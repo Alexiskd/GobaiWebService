@@ -25,6 +25,10 @@ pnpm-debug.log*
 # Sauvegardes locales
 _sauvegarde_avant_optimisation/
 
+# Données LiDAR (fichiers COPC/LAS volumineux)
+/pointclouds/
+/backend/pointclouds/
+
 # OS et éditeurs
 .DS_Store
 Thumbs.db

@@ -58,6 +58,8 @@ export interface AppConfig {
     paypalHostedButtonId?: string;
     paypalBusiness?: string;
   };
+  /** Nuages de points LiDAR (COPC/LAS) servis en HTTP Range depuis ce répertoire. */
+  pointclouds: { dir: string };
 }
 
 /** Entrée `iceServers` rendue au navigateur (même forme que RTCIceServer, sans dépendance DOM côté serveur). */
@@ -158,6 +160,7 @@ export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConf
       paypalHostedButtonId,
       paypalBusiness,
     },
+    pointclouds: { dir: env.POINTCLOUD_DIR?.trim() || 'pointclouds' },
   };
 }
 

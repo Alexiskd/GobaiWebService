@@ -17,6 +17,7 @@ import { MarsModule } from './mars.module';
 import { MercuryModule } from './mercury.module';
 import { SunModule } from './sun.module';
 import { DonationsModule } from './donations.module';
+import { PointCloudsModule } from './pointclouds.module';
 
 @Module({
   imports: [
@@ -40,6 +41,8 @@ import { DonationsModule } from './donations.module';
     BordersModule,
     PlacesModule,
     DonationsModule,
+    // Nuages de points LiDAR (COPC/LAS) servis en HTTP Range pour le rendu côté navigateur.
+    PointCloudsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

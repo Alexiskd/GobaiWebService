@@ -22,6 +22,7 @@ export function buildOpenApiDocument(app: INestApplication) {
     .addTag('Villes', 'Villes du globe avec recherche.')
     .addTag('Routes', 'Axes routiers principaux et étiquettes.')
     .addTag('Tuiles', 'Modèle de tuiles simplifié : couches, URL, coordonnées, attribution.')
+    .addTag('Nuages de points', 'Fichiers COPC/LAS servis en HTTP Range pour le rendu LiDAR côté navigateur.')
     .addTag('Pair-à-pair', 'Signalisation WebRTC : relais des offres SDP et candidats ICE, sans données d’application.')
     .addTag('Service', 'Supervision.')
     .build();
