@@ -1,0 +1,3 @@
+// Shaders GLSL de l'atmosphère terrestre (halo bleu éclairé côté jour).
+export const atmosphereVertexShader='#include <common>\n#include <logdepthbuf_pars_vertex>\nvarying vec3 vN;void main(){vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);\n#include <logdepthbuf_vertex>\n}';
+export const atmosphereFragmentShader='#include <logdepthbuf_pars_fragment>\nuniform vec3 sunV;varying vec3 vN;void main(){\n#include <logdepthbuf_fragment>\nfloat i=pow(clamp(-vN.z*2.3,0.,1.),2.2);float s=.3+.7*smoothstep(-.5,.5,dot(vN,sunV));gl_FragColor=vec4(vec3(.3,.58,1.)*i*s*1.5,1.);}';

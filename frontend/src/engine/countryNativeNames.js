@@ -1,0 +1,66 @@
+// Noms des pays dans leur écriture locale, pour les étiquettes à plat sur l'écran (countryLabels.js).
+// Clé = nom français de countryLabelPoints.js. Les pays d'écriture latine gardent le nom français :
+// on ne change ici que l'alphabet, pas la langue des étiquettes.
+// `lang` aide le navigateur à choisir la police ; `script` pilote la typographie CSS.
+export const COUNTRY_NATIVE_LABELS = {
+  "Afghanistan": { text: "افغانستان", lang: "fa", script: "arabic" },
+  "Algérie": { text: "الجزائر", lang: "ar", script: "arabic" },
+  "Arabie saoudite": { text: "السعودية", lang: "ar", script: "arabic" },
+  "Bahreïn": { text: "البحرين", lang: "ar", script: "arabic" },
+  "Bangladesh": { text: "বাংলাদেশ", lang: "bn", script: "bengali" },
+  "Bhoutan": { text: "འབྲུག", lang: "dz", script: "tibetan" },
+  "Biélorussie": { text: "Беларусь", lang: "be", script: "cyrillic" },
+  "Bulgarie": { text: "България", lang: "bg", script: "cyrillic" },
+  "Cambodge": { text: "កម្ពុជា", lang: "km", script: "khmer" },
+  "Chine": { text: "中国", lang: "zh-Hans", script: "chinese" },
+  "Chypre": { text: "Κύπρος", lang: "el", script: "greek" },
+  "Corée du Nord": { text: "조선", lang: "ko", script: "korean" },
+  "Corée du Sud": { text: "대한민국", lang: "ko", script: "korean" },
+  "Djibouti": { text: "جيبوتي", lang: "ar", script: "arabic" },
+  "Égypte": { text: "مصر", lang: "ar", script: "arabic" },
+  "Émirats arabes unis": { text: "الإمارات", lang: "ar", script: "arabic" },
+  "Érythrée": { text: "ኤርትራ", lang: "ti", script: "ethiopic" },
+  "Éthiopie": { text: "ኢትዮጵያ", lang: "am", script: "ethiopic" },
+  "Géorgie": { text: "საქართველო", lang: "ka", script: "georgian" },
+  "Grèce": { text: "Ελλάδα", lang: "el", script: "greek" },
+  "Hong Kong": { text: "香港", lang: "zh-Hant", script: "chinese" },
+  "Inde": { text: "भारत", lang: "hi", script: "devanagari" },
+  "Iran": { text: "ایران", lang: "fa", script: "arabic" },
+  "Irak": { text: "العراق", lang: "ar", script: "arabic" },
+  "Israël": { text: "ישראל", lang: "he", script: "hebrew" },
+  "Japon": { text: "日本", lang: "ja", script: "japanese" },
+  "Jordanie": { text: "الأردن", lang: "ar", script: "arabic" },
+  "Kazakhstan": { text: "Қазақстан", lang: "kk", script: "cyrillic" },
+  "Kirghizstan": { text: "Кыргызстан", lang: "ky", script: "cyrillic" },
+  "Laos": { text: "ລາວ", lang: "lo", script: "lao" },
+  "Liban": { text: "لبنان", lang: "ar", script: "arabic" },
+  "Libye": { text: "ليبيا", lang: "ar", script: "arabic" },
+  "Macao": { text: "澳門", lang: "zh-Hant", script: "chinese" },
+  "Maldives": { text: "ދިވެހިރާއްޖެ", lang: "dv", script: "thaana" },
+  "Maroc": { text: "المغرب", lang: "ar", script: "arabic" },
+  "Mauritanie": { text: "موريتانيا", lang: "ar", script: "arabic" },
+  "Mongolie": { text: "Монгол улс", lang: "mn", script: "cyrillic" },
+  "Myanmar": { text: "မြန်မာ", lang: "my", script: "myanmar" },
+  "Népal": { text: "नेपाल", lang: "ne", script: "devanagari" },
+  "Oman": { text: "عمان", lang: "ar", script: "arabic" },
+  "Pakistan": { text: "پاکستان", lang: "ur", script: "arabic" },
+  "Palestine": { text: "فلسطين", lang: "ar", script: "arabic" },
+  "Qatar": { text: "قطر", lang: "ar", script: "arabic" },
+  "Russie": { text: "Россия", lang: "ru", script: "cyrillic" },
+  "Serbie": { text: "Србија", lang: "sr", script: "cyrillic" },
+  "Soudan": { text: "السودان", lang: "ar", script: "arabic" },
+  "Sri Lanka": { text: "ශ්‍රී ලංකාව", lang: "si", script: "sinhala" },
+  "Syrie": { text: "سوريا", lang: "ar", script: "arabic" },
+  "Tadjikistan": { text: "Тоҷикистон", lang: "tg", script: "cyrillic" },
+  "Taïwan": { text: "臺灣", lang: "zh-Hant", script: "chinese" },
+  "Thaïlande": { text: "ประเทศไทย", lang: "th", script: "thai" },
+  "Tunisie": { text: "تونس", lang: "ar", script: "arabic" },
+  "Ukraine": { text: "Україна", lang: "uk", script: "cyrillic" },
+  "Yémen": { text: "اليمن", lang: "ar", script: "arabic" },
+};
+
+export function nativeCountryLabel(name) {
+  return Object.prototype.hasOwnProperty.call(COUNTRY_NATIVE_LABELS, name)
+    ? COUNTRY_NATIVE_LABELS[name]
+    : null;
+}
