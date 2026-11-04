@@ -8,10 +8,19 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test \"src/**/*.test.mjs\""
+    "test": "node --test \"src/**/*.test.mjs\"",
+    "test:contributions": "tsx --test src/contributions/*.test.ts",
+    "typecheck:contributions": "tsc -p tsconfig.contributions.json"
   },
   "dependencies": {
+    "@loaders.gl/core": "^4.5.4",
+    "@loaders.gl/las": "^4.5.4",
+    "@noble/hashes": "^2.0.1",
     "@tailwindcss/vite": "^4.3.3",
+    "blockstore-idb": "^4.0.1",
+    "helia": "^7.1.16",
+    "multiformats": "^14.0.5",
+    "potree-core": "^2.0.17",
     "radix-ui": "^1.8.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -19,7 +28,11 @@
     "three": "0.128.0"
   },
   "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/three": "^0.128.0",
     "@vitejs/plugin-react": "^4.3.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3",
     "vite": "^5.4.21"
   }
 }

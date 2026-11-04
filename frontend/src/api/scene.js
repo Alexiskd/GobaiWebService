@@ -2,6 +2,12 @@ import { get } from './client';
 
 export const fetchBodies = (signal) => get('/bodies', { signal });
 export const fetchRoads = (signal) => get('/roads', { signal });
+/** Nuages LAS/LAZ disponibles, leur en-tête géospatial et une URL Potree si le jeu a été converti. */
+export const fetchPointClouds = (signal) => get('/pointclouds', { signal });
+/** Métadonnées du LiDAR EPT 2018 de la Métropole de Lyon. */
+export const fetchLyonPointCloud = (signal) => get('/pointclouds/lyon', { signal });
+/** Configuration ICE publique pour la signalisation WebRTC des contributions. */
+export const fetchContributionP2PConfig = (signal) => get('/contributions/p2p-config', { signal });
 /** Recherche mondiale de lieux (Uber Maps, via le backend) : { provider, items: [{ name, context, lon, lat }], attribution }. */
 export const searchPlaces = (q, signal) => get('/places', { signal, query: { q, limit: 8 } });
 /** Noms des villes du monde (Natural Earth, triés par population) : { attribution, count, items: [{ name, native?, script?, country, lon, lat, pop, capital }] }.

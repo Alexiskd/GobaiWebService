@@ -1176,7 +1176,11 @@ export class SolarEngine {
 
     const zoomText = `${f.name} · ${Math.max(1, Math.round((this.dist / f.r) * 10) / 10)}×`;
     this.hud.set({
-      date, focusText, zoomText, tiles: this.tiles.snapshot(), moonTiles: this.moonTiles.snapshot(),
+      date, focusText, zoomText,
+      cityFocus: city && this.focus === this.earthFocus
+        ? { name: city.name, lon: city.lon, lat: city.lat }
+        : null,
+      tiles: this.tiles.snapshot(), moonTiles: this.moonTiles.snapshot(),
       marsTiles: this.marsTiles?.snapshot() ?? null,
       mercuryTiles: this.mercuryTiles?.snapshot() ?? null,
       venusTiles: this.venusTiles?.snapshot() ?? null,
