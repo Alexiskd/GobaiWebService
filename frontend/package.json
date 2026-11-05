@@ -11,6 +11,7 @@
     "test": "tsx --test \"src/**/*.test.jsx\"",
     "test:contributions": "tsx --test src/contributions/*.test.ts",
     "typecheck:contributions": "tsc -p tsconfig.contributions.json",
+    "test:lidar": "node --test lidar/lidar.test.mjs lidar/georef.test.mjs",
     "native:sync": "vite build && cap sync",
     "native:android": "npm run native:sync && cap open android",
     "native:ios": "npm run native:sync && cap open ios"

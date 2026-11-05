@@ -1,0 +1,16 @@
+{
+  "name": "gobai-space",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Gobai Space : site React/Vite et API NestJS déployés en un seul service web (l'API sert le site compilé)",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "npm run install:all && npm run build:frontend && npm run build:backend",
+    "install:all": "npm ci --prefix backend --include=dev && npm ci --prefix frontend --include=dev",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend",
+    "start": "npm run start:prod --prefix backend"
+  }
+}

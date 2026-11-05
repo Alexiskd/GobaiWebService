@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * Panneaux ouverts : recherche, aide, informations, tuile 3D et contributions.
+ * Panneaux ouverts : recherche, aide, informations, tuile 3D, contributions et LiDAR sur le globe.
  * Petit écran : un seul grand panneau à la fois (sinon ils se recouvrent).
  * Raccourcis : Ctrl K ou / (recherche), ? (aide), L (informations), Échap (fermer).
  */
@@ -9,6 +9,7 @@ export function usePanels({ compact, bodySelected }) {
   const [panel, setPanel] = useState(null); // 'layers' | 'search' | 'help' | null
   const [pointCloudOpen, setPointCloudOpen] = useState(false);
   const [contributionOpen, setContributionOpen] = useState(false);
+  const [lidarOpen, setLidarOpen] = useState(false);
   const bodySelectedRef = useRef(bodySelected);
   bodySelectedRef.current = bodySelected;
 
@@ -17,15 +18,19 @@ export function usePanels({ compact, bodySelected }) {
 
   const toggleLayers = useCallback(() => {
     setPanel((p) => (p === 'layers' ? null : 'layers'));
-    if (compact) { setPointCloudOpen(false); setContributionOpen(false); }
+    if (compact) { setPointCloudOpen(false); setContributionOpen(false); setLidarOpen(false); }
   }, [compact]);
   const togglePointClouds = useCallback(() => {
     setPointCloudOpen((o) => !o);
-    if (compact) { setContributionOpen(false); setPanel((p) => (p === 'layers' ? null : p)); }
+    if (compact) { setContributionOpen(false); setLidarOpen(false); setPanel((p) => (p === 'layers' ? null : p)); }
   }, [compact]);
   const toggleContributions = useCallback(() => {
     setContributionOpen((o) => !o);
-    if (compact) { setPointCloudOpen(false); setPanel((p) => (p === 'layers' ? null : p)); }
+    if (compact) { setPointCloudOpen(false); setLidarOpen(false); setPanel((p) => (p === 'layers' ? null : p)); }
+  }, [compact]);
+  const toggleLidar = useCallback(() => {
+    setLidarOpen((o) => !o);
+    if (compact) { setPointCloudOpen(false); setContributionOpen(false); setPanel((p) => (p === 'layers' ? null : p)); }
   }, [compact]);
 
   useEffect(() => {
@@ -49,7 +54,7 @@ export function usePanels({ compact, bodySelected }) {
 
   return {
     panel, setPanel, closePanel, layersOpen,
-    pointCloudOpen, setPointCloudOpen, contributionOpen, setContributionOpen,
-    toggleLayers, togglePointClouds, toggleContributions,
+    pointCloudOpen, setPointCloudOpen, contributionOpen, setContributionOpen, lidarOpen, setLidarOpen,
+    toggleLayers, togglePointClouds, toggleContributions, toggleLidar,
   };
 }

@@ -1,8 +1,11 @@
-// Client HTTP minimal de l'API NestJS. Base : VITE_API_URL (ex. https://api.exemple.fr/api) ou /api (proxy Vite).
+// Client HTTP minimal de l'API NestJS. Base : VITE_API_URL (ex. https://api.exemple.fr/api) sinon /api :
+// en ligne, le site et l'API forment un seul service web (même origine) ; en développement, le proxy Vite relaie /api.
+// Application native (Capacitor) : pas de serveur local, on vise l'API en ligne.
 const DEFAULT_PRODUCTION_API_URL = 'https://gobai-space.onrender.com/api';
+const IS_NATIVE = typeof window !== 'undefined' && Boolean(window.Capacitor?.isNativePlatform?.());
 const ROOT = (
   import.meta.env.VITE_API_URL
-  || (import.meta.env.PROD ? DEFAULT_PRODUCTION_API_URL : '/api')
+  || (IS_NATIVE ? DEFAULT_PRODUCTION_API_URL : '/api')
 ).replace(/\/$/, '');
 export { ROOT as API_ROOT };
 export const API_BASE = `${ROOT}/v1`;

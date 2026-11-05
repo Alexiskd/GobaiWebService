@@ -1,23 +1,31 @@
 # Moteur LiDAR (LAS / LAZ)
 
-Moteur WebGL 2 de nuages de points, sans three.js, pour les fichiers `.las` et `.laz` (LAS 1.0 à 1.4, formats de point 0 à 10).
+Moteur WebGL 2 de nuages de points, sans three.js, pour les fichiers `.las` et `.laz` (LAS 1.0 à 1.4, formats de point 0 à 10),
+et couche three.js qui pose ces nuages sur le globe terrestre de Gobai Space.
 
-## Installation (dans `frontend/`)
+## Intégration (déjà faite dans `frontend/`)
 
-```bash
-cp -r lidar src/lidar
-npm install laz-perf          # décompression LAZ (WebAssembly)
-```
+- Alias Vite `@lidar` → `frontend/lidar`, `worker: { format: 'es' }`, `optimizeDeps.exclude: ['laz-perf']` (`vite.config.js`).
+- Bouton **LiDAR** de la barre d'outils → panneau `src/components/menus/LidarGlobe/LidarGlobe.jsx`.
+- État et couche 3D : `src/components/scene/useGlobeLidar.jsx` (les nuages restent sur la Terre panneau fermé).
 
-Dans `vite.config.js` :
+## Sur le globe
 
 ```js
-export default defineConfig({
-  // …
-  worker: { format: 'es' },                  // le worker charge laz-perf à la demande
-  optimizeDeps: { exclude: ['laz-perf'] },   // garde laz-perf.wasm à côté de son module
-});
+import { loadLidarCloud } from '@lidar/loadCloud.js';
+const { GlobeLidarLayer } = await import('@lidar/GlobeLidarLayer.js'); // three.js chargé à la demande
+
+const layer = new GlobeLidarLayer(engine);              // SolarEngine : earth.mesh, cam, renderer
+const result = await loadLidarCloud(fichierOuUrl).promise; // points en mètres Est-Nord-Haut autour du centre
+const id = layer.add(result);                           // position lue dans le système de coordonnées du fichier
+layer.add(result, { placement: { lat, lon } });         // fichier sans système reconnu : placement manuel
+layer.setColorMode(id, 'classification');               // rgb | elevation | intensity | classification | returns
+layer.setGroundClamp(id, false);                        // altitude du fichier au lieu du sol posé sur la sphère
 ```
+
+Systèmes reconnus (`georef.js`) : Lambert-93 (2154), CC42 à CC50 (3942 à 3950), UTM WGS84 / ETRS89 / outre-mer,
+Web Mercator (3857), géographique (4326, 4171, 4258…). Systèmes composés (ex. LiDAR HD IGN 2154 + NGF-IGN69) lus via le WKT.
+Le globe n'ayant pas de relief, le sol du nuage est posé sur la sphère par défaut (« Poser au sol »).
 
 ## Utilisation
 
@@ -48,7 +56,7 @@ engine.dispose();
 ## Tests
 
 ```bash
-node --test src/lidar/lidar.test.mjs
+npm run test:lidar
 ```
 
 ## Commandes

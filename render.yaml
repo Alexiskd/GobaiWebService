@@ -1,0 +1,15 @@
+# Render Blueprint : un seul service web (API NestJS + site React servi par l'API).
+# Build : installe et compile frontend puis backend. Start : node backend/dist/main.js (dossier backend).
+services:
+  - type: web
+    name: gobai-space
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # PORT est fourni par Render. Les autres variables (PayPal, P2P_TURN_*, tuiles…) : voir backend/.env.example.

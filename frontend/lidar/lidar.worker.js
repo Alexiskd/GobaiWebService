@@ -2,6 +2,7 @@
 // l'octree, sans bloquer l'interface. Les tableaux des nœuds sont transférés (pas copiés) au fil principal.
 import { crsLabel, createPointReader, readLasHeader } from './lasFormat.js';
 import { buildOctree } from './octree.js';
+import { geoFrame } from './georef.js';
 
 const LAZ_PERF_VERSION = '0.0.6';
 const LAZ_PERF_CDN = `https://cdn.jsdelivr.net/npm/laz-perf@${LAZ_PERF_VERSION}/lib/web/`;
@@ -47,7 +48,7 @@ const post = (message, transfer) => self.postMessage(message, transfer || []);
 const progress = (id, phase, ratio) => post({ type: 'progress', id, phase, ratio });
 
 /** Lit tous les points (ou un sur `stride` au-delà de `maxPoints`) dans des colonnes compactes. */
-async function decode(id, buffer, header, maxPoints, lazWasmBase) {
+async function decode(id, buffer, header, maxPoints, lazWasmBase, georeference = false) {
   const total = header.pointCount;
   if (!total) throw new Error('Le fichier ne contient aucun point.');
   const stride = Math.max(1, Math.ceil(total / maxPoints));
@@ -56,6 +57,10 @@ async function decode(id, buffer, header, maxPoints, lazWasmBase) {
   // Centre du nuage : les coordonnées (souvent ~10⁶ m en Lambert-93) sont stockées relativement à lui en float32.
   const validBox = header.min.every((v, i) => Number.isFinite(v) && Number.isFinite(header.max[i]) && header.max[i] >= v);
   const center = validBox ? header.min.map((v, i) => (v + header.max[i]) / 2) : header.offset.slice();
+  // Option globe : points exprimés directement en mètres Est-Nord-Haut autour du centre (convergence et échelle
+  // de la projection incluses). Sans système de coordonnées reconnu, la grille reste telle quelle (placement manuel).
+  const frame = georeference ? geoFrame(header.crs, center) : null;
+  const [ex, nx, ey, ny] = frame ? frame.matrix : [1, 0, 0, 1];
 
   const positions = new Float32Array(capacity * 3);
   const colors = header.hasRgb ? new Uint16Array(capacity * 3) : null;
@@ -72,7 +77,8 @@ async function decode(id, buffer, header, maxPoints, lazWasmBase) {
   const read = createPointReader(header);
   const p = {};
   const store = () => {
-    const x = p.x - center[0], y = p.y - center[1], z = p.z - center[2];
+    const gx = p.x - center[0], gy = p.y - center[1], z = p.z - center[2];
+    const x = ex * gx + ey * gy, y = nx * gx + ny * gy;
     if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
     positions[k * 3] = x; positions[k * 3 + 1] = y; positions[k * 3 + 2] = z;
     if (x < min[0]) min[0] = x; if (x > max[0]) max[0] = x;
@@ -142,7 +148,7 @@ async function decode(id, buffer, header, maxPoints, lazWasmBase) {
   if (intensityRange[1] <= intensityRange[0]) intensityRange = [0, Math.max(1, percentile(1))];
 
   return {
-    count: k, stride, center, min, max, positions, colors, intensity, classification, returns, classCounts,
+    count: k, stride, center, frame, min, max, positions, colors, intensity, classification, returns, classCounts,
     intensityRange,
     maxColor,
     colorShift: maxColor > 255 ? 8 : 0, // couleurs 16 bits ou 8 bits selon le logiciel producteur
@@ -182,13 +188,13 @@ function packNodes(data, tree) {
 }
 
 self.onmessage = async (event) => {
-  const { type, id, buffer, name, maxPoints = 25_000_000, lazWasmBase = '' } = event.data || {};
+  const { type, id, buffer, name, maxPoints = 25_000_000, lazWasmBase = '', georeference = false } = event.data || {};
   if (type !== 'load') return;
   const started = performance.now();
   try {
     const header = readLasHeader(buffer);
     post({ type: 'header', id, header: { ...header, crsLabel: crsLabel(header.crs) } });
-    const data = await decode(id, buffer, header, maxPoints, lazWasmBase);
+    const data = await decode(id, buffer, header, maxPoints, lazWasmBase, georeference);
     const decoded = performance.now();
 
     const tree = buildOctree(data.positions, data.count, { min: data.min, max: data.max }, {
@@ -206,6 +212,7 @@ self.onmessage = async (event) => {
         name,
         header: { ...header, crsLabel: crsLabel(header.crs) },
         center: data.center,
+        geo: data.frame, // { lon, lat, height, epsg, label } ou null (option georeference)
         bounds: { min: data.min, max: data.max },
         pointCount: data.count,
         filePointCount: header.pointCount,

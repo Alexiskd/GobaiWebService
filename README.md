@@ -37,6 +37,29 @@ The LAS WKT is displayed but there is no general CRS reprojection engine. The fi
 
 Corrections are new signed contribution events that reference the prior version CID. Existing versions and their votes remain unchanged.
 
+## Deployment (Render, single web service)
+
+The NestJS API also serves the compiled frontend (`frontend/dist`) on the same origin: one service, one URL, no CORS. Routes under `/api` go to the API (including the `/api/p2p/signal` WebSocket); every other `GET` returns the React app.
+
+From the repository root:
+
+```powershell
+npm run build   # installs backend + frontend, builds frontend (Vite) then backend (Nest)
+npm start       # node backend/dist/main.js — site on http://localhost:3001/
+```
+
+On Render, either use the `render.yaml` Blueprint or create a **Web Service** manually:
+
+| Setting | Value |
+| --- | --- |
+| Root Directory | *(empty — repository root)* |
+| Runtime | Node (version from `.node-version`: 22) |
+| Build Command | `npm run build` |
+| Start Command | `npm start` |
+| Health Check Path | `/api/health` |
+
+Render provides `PORT`. Do not set `VITE_API_URL` for the web build (the site calls `/api` on its own origin). Native Capacitor builds still default to `https://gobai-space.onrender.com/api`. Other backend variables are listed in `backend/.env.example`. The tile cache and `pointclouds/` folder live in `backend/` on Render's ephemeral disk.
+
 ## Development and checks
 
 Run the API and frontend using the repository's existing scripts. The frontend Vite proxy forwards `/api` (including WebSocket upgrades) to `http://localhost:3001` by default.

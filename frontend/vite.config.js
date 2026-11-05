@@ -6,8 +6,14 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@lidar': fileURLToPath(new URL('./lidar', import.meta.url)), // moteur LiDAR (LAS / LAZ)
+    },
   },
+  // Le worker LiDAR charge laz-perf à la demande (import dynamique) : format ES obligatoire.
+  worker: { format: 'es' },
+  optimizeDeps: { exclude: ['laz-perf'] }, // garde laz-perf.wasm à côté de son module
   server: {
     port: 5173,
     // En développement, /api est relayé vers le backend NestJS.

@@ -18,12 +18,14 @@ import { Toolbar } from './toolbar/Toolbar';
 import { Aide } from './menus/Aide';
 import { Contribuer } from './menus/Contribuer/Contribuer';
 import { Informations } from './menus/Informations/Informations';
+import { LidarGlobe } from './menus/LidarGlobe/LidarGlobe';
 import { Rechercher } from './menus/Rechercher';
 import { Tuile3D } from './menus/Tuile3D/Tuile3D';
 import { bordersHintText, cityNamesHintText, moonModelHintText, shadowcamHintText } from './scene/layerHints';
 import { useCameraToggles } from './scene/useCameraToggles';
 import { useDocumentViewport } from './scene/useDocumentViewport';
 import { useEarthDisplay } from './scene/useEarthDisplay';
+import { useGlobeLidar } from './scene/useGlobeLidar';
 import { useMapFeeds } from './scene/useMapFeeds';
 import { useMoonFeeds } from './scene/useMoonFeeds';
 import { useMoonLayers } from './scene/useMoonLayers';
@@ -81,6 +83,7 @@ export function SolarScene({ data }) {
   const { cityInfo, bordersInfo } = useMapFeeds({ engine, push });
   const actions = useSceneActions({ engineRef, setAuto: camera.setAuto });
   const panels = usePanels({ compact, bodySelected });
+  const lidar = useGlobeLidar({ engine, push });
 
   return (
     <div className={compact ? 'app-shell is-compact' : 'app-shell'} data-vp={viewport.size}>
@@ -159,6 +162,9 @@ export function SolarScene({ data }) {
         onPointClouds={panels.togglePointClouds}
         contributionOpen={panels.contributionOpen}
         onContributions={panels.toggleContributions}
+        lidarOpen={panels.lidarOpen}
+        lidarCount={lidar.clouds.length}
+        onLidar={panels.toggleLidar}
         onSearch={() => panels.setPanel('search')}
         onToggleLayers={panels.toggleLayers}
         onToggleAuto={() => camera.setAuto((v) => !v)}
@@ -172,6 +178,11 @@ export function SolarScene({ data }) {
         city={cityFocus}
         open={panels.pointCloudOpen}
         onClose={() => panels.setPointCloudOpen(false)}
+      />
+      <LidarGlobe
+        open={panels.lidarOpen}
+        onClose={() => panels.setLidarOpen(false)}
+        lidar={lidar}
       />
       <Contribuer
         engine={engine}
