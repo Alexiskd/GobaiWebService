@@ -1,4 +1,4 @@
-import SolarSystem from './components/GlobalComponents';
+import SolarSystem from './components/SolarSystem';
 
 export default function App() {
   return <SolarSystem />;

@@ -1,0 +1,18 @@
+export const PROVIDER_LABEL = {
+  gibs: 'NASA GIBS',
+  'nasa-trek': 'NASA Moon Trek',
+  'mars-trek': 'NASA Mars Trek',
+  'venus-trek': 'NASA Venus Trek',
+  'moon-trek': 'NASA Moon Trek (catalogue)',
+  'usgs-astro': 'USGS Astrogeology',
+  'lroc-lunaserv': 'LROC Lunarserv',
+  'usgs-astro-mars': 'USGS Astrogeology',
+  'opm-mars': 'OpenPlanetaryMap',
+  'murray-lab': 'Caltech Murray Lab',
+  'mercury-lunaserv': 'ASU Lunaserv',
+  'usgs-astro-mercury': 'USGS Astrogeology',
+  'mercury-trek': 'NASA Mercury Trek',
+  'mercury-trek-wmts': 'NASA Mercury Trek',
+  'mercury-quickmap': 'Mercury QuickMap',
+  'opm-mercury': 'OpenPlanetaryMap',
+};

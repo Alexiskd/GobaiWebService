@@ -1,4 +1,4 @@
-import { fetchContributionP2PConfig, resolveApiUrl } from '../api/index.js';
+import { fetchContributionP2PConfig, resolveApiUrl } from '../api/index';
 import { getBytes, hasBlock, importRemoteBlock, listContributionBlocks } from './store';
 
 const ROOM = 'gobai-contributions-v1';
