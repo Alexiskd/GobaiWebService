@@ -394,7 +394,11 @@ input:disabled + label { opacity: 0.6; cursor: default; }
 
 /* ── Panneau de l’astre (en direct + couches), à droite ─────────────────── */
 .moon-live { position: fixed; right: calc(var(--gutter) + 62px); top: calc(env(safe-area-inset-top, 0px) + 12px); width: 320px; max-height: calc(100dvh - 90px); overflow-y: auto; padding-bottom: 10px; z-index: 30; }
-.moon-live h2 .live, .moon-live .live { font-size: 0.7rem; }
+.moon-live .live { font-size: 0.62rem; }
+.moon-live > header { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; padding: 14px 10px 10px; }
+.moon-live > header .ghost { justify-self: end; }
+.live-heading { grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; text-align: center; }
+.live-heading h2 { margin: 0; font-size: 1.22rem; font-weight: 650; letter-spacing: 0.01em; overflow-wrap: anywhere; }
 .moon-live .layers-section { margin-top: 14px; padding-top: 4px; border-top: 1px solid var(--line); }
 .moon-live .layers-section > header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 16px; min-height: 34px; }
 .moon-live .layers-section h3 { margin: 4px 0 0; }

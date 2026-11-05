@@ -121,8 +121,6 @@ export const controlStyles = {
 
   // ================================================ Téléphone étroit : fiche sur une colonne
   '@media (max-width: 480px)': {
-    [`${R} .ac-fact`]: { gridTemplateColumns: '1fr', gap: '2px' },
-    [`${R} .ac-fact dd`]: { textAlign: 'left' },
     [`${R} .ac-stats, ${R} .ac-orbiter .ac-hint`]: { paddingLeft: '12px' },
   },
 

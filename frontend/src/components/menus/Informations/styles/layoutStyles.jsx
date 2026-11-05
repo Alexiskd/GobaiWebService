@@ -17,24 +17,33 @@ export const layoutStyles = {
   // ------------------------------------------------ Sections et textes
   [`${R} .ac-section, ${R} .ac-group`]: { display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0, margin: 0, padding: 0 },
   [`${R} .ac-title, ${R} .ac-group-title`]: smallCaps,
+  [`${R} .ac-title`]: { textAlign: 'center' },
+  [`${R} .ac-section > .ac-hint`]: { textAlign: 'center' },
+  [`${R} .moon-search`]: { margin: 0 }, // la marge héritée de la feuille globale décalait le champ
   [`${R} .ac-subtitle`]: { margin: '2px 0 0', fontSize: '12px', fontWeight: 600, opacity: 0.8 },
   [`${R} .ac-hint`]: { margin: 0, fontSize: '12px', opacity: 0.6, lineHeight: 1.45, overflowWrap: 'anywhere' },
   [`${R} .ac-hint strong`]: { fontWeight: 600, opacity: 1 },
   [`${R} .ac-card`]: card,
 
-  // ------------------------------------------------ Fiche : libellé à gauche, valeur alignée à droite
+  // ------------------------------------------------ Fiche : tuiles centrées sur deux colonnes (libellé, valeur, note)
+  [`${R} .ac-facts`]: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
   [`${R} .ac-fact`]: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(88px, 32%) minmax(0, 1fr)',
-    alignItems: 'baseline',
-    gap: '12px',
-    padding: '9px 12px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+    minWidth: 0,
+    padding: '12px 10px',
+    textAlign: 'center',
   },
-  [`${R} .ac-fact + .ac-fact`]: { borderTop: `1px solid ${LINE}` },
-  [`${R} .ac-fact dt`]: { margin: 0, fontSize: '12px', opacity: 0.6 },
-  [`${R} .ac-fact dd`]: { margin: 0, minWidth: 0, textAlign: 'right' },
-  [`${R} .ac-value`]: { fontWeight: 600, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' },
-  [`${R} .ac-fact small`]: { ...muted, display: 'block', marginTop: '2px' },
+  [`${R} .ac-fact:nth-child(odd)`]: { borderRight: `1px solid ${LINE}` },
+  [`${R} .ac-fact:nth-child(n + 3)`]: { borderTop: `1px solid ${LINE}` },
+  [`${R} .ac-fact:last-child:nth-child(odd)`]: { gridColumn: '1 / -1', borderRight: 0 }, // nombre impair : dernière tuile pleine largeur
+  [`${R} .ac-fact dt`]: { ...smallCaps, fontSize: '10px', opacity: 0.55 },
+  [`${R} .ac-fact dd`]: { margin: 0, minWidth: 0, maxWidth: '100%', textAlign: 'center' },
+  [`${R} .ac-value`]: { display: 'block', fontSize: '15px', fontWeight: 600, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' },
+  [`${R} .ac-fact small`]: { ...muted, display: 'block', marginTop: '3px' },
 
   // ------------------------------------------------ Lignes simples (phases) : nom à gauche, date à droite
   [`${R} .ac-rows`]: { ...card, listStyle: 'none' },

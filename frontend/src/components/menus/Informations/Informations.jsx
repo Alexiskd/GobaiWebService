@@ -42,7 +42,11 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, childre
     >
       <header {...drag.handleProps} onClick={compact ? () => setOpen((v) => !v) : undefined}>
         {compact ? <span className="sheet-handle" aria-hidden="true" /> : <span className="drag-grip" aria-hidden="true" />}
-        <h2>{view ? <>{view.name} <span className="live">en direct</span></> : 'Informations'}</h2>
+        {/* Nom de l'astre et badge « En direct » centrés ; poignée à gauche, bouton de repli à droite. */}
+        <div className="live-heading">
+          <h2>{view ? view.name : 'Informations'}</h2>
+          {view && <span className="live" role="status">En direct</span>}
+        </div>
         <button
           type="button"
           className="ghost"

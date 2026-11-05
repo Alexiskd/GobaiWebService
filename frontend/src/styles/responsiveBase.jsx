@@ -84,6 +84,8 @@ export const baseStyles = {
     WebkitOverflowScrolling: 'touch',
     minHeight: 0,
   },
+  // Marges intérieures du panneau flottant (la version mobile en feuille a déjà les siennes).
+  'html .live-panel:not(.panel-sheet) .panel-body': { padding: '6px 16px 14px' },
 
   // ------------------------------------------------ Palette
   'html .palette': {
