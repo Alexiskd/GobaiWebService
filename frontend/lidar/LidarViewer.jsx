@@ -1,34 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Box, Button, Checkbox, Chip, Divider, IconButton, LinearProgress, MenuItem, Paper, Select, Slider, Stack, Switch,
-  ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip, Typography, createTheme, useMediaQuery,
+  ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery,
 } from '@mui/material';
 import { LidarEngine } from './LidarEngine.js';
 import { COLOR_MODES, GRADIENTS, classInfo } from './colormaps.js';
+import { crayonBox, crayonTheme } from '@/styles/crayonMuiTheme';
 
 // Visionneuse LiDAR : dépôt d'un fichier .las / .laz, réglages d'affichage, classes, outils de mesure.
-// Thème sombre MUI local (aucun ThemeProvider global nécessaire). Plein écran sur mobile pour le panneau de réglages.
+// Thème crayon partagé (ThemeProvider local : la visionneuse reste utilisable hors de l'app). Plein écran sur mobile pour le panneau de réglages.
 
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: { main: '#4fc3f7' },
-    background: { paper: '#0d1322', default: '#05070d' },
-  },
-  typography: { fontSize: 13, fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' },
-  shape: { borderRadius: 10 },
-});
+// Thème crayon de l'application (traits blancs sur bleu), partagé avec les styles globaux.
+const theme = crayonTheme;
 
 const COMPACT = '(max-width: 720px), (max-height: 500px) and (pointer: coarse)';
 const nf = (v, d = 0) => Number(v).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const count = (v) => (v >= 1e6 ? `${nf(v / 1e6, v >= 1e7 ? 0 : 1)} M` : v >= 1e4 ? `${nf(v / 1e3)} k` : nf(v));
-const glass = {
-  bgcolor: 'rgba(12, 18, 32, 0.86)',
-  backdropFilter: 'blur(14px)',
-  WebkitBackdropFilter: 'blur(14px)',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-  boxShadow: '0 12px 40px rgba(0, 0, 0, 0.45)',
-};
+const glass = crayonBox;
 
 function Section({ title, children, action }) {
   return (

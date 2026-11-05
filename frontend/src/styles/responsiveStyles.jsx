@@ -6,6 +6,7 @@ import { screenStyles } from './responsiveScreens';
 import { compactStyles } from './responsiveCompact';
 import { smallScreenStyles } from './responsiveSmallScreens';
 import { motionStyles } from './responsiveMotion';
+import { crayonStyles } from './responsiveCrayon';
 
 // Styles MUI (ex responsive.css), découpés par zone.
 // Paliers : xs ≤480 · sm ≤720 · md ≤1024 · lg ≤1440 · xl >1440.
@@ -19,6 +20,7 @@ const responsiveStyles = {
   ...compactStyles,
   ...smallScreenStyles,
   ...motionStyles,
+  ...crayonStyles, // thème crayon blanc sur bleu : toujours en dernier
 };
 
 /** Injecte tous les styles responsive (MUI / Emotion). Objet constant : sérialisé une seule fois. */
