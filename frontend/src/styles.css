@@ -52,8 +52,17 @@ button.ghost:hover { color: var(--ink); }
 .title h1 { font-size: 1.08rem; font-weight: 600; letter-spacing: 0.01em; display: flex; align-items: center; gap: 9px; }
 .title .brand-logo { width: 112px; height: auto; flex: none; object-fit: contain; }
 .title-text { min-width: 0; }
-.live { font-size: 0.72rem; font-weight: 600; color: var(--sun); display: inline-flex; align-items: center; gap: 6px; }
-.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--sun); box-shadow: 0 0 8px var(--sun); }
+/* Badge « En direct » : pastille ambrée, point qui pulse (arrêté si l'utilisateur réduit les animations). */
+.live { display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 9px; border: 1px solid rgba(240, 178, 74, 0.45);
+  border-radius: 999px; background: rgba(240, 178, 74, 0.12); color: var(--sun); font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase; line-height: 1; white-space: nowrap; }
+.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--sun); animation: live-pulse 1.8s ease-out infinite; }
+@keyframes live-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(240, 178, 74, 0.65); }
+  70% { box-shadow: 0 0 0 7px rgba(240, 178, 74, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 178, 74, 0); }
+}
+@media (prefers-reduced-motion: reduce) { .live::before { animation: none; box-shadow: 0 0 8px var(--sun); } }
 .title p { color: var(--dim); font-size: 0.8rem; margin-top: 3px; }
 .donation-button, .donation-unavailable { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 14px); right: var(--gutter); z-index: 25;
   display: inline-flex; align-items: center; gap: 7px; padding: 9px 13px; border: 1px solid rgba(0, 112, 186, 0.75);

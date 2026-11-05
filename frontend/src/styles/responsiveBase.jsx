@@ -59,10 +59,16 @@ export const baseStyles = {
     paddingLeft: 0,
     position: 'relative',
     zIndex: 1,
+    // Textes centrés les uns sous les autres : titre, badge « En direct », date, astre suivi.
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    textAlign: 'center',
+    gap: '5px',
     minWidth: 0,
   },
-  'html .hud-title h1': { fontSize: 'clamp(15px, 1.2vw + 9px, 26px)', lineHeight: 1.15, margin: 0 },
-  'html .hud-title p': { margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  'html .hud-title h1': { fontSize: 'clamp(15px, 1.2vw + 9px, 26px)', lineHeight: 1.15, margin: 0, justifyContent: 'center' },
+  'html .hud-title p': { margin: 0, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
 
   // ------------------------------------------------ Panneau droit
   'html .live-panel': {

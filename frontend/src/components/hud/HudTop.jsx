@@ -21,8 +21,9 @@ export function HudTop({ hud }) {
       />
       <div className="title-text">
         <h1>
-          Gobai Space <span className="title-glyphs" aria-hidden="true">١д१壹אη하</span> <span className="live">en direct</span>
+          Gobai Space <span className="title-glyphs" aria-hidden="true">١д१壹אη하</span>
         </h1>
+        <span className="live" role="status">En direct</span>
         <p className="title-date">{date}</p>
         {focusText && <p className="title-focus">{focusText}</p>}
       </div>

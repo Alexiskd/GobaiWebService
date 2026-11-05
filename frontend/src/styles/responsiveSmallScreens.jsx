@@ -6,7 +6,7 @@ export const smallScreenStyles = {
   // ================================================ Téléphone très étroit (≤ 380px)
   [MQ.tiny]: {
     ':root': { '--logo-w': '76px' },
-    'html .hud-title h1 .live': { display: 'none' },
+    'html .hud-title .live': { display: 'none' },
     'html .toolbar-compact .tool-btn': { fontSize: '10px' },
   },
 
