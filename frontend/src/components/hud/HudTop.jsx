@@ -12,7 +12,7 @@ export function HudTop({ hud }) {
     <header className="title hud-title" ref={drag.ref} style={drag.style} {...drag.handleProps}>
       <img
         className="brand-logo"
-        src="/logo.png?v=2"
+        src="/logo.png?v=3"
         alt="Logo Gobai"
         width="252"
         height="138"
