@@ -16,7 +16,7 @@ export const controlStyles = {
     margin: 0,
     cursor: 'pointer',
   },
-  [`${R} .ac-switch:hover`]: { background: 'rgba(255, 255, 255, 0.025)' },
+  [`${R} .ac-switch:hover`]: { background: 'rgba(0, 0, 0, 0.03)' },
   [`${R} .ac-switch.is-disabled`]: { cursor: 'default', opacity: 0.55 },
   [`${R} .ac-switch-text, ${R} .ac-option-text`]: { display: 'flex', flexDirection: 'column', minWidth: 0 },
   [`${R} .ac-switch-label, ${R} .ac-option-label`]: { fontWeight: 500 },
@@ -30,7 +30,7 @@ export const controlStyles = {
     height: '20px',
     margin: 0,
     borderRadius: '999px',
-    background: 'rgba(255, 255, 255, 0.18)',
+    background: '#a2a9b1',
     cursor: 'pointer',
     transition: 'background-color 150ms ease',
   },
@@ -62,8 +62,8 @@ export const controlStyles = {
     cursor: 'pointer',
     transition: 'background-color 120ms ease',
   },
-  [`${R} .ac-option:hover`]: { background: 'rgba(255, 255, 255, 0.025)' },
-  [`${R} .ac-option.is-checked`]: { background: 'rgba(79, 195, 247, 0.08)' },
+  [`${R} .ac-option:hover`]: { background: 'rgba(0, 0, 0, 0.03)' },
+  [`${R} .ac-option.is-checked`]: { background: '#eaecf0' },
   [`${R} .ac-radio`]: {
     appearance: 'none',
     WebkitAppearance: 'none',
@@ -74,7 +74,7 @@ export const controlStyles = {
     height: '16px',
     margin: '2px 0 0',
     borderRadius: '50%',
-    border: '1.5px solid rgba(255, 255, 255, 0.4)',
+    border: '1.5px solid #72777d',
     cursor: 'pointer',
   },
   [`${R} .ac-radio::before`]: {
@@ -104,7 +104,7 @@ export const controlStyles = {
   [`${R} .ac-status-dot`]: { width: '8px', height: '8px', borderRadius: '50%', flex: 'none' },
   [`${R} .ac-status.is-ok .ac-status-dot`]: { background: '#49df8a' },
   [`${R} .ac-status.is-busy .ac-status-dot`]: { background: '#ffc857', animation: 'acPulse 1.2s ease-in-out infinite' },
-  [`${R} .ac-status.is-bad`]: { color: '#ffb3ba' },
+  [`${R} .ac-status.is-bad`]: { color: '#d33' },
   [`${R} .ac-status.is-bad .ac-status-dot`]: { background: '#ff5b69' },
 
   // ================================================ Tactile : lignes d'au moins 44 px

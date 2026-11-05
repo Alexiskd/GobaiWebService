@@ -5,18 +5,18 @@ import {
 } from '@mui/material';
 import { LidarEngine } from './LidarEngine.js';
 import { COLOR_MODES, GRADIENTS, classInfo } from './colormaps.js';
-import { crayonBox, crayonTheme } from '@/styles/crayonMuiTheme';
+import { wikiBox, wikiTheme } from '@/styles/wikiMuiTheme';
 
 // Visionneuse LiDAR : dépôt d'un fichier .las / .laz, réglages d'affichage, classes, outils de mesure.
-// Thème crayon partagé (ThemeProvider local : la visionneuse reste utilisable hors de l'app). Plein écran sur mobile pour le panneau de réglages.
+// Thème clair partagé (ThemeProvider local : la visionneuse reste utilisable hors de l'app). Plein écran sur mobile pour le panneau de réglages.
 
-// Thème crayon de l'application (traits blancs sur bleu), partagé avec les styles globaux.
-const theme = crayonTheme;
+// Thème clair de l'application (blanc et noir), partagé avec les styles globaux.
+const theme = wikiTheme;
 
 const COMPACT = '(max-width: 720px), (max-height: 500px) and (pointer: coarse)';
 const nf = (v, d = 0) => Number(v).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const count = (v) => (v >= 1e6 ? `${nf(v / 1e6, v >= 1e7 ? 0 : 1)} M` : v >= 1e4 ? `${nf(v / 1e3)} k` : nf(v));
-const glass = crayonBox;
+const glass = wikiBox;
 
 function Section({ title, children, action }) {
   return (
@@ -43,7 +43,7 @@ function Row({ label, children, hint }) {
 }
 
 function Swatch({ color }) {
-  return <Box component="span" sx={{ width: 12, height: 12, borderRadius: '3px', bgcolor: color, flex: 'none', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2)' }} />;
+  return <Box component="span" sx={{ width: 12, height: 12, borderRadius: '3px', bgcolor: color, flex: 'none', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.25)' }} />;
 }
 
 /**
@@ -172,7 +172,7 @@ export function LidarViewer({ source = null, name, maxPoints, lazWasmBase, onClo
     : 'Glisser : tourner · Clic droit ou Maj : déplacer · Molette : zoom · Double-clic : recentrer · R : vue globale · T : dessus · M : mesure · Échap : effacer';
 
   const panel = ready && (
-    <Stack spacing={2.25} divider={<Divider flexItem sx={{ borderColor: 'rgba(255,255,255,0.07)' }} />}>
+    <Stack spacing={2.25} divider={<Divider flexItem />}>
       <Section title="Coloration">
         <Stack direction="row" flexWrap="wrap" gap={0.75}>
           {COLOR_MODES.map((m) => (
@@ -252,7 +252,7 @@ export function LidarViewer({ source = null, name, maxPoints, lazWasmBase, onClo
             </Stack>
           )}
         >
-          <Box sx={{ border: '1px solid rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+          <Box sx={{ border: '1px solid #c8ccd1', borderRadius: '2px', overflow: 'hidden' }}>
             {classList.map(({ c, n, name: label, color }, i) => (
               <Stack
                 key={c}
@@ -260,7 +260,7 @@ export function LidarViewer({ source = null, name, maxPoints, lazWasmBase, onClo
                 direction="row"
                 alignItems="center"
                 gap={1}
-                sx={{ px: 1, minHeight: coarse ? 44 : 34, cursor: 'pointer', borderTop: i ? '1px solid rgba(255,255,255,0.06)' : 'none', '&:hover': { bgcolor: 'rgba(255,255,255,0.03)' } }}
+                sx={{ px: 1, minHeight: coarse ? 44 : 34, cursor: 'pointer', borderTop: i ? '1px solid #eaecf0' : 'none', '&:hover': { bgcolor: '#f8f9fa' } }}
               >
                 <Checkbox size="small" checked={classes[c] !== false} onChange={(_, on) => toggleClass(c, on)} sx={{ p: 0.5 }} />
                 <Swatch color={color} />
@@ -345,7 +345,7 @@ export function LidarViewer({ source = null, name, maxPoints, lazWasmBase, onClo
                 : { top: 12, right: 12, bottom: 12, width: 328 }),
             }}
           >
-            {compact && <Box sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: 'rgba(255,255,255,0.3)', mx: 'auto', mb: 1.5 }} />}
+            {compact && <Box sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: '#c8ccd1', mx: 'auto', mb: 1.5 }} />}
             {panel}
           </Paper>
         )}
@@ -366,7 +366,7 @@ export function LidarViewer({ source = null, name, maxPoints, lazWasmBase, onClo
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>Déposez un nuage LiDAR</Typography>
               <Typography variant="body2" sx={{ opacity: 0.7, mb: 2 }}>Fichier .las ou .laz (LAS 1.0 à 1.4), par exemple une dalle LiDAR HD de l’IGN.</Typography>
               <Button variant="contained">Choisir un fichier</Button>
-              {status === 'error' && <Typography variant="body2" sx={{ color: '#ff8a80', mt: 2 }} role="alert">{error}</Typography>}
+              {status === 'error' && <Typography variant="body2" sx={{ color: '#d33', mt: 2 }} role="alert">{error}</Typography>}
             </Paper>
           </Box>
         )}

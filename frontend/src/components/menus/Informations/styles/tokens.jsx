@@ -1,7 +1,8 @@
-export const ACCENT = '#4fc3f7';
-export const LINE = 'rgba(255, 255, 255, 0.07)';
-export const CARD_BG = 'rgba(255, 255, 255, 0.035)';
-export const CARD_BORDER = 'rgba(255, 255, 255, 0.08)';
+// Thème clair (encyclopédie) : noir pour l'accent, gris Codex pour filets et encadrés.
+export const ACCENT = '#202122';
+export const LINE = '#eaecf0';
+export const CARD_BG = '#f8f9fa';
+export const CARD_BORDER = '#c8ccd1';
 export const R = 'html .ac'; // portée : uniquement le contenu de ces deux composantes
 
 export const card = {
@@ -9,7 +10,7 @@ export const card = {
   padding: 0,
   background: CARD_BG,
   border: `1px solid ${CARD_BORDER}`,
-  borderRadius: '10px',
+  borderRadius: '2px',
   overflow: 'hidden',
 };
 export const smallCaps = {

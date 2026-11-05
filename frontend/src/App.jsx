@@ -1,11 +1,11 @@
 import { ThemeProvider } from '@mui/material';
 import SolarSystem from './components/SolarSystem';
-import { crayonTheme } from './styles/crayonMuiTheme';
+import { wikiTheme } from './styles/wikiMuiTheme';
 
-// Thème MUI « crayon » pour toute l'app (les styles globaux du même thème sont dans styles/responsiveCrayon).
+// Thème MUI clair « encyclopédie » pour toute l'app (les styles globaux du même thème sont dans styles/responsiveWiki).
 export default function App() {
   return (
-    <ThemeProvider theme={crayonTheme}>
+    <ThemeProvider theme={wikiTheme}>
       <SolarSystem />
     </ThemeProvider>
   );

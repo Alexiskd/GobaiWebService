@@ -31,7 +31,7 @@ export const layoutStyles = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // tuiles d'une même ligne alignées par le haut
     gap: '4px',
     minWidth: 0,
     padding: '12px 10px',
@@ -97,7 +97,7 @@ export const layoutStyles = {
     padding: '10px 12px',
     cursor: 'pointer',
   },
-  [`${R} .ac-orbiter-head:hover:not(:disabled)`]: { background: 'rgba(255, 255, 255, 0.04)' },
+  [`${R} .ac-orbiter-head:hover:not(:disabled)`]: { background: 'rgba(0, 0, 0, 0.03)' },
   [`${R} .ac-orbiter-head:disabled`]: { cursor: 'default', opacity: 0.6 },
   [`${R} .ac-dot`]: { width: '10px', height: '10px', borderRadius: '50%', background: 'var(--c)', boxShadow: '0 0 8px var(--c)' },
   [`${R} .ac-orbiter-name`]: { fontWeight: 600, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
