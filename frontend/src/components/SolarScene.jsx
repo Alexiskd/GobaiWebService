@@ -11,6 +11,7 @@ import { Attribution } from './hud/Attribution';
 import { Compass } from './hud/Compass';
 import { GpsFrame } from './hud/GpsFrame';
 import { HudTop } from './hud/HudTop';
+import { MenuBar } from './hud/MenuBar';
 import { Navigator } from './hud/Navigator';
 import { SceneLabels } from './hud/SceneLabels';
 import { Toasts } from './hud/Toasts';
@@ -169,6 +170,7 @@ export function SolarScene({ data }) {
         moonModelHint={moonModelHintText(moon.moonModelInfo)}
       />
       <Navigator bodies={navBodies} focus={focus} onSelect={actions.selectFocus} />
+      <MenuBar bodies={navBodies} focus={focus} onSelect={actions.selectFocus} />
       <Compass hud={hud} onRecalibrate={actions.recalibrateNorth} />
       <ZoomPad onZoom={actions.zoom} />
       <Toolbar
