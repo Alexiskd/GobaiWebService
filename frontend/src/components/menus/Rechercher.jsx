@@ -3,9 +3,11 @@ import { searchPlaces } from '@/api';
 import { useViewport } from '@/hooks/useViewport';
 import { coords } from '@/lib/format';
 import { fold } from '@/lib/search';
+import { altitudeForView, formatLatLon, parseLatLon } from '@/engine/gps';
 
 const MAX_RESULTS = 40;
 const WORLD_DEBOUNCE_MS = 300;
+const GPS_VIEW_M = 10; // un point GPS est survolé à l'échelle de 10 m (hauteur de l'écran)
 
 /**
  * Recherche rapide (Ctrl K ou /) : astres, villes de l’API, puis lieux mondiaux si Uber Maps est configuré.
@@ -46,7 +48,14 @@ export function Rechercher({ open, onClose, cities, bodyNames, onPickCity, onPic
     const places = world.items
       .filter((p) => !seen.has(fold(p.name)))
       .map((p, i) => ({ type: 'place', name: p.name, i, place: p, sub: p.context || coords(p.lat, p.lon) }));
-    return [...local, ...places];
+    // Coordonnées saisies (« 48.8584, 2.2945 », « 48°51'30"N 2°17'40"E »…) : premier résultat, survol à 10 m.
+    const point = parseLatLon(query);
+    const gps = point ? [{
+      type: 'gps', i: 0, name: formatLatLon(point.lat, point.lon, 6),
+      sub: `Coordonnées GPS · survol à l’échelle de ${GPS_VIEW_M} m`,
+      place: { name: formatLatLon(point.lat, point.lon, 5), lat: point.lat, lon: point.lon, altitudeM: altitudeForView(GPS_VIEW_M) },
+    }] : [];
+    return [...gps, ...local, ...places];
   }, [index, query, world.items]);
 
   useEffect(() => {
@@ -67,7 +76,7 @@ export function Rechercher({ open, onClose, cities, bodyNames, onPickCity, onPic
   const choose = (r) => {
     if (!r) return;
     if (r.type === 'city') onPickCity(r.i);
-    else if (r.type === 'place') onPickPlace?.(r.place);
+    else if (r.type === 'place' || r.type === 'gps') onPickPlace?.(r.place);
     else onPickBody(r.i);
     inputRef.current?.blur(); // referme le clavier virtuel
     onClose();
@@ -91,7 +100,7 @@ export function Rechercher({ open, onClose, cities, bodyNames, onPickCity, onPic
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={worldSearch ? (compact ? 'Ville, planète…' : 'N’importe quelle ville du monde, une planète…') : 'Une ville, une planète…'}
+            placeholder={worldSearch ? (compact ? 'Ville, planète, GPS…' : 'Une ville du monde, une planète ou des coordonnées GPS…') : 'Une ville, une planète ou des coordonnées GPS…'}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="none"

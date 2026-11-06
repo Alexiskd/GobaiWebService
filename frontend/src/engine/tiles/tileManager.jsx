@@ -3,8 +3,11 @@ import { TileSource } from './tileSource';
 import { TileLayer } from './tileLayer';
 import { viewportBounds } from './viewport';
 
-/** Altitude minimale de la caméra au-dessus du sol quand une carte est affichée (≈ 15 m, zoom 22) — en rayons terrestres. */
-export const MIN_DISTANCE_WITH_TILES = 1 + 2.4e-6;
+/**
+ * Altitude minimale de la caméra au-dessus du sol quand une carte est affichée, en rayons terrestres : ≈ 5 m, pour
+ * qu'environ 10 m de terrain tiennent dans la largeur de l'écran (zoom 22, images au-delà de leur niveau natif agrandies).
+ */
+export const MIN_DISTANCE_WITH_TILES = 1 + 8e-7;
 
 /**
  * Fait le lien entre le moteur 3D et les tuiles d'un astre : choix du fond et du calque, cadrage de la caméra

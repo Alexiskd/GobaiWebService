@@ -18,6 +18,8 @@ import { MoonOrbiters } from './moonOrbiters';
 import { createMoonSurfaceMaterial, loadMoonModel } from './moonModel';
 import { ShadowCamLayer } from './shadowcam';
 import { TILED_BODIES, TILED_BODY_BY_ID, minAltitudeRadii } from './tiledBodies';
+import { EARTH_RADIUS_M, insetCorners, screenGeo } from './gps';
+import { tileRadius } from './tiles/tileGeometry';
 
 const TAU = 6.2832;
 const EARTH_RADIUS_KM = TILED_BODY_BY_ID.earth.radiusKm;
@@ -94,6 +96,9 @@ export class SolarEngine {
     this.el = 0.8;
     this.dist = VIEW_DISTANCE;
     this.distGoal = VIEW_DISTANCE;
+    this.gpsOn = true;               // coordonnées GPS des coins de l'écran (Terre)
+    this.gpsInv = new THREE.Matrix4();
+    this.gpsInsets = { top: 0, right: 0, bottom: 0, left: 0 }; // zone utile (px CSS), voir setGpsInsets
     this.drag = false;
     this.keyRotate = { left: false, right: false, up: false, down: false };
     this.autoRotate = true;
@@ -532,10 +537,62 @@ export class SolarEngine {
   }
 
   /** Va vers n'importe quel lieu de la Terre (ex. résultat de la recherche mondiale). */
-  goTo({ name, lon, lat }) {
+  goTo({ name, lon, lat, altitudeM }) {
     this.setFocus(this.earthFocus);
-    this.distGoal = this.tiles.active ? 1.0004 : 1.004;
+    if (Number.isFinite(altitudeM) && altitudeM > 0) {
+      // Altitude demandée (ex. point GPS à l'échelle de 10 m), jamais sous le plancher autorisé avec une carte.
+      const floor = this.tiles.active ? minAltitudeRadii(TILED_BODY_BY_ID.earth) : 0.004;
+      this.distGoal = 1 + Math.max(floor, altitudeM / EARTH_RADIUS_M);
+    } else {
+      this.distGoal = this.tiles.active ? 1.0004 : 1.004;
+    }
     this.lockCity = { name, lon, lat, lv: lonLatToVec([lon, lat]) };
+  }
+
+  /** Marges (px CSS) de la zone dont on donne les coins : le bas de l'écran mobile est couvert par la barre d'outils. */
+  setGpsInsets(insets) {
+    this.gpsInsets = { top: 0, right: 0, bottom: 0, left: 0, ...insets };
+    this.hudAt = 0;
+  }
+
+  /** Affiche ou masque les coordonnées GPS des coins de l'écran. */
+  setGpsVisible(on) {
+    this.gpsOn = Boolean(on);
+    this.hudAt = 0;
+  }
+
+  /**
+   * Coordonnées GPS des quatre coins et du centre de l'écran, et échelle au centre (Terre suivie seulement).
+   * Le rayon de chaque coin est intersecté avec la surface réellement dessinée (rayon des tuiles du niveau affiché,
+   * légèrement au-dessus de la sphère) : le point affiché est celui qu'on voit à l'écran, au centimètre près.
+   */
+  gpsState() {
+    if (!this.gpsOn || this.focus !== this.earthFocus) return null;
+    const E = this.earth;
+    const cam = this.cam;
+    E.mesh.updateWorldMatrix(true, false);
+    const c = cam.matrixWorld.elements;
+    const m = E.mesh.matrixWorld.elements;
+    const layer = this.tiles.active ? this.tiles.base?.layer : null;
+    const ground = layer ? tileRadius(layer.visibleZoom, layer.gap) : 1;
+    const scale = Math.hypot(m[0], m[1], m[2]);
+    const geo = screenGeo({
+      origin: [c[12], c[13], c[14]],
+      right: [c[0], c[1], c[2]],
+      up: [c[4], c[5], c[6]],
+      forward: [-c[8], -c[9], -c[10]],
+      tanY: Math.tan((cam.fov * D) / 2),
+      aspect: cam.aspect,
+      center: [m[12], m[13], m[14]],
+      radius: (E.def.radius || 1) * scale * ground,
+      toLocal: this.gpsInv.copy(E.mesh.matrixWorld).invert().elements,
+      widthPx: this.W,
+      radiusM: EARTH_RADIUS_M * ground,
+      points: insetCorners(this.gpsInsets, this.W, this.H),
+    });
+    // Rien à afficher tant que l'écran ne touche pas la Terre.
+    if (!geo.center && geo.corners.every((k) => k.lat === null)) return null;
+    return geo;
   }
 
   setAutoRotate(on) { this.autoRotate = on; }
@@ -1042,6 +1099,7 @@ export class SolarEngine {
       moonLive: f.moon ? this.moonLiveState() : null,
       bodyLive: f.body ? { id: bodyId(f.body.def), name: f.name, au, lightMinutes: au * LIGHT_MINUTES_PER_AU } : null,
       compass: this.compassState(),
+      gps: this.gpsState(),
     });
   }
 

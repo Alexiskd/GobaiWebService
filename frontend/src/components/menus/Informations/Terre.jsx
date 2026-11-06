@@ -9,7 +9,7 @@ import { EarthStatus } from './EarthStatus';
 export function Terre({
   hud, layers, baseId, onBase, listStatus, listError,
   roads, onRoads, roadsHint, shade, onShade, borders, onBorders, bordersHint, coasts, onCoasts,
-  countryNames, onCountryNames, cityNames, onCityNames, cityNamesHint, cityNamesDisabled,
+  countryNames, onCountryNames, cityNames, onCityNames, cityNamesHint, cityNamesDisabled, gps, onGps,
 }) {
   const bases = layers.filter((l) => l.kind !== 'overlay');
 
@@ -35,6 +35,7 @@ export function Terre({
         <Switch checked={borders} onChange={onBorders} label="Frontières des pays" hint={bordersHint} />
         <Switch checked={coasts} onChange={onCoasts} label="Littoraux" hint="Bord de mer, océans et Caspienne" />
         <Switch checked={roads} disabled={Boolean(roadsHint)} onChange={onRoads} label="Routes et noms" hint={roadsHint} />
+        <Switch checked={gps} onChange={onGps} label="Coordonnées GPS" hint="Coins de l’écran, centre et échelle ; précision selon le zoom (touche G)" />
       </Group>
 
       <DisplayGroup shade={shade} onShade={onShade} />

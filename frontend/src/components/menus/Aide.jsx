@@ -6,6 +6,7 @@ const KEYS = [
   ['← → ↑ ↓', 'Faire tourner la caméra autour de l’astre'],
   ['0 (pavé numérique)', 'Vue d’ensemble'],
   ['L', 'Ouvrir ou fermer les informations'],
+  ['G', 'Afficher ou masquer les coordonnées GPS'],
   ['?', 'Afficher cette aide'],
   ['Échap', 'Fermer le panneau ouvert'],
 ];

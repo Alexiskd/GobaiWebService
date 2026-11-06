@@ -14,7 +14,7 @@ const MAPPED_BODIES = ['earth', 'moon', 'mars', 'mercury', 'venus'];
  */
 export function BodyLayersMenu({
   hud, bodyId: currentId = null, bodyName = null, layers = [], moonRealAvailable, moonColorOk, listStatus, listError,
-  baseId, onBase, roads, onRoads, roadsHint, shade, onShade, borders, onBorders, bordersHint, coasts, onCoasts, countryNames, onCountryNames, cityNames, onCityNames, cityNamesHint, cityNamesDisabled,
+  baseId, onBase, roads, onRoads, roadsHint, shade, onShade, borders, onBorders, bordersHint, coasts, onCoasts, countryNames, onCountryNames, cityNames, onCityNames, cityNamesHint, cityNamesDisabled, gps, onGps,
   moonFeatures, onMoonFeatures, moonOrbiters, onMoonOrbiters, moonModel, onMoonModel, moonModelHint, shadowcam, onShadowcam, shadowcamHint,
   moonLayers = [], moonBaseId = null, onMoonBase,
   marsLayers = [], marsBaseId = null, onMarsBase,
@@ -51,6 +51,8 @@ export function BodyLayersMenu({
           onCityNames={onCityNames}
           cityNamesHint={cityNamesHint}
           cityNamesDisabled={cityNamesDisabled}
+          gps={gps}
+          onGps={onGps}
         />
       )}
 

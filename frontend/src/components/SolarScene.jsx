@@ -9,6 +9,7 @@ import { useViewport } from '@/hooks/useViewport';
 import { ResponsiveStyles } from '@/styles/responsiveStyles';
 import { Attribution } from './hud/Attribution';
 import { Compass } from './hud/Compass';
+import { GpsFrame } from './hud/GpsFrame';
 import { HudTop } from './hud/HudTop';
 import { Navigator } from './hud/Navigator';
 import { SceneLabels } from './hud/SceneLabels';
@@ -44,7 +45,7 @@ export function SolarScene({ data }) {
   const engineRef = useRef(null);
   const labels = useMemo(() => ({ sun: null, planets: [], cities: [] }), []);
   const hud = useMemo(
-    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null }),
+    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null }),
     []
   );
   const bodyNames = useMemo(
@@ -90,6 +91,7 @@ export function SolarScene({ data }) {
       <ResponsiveStyles />
       <div className="stage" ref={containerRef} />
       <SceneLabels data={data} registry={labels} onSelectBody={actions.selectFocus} />
+      <GpsFrame hud={hud} engine={engine} />
 
       <HudTop hud={hud} />
       <Informations
@@ -137,6 +139,8 @@ export function SolarScene({ data }) {
         onCityNames={earth.setCityNames}
         cityNamesHint={cityNamesHintText(earth.namesIncluded, cityInfo)}
         cityNamesDisabled={earth.namesIncluded}
+        gps={earth.gps}
+        onGps={earth.setGps}
         moonFeatures={moon.moonFeatures}
         onMoonFeatures={moon.setMoonFeatures}
         moonOrbiters={moon.moonOrbiters}
