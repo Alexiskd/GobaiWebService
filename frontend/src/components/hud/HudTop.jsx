@@ -9,7 +9,7 @@ export function HudTop({ hud }) {
   const drag = useHudDraggable('titre', !compact);
   // Les tailles et marges du logo sont dans les styles MUI (`responsiveStyles`), plus de valeurs figées en ligne.
   return (
-    <header className="title hud-title" ref={drag.ref} style={drag.style} {...drag.handleProps}>
+    <header className="title hud-title" ref={drag.ref}  {...drag.handleProps}>
       <img
         className="brand-logo"
         src="/logo.png?v=3"
