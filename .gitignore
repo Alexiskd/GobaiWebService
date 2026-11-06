@@ -13,9 +13,6 @@ coverage/
 .env.*
 !.env.example
 
-# Registre des dons (données privées des donateurs)
-storage/
-
 # Caches et logs
 cache/
 logs/

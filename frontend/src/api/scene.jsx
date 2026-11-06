@@ -1,4 +1,4 @@
-import { get, post } from './client';
+import { get } from './client';
 
 export const fetchBodies = (signal) => get('/bodies', { signal });
 export const fetchRoads = (signal) => get('/roads', { signal });
@@ -26,12 +26,6 @@ export const fetchMoonOrbiters = (signal) => get('/ephemeris/moon/orbiters', { s
 export const fetchBorders = (signal) => get('/borders', { signal });
 /** Réponse paginée { total, items } ; sans paramètre, toutes les villes. */
 export const fetchCities = (params, signal) => get('/cities', { signal, query: params });
-/** État des dons du mois : { enabled, clientId, currency, monthlyLimit, raised, remaining, resetsAt, minAmount }. */
-export const fetchDonationConfig = (signal) => get('/donations/config', { signal });
-/** Crée une commande PayPal pour `amount` euros : { id }. Refusée (409) au-delà du reste du mois. */
-export const createDonationOrder = (amount) => post('/donations/orders', { amount });
-/** Encaisse un don approuvé dans PayPal : { status, amount, raised, remaining }. */
-export const captureDonation = (orderId) => post(`/donations/orders/${encodeURIComponent(orderId)}/capture`);
 
 // Tout ce dont la scène a besoin, en parallèle. `cities` est la liste (items) dans l'ordre d'importance.
 export async function fetchSceneData(signal) {

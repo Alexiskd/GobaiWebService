@@ -4,6 +4,7 @@ import { useHudDraggable } from '@/hooks/useHudDraggable';
 import { useViewport } from '@/hooks/useViewport';
 import { edge } from '@/theme/layout';
 import { LiveChip } from '../ui/PanelHeader';
+import { MenuDeroulant } from '../ui/MenuDeroulant';
 
 export function HudTop({ hud }) {
   const { compact } = useViewport();
@@ -45,6 +46,7 @@ export function HudTop({ hud }) {
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>{date}</Typography>
         {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{focusText}</Typography>}
       </Box>
+      <MenuDeroulant label="Menu" options={['vide']} sx={{ flex: 'none' }} />
     </Paper>
   );
 }

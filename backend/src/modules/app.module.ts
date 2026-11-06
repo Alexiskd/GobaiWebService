@@ -16,7 +16,6 @@ import { MoonModule } from './moon.module';
 import { MarsModule } from './mars.module';
 import { MercuryModule } from './mercury.module';
 import { SunModule } from './sun.module';
-import { DonationsModule } from './donations.module';
 import { PointCloudsModule } from './pointclouds.module';
 import { ContributionsModule } from './contributions.module';
 
@@ -41,7 +40,6 @@ import { ContributionsModule } from './contributions.module';
     SunModule,
     BordersModule,
     PlacesModule,
-    DonationsModule,
     // Nuages de points LiDAR (COPC/LAS) servis en HTTP Range pour le rendu côté navigateur.
     PointCloudsModule,
     ContributionsModule,

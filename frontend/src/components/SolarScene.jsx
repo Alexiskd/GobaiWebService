@@ -19,7 +19,6 @@ import { FullScreenMessage } from './SolarSystem';
 import { Toolbar } from './toolbar/Toolbar';
 import { Aide } from './menus/Aide';
 import { Contribuer } from './menus/Contribuer/Contribuer';
-import { Don } from './menus/Don/Don';
 import { Informations } from './menus/Informations/Informations';
 import { LidarGlobe } from './menus/LidarGlobe/LidarGlobe';
 import { Rechercher } from './menus/Rechercher';
@@ -54,14 +53,22 @@ export function SolarScene({ data }) {
     () => [data.bodies.sun.name, ...data.bodies.planets.map((p) => p.name), data.bodies.moon.name],
     [data]
   );
-  const navBodies = useMemo(
-    () => [
-      { name: data.bodies.sun.name, color: data.bodies.sun.color || '#ffb300' },
-      ...data.bodies.planets.map((p) => ({ name: p.name, color: p.color || '#8b97b3' })),
-      { name: data.bodies.moon.name, color: '#d8d2c4' },
-    ],
-    [data]
-  );
+  // Ordre d'affichage : la Lune suit la Terre et porte son numéro « bis » ; `index` reste l'indice du moteur.
+  const navBodies = useMemo(() => {
+    const planets = data.bodies.planets;
+    const list = [
+      { index: 0, name: data.bodies.sun.name, color: data.bodies.sun.color || '#ffb300' },
+      ...planets.map((p, i) => ({ index: i + 1, name: p.name, color: p.color || '#8b97b3' })),
+    ];
+    list.forEach((b, i) => { b.number = String(i + 1).padStart(2, '0'); });
+    const earth = planets.findIndex((p) => p.earth || p.name === 'Terre');
+    const at = earth >= 0 ? earth + 2 : list.length;
+    list.splice(at, 0, {
+      index: planets.length + 1, name: data.bodies.moon.name, color: '#d8d2c4',
+      number: earth >= 0 ? `${list[at - 1].number} bis` : String(list.length + 1).padStart(2, '0'),
+    });
+    return list;
+  }, [data]);
 
   useDocumentViewport(viewport);
   useStageResize(containerRef, engineRef);
@@ -184,7 +191,6 @@ export function SolarScene({ data }) {
         onToggleTilt={() => camera.setTilt((v) => !v)}
         onReset={actions.resetView}
         onHelp={() => panels.setPanel('help')}
-        onDonate={() => panels.setPanel('donate')}
         sound={sound}
         onToggleSound={toggleSound}
       />
@@ -224,7 +230,6 @@ export function SolarScene({ data }) {
         onPickBody={actions.selectFocus}
       />
       <Aide open={panels.panel === 'help'} onClose={panels.closePanel} />
-      <Don open={panels.panel === 'donate'} onClose={panels.closePanel} />
 
       {!engine && (
         <FullScreenMessage>

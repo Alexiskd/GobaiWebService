@@ -9,13 +9,13 @@ export function Toolbar({
   citySelected, pointCloudOpen, onPointClouds,
   contributionOpen, onContributions,
   lidarOpen, lidarCount, onLidar,
-  onSearch, onToggleLayers, onToggleAuto, onToggleTilt, onReset, onHelp, onDonate,
+  onSearch, onToggleLayers, onToggleAuto, onToggleTilt, onReset, onHelp,
   sound = true, onToggleSound,
 }) {
   const { compact } = useViewport();
   const actions = toolbarActions({
     layersOpen, bodySelected, citySelected, pointCloudOpen, contributionOpen, lidarOpen, lidarCount, auto, tilt, sound,
-    onSearch, onToggleLayers, onReset, onPointClouds, onContributions, onLidar, onToggleAuto, onToggleTilt, onToggleSound, onHelp, onDonate,
+    onSearch, onToggleLayers, onReset, onPointClouds, onContributions, onLidar, onToggleAuto, onToggleTilt, onToggleSound, onHelp,
   });
   return compact ? <CompactToolbar hud={hud} actions={actions} /> : <DesktopToolbar hud={hud} actions={actions} />;
 }

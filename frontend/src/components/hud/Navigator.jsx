@@ -44,7 +44,8 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
       >
         <Stack direction="row" spacing={0.75} alignItems="center" sx={{ height: '100%', px: 1, width: 'max-content' }}>
           {bodies.map((body, i) => {
-            const current = focus === i;
+            const index = body.index ?? i;
+            const current = focus === index;
             return (
               <Chip
                 key={body.name}
@@ -55,7 +56,7 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
                 color={current ? 'primary' : 'default'}
                 variant={current ? 'filled' : 'outlined'}
                 aria-current={current ? 'true' : undefined}
-                onClick={() => onSelect(i)}
+                onClick={() => onSelect(index)}
                 sx={{ height: 40, borderRadius: 5, scrollSnapAlign: 'center', '& .MuiChip-icon': { ml: 1.25 } }}
               />
             );
@@ -91,18 +92,19 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
         )}
       >
         {bodies.map((body, i) => {
-          const current = focus === i;
+          const index = body.index ?? i;
+          const current = focus === index;
           return (
             <ListItemButton
               key={body.name}
               selected={current}
               aria-current={current ? 'true' : undefined}
-              onClick={() => onSelect(i)}
+              onClick={() => onSelect(index)}
               sx={{ borderRadius: 2, mx: 0.75 }}
             >
               <ListItemIcon sx={{ minWidth: 30 }}><Orb color={body.color} /></ListItemIcon>
               <ListItemText primary={body.name} />
-              <Typography variant="caption" color="text.disabled" aria-hidden="true">{String(i + 1).padStart(2, '0')}</Typography>
+              <Typography variant="caption" color="text.disabled" aria-hidden="true">{body.number ?? String(i + 1).padStart(2, '0')}</Typography>
             </ListItemButton>
           );
         })}

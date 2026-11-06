@@ -2,7 +2,7 @@
 // `group` = bloc de la barre ordinateur, séparés par un trait vertical.
 export function toolbarActions({
   layersOpen, bodySelected, citySelected, pointCloudOpen, contributionOpen, lidarOpen, lidarCount = 0, auto, tilt, sound,
-  onSearch, onToggleLayers, onReset, onPointClouds, onContributions, onLidar, onToggleAuto, onToggleTilt, onToggleSound, onHelp, onDonate,
+  onSearch, onToggleLayers, onReset, onPointClouds, onContributions, onLidar, onToggleAuto, onToggleTilt, onToggleSound, onHelp,
 }) {
   return [
     { id: 'search', group: 'explore', icon: '⌕', label: 'Rechercher', primary: true, onClick: onSearch, title: 'Rechercher une ville ou un astre (Ctrl K)', kbd: 'Ctrl K' },
@@ -14,7 +14,6 @@ export function toolbarActions({
     { id: 'auto', group: 'camera', icon: '↻', label: 'Rotation', pressed: auto, onClick: onToggleAuto, title: 'Rotation automatique' },
     { id: 'tilt', group: 'camera', icon: '◢', label: 'Vue 3/4', pressed: tilt, onClick: onToggleTilt, title: 'Vue 3/4 automatique en approchant du sol' },
     onToggleSound && { id: 'sound', group: 'help', icon: '♪', label: sound ? 'Son activé' : 'Son coupé', short: 'Son', iconOnly: true, pressed: sound, noSound: true, onClick: onToggleSound, title: sound ? 'Couper le son des clics' : 'Activer le son des clics' },
-    onDonate && { id: 'donate', group: 'help', icon: '♥', label: 'Faire un don', short: 'Don', onClick: onDonate, title: 'Soutenir Gobai Space par un don PayPal' },
     onHelp && { id: 'help', group: 'help', icon: '?', label: 'Aide', iconOnly: true, onClick: onHelp, title: 'Raccourcis clavier (?)' },
   ].filter(Boolean);
 }

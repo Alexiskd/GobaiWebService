@@ -55,18 +55,6 @@ export interface AppConfig {
   danuri: { shadowcamPdsUrl: string };
   /** Signalisation WebRTC : relais des offres SDP et candidats ICE (aucune donnée d'application ne transite). */
   p2p: { maxPeers: number; maxRooms: number; iceServers: IceServerConfig[] };
-  /** Dons PayPal (API Orders v2) plafonnés par mois civil. Le secret reste côté serveur. */
-  donations: {
-    paypal: { clientId?: string; clientSecret?: string; environment: 'sandbox' | 'production' };
-    currency: string;
-    /** Plafond par mois civil, en centimes. */
-    monthlyLimitCents: number;
-    minAmountCents: number;
-    /** Fuseau du mois civil (remise à zéro le 1er à 00:00 heure locale). */
-    timeZone: string;
-    /** Registre JSON des dons (doit survivre aux redémarrages). */
-    ledgerFile: string;
-  };
   /** Nuages de points LiDAR (COPC/LAS) servis en HTTP Range depuis ce répertoire. */
   pointclouds: { dir: string };
 }
@@ -90,14 +78,6 @@ function positiveNumber(name: string, raw: string | undefined, fallback: number)
 /** Lit et valide l'environnement. Échoue vite, avec un message clair, plutôt que de planter plus tard. */
 export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const cors = env.CORS_ORIGIN?.split(',').map((s) => s.trim()).filter(Boolean);
-  const paypalEnvironment = env.PAYPAL_ENV?.trim() || 'sandbox';
-  if (paypalEnvironment !== 'sandbox' && paypalEnvironment !== 'production') {
-    throw new Error('Variable d’environnement PAYPAL_ENV invalide : sandbox ou production attendu');
-  }
-  const donationTimeZone = env.DONATION_TIMEZONE?.trim() || 'Europe/Paris';
-  try { new Intl.DateTimeFormat('fr-FR', { timeZone: donationTimeZone }); } catch {
-    throw new Error(`Variable d’environnement DONATION_TIMEZONE invalide : ${donationTimeZone}`);
-  }
 
   return {
     port: positiveNumber('PORT', env.PORT, 3001),
@@ -168,18 +148,6 @@ export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConf
       maxPeers: intInRange(env.P2P_MAX_PEERS, 8, 2, 16),
       maxRooms: intInRange(env.P2P_MAX_ROOMS, 1000, 1, 100_000),
       iceServers: iceServers(env),
-    },
-    donations: {
-      paypal: {
-        clientId: env.PAYPAL_CLIENT_ID?.trim() || undefined,
-        clientSecret: env.PAYPAL_CLIENT_SECRET?.trim() || undefined,
-        environment: paypalEnvironment,
-      },
-      currency: 'EUR',
-      monthlyLimitCents: Math.round(positiveNumber('DONATION_MONTHLY_LIMIT_EUR', env.DONATION_MONTHLY_LIMIT_EUR, 3400) * 100),
-      minAmountCents: 100,
-      timeZone: donationTimeZone,
-      ledgerFile: env.DONATION_LEDGER_FILE?.trim() || 'storage/donations.json',
     },
     pointclouds: { dir: env.POINTCLOUD_DIR?.trim() || 'pointclouds' },
   };
