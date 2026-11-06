@@ -1,5 +1,6 @@
 export type ProviderId =
   | 'gibs'
+  | 'google'
   | 'nasa-trek'
   | 'mars-trek'
   | 'venus-trek'

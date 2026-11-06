@@ -1,15 +1,19 @@
 import { memo } from 'react';
+import { Box } from '@mui/material';
+
+// Étiquettes des astres et des villes : le moteur les positionne lui-même à chaque image ; leur apparence
+// (classe `l`) est partagée avec les étiquettes créées par le moteur (theme/SceneStyles).
 
 export const SceneLabels = memo(function SceneLabels({ data, registry, onSelectBody }) {
   const { sun, planets } = data.bodies;
   return (
     <>
-      <div className="l" ref={(el) => { registry.sun = el; }} style={{ '--c': sun.color }}>
+      <Box className="l" ref={(el) => { registry.sun = el; }} style={{ '--c': sun.color }}>
         {sun.name}
-      </div>
+      </Box>
 
       {planets.map((p, i) => (
-        <div
+        <Box
           key={p.name}
           className="l l-planet"
           ref={(el) => { registry.planets[i] = el; }}
@@ -20,18 +24,18 @@ export const SceneLabels = memo(function SceneLabels({ data, registry, onSelectB
           onClick={(e) => { e.stopPropagation(); onSelectBody(i + 1); }}
         >
           {p.name}
-        </div>
+        </Box>
       ))}
 
       {data.cities.map((c, i) => (
-        <div
+        <Box
           key={`${c.name}-${i}`}
           className="l l-city"
           ref={(el) => { registry.cities[i] = el; }}
           style={{ '--c': '#fff', display: 'none' }}
         >
           {c.name}
-        </div>
+        </Box>
       ))}
     </>
   );

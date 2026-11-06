@@ -1,3 +1,5 @@
+import { Divider, Paper, Stack } from '@mui/material';
+import { safe } from '@/theme/mediaQueries';
 import { Readout } from '../hud/Readout';
 import { ToolbarButton } from './ToolbarButton';
 
@@ -8,14 +10,24 @@ export function DesktopToolbar({ hud, actions }) {
     .filter((list) => list.length);
 
   return (
-    <div className="toolbar toolbar-desktop" role="toolbar" aria-label="Actions">
+    <Paper
+      elevation={6}
+      role="toolbar"
+      aria-label="Actions"
+      data-hud="toolbar"
+      sx={{
+        position: 'fixed', zIndex: (t) => t.zIndex.toolbar, left: '50%', transform: 'translateX(-50%)',
+        bottom: `calc(${safe('bottom')} + 12px)`, maxWidth: 'calc(100vw - 28px)', overflowX: 'auto',
+        display: 'flex', alignItems: 'center', gap: 0.5, p: 0.75, scrollbarWidth: 'none',
+      }}
+    >
       <Readout hud={hud} />
-      {groups.map((list, gi) => (
-        <div key={list[0].group} className="tool-group" role="group" aria-label={list[0].group}>
-          {gi > 0 && <span className="tool-sep" aria-hidden="true" />}
+      {groups.map((list) => (
+        <Stack key={list[0].group} direction="row" alignItems="center" spacing={0.5} role="group" aria-label={list[0].group}>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
           {list.map((a) => <ToolbarButton key={a.id} action={a} compact={false} />)}
-        </div>
+        </Stack>
       ))}
-    </div>
+    </Paper>
   );
 }

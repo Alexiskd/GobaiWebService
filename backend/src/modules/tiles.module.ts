@@ -5,6 +5,7 @@ import { MarsModule } from './mars.module';
 import { MercuryModule } from './mercury.module';
 import { MoonModule } from './moon.module';
 import { GibsTileProvider } from '../services/map-tiles/providers/gibs-tile.provider';
+import { GoogleTileProvider } from '../services/map-tiles/providers/google-tile.provider';
 import { NasaTrekMoonProvider } from '../services/map-tiles/providers/nasa-trek-moon.provider';
 import { NasaTrekMarsProvider } from '../services/map-tiles/providers/nasa-trek-mars.provider';
 import { NasaTrekVenusProvider } from '../services/map-tiles/providers/nasa-trek-venus.provider';
@@ -23,6 +24,7 @@ import { SpaceLayersService } from '../services/map-tiles/space-layers.service';
       provide: TILE_PROVIDERS,
       inject: [APP_CONFIG],
       useFactory: (config: AppConfig) => [
+        new GoogleTileProvider(config.tiles.google),
         new GibsTileProvider(config.tiles.gibs),
         new NasaTrekMoonProvider(config.tiles.moon),
         new NasaTrekMarsProvider(config.tiles.mars),

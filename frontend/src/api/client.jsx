@@ -28,9 +28,23 @@ export class ApiError extends Error {
 
 export async function get(path, { signal, query } = {}) {
   const qs = query ? `?${new URLSearchParams(Object.entries(query).filter(([, v]) => v !== undefined && v !== null))}` : '';
+  return request(path, `${API_BASE}${path}${qs}`, { signal, headers: { Accept: 'application/json' } });
+}
+
+/** POST JSON : renvoie la réponse JSON, ou lève une ApiError avec le message du serveur. */
+export function post(path, body, { signal } = {}) {
+  return request(path, `${API_BASE}${path}`, {
+    method: 'POST',
+    signal,
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+async function request(path, url, init) {
   let res;
   try {
-    res = await fetch(`${API_BASE}${path}${qs}`, { signal, headers: { Accept: 'application/json' } });
+    res = await fetch(url, init);
   } catch (e) {
     if (e.name === 'AbortError') throw e;
     throw new ApiError(0, 'API injoignable', path);

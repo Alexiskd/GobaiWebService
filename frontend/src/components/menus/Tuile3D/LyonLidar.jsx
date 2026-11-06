@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
+import { Alert, Box, Link, Stack, Typography } from '@mui/material';
 import { resolveApiUrl } from '@/api';
 import { formatPointCount } from './format';
+import { MetaChips } from './CloudMeta';
 
 // Section « LiDAR Métropole de Lyon » : métadonnées EPT et viewer Potree externe.
 export function LyonLidar({ dataset }) {
@@ -16,40 +18,41 @@ export function LyonLidar({ dataset }) {
   }, [dataset.data]);
 
   return (
-    <section className="city-pointcloud-lyon" aria-label="LiDAR de la Métropole de Lyon">
-      <h3>LiDAR Métropole de Lyon · 2018</h3>
-      {dataset.status === 'loading' && <p className="city-pointcloud-message">Chargement des métadonnées EPT…</p>}
-      {dataset.status === 'error' && (
-        <p className="city-pointcloud-message is-error">Jeu de données indisponible : {dataset.error}</p>
-      )}
+    <Stack component="section" spacing={1} aria-label="LiDAR de la Métropole de Lyon">
+      <Typography component="h3" variant="subtitle2">LiDAR Métropole de Lyon · 2018</Typography>
+      {dataset.status === 'loading' && <Typography variant="body2" color="text.secondary">Chargement des métadonnées EPT…</Typography>}
+      {dataset.status === 'error' && <Alert severity="error">Jeu de données indisponible : {dataset.error}</Alert>}
       {dataset.data && (
         <>
-          <div className="city-pointcloud-meta">
-            <span>{formatPointCount(dataset.data.pointCount)}</span>
-            {dataset.data.coordinateSystem && <span>{dataset.data.coordinateSystem}</span>}
-            {dataset.data.license && <span>{dataset.data.license}</span>}
-            {dataset.data.note && <span>{dataset.data.note}</span>}
-          </div>
+          <MetaChips
+            items={[
+              formatPointCount(dataset.data.pointCount),
+              dataset.data.coordinateSystem,
+              dataset.data.license,
+              dataset.data.note,
+            ]}
+          />
           {viewerUrl ? (
-            <iframe
-              className="city-pointcloud-ept-frame"
+            <Box
+              component="iframe"
               title="Viewer Potree du LiDAR de la Métropole de Lyon"
               src={viewerUrl}
               loading="lazy"
               referrerPolicy="no-referrer"
               allow="fullscreen"
               allowFullScreen
+              sx={{ width: '100%', height: 'clamp(240px, 42dvh, 520px)', border: 1, borderColor: 'divider', borderRadius: 2, bgcolor: '#000' }}
             />
           ) : (
-            <p className="city-pointcloud-message is-error">Adresse EPT invalide.</p>
+            <Alert severity="error">Adresse EPT invalide.</Alert>
           )}
           {dataset.data.sourceUrl && (
-            <a href={dataset.data.sourceUrl} target="_blank" rel="noreferrer noopener">
+            <Link href={dataset.data.sourceUrl} target="_blank" rel="noreferrer noopener" variant="body2" sx={{ alignSelf: 'flex-start' }}>
               Source officielle — data.gouv.fr
-            </a>
+            </Link>
           )}
         </>
       )}
-    </section>
+    </Stack>
   );
 }

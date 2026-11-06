@@ -208,6 +208,22 @@ export class TilesController {
     res.send(tile.body);
   }
 
+  @Get('google/:layerId/:z/:x/:y')
+  @SkipThrottle()
+  @ApiOperation({
+    summary: 'Tuile satellite Google (relayée)',
+    description: 'Téléchargée chez Google Map Tiles avec la clé du serveur puis renvoyée telle quelle, sans stockage.',
+  })
+  @ApiOkResponse({ description: 'Image JPEG de la tuile.' })
+  @ApiNotFoundResponse({ type: ApiErrorDto })
+  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  async googleTile(@Param() p: TileParamsDto, @Res() res: RedirectableResponse): Promise<void> {
+    const tile = await this.tiles.googleTile(p.layerId, p.z, p.x, p.y);
+    res.setHeader('Content-Type', tile.contentType);
+    res.setHeader('Cache-Control', tile.cacheControl || 'private, max-age=86400');
+    res.send(tile.body);
+  }
+
   @Get(':layerId/:z/:x/:y')
   @ApiOperation({
     summary: 'Accéder à une tuile précise',

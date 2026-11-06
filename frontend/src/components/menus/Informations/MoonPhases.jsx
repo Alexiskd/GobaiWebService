@@ -1,3 +1,4 @@
+import { List, ListItem, ListItemText, Typography } from '@mui/material';
 import { Hint } from '../../ui/Hint';
 import { Section } from '../../ui/Section';
 
@@ -11,14 +12,15 @@ export function MoonPhases({ phases }) {
   if (!phases?.items?.length) return null;
   return (
     <Section title="Prochaines phases">
-      <ol className="ac-rows">
+      <List dense disablePadding component="ol">
         {phases.items.map((p) => (
-          <li className="ac-row" key={p.utc}>
-            <span>{p.phase}</span>
-            <time className="ac-row-value" dateTime={p.utc}>{dateLabel(p.utc)}</time>
-          </li>
+          <ListItem key={p.utc} disableGutters secondaryAction={(
+            <Typography component="time" variant="body2" color="text.secondary" dateTime={p.utc}>{dateLabel(p.utc)}</Typography>
+          )}>
+            <ListItemText primary={p.phase} />
+          </ListItem>
         ))}
-      </ol>
+      </List>
       {phases.source && <Hint>Source : {phases.source}</Hint>}
     </Section>
   );

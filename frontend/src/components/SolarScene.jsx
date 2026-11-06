@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react';
+import { Box, CircularProgress, Stack, Typography } from '@mui/material';
 import { bodyId } from '@/engine/bodyPlaces';
 import { createHudStore, useHud } from '@/engine/hudStore';
 import { useBubbleSound } from '@/hooks/useBubbleSound';
@@ -6,7 +7,6 @@ import { useSolarEngine } from '@/hooks/useSolarEngine';
 import { useTileLayers } from '@/hooks/useTileLayers';
 import { useToasts } from '@/hooks/useToasts';
 import { useViewport } from '@/hooks/useViewport';
-import { ResponsiveStyles } from '@/styles/responsiveStyles';
 import { Attribution } from './hud/Attribution';
 import { Compass } from './hud/Compass';
 import { GpsFrame } from './hud/GpsFrame';
@@ -15,9 +15,11 @@ import { Navigator } from './hud/Navigator';
 import { SceneLabels } from './hud/SceneLabels';
 import { Toasts } from './hud/Toasts';
 import { ZoomPad } from './hud/ZoomPad';
+import { FullScreenMessage } from './SolarSystem';
 import { Toolbar } from './toolbar/Toolbar';
 import { Aide } from './menus/Aide';
 import { Contribuer } from './menus/Contribuer/Contribuer';
+import { Don } from './menus/Don/Don';
 import { Informations } from './menus/Informations/Informations';
 import { LidarGlobe } from './menus/LidarGlobe/LidarGlobe';
 import { Rechercher } from './menus/Rechercher';
@@ -87,9 +89,16 @@ export function SolarScene({ data }) {
   const lidar = useGlobeLidar({ engine, push });
 
   return (
-    <div className={compact ? 'app-shell is-compact' : 'app-shell'} data-vp={viewport.size}>
-      <ResponsiveStyles />
-      <div className="stage" ref={containerRef} />
+    <Box data-vp={viewport.size} sx={{ position: 'fixed', inset: 0 }}>
+      {/* Scène 3D : le moteur y ajoute son canvas WebGL, plein écran sous tout le HUD. */}
+      <Box
+        ref={containerRef}
+        sx={{
+          position: 'absolute', inset: 0,
+          '& > canvas': { display: 'block', position: 'fixed', inset: 0, width: '100%', height: '100%', touchAction: 'none', cursor: 'grab' },
+          '& > canvas:active': { cursor: 'grabbing' },
+        }}
+      />
       <SceneLabels data={data} registry={labels} onSelectBody={actions.selectFocus} />
       <GpsFrame hud={hud} engine={engine} />
 
@@ -175,6 +184,7 @@ export function SolarScene({ data }) {
         onToggleTilt={() => camera.setTilt((v) => !v)}
         onReset={actions.resetView}
         onHelp={() => panels.setPanel('help')}
+        onDonate={() => panels.setPanel('donate')}
         sound={sound}
         onToggleSound={toggleSound}
       />
@@ -214,8 +224,16 @@ export function SolarScene({ data }) {
         onPickBody={actions.selectFocus}
       />
       <Aide open={panels.panel === 'help'} onClose={panels.closePanel} />
+      <Don open={panels.panel === 'donate'} onClose={panels.closePanel} />
 
-      {!engine && <div className="loading">{error || 'Chargement de la Terre et de la Lune…'}</div>}
-    </div>
+      {!engine && (
+        <FullScreenMessage>
+          <Stack alignItems="center" spacing={2}>
+            {!error && <CircularProgress />}
+            <Typography color={error ? 'error' : 'text.secondary'}>{error || 'Chargement de la Terre et de la Lune…'}</Typography>
+          </Stack>
+        </FullScreenMessage>
+      )}
+    </Box>
   );
 }

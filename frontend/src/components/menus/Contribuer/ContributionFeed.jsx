@@ -1,6 +1,8 @@
+import { Stack, Typography } from '@mui/material';
 import { FeedCard } from './FeedCard';
 import { FeedSearch } from './FeedSearch';
 import { FeedTabs } from './FeedTabs';
+import { Note } from './Note';
 
 // Flux communautaire : classement, recherche, puis une carte par contribution visible.
 export function ContributionFeed({
@@ -8,19 +10,17 @@ export function ContributionFeed({
   commentDrafts, setCommentDrafts, onFeedMode, onFeedSearch, onVote, onCorrect, onComment,
 }) {
   return (
-    <section className="contribution-feed" aria-label="Flux des contributions">
-      <h3>{feedMode === 'hot' ? 'Flux communautaire' : 'Recommandé pour vous'}</h3>
+    <Stack component="section" spacing={1.5} aria-label="Flux des contributions" sx={{ pt: 1, borderTop: 1, borderColor: 'divider' }}>
+      <Typography component="h3" variant="subtitle1" sx={{ fontWeight: 600 }}>
+        {feedMode === 'hot' ? 'Flux communautaire' : 'Recommandé pour vous'}
+      </Typography>
       <FeedTabs feedMode={feedMode} compact={compact} onChange={onFeedMode} />
       <FeedSearch value={feedSearch} onChange={onFeedSearch} />
-      {!entries.length && <p className="contribution-note">Aucune contribution dans ce stockage local.</p>}
+      {!entries.length && <Note>Aucune contribution dans ce stockage local.</Note>}
       {entries.length > 0 && feedMode === 'recommended' && !recommendations.length && (
-        <p className="contribution-note">
-          Pas encore de recommandations : votez sur au moins deux contributions également évaluées par un pair.
-        </p>
+        <Note>Pas encore de recommandations : votez sur au moins deux contributions également évaluées par un pair.</Note>
       )}
-      {feedEntries.length > 0 && visibleFeedEntries.length === 0 && (
-        <p className="contribution-note">Aucun résultat pour cette recherche.</p>
-      )}
+      {feedEntries.length > 0 && visibleFeedEntries.length === 0 && <Note>Aucun résultat pour cette recherche.</Note>}
       {visibleFeedEntries.map((entry) => (
         <FeedCard
           key={entry.cid}
@@ -37,6 +37,6 @@ export function ContributionFeed({
           onComment={(parentCid) => onComment(entry, parentCid)}
         />
       ))}
-    </section>
+    </Stack>
   );
 }

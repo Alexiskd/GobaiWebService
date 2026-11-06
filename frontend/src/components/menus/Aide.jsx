@@ -1,4 +1,6 @@
+import { Box, Dialog, DialogContent, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
 import { useViewport } from '@/hooks/useViewport';
+import { PanelHeader } from '../ui/PanelHeader';
 
 const KEYS = [
   ['Ctrl K  ou  /', 'Rechercher une ville ou un astre'],
@@ -20,23 +22,31 @@ const GESTURES = [
 ];
 
 export function Aide({ open, onClose }) {
-  const { coarse } = useViewport();
-  if (!open) return null;
+  const { coarse, compact } = useViewport();
   const rows = coarse ? GESTURES : KEYS;
+  const title = coarse ? 'Gestes tactiles' : 'Raccourcis clavier';
   return (
-    <div className="overlay" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="panel help" role="dialog" aria-modal="true" aria-label={coarse ? 'Gestes tactiles' : 'Raccourcis clavier'}>
-        <header>
-          <h2>{coarse ? 'Gestes tactiles' : 'Raccourcis clavier'}</h2>
-          <button type="button" className="ghost" onClick={onClose} aria-label="Fermer">×</button>
-        </header>
-        <dl>
-          {rows.map(([k, d]) => (
-            <div key={k}><dt><kbd>{k}</kbd></dt><dd>{d}</dd></div>
-          ))}
-        </dl>
-        {!coarse && <p className="hint">Souris : glisser pour tourner, molette ou pincement pour zoomer, clic sur un astre pour le centrer.</p>}
-      </div>
-    </div>
+    <Dialog open={open} onClose={onClose} fullScreen={compact} maxWidth="xs" fullWidth aria-label={title}>
+      <PanelHeader title={title} onClose={onClose} />
+      <DialogContent sx={{ pt: 1 }}>
+        <Table size="small">
+          <TableBody>
+            {rows.map(([k, d]) => (
+              <TableRow key={k}>
+                <TableCell sx={{ whiteSpace: 'nowrap', pl: 0 }}>
+                  <Box component="kbd" sx={{ font: 'inherit', fontSize: '0.85em', px: 0.75, py: 0.25, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'action.hover' }}>{k}</Box>
+                </TableCell>
+                <TableCell sx={{ pr: 0 }}>{d}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {!coarse && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Souris : glisser pour tourner, molette ou pincement pour zoomer, clic sur un astre pour le centrer.
+          </Typography>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

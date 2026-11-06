@@ -1,6 +1,5 @@
 import { Hint } from '../../ui/Hint';
 import { Section } from '../../ui/Section';
-import { AdaptiveStyles } from './AdaptiveStyles';
 import { Facts } from './Facts';
 import { MoonExtras } from './MoonExtras';
 
@@ -9,8 +8,7 @@ export function BodyPlacesInfo({ view, handlers, Search }) {
   const { id, name, places, placeholder, onPick, facts, moon, phases } = view;
 
   return (
-    <div className="ac">
-      <AdaptiveStyles />
+    <>
 
       <Section title="Rechercher un lieu">
         {places.length > 0 ? (
@@ -34,6 +32,6 @@ export function BodyPlacesInfo({ view, handlers, Search }) {
       )}
 
       {moon && <MoonExtras moon={moon} phases={phases} handlers={handlers} />}
-    </div>
+    </>
   );
 }

@@ -1,3 +1,5 @@
+import { Typography } from '@mui/material';
+
 export function Hint({ children }) {
-  return <p className="ac-hint">{children}</p>;
+  return <Typography variant="body2" color="text.secondary" sx={{ my: 1, px: 0.5 }}>{children}</Typography>;
 }

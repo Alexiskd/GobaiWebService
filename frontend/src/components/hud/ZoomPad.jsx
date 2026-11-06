@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { Paper, Tooltip, IconButton, Divider } from '@mui/material';
+import { useViewport } from '@/hooks/useViewport';
+import { edge } from '@/theme/layout';
+import { AddIcon, RemoveIcon } from '../ui/icons';
 
 const HOLD_INTERVAL_MS = 65;
 
 export function ZoomPad({ onZoom }) {
+  const { compact } = useViewport();
   const timer = useRef(null);
 
   const stop = useCallback(() => {
@@ -50,14 +55,34 @@ export function ZoomPad({ onZoom }) {
     onContextMenu: (e) => e.preventDefault(),
   };
 
+  const button = (factor, label, Icon) => (
+    <Tooltip title={label} placement="left">
+      <IconButton
+        size="large"
+        aria-label={label}
+        onPointerDown={start(factor)}
+        onKeyDown={onKeyDown(factor)}
+        {...common}
+        sx={{ borderRadius: 0, width: 48, height: 48, touchAction: 'none' }}
+      >
+        <Icon />
+      </IconButton>
+    </Tooltip>
+  );
+
   return (
-    <div className="zoom-pad" role="group" aria-label="Contrôles de zoom">
-      <button type="button" title="Maintenir pour zoomer" aria-label="Maintenir pour zoomer" onPointerDown={start(0.94)} onKeyDown={onKeyDown(0.94)} {...common}>
-        +
-      </button>
-      <button type="button" title="Maintenir pour dézoomer" aria-label="Maintenir pour dézoomer" onPointerDown={start(1.064)} onKeyDown={onKeyDown(1.064)} {...common}>
-        −
-      </button>
-    </div>
+    <Paper
+      elevation={4}
+      role="group"
+      aria-label="Contrôles de zoom"
+      sx={{
+        position: 'fixed', zIndex: (t) => t.zIndex.hud, right: edge('right', compact ? 8 : 14), top: '50%', transform: 'translateY(-50%)',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+      }}
+    >
+      {button(0.94, 'Maintenir pour zoomer', AddIcon)}
+      <Divider />
+      {button(1.064, 'Maintenir pour dézoomer', RemoveIcon)}
+    </Paper>
   );
 }

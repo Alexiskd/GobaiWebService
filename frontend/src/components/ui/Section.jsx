@@ -1,8 +1,11 @@
+import { Box, Typography } from '@mui/material';
+
+/** Section d'un panneau : titre court en capitales (overline) puis contenu. */
 export function Section({ title, children }) {
   return (
-    <section className="ac-section">
-      {title && <h3 className="ac-title">{title}</h3>}
+    <Box component="section" sx={{ mb: 2 }}>
+      {title && <Typography component="h3" variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2.2 }}>{title}</Typography>}
       {children}
-    </section>
+    </Box>
   );
 }

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useMediaQuery } from '@mui/material';
+import { Alert, Box, Paper, Typography, useMediaQuery } from '@mui/material';
 import { cloudBaseUrl } from './format';
-import { QUERIES } from './queries';
-import { PointCloudStyles } from './PointCloudStyles';
+import { QUERIES, safe } from '@/theme/mediaQueries';
+import { edge } from '@/theme/layout';
 import { usePointCloudCatalog } from './usePointCloudCatalog';
 import { useLyonDataset } from './useLyonDataset';
 import { usePanelLock } from './usePanelLock';
@@ -15,7 +15,7 @@ import { PotreeViewer } from './PotreeViewer';
 
 // Panneau « Tuile 3D » : nuage de points Potree d'une ville.
 // Écran large : panneau flottant. Mobile / téléphone en paysage : plein écran.
-// Tous les styles sont en MUI (`GlobalStyles` + `useMediaQuery`), aucun fichier .css.
+// Composants MUI stylés par `sx` ; la disposition suit `useMediaQuery`.
 
 export function Tuile3D({ city, open, onClose }) {
   const compact = useMediaQuery(QUERIES.compact, { noSsr: true });
@@ -40,24 +40,33 @@ export function Tuile3D({ city, open, onClose }) {
   if (!open || !city) return null;
 
   return (
-    <section
-      className="city-pointcloud panel"
+    <Paper
+      component="section"
+      elevation={12}
       role="dialog"
       aria-modal={compact ? 'true' : 'false'} // plein écran sur mobile : c'est alors une vraie modale
       aria-label={`Nuages 3D de ${city.name}`}
+      sx={{
+        position: 'fixed', zIndex: (t) => t.zIndex.panel, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        ...(compact ? {
+          inset: 0, borderRadius: 0, pt: safe('top'), pb: safe('bottom'),
+        } : {
+          right: edge('right'), top: '50%', transform: 'translateY(-50%)',
+          width: 'clamp(340px, 34vw, 560px)', maxHeight: 'min(80vh, 780px)',
+        }),
+      }}
     >
-      <PointCloudStyles />
       <Tuile3DHeader name={city.name} onClose={onClose} />
-      <div className="city-pointcloud-body">
+      <Box sx={{ overflowY: 'auto', overscrollBehavior: 'contain', p: 2, display: 'grid', gap: 1.5, minHeight: 0 }}>
         <CityLocation lat={Number(city.lat)} lon={Number(city.lon)} />
         {isLyon && <LyonLidar dataset={lyonDataset} />}
-        {catalog.status === 'loading' && <p className="city-pointcloud-message">Recherche des jeux de données…</p>}
-        {catalog.status === 'error' && <p className="city-pointcloud-message is-error">Catalogue indisponible : {catalog.error}</p>}
+        {catalog.status === 'loading' && <Typography variant="body2" color="text.secondary">Recherche des jeux de données…</Typography>}
+        {catalog.status === 'error' && <Alert severity="error">Catalogue indisponible : {catalog.error}</Alert>}
         {catalog.status === 'ready' && !available.length && !isLyon && (
-          <p className="city-pointcloud-message">
+          <Alert severity="info">
             Aucun jeu Potree converti n’est associé. Placez les données converties dans
-            <code> POINTCLOUD_DIR/potree/&lt;nom-du-fichier&gt;/cloud.js</code>.
-          </p>
+            <Box component="code" sx={{ ml: 0.5 }}>POINTCLOUD_DIR/potree/&lt;nom-du-fichier&gt;/cloud.js</Box>.
+          </Alert>
         )}
         {selected && (
           <>
@@ -66,7 +75,7 @@ export function Tuile3D({ city, open, onClose }) {
             <PotreeViewer key={`${cityKey}|${selected.name}`} cloud={selected} coarse={coarse} />
           </>
         )}
-      </div>
-    </section>
+      </Box>
+    </Paper>
   );
 }

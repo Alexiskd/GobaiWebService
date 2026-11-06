@@ -112,7 +112,7 @@ export function useContributionDraft({ setError, setStatus }) {
     setStatus(`Nouvelle version de ${entry.manifest.title} · CID précédent ${entry.cid}`);
     setError('');
     // Remonte au formulaire : sur mobile il est hors de l'écran quand on touche une carte du flux.
-    requestAnimationFrame(() => document.querySelector('.contribution-body')?.scrollTo({ top: 0, behavior: 'smooth' }));
+    requestAnimationFrame(() => document.querySelector('[data-contribution-body]')?.scrollTo({ top: 0, behavior: 'smooth' }));
   };
 
   const cancelCorrection = () => {

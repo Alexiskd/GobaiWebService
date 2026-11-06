@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { Box, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material';
 import { PlaceSearch } from '@/components/ui/PlaceSearch';
 import { useHudDraggable } from '@/hooks/useHudDraggable';
 import { useViewport } from '@/hooks/useViewport';
+import { PANEL_W, TOOLBAR_H, edge } from '@/theme/layout';
+import { safe } from '@/theme/mediaQueries';
+import { CloseIcon, ExpandLessIcon, ExpandMoreIcon } from '../../ui/icons';
+import { LiveChip, PanelHeader } from '../../ui/PanelHeader';
 import { BodyLayersMenu } from './BodyLayersMenu';
 import { BodyPlacesInfo } from './BodyPlacesInfo';
 import { useBodyView } from './useBodyView';
@@ -26,52 +31,65 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, childre
     wasCompact.current = compact;
   }, [compact, layersOpen]);
 
-  const className = [
-    'panel moon-live live-panel',
-    compact && 'panel-sheet',
-    compact && (open ? 'is-open' : 'is-collapsed'),
-  ].filter(Boolean).join(' ');
+  // Ordinateur : fenêtre flottante à droite (déplaçable). Mobile : tiroir au-dessus de la barre d'outils.
+  const placement = compact ? {
+    left: 0, right: 0, bottom: `calc(${TOOLBAR_H}px + ${safe('bottom')})`, width: 'auto',
+    maxHeight: `min(62dvh, calc(100dvh - ${TOOLBAR_H}px - ${safe('bottom')} - ${safe('top')} - 90px))`,
+    borderRadius: '18px 18px 0 0', zIndex: (t) => t.zIndex.toolbar + 5,
+  } : {
+    right: edge('right', 76), top: edge('top', 12), width: PANEL_W, maxHeight: 'calc(100dvh - 100px)',
+    zIndex: (t) => t.zIndex.hudPanel,
+  };
 
   return (
-    <section
-      className={className}
+    <Paper
+      component="section"
+      elevation={8}
       data-body={view?.id}
       aria-label={view ? `${view.name} en direct` : 'Informations'}
       ref={drag.ref}
       style={drag.style}
+      sx={{ position: 'fixed', display: 'flex', flexDirection: 'column', overflow: 'hidden', ...placement }}
     >
-      <header {...drag.handleProps} onClick={compact ? () => setOpen((v) => !v) : undefined}>
-        {compact ? <span className="sheet-handle" aria-hidden="true" /> : <span className="drag-grip" aria-hidden="true" />}
-        {/* Nom de l'astre et badge « En direct » centrés ; poignée à gauche, bouton de repli à droite. */}
-        <div className="live-heading">
-          <h2>{view ? view.name : 'Informations'}</h2>
-          {view && <span className="live" role="status">En direct</span>}
-        </div>
-        <button
-          type="button"
-          className="ghost"
-          onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-          aria-expanded={open}
-          aria-label={open ? 'Réduire' : 'Déplier'}
-        >
-          {open ? '–' : '+'}
-        </button>
-      </header>
-      {open && (
-        <div className="panel-body">
+      <PanelHeader
+        sheet={compact}
+        dragProps={drag.handleProps}
+        onClick={compact ? () => setOpen((v) => !v) : undefined}
+        title={view ? view.name : 'Informations'}
+        titleAdornment={view ? <LiveChip /> : null}
+        sx={open ? undefined : { borderBottom: 0 }}
+        actions={(
+          <IconButton
+            size="small"
+            onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+            aria-expanded={open}
+            aria-label={open ? 'Réduire' : 'Déplier'}
+          >
+            {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+          </IconButton>
+        )}
+      />
+      <Collapse in={open} timeout="auto" unmountOnExit sx={{ flex: '0 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+        <Box sx={{ px: 2, pt: 1.5, pb: compact ? `calc(${safe('bottom')} + 12px)` : 1.5 }}>
           {children}
           {layersOpen && (
-            <section className="layers-section" aria-label="Informations" ref={layersRef}>
-              <header>
-                {view && <h3>Informations{menu.bodyName ? ` · ${menu.bodyName}` : ''}</h3>}
-                <button type="button" className="ghost" onClick={onCloseLayers} aria-label="Fermer les informations">×</button>
-              </header>
+            <Box component="section" aria-label="Informations" ref={layersRef} sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ minHeight: 36 }}>
+                {view && (
+                  <Typography component="h3" variant="subtitle2" color="text.secondary">
+                    Informations{menu.bodyName ? ` · ${menu.bodyName}` : ''}
+                  </Typography>
+                )}
+                <IconButton size="small" onClick={onCloseLayers} aria-label="Fermer les informations" sx={{ ml: 'auto' }}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Stack>
               <BodyLayersMenu hud={hud} {...menu} />
-            </section>
+            </Box>
           )}
-        </div>
-      )}
-    </section>
+        </Box>
+      </Collapse>
+    </Paper>
   );
 }
 

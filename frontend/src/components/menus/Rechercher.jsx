@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Dialog, IconButton, InputBase, List, ListItem, ListItemButton, ListItemText, Stack } from '@mui/material';
 import { searchPlaces } from '@/api';
 import { useViewport } from '@/hooks/useViewport';
 import { coords } from '@/lib/format';
 import { fold } from '@/lib/search';
 import { altitudeForView, formatLatLon, parseLatLon } from '@/engine/gps';
+import { CloseIcon } from '../ui/icons';
 
 const MAX_RESULTS = 40;
 const WORLD_DEBOUNCE_MS = 300;
@@ -62,16 +64,12 @@ export function Rechercher({ open, onClose, cities, bodyNames, onPickCity, onPic
     if (!open) return undefined;
     setQuery('');
     setActive(0);
+    // Le dialogue MUI bloque déjà le défilement de la page ; le focus va au champ une fois la fenêtre montée.
     const t = setTimeout(() => inputRef.current?.focus(), 0);
-    // Bloque le défilement de la page derrière la palette (iOS).
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { clearTimeout(t); document.body.style.overflow = prev; };
+    return () => clearTimeout(t);
   }, [open]);
   useEffect(() => { setActive(0); }, [query]);
   useEffect(() => { listRef.current?.children[active]?.scrollIntoView({ block: 'nearest' }); }, [active]);
-
-  if (!open) return null;
 
   const choose = (r) => {
     if (!r) return;
@@ -88,52 +86,70 @@ export function Rechercher({ open, onClose, cities, bodyNames, onPickCity, onPic
     else if (e.key === 'Escape') { e.preventDefault(); onClose(); }
   };
 
+  const empty = (text) => (
+    <ListItem aria-disabled="true"><ListItemText secondary={text} /></ListItem>
+  );
+
   return (
-    <div className="overlay palette-overlay" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className={compact ? 'palette palette-sheet' : 'palette'} role="dialog" aria-modal="true" aria-label="Rechercher">
-        <div className="palette-bar">
-          <input
-            ref={inputRef}
-            type="search"
-            inputMode="search"
-            enterKeyHint="go"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={worldSearch ? (compact ? 'Ville, planète, GPS…' : 'Une ville du monde, une planète ou des coordonnées GPS…') : 'Une ville, une planète ou des coordonnées GPS…'}
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="none"
-            spellCheck="false"
-            role="combobox"
-            aria-expanded="true"
-            aria-controls="palette-list"
-            aria-activedescendant={results[active] ? `pal-${active}` : undefined}
-          />
-          {/* Pas de touche Échap sur mobile : bouton de fermeture visible. */}
-          <button type="button" className="ghost palette-close" onClick={onClose} aria-label="Fermer la recherche">
-            {compact ? 'Annuler' : '×'}
-          </button>
-        </div>
-        <ul id="palette-list" role="listbox" ref={listRef}>
-          {results.map((r, n) => (
-            <li
-              key={`${r.type}-${r.i}`}
-              id={`pal-${n}`}
-              role="option"
-              aria-selected={n === active}
-              onPointerMove={(e) => { if (e.pointerType === 'mouse') setActive(n); }}
-              onClick={() => choose(r)}
-            >
-              <span>{r.name}</span>
-              <small>{r.sub}</small>
-            </li>
-          ))}
-          {!results.length && world.status !== 'loading' && <li className="empty" aria-disabled="true">Aucun résultat pour « {query} ». Essayez un autre nom.</li>}
-          {worldSearch && world.status === 'loading' && <li className="empty" aria-disabled="true">Recherche dans le monde entier…</li>}
-          {worldSearch && world.status === 'error' && <li className="empty" aria-disabled="true">Recherche mondiale indisponible.</li>}
-        </ul>
-      </div>
-    </div>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen={compact}
+      fullWidth
+      maxWidth="sm"
+      aria-label="Rechercher"
+      sx={{ '& .MuiDialog-container': { alignItems: compact ? 'stretch' : 'flex-start' } }}
+      slotProps={{ paper: { sx: compact ? {} : { mt: '14vh' } } }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}>
+        <InputBase
+          inputRef={inputRef}
+          type="search"
+          fullWidth
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={worldSearch ? (compact ? 'Ville, planète, GPS…' : 'Une ville du monde, une planète ou des coordonnées GPS…') : 'Une ville, une planète ou des coordonnées GPS…'}
+          sx={{ fontSize: '1.05rem', py: 1 }}
+          slotProps={{
+            input: {
+              inputMode: 'search', enterKeyHint: 'go', autoComplete: 'off', autoCorrect: 'off', autoCapitalize: 'none', spellCheck: 'false',
+              role: 'combobox', 'aria-expanded': 'true', 'aria-controls': 'palette-list',
+              'aria-activedescendant': results[active] ? `pal-${active}` : undefined,
+            },
+          }}
+        />
+        {/* Pas de touche Échap sur mobile : bouton de fermeture visible. */}
+        {compact ? (
+          <Button onClick={onClose} aria-label="Fermer la recherche">Annuler</Button>
+        ) : (
+          <IconButton onClick={onClose} aria-label="Fermer la recherche"><CloseIcon /></IconButton>
+        )}
+      </Stack>
+      <List id="palette-list" role="listbox" ref={listRef} dense sx={{ maxHeight: compact ? 'none' : '46vh', overflowY: 'auto', p: 0.75 }}>
+        {results.map((r, n) => (
+          <ListItemButton
+            key={`${r.type}-${r.i}`}
+            id={`pal-${n}`}
+            role="option"
+            aria-selected={n === active}
+            selected={n === active}
+            onPointerMove={(e) => { if (e.pointerType === 'mouse') setActive(n); }}
+            onClick={() => choose(r)}
+            sx={{ borderRadius: 1.5 }}
+          >
+            <ListItemText
+              primary={r.name}
+              secondary={r.sub}
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1.5, my: 0.25 }}
+              slotProps={{ secondary: { sx: { textAlign: 'right', flex: 'none', maxWidth: '55%' } } }}
+            />
+          </ListItemButton>
+        ))}
+        {!results.length && world.status !== 'loading' && empty(`Aucun résultat pour « ${query} ». Essayez un autre nom.`)}
+        {worldSearch && world.status === 'loading' && empty('Recherche dans le monde entier…')}
+        {worldSearch && world.status === 'error' && empty('Recherche mondiale indisponible.')}
+      </List>
+    </Dialog>
   );
 }

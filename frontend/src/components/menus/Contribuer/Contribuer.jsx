@@ -1,25 +1,24 @@
 import { useMemo, useState } from 'react';
-import { useMediaQuery } from '@mui/material';
+import { Alert, Box, Dialog, Typography, useMediaQuery } from '@mui/material';
+import { QUERIES } from '@/theme/mediaQueries';
+import { PanelHeader } from '../../ui/PanelHeader';
 import { ContributionLayer } from './ContributionLayer';
-import { ContributionStyles } from './ContributionStyles';
 import { ContributionNotes } from './ContributionNotes';
 import { ContributionForm } from './ContributionForm';
 import { ContributionFeed } from './ContributionFeed';
 import { LazFileField } from './LazFileField';
 import { PeerStatus } from './PeerStatus';
 import { PseudonymField } from './PseudonymField';
-import { QUERIES } from './media';
 import { useContributionActions } from './useContributionActions';
 import { useContributionDraft } from './useContributionDraft';
 import { useContributionFeed } from './useContributionFeed';
 import { useContributionIdentity } from './useContributionIdentity';
 import { useContributionPeer } from './useContributionPeer';
 import { useLazAnalysis } from './useLazAnalysis';
-import { useModalLock } from './useModalLock';
 
 // Panneau des contributions communautaires (nuages de points LAZ).
 // Écran large : fenêtre centrée. Mobile / téléphone en paysage : plein écran.
-// Tous les styles sont en MUI (`GlobalStyles` + `useMediaQuery`), aucun fichier .css.
+// Dialogue MUI (Échap et blocage du défilement inclus), composants stylés par `sx`.
 export function Contribuer({ engine, open, onClose }) {
   const compact = useMediaQuery(QUERIES.compact, { noSsr: true });
   const [busy, setBusy] = useState(false);
@@ -50,7 +49,6 @@ export function Contribuer({ engine, open, onClose }) {
     setError,
     setStatus,
   });
-  useModalLock(open, onClose);
 
   const hasPseudonym = Boolean(pseudonym.trim());
   const visualItems = useMemo(
@@ -61,62 +59,62 @@ export function Contribuer({ engine, open, onClose }) {
   return (
     <>
       <ContributionLayer engine={engine} entries={visualItems} />
-      {open && (
-        <div className="overlay contribution-overlay" onPointerDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-          <ContributionStyles />
-          <section className="contribution-panel panel" role="dialog" aria-modal="true" aria-label="Contributions communautaires">
-            <header>
-              <div><span className="city-pointcloud-kicker">Données 3D locales</span><h2>Contributions</h2></div>
-              <button type="button" className="icon-btn" onClick={onClose} aria-label="Fermer">×</button>
-            </header>
-            <div className="contribution-body">
-              <ContributionNotes compact={compact} />
-              <PseudonymField value={pseudonym} busy={busy} onChange={updatePseudonym} />
-              <PeerStatus status={p2pStatus} error={p2pError} />
-              {!draft.correction && (
-                <LazFileField inputRef={draft.fileInputRef} busy={busy} onChange={draft.handleFile} />
-              )}
-              {(draft.metadata || draft.correction) && (
-                <ContributionForm
-                  draft={draft}
-                  busy={busy}
-                  hasPseudonym={hasPseudonym}
-                  identity={identity}
-                  analyzing={analyzing}
-                  progress={progress}
-                  onAnalyze={analyzeFile}
-                  onPublish={publish}
-                />
-              )}
-              {status && <p className="contribution-status" role="status">{status}</p>}
-              {error && <p className="contribution-error" role="alert">{error}</p>}
-              <ContributionFeed
-                compact={compact}
-                busy={busy}
-                hasPseudonym={hasPseudonym}
-                publicKey={identity?.publicKey}
-                feedMode={feed.feedMode}
-                feedSearch={feed.feedSearch}
-                entries={feed.entries}
-                feedEntries={feed.feedEntries}
-                visibleFeedEntries={feed.visibleFeedEntries}
-                recommendations={feed.recommendations}
-                commentDrafts={commentDrafts}
-                setCommentDrafts={setCommentDrafts}
-                onFeedMode={feed.setFeedMode}
-                onFeedSearch={feed.setFeedSearch}
-                onVote={vote}
-                onCorrect={draft.startCorrection}
-                onComment={comment}
-              />
-              <p className="contribution-note">
-                Anti-abus : une voix comptée par participant et contribution, preuve de travail légère (10 bits). La résistance Sybil reste limitée :
-                plusieurs pseudos peuvent toujours être créés. IndexedDB conserve les blocs uniquement sur cet appareil.
-              </p>
-            </div>
-          </section>
-        </div>
-      )}
+      <Dialog
+        open={open}
+        onClose={onClose}
+        fullScreen={compact}
+        fullWidth
+        maxWidth="md"
+        aria-label="Contributions communautaires"
+        slotProps={{ paper: { sx: { display: 'flex', flexDirection: 'column', maxHeight: compact ? 'none' : 'min(88vh, 900px)' } } }}
+      >
+        <PanelHeader kicker="Données 3D locales" title="Contributions" onClose={onClose} />
+        <Box data-contribution-body="" sx={{ overflowY: 'auto', overscrollBehavior: 'contain', p: 2, display: 'grid', gap: 2, minHeight: 0 }}>
+          <ContributionNotes compact={compact} />
+          <PseudonymField value={pseudonym} busy={busy} onChange={updatePseudonym} />
+          <PeerStatus status={p2pStatus} error={p2pError} />
+          {!draft.correction && (
+            <LazFileField inputRef={draft.fileInputRef} busy={busy} onChange={draft.handleFile} />
+          )}
+          {(draft.metadata || draft.correction) && (
+            <ContributionForm
+              draft={draft}
+              busy={busy}
+              hasPseudonym={hasPseudonym}
+              identity={identity}
+              analyzing={analyzing}
+              progress={progress}
+              onAnalyze={analyzeFile}
+              onPublish={publish}
+            />
+          )}
+          {status && <Alert severity="info" role="status">{status}</Alert>}
+          {error && <Alert severity="error" role="alert">{error}</Alert>}
+          <ContributionFeed
+            compact={compact}
+            busy={busy}
+            hasPseudonym={hasPseudonym}
+            publicKey={identity?.publicKey}
+            feedMode={feed.feedMode}
+            feedSearch={feed.feedSearch}
+            entries={feed.entries}
+            feedEntries={feed.feedEntries}
+            visibleFeedEntries={feed.visibleFeedEntries}
+            recommendations={feed.recommendations}
+            commentDrafts={commentDrafts}
+            setCommentDrafts={setCommentDrafts}
+            onFeedMode={feed.setFeedMode}
+            onFeedSearch={feed.setFeedSearch}
+            onVote={vote}
+            onCorrect={draft.startCorrection}
+            onComment={comment}
+          />
+          <Typography variant="caption" color="text.secondary">
+            Anti-abus : une voix comptée par participant et contribution, preuve de travail légère (10 bits). La résistance Sybil reste limitée :
+            plusieurs pseudos peuvent toujours être créés. IndexedDB conserve les blocs uniquement sur cet appareil.
+          </Typography>
+        </Box>
+      </Dialog>
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { Box, Typography } from '@mui/material';
 import { CommentForm } from './CommentForm';
 
 export function CommentBranches({ comments, contributionCid, drafts, setDrafts, onSubmit, busy, maxDepth = 4 }) {
@@ -8,9 +9,12 @@ export function CommentBranches({ comments, contributionCid, drafts, setDrafts, 
     .map((comment) => {
       const draftKey = `${contributionCid}|${comment.cid}`;
       return (
-        <div className="contribution-comment" key={comment.cid} style={{ '--depth': Math.min(depth, maxDepth) }}>
-          <strong>{String(comment.payload.pseudonym || 'Participant sans pseudo')}</strong>
-          <p>{String(comment.payload.text || '')}</p>
+        <Box
+          key={comment.cid}
+          sx={{ display: 'grid', gap: 0.5, ml: Math.min(depth, maxDepth) * 1.5, pl: 1.5, borderLeft: 2, borderColor: 'divider' }}
+        >
+          <Typography component="strong" variant="body2" sx={{ fontWeight: 600 }}>{String(comment.payload.pseudonym || 'Participant sans pseudo')}</Typography>
+          <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>{String(comment.payload.text || '')}</Typography>
           <CommentForm
             value={drafts[draftKey] || ''}
             placeholder="Répondre"
@@ -20,7 +24,7 @@ export function CommentBranches({ comments, contributionCid, drafts, setDrafts, 
             onSubmit={() => onSubmit(comment.cid)}
           />
           {branch(comment.cid, depth + 1)}
-        </div>
+        </Box>
       );
     });
 

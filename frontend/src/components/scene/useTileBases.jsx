@@ -6,7 +6,8 @@ import { TILED_BODY_BY_ID } from '@/engine/tiledBodies';
  * La Lune a son propre choix (« Lune réelle » composite) : voir chooseMoonBase.
  */
 const DEFAULT_BASE = {
-  earth: (ls) => ls.find((l) => l.kind === 'hybrid') || ls.find((l) => l.kind === 'imagery'),
+  earth: (ls) => ls.find((l) => l.id === 'google-satellite')
+    || ls.find((l) => l.kind === 'hybrid') || ls.find((l) => l.kind === 'imagery'),
   mars: (ls) => ls.find((l) => l.kind === 'imagery'),
   mercury: (ls) => ls.find((l) => l.provider === 'mercury-trek-wmts')
     || ls.find((l) => l.provider === 'mercury-quickmap')

@@ -1,5 +1,4 @@
 import { Hint } from '../../ui/Hint';
-import { AdaptiveStyles } from './AdaptiveStyles';
 import { Lune } from './Lune';
 import { Mars } from './Mars';
 import { Mercure } from './Mercure';
@@ -24,8 +23,7 @@ export function BodyLayersMenu({
   const mapped = MAPPED_BODIES.includes(currentId);
 
   return (
-    <div className="ac">
-      <AdaptiveStyles />
+    <>
 
       {currentId === 'earth' && (
         <Terre
@@ -96,6 +94,6 @@ export function BodyLayersMenu({
       {currentId !== null && !mapped && (
         <Hint>Aucune information cartographique disponible pour {bodyName || 'cet astre'}.</Hint>
       )}
-    </div>
+    </>
   );
 }

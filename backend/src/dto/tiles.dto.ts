@@ -9,7 +9,7 @@ export class TileLayerDto {
   @ApiProperty({ example: 'Photographie aérienne et satellite.' }) description: string;
   @ApiProperty({ enum: ['imagery', 'map', 'relief', 'hybrid', 'overlay'], description: 'Nature du rendu. `overlay` = calque transparent à superposer.' })
   kind: string;
-  @ApiProperty({ enum: ['gibs', 'nasa-trek', 'mars-trek', 'venus-trek', 'moon-trek', 'usgs-astro', 'lroc-lunaserv', 'usgs-astro-mars', 'opm-mars', 'murray-lab'], description: 'Fournisseur qui sert réellement les images.' }) provider: string;
+  @ApiProperty({ enum: ['google', 'gibs', 'nasa-trek', 'mars-trek', 'venus-trek', 'moon-trek', 'usgs-astro', 'lroc-lunaserv', 'usgs-astro-mars', 'opm-mars', 'murray-lab'], description: 'Fournisseur qui sert réellement les images.' }) provider: string;
   @ApiProperty({ enum: ['earth', 'moon', 'mars', 'mercury', 'venus'], description: 'Astre sur lequel la couche se pose.' }) body: string;
   @ApiProperty({
     enum: ['mercator', 'equirectangular'],

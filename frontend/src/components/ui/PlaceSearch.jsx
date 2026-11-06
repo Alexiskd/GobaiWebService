@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { List, ListItem, ListItemButton, ListItemText, Paper, TextField } from '@mui/material';
 import { coords } from '@/lib/format';
 import { fold } from '@/lib/search';
 
@@ -29,11 +30,11 @@ export function PlaceSearch({ places, onPick, placeholder = 'Rechercher un lieu�
   };
 
   return (
-    <div className="moon-search place-search">
-      <input
+    <>
+      <TextField
         type="search"
-        inputMode="search"
-        enterKeyHint="search"
+        size="small"
+        fullWidth
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
@@ -41,33 +42,33 @@ export function PlaceSearch({ places, onPick, placeholder = 'Rechercher un lieu�
           else if (e.key === 'Escape') setQuery('');
         }}
         placeholder={placeholder}
-        aria-label={placeholder}
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="none"
-        spellCheck="false"
+        slotProps={{
+          htmlInput: {
+            'aria-label': placeholder, inputMode: 'search', enterKeyHint: 'search',
+            autoComplete: 'off', autoCorrect: 'off', autoCapitalize: 'none', spellCheck: 'false',
+          },
+        }}
       />
       {q && (
-        <ul>
-          {results.map((f) => (
-            // Deux lieux peuvent porter le même nom : la clé inclut les coordonnées.
-            <li key={`${f.name}-${f.lat}-${f.lon}`}>
-              {onPick ? (
-                <button type="button" onClick={() => pick(f)} title={f.info || coords(f.lat, f.lon)}>
-                  <span>{f.native || f.name}</span>
-                  <small>{detail(f)}</small>
-                </button>
+        <Paper variant="outlined" sx={{ mt: 1, bgcolor: 'transparent', backdropFilter: 'none', maxHeight: 280, overflowY: 'auto' }}>
+          <List dense disablePadding>
+            {results.map((f) => {
+              // Deux lieux peuvent porter le même nom : la clé inclut les coordonnées.
+              const text = <ListItemText primary={f.native || f.name} secondary={detail(f)} />;
+              return onPick ? (
+                <ListItemButton key={`${f.name}-${f.lat}-${f.lon}`} onClick={() => pick(f)} title={f.info || coords(f.lat, f.lon)}>
+                  {text}
+                </ListItemButton>
               ) : (
-                <div className="place-row" title={f.info || coords(f.lat, f.lon)}>
-                  <span>{f.native || f.name}</span>
-                  <small>{detail(f)}</small>
-                </div>
-              )}
-            </li>
-          ))}
-          {!results.length && <li className="empty">Aucun lieu pour « {query} ».</li>}
-        </ul>
+                <ListItem key={`${f.name}-${f.lat}-${f.lon}`} title={f.info || coords(f.lat, f.lon)}>{text}</ListItem>
+              );
+            })}
+            {!results.length && (
+              <ListItem><ListItemText secondary={`Aucun lieu pour « ${query} ».`} /></ListItem>
+            )}
+          </List>
+        </Paper>
       )}
-    </div>
+    </>
   );
 }

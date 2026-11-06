@@ -1,6 +1,15 @@
+import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { useSolarData } from '@/hooks/useSolarData';
-import { ResponsiveStyles } from '@/styles/responsiveStyles';
 import { SolarScene } from './SolarScene';
+
+/** Écran plein (chargement, erreur) centré au-dessus de tout. */
+export function FullScreenMessage({ children }) {
+  return (
+    <Box sx={{ position: 'fixed', inset: 0, zIndex: (t) => t.zIndex.modal + 20, display: 'grid', placeItems: 'center', bgcolor: 'background.default', p: 2 }}>
+      {children}
+    </Box>
+  );
+}
 
 export function SolarSystem() {
   const { status, data, error, retry } = useSolarData();
@@ -8,18 +17,26 @@ export function SolarSystem() {
   if (status === 'ready') return <SolarScene data={data} />;
 
   return (
-    <div className="loading">
-      <ResponsiveStyles />
+    <FullScreenMessage>
       {status === 'loading' ? (
-        'Connexion à l’API…'
+        <Stack alignItems="center" spacing={2}>
+          <CircularProgress />
+          <Typography color="text.secondary">Connexion à l’API…</Typography>
+        </Stack>
       ) : (
-        <div className="fail">
-          <p>Impossible de joindre l’API : {error}.</p>
-          <p className="hint">Lancez le backend (<code>npm run dev:api</code>, port 3001), puis réessayez.</p>
-          <button type="button" onClick={retry}>Réessayer</button>
-        </div>
+        <Alert
+          severity="error"
+          variant="outlined"
+          sx={{ maxWidth: 480 }}
+          action={<Button color="inherit" size="small" onClick={retry}>Réessayer</Button>}
+        >
+          <Typography variant="body2">Impossible de joindre l’API : {error}.</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            Lancez le backend (<Box component="code">npm run dev:api</Box>, port 3001), puis réessayez.
+          </Typography>
+        </Alert>
       )}
-    </div>
+    </FullScreenMessage>
   );
 }
 

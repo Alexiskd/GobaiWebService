@@ -5,6 +5,7 @@ import type { LocateDto, TileLayerListDto, AttributionDto } from '../../dto/tile
 import { fillTemplate, gridSize, isValidTile, lonLatToTile, tileBounds, TILE_SIZE, MAX_LATITUDE } from './tile-math';
 import type { ResolvedTileLayer, TileProvider, Viewport } from './providers/tile-provider';
 import { GibsTileProvider } from './providers/gibs-tile.provider';
+import { GoogleTileProvider, type GoogleTile } from './providers/google-tile.provider';
 import { NasaTrekMoonProvider } from './providers/nasa-trek-moon.provider';
 import { NasaTrekMarsProvider } from './providers/nasa-trek-mars.provider';
 import { NasaTrekVenusProvider } from './providers/nasa-trek-venus.provider';
@@ -58,6 +59,7 @@ const MARS_FUSION_LAYERS = MARS_FUSION_ALGORITHM_INFO.map((algorithm) => ({
 @Injectable()
 export class TilesService {
   private readonly gibs: TileProvider;
+  private readonly google: GoogleTileProvider;
   private readonly moon: TileProvider;
   private readonly mars: TileProvider;
   private readonly venus: TileProvider;
@@ -68,6 +70,8 @@ export class TilesService {
     @Optional() private readonly space?: SpaceLayersService,
   ) {
     this.gibs = providers.find((p) => p.id === 'gibs') ?? new GibsTileProvider(config.tiles.gibs);
+    this.google = (providers.find((p) => p.id === 'google') as GoogleTileProvider | undefined)
+      ?? new GoogleTileProvider(config.tiles.google ?? { language: 'fr-FR', region: 'FR', maxZoom: 21 });
     this.moon = providers.find((p) => p.id === 'nasa-trek') ?? new NasaTrekMoonProvider(config.tiles.moon);
     this.mars = providers.find((p) => p.id === 'mars-trek') ?? new NasaTrekMarsProvider(config.tiles.mars);
     this.venus = providers.find((p) => p.id === 'venus-trek') ?? new NasaTrekVenusProvider(config.tiles.venus);
@@ -82,7 +86,7 @@ export class TilesService {
     const { provider, fallback } = this.active();
     return {
       provider: provider.id, fallback, tileSize: TILE_SIZE, placeSearch: Boolean(this.config.tiles.uber.clientId && this.config.tiles.uber.clientSecret),
-      layers: [...provider.layers(), ...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...this.venus.layers(), ...(this.space?.list() ?? [])],
+      layers: [...this.google.layers(), ...provider.layers(), ...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...this.venus.layers(), ...(this.space?.list() ?? [])],
     };
   }
 
@@ -172,12 +176,18 @@ export class TilesService {
     return fillTemplate((await this.resolve(layerId)).urlTemplate, { z, x, y });
   }
 
+  /** Tuile Google relayée par le serveur (la clé API ne part jamais vers le navigateur). */
+  googleTile(layerId: string, z: number, x: number, y: number): Promise<GoogleTile> {
+    return this.google.tile(layerId, z, x, y);
+  }
+
   private allLayers() {
-    return [...this.active().provider.layers(), ...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...this.venus.layers(), ...(this.space?.list() ?? [])];
+    return [...this.google.layers(), ...this.active().provider.layers(), ...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...this.venus.layers(), ...(this.space?.list() ?? [])];
   }
 
   /** Fournisseur qui sert cette couche : la Lune et Mars ont le leur, le reste va au fournisseur actif de la Terre. */
   private providerFor(layerId: string): TileProvider {
+    if (this.google.layers().some((l) => l.id === layerId)) return this.google;
     if (this.moon.layers().some((l) => l.id === layerId)) return this.moon;
     if (this.mars.layers().some((l) => l.id === layerId)) return this.mars;
     if (this.venus.layers().some((l) => l.id === layerId)) return this.venus;

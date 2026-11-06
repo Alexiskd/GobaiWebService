@@ -1,3 +1,4 @@
+import { Stack } from '@mui/material';
 import { Hint } from '../../ui/Hint';
 import { Section } from '../../ui/Section';
 import { Orbiter } from './Orbiter';
@@ -8,9 +9,9 @@ export function MoonOrbiters({ orbiters, source, onSelect }) {
       {orbiters.length === 0 ? (
         <Hint>Chargement des positions (JPL Horizons)…</Hint>
       ) : (
-        <ul className="ac-orbiters">
+        <Stack component="ul" spacing={1} sx={{ m: 0, p: 0, listStyle: 'none' }}>
           {orbiters.map((o) => <Orbiter key={o.id} o={o} onSelect={onSelect} />)}
-        </ul>
+        </Stack>
       )}
       {source && <Hint>Positions : {source}</Hint>}
     </Section>

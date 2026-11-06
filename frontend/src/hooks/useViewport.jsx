@@ -1,6 +1,6 @@
 import { useMediaQuery } from '@mui/material';
 import { useMemo } from 'react';
-import { QUERIES } from '@/styles/mediaQueries';
+import { QUERIES } from '@/theme/mediaQueries';
 
 // Catégories d’écran (voir `QUERIES`) :
 //  - xs  ≤ 480 px   : téléphone portrait
