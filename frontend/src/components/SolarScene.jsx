@@ -108,7 +108,7 @@ export function SolarScene({ data }) {
         }}
       />
       <SceneLabels data={data} registry={labels} onSelectBody={actions.selectFocus} />
-      <GpsFrame hud={hud} engine={engine} />
+
 
       <HudTop hud={hud} />
       <Informations
