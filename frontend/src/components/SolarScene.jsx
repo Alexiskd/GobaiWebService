@@ -25,6 +25,7 @@ import { LidarGlobe } from './menus/LidarGlobe/LidarGlobe';
 import { Rechercher } from './menus/Rechercher';
 import { Tuile3D } from './menus/Tuile3D/Tuile3D';
 import { bordersHintText, cityNamesHintText, moonModelHintText, shadowcamHintText } from './scene/layerHints';
+import { navigationBodies } from './scene/navigationBodies';
 import { useCameraToggles } from './scene/useCameraToggles';
 import { useDocumentViewport } from './scene/useDocumentViewport';
 import { useEarthDisplay } from './scene/useEarthDisplay';
@@ -54,22 +55,7 @@ export function SolarScene({ data }) {
     () => [data.bodies.sun.name, ...data.bodies.planets.map((p) => p.name), data.bodies.moon.name],
     [data]
   );
-  // Ordre d'affichage : la Lune suit la Terre et porte son numéro « bis » ; `index` reste l'indice du moteur.
-  const navBodies = useMemo(() => {
-    const planets = data.bodies.planets;
-    const list = [
-      { index: 0, name: data.bodies.sun.name, color: data.bodies.sun.color || '#ffb300' },
-      ...planets.map((p, i) => ({ index: i + 1, name: p.name, color: p.color || '#8b97b3' })),
-    ];
-    list.forEach((b, i) => { b.number = String(i + 1).padStart(2, '0'); });
-    const earth = planets.findIndex((p) => p.earth || p.name === 'Terre');
-    const at = earth >= 0 ? earth + 2 : list.length;
-    list.splice(at, 0, {
-      index: planets.length + 1, name: data.bodies.moon.name, color: '#d8d2c4',
-      number: earth >= 0 ? `${list[at - 1].number} bis` : String(list.length + 1).padStart(2, '0'),
-    });
-    return list;
-  }, [data]);
+  const navBodies = useMemo(() => navigationBodies(data.bodies), [data]);
 
   useDocumentViewport(viewport);
   useStageResize(containerRef, engineRef);

@@ -1,10 +1,10 @@
-import { memo, useEffect, useRef } from 'react';
-import { Box, Chip, List, ListItemButton, ListItemIcon, ListItemText, ListSubheader, Paper, Stack, Typography } from '@mui/material';
+import { memo, useEffect, useRef, useState } from 'react';
+import { Box, Chip, IconButton, List, ListItemButton, ListItemIcon, ListItemText, ListSubheader, Paper, Stack, Typography } from '@mui/material';
 import { useHudDraggable } from '@/hooks/useHudDraggable';
 import { useViewport } from '@/hooks/useViewport';
 import { RAIL, STRIP_H, TOOLBAR_H, edge } from '@/theme/layout';
 import { safe } from '@/theme/mediaQueries';
-import { DragIndicatorIcon } from '../ui/icons';
+import { DragIndicatorIcon, ExpandLessIcon, ExpandMoreIcon } from '../ui/icons';
 
 /** Pastille de l'astre, à sa couleur. */
 const Orb = ({ color, size = 14 }) => (
@@ -22,6 +22,12 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
   const { compact } = useViewport();
   const drag = useHudDraggable('navigation', !compact);
   const activeRef = useRef(null);
+  const [expanded, setExpanded] = useState(true);
+  const selectedParent = bodies.find((body) => body.index === focus)?.parentIndex;
+
+  useEffect(() => {
+    if (selectedParent != null) setExpanded(true);
+  }, [selectedParent, focus]);
 
   // En bande horizontale, l'astre actif reste visible.
   useEffect(() => {
@@ -51,7 +57,8 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
                 key={body.name}
                 ref={current ? activeRef : undefined}
                 icon={<Orb color={body.color} size={12} />}
-                label={body.name}
+                label={`${body.parentIndex != null ? '↳ ' : ''}${body.name} · ${body.number ?? String(i + 1).padStart(2, '0')}`}
+                aria-label={`${body.name}, ${body.number ?? String(i + 1).padStart(2, '0')}${body.parentIndex != null ? `, satellite de ${bodies.find((parent) => parent.index === body.parentIndex)?.name}` : ''}`}
                 clickable
                 color={current ? 'primary' : 'default'}
                 variant={current ? 'filled' : 'outlined'}
@@ -93,19 +100,46 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
       >
         {bodies.map((body, i) => {
           const index = body.index ?? i;
-          const current = focus === index;
-          return (
+          const children = bodies.filter((candidate) => candidate.parentIndex === index);
+          if (body.parentIndex != null) return null;
+          const row = (item, itemIndex, child = false) => (
             <ListItemButton
-              key={body.name}
-              selected={current}
-              aria-current={current ? 'true' : undefined}
-              onClick={() => onSelect(index)}
-              sx={{ borderRadius: 2, mx: 0.75 }}
+              selected={focus === itemIndex}
+              aria-current={focus === itemIndex ? 'true' : undefined}
+              onClick={() => onSelect(itemIndex)}
+              sx={{ borderRadius: 2, mx: 0.75, pl: child ? 3 : 1, flex: 1, minWidth: 0 }}
             >
-              <ListItemIcon sx={{ minWidth: 30 }}><Orb color={body.color} /></ListItemIcon>
-              <ListItemText primary={body.name} />
-              <Typography variant="caption" color="text.disabled" aria-hidden="true">{body.number ?? String(i + 1).padStart(2, '0')}</Typography>
+              <ListItemIcon sx={{ minWidth: 30 }}><Orb color={item.color} /></ListItemIcon>
+              <ListItemText primary={item.name} />
+              <Typography variant="caption" color="text.disabled">{item.number ?? String(itemIndex + 1).padStart(2, '0')}</Typography>
             </ListItemButton>
+          );
+          return (
+            <Box component="li" key={body.name} sx={{ listStyle: 'none' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {children.length > 0 && (
+                  <IconButton
+                    size="small"
+                    aria-label={`${expanded ? 'Replier' : 'Déplier'} les satellites de ${body.name}`}
+                    aria-expanded={expanded}
+                    onClick={() => setExpanded((value) => !value)}
+                    sx={{ ml: 0.5 }}
+                  >
+                    {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+                  </IconButton>
+                )}
+                {row(body, index)}
+              </Box>
+              {children.length > 0 && expanded && (
+                <List component="ul" disablePadding aria-label={`Satellites de ${body.name}`}>
+                  {children.map((child) => (
+                    <Box component="li" key={child.name} sx={{ listStyle: 'none', ml: 3, borderLeft: 1, borderColor: 'divider' }}>
+                      {row(child, child.index, true)}
+                    </Box>
+                  ))}
+                </List>
+              )}
+            </Box>
           );
         })}
       </List>
