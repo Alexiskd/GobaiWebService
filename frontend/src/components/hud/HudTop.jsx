@@ -46,7 +46,6 @@ export function HudTop({ hud }) {
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>{date}</Typography>
         {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{focusText}</Typography>}
       </Box>
-      <MenuDeroulant label="Menu" options={['vide']} sx={{ flex: 'none' }} />
     </Paper>
   );
 }
