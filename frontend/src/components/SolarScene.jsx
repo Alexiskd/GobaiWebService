@@ -13,7 +13,6 @@ import { GpsFrame } from './hud/GpsFrame';
 import { HudTop } from './hud/HudTop';
 import { MenuBar } from './hud/MenuBar';
 import { Navigator } from './hud/Navigator';
-import { SceneLabels } from './hud/SceneLabels';
 import { Toasts } from './hud/Toasts';
 import { ZoomPad } from './hud/ZoomPad';
 import { FullScreenMessage } from './SolarSystem';
