@@ -76,15 +76,20 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
       sx={{
         position: 'fixed', zIndex: (t) => t.zIndex.hud, left: edge('left'), top: '50%', transform: 'translateY(-50%)',
         width: RAIL, maxHeight: 'calc(100dvh - 200px)', overflowY: 'auto',
+        fontFamily: '"Cascadia Code", Consolas, "SFMono-Regular", Menlo, monospace',
       }}
     >
       <List
         dense
+        disablePadding
         subheader={(
           <ListSubheader
             component="div"
             {...drag.handleProps}
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'grab', userSelect: 'none', touchAction: 'none' }}
+            sx={{
+              display: 'flex', alignItems: 'center', gap: 0.5, cursor: 'grab', userSelect: 'none', touchAction: 'none',
+              textTransform: 'uppercase', fontSize: 11, fontWeight: 700, letterSpacing: '.06em', lineHeight: '26px',
+            }}
           >
             <DragIndicatorIcon fontSize="small" sx={{ color: 'text.disabled', ml: -0.75 }} aria-hidden="true" />
             Navigation
@@ -100,11 +105,19 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
               selected={current}
               aria-current={current ? 'true' : undefined}
               onClick={() => onSelect(index)}
-              sx={{ borderRadius: 2, mx: 0.75 }}
+              sx={{
+                borderRadius: 0, py: 0.4, pl: 1.25,
+                fontFamily: 'inherit', fontSize: 13,
+                borderLeft: '2px solid', borderLeftColor: current ? 'primary.main' : 'transparent',
+                '&.Mui-selected': { bgcolor: 'action.selected' },
+                '&.Mui-selected:hover': { bgcolor: 'action.selected' },
+              }}
             >
-              <ListItemIcon sx={{ minWidth: 30 }}><Orb color={body.color} /></ListItemIcon>
-              <ListItemText primary={body.name} />
-              <Typography variant="caption" color="text.disabled" aria-hidden="true">{body.number ?? String(i + 1).padStart(2, '0')}</Typography>
+              <ListItemIcon sx={{ minWidth: 26 }}><Orb color={body.color} /></ListItemIcon>
+              <ListItemText primaryTypographyProps={{ fontFamily: 'inherit', fontSize: 'inherit' }} primary={body.name} />
+              <Typography variant="caption" color="text.disabled" aria-hidden="true" sx={{ fontFamily: 'inherit' }}>
+                {body.number ?? String(i + 1).padStart(2, '0')}
+              </Typography>
             </ListItemButton>
           );
         })}
