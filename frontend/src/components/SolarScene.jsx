@@ -107,7 +107,7 @@ export function SolarScene({ data }) {
           '& > canvas:active': { cursor: 'grabbing' },
         }}
       />
-      <SceneLabels data={data} registry={labels} onSelectBody={actions.selectFocus} />
+   
 
 
       <HudTop hud={hud} />
