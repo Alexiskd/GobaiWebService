@@ -17,7 +17,7 @@ import { gridNorthHeading, lambert93ToWgs84 } from '../contributions/lambert93';
 // Fonctions et constantes des nuages LiDAR HD de l'IGN.
 import {
   ByteCache, COPC_HEADER_BYTES, type CopcEntry, type CopcInfo, IGN_LIDAR_LAYER, type IgnLidarTile, LAZDEC_POINT_BYTES, LIDAR_IMAGERY, LIDAR_STEP,
-  encodeNode, isLidarNodeKey, isLidarTileId, lidarWfsUrl, parseCopcHeader, parseHierarchyPage, tileKmFromId, tilesFromWfs,
+  encodeNode, isLidarNodeKey, isLidarTileId, lidarWfsBboxUrl, lidarWfsUrl, parseCopcHeader, parseLidarBox, parseHierarchyPage, tileKmFromId, tilesFromWfs,
 } from './lidar-tiles';
 
 /**
@@ -91,11 +91,14 @@ export class LidarTilesService {
   }
 
   /**
-   * Dalles autour d'un point (degrés) dans un rayon (m, 100 à 1 500, 600 par défaut), avec leurs manifestes, les plus
-   * proches d'abord. Rien hors de France ou si le décodeur manque.
+   * Dalles autour d'un point (degrés) dans un rayon (m, 100 à 1 500, 600 par défaut), ou, si `bbox` est donnée, toutes
+   * celles qui touchent cette emprise (le champ de la caméra, 8 km de côté au plus, 32 dalles au plus), avec leurs
+   * manifestes, les plus proches du point d'abord. Rien hors de France ou si le décodeur manque.
    */
-  // Méthode list : la longitude, la latitude et le rayon.
-  async list(lon: number, lat: number, radiusM = 600) {
+  // Méthode list : la longitude, la latitude, le rayon et l'emprise facultative.
+  async list(lon: number, lat: number, radiusM = 600, bbox?: string) {
+    // Emprise du champ de la caméra, si elle est donnée et lisible.
+    const box = parseLidarBox(bbox);
     // Rayon borné, 600 m s'il est absent ou invalide.
     const r = Number.isFinite(radiusM) && radiusM > 0 ? Math.min(1500, Math.max(100, radiusM)) : 600;
     // Réponse vide, avec l'état du décodeur.
@@ -107,13 +110,13 @@ export class LidarTilesService {
     // Essai (début).
     try {
       // Requête WFS, réponse JSON.
-      found = tilesFromWfs(JSON.parse((await this.fetchBytes(lidarWfsUrl(lon, lat, r, this.layer, 16))).toString('utf8')));
+      found = tilesFromWfs(JSON.parse((await this.fetchBytes(box ? lidarWfsBboxUrl(box, this.layer, 64) : lidarWfsUrl(lon, lat, r, this.layer, 16))).toString('utf8')));
     // Échec : journalisé, rien.
     } catch (e) { this.logger.warn(`WFS LiDAR HD : ${(e as Error).message}`); return empty; }
     // Les plus proches du point d'abord (centre de chaque dalle tiré de son identifiant).
     found.sort((a, b) => this.distanceTo(a.id, lon, lat) - this.distanceTo(b.id, lon, lat));
-    // Manifestes préparés (8 dalles au plus), les échecs étant écartés.
-    const items = (await Promise.all(found.slice(0, 8).map((t) => this.prepare(t).then((p) => p.manifest).catch((e: Error) => { this.logger.warn(`Dalle ${t.id} : ${e.message}`); return null; })))).filter(Boolean);
+    // Manifestes préparés (32 dalles au plus avec une emprise, 8 sinon), les échecs étant écartés.
+    const items = (await Promise.all(found.slice(0, box ? 32 : 8).map((t) => this.prepare(t).then((p) => p.manifest).catch((e: Error) => { this.logger.warn(`Dalle ${t.id} : ${e.message}`); return null; })))).filter(Boolean);
     // Renvoie les dalles.
     return { ...empty, items };
   // Fin de list.

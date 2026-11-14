@@ -61,10 +61,12 @@ export class LidarTilesController {
   @ApiQuery({ name: 'lat', example: 48.8608 })
   // Documente le rayon de recherche, facultatif (100 à 1 500 m, 600 par défaut).
   @ApiQuery({ name: 'r', required: false, example: 900 })
-  // Méthode list : reçoit la longitude, la latitude et le rayon, renvoie les dalles et leurs nœuds.
-  list(@Query('lon') lon?: string, @Query('lat') lat?: string, @Query('r') r?: string) {
+  // Documente l'emprise du champ de la caméra, facultative (ouest,sud,est,nord en degrés ; 8 km de côté au plus).
+  @ApiQuery({ name: 'bbox', required: false, example: '2.33,48.85,2.37,48.87' })
+  // Méthode list : reçoit la longitude, la latitude, le rayon et l'emprise, renvoie les dalles et leurs nœuds.
+  list(@Query('lon') lon?: string, @Query('lat') lat?: string, @Query('r') r?: string, @Query('bbox') bbox?: string) {
     // Délègue au service, avec les valeurs converties en nombres.
-    return this.lidar.list(Number(lon), Number(lat), Number(r));
+    return this.lidar.list(Number(lon), Number(lat), Number(r), bbox);
   // Fin de list.
   }
 

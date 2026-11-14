@@ -2159,7 +2159,8 @@ export class SolarEngine {
   // setLidarPointTiles : reçoit les dalles LiDAR.
   setLidarPointTiles(items) { this.lidarPoints.setTiles(items); }
   /**
-   * Recherche des nuages LiDAR HD de l'IGN sous la caméra : `discovery(lon, lat, rayonM)` renvoie une promesse des manifestes,
+   * Recherche des nuages LiDAR HD de l'IGN dans le champ de la caméra : `discovery(lon, lat, bbox)` (caméra, emprise
+   * [ouest, sud, est, nord] du champ au sol) renvoie une promesse des manifestes,
    * `onTiles(places)` est appelé à chaque nouvelle liste de dalles.
    */
   // setLidarDiscovery : branche la recherche des dalles et le rappel des lieux.

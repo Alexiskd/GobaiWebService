@@ -421,6 +421,61 @@ export function viewTarget(cam, dir) {
 export const searchRadius = (distM) => Math.min(1500, Math.max(600, distM * 0.5 + 400));
 
 /**
+ * Emprise au sol du champ de la caméra (sphère unité) : pour chaque rayon de l'écran, le point du sol qu'il touche ;
+ * s'il touche plus loin que `maxDist` (ou passe au-dessus de l'horizon), le point du sol à la verticale du rayon à
+ * `maxDist`. S'y ajoute le point sous la caméra. Vue de dessus comme en vue 3/4, tout le terrain visible est couvert.
+ */
+// Déclare et exporte viewFootprint : la caméra, les directions des rayons et la distance maximale (unités du rayon).
+export function viewFootprint(cam, dirs, maxDist) {
+  // Normalise un vecteur sur la sphère unité.
+  const unit = (v) => { const l = Math.hypot(v[0], v[1], v[2]) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+  // Le point sous la caméra d'abord.
+  const out = [unit(cam)];
+  // Pour chaque rayon (début).
+  for (const d of dirs) {
+    // Point du sol touché par le rayon.
+    const hit = viewTarget(cam, d);
+    // Assez proche : gardé ; sinon la verticale du rayon à la distance maximale.
+    out.push(hit && hit.dist <= maxDist ? hit.point : unit([cam[0] + d[0] * maxDist, cam[1] + d[1] * maxDist, cam[2] + d[2] * maxDist]));
+  // Fin de la boucle.
+  }
+  // Renvoie les points.
+  return out;
+// Fin de viewFootprint.
+}
+
+/** Emprise [ouest, sud, est, nord] (degrés) d'une liste de [longitude, latitude]. */
+// Déclare et exporte lonLatBox : les points en degrés.
+export function lonLatBox(points) {
+  // Bords de départ.
+  let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity;
+  // Élargit l'emprise à chaque point.
+  for (const [lon, lat] of points) { w = Math.min(w, lon); e = Math.max(e, lon); s = Math.min(s, lat); n = Math.max(n, lat); }
+  // Renvoie l'emprise.
+  return [w, s, e, n];
+// Fin de lonLatBox.
+}
+
+/** Écart maximal (m) entre les bords de deux emprises [ouest, sud, est, nord] ; infini sans ancienne emprise. */
+// Déclare et exporte boxShiftM : l'ancienne et la nouvelle emprise.
+export function boxShiftM(a, b) {
+  // Pas d'ancienne emprise : infini.
+  if (!a) return Infinity;
+  // Mètres par degré de longitude à cette latitude.
+  const k = Math.cos(((b[1] + b[3]) / 2) * (Math.PI / 180));
+  // Le plus grand écart des quatre bords, en mètres.
+  return Math.max(Math.abs(a[0] - b[0]) * k, Math.abs(a[2] - b[2]) * k, Math.abs(a[1] - b[1]), Math.abs(a[3] - b[3])) * 111_195;
+// Fin de boxShiftM.
+}
+
+/**
+ * Part du budget de points d'une dalle : le budget total partagé entre les dalles affichées selon leur poids (plus
+ * une dalle est proche, plus elle en reçoit), avec un plancher pour que chaque dalle visible garde sa base.
+ */
+// Déclare et exporte shareBudget : le budget, le poids de la dalle, la somme des poids et le plancher.
+export const shareBudget = (budget, weight, total, floor = 60_000) => (total > 0 ? Math.max(floor, Math.round(budget * weight / total)) : budget);
+
+/**
  * Hauteur de caméra (m) en deçà de laquelle le nuage de points LiDAR est dessiné : 750 m, soit 0,75 km au HUD.
  * C'est la même grandeur que la distance du zoom lue à l'écran — la hauteur au-dessus du sol — et non la distance à
  * la dalle : sous 0,75 km, le nuage apparaît, au-dessus il reste masqué.

@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, searchRadius, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -404,6 +404,43 @@ test('point visé : intersection de l’axe de visée avec le sol, rien vers le 
   assert.equal(viewTarget([0.5, 0, 0], [-1, 0, 0]), null);
   // Rayon de recherche borné entre 600 et 1 500 m.
   assert.equal(searchRadius(100), 600); assert.equal(searchRadius(1000), 900); assert.equal(searchRadius(1e6), 1500);
+});
+
+// Test : l'emprise au sol du champ de la caméra, de dessus et en vue 3/4.
+test('emprise du champ : vue de dessus serrée, vue 3/4 jusqu’à la portée, ciel ramené au sol', () => {
+  // Caméra à 500 m au-dessus de (1, 0, 0) ; portée de 3 km.
+  const h = 500 / EARTH_RADIUS_M, cam = [1 + h, 0, 0], max = 3000 / EARTH_RADIUS_M;
+  // Distance au sol (m) d'un point au point sous la caméra.
+  const ground = (p) => Math.hypot(p[1], p[2]) * EARTH_RADIUS_M;
+  // Vue de dessus : quatre rayons écartés de ±20° autour de la verticale.
+  const s = Math.sin(0.35), c = Math.cos(0.35);
+  const top = viewFootprint(cam, [[-c, s, 0], [-c, -s, 0], [-c, 0, s], [-c, 0, -s]], max);
+  // Le point sous la caméra d'abord, puis un point par rayon, tous à moins de 200 m.
+  assert.equal(top.length, 5); assert.ok(top.every((p) => ground(p) < 200));
+  // Vue 3/4 : un rayon vers l'horizon (presque à plat) et un rayon vers le ciel.
+  const tilted = viewFootprint(cam, [[-0.05, 1, 0], [0.3, 1, 0]], max);
+  // Le rayon presque à plat touche le sol au-delà de 3 km : ramené à la portée, ≈ 3 km devant.
+  assert.ok(Math.abs(ground(tilted[1]) - 3000) < 50, String(ground(tilted[1])));
+  // Le rayon vers le ciel : la verticale du rayon à la portée, au sol, devant la caméra.
+  assert.ok(Math.abs(Math.hypot(...tilted[2]) - 1) < 1e-12 && tilted[2][1] > 0);
+  // Emprise en degrés et écart des bords.
+  const box = lonLatBox([[2.3, 48.8], [2.4, 48.9], [2.35, 48.85]]);
+  assert.deepEqual(box, [2.3, 48.8, 2.4, 48.9]);
+  assert.equal(boxShiftM(null, box), Infinity); assert.equal(boxShiftM(box, box), 0);
+  // Un bord nord décalé de 0,01° : ≈ 1 112 m.
+  assert.ok(Math.abs(boxShiftM(box, [2.3, 48.8, 2.4, 48.91]) - 1112) < 1);
+});
+
+// Test : le budget de points partagé entre les dalles affichées.
+test('budget partagé : la dalle proche en reçoit le plus, plancher pour les lointaines', () => {
+  // Deux dalles : l'une à 150 m, l'autre à 1 500 m (poids en 1/d²).
+  const near = 1 / 150 ** 2, far = 1 / 1500 ** 2, total = near + far;
+  // La proche reçoit presque tout le budget.
+  assert.ok(shareBudget(3e6, near, total) > 2.9e6);
+  // La lointaine garde au moins le plancher.
+  assert.equal(shareBudget(3e6, far, total), 60_000);
+  // Sans somme connue : le budget entier.
+  assert.equal(shareBudget(3e6, 0, 0), 3e6);
 });
 
 // Réduction automatique ×4 : un point gardé sur quatre, dans l'ordre, et points agrandis de √4.
