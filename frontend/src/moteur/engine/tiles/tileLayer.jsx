@@ -147,6 +147,9 @@ export class TileLayer {
     this.uploadsPerFrame = uploadsPerFrame;
     // Part des envois autorisée : toute.
     this.uploadShare = 1; // part autorisée cette image (réglée par TileManager quand le rythme d'images fléchit)
+    // Compteurs de performance : naissance de la couche, première tuile (ms), tuiles mises en place, temps d'envoi
+    // à la carte graphique par image (ms, lissé) et débit de mise en place (tuiles/s, sur 5 s glissantes).
+    this.perf = { bornAt: performance.now(), firstTileMs: null, installs: 0, uploadMs: 0, rate: 0, windowAt: performance.now(), windowCount: 0 };
     // Affichage en cellules hexagonales (voir hexDisplay.jsx) : le modèle par défaut. `hex: false` garde l'ancien
     // affichage en tuiles carrées (tests, dépannage).
     // Affichage en hexagones demandé ?
@@ -408,6 +411,8 @@ export class TileLayer {
       this.arrived.sort((p, q) => p.d - q.d);
       // Nombre d'envois permis à cette image, 1 au moins.
       const uploads = Math.max(1, Math.ceil(this.uploadsPerFrame * this.uploadShare));
+      // Début de la mesure du temps d'envoi.
+      const t0 = performance.now(), before = this.perf.installs;
       // Tant qu'il en reste et que le quota n'est pas atteint (début).
       for (let n = 0; n < uploads && this.arrived.length;) {
         // Prend la première.
@@ -418,12 +423,18 @@ export class TileLayer {
         if (!this.wantedKeys.has(a.key) && !this.pinKeys.has(a.key)) { this.toRam(a); continue; }
         // La met en place sur la carte graphique.
         this.install(a);
+        // Une mise en place de plus ; la première date le temps avant la première tuile.
+        if (this.perf.firstTileMs === null) this.perf.firstTileMs = Math.round(performance.now() - this.perf.bornAt);
+        // Comptée.
+        this.perf.installs++; this.perf.windowCount++;
         // Affichage à recalculer.
         this.showDirty = true;
         // Un envoi de plus.
         n++;
       // Fin de la boucle.
       }
+      // Temps d'envoi de cette image (lissé), seulement si une tuile est partie.
+      if (this.perf.installs > before) this.perf.uploadMs = 0.9 * this.perf.uploadMs + 0.1 * (performance.now() - t0);
     // Fin de ce cas.
     }
 
@@ -645,6 +656,18 @@ export class TileLayer {
     // Terminé si toutes le sont.
     this.preloadComplete = done === this.pinList.length;
   // Fin de preloadWorld.
+  }
+
+  /** Compteurs de performance : première tuile (ms), tuiles mises en place, tuiles/s, envoi au GPU par image (ms). */
+  // perfSnapshot : les compteurs (début).
+  perfSnapshot(now = performance.now()) {
+    // Compteurs.
+    const p = this.perf;
+    // Fenêtre de 5 s écoulée : débit recalculé, fenêtre repartie.
+    if (now - p.windowAt >= 5000) { p.rate = Math.round((p.windowCount * 10000) / (now - p.windowAt)) / 10; p.windowAt = now; p.windowCount = 0; }
+    // Renvoie les valeurs lisibles.
+    return { firstTileMs: p.firstTileMs, installs: p.installs, tilesPerSec: p.rate, uploadMs: Math.round(p.uploadMs * 100) / 100 };
+  // Fin de perfSnapshot.
   }
 
   /** Avancement du préchargement en mémoire : { done, total }. */
