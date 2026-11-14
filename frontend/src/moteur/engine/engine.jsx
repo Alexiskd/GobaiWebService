@@ -2158,6 +2158,12 @@ export class SolarEngine {
   /** Dalles LiDAR en points 3D : manifestes de l'API (GET /lidar → items), puis affichage ou non. */
   // setLidarPointTiles : reçoit les dalles LiDAR.
   setLidarPointTiles(items) { this.lidarPoints.setTiles(items); }
+  /**
+   * Recherche des nuages LiDAR HD de l'IGN sous la caméra : `discovery(lon, lat)` renvoie une promesse des manifestes,
+   * `onTiles(places)` est appelé à chaque nouvelle liste de dalles.
+   */
+  // setLidarDiscovery : branche la recherche des dalles et le rappel des lieux.
+  setLidarDiscovery(discovery, onTiles = null) { this.lidarPoints.discovery = discovery; this.lidarPoints.onTiles = onTiles; }
   // setLidarPointsVisible : affiche ou masque les points LiDAR.
   setLidarPointsVisible(on) { this.lidarPoints.setEnabled(on); }
   /** Couleur des points : « photo » (orthophoto drapée sur le nuage) ou « classes ». */

@@ -21,7 +21,7 @@ const TAGS: [string, string][] = [
   ['Volcans', 'Volcans en éruption dans le monde, en direct.'],
   // La carte de la Terre.
   ['Tuiles', 'Modèle de tuiles simplifié : couches, URL, coordonnées, attribution.'],
-  ['LiDAR 3D', 'Dalles LiDAR servies en vrais points 3D, nœud par nœud.'],
+  ['LiDAR 3D', 'Nuages LiDAR HD de l’IGN lus en direct (COPC) et servis en vrais points 3D, nœud par nœud.'],
   ['Nuages de points', 'Fichiers COPC/LAS servis en HTTP Range pour le rendu LiDAR côté navigateur.'],
   ['Frontières', 'Frontières des pays et littoraux.'],
   ['World Atlas', 'Pays en TopoJSON, source des frontières.'],

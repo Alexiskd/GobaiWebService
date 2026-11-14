@@ -13,8 +13,9 @@ import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
 import { xyzToLonLat } from './tiles/mercator';
 
-// Dossier de la dalle LiDAR de Paris, dans les données du backend.
-const dir = new URL('../../../../backend/data/lidar/paris-0652-6863/', import.meta.url);
+// Jeu d'essai : manifeste et racine de la dalle LiDAR HD de Paris (LHD_FXX_0652_6863), gardés pour les tests seulement
+// (l'application lit désormais les nuages de l'IGN en direct).
+const dir = new URL('./__fixtures__/lidar-paris/', import.meta.url);
 // Son manifeste.
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', dir), 'utf8'));
 // L'arbre des nœuds construit à partir du manifeste.

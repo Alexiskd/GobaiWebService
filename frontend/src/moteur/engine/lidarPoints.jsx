@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 // Importe EARTH_RADIUS_M, le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
+// Importe xyzToLonLat, la longitude et la latitude d'un point de la sphère, depuis mercator.
+import { xyzToLonLat } from './tiles/mercator';
 // Importe LidarDrape, l'orthophoto drapée sur les points, depuis lidarDrape.
 import { LidarDrape } from './lidarDrape';
 // Importe drapePlan et nodeDrape, le plan du drapage et son calage par nœud, depuis lidarDrapeMath.
@@ -43,6 +45,12 @@ const DESKTOP = { budget: 6_000_000, keep: 10_000_000, maxSpacingPx: 1.5, parall
 const HANDHELD = { budget: 2_200_000, keep: 3_400_000, maxSpacingPx: 2.2, parallel: 4, drapeZoom: 17, drapeSize: 2048 };
 // Délai entre deux sélections des nœuds : 120 ms.
 const SELECT_EVERY_MS = 120;
+/** Recherche des dalles LiDAR HD de l'IGN autour de la caméra : sous 3 km d'altitude, au plus toutes les 3 s, après 300 m de déplacement. */
+// Altitude de recherche, délai et déplacement minimal.
+const DISCOVER_ALT_M = 3000, DISCOVER_EVERY_MS = 3000, DISCOVER_MOVE_M = 300;
+/** Dalles gardées au plus (les plus éloignées de la caméra sortent les premières). */
+// Six dalles.
+const MAX_TILES = 6;
 // Délai avant un nouvel essai après un échec : 15 secondes.
 const RETRY_AFTER_MS = 15_000;
 /** Profondeur des points : logarithme de la distance, de 10 cm à 1 000 km. */
@@ -184,7 +192,71 @@ export class LidarPoints {
     this.frustum = new THREE.Frustum();
     // Boîte de travail.
     this.box = new THREE.Box3();
+    // Recherche des dalles autour de la caméra : fonction (lon, lat) → promesse des manifestes, fournie par l'interface.
+    this.discovery = null;
+    // Recherche en cours, instant et lieu de la dernière.
+    this.discovering = false; this.discoverAt = -Infinity; this.discoverLon = NaN; this.discoverLat = NaN;
+    // Rappel à chaque nouvelle liste de dalles (lieux pour l'interface), ou null.
+    this.onTiles = null;
   // Fin du constructeur.
+  }
+
+  /**
+   * Ajoute des dalles (GET /lidar?lon&lat → items) sans retirer celles déjà en place ; au-delà de MAX_TILES, les plus
+   * éloignées du point de recherche sortent.
+   */
+  // addTiles : ajoute les dalles reçues (début).
+  addTiles(manifests = []) {
+    // Pour chaque fiche reçue (début).
+    for (const m of manifests) {
+      // Fiche incomplète, ou dalle déjà en place : ignorée.
+      if (!m?.id || !m.bounds || !m.anchor || !Array.isArray(m.nodes) || !m.nodeUrl || this.tiles.has(m.id)) continue;
+      // Crée la dalle et la range.
+      this.tiles.set(m.id, this.createTile(m));
+    // Fin de la boucle.
+    }
+    // Trop de dalles : les plus éloignées du dernier point de recherche sortent.
+    if (this.tiles.size > MAX_TILES && Number.isFinite(this.discoverLat)) {
+      // Distance (degrés pondérés) d'une dalle au point de recherche.
+      const far = (t) => Math.hypot((t.manifest.anchor.lon - this.discoverLon) * Math.cos(this.discoverLat * (Math.PI / 180)), t.manifest.anchor.lat - this.discoverLat);
+      // Dalles de la plus lointaine à la plus proche.
+      const order = [...this.tiles.values()].sort((a, b) => far(b) - far(a));
+      // Retire les plus lointaines.
+      for (const t of order.slice(0, this.tiles.size - MAX_TILES)) { this.removeTile(t); this.tiles.delete(t.manifest.id); }
+    // Fin de ce cas.
+    }
+    // Prévient l'interface.
+    this.onTiles?.(this.places());
+    // Sélection à refaire.
+    this.dirty = true;
+  // Fin de addTiles.
+  }
+
+  /**
+   * Recherche des dalles LiDAR HD de l'IGN sous la caméra : sous 3 km d'altitude, au plus toutes les 3 secondes et
+   * seulement après 300 m de déplacement. Les dalles reçues s'ajoutent à celles en place.
+   */
+  // discover : la caméra, le repère et l'instant (début).
+  discover(cam, frame, now) {
+    // Pas de fonction de recherche, ou recherche en cours : rien.
+    if (!this.discovery || this.discovering) return;
+    // Caméra dans le repère de la Terre, ramenée à la sphère unité.
+    const local = this.tmpN.copy(cam.position).applyMatrix4(this.tmpM.copy(frame.matrixWorld).invert()).divideScalar(this.radius);
+    // Altitude de la caméra (m).
+    const alt = (local.length() - 1) * EARTH_RADIUS_M;
+    // Trop haut : rien.
+    if (!(alt > 0 && alt < DISCOVER_ALT_M)) return;
+    // Longitude et latitude du point survolé.
+    const [lon, lat] = xyzToLonLat([local.x, local.y, local.z]);
+    // Déplacement depuis la dernière recherche (m).
+    const moved = Number.isFinite(this.discoverLat) ? Math.hypot((lon - this.discoverLon) * Math.cos(lat * (Math.PI / 180)), lat - this.discoverLat) * 111_195 : Infinity;
+    // Trop tôt, ou pas assez loin : rien.
+    if (now - this.discoverAt < DISCOVER_EVERY_MS || moved < DISCOVER_MOVE_M) return;
+    // Recherche en cours, notée à cet instant et à ce lieu.
+    this.discovering = true; this.discoverAt = now; this.discoverLon = lon; this.discoverLat = lat;
+    // Demande les dalles, les ajoute ; un échec est ignoré (nouvel essai au prochain déplacement).
+    Promise.resolve(this.discovery(lon, lat)).then((items) => this.addTiles(items)).catch(() => {}).finally(() => { this.discovering = false; });
+  // Fin de discover.
   }
 
   /** Dalles de l'API (GET /lidar → items). Remplace les dalles en place. */
@@ -402,8 +474,9 @@ export class LidarPoints {
   /** Fichier d'un nœud → objet de points, masqué jusqu'à la prochaine sélection. */
   // addNode : transforme le fichier d'un nœud en points (début).
   addNode(tile, node, buffer) {
-    // Décode les positions et les attributs.
-    const decoded = decodeNode(buffer, node.n);
+    // Décode les positions et les attributs : le nombre de points est celui du fichier (8 octets par point), le
+    // serveur ayant écarté le bruit et les points virtuels du nombre annoncé par la hiérarchie COPC.
+    const decoded = decodeNode(buffer, Math.floor((buffer.byteLength ?? buffer.length) / 8));
     // Pas de quantification et demi-côté de la dalle.
     const step = tile.manifest.step, half = tile.side / 2;
     // Racine : elle couvre toute la dalle et donne la hauteur du sol, qui sert à poser la dalle sur une carte à plat.
@@ -570,6 +643,18 @@ export class LidarPoints {
   update({ cam, H, dpr = 1, sunDir = null, shade = 1, hidden = false, now = performance.now(), flat = this.flat, groundLiftM = 0 }) {
     // Applique l'état à plat ou en relief, et le soulèvement du sol dessiné.
     this.setGroundFlat(flat, groundLiftM);
+    // Recherche des dalles de l'IGN sous la caméra (même sans dalle en place), si l'affichage est permis.
+    if (this.enabled && !hidden) {
+      // Rotation propre de la Terre recopiée sur le repère, puis ses matrices à jour.
+      if (this.parent !== this.engine.earth.mesh) this.root.rotation.y = this.engine.earth.mesh.rotation.y;
+      // Matrice du repère.
+      this.root.updateMatrix();
+      // Et sa matrice dans la scène.
+      this.root.updateWorldMatrix(true, false);
+      // Recherche.
+      this.discover(cam, this.root, now);
+    // Fin de ce cas.
+    }
     // Actif si l'affichage est permis, non masqué et s'il y a des dalles.
     const on = this.enabled && !hidden && this.tiles.size > 0;
     // Inactif : masque le repère, efface l'avancement et s'arrête.

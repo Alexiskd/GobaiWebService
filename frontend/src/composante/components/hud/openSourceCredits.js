@@ -215,7 +215,7 @@ export const SERVICE_ORGS = [
   // « EUMETSAT » et ce que cette organisation fournit.
   { org: 'EUMETSAT', what: ['Meteosat : image de la Terre à l’instant T (Europe, Afrique), une toutes les 10 minutes'] },
   // « IGN » et ce que cette organisation fournit.
-  { org: 'IGN', what: ['Orthophotos de la Géoplateforme', 'LiDAR HD : modèles de surface, de terrain et de hauteur (Licence Ouverte 2.0)', 'LiDAR HD : nuage de points 3D de la dalle de Paris LHD_FXX_0652_6863, relevé du 3 mars 2023, colorisé avec les orthophotos de la Géoplateforme (Licence Ouverte 2.0)'] },
+  { org: 'IGN', what: ['Orthophotos de la Géoplateforme', 'LiDAR HD : modèles de surface, de terrain et de hauteur (Licence Ouverte 2.0)', 'LiDAR HD : nuages de points 3D de toute la France (jeu IGNF_NUAGES-DE-POINTS-LIDAR-HD, COPC), lus en direct sur la Géoplateforme et colorisés avec ses orthophotos (Licence Ouverte 2.0)'] },
   // « Mapterhorn (© Mapterhorn, mapterhorn.com/attribution) » et ce que cette organisation fournit.
   { org: 'Mapterhorn (© Mapterhorn, mapterhorn.com/attribution)', what: ['Altitudes de la Terre en tuiles Terrarium, d’après Copernicus GLO-30 (ESA) et des relevés nationaux ouverts'] },
   // « Mapzen / Tilezen (Terrain Tiles, hébergées par AWS Open Data) » et ce que cette organisation fournit.
