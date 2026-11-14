@@ -945,7 +945,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       {/* La galerie. */}
       <Galerie open={galleryOpen} onClose={() => setGalleryOpen(false)} />
       {/* Le globe Google : remplace le globe Terre de l'app tant qu'il est ouvert. */}
-      <GoogleEarthWindow open={googleEarthOpen} engine={engine} onClose={() => setGoogleEarthOpen(false)} />
+      <GoogleEarthWindow open={googleEarthOpen} onClose={() => setGoogleEarthOpen(false)} />
       {/* La boutique des exports payants. */}
       <Boutique open={storeOpen} onClose={() => setStoreOpen(false)} />
       {/* Le plateau tournant (début de la balise). */}
