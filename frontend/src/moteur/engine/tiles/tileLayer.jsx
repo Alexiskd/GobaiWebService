@@ -68,11 +68,38 @@ const PREFETCH_EVERY = 4;       // calcul de la vue prédite toutes les 4 images
 const PREFETCH_MAX_QUEUED = 48; // demandes prédictives en file au plus (les plus utiles d'abord)
 // Relance des demandes, vue immobile : toutes les 15 images.
 const REQUEST_SWEEP_EVERY = 15; // vue immobile : relance des demandes (échecs expirés, L2) toutes les 15 images
+// Netteté qui suit le mouvement : pendant un déplacement, une rotation ou un zoom, l'erreur tolérée à l'écran est
+// doublée (images un niveau plus grossières, quatre fois moins de requêtes) ; 250 ms après l'arrêt, la vue est
+// resélectionnée à la netteté normale.
+const MOTION_SSE = 2, MOTION_HOLD_MS = 250;
+// Zoom rapide : un niveau d'images n'est demandé qu'après 180 ms de présence dans la vue ; les niveaux traversés
+// plus vite sont sautés (l'ancêtre déjà affiché reste en attendant le niveau d'arrivée).
+const LEVEL_SETTLE_MS = 180;
 // Vue inchangée à ces tolérances près : la sélection précédente est réutilisée (pas de nouveau parcours du quadtree).
 // Tolérance de position : un millième de l'altitude.
 const VIEW_POS_TOL = 1e-3;      // × altitude de la caméra
 // Tolérance de direction : 5e-4 radian.
 const VIEW_DIR_TOL = 5e-4;      // rad (≈ 1 px d'écran)
+
+/** Copie réduite d'une image à `size` px de côté (canevas), pour l'envoi au GPU sur téléphone. */
+// downscaled : l'image et la taille (début).
+function downscaled(img, size) {
+  // Canevas de la taille voulue.
+  const canvas = document.createElement('canvas');
+  // Carré.
+  canvas.width = canvas.height = size;
+  // Contexte de dessin.
+  const ctx = canvas.getContext('2d');
+  // Sans contexte : l'image telle quelle.
+  if (!ctx) return img;
+  // Réduction soignée.
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  // Dessine l'image réduite.
+  ctx.drawImage(img, 0, 0, size, size);
+  // Renvoie le canevas.
+  return canvas;
+// Fin de downscaled.
+}
 
 /** Vue « presque identique » : position relative à l'altitude, visée et haut de l'image, champ et taille d'écran. */
 // sameView : deux vues sont-elles presque identiques (début).
@@ -139,12 +166,18 @@ export class TileLayer {
     root, source, uniforms, maxAnisotropy = 4, capacity = 260, concurrency = 6, maxZoomCap = 22, pinnedMaxZoom = PINNED_MAX_ZOOM,
     // le préchargement, la mémoire vive, le sur-zoom, le relief et ses deux sources,
     prefetch = false, ramCapacity = 0, overzoom = OVERZOOM_LEVELS, relief = null, reliefSource = null, oceanSource = null,
-    // les envois par image et l'affichage en hexagones.
-    uploadsPerFrame = UPLOADS_PER_FRAME, hex = true,
+    // les envois par image, l'affichage en hexagones et la taille maximale d'une texture (0 : pas de limite).
+    uploadsPerFrame = UPLOADS_PER_FRAME, hex = true, maxTexturePx = 0,
   // Fin des réglages (début du constructeur).
   }) {
     // Garde le nombre d'envois par image.
     this.uploadsPerFrame = uploadsPerFrame;
+    // Taille maximale d'une texture (téléphone : 256 px ; une image de 512 px est réduite avant l'envoi au GPU).
+    this.maxTexturePx = maxTexturePx;
+    // Mouvement : vue de l'image précédente, fin du mouvement en cours, état à la dernière sélection.
+    this.prevFrameView = null; this.movingUntil = -Infinity; this.lastMoving = false;
+    // Zoom rapide : instant où chaque niveau d'images est entré dans la vue.
+    this.levelSeen = new Map();
     // Part des envois autorisée : toute.
     this.uploadShare = 1; // part autorisée cette image (réglée par TileManager quand le rythme d'images fléchit)
     // Compteurs de performance : naissance de la couche, première tuile (ms), tuiles mises en place, temps d'envoi
@@ -290,13 +323,22 @@ export class TileLayer {
     const tileSize = this.source.info?.tileSize || 256;
     // Seuil SSE : 2 px d'écran par pixel de texture (tuiles de 512 px : 4× moins de requêtes pour la même netteté à l'écran).
     // Options de sélection : niveaux, projection et erreur tolérée à l'écran.
-    const opts = { minZoom: this.source.minZoom, maxZoom: this.maxZoom, projection: this.projection, tileSize: 256, maxSSE: (2 * tileSize) / 256 };
     // Instant présent.
     const now = performance.now();
+    // Mouvement : la vue a changé depuis l'image précédente → en mouvement pendant encore 250 ms.
+    if (!sameView(this.prevFrameView, view)) this.movingUntil = now + MOTION_HOLD_MS;
+    // Garde la vue de cette image.
+    this.prevFrameView = copyView(view);
+    // En mouvement ?
+    const moving = now < this.movingUntil;
+    // Options de sélection : niveaux, projection, erreur tolérée à l'écran (doublée en mouvement), vue de biais allégée.
+    const opts = { minZoom: this.source.minZoom, maxZoom: this.maxZoom, projection: this.projection, tileSize: 256, maxSSE: ((2 * tileSize) / 256) * (moving ? MOTION_SSE : 1), foreshorten: true };
 
     // Sélection (quadtree) seulement si la vue a réellement changé : caméra immobile → aucun parcours.
-    // Nouvelle sélection si la vue a changé.
-    const reselect = !sameView(this.lastView, view);
+    // Nouvelle sélection si la vue a changé, ou si le mouvement commence ou s'arrête (netteté à refaire).
+    const reselect = !sameView(this.lastView, view) || moving !== this.lastMoving;
+    // Garde l'état du mouvement.
+    this.lastMoving = moving;
     // Dans ce cas (début).
     if (reselect) {
       // Cellules hexagonales : ce sont elles qui disent quelles images carrées charger.
@@ -313,6 +355,12 @@ export class TileLayer {
       for (const t of wanted) t.p = view.fwd ? tilePriority(t, view.cam, view.fwd, finest) : t.d;
       // Garde les tuiles voulues.
       this.wanted = wanted;
+      // Zoom rapide : note l'instant d'entrée de chaque niveau d'images, oublie ceux qui ne sont plus voulus.
+      const levels = new Set(wanted.map((t) => t.z));
+      // Niveaux nouveaux : notés maintenant.
+      for (const z of levels) if (!this.levelSeen.has(z)) this.levelSeen.set(z, now);
+      // Niveaux partis : oubliés.
+      for (const z of [...this.levelSeen.keys()]) if (!levels.has(z)) this.levelSeen.delete(z);
       // Garde une copie de la vue.
       this.lastView = copyView(view);
       // Cellules hexagonales : rien à refaire à l'écran tant que la vue garde les mêmes cellules au même niveau
@@ -371,6 +419,8 @@ export class TileLayer {
         if (this.loader.has(key)) { this.loader.load(key, t.p); continue; } // remonte la priorité (ex. tuile préchargée)
         // En échec récent : suivante.
         if ((this.failed.get(key) ?? 0) > now) continue;
+        // Zoom rapide : un niveau au-delà des niveaux gardés, présent depuis moins de 180 ms, est sauté pour l'instant.
+        if (this.zooming && t.z > this.pinnedMaxZoom && now - (this.levelSeen.get(t.z) ?? now) < LEVEL_SETTLE_MS) continue;
         // La demande.
         this.request(key, t);
       // Fin de la boucle.
@@ -942,8 +992,10 @@ export class TileLayer {
     const shared = this.textures.get(img);
     // Dans ce cas : un utilisateur de plus, et elle est renvoyée.
     if (shared) { shared.refs++; return shared.tex; }
-    // Nouvelle texture.
-    const t = new THREE.Texture(img);
+    // Largeur de l'image.
+    const w = img.naturalWidth || img.width || 0;
+    // Nouvelle texture : l'image, réduite à la taille maximale si elle la dépasse (téléphone : 512 → 256 px).
+    const t = new THREE.Texture(this.maxTexturePx && w > this.maxTexturePx ? downscaled(img, this.maxTexturePx) : img);
     // La partage.
     this.textures.set(img, { tex: t, refs: 1 });
     // Avec mipmaps.

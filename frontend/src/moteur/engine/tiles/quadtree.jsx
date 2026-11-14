@@ -19,6 +19,8 @@ import { MERCATOR } from './projection';
  *  viewportH  hauteur du viewport en pixels
  *  inFrustum  (centre[x,y,z], rayon) => bool, optionnel
  * @param {object} [opts]  minZoom, maxZoom, tileSize (256), maxSSE (2 px), maxTiles (256, au-delà le seuil SSE augmente),
+ *                         foreshorten (faux par défaut : une tuile vue de biais, en vue 3/4 ou près de l'horizon, compte
+ *                         pour moins de pixels à l'écran, donc elle est moins redécoupée),
  *                         projection (MERCATOR par défaut, ou EQUIRECTANGULAR — voir projection.js).
  *                         Ancienne forme acceptée : maxTilePx (= maxSSE × tileSize).
  * @returns {{z,x,y,d,sse,c}[]} tuiles triées de la plus proche à la plus lointaine (d = distance, c = centre sur la sphère)
@@ -100,7 +102,7 @@ function tileGeo(proj, cache, z, x, y) {
 // selectAt : un passage de sélection, avec une limite de tuiles (aucune par défaut) (début).
 function selectAt(view, opts, limit = Infinity) {
   // Options avec leurs valeurs par défaut : niveaux 0 à 19, tuiles de 256 pixels, erreur de 2 pixels, projection de Mercator.
-  const { minZoom = 0, maxZoom = 19, tileSize = 256, maxSSE = 2, projection: proj = MERCATOR } = opts;
+  const { minZoom = 0, maxZoom = 19, tileSize = 256, maxSSE = 2, projection: proj = MERCATOR, foreshorten = false } = opts;
   // La caméra, le champ vertical, la hauteur de l'écran et le test du champ de vision.
   const { cam, fovY, viewportH, inFrustum } = view;
   // Distance de la caméra au centre.
@@ -145,7 +147,10 @@ function selectAt(view, opts, limit = Infinity) {
     // Taille au sol de la tuile.
     const size = g.size;
     // Distance au point le plus proche de la tuile, jamais nulle.
-    const near = Math.max(dist - size / 2, 1e-9);
+    let near = Math.max(dist - size / 2, 1e-9);
+    // Vue de biais : la tuile est écrasée à l'écran par le cosinus de l'angle de visée (racine : un seul des deux axes
+    // est écrasé), au plus de moitié, comme pour les cellules hexagonales (hexCells.jsx).
+    if (foreshorten && dist > size) { const cosI = -((c[0] - cam[0]) * c[0] + (c[1] - cam[1]) * c[1] + (c[2] - cam[2]) * c[2]) / dist; near /= Math.max(0.5, Math.sqrt(Math.max(0, cosI))); }
     // Erreur géométrique : la taille au sol d'un pixel de la texture.
     const geometricError = size / tileSize;           // taille au sol d'un pixel de texture
     // Erreur à l'écran, en pixels.

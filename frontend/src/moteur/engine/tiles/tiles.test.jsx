@@ -778,3 +778,17 @@ test('ShadowCam : stéréographique polaire et maillage centré sur le cratère'
   assert.ok(Math.abs(np[1] - 89.6) < 1e-9 && Math.abs(np[0]) < 1e-9);
 // Fin du test.
 });
+
+// Vue de biais : avec `foreshorten`, les tuiles vues en rasant (près de l'horizon) sont moins redécoupées.
+test('selectTiles : la vue de biais demande moins de tuiles fines', () => {
+  // Caméra basse (altitude de 0,02 rayon), qui voit loin vers l'horizon.
+  const v = view(camAt(10, 45, 1.02));
+  // Sans et avec la vue de biais.
+  const flat = selectTiles(v, { maxZoom: 12, maxTiles: Infinity }), skew = selectTiles(v, { maxZoom: 12, maxTiles: Infinity, foreshorten: true });
+  // Moins de tuiles, ou autant au plus.
+  assert.ok(skew.length <= flat.length);
+  // Niveau moyen plus grossier, ou égal.
+  const mean = (l) => l.reduce((s, t) => s + t.z, 0) / l.length;
+  // Comparaison.
+  assert.ok(mean(skew) <= mean(flat));
+});
