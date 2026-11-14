@@ -356,6 +356,8 @@ export class TileManager {
       // Tuiles envoyées au GPU par image : 8 sur ordinateur, 4 sur téléphone (pas de saccade).
       // Envois par image : 4 sur téléphone, 8 sinon.
       uploadsPerFrame: small ? 4 : 8,
+      // Textures de 256 px au plus sur téléphone (les images de 512 px sont réduites) : 4 fois moins de mémoire graphique.
+      maxTexturePx: small ? 256 : 0,
     // Fin de la couche.
     });
   // Fin de buildLayer.
