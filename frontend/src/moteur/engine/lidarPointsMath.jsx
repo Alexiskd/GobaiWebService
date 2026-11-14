@@ -38,6 +38,16 @@ export const LUM_NEUTRAL = 170;
 /** Diamètre d'un point, en multiple de l'espacement des points autour de lui : les surfaces sont pleines. */
 // Déclare et exporte le diamètre d'un point : 1,3 fois l'espacement.
 export const POINT_FILL = 1.3;
+/**
+ * Réduction automatique des nuages de points : un point gardé sur LIDAR_DOWNSCALE, dans chaque nœud reçu.
+ * Les points d'un nœud arrivent rangés dans l'espace (codage par écarts), donc en garder un sur quatre les éclaircit
+ * de façon régulière. Quatre fois moins de points sur une surface : l'écart entre deux points double (√4).
+ */
+// Déclare et exporte le facteur de réduction : 4 (un point sur quatre).
+export const LIDAR_DOWNSCALE = 4;
+/** Agrandissement des points qui compense la réduction : la racine carrée du facteur, pour que les surfaces restent pleines. */
+// Déclare et exporte l'agrandissement des points : √4 = 2.
+export const DOWNSCALE_FILL = Math.sqrt(LIDAR_DOWNSCALE);
 
 // Motif d'une clé de nœud : quatre nombres séparés par des tirets.
 const KEY = /^(\d+)-(\d+)-(\d+)-(\d+)$/;
@@ -160,6 +170,37 @@ export function decodeNode(buffer, count) {
   // Renvoie les positions et les attributs.
   return { position, attr };
 // Fin de decodeNode.
+}
+
+/**
+ * Réduit un nœud décodé : garde un point sur `factor` (le premier de chaque groupe). Renvoie de nouveaux tableaux
+ * et le nombre de points gardés ; avec un facteur de 1 ou moins, renvoie les tableaux tels quels.
+ */
+// Déclare et exporte downscalePoints : les positions, les attributs et le facteur.
+export function downscalePoints(position, attr, factor = LIDAR_DOWNSCALE) {
+  // Nombre de points reçus.
+  const count = attr.length / 2;
+  // Facteur entier, au moins 1.
+  const f = Math.max(1, Math.floor(factor));
+  // Pas de réduction : tableaux inchangés.
+  if (f === 1) return { position, attr, n: count };
+  // Nombre de points gardés (arrondi au-dessus : le dernier groupe incomplet garde son premier point).
+  const n = Math.ceil(count / f);
+  // Nouveau tableau des positions, trois valeurs par point gardé.
+  const pos = new Uint16Array(n * 3);
+  // Nouveau tableau des attributs, deux valeurs par point gardé.
+  const at = new Uint8Array(n * 2);
+  // Pour chaque point gardé (début).
+  for (let j = 0, i = 0; j < n; j++, i += f) {
+    // Recopie ses trois coordonnées.
+    pos[j * 3] = position[i * 3]; pos[j * 3 + 1] = position[i * 3 + 1]; pos[j * 3 + 2] = position[i * 3 + 2];
+    // Recopie sa classe et sa luminosité.
+    at[j * 2] = attr[i * 2]; at[j * 2 + 1] = attr[i * 2 + 1];
+  // Fin de la boucle.
+  }
+  // Renvoie les tableaux réduits et le nombre de points gardés.
+  return { position: pos, attr: at, n };
+// Fin de downscalePoints.
 }
 
 /** Classe d'affichage « sol » (voir LIDAR_PALETTE). */

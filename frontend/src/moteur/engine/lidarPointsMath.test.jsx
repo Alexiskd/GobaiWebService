@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -383,4 +383,24 @@ test('nuage LiDAR : dessiné seulement sous 0,15 km de hauteur', () => {
   // Une autre limite peut être donnée.
   assert.equal(showCloud(200, true, 300), true);
 // Fin du test.
+});
+
+// Réduction automatique ×4 : un point gardé sur quatre, dans l'ordre, et points agrandis de √4.
+test('downscalePoints garde un point sur quatre et agrandit les points de 2', () => {
+  // Le facteur est bien 4 et l'agrandissement 2.
+  assert.equal(LIDAR_DOWNSCALE, 4); assert.equal(DOWNSCALE_FILL, 2);
+  // Dix points : positions (i, 10 i, 100 i), classe i, luminosité 200 − i.
+  const position = new Uint16Array(30), attr = new Uint8Array(20);
+  // Remplit les dix points.
+  for (let i = 0; i < 10; i++) { position.set([i, 10 * i, 100 * i], i * 3); attr.set([i, 200 - i], i * 2); }
+  // Réduit par 4.
+  const r = downscalePoints(position, attr);
+  // Garde les points 0, 4 et 8 (le dernier groupe incomplet garde son premier point).
+  assert.equal(r.n, 3);
+  // Positions gardées.
+  assert.deepEqual([...r.position], [0, 0, 0, 4, 40, 400, 8, 80, 800]);
+  // Attributs gardés.
+  assert.deepEqual([...r.attr], [0, 200, 4, 196, 8, 192]);
+  // Facteur 1 : tableaux inchangés.
+  assert.equal(downscalePoints(position, attr, 1).position, position);
 });

@@ -7,7 +7,7 @@ import { LidarDrape } from './lidarDrape';
 // Importe drapePlan et nodeDrape, le plan du drapage et son calage par nœud, depuis lidarDrapeMath.
 import { drapePlan, nodeDrape } from './lidarDrapeMath';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
-import { LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, groundLevel, levelSpacing, loadProgress, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { DOWNSCALE_FILL, LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 
 // Dalles LiDAR en vrais points 3D sur la Terre (LiDAR HD de l'IGN). Chaque dalle est un octree additif servi par
 // l'API (GET /lidar) : la racine donne la dalle entière, les niveaux suivants arrivent autour de la caméra.
@@ -389,8 +389,8 @@ export class LidarPoints {
     node.points.material.dispose();
     // Plus de points.
     node.points = null;
-    // Décompte les points en mémoire.
-    this.loaded -= node.n;
+    // Décompte les points en mémoire (ceux gardés après réduction).
+    this.loaded -= node.kept ?? node.n;
   // Fin de dropNode.
   }
 
@@ -398,18 +398,21 @@ export class LidarPoints {
   // addNode : transforme le fichier d'un nœud en points (début).
   addNode(tile, node, buffer) {
     // Décode les positions et les attributs.
-    const { position, attr } = decodeNode(buffer, node.n);
+    const decoded = decodeNode(buffer, node.n);
     // Pas de quantification et demi-côté de la dalle.
     const step = tile.manifest.step, half = tile.side / 2;
     // Racine : elle couvre toute la dalle et donne la hauteur du sol, qui sert à poser la dalle sur une carte à plat.
     // Pour la racine, si le sol n'est pas encore connu (début).
     if ((node.key ?? node.k) === ROOT_KEY && tile.groundM === null) {
       // Calcule la hauteur du sol.
-      tile.groundM = groundLevel(position, attr, step);
+      // (calculée sur tous les points reçus, avant la réduction, pour rester précise).
+      tile.groundM = groundLevel(decoded.position, decoded.attr, step);
       // Sur une carte à plat : repose la dalle.
       if (tile.groundM !== null && this.flat) this.placeTile(tile);
     // Fin de ce cas.
     }
+    // Réduction automatique ×4 : un point gardé sur quatre, quatre fois moins à dessiner et à garder en mémoire.
+    const { position, attr, n: kept } = downscalePoints(decoded.position, decoded.attr);
     // Géométrie.
     const geo = new THREE.BufferGeometry();
     // Attribut des positions.
@@ -453,8 +456,10 @@ export class LidarPoints {
     tile.group.add(points);
     // Le garde sur le nœud.
     node.points = points;
+    // Note le nombre de points gardés sur le nœud.
+    node.kept = kept;
     // Compte les points en mémoire.
-    this.loaded += node.n;
+    this.loaded += kept;
   // Fin de addNode.
   }
 
@@ -580,7 +585,8 @@ export class LidarPoints {
     // Le transmet aux shaders.
     this.shared.uPx.value = pxPerUnit;
     // Bornes de la taille d'un point.
-    this.shared.uRange.value.set(this.profile.maxSpacingPx * dpr * POINT_FILL, 64 * dpr);
+    // Taille minimale agrandie de √4 = 2, comme la taille des points, pour compenser la réduction ×4.
+    this.shared.uRange.value.set(this.profile.maxSpacingPx * dpr * POINT_FILL * DOWNSCALE_FILL, 64 * dpr);
     // Logarithme de la profondeur proche.
     const dn = Math.log2(DEPTH_NEAR_M * unit);
     // Transmet la profondeur proche et l'inverse de l'étendue.
@@ -705,7 +711,8 @@ export class LidarPoints {
           node.usedAt = this.stamp;
           // Taille réelle des points au niveau le plus fin disponible sous ce nœud (utile seulement de tout près).
           // Taille réelle des points au niveau le plus fin sous ce nœud.
-          node.points.material.uniforms.uSize.value = levelSpacing(tile.manifest.spacing, node.fine) * POINT_FILL * unit;
+          // Agrandie de √4 = 2 pour compenser la réduction ×4 : les surfaces restent pleines.
+          node.points.material.uniforms.uSize.value = levelSpacing(tile.manifest.spacing, node.fine) * POINT_FILL * DOWNSCALE_FILL * unit;
         // Fin de ce cas.
         }
       // Fin de la boucle.
