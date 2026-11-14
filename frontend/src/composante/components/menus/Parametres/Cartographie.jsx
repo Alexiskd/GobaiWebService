@@ -74,7 +74,7 @@ export function CartographieRelief({
   // Les villes de France du LiDAR HD et l'altitude d'arrivée au-dessus d'une ville.
   lidarCities = [], lidarCityAltitudeM = 2000,
   // Les points LiDAR, leurs lieux, leur couleur, leurs rappels, l'aller à un lieu et le rappel de fin.
-  lidarPoints = false, lidarPlaces = [], onLidarPoints, lidarColor = 'photo', onLidarColor, onGoPlace, onDone,
+  lidarPoints = false, lidarPlaces = [], onLidarPoints, lidarColor = 'carte', onLidarColor, onGoPlace, onDone,
 // Fin de la liste des propriétés.
 }) {
   // Vrai si un calque LiDAR HD est choisi.
@@ -212,8 +212,10 @@ export function CartographieRelief({
                 aria-label="Couleur des points LiDAR"
               // Fin de la balise ouvrante.
               >
+                {/* Bouton « Comme la carte ». */}
+                <ToggleButton value="carte" title="Chaque point prend exactement la couleur de la carte satellite à sa verticale" sx={{ textTransform: 'none', lineHeight: 1.2 }}>Comme la carte</ToggleButton>
                 {/* Bouton « Couleurs de la photo ». */}
-                <ToggleButton value="photo" title="Chaque point prend la couleur de la photo aérienne de l’IGN à sa verticale" sx={{ textTransform: 'none', lineHeight: 1.2 }}>Couleurs de la photo</ToggleButton>
+                <ToggleButton value="photo" title="Couleur de la photo aérienne de l’IGN, nuancée par le relief du laser" sx={{ textTransform: 'none', lineHeight: 1.2 }}>Couleurs de la photo</ToggleButton>
                 {/* Bouton « Types de points ». */}
                 <ToggleButton value="classes" title="Couleur selon le type de point : sol, toit, façade, végétation" sx={{ textTransform: 'none', lineHeight: 1.2 }}>Types de points</ToggleButton>
               {/* Fin du choix de la couleur. */}

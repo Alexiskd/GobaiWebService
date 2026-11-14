@@ -80,6 +80,8 @@ test('assistant : modèle, ville et couleur du LiDAR HD', () => {
   assert.equal(r({ name: 'aller_au_dessus_d_une_ville', input: { ville: 'Berlin' } }, BODIES, LISTS), null);
   // Sans liste de villes, rien ne passe.
   assert.equal(r({ name: 'aller_au_dessus_d_une_ville', input: { ville: 'Toulouse' } }, BODIES), null);
+  // Couleur des points : comme la carte satellite.
+  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'carte' } }, BODIES, LISTS).mode, 'carte');
   // Couleur des points : celles de la photo.
   assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'photo' } }, BODIES, LISTS).mode, 'photo');
   // Couleur des points : le type de chaque point, qui vaut « classes » dans le réglage.

@@ -40,8 +40,8 @@ const LIDAR_MODELS = {
 /** Couleur des points LiDAR : identifiant de l'outil → valeur du réglage et nom affiché. */
 // Modes de couleur des points LiDAR (début de l'objet).
 const LIDAR_COLORS = {
-  // Les couleurs de la photo, et le type de chaque point.
-  photo: ['photo', 'Couleurs de la photo'], types: ['classes', 'Types de points'],
+  // Comme la carte satellite, les couleurs de la photo, et le type de chaque point.
+  carte: ['carte', 'Comme la carte'], photo: ['photo', 'Couleurs de la photo'], types: ['classes', 'Types de points'],
 // Fin de l'objet.
 };
 // Familles d'astres : identifiant → [type du moteur, nom affiché] (début de l'objet).

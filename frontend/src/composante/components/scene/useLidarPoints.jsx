@@ -6,11 +6,13 @@ import { fetchLidarTiles, resolveApiUrl } from '@/moteur/api';
 // Clé du stockage local : affichage du nuage de points.
 const KEY = 'gobai:lidar-3d'; // « 0 » : nuage de points masqué ; sinon affiché
 // Clé du stockage local : mode de couleur du nuage.
-const COLOR_KEY = 'gobai:lidar-3d-couleur'; // « classes » : couleur par type de point ; sinon photo aérienne drapée
+const COLOR_KEY = 'gobai:lidar-3d-couleur'; // « carte » (par défaut), « photo » ou « classes »
+// Mode de couleur admis : « photo » ou « classes », sinon « carte ».
+const validColor = (value) => (value === 'photo' || value === 'classes' ? value : 'carte');
 // Déclare storedColor, qui lit le mode de couleur enregistré.
 function storedColor() {
-  // « classes » si c'est la valeur enregistrée, « photo » sinon ; « photo » si le stockage est inaccessible.
-  try { return globalThis.localStorage?.getItem(COLOR_KEY) === 'classes' ? 'classes' : 'photo'; } catch { return 'photo'; }
+  // La valeur enregistrée si elle est connue, « carte » sinon ou si le stockage est inaccessible.
+  try { return validColor(globalThis.localStorage?.getItem(COLOR_KEY)); } catch { return 'carte'; }
 // Fin de storedColor.
 }
 // Déclare storedOn, qui lit l'affichage enregistré.
@@ -23,7 +25,7 @@ function storedOn() {
 /**
  * Nuages LiDAR HD de l'IGN en vrais points 3D (GET /lidar?lon&lat) : cherchés par le moteur sous la caméra, partout
  * en France, affichés par défut.
- * Renvoie { on, setOn, color, setColor, places } ; `color` : « photo » (orthophoto drapée sur les points) ou « classes » ; `places` : lieux des dalles ([{ id, name, lat, lon, points }]) pour s'y rendre.
+ * Renvoie { on, setOn, color, setColor, places } ; `color` : « carte » (couleur de la carte satellite), « photo » (orthophoto retouchée par le relief) ou « classes » ; `places` : lieux des dalles ([{ id, name, lat, lon, points }]) pour s'y rendre.
  */
 // Déclare et exporte le crochet useLidarPoints : reçoit le moteur.
 export function useLidarPoints(engine) {
@@ -70,8 +72,8 @@ export function useLidarPoints(engine) {
 
   // setColor : change le mode de couleur ; début de la fonction mémorisée.
   const setColor = useCallback((value) => {
-    // Seules deux valeurs sont admises : « classes », sinon « photo ».
-    const next = value === 'classes' ? 'classes' : 'photo';
+    // Seules trois valeurs sont admises : « photo », « classes », sinon « carte ».
+    const next = validColor(value);
     // Met l'état à jour.
     setColorState(next);
     // Enregistre le mode ; une erreur de stockage est ignorée.
