@@ -14,6 +14,8 @@ import {
 import { readLayerInfo, saveLayerInfo } from './layerInfoCache';
 // Importe le partage avec annulation réelle, le délai adaptatif, la limite par serveur et les compteurs, depuis netLoads.
 import { AdaptiveTimeout, HostGate, NET_STATS, SharedLoads, hostOf } from './netLoads';
+// Importe la lecture des pixels hors du fil principal et la mémoire des fichiers d'origine, depuis tilePixels.
+import { pixelsOffThread, rememberBlob } from './tilePixels';
 
 // Délai minimal entre deux renouvellements du modèle d'adresse : 30 secondes.
 const MIN_REFRESH_GAP_MS = 30_000;
@@ -460,7 +462,7 @@ export class TileSource {
       // Image de la source à ce niveau.
       const img = await this.farImage(source, z, x, y, signal);
       // Sa vignette.
-      const thumb = img && this.pixels(img, THUMB);
+      const thumb = img && await this.pixelsAsync(img, THUMB);
       // Sans vignette : source suivante.
       if (!thumb) continue;
       // Vignette presque vide : la tuile est notée vide pour cette source ; suivante.
@@ -488,22 +490,22 @@ export class TileSource {
     // Image du monde, par le chemin habituel.
     const base = await this.loadNative(plan, z, x, y, signal);
     // Ses pixels.
-    const out = base && this.basePixels(base);
+    const out = base && await this.basePixels(base);
     // Sans pixels : rien.
     if (!out) return null;
     // De la moins prioritaire à la plus prioritaire : chacune recouvre les précédentes là où elle a une image.
     // Pose les couches, de la moins prioritaire à la plus prioritaire.
-    for (const layer of layers.reverse()) this.layOver(out, layer.img, layer.zone, layer.st);
+    for (const layer of layers.reverse()) await this.layOver(out, layer.img, layer.zone, layer.st);
     // Renvoie le canevas.
     return this.canvasFrom(out);
   // Fin de loadFar.
   }
 
   /** Pixels (256 px) d'une image de fond, avec sa correction de couleur déjà appliquée si elle en porte une. */
-  // basePixels : les pixels d'une image de fond, en 256 px (début).
-  basePixels(img) {
-    // Lit les pixels.
-    const data = this.pixels(img, 256);
+  // basePixels, asynchrone : les pixels d'une image de fond, en 256 px (début).
+  async basePixels(img) {
+    // Lit les pixels (hors du fil principal si possible).
+    const data = await this.pixelsAsync(img, 256);
     // Correction de couleur portée par l'image.
     const st = img.__color;
     // Si elle est prête : l'applique.
@@ -514,10 +516,10 @@ export class TileSource {
   }
 
   /** Pose une image sur des pixels de fond, sauf dans sa zone sans image ; applique sa correction de couleur. */
-  // layOver : pose une image sur des pixels de fond (début).
-  layOver(out, img, zone, st) {
-    // Ses pixels.
-    const data = this.pixels(img, 256);
+  // layOver, asynchrone : pose une image sur des pixels de fond (début).
+  async layOver(out, img, zone, st) {
+    // Ses pixels (hors du fil principal si possible).
+    const data = await this.pixelsAsync(img, 256);
     // Les compose hors de la zone sans image, avec sa correction de couleur si elle est prête.
     if (data) composeZoned(out, { data, gain: st?.stats.ready ? st.gain : null, offset: st?.offset }, zone);
   // Fin de layOver.
@@ -533,7 +535,7 @@ export class TileSource {
     // La source.
     const source = a.source;
     // Vignette de l'image.
-    const thumb = this.pixels(img, THUMB);
+    const thumb = await this.pixelsAsync(img, THUMB);
     // Zone sans image.
     const zone = thumb && blankZone(thumb);
     // Sans trou (début).
@@ -548,11 +550,11 @@ export class TileSource {
     // Image des sources suivantes du plan.
     const under = await this.loadNative(plan.slice(plan.indexOf(source) + 1), z, x, y, signal);
     // Ses pixels.
-    const out = under && this.basePixels(under);
+    const out = under && await this.basePixels(under);
     // Sans pixels : rien.
     if (!out) return null;
     // Pose l'image par-dessus, hors du trou.
-    this.layOver(out, img, zone, st);
+    await this.layOver(out, img, zone, st);
     // Renvoie le canevas.
     return this.canvasFrom(out);
   // Fin de patchHoles.
@@ -666,9 +668,9 @@ export class TileSource {
       // Absente ou vide : rien.
       if (!ref || ref === EMPTY) return;
       // Vignette de la référence, découpée dans son ancêtre si besoin.
-      const refPx = this.pixels(ref, COLOR_PX, a.depth ? cropRect(ref.naturalWidth || ref.width || 256, a.depth, x, y) : null);
+      const refPx = await this.pixelsAsync(ref, COLOR_PX, a.depth ? cropRect(ref.naturalWidth || ref.width || 256, a.depth, x, y) : null);
       // Vignette de la source.
-      const srcPx = this.pixels(img, COLOR_PX);
+      const srcPx = await this.pixelsAsync(img, COLOR_PX);
       // Sans vignettes, ou mesure refusée : rien.
       if (!refPx || !srcPx || !st.stats.add(srcPx, refPx)) return;
       // Reporte la correction.
@@ -714,7 +716,7 @@ export class TileSource {
         // Note le succès de la source.
         this.directBreaker.success(source.id);
         // Source nationale, tuile pas vue entièrement couverte et image vide (début).
-        if (source.bboxes && !this.directFull.isEmpty(source.id, z, x, y, source.minZoom) && this.isBlank(img)) {
+        if (source.bboxes && !this.directFull.isEmpty(source.id, z, x, y, source.minZoom) && await this.isBlank(img)) {
           // La tuile est notée vide.
           this.directEmpty.mark(source.id, z, x, y);
           // Renvoie EMPTY.
@@ -749,15 +751,15 @@ export class TileSource {
   // Fin de directImage.
   }
 
-  /** Image vide (blanche, noire ou transparente) ? Lue sur une vignette de 16 px ; résultat gardé par image. */
-  // isBlank : l'image est-elle vide (début).
-  isBlank(img) {
+  /** Image vide (blanche, noire ou transparente) ? Lue sur une vignette de 16 px, hors du fil principal si possible ; résultat gardé par image. */
+  // isBlank, asynchrone : l'image est-elle vide (début).
+  async isBlank(img) {
     // Résultat déjà connu.
     let blank = this.blankChecked.get(img);
     // S'il ne l'est pas (début).
     if (blank === undefined) {
       // Pixels de la vignette de 16 px.
-      const data = this.pixels(img, SCRATCH_PX);
+      const data = await this.pixelsAsync(img, SCRATCH_PX);
       // Vide d'après ses pixels ; non vide s'ils sont illisibles.
       blank = data ? isBlankPixels(data) : false;
       // Garde le résultat.
@@ -768,6 +770,13 @@ export class TileSource {
     return blank;
   // Fin de isBlank.
   }
+
+  /**
+   * Pixels RGBA d'une image réduite à `size` px (ou de sa portion `crop`), lus dans le Worker à partir du fichier
+   * téléchargé ; sur le fil principal (pixels) si le Worker est indisponible ou si l'image n'a pas de fichier.
+   */
+  // pixelsAsync, asynchrone : l'image, la taille et la portion.
+  async pixelsAsync(img, size, crop = null) { const data = await pixelsOffThread(img, size, crop); return data === undefined ? this.pixels(img, size, crop) : data; }
 
   /** Pixels RGBA d'une image réduite à `size` px (ou de sa portion `crop`), ou null si le navigateur refuse la lecture. */
   // pixels : les pixels d'une image réduite, ou d'une portion (début).
@@ -1019,6 +1028,8 @@ export async function loadImage(url, signal, urgent = false) {
     img.src = blobUrl;
     // Décodage hors du fil principal : l'envoi au GPU ne bloque plus l'affichage.
     await img.decode();
+    // Garde le fichier d'origine : les lectures de pixels se feront dans le Worker (voir tilePixels.jsx).
+    rememberBlob(img, blob);
     // Renvoie l'image.
     return img;
   // Fichier illisible : tuile indisponible.
