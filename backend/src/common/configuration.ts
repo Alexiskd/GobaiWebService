@@ -11,8 +11,8 @@ export interface AppConfig {
   // port : le port d'écoute du serveur.
   port: number;
   /** `true` = toutes les origines (développement). */
-  // corsOrigins : les origines autorisées à appeler l'API, ou true pour toutes.
-  corsOrigins: string[] | true;
+  // corsOrigins : les origines autorisées à appeler l'API (jamais toutes ; les clients payants passent par leur jeton).
+  corsOrigins: string[];
   // throttle : la limite de débit, soit « limit » requêtes par fenêtre de « ttlMs » millisecondes.
   throttle: { ttlMs: number; limit: number };
   // tiles : les réglages des tuiles de carte.
@@ -126,9 +126,9 @@ export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConf
   return {
     // port : PORT, ou 3001 par défaut.
     port: positiveNumber('PORT', env.PORT, 3001),
-    // corsOrigins : la liste si elle contient au moins une origine (plus les sites partenaires autorisés sans
-    // paiement), sinon true (toutes les origines).
-    corsOrigins: cors && cors.length ? [...new Set([...cors, ...freeApiOrigins(env)])] : true,
+    // corsOrigins : CORS_ORIGIN, plus les sites de Gobai Space et les sites partenaires autorisés sans paiement (baibai).
+    // Jamais « toutes les origines » : un autre site n'est accepté que s'il envoie un jeton payé (voir common/cors.ts).
+    corsOrigins: [...new Set([...(cors ?? []), ...donationSiteUrls, ...freeApiOrigins(env)])],
     // Limite de débit :
     throttle: {
       // fenêtre : THROTTLE_TTL_SECONDS (60 par défaut), convertie en millisecondes ;

@@ -4,6 +4,8 @@ import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common
 import type { AppConfig } from '../common/configuration';
 // Filtre qui met toutes les erreurs au même format de réponse.
 import { HttpExceptionFilter } from '../common/http-exception.filter';
+// Délégué CORS : liste d'origines, ou jeton payé.
+import { corsDelegate } from '../common/cors';
 
 /** Réglages communs à l'application réelle, aux tests de bout en bout et à l'export OpenAPI. */
 // Déclare configureApp : applique à une application les réglages communs, d'après la configuration.
@@ -12,8 +14,8 @@ export function configureApp(app: INestApplication, config: AppConfig) {
   app.setGlobalPrefix('api');
   // Version dans l'adresse (/api/v1/…) ; une route sans version déclarée prend la version 1.
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-  // CORS : origines autorisées à appeler l'API depuis un navigateur (toutes en développement, la liste CORS_ORIGIN sinon).
-  app.enableCors({ origin: config.corsOrigins });
+  // CORS fermé par défaut : origines de la liste, ou autre site muni d'un jeton payé (voir common/cors.ts).
+  app.enableCors(corsDelegate(config.corsOrigins));
   // Installe le filtre d'erreurs pour toute l'application.
   app.useGlobalFilters(new HttpExceptionFilter());
   // Installe un traitement appliqué à toutes les entrées (paramètres d'adresse, de requête, corps) :
