@@ -27,8 +27,8 @@ export const TARGET_FPS = 50;
 // Déclare et exporte la durée d'une image à ce rythme : 20 ms.
 export const TARGET_FRAME_MS = 1000 / TARGET_FPS;
 
-// Déclare et exporte le profil d'un ordinateur : densité de pixels de 2 dès le départ, anticrénelage, shaders complets, anisotropie de 8.
-export const DESKTOP_PROFILE = { handheld: false, dprMax: 2, dprStart: 2, frameMs: TARGET_FRAME_MS, antialias: true, lite: false, anisotropy: 8 };
+// Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 1,75 dès le départ, anticrénelage, shaders complets, anisotropie de 8.
+export const DESKTOP_PROFILE = { handheld: false, dprMax: 1.75, dprStart: 1.75, frameMs: TARGET_FRAME_MS, antialias: true, lite: false, anisotropy: 8 };
 // Déclare et exporte le profil d'un appareil tenu en main : densité plafonnée à 1,5 et partant de 1, sans anticrénelage, shaders allégés, anisotropie de 2.
 export const HANDHELD_PROFILE = { handheld: true, dprMax: 1.5, dprStart: 1, frameMs: TARGET_FRAME_MS, antialias: false, lite: true, anisotropy: 2 };
 

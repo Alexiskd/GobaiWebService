@@ -39,10 +39,10 @@ import { DOWNSCALE_FILL, LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, build
 // Distance de préchargement du premier niveau de détail : 400 km.
 const PRELOAD_RANGE_M = 400_000;
 /** Budget d'affichage : points dessinés, points gardés en mémoire, écart toléré entre deux points (px), chargements simultanés. */
-// Réglages sur ordinateur : 6 millions de points dessinés, 10 millions gardés, écart de 1,5 px, 6 chargements, orthophoto au niveau 18 sur 4 096 px.
-const DESKTOP = { budget: 6_000_000, keep: 10_000_000, maxSpacingPx: 1.5, parallel: 6, drapeZoom: 18, drapeSize: 4096 };
-// Réglages sur téléphone ou tablette : 2,2 millions dessinés, 3,4 millions gardés, écart de 2,2 px, 4 chargements, orthophoto au niveau 17 sur 2 048 px.
-const HANDHELD = { budget: 2_200_000, keep: 3_400_000, maxSpacingPx: 2.2, parallel: 4, drapeZoom: 17, drapeSize: 2048 };
+// Réglages sur ordinateur : 3 millions de points dessinés, 5 millions gardés, écart de 1,5 px, 6 chargements, orthophoto au niveau 18 sur 4 096 px.
+const DESKTOP = { budget: 3_000_000, keep: 5_000_000, maxSpacingPx: 1.5, parallel: 6, drapeZoom: 18, drapeSize: 4096 };
+// Réglages sur téléphone ou tablette : 1,2 million dessinés, 2 millions gardés, écart de 2,2 px, 4 chargements, orthophoto au niveau 17 sur 2 048 px.
+const HANDHELD = { budget: 1_200_000, keep: 2_000_000, maxSpacingPx: 2.2, parallel: 4, drapeZoom: 17, drapeSize: 2048 };
 // Délai entre deux sélections des nœuds : 120 ms.
 const SELECT_EVERY_MS = 120;
 /** Recherche des dalles LiDAR HD de l'IGN dans le champ de la caméra : sous 3 km d'altitude, au plus toutes les 3 s, après 300 m de déplacement du point visé. */
@@ -77,8 +77,8 @@ const pointVertex = [
   // coordonnées du nœud vers l'atlas, uDrape = 1 en mode photo, 2 en mode carte (couleur de la photo, sans retouche).
   // Variables uniformes du drapage : l'atlas, les deux parties du calage et l'interrupteur.
   'uniform sampler2D uOrtho;uniform vec4 uUvA;uniform vec2 uUvB;uniform float uDrape;',
-  // Couleur transmise au shader de fragment.
-  'varying vec3 vCol;',
+  // Couleur et taille à l'écran transmises au shader de fragment.
+  'varying vec3 vCol;varying float vSz;',
   // Fonction principale (début).
   'void main(){',
   // Position dans le repère de la caméra, puis à l'écran.
@@ -86,7 +86,7 @@ const pointVertex = [
   // Distance à la caméra, jamais nulle.
   'float w=max(gl_Position.w,1e-12);',
   // Taille du point en pixels, bornée.
-  'gl_PointSize=clamp(uSize*uPx/w,uRange.x,uRange.y);',
+  'gl_PointSize=clamp(uSize*uPx/w,uRange.x,uRange.y);vSz=gl_PointSize;',
   // Profondeur logarithmique, écrite dans la position.
   'float d=clamp((log2(w)-uDepth.x)*uDepth.y,0.,.999999);gl_Position.z=(2.*d-1.)*gl_Position.w;',
   // Couleur de la classe du point, lue dans la palette.
@@ -112,10 +112,11 @@ const pointVertex = [
 ].join('\n');
 // Shader de fragment des points (début).
 const pointFragment = [
-  // Couleur reçue du shader de sommet.
-  'varying vec3 vCol;',
-  // Fonction principale : écarte ce qui sort du disque, puis écrit la couleur.
-  'void main(){vec2 d=gl_PointCoord-.5;if(dot(d,d)>.25)discard;gl_FragColor=vec4(vCol,1.);}',
+  // Couleur et taille reçues du shader de sommet.
+  'varying vec3 vCol;varying float vSz;',
+  // Fonction principale : sous 2 px, un carré suffit (pas de discard, le test de profondeur précoce reste actif) ;
+  // au-dessus, écarte ce qui sort du disque. Puis écrit la couleur.
+  'void main(){if(vSz>=2.){vec2 d=gl_PointCoord-.5;if(dot(d,d)>.25)discard;}gl_FragColor=vec4(vCol,1.);}',
 // Fin du shader de fragment : les lignes sont jointes.
 ].join('\n');
 
