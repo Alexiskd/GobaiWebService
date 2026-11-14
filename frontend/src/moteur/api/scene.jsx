@@ -10,9 +10,6 @@ export const fetchBodyListing = (signal) => get('/bodies/listing', { signal });
 /** Nuages LAS/LAZ disponibles, leur en-tête géospatial et une URL Potree si le jeu a été converti. */
 // fetchPointClouds : les nuages de points.
 export const fetchPointClouds = (signal) => get('/pointclouds', { signal });
-/** Dalles LiDAR en vrais points 3D : { storage, items: [manifeste + nodeUrl] } (voir engine/lidarPoints.jsx). */
-// fetchLidarTiles : les dalles LiDAR.
-export const fetchLidarTiles = (signal) => get('/lidar', { signal });
 /** Recherche mondiale de lieux (Photon, via le backend) : { provider, items: [{ name, context, lon, lat }], attribution }. */
 // searchPlaces : la recherche de lieux, 8 résultats au plus.
 export const searchPlaces = (q, signal) => get('/places', { signal, query: { q, limit: 8 } });

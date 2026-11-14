@@ -2,8 +2,8 @@
 import * as THREE from 'three';
 // Importe LidarGlobe et pickEarthAt, les nuages LiDAR calés sur le globe et le point de la Terre sous un pixel.
 import { LidarGlobe, pickEarthAt } from './lidarGlobe';
-// Importe LidarPoints, les dalles LiDAR en points 3D.
-import { LidarPoints } from './lidarPoints';
+// Importe Paris3D, les bâtiments de Paris en 3D (BD TOPO de l'IGN).
+import { Paris3D } from './paris3d';
 // Importe hiddenByAny, le test d'un point masqué par un astre.
 import { hiddenByAny } from './labelOcclusion';
 // Importe le moteur de chargement planétaire : budgets, taille apparente, niveau de détail, plan des tuiles, satellites, champ de vue.
@@ -372,8 +372,8 @@ export class SolarEngine {
     this.earth.group.add(this.volcanoes.root);
     // Nuages LiDAR calés par GPS.
     this.lidar = new LidarGlobe(this); // nuages LiDAR calés par GPS, sur la Terre
-    // Dalles LiDAR en points 3D.
-    this.lidarPoints = new LidarPoints(this); // dalles LiDAR en vrais points 3D (GET /lidar)
+    // Paris en 3D : bâtiments de la BD TOPO de l'IGN, extrudés à leur hauteur (à la place des dalles LiDAR en points).
+    this.paris3d = new Paris3D(this);
     // Noms des pays posés à plat sur le globe, au milieu de chaque pays, visibles avant les villes.
     this.countryLabels = new CountryLabels({
       // Parent : celui du conteneur, ou la page.
@@ -2155,14 +2155,9 @@ export class SolarEngine {
   // setBordersVisible : affiche ou masque les frontières.
   setBordersVisible(on) { this.bordersOn = on; this.applyBorders(); }
 
-  /** Dalles LiDAR en points 3D : manifestes de l'API (GET /lidar → items), puis affichage ou non. */
-  // setLidarPointTiles : reçoit les dalles LiDAR.
-  setLidarPointTiles(items) { this.lidarPoints.setTiles(items); }
-  // setLidarPointsVisible : affiche ou masque les points LiDAR.
-  setLidarPointsVisible(on) { this.lidarPoints.setEnabled(on); }
-  /** Couleur des points : « photo » (orthophoto drapée sur le nuage) ou « classes ». */
-  // setLidarPointsColor : choisit la couleur des points.
-  setLidarPointsColor(mode) { this.lidarPoints.setColorMode(mode); }
+  /** Paris en 3D : affiche ou masque les bâtiments. */
+  // setParis3dVisible : affiche ou masque Paris en 3D.
+  setParis3dVisible(on) { this.paris3d.setEnabled(on); }
 
   /** Noms des villes du monde : [{ name, lon, lat, pop, capital }] triés par population. */
   // setCityLabels : reçoit les villes du monde.
@@ -2532,8 +2527,13 @@ export class SolarEngine {
     this.volcanoes.sync(this.earth.mesh.rotation.y);
     // Met à jour les nuages LiDAR.
     this.lidar.update(this.cam);
-    // Met à jour les points LiDAR.
-    this.lidarPoints.update({ cam: this.cam, H: this.H, dpr: this.dpr, sunDir: this.sunDir, shade: this.tiles.uniforms.shade.value, hidden: Boolean(this.earth.hidden), now, flat: !this.tiles.reliefOn });
+    // Couche de tuiles de la Terre affichée, s'il y a une carte.
+    const parisLayer = this.tiles.active ? this.tiles.base?.layer : null;
+    // Niveau du sol dessiné sous la caméra : celui de la cellule hexagonale la plus proche (les cellules sont posées au
+    // rayon de leur niveau), sinon le niveau d'images le plus fin affiché.
+    const parisLevel = parisLayer?.hex?.cells?.[0]?.level ?? parisLayer?.visibleZoom ?? 0;
+    // Met à jour Paris en 3D : pied des bâtiments posé sur le sol des tuiles (légèrement soulevé selon le niveau).
+    this.paris3d.update({ cam: this.cam, hidden: Boolean(this.earth.hidden), now, flat: !this.tiles.reliefOn, groundLiftM: parisLayer ? (tileRadius(parisLevel, parisLayer.gap) - 1) * EARTH_RADIUS_M : 0 });
     // Met à jour les noms des pays.
     this.countryLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
     // Moteur de chargement planétaire : pixels par unité de scène à une unité de distance.
@@ -3422,8 +3422,8 @@ export class SolarEngine {
       compass: this.compassState(),
       // les coordonnées des coins.
       gps: this.gpsState(),
-      // Nuage de points LiDAR à l'écran : avancement de son chargement (jauge), ou null.
-      lidarPoints: this.lidarPoints.progress,
+      // Paris en 3D : carreaux affichés, en cours de chargement, et bâtiments affichés.
+      paris3d: this.paris3d.status,
       // Verrouillage de la vue : astre le plus proche de l'astre focus.
       viewLock: this.viewLockState(),
     // Fin de la publication.
@@ -3563,8 +3563,8 @@ export class SolarEngine {
     this.stopped = true;
     // Libère les nuages LiDAR.
     this.lidar?.dispose();
-    // Libère les points LiDAR.
-    this.lidarPoints?.dispose();
+    // Libère Paris en 3D.
+    this.paris3d?.dispose();
     // Retire les repères créés.
     this.markerEls?.forEach((el) => el.remove());
     // Annule l'image demandée.

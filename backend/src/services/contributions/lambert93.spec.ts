@@ -4,7 +4,7 @@ import { gridNorthHeading, ignTileAt, inFranceLambert93, lambert93ToWgs84, wgs84
 // Groupe de tests.
 describe('lambert93', () => {
   /**
-   * Référence : la dalle `backend/data/lidar/paris-0652-6863` versionnée dans le dépôt. Son emprise Lambert-93 est
+   * Référence : la dalle LiDAR HD de l'IGN LHD_FXX_0652_6863 (Paris, anciennement versionnée dans le dépôt). Son emprise Lambert-93 est
    * 652 000–653 000 × 6 862 000–6 863 000 et son manifeste porte le calage lat 48,8607816 / lon 2,3525702, cap -0,4684.
    */
   // Centre de cette dalle.

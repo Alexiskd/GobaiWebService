@@ -4,7 +4,7 @@
  * coordonnées de son fichier LAS/LAZ, sans intervention de l'utilisateur.
  *
  * Formules : conique conforme de Lambert à deux parallèles (EPSG Guidance Note 7-2, § 1.3.1.1).
- * Vérification : le centre de la dalle `backend/data/lidar/paris-0652-6863` (652 500 ; 6 862 500) donne
+ * Vérification : le centre de la dalle LiDAR HD LHD_FXX_0652_6863 (Paris) (652 500 ; 6 862 500) donne
  * 48,860782 N / 2,352570 E, soit le calage inscrit dans son manifeste à 5 mm près.
  *
  * Les altitudes LiDAR HD sont NGF-IGN69 (au-dessus du géoïde) et non ellipsoïdales : l'écart en France est
