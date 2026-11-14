@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, expandLonLatBox, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -461,4 +461,33 @@ test('downscalePoints garde un point sur quatre et agrandit les points de 2', ()
   assert.deepEqual([...r.attr], [0, 200, 4, 196, 8, 192]);
   // Facteur 1 : tableaux inchangés.
   assert.equal(downscalePoints(position, attr, 1).position, position);
+});
+
+// Ordre des chargements : toutes les dalles au même niveau d'abord, puis la plus proche, puis le rang dans la file.
+test('densityOrder : la densité monte sur toutes les dalles en même temps', () => {
+  // Deux dalles (A proche, B lointaine), deux niveaux chacune.
+  const jobs = [
+    // Niveau 1 de A, premier de sa file.
+    { id: 'A1', level: 1, dist: 10, rank: 0 },
+    // Racine de B, lointaine.
+    { id: 'B0', level: 0, dist: 900, rank: 0 },
+    // Niveau 1 de B.
+    { id: 'B1', level: 1, dist: 900, rank: 1 },
+    // Racine de A, proche.
+    { id: 'A0', level: 0, dist: 10, rank: 0 },
+    // Second nœud de niveau 1 de A.
+    { id: 'A1b', level: 1, dist: 10, rank: 2 },
+  ];
+  // Les deux racines d'abord (A puis B), puis le niveau 1 de A, puis celui de B.
+  assert.deepEqual(jobs.sort(densityOrder).map((j) => j.id), ['A0', 'B0', 'A1', 'A1b', 'B1']);
+});
+
+// Emprise élargie d'une marge en mètres.
+test('expandLonLatBox : élargit l\'emprise de la marge de chaque côté', () => {
+  // Emprise d'un degré autour de l'équateur, élargie de 111 195 m (un degré).
+  const b = expandLonLatBox([0, 0, 1, 1], 111_195);
+  // Un degré de plus de chaque côté (à l'arrondi près).
+  [-1, -1, 2, 2].forEach((v, i) => assert.ok(Math.abs(b[i] - v) < 1e-3));
+  // Sans emprise : rien.
+  assert.equal(expandLonLatBox(null, 100), null);
 });

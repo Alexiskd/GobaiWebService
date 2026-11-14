@@ -476,6 +476,31 @@ export function boxShiftM(a, b) {
 export const shareBudget = (budget, weight, total, floor = 60_000) => (total > 0 ? Math.max(floor, Math.round(budget * weight / total)) : budget);
 
 /**
+ * Ordre des chargements, toutes dalles confondues : toutes les dalles se chargent en même temps et c'est la densité
+ * qui monte. D'abord le niveau le plus grossier de chaque dalle (toutes les racines), puis le niveau suivant de
+ * chacune, et ainsi de suite ; à niveau égal, la dalle la plus proche de la caméra passe d'abord, puis l'ordre
+ * d'utilité propre à la dalle (sa file d'attente).
+ */
+// Déclare et exporte densityOrder : compare deux chargements { level, dist, rank } (niveau, distance de la dalle, rang dans sa file).
+export const densityOrder = (a, b) => a.level - b.level || a.dist - b.dist || a.rank - b.rank;
+
+/** Emprise [ouest, sud, est, nord] (degrés) élargie de `marginM` mètres de chaque côté ; null reste null. */
+// Déclare et exporte expandLonLatBox : l'emprise et la marge en mètres.
+export function expandLonLatBox(box, marginM) {
+  // Pas d'emprise : rien à élargir.
+  if (!box) return box;
+  // Les quatre bords.
+  const [w, s, e, n] = box;
+  // Marge en latitude (degrés) : 111 195 m par degré.
+  const dLat = marginM / 111_195;
+  // Marge en longitude (degrés), plus large loin de l'équateur.
+  const dLon = dLat / Math.max(0.1, Math.cos(((s + n) / 2) * (Math.PI / 180)));
+  // Emprise élargie, bornée aux limites du globe.
+  return [Math.max(-180, w - dLon), Math.max(-90, s - dLat), Math.min(180, e + dLon), Math.min(90, n + dLat)];
+// Fin de expandLonLatBox.
+}
+
+/**
  * Hauteur de caméra (m) en deçà de laquelle le nuage de points LiDAR est dessiné : 750 m, soit 0,75 km au HUD.
  * C'est la même grandeur que la distance du zoom lue à l'écran — la hauteur au-dessus du sol — et non la distance à
  * la dalle : sous 0,75 km, le nuage apparaît, au-dessus il reste masqué.
