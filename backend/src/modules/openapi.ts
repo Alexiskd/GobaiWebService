@@ -21,7 +21,6 @@ const TAGS: [string, string][] = [
   ['Volcans', 'Volcans en éruption dans le monde, en direct.'],
   // La carte de la Terre.
   ['Tuiles', 'Modèle de tuiles simplifié : couches, URL, coordonnées, attribution.'],
-  ['LiDAR 3D', 'Dalles LiDAR servies en vrais points 3D, nœud par nœud.'],
   ['Nuages de points', 'Fichiers COPC/LAS servis en HTTP Range pour le rendu LiDAR côté navigateur.'],
   ['Frontières', 'Frontières des pays et littoraux.'],
   ['World Atlas', 'Pays en TopoJSON, source des frontières.'],
@@ -51,7 +50,7 @@ export function buildOpenApiDocument(app: INestApplication, serverUrl: string = 
     .setDescription(
       [
         'Données du système solaire en direct : astres, éphémérides, villes, **modèle de tuiles** de la Terre,',
-        'dalles LiDAR et contributions des visiteurs.',
+        'calques LiDAR HD et contributions des visiteurs.',
         '',
         `Site : ${SITE_URL}/ · API : ${SITE_URL}/api/v1 · documentation : ${SITE_URL}/api/docs`,
         '',

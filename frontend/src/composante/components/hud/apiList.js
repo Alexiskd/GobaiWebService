@@ -12,7 +12,7 @@ export const API_GROUPS = [
     // Les API du groupe (début de la liste).
     items: [
       // API « IGN Géoplateforme », appelée à l'adresse data.geopf.fr.
-      { name: 'IGN Géoplateforme', host: 'data.geopf.fr', use: 'Orthophotos de la France et calques LiDAR HD (ombrages des modèles de surface, de terrain et de hauteur)' },
+      { name: 'IGN Géoplateforme', host: 'data.geopf.fr', use: 'Orthophotos de la France, calques LiDAR HD (ombrages des modèles de surface, de terrain et de hauteur) et bâtiments de Paris en 3D (WFS, BD TOPO v3)' },
       // API « EOX Sentinel-2 cloudless », appelée à l'adresse tiles.maps.eox.at.
       { name: 'EOX Sentinel-2 cloudless', host: 'tiles.maps.eox.at', use: 'Imagerie satellite du monde' },
       // API « NASA GIBS », appelée à l'adresse gibs.earthdata.nasa.gov.

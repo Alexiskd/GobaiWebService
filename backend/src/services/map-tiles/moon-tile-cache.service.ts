@@ -9,7 +9,7 @@ import type { AppConfig } from '../../common/configuration';
 // Niveaux des couches de la Lune, nombres de colonnes et de lignes, et fournisseur NASA Trek de la Lune.
 import { MOON_LAYER_LEVELS, moonCols, moonRows, NasaTrekMoonProvider } from './providers/nasa-trek-moon.provider';
 // Cache en mémoire borné en octets.
-import { ByteCache } from '../lidar-tiles/lidar-tiles';
+import { ByteCache } from '../../common/byte-cache';
 // Ouvre l'import du module de reconstruction :
 import {
   // ses fonctions et ses constantes ;

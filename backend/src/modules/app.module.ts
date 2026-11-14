@@ -51,8 +51,6 @@ import { StoreModule } from './store.module';
 import { AssistantModule } from './assistant.module';
 // Module des nuages de points LiDAR servis en fichiers (COPC/LAS).
 import { PointCloudsModule } from './pointclouds.module';
-// Module des dalles LiDAR en vrais points 3D.
-import { LidarTilesModule } from './lidar-tiles.module';
 
 // Ouvre la déclaration du module racine.
 @Module({
@@ -106,15 +104,12 @@ import { LidarTilesModule } from './lidar-tiles.module';
     // Collection personnelle de la galerie (photos et vidéos), stockée dans PostgreSQL : /api/v1/galerie
     // Routes de la galerie.
     GalleryModule,
-    // Dalles LiDAR en vrais points 3D, stockées dans PostgreSQL : /api/v1/lidar
-    // Routes des dalles LiDAR en points 3D.
     // Boutique des exports payants.
     StoreModule,
     // Contributions de placement LiDAR.
     ContributionsModule,
     // Blocage des API externes.
     ApisModule,
-    LidarTilesModule,
   // Fin de la liste des modules importés.
   ],
   // Seul contrôleur déclaré directement par le module racine : la supervision.

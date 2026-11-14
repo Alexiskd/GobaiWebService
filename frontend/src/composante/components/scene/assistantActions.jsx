@@ -24,8 +24,8 @@ const SETTINGS = {
   noms_villes: 'Noms des villes', noms_pays: 'Noms des pays', frontieres_et_littoraux: 'Frontières et littoraux',
   // rues, routes, volcans en éruption et coordonnées GPS.
   rues: 'Rues et routes', routes: 'Routes', volcans: 'Volcans en éruption', coordonnees_gps: 'Coordonnées GPS',
-  // Cartographie en relief : relief 3D, calque LiDAR HD et points LiDAR 3D.
-  relief_3d: 'Relief 3D', lidar_hd: 'LiDAR HD (France)', points_lidar: 'Points LiDAR 3D',
+  // Cartographie en relief : relief 3D, calque LiDAR HD et Paris en 3D.
+  relief_3d: 'Relief 3D', lidar_hd: 'LiDAR HD (France)', paris_3d: 'Paris en 3D',
   // Appareil : noir pur, économie d'énergie et moniteur de performance.
   noir_pur: 'Noir pur', economie_energie: 'Économie d’énergie', moniteur_performance: 'Moniteur de performance',
 // Fin de l'objet.
@@ -35,13 +35,6 @@ const SETTINGS = {
 const LIDAR_MODELS = {
   // La surface, le sol nu et les hauteurs.
   surface: ['lidar-hd-mns', 'Surface'], sol_nu: ['lidar-hd-mnt', 'Sol nu'], hauteurs: ['lidar-hd-mnh', 'Hauteurs'],
-// Fin de l'objet.
-};
-/** Couleur des points LiDAR : identifiant de l'outil → valeur du réglage et nom affiché. */
-// Modes de couleur des points LiDAR (début de l'objet).
-const LIDAR_COLORS = {
-  // Les couleurs de la photo, et le type de chaque point.
-  photo: ['photo', 'Couleurs de la photo'], types: ['classes', 'Types de points'],
 // Fin de l'objet.
 };
 // Familles d'astres : identifiant → [type du moteur, nom affiché] (début de l'objet).
@@ -148,14 +141,6 @@ export function resolveAssistantAction(action, bodies = [], lists = {}) {
       const city = byName(lidarCities, input.ville);
       // Trouvée : commande lidarCity avec ses coordonnées et son libellé ; sinon null.
       return city ? { type: 'lidarCity', city, label: `LiDAR HD au-dessus de ${city.name}` } : null;
-    // Fin du cas.
-    }
-    // Choisir la couleur des points LiDAR 3D.
-    case 'choisir_couleur_points_lidar': {
-      // Le mode demandé, null s'il n'est pas autorisé.
-      const mode = own(LIDAR_COLORS, input.couleur) ? LIDAR_COLORS[input.couleur] : null;
-      // Trouvé : commande lidarColor avec la valeur du réglage et son libellé ; sinon null.
-      return mode ? { type: 'lidarColor', mode: mode[0], label: `Points LiDAR : ${mode[1]}` } : null;
     // Fin du cas.
     }
     // Aller à un lieu nommé de la Terre.
