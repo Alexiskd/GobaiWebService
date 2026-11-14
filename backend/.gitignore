@@ -1,0 +1,8 @@
+# Dépendances.
+node_modules
+# Code compilé.
+dist
+# Caches.
+cache
+# Nuages de points LiDAR.
+/pointclouds

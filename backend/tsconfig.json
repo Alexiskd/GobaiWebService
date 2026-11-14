@@ -1,0 +1,48 @@
+// Configuration de TypeScript pour le backend (début).
+{
+  // Options du compilateur (début).
+  "compilerOptions": {
+    // Modules CommonJS, ceux de Node.
+    "module": "commonjs",
+    // Code produit pour ES2022.
+    "target": "ES2022",
+    // Bibliothèques de types : ES2022 et celles du navigateur.
+    "lib": ["ES2022", "DOM"],
+    // Pas de fichiers de déclaration.
+    "declaration": false,
+    // Les commentaires sont retirés du code compilé.
+    "removeComments": true,
+    // Les décorateurs écrivent les types, pour l'injection de NestJS.
+    "emitDecoratorMetadata": true,
+    // Décorateurs activés.
+    "experimentalDecorators": true,
+    // Imports par défaut permis pour les modules qui n'en déclarent pas.
+    "allowSyntheticDefaultImports": true,
+    // Cartes de source produites.
+    "sourceMap": true,
+    // Dossier du code source.
+    "rootDir": "./src",
+    // Dossier du code compilé.
+    "outDir": "./dist",
+    // Alias de chemins (début).
+    "paths": {
+      // « @/ » désigne le dossier src.
+      "@/*": ["./src/*"]
+    // Fin des alias.
+    },
+    // Pas de compilation incrémentale.
+    "incremental": false,
+    // Les fichiers de types des dépendances ne sont pas contrôlés.
+    "skipLibCheck": true,
+    // Contrôles stricts.
+    "strict": true,
+    // Sauf l'obligation d'initialiser chaque propriété.
+    "strictPropertyInitialization": false
+  // Fin des options.
+  },
+  // Fichiers compilés : tout le dossier src.
+  "include": ["src/**/*"],
+  // Dossiers exclus : les dépendances et le code compilé.
+  "exclude": ["node_modules", "dist"]
+// Fin de la configuration.
+}

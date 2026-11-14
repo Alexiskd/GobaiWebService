@@ -1,0 +1,623 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Plan du site, au format des moteurs de recherche, avec les images (début). -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <!-- Page d'accueil (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 1,0. -->
+    <priority>1.0</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/logo.png</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /soleil (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/soleil</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /mercure (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/mercure</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /venus (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/venus</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /terre (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/terre</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /lune (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/lune</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /mars (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/mars</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /phobos (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/phobos</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /deimos (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/deimos</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /jupiter (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/jupiter</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /saturne (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/saturne</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /uranus (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/uranus</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /neptune (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/neptune</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /pluton (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/pluton</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /io (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/io</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /europe (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/europe</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /ganymede (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/ganymede</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /callisto (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/callisto</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /mimas (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/mimas</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /encelade (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/encelade</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /tethys (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/tethys</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /dione (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/dione</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /rhea (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/rhea</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /titan (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/titan</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /japet (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/japet</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /miranda (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/miranda</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /ariel (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/ariel</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /umbriel (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/umbriel</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /titania (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/titania</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /oberon (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/oberon</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /triton (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/triton</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /charon (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/charon</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque semaine. -->
+    <changefreq>weekly</changefreq>
+    <!-- Priorité : 0,8. -->
+    <priority>0.8</priority>
+    <!-- Image de la page (début). -->
+    <image:image>
+      <!-- Adresse de l'image. -->
+      <image:loc>https://www.gobaispace.com/og-image.jpg</image:loc>
+    <!-- Fin de l'image. -->
+    </image:image>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /galerie (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/galerie</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque mois. -->
+    <changefreq>monthly</changefreq>
+    <!-- Priorité : 0,7. -->
+    <priority>0.7</priority>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /node (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/node</loc>
+    <!-- Dernière modification : 11 novembre 2026. -->
+    <lastmod>2026-11-11</lastmod>
+    <!-- Mise à jour attendue : chaque mois. -->
+    <changefreq>monthly</changefreq>
+    <!-- Priorité : 0,4. -->
+    <priority>0.4</priority>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page /faire-un-don (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/faire-un-don</loc>
+    <!-- Dernière modification : 13 novembre 2026. -->
+    <lastmod>2026-11-13</lastmod>
+    <!-- Mise à jour attendue : chaque mois. -->
+    <changefreq>monthly</changefreq>
+    <!-- Priorité : 0,5. -->
+    <priority>0.5</priority>
+  <!-- Fin de la page. -->
+  </url>
+<!-- Fin du plan du site. -->
+</urlset>

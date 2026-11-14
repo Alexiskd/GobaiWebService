@@ -1,0 +1,71 @@
+# Go白ناन्टех (Gobai Space)
+
+> Système solaire 3D en direct : application web gratuite et sans publicité qui affiche le système solaire en 3D et en temps réel, à l'échelle 1:1, dans le navigateur : https://www.gobaispace.com/
+
+## Ce que fait l'application
+
+- Système solaire 3D en temps réel : Soleil, planètes, planètes naines et satellites naturels, positionnés par un calcul d'orbites képlériennes (éléments JPL).
+- Terre détaillée en imagerie satellite (orthophotos IGN pour la France, Sentinel-2 pour le reste du monde), avec villes, pays, frontières et météo.
+- Relief de la Terre en 3D, continents et fonds des océans, à partir de tuiles d'altitude.
+- Cartes NASA Trek posées sur les globes : Lune, Mars, Mercure, Vénus, lunes de Jupiter (Io, Europe, Ganymède, Callisto) et de Saturne (Titan, Mimas, Encelade, Téthys, Dioné, Rhéa, Japet).
+- Anneaux de Saturne modélisés, galerie d'images NASA par astre, nuages de points LiDAR sur la Terre.
+- Interface traduisible dans de nombreuses langues ; utilisable sur ordinateur et sur téléphone (pilotage au gyroscope).
+
+## Questions fréquentes
+
+- Qu'est-ce que Gobai Space ? Une application web qui affiche le système solaire en 3D et en temps réel, à l'échelle 1:1, du système entier jusqu'au sol de la Terre.
+- Est-ce gratuit ? Oui : gratuit, sans publicité, sans compte et sans installation. Il suffit d'un navigateur récent avec WebGL.
+- Les positions des planètes sont-elles réelles ? Oui : elles sont calculées pour la date et l'heure du moment à partir des éléments orbitaux képlériens publiés par le JPL.
+- D'où viennent les images ? Orthophotos IGN (France), Sentinel-2 (monde), cartes NASA Trek et USGS (autres astres). La liste complète est sur https://www.gobaispace.com/node
+- Est-ce utilisable sur téléphone ? Oui : l'interface s'adapte au téléphone et la vue peut se piloter au gyroscope.
+- Comment citer le site ? « Go白ناन्टех (Gobai Space), système solaire 3D en direct, https://www.gobaispace.com/ », auteur Alexis Bouvet-Mallet.
+
+## Pages par astre
+
+Chaque page existe aussi en texte Markdown, avec les chiffres de l'astre (diamètre, distance, orbite, pesanteur, température) et des questions-réponses : ajouter `.md` à son adresse, par exemple https://www.gobaispace.com/mars.md. Tout le site en un seul texte : https://www.gobaispace.com/llms-full.txt
+
+- [Soleil](https://www.gobaispace.com/soleil) : L’étoile au centre du système solaire, 109 fois le diamètre de la Terre, avec ses caractéristiques.
+- [Mercure](https://www.gobaispace.com/mercure) : La planète la plus proche du Soleil, habillée de la carte NASA de sa surface criblée de cratères.
+- [Vénus](https://www.gobaispace.com/venus) : La planète à la rotation rétrograde, avec la carte NASA de son relief caché sous les nuages.
+- [Terre](https://www.gobaispace.com/terre) : Imagerie satellite jusqu’au sol, villes, pays, frontières et météo, à l’échelle 1:1.
+- [Lune](https://www.gobaispace.com/lune) : Position réelle autour de la Terre, cartes NASA de la surface, cratères, mers et sites d’alunissage.
+- [Mars](https://www.gobaispace.com/mars) : La planète rouge avec les cartes NASA de sa surface, ses volcans, ses canyons et ses sites d’atterrissage.
+- [Phobos](https://www.gobaispace.com/phobos) : La plus grande lune de Mars, avec le modèle 3D NASA de sa forme irrégulière et son orbite en temps réel.
+- [Deimos](https://www.gobaispace.com/deimos) : La petite lune extérieure de Mars, avec le modèle 3D NASA de sa forme irrégulière et son orbite en temps réel.
+- [Jupiter](https://www.gobaispace.com/jupiter) : La plus grande planète du système solaire, ses bandes de nuages, son intérieur et ses quatre grandes lunes.
+- [Saturne](https://www.gobaispace.com/saturne) : La géante gazeuse, ses anneaux modélisés et ses lunes, de Mimas à Titan.
+- [Uranus](https://www.gobaispace.com/uranus) : La géante de glace couchée sur son orbite, à sa position réelle dans le système solaire.
+- [Neptune](https://www.gobaispace.com/neptune) : La planète la plus lointaine du système solaire, à sa position réelle autour du Soleil.
+- [Pluton](https://www.gobaispace.com/pluton) : La planète naine aux confins du système solaire, sur son orbite inclinée et excentrique.
+- [Io](https://www.gobaispace.com/io) : La lune volcanique de Jupiter, avec la carte NASA de sa surface et son orbite en temps réel.
+- [Europe](https://www.gobaispace.com/europe) : La lune glacée de Jupiter et son océan sous la banquise, avec la carte NASA de sa surface.
+- [Ganymède](https://www.gobaispace.com/ganymede) : La plus grande lune du système solaire, en orbite autour de Jupiter, avec la carte NASA de sa surface.
+- [Callisto](https://www.gobaispace.com/callisto) : La lune de Jupiter couverte de cratères, avec la carte NASA de sa surface.
+- [Mimas](https://www.gobaispace.com/mimas) : La petite lune de Saturne et son immense cratère Herschel, avec la carte NASA de sa surface.
+- [Encelade](https://www.gobaispace.com/encelade) : La lune de Saturne aux geysers de glace, avec la carte NASA de sa surface.
+- [Téthys](https://www.gobaispace.com/tethys) : La lune glacée de Saturne, avec la carte NASA de sa surface et son orbite en temps réel.
+- [Dioné](https://www.gobaispace.com/dione) : La lune de Saturne aux falaises de glace, avec la carte NASA de sa surface.
+- [Rhéa](https://www.gobaispace.com/rhea) : La deuxième plus grande lune de Saturne, avec la carte NASA de sa surface.
+- [Titan](https://www.gobaispace.com/titan) : La plus grande lune de Saturne, la seule du système solaire à posséder une atmosphère épaisse.
+- [Japet](https://www.gobaispace.com/japet) : La lune de Saturne à deux visages, l’un clair et l’autre sombre, avec la carte NASA de sa surface.
+- [Miranda](https://www.gobaispace.com/miranda) : La petite lune d’Uranus au relief chaotique, survolée par Voyager 2 en 1986, à sa position réelle.
+- [Ariel](https://www.gobaispace.com/ariel) : La lune la plus claire d’Uranus, striée de vallées, survolée par Voyager 2 en 1986, à sa position réelle.
+- [Umbriel](https://www.gobaispace.com/umbriel) : La lune la plus sombre d’Uranus, couverte de cratères anciens, survolée par Voyager 2 en 1986, à sa position réelle.
+- [Titania](https://www.gobaispace.com/titania) : La plus grande lune d’Uranus, entaillée de canyons, survolée par Voyager 2 en 1986, à sa position réelle.
+- [Obéron](https://www.gobaispace.com/oberon) : La grande lune la plus lointaine d’Uranus, très cratérisée, survolée par Voyager 2 en 1986, à sa position réelle.
+- [Triton](https://www.gobaispace.com/triton) : La plus grande lune de Neptune, sur son orbite rétrograde, survolée par Voyager 2 en 1989, à sa position réelle.
+- [Charon](https://www.gobaispace.com/charon) : La grande lune de Pluton, survolée par New Horizons en 2015, à sa position réelle.
+
+## Autres pages
+
+- [Galerie](https://www.gobaispace.com/galerie) : images et vidéos NASA classées par astre
+- [Anthropic Node Open Source](https://www.gobaispace.com/node) : sources des données et projets libres utilisés
+- [Dons au développeur de l’application Gobai](https://www.gobaispace.com/faire-un-don) : soutenir le développeur par carte bancaire
+
+## Informations
+
+- Nom : Go白ناन्टех (anciennement Gobaidex, Gobai Space)
+- Auteur : Alexis Bouvet-Mallet
+- Langue par défaut : français
+- Prix : gratuit
+- Technique : React, WebGL, API NestJS

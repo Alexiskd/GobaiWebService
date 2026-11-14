@@ -1,0 +1,40 @@
+# https://www.gobaispace.com/
+# Résumé du site pour les assistants IA : https://www.gobaispace.com/llms.txt
+# Site entier en texte : https://www.gobaispace.com/llms-full.txt · une page en texte : ajouter .md (https://www.gobaispace.com/mars.md)
+User-agent: *
+# Tout le site est autorisé,
+Allow: /
+# sauf l'API.
+Disallow: /api/
+
+# Assistants et moteurs de réponse IA : lecture et citation du site autorisées.
+User-agent: GPTBot
+# Robot de recherche d'OpenAI.
+User-agent: OAI-SearchBot
+# Navigation de ChatGPT pour un utilisateur.
+User-agent: ChatGPT-User
+# Robot de Claude.
+User-agent: ClaudeBot
+# Robot de recherche de Claude.
+User-agent: Claude-SearchBot
+# Navigation de Claude pour un utilisateur.
+User-agent: Claude-User
+# Robot de Perplexity.
+User-agent: PerplexityBot
+# Navigation de Perplexity pour un utilisateur.
+User-agent: Perplexity-User
+# Entraînement des modèles de Google.
+User-agent: Google-Extended
+# Entraînement des modèles d'Apple.
+User-agent: Applebot-Extended
+# Navigation de Mistral pour un utilisateur.
+User-agent: MistralAI-User
+# Robot de Common Crawl.
+User-agent: CCBot
+# Tout le site est autorisé,
+Allow: /
+# sauf l'API.
+Disallow: /api/
+
+# Adresse du plan du site.
+Sitemap: https://www.gobaispace.com/sitemap.xml

@@ -1,0 +1,705 @@
+/* Galerie (styles limités au conteneur .gobai-gallery pour ne pas toucher le reste de l’app). */
+/* Fond spatial profond, une couleur d'accent par planète (--planet). */
+/* Début de la règle pour « .gobai-gallery ». */
+.gobai-gallery {
+  /* Variable --void = #07080d. */
+  --void: #07080d;
+  /* Variable --panel = #10121b. */
+  --panel: #10121b;
+  /* Variable --line = #222636. */
+  --line: #222636;
+  /* Variable --ink = #e8e9f0. */
+  --ink: #e8e9f0;
+  /* Variable --muted = #8a8fa6. */
+  --muted: #8a8fa6;
+  /* Variable --display = 'Syne', 'Arial Black', sans-serif. */
+  --display: 'Syne', 'Arial Black', sans-serif;
+  /* Variable --body = 'IBM Plex Sans', system-ui, sans-serif. */
+  --body: 'IBM Plex Sans', system-ui, sans-serif;
+  /* Variable --mono = 'IBM Plex Mono', ui-monospace, monospace. */
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* Jeu de couleurs annoncé au navigateur : dark. */
+  color-scheme: dark;
+/* Fin de la règle. */
+}
+
+/* Pour « .gobai-gallery, .gobai-gallery * » : calcul de la taille de la boîte : border-box. */
+.gobai-gallery, .gobai-gallery * { box-sizing: border-box; }
+/* Début de la règle pour « .gobai-gallery ». */
+.gobai-gallery {
+  /* Marge extérieure : 0. */
+  margin: 0;
+  /* Fond : var(--void). */
+  background: var(--void);
+  /* Couleur du texte : var(--ink). */
+  color: var(--ink);
+  /* Police (raccourci : graisse, taille, interligne, famille) : 15px/1.5 var(--body). */
+  font: 15px/1.5 var(--body);
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery button, .gobai-gallery select » : police (raccourci : graisse, taille, interligne, famille) : inherit ; couleur du texte : inherit. */
+.gobai-gallery button, .gobai-gallery select { font: inherit; color: inherit; }
+/* Pour « .gobai-gallery button:focus-visible, .gobai-gallery select:focus-visible » : contour de focus : 2px solid var(--planet) ; écart du contour de focus : 2px. */
+.gobai-gallery button:focus-visible, .gobai-gallery select:focus-visible { outline: 2px solid var(--planet); outline-offset: 2px; }
+
+/* Début de la règle pour « .gobai-gallery .app ». */
+.gobai-gallery .app {
+  /* Largeur maximale : 1400px. */
+  max-width: 1400px;
+  /* Marge extérieure : 0 auto. */
+  margin: 0 auto;
+  /* Marge intérieure : 32px max(16px, 3vw) 64px. */
+  padding: 32px max(16px, 3vw) 64px;
+  /* Mode d'affichage : flex. */
+  display: flex;
+  /* Direction de la boîte flexible : column. */
+  flex-direction: column;
+  /* Espacement entre les éléments : 28px. */
+  gap: 28px;
+/* Fin de la règle. */
+}
+
+/* En-tête */
+/* Pour « .gobai-gallery .masthead » : mode d'affichage : flex ; direction de la boîte flexible : column ; espacement entre les éléments : 24px. */
+.gobai-gallery .masthead { display: flex; flex-direction: column; gap: 24px; }
+/* Début de la règle pour « .gobai-gallery .eyebrow ». */
+.gobai-gallery .eyebrow {
+  /* Police (raccourci : graisse, taille, interligne, famille) : 500 12px var(--mono). */
+  font: 500 12px var(--mono);
+  /* Espacement des lettres : .12em. */
+  letter-spacing: .12em;
+  /* Casse du texte : uppercase. */
+  text-transform: uppercase;
+  /* Couleur du texte : var(--muted). */
+  color: var(--muted);
+/* Fin de la règle. */
+}
+/* Début de la règle pour « .gobai-gallery h1 ». */
+.gobai-gallery h1 {
+  /* Marge extérieure : 6px 0 0. */
+  margin: 6px 0 0;
+  /* Police (raccourci : graisse, taille, interligne, famille) : 800 clamp(30px, 5vw, 56px)/1 var(--display). */
+  font: 800 clamp(30px, 5vw, 56px)/1 var(--display);
+  /* Espacement des lettres : -.02em. */
+  letter-spacing: -.02em;
+  /* Répartition du texte sur les lignes : balance. */
+  text-wrap: balance;
+/* Fin de la règle. */
+}
+
+/* Pour « .gobai-gallery .planets » : mode d'affichage : grid ; colonnes de la grille : repeat(auto-fit, minmax(170px, 1fr)) ; espacement entre les éléments : 10px. */
+.gobai-gallery .planets { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+/* Début de la règle pour « .gobai-gallery .planet ». */
+.gobai-gallery .planet {
+  /* Mode d'affichage : grid. */
+  display: grid;
+  /* Colonnes de la grille : auto 1fr. */
+  grid-template-columns: auto 1fr;
+  /* Lignes de la grille : auto auto. */
+  grid-template-rows: auto auto;
+  /* Espacement entre les colonnes : 12px. */
+  column-gap: 12px;
+  /* Alignement des éléments sur l'axe secondaire : center. */
+  align-items: center;
+  /* Marge intérieure : 14px 16px. */
+  padding: 14px 16px;
+  /* Fond : var(--panel). */
+  background: var(--panel);
+  /* Bordure : 1px solid var(--line). */
+  border: 1px solid var(--line);
+  /* Rayon des coins : 6px. */
+  border-radius: 6px;
+  /* Curseur de la souris : pointer. */
+  cursor: pointer;
+  /* Alignement du texte : left. */
+  text-align: left;
+  /* Transition : border-color .2s, background .2s. */
+  transition: border-color .2s, background .2s;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .planet:hover » : couleur de la bordure : color-mix(in srgb, var(--c) 50%, var(--line)). */
+.gobai-gallery .planet:hover { border-color: color-mix(in srgb, var(--c) 50%, var(--line)); }
+/* Pour « .gobai-gallery .planet.is-active » : couleur de la bordure : var(--c) ; fond : color-mix(in srgb, var(--c) 10%, var(--panel)). */
+.gobai-gallery .planet.is-active { border-color: var(--c); background: color-mix(in srgb, var(--c) 10%, var(--panel)); }
+/* Début de la règle pour « .gobai-gallery .orb ». */
+.gobai-gallery .orb {
+  /* Lignes occupées dans la grille : span 2. */
+  grid-row: span 2;
+  /* Largeur : 30px ; hauteur : 30px ; rayon des coins : 50%. */
+  width: 30px; height: 30px; border-radius: 50%;
+  /* Fond : radial-gradient(circle at 35% 30%, #fff8, var(--c) 45%, #000 110%). */
+  background: radial-gradient(circle at 35% 30%, #fff8, var(--c) 45%, #000 110%);
+  /* Ombre portée : 0 0 18px color-mix(in srgb, var(--c) 40%, transparent). */
+  box-shadow: 0 0 18px color-mix(in srgb, var(--c) 40%, transparent);
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .planet-name » : police (raccourci : graisse, taille, interligne, famille) : 600 17px var(--display). */
+.gobai-gallery .planet-name { font: 600 17px var(--display); }
+/* Pour « .gobai-gallery .planet-dist » : police (raccourci : graisse, taille, interligne, famille) : 12px var(--mono) ; couleur du texte : var(--muted). */
+.gobai-gallery .planet-dist { font: 12px var(--mono); color: var(--muted); }
+
+/* Barre d'outils */
+/* Début de la règle pour « .gobai-gallery .toolbar ». */
+.gobai-gallery .toolbar {
+  /* Mode d'affichage : flex. */
+  display: flex;
+  /* Retour à la ligne des éléments : wrap. */
+  flex-wrap: wrap;
+  /* Espacement entre les éléments : 12px 20px. */
+  gap: 12px 20px;
+  /* Répartition des éléments sur l'axe principal : space-between. */
+  justify-content: space-between;
+  /* Alignement des éléments sur l'axe secondaire : center. */
+  align-items: center;
+  /* Marges intérieures haute et basse : 14px. */
+  padding-block: 14px;
+  /* Bordures du haut et du bas : 1px solid var(--line). */
+  border-block: 1px solid var(--line);
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .missions » : mode d'affichage : flex ; retour à la ligne des éléments : wrap ; espacement entre les éléments : 8px ; largeur minimale : 0. */
+.gobai-gallery .missions { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+/* Début de la règle pour « .gobai-gallery .chip ». */
+.gobai-gallery .chip {
+  /* Mode d'affichage : inline-flex ; alignement des éléments sur l'axe secondaire : center ; espacement entre les éléments : 8px. */
+  display: inline-flex; align-items: center; gap: 8px;
+  /* Marge intérieure : 6px 12px. */
+  padding: 6px 12px;
+  /* Fond : transparent. */
+  background: transparent;
+  /* Bordure : 1px solid var(--line). */
+  border: 1px solid var(--line);
+  /* Rayon des coins : 999px. */
+  border-radius: 999px;
+  /* Curseur de la souris : pointer. */
+  cursor: pointer;
+  /* Taille du texte : 14px. */
+  font-size: 14px;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .chip:hover » : couleur de la bordure : var(--muted). */
+.gobai-gallery .chip:hover { border-color: var(--muted); }
+/* Pour « .gobai-gallery .chip.is-active » : fond : var(--planet) ; couleur de la bordure : var(--planet) ; couleur du texte : var(--void). */
+.gobai-gallery .chip.is-active { background: var(--planet); border-color: var(--planet); color: var(--void); }
+/* Pour « .gobai-gallery .chip-meta » : police (raccourci : graisse, taille, interligne, famille) : 11px var(--mono) ; opacité : .65. */
+.gobai-gallery .chip-meta { font: 11px var(--mono); opacity: .65; }
+/* Début de la règle pour « .gobai-gallery .chip-count ». */
+.gobai-gallery .chip-count {
+  /* Police (raccourci : graisse, taille, interligne, famille) : 500 11px var(--mono). */
+  font: 500 11px var(--mono);
+  /* Marge intérieure : 1px 6px ; rayon des coins : 999px. */
+  padding: 1px 6px; border-radius: 999px;
+  /* Fond : color-mix(in srgb, currentColor 15%, transparent). */
+  background: color-mix(in srgb, currentColor 15%, transparent);
+  /* Forme des chiffres : tabular-nums. */
+  font-variant-numeric: tabular-nums;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .sort » : mode d'affichage : flex ; alignement des éléments sur l'axe secondaire : center ; espacement entre les éléments : 8px ; police (raccourci : graisse, taille, interligne, famille) : 12px var(--mono) ; couleur du texte : var(--muted) ; casse du texte : uppercase ; espacement des lettres : .08em. */
+.gobai-gallery .sort { display: flex; align-items: center; gap: 8px; font: 12px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+/* Pour « .gobai-gallery .sort select » : fond : var(--panel) ; bordure : 1px solid var(--line) ; rayon des coins : 4px ; marge intérieure : 6px 8px ; casse du texte : none ; espacement des lettres : 0. */
+.gobai-gallery .sort select { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; text-transform: none; letter-spacing: 0; }
+
+/* Grille */
+/* Début de la règle pour « .gobai-gallery .grid ». */
+.gobai-gallery .grid {
+  /* Mode d'affichage : grid. */
+  display: grid;
+  /* Colonnes de la grille : repeat(auto-fill, minmax(220px, 1fr)). */
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  /* Espacement entre les éléments : 12px. */
+  gap: 12px;
+/* Fin de la règle. */
+}
+/* Début de la règle pour « .gobai-gallery .tile ». */
+.gobai-gallery .tile {
+  /* Positionnement : relative. */
+  position: relative;
+  /* Marge extérieure : 0. */
+  margin: 0;
+  /* Proportions (largeur / hauteur) : 1. */
+  aspect-ratio: 1;
+  /* Largeur maximale : 100%. */
+  max-width: 100%;
+  /* Débordement : hidden. */
+  overflow: hidden;
+  /* Rayon des coins : 4px. */
+  border-radius: 4px;
+  /* Fond : var(--panel). */
+  background: var(--panel);
+  /* Curseur de la souris : zoom-in. */
+  cursor: zoom-in;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .tile img » : largeur : 100% ; hauteur : 100% ; ajustement de l'image dans sa boîte : cover ; mode d'affichage : block ; transition : transform .5s. */
+.gobai-gallery .tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s; }
+/* Pour « .gobai-gallery .tile:hover img » : transformation : scale(1.05). */
+.gobai-gallery .tile:hover img { transform: scale(1.05); }
+/* Début de la règle pour « .gobai-gallery .tile figcaption ». */
+.gobai-gallery .tile figcaption {
+  /* Positionnement : absolute ; distance aux quatre bords : auto 0 0 0. */
+  position: absolute; inset: auto 0 0 0;
+  /* Mode d'affichage : flex ; direction de la boîte flexible : column ; espacement entre les éléments : 2px. */
+  display: flex; flex-direction: column; gap: 2px;
+  /* Marge intérieure : 36px 12px 10px. */
+  padding: 36px 12px 10px;
+  /* Fond : linear-gradient(transparent, #07080df2). */
+  background: linear-gradient(transparent, #07080df2);
+/* Fin de la règle. */
+}
+/* Début de la règle pour « .gobai-gallery .tile-mission ». */
+.gobai-gallery .tile-mission {
+  /* Police (raccourci : graisse, taille, interligne, famille) : 500 10px var(--mono). */
+  font: 500 10px var(--mono);
+  /* Casse du texte : uppercase ; espacement des lettres : .12em. */
+  text-transform: uppercase; letter-spacing: .12em;
+  /* Couleur du texte : var(--planet). */
+  color: var(--planet);
+/* Fin de la règle. */
+}
+/* Début de la règle pour « .gobai-gallery .tile-title ». */
+.gobai-gallery .tile-title {
+  /* Taille du texte : 13px ; interligne : 1.3. */
+  font-size: 13px; line-height: 1.3;
+  /* Mode d'affichage : -webkit-box ; nombre maximal de lignes affichées : 2 ; orientation de la boîte (nécessaire à la limite de lignes) : vertical ; débordement : hidden. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .tile-date » : police (raccourci : graisse, taille, interligne, famille) : 11px var(--mono) ; couleur du texte : var(--muted). */
+.gobai-gallery .tile-date { font: 11px var(--mono); color: var(--muted); }
+/* Pour « .gobai-gallery .skeleton » : curseur de la souris : default ; animation : pulse 1.4s ease-in-out infinite. */
+.gobai-gallery .skeleton { cursor: default; animation: pulse 1.4s ease-in-out infinite; }
+/* Animation « pulse » : à 50% : opacité : .45. */
+@keyframes pulse { 50% { opacity: .45; } }
+
+/* Pour « .gobai-gallery .notice, .gobai-gallery .empty » : couleur du texte : var(--muted) ; taille du texte : 14px ; marge extérieure : 0. */
+.gobai-gallery .notice, .gobai-gallery .empty { color: var(--muted); font-size: 14px; margin: 0; }
+/* Pour « .gobai-gallery .notice » : couleur du texte : #f0a070. */
+.gobai-gallery .notice { color: #f0a070; }
+
+/* Pour « .gobai-gallery .foot » : mode d'affichage : flex ; répartition des éléments sur l'axe principal : space-between ; alignement des éléments sur l'axe secondaire : center ; espacement entre les éléments : 12px ; retour à la ligne des éléments : wrap. */
+.gobai-gallery .foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+/* Pour « .gobai-gallery .count » : police (raccourci : graisse, taille, interligne, famille) : 12px var(--mono) ; couleur du texte : var(--muted) ; forme des chiffres : tabular-nums. */
+.gobai-gallery .count { font: 12px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Début de la règle pour « .gobai-gallery .more ». */
+.gobai-gallery .more {
+  /* Marge intérieure : 10px 22px. */
+  padding: 10px 22px;
+  /* Fond : transparent. */
+  background: transparent;
+  /* Bordure : 1px solid var(--planet). */
+  border: 1px solid var(--planet);
+  /* Couleur du texte : var(--planet). */
+  color: var(--planet);
+  /* Rayon des coins : 4px. */
+  border-radius: 4px;
+  /* Curseur de la souris : pointer. */
+  cursor: pointer;
+  /* Graisse du texte : 500. */
+  font-weight: 500;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .more:hover » : fond : var(--planet) ; couleur du texte : var(--void). */
+.gobai-gallery .more:hover { background: var(--planet); color: var(--void); }
+/* Pour « .gobai-gallery .more:disabled » : opacité : .5 ; curseur de la souris : wait. */
+.gobai-gallery .more:disabled { opacity: .5; cursor: wait; }
+
+/* Visionneuse */
+/* Début de la règle pour « .gobai-gallery .lightbox ». */
+.gobai-gallery .lightbox {
+  /* Positionnement : fixed ; distance aux quatre bords : 0 ; niveau d'empilement : 50. */
+  position: fixed; inset: 0; z-index: 50;
+  /* Fond : #000000e6. */
+  background: #000000e6;
+  /* Mode d'affichage : grid ; placement des éléments dans leur case : center. */
+  display: grid; place-items: center;
+  /* Marge intérieure : 24px. */
+  padding: 24px;
+/* Fin de la règle. */
+}
+/* Début de la règle pour « .gobai-gallery .lb-body ». */
+.gobai-gallery .lb-body {
+  /* Mode d'affichage : grid. */
+  display: grid;
+  /* Colonnes de la grille : minmax(0, 1fr) 340px. */
+  grid-template-columns: minmax(0, 1fr) 340px;
+  /* Largeur : min(1300px, 100%). */
+  width: min(1300px, 100%);
+  /* Hauteur maximale : 100%. */
+  max-height: 100%;
+  /* Fond : var(--panel). */
+  background: var(--panel);
+  /* Bordure : 1px solid var(--line). */
+  border: 1px solid var(--line);
+  /* Rayon des coins : 6px. */
+  border-radius: 6px;
+  /* Débordement : hidden. */
+  overflow: hidden;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .lb-stage » : positionnement : relative ; fond : #000 ; mode d'affichage : grid ; placement des éléments dans leur case : center ; hauteur minimale : 0. */
+.gobai-gallery .lb-stage { position: relative; background: #000; display: grid; place-items: center; min-height: 0; }
+/* Pour « .gobai-gallery .lb-stage img » : largeur maximale : 100% ; hauteur maximale : calc(100vh - 48px) ; ajustement de l'image dans sa boîte : contain ; mode d'affichage : block. */
+.gobai-gallery .lb-stage img { max-width: 100%; max-height: calc(100vh - 48px); object-fit: contain; display: block; }
+/* Début de la règle pour « .gobai-gallery .lb-nav ». */
+.gobai-gallery .lb-nav {
+  /* Positionnement : absolute ; distance au bord haut : 50% ; transformation : translateY(-50%). */
+  position: absolute; top: 50%; transform: translateY(-50%);
+  /* Largeur : 44px ; hauteur : 44px ; rayon des coins : 50%. */
+  width: 44px; height: 44px; border-radius: 50%;
+  /* Fond : #0009 ; bordure : 1px solid #fff3. */
+  background: #0009; border: 1px solid #fff3;
+  /* Taille du texte : 26px ; interligne : 1 ; curseur de la souris : pointer. */
+  font-size: 26px; line-height: 1; cursor: pointer;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .lb-nav.prev » : distance au bord gauche : 12px. */
+.gobai-gallery .lb-nav.prev { left: 12px; }
+/* Pour « .gobai-gallery .lb-nav.next » : distance au bord droit : 12px. */
+.gobai-gallery .lb-nav.next { right: 12px; }
+/* Pour « .gobai-gallery .lb-info » : marge intérieure : 20px ; débordement vertical : auto ; hauteur maximale : calc(100vh - 48px) ; mode d'affichage : flex ; direction de la boîte flexible : column ; espacement entre les éléments : 14px ; largeur minimale : 0. */
+.gobai-gallery .lb-info { padding: 20px; overflow-y: auto; max-height: calc(100vh - 48px); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+/* Pour « .gobai-gallery .lb-top » : mode d'affichage : flex ; répartition des éléments sur l'axe principal : space-between ; alignement des éléments sur l'axe secondaire : center. */
+.gobai-gallery .lb-top { display: flex; justify-content: space-between; align-items: center; }
+/* Pour « .gobai-gallery .lb-close » : fond : none ; bordure : 0 ; curseur de la souris : pointer ; taille du texte : 18px ; couleur du texte : var(--muted). */
+.gobai-gallery .lb-close { background: none; border: 0; cursor: pointer; font-size: 18px; color: var(--muted); }
+/* Pour « .gobai-gallery .lb-info h2 » : marge extérieure : 0 ; police (raccourci : graisse, taille, interligne, famille) : 600 20px/1.2 var(--display) ; répartition du texte sur les lignes : balance. */
+.gobai-gallery .lb-info h2 { margin: 0; font: 600 20px/1.2 var(--display); text-wrap: balance; }
+/* Pour « .gobai-gallery .lb-info dl » : marge extérieure : 0 ; mode d'affichage : grid ; espacement entre les éléments : 6px. */
+.gobai-gallery .lb-info dl { margin: 0; display: grid; gap: 6px; }
+/* Pour « .gobai-gallery .lb-info dl div » : mode d'affichage : flex ; répartition des éléments sur l'axe principal : space-between ; espacement entre les éléments : 12px ; bordure du bas : 1px solid var(--line) ; marge intérieure basse : 6px. */
+.gobai-gallery .lb-info dl div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+/* Pour « .gobai-gallery .lb-info dt » : police (raccourci : graisse, taille, interligne, famille) : 11px var(--mono) ; casse du texte : uppercase ; espacement des lettres : .1em ; couleur du texte : var(--muted). */
+.gobai-gallery .lb-info dt { font: 11px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+/* Pour « .gobai-gallery .lb-info dd » : marge extérieure : 0 ; police (raccourci : graisse, taille, interligne, famille) : 13px var(--mono) ; alignement du texte : right ; coupure des mots : break-all. */
+.gobai-gallery .lb-info dd { margin: 0; font: 13px var(--mono); text-align: right; word-break: break-all; }
+/* Pour « .gobai-gallery .lb-desc » : marge extérieure : 0 ; taille du texte : 14px ; couleur du texte : #c5c8d6 ; gestion des espaces et des retours à la ligne : pre-line. */
+.gobai-gallery .lb-desc { margin: 0; font-size: 14px; color: #c5c8d6; white-space: pre-line; }
+/* Pour « .gobai-gallery .lb-link » : couleur du texte : var(--planet) ; taille du texte : 14px ; décoration du texte : none. */
+.gobai-gallery .lb-link { color: var(--planet); font-size: 14px; text-decoration: none; }
+/* Pour « .gobai-gallery .lb-link:hover » : décoration du texte : underline. */
+.gobai-gallery .lb-link:hover { text-decoration: underline; }
+
+/* Règles appliquées quand la fenêtre fait 820 px de large au plus (début). */
+@media (max-width: 820px) {
+  /* Pour « .gobai-gallery .planets » : colonnes de la grille : repeat(2, 1fr). */
+  .gobai-gallery .planets { grid-template-columns: repeat(2, 1fr); }
+  /* Pour « .gobai-gallery .lightbox » : marge intérieure : 0. */
+  .gobai-gallery .lightbox { padding: 0; }
+  /* Pour « .gobai-gallery .lb-body » : colonnes de la grille : 1fr ; hauteur : 100% ; rayon des coins : 0 ; débordement vertical : auto. */
+  .gobai-gallery .lb-body { grid-template-columns: 1fr; height: 100%; border-radius: 0; overflow-y: auto; }
+  /* Pour « .gobai-gallery .lb-stage img, .gobai-gallery .lb-info » : hauteur maximale : none. */
+  .gobai-gallery .lb-stage img, .gobai-gallery .lb-info { max-height: none; }
+  /* Pour « .gobai-gallery .grid » : colonnes de la grille : repeat(auto-fill, minmax(150px, 1fr)). */
+  .gobai-gallery .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+/* Fin du bloc @media. */
+}
+
+/* Règles appliquées quand l'utilisateur a demandé moins d'animations (début). */
+@media (prefers-reduced-motion: reduce) {
+  /* Pour « .gobai-gallery, .gobai-gallery * » : transition : none !important ; animation : none !important. */
+  .gobai-gallery, .gobai-gallery * { transition: none !important; animation: none !important; }
+/* Fin du bloc @media. */
+}
+
+/* Sélecteur planète / satellites */
+/* Pour « .gobai-gallery .bodies » : mode d'affichage : flex ; retour à la ligne des éléments : wrap ; alignement des éléments sur l'axe secondaire : stretch ; espacement entre les éléments : 8px. */
+.gobai-gallery .bodies { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+/* Début de la règle pour « .gobai-gallery .body-tab ». */
+.gobai-gallery .body-tab {
+  /* Mode d'affichage : flex ; direction de la boîte flexible : column ; répartition des éléments sur l'axe principal : center ; espacement entre les éléments : 2px. */
+  display: flex; flex-direction: column; justify-content: center; gap: 2px;
+  /* Marge intérieure : 8px 14px. */
+  padding: 8px 14px;
+  /* Fond : var(--panel). */
+  background: var(--panel);
+  /* Bordure : 1px solid var(--line). */
+  border: 1px solid var(--line);
+  /* Rayon des coins : 4px. */
+  border-radius: 4px;
+  /* Curseur de la souris : pointer. */
+  cursor: pointer;
+  /* Alignement du texte : left. */
+  text-align: left;
+  /* Graisse du texte : 500. */
+  font-weight: 500;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .body-tab.moon » : graisse du texte : 400 ; couleur du texte : #c5c8d6. */
+.gobai-gallery .body-tab.moon { font-weight: 400; color: #c5c8d6; }
+/* Pour « .gobai-gallery .body-tab:hover » : couleur de la bordure : var(--muted). */
+.gobai-gallery .body-tab:hover { border-color: var(--muted); }
+/* Pour « .gobai-gallery .body-tab.is-active » : couleur de la bordure : var(--planet) ; couleur du texte : var(--ink) ; ombre portée : inset 0 -2px 0 var(--planet). */
+.gobai-gallery .body-tab.is-active { border-color: var(--planet); color: var(--ink); box-shadow: inset 0 -2px 0 var(--planet); }
+/* Pour « .gobai-gallery .body-kind » : police (raccourci : graisse, taille, interligne, famille) : 500 10px var(--mono) ; casse du texte : uppercase ; espacement des lettres : .12em ; couleur du texte : var(--muted). */
+.gobai-gallery .body-kind { font: 500 10px var(--mono); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+/* Pour « .gobai-gallery .body-sep » : largeur : 1px ; fond : var(--line) ; marges extérieures gauche et droite : 4px. */
+.gobai-gallery .body-sep { width: 1px; background: var(--line); margin-inline: 4px; }
+
+/* Rubrique « Lunes sphériques » */
+/* Pour « .gobai-gallery .spheres » : mode d'affichage : flex ; direction de la boîte flexible : column ; espacement entre les éléments : 24px. */
+.gobai-gallery .spheres { display: flex; flex-direction: column; gap: 24px; }
+/* Pour « .gobai-gallery .sph-hero » : mode d'affichage : flex ; retour à la ligne des éléments : wrap ; espacement entre les éléments : 20px 32px ; répartition des éléments sur l'axe principal : space-between ; alignement des éléments sur l'axe secondaire : flex-end. */
+.gobai-gallery .sph-hero { display: flex; flex-wrap: wrap; gap: 20px 32px; justify-content: space-between; align-items: flex-end; }
+/* Pour « .gobai-gallery .sph-title » : marge extérieure : 6px 0 8px ; police (raccourci : graisse, taille, interligne, famille) : 800 clamp(26px, 4vw, 44px)/1 var(--display) ; espacement des lettres : -.02em. */
+.gobai-gallery .sph-title { margin: 6px 0 8px; font: 800 clamp(26px, 4vw, 44px)/1 var(--display); letter-spacing: -.02em; }
+/* Pour « .gobai-gallery .sph-lede » : marge extérieure : 0 ; largeur maximale : 60ch ; couleur du texte : var(--muted). */
+.gobai-gallery .sph-lede { margin: 0; max-width: 60ch; color: var(--muted); }
+/* Début de la règle pour « .gobai-gallery .sph-live ». */
+.gobai-gallery .sph-live {
+  /* Mode d'affichage : grid ; colonnes de la grille : auto 1fr ; espacement entre les colonnes : 10px ; alignement des éléments sur l'axe secondaire : center. */
+  display: grid; grid-template-columns: auto 1fr; column-gap: 10px; align-items: center;
+  /* Marge intérieure : 14px 18px ; bordure : 1px solid var(--line) ; rayon des coins : 6px ; fond : var(--panel) ; largeur minimale : 0. */
+  padding: 14px 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); min-width: 0;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .sph-dot » : largeur : 8px ; hauteur : 8px ; rayon des coins : 50% ; fond : #ff5a4f ; animation : sph-pulse 1.6s ease-in-out infinite. */
+.gobai-gallery .sph-dot { width: 8px; height: 8px; border-radius: 50%; background: #ff5a4f; animation: sph-pulse 1.6s ease-in-out infinite; }
+/* Animation « sph-pulse » : à 50% : opacité : .25. */
+@keyframes sph-pulse { 50% { opacity: .25; } }
+/* Pour « .gobai-gallery .sph-live-label » : police (raccourci : graisse, taille, interligne, famille) : 500 11px var(--mono) ; espacement des lettres : .1em ; casse du texte : uppercase ; couleur du texte : var(--muted). */
+.gobai-gallery .sph-live-label { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+/* Pour « .gobai-gallery .sph-live-count » : colonnes occupées dans la grille : 1 / -1 ; police (raccourci : graisse, taille, interligne, famille) : 800 clamp(30px, 5vw, 48px)/1.1 var(--display) ; forme des chiffres : tabular-nums ; couleur du texte : var(--planet). */
+.gobai-gallery .sph-live-count { grid-column: 1 / -1; font: 800 clamp(30px, 5vw, 48px)/1.1 var(--display); font-variant-numeric: tabular-nums; color: var(--planet); }
+/* Pour « .gobai-gallery .sph-live-meta » : colonnes occupées dans la grille : 1 / -1 ; police (raccourci : graisse, taille, interligne, famille) : 12px var(--mono) ; couleur du texte : var(--muted). */
+.gobai-gallery .sph-live-meta { grid-column: 1 / -1; font: 12px var(--mono); color: var(--muted); }
+/* Pour « .gobai-gallery .sph-facts » : mode d'affichage : grid ; colonnes de la grille : repeat(4, 1fr) ; espacement entre les éléments : 10px ; marge extérieure : 0. */
+.gobai-gallery .sph-facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0; }
+/* Pour « .gobai-gallery .sph-facts div » : marge intérieure : 10px 14px ; bordure de gauche : 2px solid var(--line). */
+.gobai-gallery .sph-facts div { padding: 10px 14px; border-left: 2px solid var(--line); }
+/* Pour « .gobai-gallery .sph-facts dt » : police (raccourci : graisse, taille, interligne, famille) : 11px var(--mono) ; casse du texte : uppercase ; espacement des lettres : .08em ; couleur du texte : var(--muted). */
+.gobai-gallery .sph-facts dt { font: 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+/* Pour « .gobai-gallery .sph-facts dd » : marge extérieure : 2px 0 0 ; police (raccourci : graisse, taille, interligne, famille) : 600 16px var(--display). */
+.gobai-gallery .sph-facts dd { margin: 2px 0 0; font: 600 16px var(--display); }
+/* Pour « .gobai-gallery .sph-grid » : mode d'affichage : grid ; colonnes de la grille : repeat(auto-fill, minmax(260px, 1fr)) ; espacement entre les éléments : 12px. */
+.gobai-gallery .sph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+/* Pour « .gobai-gallery .sph-card » : mode d'affichage : flex ; direction de la boîte flexible : column ; fond : var(--panel) ; bordure : 1px solid var(--line) ; rayon des coins : 6px ; débordement : hidden. */
+.gobai-gallery .sph-card { display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+/* Pour « .gobai-gallery .sph-card:hover » : couleur de la bordure : color-mix(in srgb, var(--moon) 60%, var(--line)). */
+.gobai-gallery .sph-card:hover { border-color: color-mix(in srgb, var(--moon) 60%, var(--line)); }
+/* Pour « .gobai-gallery .sph-thumb » : mode d'affichage : grid ; placement des éléments dans leur case : center ; proportions (largeur / hauteur) : 16 / 9 ; largeur maximale : 100% ; fond : #000 ; débordement : hidden. */
+.gobai-gallery .sph-thumb { display: grid; place-items: center; aspect-ratio: 16 / 9; max-width: 100%; background: #000; overflow: hidden; }
+/* Pour « .gobai-gallery .sph-thumb img » : largeur : 100% ; hauteur : 100% ; ajustement de l'image dans sa boîte : cover. */
+.gobai-gallery .sph-thumb img { width: 100%; height: 100%; object-fit: cover; }
+/* Pour « .gobai-gallery .sph-orb » : largeur : 56px ; hauteur : 56px ; rayon des coins : 50% ; fond : radial-gradient(circle at 35% 30%, #fff8, var(--moon) 45%, #000 110%). */
+.gobai-gallery .sph-orb { width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8, var(--moon) 45%, #000 110%); }
+/* Pour « .gobai-gallery .sph-body » : marge intérieure : 12px 14px 14px ; mode d'affichage : flex ; direction de la boîte flexible : column ; espacement entre les éléments : 8px. */
+.gobai-gallery .sph-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; }
+/* Pour « .gobai-gallery .sph-head » : mode d'affichage : flex ; répartition des éléments sur l'axe principal : space-between ; alignement des éléments sur l'axe secondaire : baseline ; espacement entre les éléments : 8px. */
+.gobai-gallery .sph-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+/* Pour « .gobai-gallery .sph-head h3 » : marge extérieure : 0 ; police (raccourci : graisse, taille, interligne, famille) : 700 19px var(--display). */
+.gobai-gallery .sph-head h3 { margin: 0; font: 700 19px var(--display); }
+/* Pour « .gobai-gallery .sph-planet » : police (raccourci : graisse, taille, interligne, famille) : 12px var(--mono) ; couleur du texte : var(--muted). */
+.gobai-gallery .sph-planet { font: 12px var(--mono); color: var(--muted); }
+/* Pour « .gobai-gallery .sph-data » : marge extérieure : 0 ; mode d'affichage : grid ; espacement entre les éléments : 3px. */
+.gobai-gallery .sph-data { margin: 0; display: grid; gap: 3px; }
+/* Pour « .gobai-gallery .sph-data div » : mode d'affichage : flex ; répartition des éléments sur l'axe principal : space-between ; espacement entre les éléments : 10px ; taille du texte : 13px. */
+.gobai-gallery .sph-data div { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+/* Pour « .gobai-gallery .sph-data dt » : couleur du texte : var(--muted). */
+.gobai-gallery .sph-data dt { color: var(--muted); }
+/* Pour « .gobai-gallery .sph-data dd » : marge extérieure : 0 ; famille de police : var(--mono) ; taille du texte : 12px ; forme des chiffres : tabular-nums ; alignement du texte : right. */
+.gobai-gallery .sph-data dd { margin: 0; font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+/* Pour « .gobai-gallery .sph-count » : marge extérieure : 4px 0 0 ; marge intérieure haute : 8px ; bordure du haut : 1px solid var(--line) ; police (raccourci : graisse, taille, interligne, famille) : 500 13px var(--mono) ; couleur du texte : var(--moon) ; forme des chiffres : tabular-nums. */
+.gobai-gallery .sph-count { margin: 4px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font: 500 13px var(--mono); color: var(--moon); font-variant-numeric: tabular-nums; }
+/* Pour « .gobai-gallery .sph-notes » : mode d'affichage : flex ; direction de la boîte flexible : column ; espacement entre les éléments : 6px ; taille du texte : 13px ; couleur du texte : var(--muted) ; largeur maximale : 90ch. */
+.gobai-gallery .sph-notes { display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: var(--muted); max-width: 90ch; }
+/* Pour « .gobai-gallery .sph-notes p » : marge extérieure : 0. */
+.gobai-gallery .sph-notes p { margin: 0; }
+/* Pour « .gobai-gallery .sph-notes a » : couleur du texte : var(--planet). */
+.gobai-gallery .sph-notes a { color: var(--planet); }
+/* Règles appliquées quand la fenêtre fait 820 px de large au plus (début). */
+@media (max-width: 820px) {
+  /* Pour « .gobai-gallery .sph-facts » : colonnes de la grille : repeat(2, 1fr). */
+  .gobai-gallery .sph-facts { grid-template-columns: repeat(2, 1fr); }
+/* Fin du bloc @media. */
+}
+/* Règles appliquées quand l'utilisateur a demandé moins d'animations (début). */
+@media (prefers-reduced-motion: reduce) {
+  /* Pour « .gobai-gallery .sph-dot » : animation : none. */
+  .gobai-gallery .sph-dot { animation: none; }
+/* Fin du bloc @media. */
+}
+
+/* Téléchargement : bouton sur chaque vignette (au survol) et dans la visionneuse. */
+/* Pour « .gobai-gallery .tile » : positionnement : relative. */
+.gobai-gallery .tile { position: relative; }
+/* Début de la règle pour « .gobai-gallery .tile-dl ». */
+.gobai-gallery .tile-dl {
+  /* Positionnement : absolute ; distance au bord haut : 8px ; distance au bord droit : 8px ; niveau d'empilement : 2. */
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  /* Largeur : 32px ; hauteur : 32px ; rayon des coins : 50% ; bordure : 1px solid rgba(255,255,255,.35). */
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,.35);
+  /* Fond : rgba(0,0,0,.55) ; couleur du texte : #fff ; taille du texte : 16px ; interligne : 1 ; curseur de la souris : pointer. */
+  background: rgba(0,0,0,.55); color: #fff; font-size: 16px; line-height: 1; cursor: pointer;
+  /* Opacité : 0 ; transition : opacity .2s. */
+  opacity: 0; transition: opacity .2s;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .tile:hover .tile-dl, .gobai-gallery .tile-dl:focus-visible » : opacité : 1. */
+.gobai-gallery .tile:hover .tile-dl, .gobai-gallery .tile-dl:focus-visible { opacity: 1; }
+/* Sur les écrans sans survol (tactiles) : pour « .gobai-gallery .tile-dl » : opacité : 1. */
+@media (hover: none) { .gobai-gallery .tile-dl { opacity: 1; } }
+/* Pour « .gobai-gallery .tile-dl:disabled » : curseur de la souris : progress. */
+.gobai-gallery .tile-dl:disabled { cursor: progress; }
+/* Pour « .gobai-gallery .lb-actions » : mode d'affichage : flex ; retour à la ligne des éléments : wrap ; alignement des éléments sur l'axe secondaire : center ; espacement entre les éléments : 12px. */
+.gobai-gallery .lb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+/* Début de la règle pour « .gobai-gallery .lb-dl ». */
+.gobai-gallery .lb-dl {
+  /* Marge intérieure : 8px 14px ; rayon des coins : 999px ; bordure : 1px solid var(--planet, #7fb3ff). */
+  padding: 8px 14px; border-radius: 999px; border: 1px solid var(--planet, #7fb3ff);
+  /* Fond : transparent ; couleur du texte : var(--planet, #7fb3ff) ; taille du texte : 14px ; curseur de la souris : pointer. */
+  background: transparent; color: var(--planet, #7fb3ff); font-size: 14px; cursor: pointer;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .lb-dl:hover » : fond : rgba(127,179,255,.12). */
+.gobai-gallery .lb-dl:hover { background: rgba(127,179,255,.12); }
+/* Pour « .gobai-gallery .lb-dl:disabled » : opacité : .6 ; curseur de la souris : progress. */
+.gobai-gallery .lb-dl:disabled { opacity: .6; cursor: progress; }
+
+/* Téléchargement de toute la galerie en .zip */
+/* Pour « .gobai-gallery .zip » : mode d'affichage : inline-flex ; alignement des éléments sur l'axe secondaire : center ; espacement entre les éléments : 10px ; retour à la ligne des éléments : wrap. */
+.gobai-gallery .zip { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* Pour « .gobai-gallery .zip-msg » : police (raccourci : graisse, taille, interligne, famille) : 12px var(--mono, monospace) ; couleur du texte : var(--muted, #8a93a6). */
+.gobai-gallery .zip-msg { font: 12px var(--mono, monospace); color: var(--muted, #8a93a6); }
+
+/* Bouton .zip de chaque planète, en haut à droite de sa carte */
+/* Pour « .gobai-gallery .planet-wrap » : positionnement : relative ; mode d'affichage : block. */
+.gobai-gallery .planet-wrap { position: relative; display: block; }
+/* Pour « .gobai-gallery .planet-wrap .planet » : largeur : 100%. */
+.gobai-gallery .planet-wrap .planet { width: 100%; }
+/* Début de la règle pour « .gobai-gallery .planet-zip ». */
+.gobai-gallery .planet-zip {
+  /* Positionnement : absolute ; distance au bord haut : 6px ; distance au bord droit : 6px ; niveau d'empilement : 1. */
+  position: absolute; top: 6px; right: 6px; z-index: 1;
+  /* Marge intérieure : 3px 8px ; rayon des coins : 999px ; bordure : 1px solid var(--line, rgba(255,255,255,.2)). */
+  padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line, rgba(255,255,255,.2));
+  /* Fond : rgba(0,0,0,.45) ; couleur du texte : var(--muted, #b8c0cf) ; police (raccourci : graisse, taille, interligne, famille) : 11px var(--mono, monospace) ; curseur de la souris : pointer. */
+  background: rgba(0,0,0,.45); color: var(--muted, #b8c0cf); font: 11px var(--mono, monospace); cursor: pointer;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .planet-zip:hover » : couleur du texte : #fff ; couleur de la bordure : rgba(255,255,255,.5). */
+.gobai-gallery .planet-zip:hover { color: #fff; border-color: rgba(255,255,255,.5); }
+/* Pour « .gobai-gallery .planet-zip.is-busy » : couleur du texte : #fff ; curseur de la souris : progress. */
+.gobai-gallery .planet-zip.is-busy { color: #fff; cursor: progress; }
+
+/* Catégories d'astres : planètes, planètes géantes, planètes naines, satellites */
+/* Pour « .gobai-gallery .cat-wrap » : largeur maximale : 1400px ; marge extérieure : 0 auto ; marge intérieure : 28px max(16px, 3vw) 0 ; mode d'affichage : flex ; direction de la boîte flexible : column ; espacement entre les éléments : 18px. */
+.gobai-gallery .cat-wrap { max-width: 1400px; margin: 0 auto; padding: 28px max(16px, 3vw) 0; display: flex; flex-direction: column; gap: 18px; }
+/* Pour « .gobai-gallery .cats » : mode d'affichage : grid ; colonnes de la grille : repeat(4, minmax(0, 1fr)) ; espacement entre les éléments : 12px. */
+.gobai-gallery .cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+/* Début de la règle pour « .gobai-gallery .cat ». */
+.gobai-gallery .cat {
+  /* Positionnement : relative ; débordement : hidden. */
+  position: relative; overflow: hidden;
+  /* Mode d'affichage : flex ; direction de la boîte flexible : column ; alignement des éléments sur l'axe secondaire : flex-start ; espacement entre les éléments : 4px. */
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  /* Marge intérieure : 18px 18px 16px ; hauteur minimale : 168px. */
+  padding: 18px 18px 16px; min-height: 168px;
+  /* Fond : linear-gradient(160deg, color-mix(in srgb, var(--c) 9%, var(--panel)), var(--panel) 62%). */
+  background: linear-gradient(160deg, color-mix(in srgb, var(--c) 9%, var(--panel)), var(--panel) 62%);
+  /* Bordure : 1px solid var(--line) ; rayon des coins : 14px. */
+  border: 1px solid var(--line); border-radius: 14px;
+  /* Curseur de la souris : pointer ; alignement du texte : left. */
+  cursor: pointer; text-align: left;
+  /* Transition : border-color .25s, transform .25s, box-shadow .25s. */
+  transition: border-color .25s, transform .25s, box-shadow .25s;
+/* Fin de la règle. */
+}
+/* Début de la règle pour « .gobai-gallery .cat::after ». */
+.gobai-gallery .cat::after {
+  /* Contenu généré : '' ; positionnement : absolute ; distance aux quatre bords : auto -30% -70% auto ; largeur : 80% ; proportions (largeur / hauteur) : 1 ; rayon des coins : 50%. */
+  content: ''; position: absolute; inset: auto -30% -70% auto; width: 80%; aspect-ratio: 1; border-radius: 50%;
+  /* Fond : radial-gradient(circle, color-mix(in srgb, var(--c) 28%, transparent), transparent 65%). */
+  background: radial-gradient(circle, color-mix(in srgb, var(--c) 28%, transparent), transparent 65%);
+  /* Opacité : .5 ; réaction aux clics : none ; transition : opacity .25s. */
+  opacity: .5; pointer-events: none; transition: opacity .25s;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .cat:hover » : couleur de la bordure : color-mix(in srgb, var(--c) 55%, var(--line)) ; transformation : translateY(-2px). */
+.gobai-gallery .cat:hover { border-color: color-mix(in srgb, var(--c) 55%, var(--line)); transform: translateY(-2px); }
+/* Début de la règle pour « .gobai-gallery .cat.is-active ». */
+.gobai-gallery .cat.is-active {
+  /* Couleur de la bordure : var(--c). */
+  border-color: var(--c);
+  /* Ombre portée : 0 0 0 1px var(--c), 0 14px 40px -18px var(--c). */
+  box-shadow: 0 0 0 1px var(--c), 0 14px 40px -18px var(--c);
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .cat.is-active::after » : opacité : 1. */
+.gobai-gallery .cat.is-active::after { opacity: 1; }
+/* Pour « .gobai-gallery .cat:focus-visible » : contour de focus : 2px solid var(--c) ; écart du contour de focus : 2px. */
+.gobai-gallery .cat:focus-visible { outline: 2px solid var(--c); outline-offset: 2px; }
+/* Pour « .gobai-gallery .cat-orbs » : mode d'affichage : flex ; alignement des éléments sur l'axe secondaire : center ; hauteur : 46px ; marge extérieure basse : 10px. */
+.gobai-gallery .cat-orbs { display: flex; align-items: center; height: 46px; margin-bottom: 10px; }
+/* Début de la règle pour « .gobai-gallery .cat-orbs i ». */
+.gobai-gallery .cat-orbs i {
+  /* Mode d'affichage : block ; largeur : 26px ; hauteur : 26px ; rayon des coins : 50% ; marge extérieure droite : -6px. */
+  display: block; width: 26px; height: 26px; border-radius: 50%; margin-right: -6px;
+  /* Fond : radial-gradient(circle at 35% 30%, #fff9, var(--o) 45%, #000 115%). */
+  background: radial-gradient(circle at 35% 30%, #fff9, var(--o) 45%, #000 115%);
+  /* Ombre portée : 0 0 14px color-mix(in srgb, var(--o) 35%, transparent), 0 0 0 2px var(--panel). */
+  box-shadow: 0 0 14px color-mix(in srgb, var(--o) 35%, transparent), 0 0 0 2px var(--panel);
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .cat-orbs-geantes i » : largeur : 44px ; hauteur : 44px ; marge extérieure droite : -12px. */
+.gobai-gallery .cat-orbs-geantes i { width: 44px; height: 44px; margin-right: -12px; }
+/* Pour « .gobai-gallery .cat-orbs-geantes i:nth-child(n+3) » : largeur : 32px ; hauteur : 32px. */
+.gobai-gallery .cat-orbs-geantes i:nth-child(n+3) { width: 32px; height: 32px; }
+/* Pour « .gobai-gallery .cat-orbs-naines i » : largeur : 18px ; hauteur : 18px ; marge extérieure droite : 6px ; ombre portée : 0 0 10px color-mix(in srgb, var(--o) 35%, transparent). */
+.gobai-gallery .cat-orbs-naines i { width: 18px; height: 18px; margin-right: 6px; box-shadow: 0 0 10px color-mix(in srgb, var(--o) 35%, transparent); }
+/* Pour « .gobai-gallery .cat-orbs-satellites i » : largeur : 14px ; hauteur : 14px ; marge extérieure droite : 8px ; ombre portée : 0 0 8px color-mix(in srgb, var(--o) 45%, transparent). */
+.gobai-gallery .cat-orbs-satellites i { width: 14px; height: 14px; margin-right: 8px; box-shadow: 0 0 8px color-mix(in srgb, var(--o) 45%, transparent); }
+/* Pour « .gobai-gallery .cat-orbs-satellites i:nth-child(odd) » : transformation : translateY(-9px). */
+.gobai-gallery .cat-orbs-satellites i:nth-child(odd) { transform: translateY(-9px); }
+/* Pour « .gobai-gallery .cat-orbs-satellites i:nth-child(even) » : transformation : translateY(9px). */
+.gobai-gallery .cat-orbs-satellites i:nth-child(even) { transform: translateY(9px); }
+/* Pour « .gobai-gallery .cat-name » : police (raccourci : graisse, taille, interligne, famille) : 800 clamp(18px, 1.9vw, 24px)/1.1 var(--display) ; espacement des lettres : -.01em. */
+.gobai-gallery .cat-name { font: 800 clamp(18px, 1.9vw, 24px)/1.1 var(--display); letter-spacing: -.01em; }
+/* Pour « .gobai-gallery .cat.is-active .cat-name » : couleur du texte : var(--c). */
+.gobai-gallery .cat.is-active .cat-name { color: var(--c); }
+/* Pour « .gobai-gallery .cat-sub » : taille du texte : 13px ; couleur du texte : #c5c8d6. */
+.gobai-gallery .cat-sub { font-size: 13px; color: #c5c8d6; }
+/* Pour « .gobai-gallery .cat-meta » : marge extérieure haute : auto ; marge intérieure haute : 10px ; police (raccourci : graisse, taille, interligne, famille) : 11px var(--mono) ; espacement des lettres : .06em ; casse du texte : uppercase ; couleur du texte : var(--muted). */
+.gobai-gallery .cat-meta { margin-top: auto; padding-top: 10px; font: 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+/* Quand la fenêtre fait 980 px de large au plus : pour « .gobai-gallery .cats » : colonnes de la grille : repeat(2, minmax(0, 1fr)) ; pour « .gobai-gallery .cat » : hauteur minimale : 0. */
+@media (max-width: 980px) { .gobai-gallery .cats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .gobai-gallery .cat { min-height: 0; } }
+/* Quand la fenêtre fait 460 px de large au plus : pour « .gobai-gallery .cats » : colonnes de la grille : 1fr. */
+@media (max-width: 460px) { .gobai-gallery .cats { grid-template-columns: 1fr; } }
+
+/* Vues de la galerie : archives NASA / ma collection */
+/* Pour « .gobai-gallery .views » : mode d'affichage : flex ; espacement entre les éléments : 8px ; retour à la ligne des éléments : wrap. */
+.gobai-gallery .views { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Début de la règle pour « .gobai-gallery .view-tab ». */
+.gobai-gallery .view-tab {
+  /* Marge intérieure : 8px 16px ; rayon des coins : 999px ; bordure : 1px solid var(--line). */
+  padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+  /* Fond : transparent ; curseur de la souris : pointer ; police (raccourci : graisse, taille, interligne, famille) : 500 13px var(--mono) ; espacement des lettres : .06em ; casse du texte : uppercase. */
+  background: transparent; cursor: pointer; font: 500 13px var(--mono); letter-spacing: .06em; text-transform: uppercase;
+  /* Couleur du texte : var(--muted). */
+  color: var(--muted);
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .view-tab:hover » : couleur de la bordure : var(--muted) ; couleur du texte : var(--ink). */
+.gobai-gallery .view-tab:hover { border-color: var(--muted); color: var(--ink); }
+/* Pour « .gobai-gallery .view-tab.is-active » : fond : var(--ink) ; couleur de la bordure : var(--ink) ; couleur du texte : var(--void). */
+.gobai-gallery .view-tab.is-active { background: var(--ink); border-color: var(--ink); color: var(--void); }
+
+/* Ma collection : vidéos et lien de téléchargement */
+/* Pour « .gobai-gallery a.tile-dl » : mode d'affichage : grid ; placement des éléments dans leur case : center ; décoration du texte : none. */
+.gobai-gallery a.tile-dl { display: grid; place-items: center; text-decoration: none; }
+/* Pour « .gobai-gallery a.lb-dl » : décoration du texte : none. */
+.gobai-gallery a.lb-dl { text-decoration: none; }
+/* Début de la règle pour « .gobai-gallery .tile-play ». */
+.gobai-gallery .tile-play {
+  /* Positionnement : absolute ; distance au bord haut : 50% ; distance au bord gauche : 50% ; transformation : translate(-50%, -50%). */
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  /* Largeur : 52px ; hauteur : 52px ; rayon des coins : 50% ; mode d'affichage : grid ; placement des éléments dans leur case : center. */
+  width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+  /* Fond : rgba(0,0,0,.6) ; bordure : 1px solid rgba(255,255,255,.5) ; couleur du texte : #fff ; taille du texte : 18px ; marge intérieure gauche : 3px. */
+  background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.5); color: #fff; font-size: 18px; padding-left: 3px;
+  /* Réaction aux clics : none. */
+  pointer-events: none;
+/* Fin de la règle. */
+}
+/* Pour « .gobai-gallery .lb-stage video » : largeur maximale : 100% ; hauteur maximale : calc(100vh - 48px) ; mode d'affichage : block ; fond : #000. */
+.gobai-gallery .lb-stage video { max-width: 100%; max-height: calc(100vh - 48px); display: block; background: #000; }
