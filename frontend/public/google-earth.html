@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!-- Globe Google : page autonome affichée dans un iframe par l'app (voir GoogleEarthWindow.jsx). -->
+<!-- Google refuse d'être affiché dans un iframe d'un autre site (en-tête X-Frame-Options), le site Google Earth compris : -->
+<!-- cette page, servie par l'app elle-même, charge à la place le globe 3D photoréaliste officiel de Google -->
+<!-- (3D Maps de l'API Maps JavaScript, élément <gmp-map-3d>). La clé et la position de départ arrivent de la page -->
+<!-- parente par postMessage ; la page renvoie la position de la caméra pour que l'app la reprenne à la fermeture. -->
+<html lang="fr">
+<head>
+  <!-- Encodage. -->
+  <meta charset="utf-8">
+  <!-- Largeur de l'écran, sans zoom de la page (le globe gère ses propres gestes). -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <!-- Pas d'indexation : page technique. -->
+  <meta name="robots" content="noindex">
+  <!-- Titre. -->
+  <title>Globe Google</title>
+  <!-- Styles (début). -->
+  <style>
+    /* Toute la fenêtre, fond spatial, sans marges. */
+    html, body { height: 100%; margin: 0; background: #05070c; color: #dce6f5; font-family: system-ui, sans-serif; overflow: hidden; }
+    /* Le globe remplit la fenêtre. */
+    gmp-map-3d { position: absolute; inset: 0; width: 100%; height: 100%; }
+    /* Message d'attente ou d'erreur, centré. */
+    #msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; line-height: 1.5; font-size: 15px; }
+  /* Fin des styles. */
+  </style>
+</head>
+<body>
+  <!-- Message affiché tant que le globe n'est pas là. -->
+  <div id="msg">Chargement du globe Google…</div>
+  <!-- Script de la page (début). -->
+  <script>
+    // Origine de la page : seuls les messages de l'app (même origine) sont écoutés.
+    const ORIGIN = location.origin;
+    // Zone du message.
+    const msg = document.getElementById('msg');
+    // Le globe, une fois créé.
+    let map = null;
+    // Déjà initialisée ? Non.
+    let started = false;
+    // Dernier envoi de la caméra (ms), pour n'en envoyer qu'un tous les 200 ms au plus.
+    let sentAt = 0;
+
+    // say : affiche un message à la place du globe.
+    const say = (text) => { msg.textContent = text; msg.style.display = 'grid'; };
+    // num : un nombre lu sur un objet de l'API (propriété ou fonction), ou NaN.
+    const num = (o, k) => { const v = o?.[k]; return Number(typeof v === 'function' ? v.call(o) : v); };
+
+    // loadMaps : charge l'API Maps JavaScript avec la bibliothèque 3D, une seule fois (début).
+    function loadMaps(key) {
+      // Promesse du chargement.
+      return new Promise((resolve, reject) => {
+        // Rappel appelé par l'API quand elle est prête.
+        window.__gobaiGmapsReady = () => resolve();
+        // Balise du script.
+        const s = document.createElement('script');
+        // Adresse : clé, version bêta (3D Maps), bibliothèque maps3d, chargement asynchrone, rappel.
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=beta&libraries=maps3d&loading=async&callback=__gobaiGmapsReady`;
+        // Asynchrone.
+        s.async = true;
+        // Échec du chargement (réseau, clé refusée) : rejet.
+        s.onerror = () => reject(new Error('API Google Maps injoignable'));
+        // Ajoute le script à la page.
+        document.head.appendChild(s);
+      // Fin de la promesse.
+      });
+    // Fin de loadMaps.
+    }
+
+    // sendCamera : renvoie la position de la caméra à l'app (au plus tous les 200 ms, sauf `force`) (début).
+    function sendCamera(force = false) {
+      // Sans globe : rien.
+      if (!map) return;
+      // Instant présent.
+      const now = performance.now();
+      // Trop tôt : rien.
+      if (!force && now - sentAt < 200) return;
+      // Note l'envoi.
+      sentAt = now;
+      // Centre visé.
+      const c = map.center;
+      // Envoie latitude, longitude, distance caméra–centre, inclinaison et cap.
+      parent.postMessage({ type: 'gobai:google-earth:camera', lat: num(c, 'lat'), lng: num(c, 'lng'), range: Number(map.range), tilt: Number(map.tilt), heading: Number(map.heading) }, ORIGIN);
+    // Fin de sendCamera.
+    }
+
+    // start : crée le globe à la position demandée (début).
+    async function start({ key, lat, lng, range }) {
+      // Déjà fait : rien.
+      if (started) return;
+      // Le note.
+      started = true;
+      // Sans clé : explication.
+      if (!key) { say('Globe Google indisponible : ajoute la clé GOOGLE_MAPS_API_KEY (API Maps JavaScript activée) dans les variables d’environnement Render.'); return; }
+      // Essai (début).
+      try {
+        // Charge l'API.
+        await loadMaps(key);
+        // Bibliothèque 3D.
+        const lib = await google.maps.importLibrary('maps3d');
+        // Globe : centre, distance, vue de dessus, plein nord, en mode satellite (sans le mode, rien ne s'affiche).
+        map = new lib.Map3DElement({ center: { lat, lng, altitude: 0 }, range, tilt: 0, heading: 0, mode: lib.MapMode?.SATELLITE ?? 'SATELLITE' });
+        // Échec d'initialisation (clé refusée, API non activée, facturation absente) : explication.
+        map.addEventListener('gmp-error', () => say('Le globe Google a refusé de démarrer : vérifie la clé (API Maps JavaScript activée, facturation active, site autorisé).'));
+        // Chaque mouvement de caméra : position renvoyée à l'app.
+        for (const ev of ['gmp-centerchange', 'gmp-rangechange', 'gmp-tiltchange', 'gmp-headingchange']) map.addEventListener(ev, () => sendCamera());
+        // Caméra arrêtée : position renvoyée tout de suite.
+        map.addEventListener('gmp-steadychange', () => sendCamera(true));
+        // Ajoute le globe à la page.
+        document.body.appendChild(map);
+        // Masque le message.
+        msg.style.display = 'none';
+      // Échec : explication.
+      } catch (e) { say(`Globe Google indisponible : ${e.message}`); }
+    // Fin de start.
+    }
+
+    // Messages de l'app : initialisation (clé et position de départ).
+    window.addEventListener('message', (e) => {
+      // Autre origine, ou pas un message de l'app : ignoré.
+      if (e.origin !== ORIGIN || e.data?.type !== 'gobai:google-earth:init') return;
+      // Démarre le globe.
+      start(e.data);
+    // Fin de l'écoute.
+    });
+    // Page prête : le signale à l'app, qui envoie la clé et la position.
+    parent.postMessage({ type: 'gobai:google-earth:ready' }, ORIGIN);
+  // Fin du script.
+  </script>
+</body>
+</html>

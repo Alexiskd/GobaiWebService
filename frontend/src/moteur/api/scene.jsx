@@ -39,6 +39,9 @@ export const fetchMoonPhases = (signal) => get('/ephemeris/moon/phases', { signa
 /** Assistant de la fenêtre « Claude » : { enabled, model } ; enabled = clé de l'API configurée sur le serveur. */
 // fetchAssistantConfig : la configuration de l'assistant.
 export const fetchAssistantConfig = (signal) => get('/assistant/config', { signal });
+/** Globe Google : { available, key } (clé de l'API Maps JavaScript, voir /google-earth.html). */
+// fetchGoogleEarthConfig : la configuration du globe Google.
+export const fetchGoogleEarthConfig = (signal) => get('/google-earth/config', { signal });
 /** Envoie la conversation [{ role: 'user' | 'assistant', content }] : { reply }. */
 // askAssistant : envoie la conversation et l'inventaire des éléments actionnables de l'écran à l'assistant.
 export const askAssistant = (messages, elements, signal) => post('/assistant/messages', { messages, elements }, { signal });
