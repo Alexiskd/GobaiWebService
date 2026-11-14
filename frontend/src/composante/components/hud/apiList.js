@@ -138,7 +138,7 @@ export const API_GROUPS = [
       // API « Google Fonts », appelée à l'adresse fonts.googleapis.com.
       { name: 'Google Fonts', host: 'fonts.googleapis.com', use: 'Police Google Sans' },
       // API « Stripe », appelée à l'adresse api.stripe.com ; seulement si sa clé est configurée sur le serveur.
-      { name: 'Stripe', host: 'api.stripe.com', use: 'Dons par carte bancaire', key: true },
+      { name: 'Stripe', host: 'api.stripe.com', use: 'Paiements de la boutique', key: true },
       // API « Anthropic (Claude) », appelée à l'adresse api.anthropic.com ; seulement si sa clé est configurée sur le serveur.
       { name: 'Anthropic (Claude)', host: 'api.anthropic.com', use: 'Assistant de la barre d’outils', key: true },
       // API « Google Draco (CDN) », appelée à l'adresse www.gstatic.com.

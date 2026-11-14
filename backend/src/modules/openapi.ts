@@ -34,7 +34,6 @@ const TAGS: [string, string][] = [
   ['Contributions', 'Placements LiDAR proposés par les visiteurs, comptes et votes.'],
   ['Galerie', 'Photos et vidéos de la galerie.'],
   ['Assistant', 'Assistant de la barre d’outils.'],
-  ['Dons', 'Dons par carte bancaire.'],
   // L'exploitation.
   ['API externes', 'API externes déconnectées sur le serveur.'],
   ['Service', 'Supervision.'],

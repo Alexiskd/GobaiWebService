@@ -3,8 +3,6 @@ import { ExportAccessController } from '../controllers/export-access.controller'
 
 // Module de la galerie (photos et vidéos personnelles, stockées dans PostgreSQL).
 import { GalleryModule } from './gallery.module';
-// Module des dons par carte bancaire.
-import { DonationsModule } from './donations.module';
 // Décorateur Module de NestJS : il déclare ce qu'un module importe, expose et fournit.
 import { Module } from '@nestjs/common';
 // Jeton APP_GUARD : sert à enregistrer une garde appliquée à toutes les routes de l'application.
@@ -93,8 +91,6 @@ import { LidarTilesModule } from './lidar-tiles.module';
     WorldAtlasModule,
     // Routes des frontières : /api/v1/borders.
     BordersModule,
-    // Routes des dons : /api/v1/donations.
-    DonationsModule,
     // Routes de recherche de lieux.
     PlacesModule,
     // Assistant de la fenêtre « Claude » (API Claude, clé côté serveur) : /api/v1/assistant
