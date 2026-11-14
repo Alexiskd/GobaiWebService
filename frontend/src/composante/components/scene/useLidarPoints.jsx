@@ -34,8 +34,8 @@ export function useLidarPoints(engine) {
   // État : le mode de couleur, lu dans le stockage.
   const [color, setColorState] = useState(storedColor);
 
-  // Effet qui branche la recherche des nuages LiDAR HD de l'IGN : le moteur demande les dalles sous la caméra quand
-  // elle descend sous 3 km, partout en France ; le serveur les lit en direct sur la Géoplateforme.
+  // Effet qui branche la recherche des nuages LiDAR HD de l'IGN : le moteur demande les dalles du champ de la caméra
+  // quand elle descend sous 3 km, partout en France ; le serveur les lit en direct sur la Géoplateforme.
   useEffect(() => {
     // Sans moteur, ou si le moteur ne gère pas la recherche, rien à faire.
     if (!engine?.setLidarDiscovery) return undefined;
@@ -43,8 +43,8 @@ export function useLidarPoints(engine) {
     const controller = new AbortController();
     // Branche la recherche (début) :
     engine.setLidarDiscovery(
-      // les dalles autour du point, avec l'adresse complète de chaque nœud ;
-      (lon, lat) => fetchLidarTiles(controller.signal, { lon, lat }).then(({ items }) => (Array.isArray(items) ? items : []).map((m) => ({ ...m, nodeUrl: resolveApiUrl(m.nodeUrl) }))),
+      // les dalles autour du point visé, dans le rayon demandé, avec l'adresse complète de chaque nœud ;
+      (lon, lat, r) => fetchLidarTiles(controller.signal, { lon, lat, r }).then(({ items }) => (Array.isArray(items) ? items : []).map((m) => ({ ...m, nodeUrl: resolveApiUrl(m.nodeUrl) }))),
       // à chaque nouvelle liste : les lieux des dalles (identifiant, nom, position, nombre de points).
       (list) => setPlaces(list),
     // Fin du branchement.

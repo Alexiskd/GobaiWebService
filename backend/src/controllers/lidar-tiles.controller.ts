@@ -59,10 +59,12 @@ export class LidarTilesController {
   @ApiQuery({ name: 'lon', example: 2.3526 })
   // Documente la latitude, avec un exemple.
   @ApiQuery({ name: 'lat', example: 48.8608 })
-  // Méthode list : reçoit la longitude et la latitude, renvoie les dalles et leurs nœuds.
-  list(@Query('lon') lon?: string, @Query('lat') lat?: string) {
-    // Délègue au service, avec les coordonnées converties en nombres.
-    return this.lidar.list(Number(lon), Number(lat));
+  // Documente le rayon de recherche, facultatif (100 à 1 500 m, 600 par défaut).
+  @ApiQuery({ name: 'r', required: false, example: 900 })
+  // Méthode list : reçoit la longitude, la latitude et le rayon, renvoie les dalles et leurs nœuds.
+  list(@Query('lon') lon?: string, @Query('lat') lat?: string, @Query('r') r?: string) {
+    // Délègue au service, avec les valeurs converties en nombres.
+    return this.lidar.list(Number(lon), Number(lat), Number(r));
   // Fin de list.
   }
 
