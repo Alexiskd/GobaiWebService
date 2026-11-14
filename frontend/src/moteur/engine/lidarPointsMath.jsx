@@ -539,6 +539,14 @@ export function domeBudget(entries, budget) {
 // Fin de domeBudget.
 }
 
+/**
+ * Budget de points du dôme, fixé par la hauteur de la caméra : 6·10⁸ / hauteur, arrondi à 50 000 points, entre
+ * 200 000 et `max` (3 millions sur ordinateur, 1,2 million sur téléphone). De près le dôme est petit et très dense ;
+ * de haut il est grand et léger.
+ */
+// Déclare et exporte budgetForHeight : la hauteur de la caméra (m) et le budget maximal de l'appareil.
+export const budgetForHeight = (heightM, max = 3_000_000, min = 200_000) => (Number.isFinite(heightM) && heightM > 0 ? Math.min(max, Math.max(min, Math.round(6e8 / heightM / 50_000) * 50_000)) : max);
+
 /** Distance approchée (m) entre deux points en degrés (projection locale, juste sur quelques kilomètres). */
 // Déclare et exporte lonLatDistanceM : longitude et latitude du premier point, puis du second.
 export function lonLatDistanceM(lon1, lat1, lon2, lat2) {
