@@ -35,6 +35,8 @@ import { NavballPilote } from './hud/NavballPilote';
 // Importe le cadre des coordonnées GPS.
 import { GpsFrame } from './hud/GpsFrame';
 // Importe l'indicateur de chargement des tuiles.
+// Importe la jauge LiDAR.
+import { LidarJauge } from './hud/LidarJauge';
 import { TuilesLoader } from './hud/TuilesLoader';
 // Importe le compteur d'images par seconde.
 import { FpsCounter } from './hud/FpsCounter';
@@ -82,6 +84,8 @@ import { Informations } from './menus/Informations/Informations';
 import { Rechercher } from './menus/Rechercher';
 // Importe le crochet des nuages LiDAR sur le globe.
 import { useLidarGlobe } from './scene/useLidarGlobe';
+// Importe le crochet des dalles LiDAR en points 3D.
+import { useLidarPoints } from './scene/useLidarPoints';
 // Importe le crochet de Paris en 3D (bâtiments de l'IGN).
 import { useParis3D } from './scene/useParis3D';
 // Importe le texte d'aide des noms de villes.
@@ -146,7 +150,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Magasin du HUD, créé une seule fois (début de l'appel).
   const hud = useMemo(
     // Ses valeurs de départ : textes vides, texte d'aide du zoom, et tout le reste à null ou à 0.
-    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', zoomShort: '', scaleText: '', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null, paris3d: null, viewLock: null, fps: 0, perf: null }),
+    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', zoomShort: '', scaleText: '', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null, lidarPoints: null, paris3d: null, viewLock: null, fps: 0, perf: null }),
     // Aucune dépendance.
     []
   // Fin de l'appel.
@@ -446,6 +450,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const myPosition = useMyPosition({ showPosition: actions.showPosition, goPlace: actions.pickPlace, push });
   // Nuages LiDAR sur le globe.
   const lidarGlobe = useLidarGlobe(engine);
+  // Dalles LiDAR en vrais points 3D (Paris) : chargées par le moteur à l'approche, interrupteur dans Paramètres.
+  // Dalles LiDAR en points 3D.
+  const lidarPoints = useLidarPoints(engine);
   // Paris en 3D (bâtiments de la BD TOPO de l'IGN) : chargé par le moteur à l'approche, interrupteur dans Paramètres.
   // Paris en 3D.
   const paris3d = useParis3D(engine);
@@ -545,6 +552,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
         relief_3d: camera.setRelief,
         // Le calque LiDAR HD : allumé sur le premier modèle proposé, éteint sinon.
         lidar_hd: (on) => earth.setLidar(on ? (bases.lidarLayers[0]?.id ?? null) : null),
+        // Les points LiDAR 3D.
+        points_lidar: lidarPoints.setOn,
         // Paris en 3D.
         paris_3d: paris3d.setOn,
         // Le noir pur de l'interface.
@@ -571,6 +580,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
         actions.pickPlace({ name: cmd.city.name, lat: cmd.city.lat, lon: cmd.city.lon, altitudeM: earth.lidarCityAltitudeM, fly: true });
         // Fin de la commande.
         break;
+      // lidarColor : choisit la couleur des points LiDAR 3D.
+      case 'lidarColor': lidarPoints.setColor(cmd.mode); break;
       // earthPlace : survole un lieu nommé de la Terre, en vol ; l'altitude est celle du moteur.
       case 'earthPlace': actions.pickPlace({ name: cmd.place.name, lon: cmd.place.lon, lat: cmd.place.lat, fly: true }); break;
       // moonPlace : survole un lieu nommé de la Lune ; goToSite cible la Lune et choisit son altitude de survol.
@@ -716,6 +727,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
       {/* Le pavé de zoom. */}
       <ZoomPad onZoom={actions.zoom} />
+      {/* La jauge LiDAR. */}
+      <LidarJauge hud={hud} />
       {/* L'indicateur de chargement des tuiles de l'astre visé. */}
       <TuilesLoader hud={hud} bodyId={currentBodyId} bodyName={currentBodyName} />
       {/* Le compteur d'images par seconde. */}
@@ -987,6 +1000,16 @@ export function SolarScene({ data, onSettled, covered = false }) {
           lidarCities: earth.lidarCities,
           // Altitude d'arrivée au-dessus d'une ville.
           lidarCityAltitudeM: earth.lidarCityAltitudeM,
+          // Points LiDAR affichés ou non.
+          lidarPoints: lidarPoints.on,
+          // Lieux des dalles LiDAR.
+          lidarPlaces: lidarPoints.places,
+          // Réglage des points LiDAR.
+          onLidarPoints: lidarPoints.setOn,
+          // Mode de couleur des points LiDAR.
+          lidarColor: lidarPoints.color,
+          // Réglage du mode de couleur.
+          onLidarColor: lidarPoints.setColor,
           // Paris en 3D affiché ou non.
           paris3d: paris3d.on,
           // Réglage de Paris en 3D.

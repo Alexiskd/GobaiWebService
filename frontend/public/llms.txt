@@ -8,7 +8,7 @@
 - Terre détaillée en imagerie satellite (orthophotos IGN pour la France, Sentinel-2 pour le reste du monde), avec villes, pays, frontières et météo.
 - Relief de la Terre en 3D, continents et fonds des océans, à partir de tuiles d'altitude.
 - Cartes NASA Trek posées sur les globes : Lune, Mars, Mercure, Vénus, lunes de Jupiter (Io, Europe, Ganymède, Callisto) et de Saturne (Titan, Mimas, Encelade, Téthys, Dioné, Rhéa, Japet).
-- Anneaux de Saturne modélisés, galerie d'images NASA par astre, Paris en 3D (bâtiments de l'IGN, BD TOPO).
+- Anneaux de Saturne modélisés, galerie d'images NASA par astre, Paris en 3D (bâtiments de l'IGN, BD TOPO) fusionné avec le nuage de points LiDAR de la dalle de Paris.
 - Interface traduisible dans de nombreuses langues ; utilisable sur ordinateur et sur téléphone (pilotage au gyroscope).
 
 ## Questions fréquentes

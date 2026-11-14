@@ -80,8 +80,12 @@ test('assistant : modèle, ville et couleur du LiDAR HD', () => {
   assert.equal(r({ name: 'aller_au_dessus_d_une_ville', input: { ville: 'Berlin' } }, BODIES, LISTS), null);
   // Sans liste de villes, rien ne passe.
   assert.equal(r({ name: 'aller_au_dessus_d_une_ville', input: { ville: 'Toulouse' } }, BODIES), null);
-  // L'ancien outil de couleur des points LiDAR n'existe plus : refusé.
-  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'photo' } }, BODIES, LISTS), null);
+  // Couleur des points : celles de la photo.
+  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'photo' } }, BODIES, LISTS).mode, 'photo');
+  // Couleur des points : le type de chaque point, qui vaut « classes » dans le réglage.
+  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'types' } }, BODIES, LISTS).mode, 'classes');
+  // Une couleur inventée est refusée.
+  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'arc_en_ciel' } }, BODIES, LISTS), null);
   // Paris en 3D est un réglage d'affichage.
   assert.equal(r({ name: 'regler_affichage', input: { reglage: 'paris_3d', actif: true } }, BODIES).setting, 'paris_3d');
   // Protection du prototype, comme pour les fenêtres.

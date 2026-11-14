@@ -30,7 +30,7 @@ import { MaPosition } from './MaPosition';
  * Terre :
  *  - MaPosition          survol de sa position (GPS de l'appareil) et lieu « Maison » gardé comme point de départ
  *  - Cartographie        à plat : noms des villes et des pays, frontières et littoraux, rues et routes
- *  - CartographieRelief  en relief : relief 3D de la Terre, LiDAR HD de l'IGN, Paris en 3D
+ *  - CartographieRelief  en relief : relief 3D de la Terre, LiDAR HD de l'IGN, Paris en 3D et points LiDAR 3D
  * Affichage du système solaire :
  *  - Reperes             repères (orbites, points et noms, lieux de la Lune), atmosphères et ciel lointain
  * Déplacement :

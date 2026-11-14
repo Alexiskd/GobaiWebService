@@ -9,6 +9,12 @@ import { MenuDeroulant } from '../../ui/MenuDeroulant';
 // Importe le lieu d'arrivée au-dessus de Paris.
 import { PARIS_PLACE } from '../../scene/useParis3D';
 
+/** Altitude d'arrivée au-dessus d'une dalle de points 3D (m) : la dalle de 1 km tient dans l'écran, en vue 3/4. */
+// Altitude d'arrivée au-dessus d'une dalle de points : 900 m.
+const POINTS_ALTITUDE_M = 900;
+// millions : écrit un nombre de points en millions, avec une décimale au plus.
+const millions = (n) => `${(n / 1e6).toLocaleString('fr-FR', { maximumFractionDigits: 1 })} millions de points`;
+
 // Libellés courts des trois modèles LiDAR HD (identifiants des calques de l'API, voir backend lidar-hd.ts).
 // Libellé court de chaque modèle LiDAR HD : surface, sol nu, hauteurs.
 const LIDAR_SHORT = { 'lidar-hd-mns': 'Surface', 'lidar-hd-mnt': 'Sol nu', 'lidar-hd-mnh': 'Hauteurs' };
@@ -59,7 +65,7 @@ export function Cartographie({
 /**
  * Cartographie en relief de la Terre : tout ce qui donne du volume à la carte. Relief 3D du globe (montagnes, fonds
  * marins), LiDAR HD de l'IGN sur la France (ombrage du modèle de surface, du sol nu ou des hauteurs), avec un menu
- * des villes où s'y rendre en direct, et Paris en 3D (bâtiments de l'IGN), avec un bouton pour s'y rendre.
+ * des villes où s'y rendre en direct, Paris en 3D (bâtiments de l'IGN) et la dalle LiDAR en vrais points 3D, fusionnés au même endroit, avec des boutons pour s'y rendre.
  */
 // Déclare et exporte le composant CartographieRelief (début de la liste des propriétés).
 export function CartographieRelief({
@@ -69,8 +75,10 @@ export function CartographieRelief({
   lidarId = null, lidarLayers = [], onLidar,
   // Les villes de France du LiDAR HD et l'altitude d'arrivée au-dessus d'une ville.
   lidarCities = [], lidarCityAltitudeM = 2000,
-  // Paris en 3D et son rappel, l'aller à un lieu et le rappel de fin.
-  paris3d = false, onParis3d, onGoPlace, onDone,
+  // Paris en 3D et son rappel.
+  paris3d = false, onParis3d,
+  // Les points LiDAR, leurs lieux, leur couleur, leurs rappels, l'aller à un lieu et le rappel de fin.
+  lidarPoints = false, lidarPlaces = [], onLidarPoints, lidarColor = 'photo', onLidarColor, onGoPlace, onDone,
 // Fin de la liste des propriétés.
 }) {
   // Vrai si un calque LiDAR HD est choisi.
@@ -215,6 +223,88 @@ export function CartographieRelief({
         {/* Fin du conteneur. */}
         </Box>
       // Fin du cas.
+      )}
+      {/* S'il y a des dalles de points (début). */}
+      {lidarPlaces.length > 0 && (
+        // Fragment du bloc.
+        <>
+          {/* Interrupteur des points LiDAR 3D (début de la balise). */}
+          <Switch
+            // Son état.
+            checked={lidarPoints}
+            // Son rappel.
+            onChange={onLidarPoints}
+            // Son libellé.
+            label="Points LiDAR 3D"
+            // Son texte d'aide.
+            hint="Bâtiments, arbres et rues en vrais points 3D"
+          // Fin de l'interrupteur.
+          />
+          {/* S'il est actif (début). */}
+          {lidarPoints && (
+            // Conteneur en colonne.
+            <Box sx={{ px: 1.5, pb: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+              {/* Le choix de la couleur (début de la balise). */}
+              <ToggleButtonGroup
+                // Un seul choix à la fois.
+                exclusive
+                // Toute la largeur.
+                fullWidth
+                // Petite taille.
+                size="small"
+                // Le mode de couleur choisi.
+                value={lidarColor}
+                // Au changement : choisit le mode, sauf si le choix est annulé.
+                onChange={(_e, mode) => { if (mode) onLidarColor?.(mode); }}
+                // Nom pour les lecteurs d'écran.
+                aria-label="Couleur des points LiDAR"
+              // Fin de la balise ouvrante.
+              >
+                {/* Bouton « Couleurs de la photo ». */}
+                <ToggleButton value="photo" title="Chaque point prend la couleur de la photo aérienne de l’IGN à sa verticale" sx={{ textTransform: 'none', lineHeight: 1.2 }}>Couleurs de la photo</ToggleButton>
+                {/* Bouton « Types de points ». */}
+                <ToggleButton value="classes" title="Couleur selon le type de point : sol, toit, façade, végétation" sx={{ textTransform: 'none', lineHeight: 1.2 }}>Types de points</ToggleButton>
+              {/* Fin du choix de la couleur. */}
+              </ToggleButtonGroup>
+              {/* Un bouton par dalle (début). */}
+              {lidarPlaces.map((place) => (
+                // Le bouton (début de la balise).
+                <Button
+                  // Clé unique : l'identifiant de la dalle.
+                  key={place.id}
+                  // Petite taille.
+                  size="small"
+                  // À contour.
+                  variant="outlined"
+                  // Infobulle : le nombre de points.
+                  title={millions(place.points)}
+                  // Au clic (début).
+                  onClick={() => {
+                    // Va à la dalle, à l'altitude d'arrivée, en vol.
+                    onGoPlace?.({ name: place.name, lat: place.lat, lon: place.lon, altitudeM: POINTS_ALTITUDE_M, fly: true });
+                    // Signale la fin.
+                    onDone?.();
+                  // Fin du clic.
+                  }}
+                  // Nom et invitation aux deux extrémités, casse d'origine.
+                  sx={{ textTransform: 'none', justifyContent: 'space-between', lineHeight: 1.25, textAlign: 'left' }}
+                // Fin de la balise ouvrante.
+                >
+                  {/* Le nom de la dalle. */}
+                  <span>{place.name}</span>
+                  {/* L'invitation « Y aller », décorative. */}
+                  <span aria-hidden="true">Y aller →</span>
+                {/* Fin du bouton. */}
+                </Button>
+              // Fin des boutons.
+              ))}
+            {/* Fin du conteneur. */}
+            </Box>
+          // Fin du cas.
+          )}
+        {/* Fin du fragment. */}
+        </>
+      // Fin du bloc des points.
       )}
     {/* Fin du groupe. */}
     </Group>
