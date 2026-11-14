@@ -733,10 +733,6 @@ export class SolarEngine {
           concurrency: cfg.concurrency, detail: cfg.detail, overzoom: cfg.overzoom, polarScale: cfg.flattening ? 1 - cfg.flattening : 1,
           // les niveaux gardés, le préchargement et la mémoire vive ;
           pinnedMaxZoom: cfg.pinnedMaxZoom, prefetch: cfg.prefetch, ramCapacity: cfg.ramCapacity,
-          // le cache persistant ;
-          persistentCache: cfg.persistentCache,
-          // le cache des tuiles directes ;
-          directCache: cfg.directCache,
           // le relief et le rayon en kilomètres ;
           relief: cfg.relief, radiusKm: cfg.radiusKm,
           // Planètes : le repère des tuiles suit la rotation propre (le maillage), pas l'inclinaison portée par le groupe.

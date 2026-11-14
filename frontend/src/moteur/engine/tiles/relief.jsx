@@ -254,7 +254,7 @@ const BROKEN_AFTER = 8; // échecs d'affilée sur la dernière source avant de r
  * Tuiles d'altitude d'un astre. Plusieurs sources possibles, dans l'ordre : la première qui répond est gardée ; si
  * elle ne répond pas (fiche introuvable, tuiles en échec dès le départ), on passe à la suivante. Un téléchargement par
  * adresse, partagé entre les tuiles d'image qui affichent des portions de la même tuile d'altitude.
- * `io` : { loadImage(url) → image décodée, fetchJson(url) → objet, warm?(url) → préchargement sur disque } fournis par l'appelant.
+ * `io` : { loadImage(url) → image décodée, fetchJson(url) → objet } fournis par l'appelant (rien n'est gardé sur le disque).
  */
 // Déclare et exporte la classe ReliefSource (début).
 export class ReliefSource {
@@ -280,8 +280,6 @@ export class ReliefSource {
     this.resolving = null;
     // Téléchargements partagés, par adresse.
     this.shared = new Map(); // url → promesse d'image
-    // Adresses déjà préchargées.
-    this.warmed = new Set(); // adresses déjà préchargées vers le disque pendant la session
     // Nombre d'échecs d'affilée : 0.
     this.failures = 0;
     // La source en cours n'a pas encore répondu.
@@ -416,30 +414,6 @@ export class ReliefSource {
     // Renvoie la promesse.
     return p;
   // Fin de fetchShared.
-  }
-
-  /**
-   * Précharge une tuile d'altitude vers le disque du navigateur, sans la décoder (`io.warm`, facultatif) : elle sera
-   * lue sur place quand l'image qu'elle soulève s'affichera. Renvoie true si une requête est partie ; rien tant que
-   * l'adresse de la source n'est pas connue, ni pour une tuile déjà en mémoire ou déjà préchargée.
-   */
-  // warm : précharge une tuile vers le disque (début).
-  warm(coord) {
-    // Sans adresse, sans fonction de préchargement ou relief abandonné : refusé.
-    if (!this.template || !this.io.warm || this.broken) return false;
-    // Adresse de la tuile.
-    const url = this.url(coord);
-    // Déjà en mémoire ou déjà préchargée : refusé.
-    if (this.shared.has(url) || this.warmed.has(url)) return false;
-    // Au-delà de 2000 adresses notées : la liste est vidée.
-    if (this.warmed.size >= 2000) this.warmed.clear();
-    // Note l'adresse.
-    this.warmed.add(url);
-    // Lance le préchargement ; un échec est ignoré.
-    Promise.resolve(this.io.warm(url)).catch(() => {}); // préchargement facultatif : un échec ne change rien
-    // Lancé.
-    return true;
-  // Fin de warm.
   }
 
   // loadImage : l'image d'une tuile, avec un signal d'annulation facultatif (début).

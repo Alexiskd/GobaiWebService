@@ -2,10 +2,8 @@
 import { uploadShare } from '../powerSaver';
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
-// Importe la source d'images des tuiles et les deux chargements d'image, depuis tileSource.
-import { TileSource, loadImage, loadImageCached } from './tileSource';
-// Importe les noms et plafonds des caches sur disque du LiDAR et du relief, et les fonctions du cache, depuis diskCache.
-import { LIDAR_DISK, LIDAR_DISK_MAX, RELIEF_DISK, RELIEF_DISK_MAX, diskWritten, openDisk } from './diskCache';
+// Importe la source d'images des tuiles et le chargement d'une image (sans cache), depuis tileSource.
+import { TileSource, loadImage } from './tileSource';
 // Importe la source des tuiles d'altitude et les fonctions de réglage du relief, depuis relief.
 import { ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
@@ -41,7 +39,6 @@ export const MIN_DISTANCE_WITH_TILES = 1 + 8e-7;
  *  calque = ombrage du relief.
  *  prefetch      préchargement prédictif (trajectoire de la caméra, cône de 120°) vers le cache RAM
  *  ramCapacity   images décodées gardées en RAM pour le préchargement (400 par défaut, 96 au plus sur mobile)
- *  persistentCache nom du cache persistant du navigateur (L3, Cache Storage) pour les fichiers de tuiles
  *  pinnedMaxZoom niveaux 0 à n de tout l'astre préchargés et gardés en mémoire (2 par défaut, plafonné à 2 sur mobile)
  *  syncRotation  (root) => void, optionnel : recopie la rotation propre de l'astre sur le repère des tuiles
  *  detail        'gas' ou 'rock' : détail simulé au-delà de la résolution des images (voir tileShaders.jsx) ; absent = aucun
@@ -79,9 +76,6 @@ export class TileManager {
     this.api = api;
     // Garde la description de l'astre.
     this.body = body;
-    // Anciens caches de tuiles de cet astre (contenu remplacé côté serveur) : supprimés du navigateur.
-    // Supprime du navigateur les anciens caches de l'astre ; une erreur est ignorée.
-    for (const name of body.retiredCaches ?? []) globalThis.caches?.delete(name).catch(() => {});
     // Garde la fonction de changement.
     this.onChange = onChange;
     // Repère des tuiles.
@@ -123,9 +117,8 @@ export class TileManager {
     // Sur téléphone, un relief allégé (maillage, niveau des tuiles d'altitude) : voir tuneRelief.
     // Relief de l'astre : mis en forme, puis allégé sur téléphone.
     this.relief = tuneRelief(normalizeRelief(body.relief, body.radiusKm), /Mobi|Android|iPhone|iPad/.test(globalThis.navigator?.userAgent || ''));
-    // Les tuiles d'altitude et de profondeur déjà vues restent sur le disque du navigateur (voir reliefLoader).
-    // Accès du relief : le chargeur par le disque et la lecture d'une fiche JSON.
-    const reliefIo = { ...reliefLoader(), fetchJson };
+    // Accès du relief : le chargement d'une image (sans cache, en mémoire seulement) et la lecture d'une fiche JSON.
+    const reliefIo = { loadImage: (url) => loadImage(url), fetchJson };
     // Source des tuiles d'altitude, pour un relief Terrarium.
     this.reliefSource = this.relief?.kind === 'terrarium' ? new ReliefSource(this.relief, reliefIo) : null;
     // Fond des océans : tuiles de profondeur, si l'astre en a et si l'utilisateur ne l'a pas coupé (« gobai:relief-ocean »).
@@ -263,7 +256,7 @@ export class TileManager {
     if (this.base?.id === layerId) return this.base.source.info;
 
     // Source d'images de la couche demandée.
-    const source = new TileSource({ api: this.api, layerId, onChange: this.onChange, persistentCache: this.body.persistentCache, directCache: this.body.directCache });
+    const source = new TileSource({ api: this.api, layerId, onChange: this.onChange });
     // Essai (début).
     try {
       // Attend son démarrage.
@@ -385,20 +378,13 @@ export class TileManager {
     }
     // Même calque : rien à faire.
     if (this.overlay?.id === layerId) return;
-    // Calques LiDAR HD : tous les niveaux déjà vus restent sur le disque du navigateur, dans leur propre cache à plafond.
-    // Cache sur disque : pour un calque LiDAR HD,
-    const directCache = layerId.startsWith('lidar-hd-')
-      // un cache à part, jusqu'au niveau 22, plafonné selon l'appareil ;
-      ? { name: LIDAR_DISK, maxZoom: 22, maxEntries: HANDHELD.test(globalThis.navigator?.userAgent || '') ? LIDAR_DISK_MAX.handheld : LIDAR_DISK_MAX.desktop }
-      // sinon celui de l'astre.
-      : this.body.directCache;
     // Calque des rues : dessiné dans le navigateur à partir de tuiles vectorielles (voir roadSource.jsx).
     // Source : pour le calque des rues,
     const source = layerId === ROADS_LAYER_ID
       // la source des rues ;
       ? new RoadSource({ onChange: this.onChange, handheld: HANDHELD.test(globalThis.navigator?.userAgent || '') })
       // sinon une source d'images.
-      : new TileSource({ api: this.api, layerId, onChange: this.onChange, persistentCache: this.body.persistentCache, directCache });
+      : new TileSource({ api: this.api, layerId, onChange: this.onChange });
     // Attend son démarrage.
     await source.start();
     // En erreur : la source est libérée et une erreur est levée.
@@ -600,13 +586,13 @@ export class TileManager {
       loading: b?.layer.loading ?? 0,
       // Avancement du préchargement.
       preload: b ? b.layer.preload : { done: 0, total: 0 },
-      // Caches : L1 = textures GPU, L2 = images décodées en RAM, L3 = disque du navigateur (lus / téléchargés).
+      // Caches : L1 = textures GPU, L2 = images décodées en RAM (rien sur le disque du navigateur).
       // Caches, s'il y a un fond (début) :
       caches: b ? {
         // textures en mémoire graphique et images en mémoire vive,
         gpu: b.layer.cache.size + b.layer.pinned.size, ram: b.layer.ram.size,
-        // lectures sur disque et téléchargements.
-        disk: b.source.stats.disk, net: b.source.stats.network,
+        // téléchargements.
+        net: b.source.stats.network,
       // Fin des caches.
       } : null,
       // Limites de la vue, arrondies, avec le niveau borné entre 0 et 22.
@@ -664,51 +650,6 @@ function readReliefChoice() {
 /** Lit une fiche JSON d'un fournisseur (5 s au plus). */
 // Motif qui reconnaît un téléphone ou une tablette.
 const HANDHELD = /Mobi|Android|iPhone|iPad/;
-
-/**
- * Chargement (`loadImage`) et préchargement (`warm`) d'une tuile de relief à travers le disque du navigateur : lue sur place si elle y est déjà (aucune
- * requête), sinon téléchargée, enregistrée puis décodée. Le cache est partagé par tous les astres et plafonné.
- * Sans Cache Storage, ou si ce chemin échoue (fournisseur qui refuse `fetch`), l'image est chargée comme avant.
- */
-// reliefLoader : les accès du relief à travers le disque du navigateur (début).
-function reliefLoader() {
-  // Plafond du cache, selon l'appareil.
-  const max = HANDHELD.test(globalThis.navigator?.userAgent || '') ? RELIEF_DISK_MAX.handheld : RELIEF_DISK_MAX.desktop;
-  // Compteurs de chargements.
-  const stats = { network: 0, disk: 0 };
-  // Cache sur disque : pas encore ouvert.
-  let disk; // ouvert à la première tuile
-  // open : ouvre le cache à la première demande.
-  const open = () => { if (disk === undefined) disk = openDisk(RELIEF_DISK); return disk; };
-  // stored : signale une écriture au cache.
-  const stored = () => diskWritten(RELIEF_DISK, disk, max);
-  // Renvoie les accès (début).
-  return {
-    // loadImage : par le cache sur disque, avec repli sur le chargement direct ; direct sans cache.
-    loadImage: (url) => (open() ? loadImageCached(url, disk, stats, false, stored).catch(() => loadImage(url)) : loadImage(url)),
-    // Préchargement : fichier téléchargé en priorité basse et enregistré, sans décodage ni mémoire graphique.
-    // warm, asynchrone : précharge un fichier (début).
-    warm: async (url) => {
-      // Le cache.
-      const cache = open() && await disk;
-      // Sans cache, ou fichier déjà présent : rien.
-      if (!cache || await cache.match(url).catch(() => null)) return false;
-      // Télécharge le fichier en priorité basse.
-      const res = await fetch(url, { priority: 'low' });
-      // Réponse en erreur, ou qui n'est pas une image : rien.
-      if (!res.ok || !(res.headers.get('content-type') || '').startsWith('image/')) return false;
-      // L'enregistre dans le cache.
-      await cache.put(url, res);
-      // Signale l'écriture.
-      stored();
-      // Préchargé.
-      return true;
-    // Fin de warm.
-    },
-  // Fin des accès.
-  };
-// Fin de reliefLoader.
-}
 
 // fetchJson, asynchrone : lit un document JSON (début).
 async function fetchJson(url) {

@@ -12,8 +12,6 @@ import {
 } from './earthDirect';
 // Importe la lecture et l'enregistrement de la description d'une couche, depuis layerInfoCache.
 import { readLayerInfo, saveLayerInfo } from './layerInfoCache';
-// Importe diskWritten, le signal d'une écriture au cache sur disque, depuis diskCache.
-import { diskWritten } from './diskCache';
 
 // Délai minimal entre deux renouvellements du modèle d'adresse : 30 secondes.
 const MIN_REFRESH_GAP_MS = 30_000;
@@ -86,13 +84,11 @@ function directAllowed() {
 // Déclare et exporte la classe TileSource (début).
 export class TileSource {
   /**
-   * @param {{ api: { layer(id, signal?): Promise<object> }, layerId: string, onChange?: () => void, persistentCache?: string }} opts
-   *  persistentCache  nom d'un cache persistant du navigateur (Cache Storage, sur le disque) : cache L3, les fichiers
-   *                   bruts y restent d'une visite à l'autre et ne sont plus redemandés au réseau. Images de même origine
-   *                   seulement (ex. Lune via le cache disque du serveur).
+   * @param {{ api: { layer(id, signal?): Promise<object> }, layerId: string, onChange?: () => void }} opts
+   * Rien n'est gardé sur le disque du navigateur : les tuiles sont téléchargées sans cache et gardées en mémoire seulement.
    */
-  // Constructeur : l'API, l'identifiant de la couche, la fonction de changement et les deux caches sur disque (début).
-  constructor({ api, layerId, onChange = () => {}, persistentCache = null, directCache = null }) {
+  // Constructeur : l'API, l'identifiant de la couche et la fonction de changement (début).
+  constructor({ api, layerId, onChange = () => {} }) {
     // Garde l'API.
     this.api = api;
     // Garde l'identifiant de la couche.
@@ -117,12 +113,8 @@ export class TileSource {
     this.refreshing = null;
     // Images partagées, par adresse.
     this.shared = new Map();    // url → promesse d'image (évite de télécharger 64 fois l'ancêtre d'une zone sur-zoomée)
-    // Garde le nom du cache persistant.
-    this.persistentCache = persistentCache;
-    // Cache persistant : pas encore ouvert.
-    this.l3 = null;             // promesse du Cache Storage ouvert (ou null si indisponible)
-    // Compteurs : réseau, disque, direct et relais.
-    this.stats = { network: 0, disk: 0, direct: 0, relay: 0 };
+    // Compteurs : réseau, direct et relais.
+    this.stats = { network: 0, direct: 0, relay: 0 };
     // Chargement direct permis ?
     this.directOn = directAllowed();
     // Tuiles vues vides, par source.
@@ -136,12 +128,6 @@ export class TileSource {
     this.directVariant = new Map();         // source → variante d'adresse qui a répondu en dernier
     // Images déjà contrôlées : vides ou non.
     this.blankChecked = new WeakMap();      // image → vide ou non (un ancêtre partagé n'est contrôlé qu'une fois)
-    // Fond instantané : fichiers des tuiles chargées en direct jusqu'au niveau `maxZoom`, et de la vue de loin, gardés
-    // sur le disque du navigateur ({ name, maxZoom }) : aux visites suivantes ils ne repassent plus par le réseau.
-    // Garde le cache des tuiles directes.
-    this.directCache = directCache;
-    // Ce cache : pas encore ouvert.
-    this.directL3 = null;
     // Vue de loin : tuiles vues vides, par source.
     this.farEmpty = new EmptyMemo();        // vue de loin : tuiles vues vides, par source (mémoire séparée des niveaux natifs)
     // Tuiles natives vues entièrement couvertes, par source : leurs descendantes le sont aussi, donc plus aucun
@@ -194,18 +180,6 @@ export class TileSource {
   // Fin de preconnect.
   }
 
-  /** Cache disque des tuiles chargées en direct (fond instantané), ou null. */
-  // openDirectL3 : ouvre le cache sur disque des tuiles directes (début).
-  openDirectL3() {
-    // Sans nom de cache, ou sans Cache Storage : null.
-    if (!this.directCache?.name || typeof caches === 'undefined') return null;
-    // L'ouvre à la première demande ; null en cas d'échec.
-    if (!this.directL3) this.directL3 = caches.open(this.directCache.name).catch(() => null);
-    // Renvoie la promesse.
-    return this.directL3;
-  // Fin de openDirectL3.
-  }
-
   /** Accord des couleurs actif pour cette couche ? */
   // colorMatch : vrai si l'accord des couleurs est permis ici et non refusé par la couche.
   get colorMatch() { return this.colorOn && this.info?.colorMatch !== false; }
@@ -238,18 +212,6 @@ export class TileSource {
     // Le renvoie s'il est permis et valide, sinon null.
     return this.directOn && validPlan(plan) ? plan : null;
   // Fin de directPlan.
-  }
-
-  /** Cache L3 (disque du navigateur) si disponible : contexte sécurisé (https ou localhost) requis. */
-  // openL3 : ouvre le cache persistant (début).
-  openL3() {
-    // Sans nom de cache, ou sans Cache Storage : null.
-    if (!this.persistentCache || typeof caches === 'undefined') return null;
-    // L'ouvre à la première demande ; null en cas d'échec.
-    if (!this.l3) this.l3 = caches.open(this.persistentCache).catch(() => null);
-    // Renvoie la promesse.
-    return this.l3;
-  // Fin de openL3.
   }
 
   // ready : vrai quand le statut est « ready ».
@@ -741,10 +703,8 @@ export class TileSource {
       const k = (first + i) % templates.length;
       // Essai (début).
       try {
-        // À garder sur le disque : jusqu'au niveau maximal du cache.
-        const persist = Boolean(this.directCache) && z <= this.directCache.maxZoom;
         // Charge l'image, 4 secondes au plus.
-        const img = await withTimeout(this.sharedImage(fillDirect(templates[k], z, x, y), signal, persist), DIRECT_TIMEOUT_MS);
+        const img = await withTimeout(this.sharedImage(fillDirect(templates[k], z, x, y), signal), DIRECT_TIMEOUT_MS);
         // Retient la variante.
         this.directVariant.set(source.id, k);
         // Note le succès de la source.
@@ -847,13 +807,13 @@ export class TileSource {
 
   /** Chargement partagé : un seul téléchargement par URL, chaque appelant garde son propre signal d'annulation. */
   // sharedImage : un seul téléchargement par adresse (début).
-  sharedImage(url, signal, persist = false) {
+  sharedImage(url, signal) {
     // Chargement déjà en cours ou récent.
     let p = this.shared.get(url);
     // S'il n'y en a pas (début).
     if (!p) {
       // Le lance, en priorité haute pour une demande urgente.
-      p = this.loadLocal(url, persist, Boolean(signal) && this.urgent.has(signal));
+      p = loadImage(url, undefined, Boolean(signal) && this.urgent.has(signal));
       // Le partage.
       this.shared.set(url, p);
       // À la fin (début) :
@@ -869,50 +829,6 @@ export class TileSource {
     // Renvoie la promesse, liée au signal de l'appelant.
     return withSignal(p, signal);
   // Fin de sharedImage.
-  }
-
-  /** `persist` : tuile chargée en direct à garder sur le disque du navigateur (fond instantané, vue de loin). */
-  // loadLocal : charge une image, par le cache sur disque s'il y en a un (début).
-  loadLocal(url, persist = false, urgent = false) {
-    // Même origine : adresse qui commence par un seul « / ».
-    const sameOrigin = url.startsWith('/') && !url.startsWith('//');
-    // Cache : le cache persistant pour la même origine, sinon celui des tuiles directes si demandé.
-    const l3 = sameOrigin ? this.openL3() : (persist ? this.openDirectL3() : null);
-    // Cache à plafond (calques LiDAR HD, tous niveaux) : ménage des plus anciens fichiers au fil des enregistrements.
-    // onStore : le ménage d'un cache à plafond, pour une autre origine.
-    const onStore = !sameOrigin && this.directCache?.maxEntries ? () => diskWritten(this.directCache.name, l3, this.directCache.maxEntries) : undefined;
-    // Par le cache s'il y en a un, sinon chargement simple.
-    return l3 ? loadImageCached(url, l3, this.stats, urgent, onStore) : loadImage(url, undefined, urgent);
-  // Fin de loadLocal.
-  }
-
-  /**
-   * Réchauffe le cache L3 : télécharge le fichier d'une tuile et l'enregistre sur le disque du navigateur, sans le
-   * décoder ni l'envoyer au GPU. Renvoie false si rien n'a été fait (pas de cache L3, déjà présent).
-   */
-  // warm, asynchrone : enregistre le fichier d'une tuile sur le disque sans le décoder (début).
-  async warm(coord) {
-    // Son adresse.
-    const url = this.url(coord);
-    // Cache persistant, pour une adresse de même origine.
-    const cacheP = url.startsWith('/') && !url.startsWith('//') ? this.openL3() : null;
-    // Attend son ouverture.
-    const cache = cacheP && await cacheP;
-    // Sans cache : faux.
-    if (!cache) return false;
-    // Déjà présent : faux.
-    if (await cache.match(url).catch(() => null)) return false;
-    // Télécharge le fichier.
-    const res = await fetch(url);
-    // Réponse en erreur, ou qui n'est pas une image : exception.
-    if (!res.ok || !(res.headers.get('content-type') || '').startsWith('image/')) throw new Error('Tuile indisponible');
-    // L'enregistre ; un échec est ignoré.
-    await cache.put(url, res).catch(() => {});
-    // Compte un téléchargement.
-    this.stats.network++;
-    // Vrai.
-    return true;
-  // Fin de warm.
   }
 
   // dispose : libère la source (début).
@@ -1043,45 +959,28 @@ const sleep = (ms, signal) => new Promise((resolve, reject) => {
 });
 
 /**
- * Chargement à travers le cache L3 : fichier brut lu sur le disque du navigateur s'il y est (10 à 50 ms), sinon
- * téléchargé, enregistré, puis décodé. Le décodage se fait hors du fil principal (`img.decode`).
- * `onStore` : appelé après chaque fichier enregistré (ménage des caches à plafond, voir diskCache.jsx).
+ * Charge une image par son adresse, sans aucun cache : le fichier est téléchargé à chaque demande (`cache: 'no-store'`,
+ * rien n'est écrit sur l'appareil), puis décodé hors du fil principal. L'image ne vit qu'en mémoire.
  */
-// Déclare et exporte loadImageCached, asynchrone : charge une image à travers le cache sur disque (début).
-export async function loadImageCached(url, cacheP, stats, urgent = false, onStore = null) {
-  // Attend l'ouverture du cache.
-  const cache = await cacheP;
-  // Sans cache : chargement simple.
-  if (!cache) return loadImage(url, undefined, urgent);
-  // Cherche le fichier dans le cache.
-  let res = await cache.match(url).catch(() => null);
-  // Octets du fichier.
-  let blob;
-  // S'il y est (début).
-  if (res) {
-    // Compte une lecture sur disque.
-    stats.disk++;
-    // Lit ses octets.
-    blob = await res.blob();
-  // Sinon (début).
-  } else {
-    // Le télécharge, en priorité haute si demandé.
-    res = await fetch(url, urgent ? { priority: 'high' } : undefined);
-    // Type du contenu.
-    const type = res.headers.get('content-type') || '';
-    // Réponse en erreur, ou qui n'est pas une image : exception.
-    if (!res.ok || !type.startsWith('image/')) throw new Error('Tuile indisponible');
-    // Compte un téléchargement.
-    stats.network++;
-    // Le fichier est lu une fois, puis enregistré à partir de ses octets : pas de double lecture du flux réseau
-    // (un flux dédoublé avance au rythme du fil principal et traîne quand l'affichage est chargé).
-    // Lit ses octets.
-    blob = await res.blob();
-    // L'enregistre dans le cache, puis signale l'écriture ; un échec est ignoré.
-    cache.put(url, new Response(blob, { headers: { 'content-type': type } })).then(() => onStore?.(), () => {}); // quota plein : on continue sans l'enregistrer
-  // Fin du choix.
-  }
-  // Adresse temporaire des octets.
+// Déclare et exporte loadImage : charge une image par son adresse (début).
+export async function loadImage(url, signal, urgent = false) {
+  // API déconnectée (onglet « API ») : aucune demande ne part, la tuile est indisponible.
+  if (isUrlBlocked(url)) throw new Error('Tuile indisponible');
+  // Déjà annulée : rejet d'annulation.
+  if (signal?.aborted) throw abortError();
+  // Réponse du téléchargement.
+  let res;
+  // Essai (début).
+  try {
+    // Téléchargement sans cache ni identifiants ; une tuile à l'écran passe devant.
+    res = await fetch(url, { signal, cache: 'no-store', credentials: 'omit', priority: urgent ? 'high' : 'auto' });
+  // Échec : annulation voulue, sinon tuile indisponible.
+  } catch (e) { throw signal?.aborted ? abortError() : new Error('Tuile indisponible'); }
+  // Réponse en erreur : tuile indisponible.
+  if (!res.ok) throw new Error('Tuile indisponible');
+  // Les octets de l'image.
+  const blob = await res.blob();
+  // Adresse locale du fichier en mémoire (même origine : ses pixels restent lisibles).
   const blobUrl = URL.createObjectURL(blob);
   // Essai (début).
   try {
@@ -1089,63 +988,15 @@ export async function loadImageCached(url, cacheP, stats, urgent = false, onStor
     const img = new Image();
     // Décodage asynchrone.
     img.decoding = 'async';
-    // Lui donne l'adresse temporaire.
+    // Pose l'adresse locale.
     img.src = blobUrl;
-    // Attend le décodage.
+    // Décodage hors du fil principal : l'envoi au GPU ne bloque plus l'affichage.
     await img.decode();
     // Renvoie l'image.
     return img;
-  // En cas d'erreur (début).
-  } catch {
-    // Retire le fichier du cache.
-    cache.delete(url).catch(() => {}); // fichier abîmé : retéléchargé au prochain essai
-    // Exception « Tuile illisible ».
-    throw new Error('Tuile illisible');
-  // Dans tous les cas (début).
-  } finally {
-    // Libère l'adresse temporaire.
-    URL.revokeObjectURL(blobUrl);
-  // Fin de l'essai.
-  }
-// Fin de loadImageCached.
-}
-
-// Déclare et exporte loadImage : charge une image par son adresse (début).
-export function loadImage(url, signal, urgent = false) {
-  // Renvoie une promesse (début).
-  return new Promise((resolve, reject) => {
-    // API déconnectée (onglet « API ») : aucune demande ne part, la tuile est indisponible.
-    if (isUrlBlocked(url)) { reject(new Error('Tuile indisponible')); return; }
-    // Crée une image.
-    const img = new Image();
-    // Sans identifiants, pour pouvoir lire ses pixels.
-    img.crossOrigin = 'anonymous';
-    // Décodage asynchrone.
-    img.decoding = 'async';
-    // Image créée hors de la page : le navigateur la charge en priorité basse par défaut. Une tuile à l'écran passe devant.
-    // Demande urgente : priorité haute.
-    if (urgent) img.fetchPriority = 'high';
-    // onAbort : vide l'adresse et rejette.
-    const onAbort = () => { img.src = ''; reject(abortError()); };
-    // Écoute l'annulation, une seule fois.
-    signal?.addEventListener('abort', onAbort, { once: true });
-    // Au chargement (début).
-    img.onload = () => {
-      // Retire l'écoute.
-      signal?.removeEventListener('abort', onAbort);
-      // Décodage hors du fil principal avant de rendre l'image : la lecture de pixels et l'envoi au GPU ne bloquent
-      // plus l'affichage (pas de saccade à l'arrivée des tuiles). Sans `decode`, ou s'il échoue, l'image sert quand même.
-      // Si le décodage existe : l'attend, et rend l'image même s'il échoue.
-      if (typeof img.decode === 'function') img.decode().then(() => resolve(img), () => resolve(img));
-      // Sinon : rend l'image.
-      else resolve(img);
-    // Fin du chargement.
-    };
-    // En cas d'erreur : retire l'écoute et rejette « Tuile indisponible ».
-    img.onerror = () => { signal?.removeEventListener('abort', onAbort); reject(new Error('Tuile indisponible')); };
-    // Lance le chargement.
-    img.src = url;
-  // Fin de la promesse.
-  });
+  // Fichier illisible : tuile indisponible.
+  } catch { throw new Error('Tuile illisible'); }
+  // Dans tous les cas : libère l'adresse locale.
+  finally { URL.revokeObjectURL(blobUrl); }
 // Fin de loadImage.
 }

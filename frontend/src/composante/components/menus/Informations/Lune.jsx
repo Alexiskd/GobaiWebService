@@ -84,7 +84,7 @@ export function Lune({
       </Group>
 
       {/* La ligne d'état des tuiles de la Lune, avec le suivi de la mise en cache. */}
-      <TileStatus hud={hud} source="moonTiles" label="Lune" warmup />
+      <TileStatus hud={hud} source="moonTiles" label="Lune" />
     {/* Fin du fragment. */}
     </>
   // Fin du rendu.
