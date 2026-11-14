@@ -33,7 +33,7 @@ import { DOWNSCALE_FILL, LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, build
 // (2) les points se dessinent avec leur propre profondeur logarithmique, précise au millimètre près du sol,
 // (3) la boîte réécrit une profondeur normale pour ce qui est dessiné ensuite (atmosphère, nuages).
 
-// La hauteur d'affichage du nuage (1 000 m, soit 1 km au HUD) et la règle d'affichage vivent dans le module de
+// La hauteur d'affichage du nuage (750 m, soit 0,75 km au HUD) et la règle d'affichage vivent dans le module de
 // calcul, avec les autres fonctions pures : voir lidarPointsMath.jsx.
 /** En deçà (m), le premier niveau de détail d'une dalle dans le champ de la caméra est chargé d'avance, après la racine. */
 // Distance de préchargement du premier niveau de détail : 400 km.

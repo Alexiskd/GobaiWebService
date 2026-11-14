@@ -362,17 +362,17 @@ test('carte à plat : hauteur du sol du nuage, et dalle posée le sol sur la car
 });
 
 // Test : la hauteur d'affichage du nuage de points.
-test('nuage LiDAR : dessiné sous 1 km de hauteur, dans le champ', () => {
-  // La hauteur limite vaut 1 000 m, soit 1 km au HUD.
-  assert.equal(CLOUD_HEIGHT_M, 1000);
+test('nuage LiDAR : dessiné sous 0,75 km de hauteur, dans le champ', () => {
+  // La hauteur limite vaut 750 m, soit 0,75 km au HUD.
+  assert.equal(CLOUD_HEIGHT_M, 750);
   // Juste en dessous de la limite, dans le champ : dessiné.
-  assert.equal(showCloud(999, true), true);
+  assert.equal(showCloud(749, true), true);
   // Tout près du sol : dessiné.
   assert.equal(showCloud(5, true), true);
   // À la limite exacte : pas encore dessiné.
-  assert.equal(showCloud(1000, true), false);
+  assert.equal(showCloud(750, true), false);
   // Au-dessus de la limite : masqué.
-  assert.equal(showCloud(1500, true), false);
+  assert.equal(showCloud(1000, true), false);
   // Sous la limite mais hors du champ de la caméra : masqué.
   assert.equal(showCloud(100, false), false);
   // Caméra sous le plan de la dalle : masqué, elle est de l'autre côté.

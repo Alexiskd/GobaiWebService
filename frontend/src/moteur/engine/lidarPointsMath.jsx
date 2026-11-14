@@ -421,16 +421,16 @@ export function viewTarget(cam, dir) {
 export const searchRadius = (distM) => Math.min(1500, Math.max(600, distM * 0.5 + 400));
 
 /**
- * Hauteur de caméra (m) en deçà de laquelle le nuage de points LiDAR est dessiné : 1 000 m, soit 1 km au HUD.
+ * Hauteur de caméra (m) en deçà de laquelle le nuage de points LiDAR est dessiné : 750 m, soit 0,75 km au HUD.
  * C'est la même grandeur que la distance du zoom lue à l'écran — la hauteur au-dessus du sol — et non la distance à
- * la dalle : sous 1 km, le nuage apparaît, au-dessus il reste masqué.
+ * la dalle : sous 0,75 km, le nuage apparaît, au-dessus il reste masqué.
  *
  * Le nuage se charge au fur et à mesure : de haut, seule la racine de chaque dalle du champ (quelques dizaines de
  * milliers de points) ; en descendant, les niveaux plus fins, seulement dans le champ de la caméra et dans le budget de
- * points. Au-dessus de 1 km, il ne couvrirait que quelques pixels : il reste masqué.
+ * points. Au-dessus de 0,75 km, il ne couvrirait que quelques pixels : il reste masqué.
  */
-// Hauteur d'affichage du nuage de points : 1 000 mètres (le niveau de détail suit la distance : de haut, la racine).
-export const CLOUD_HEIGHT_M = 1000;
+// Hauteur d'affichage du nuage de points : 750 mètres (le niveau de détail suit la distance : de haut, la racine).
+export const CLOUD_HEIGHT_M = 750;
 
 /**
  * Le nuage de points est-il dessiné ? Deux conditions : la dalle est dans le champ de la caméra, et la caméra est
