@@ -2,11 +2,15 @@
 //
 // Même source que le TP iTowns de l'IGN (github.com/IGNF/TP_iTowns) : les bâtiments de la BD TOPO® v3, servis en
 // GeoJSON par le service WFS de la Géoplateforme (couche BDTOPO_V3:batiment), avec leur hauteur. Chaque bâtiment est
-// extrudé de son emprise au sol jusqu'à sa hauteur, puis allégé (contours simplifiés, petits bâtiments écartés). Paris est
-// découpée selon les tuiles de la carte (niveau 16, ≈ 400 m) ; seuls les carreaux dans le champ de la caméra sont chargés.
+// extrudé de son emprise au sol jusqu'à sa hauteur, puis allégé (contours simplifiés à 2 m, petits bâtiments écartés).
+// Paris est découpée en cellules hexagonales, celles de la carte (même grille géodésique, niveau 13, ≈ 550 m de large) ;
+// seules les cellules dans le champ de la caméra sont chargées. Chaque bâtiment appartient à une seule cellule : celle
+// qui contient le centre de son emprise.
 
-// Importe lonLatToXYZ, la conversion d'une longitude et d'une latitude en point de la sphère unité, depuis mercator.
-import { lonLatToXYZ } from './tiles/mercator';
+// Importe lonLatToXYZ et xyzToLonLat, les conversions entre longitude, latitude et point de la sphère unité.
+import { lonLatToXYZ, xyzToLonLat } from './tiles/mercator';
+// Importe hexCell, cellKeyOf et cellBox : les cellules hexagonales de la carte, la clé de celle d'un point, leur emprise.
+import { cellBox, cellKeyOf, hexCell } from './tiles/hexCells';
 // Importe EARTH_RADIUS_M, le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 
@@ -14,12 +18,11 @@ import { EARTH_RADIUS_M } from './gps';
 // Déclare et exporte l'emprise de Paris : ouest, sud, est, nord.
 export const PARIS_BOUNDS = { west: 2.224, south: 48.815, east: 2.47, north: 48.903 };
 /**
- * Niveau des carreaux : le découpage est celui des tuiles de la carte (Web Mercator, comme les images de la Terre),
- * au niveau 16, soit des carreaux d'environ 400 m de côté à Paris. Un carreau de bâtiments couvre exactement une tuile
- * de la carte de ce niveau.
+ * Fréquence des cellules hexagonales : la même grille géodésique que les cellules de la carte (tiles/hexCells.jsx),
+ * à la fréquence 16 384 (niveau 13), soit des cellules d'environ 275 m de rayon (≈ 550 m de large) à Paris.
  */
-// Déclare et exporte le niveau des carreaux : 16.
-export const TILE_Z = 16;
+// Déclare et exporte la fréquence des cellules : 16 384.
+export const HEX_F = 16384;
 /** Altitude de la caméra (m) sous laquelle les bâtiments sont chargés et dessinés : 4 km. */
 // Déclare et exporte l'altitude d'affichage : 4 000 m.
 export const SHOW_ALTITUDE_M = 4000;
@@ -33,11 +36,11 @@ export const FLOOR_M = 3;
 // Déclare et exporte la limite de bâtiments par requête : 5 000.
 export const WFS_COUNT = 5000;
 /** Allègement : tolérance de simplification des contours (m), au-delà de laquelle un point est gardé. */
-// Déclare et exporte la tolérance de simplification : 1 m.
-export const SIMPLIFY_M = 1;
+// Déclare et exporte la tolérance de simplification : 2 m.
+export const SIMPLIFY_M = 2;
 /** Allègement : emprise au sol minimale d'un bâtiment, et d'une cour intérieure (m²) ; plus petit, il est écarté. */
-// Déclare et exporte l'emprise minimale : 25 m².
-export const MIN_AREA_M2 = 25;
+// Déclare et exporte l'emprise minimale : 40 m².
+export const MIN_AREA_M2 = 40;
 /** Adresse du service WFS de la Géoplateforme de l'IGN. */
 // Déclare et exporte l'adresse du service WFS.
 export const WFS_URL = 'https://data.geopf.fr/wfs/ows';
@@ -48,51 +51,38 @@ export const WFS_LAYER = 'BDTOPO_V3:batiment';
 // Mètres par degré de latitude.
 const M_PER_DEG = (Math.PI * EARTH_RADIUS_M) / 180;
 
-/** Colonne et ligne (fractionnaires) d'un point dans les tuiles Web Mercator du niveau z. */
-// Déclare et exporte mercatorXY : la longitude, la latitude et le niveau.
-export function mercatorXY(lon, lat, z = TILE_Z) {
-  // Nombre de tuiles par côté.
-  const n = 2 ** z;
-  // Latitude en radians, bornée à celle de la projection.
-  const la = Math.max(-85.05112878, Math.min(85.05112878, lat)) * (Math.PI / 180);
-  // Colonne et ligne.
-  return { x: ((lon + 180) / 360) * n, y: ((1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2) * n };
-// Fin de mercatorXY.
+/**
+ * Cellule hexagonale qui contient un point, avec ce qu'il faut pour la charger et la poser : sa clé, son centre en
+ * degrés, son emprise rectangulaire (pour la requête WFS) et la cellule elle-même (contour, rayon, milieux des côtés).
+ */
+// Cellules déjà calculées, par clé (le contour d'une cellule coûte plus cher que sa clé) : 3 000 au plus.
+const CELLS = new Map();
+// Déclare et exporte cellAt : un point de la sphère unité.
+export function cellAt(p) {
+  // Clé de la cellule du point.
+  const key = cellKeyOf(p, HEX_F);
+  // Déjà calculée : renvoyée telle quelle.
+  const hit = CELLS.get(key);
+  // Trouvée.
+  if (hit) return hit;
+  // Réserve pleine : vidée.
+  if (CELLS.size >= 3000) CELLS.clear();
+  // La cellule de la grille.
+  const cell = hexCell(p, HEX_F);
+  // Longitude et latitude de son centre.
+  const [lon, lat] = xyzToLonLat(cell.center);
+  // La cellule, sa clé, son centre et son emprise.
+  const out = { cell, key: cell.key, lon, lat, bounds: { ...cellBox(cell), lon, lat } };
+  // Gardée sous sa clé.
+  CELLS.set(key, out);
+  // Renvoyée.
+  return out;
+// Fin de cellAt.
 }
 
-/** Tuile du niveau 16 qui contient un point. */
-// Déclare et exporte tileIndexAt : la longitude et la latitude.
-export function tileIndexAt(lon, lat) {
-  // Position fractionnaire.
-  const { x, y } = mercatorXY(lon, lat);
-  // Arrondie vers le bas.
-  return { x: Math.floor(x), y: Math.floor(y) };
-// Fin de tileIndexAt.
-}
-
-/** Emprise d'une tuile du niveau 16 (degrés), avec son centre. */
-// Déclare et exporte tileBounds : la colonne et la ligne.
-export function tileBounds(x, y, z = TILE_Z) {
-  // Nombre de tuiles par côté.
-  const n = 2 ** z;
-  // Latitude du bord nord d'une ligne.
-  const latOf = (row) => Math.atan(Math.sinh(Math.PI * (1 - (2 * row) / n))) * (180 / Math.PI);
-  // Les quatre bords.
-  const west = (x / n) * 360 - 180, east = ((x + 1) / n) * 360 - 180, north = latOf(y), south = latOf(y + 1);
-  // Renvoie les bords et le centre.
-  return { west, east, north, south, lon: (west + east) / 2, lat: (north + south) / 2 };
-// Fin de tileBounds.
-}
-
-/** Tuiles qui couvrent Paris : colonnes x0 à x1, lignes y0 à y1 (le nord a la plus petite ligne). */
-// Déclare et exporte la grille de Paris (début).
-export const GRID = (() => {
-  // Coin nord-ouest et coin sud-est.
-  const nw = tileIndexAt(PARIS_BOUNDS.west, PARIS_BOUNDS.north), se = tileIndexAt(PARIS_BOUNDS.east, PARIS_BOUNDS.south);
-  // Renvoie les bornes.
-  return { x0: nw.x, x1: se.x, y0: nw.y, y1: se.y };
-// Fin de la grille.
-})();
+/** L'emprise rectangulaire touche-t-elle Paris ? */
+// touchesParis : l'emprise.
+const touchesParis = (b) => b.east > PARIS_BOUNDS.west && b.west < PARIS_BOUNDS.east && b.north > PARIS_BOUNDS.south && b.south < PARIS_BOUNDS.north;
 
 /** Distance au sol approchée (m) entre deux points proches. */
 // Déclare et exporte groundDistance : deux longitudes et deux latitudes.
@@ -114,57 +104,86 @@ export function groundDistance(lon1, lat1, lon2, lat2) {
 export const viewRange = (altitudeM) => Math.min(4000, Math.max(800, altitudeM * 6));
 
 /**
- * Tuiles de Paris à moins de `radiusM` du point (lon, lat), du plus proche au plus lointain. Rien si le point est loin
- * de Paris. Le choix final (seulement celles du champ de la caméra) est fait par le moteur.
+ * Cellules hexagonales de Paris à moins de `radiusM` du point (lon, lat), de la plus proche à la plus lointaine :
+ * parcours de proche en proche, d'une cellule à ses six voisines. Rien si le point est loin de Paris. Le choix final
+ * (seulement celles du champ de la caméra) est fait par le moteur.
  */
-// Déclare et exporte tilesAround : le point et le rayon.
-export function tilesAround(lon, lat, radiusM) {
-  // Tuile du point.
-  const c = tileIndexAt(lon, lat);
-  // Côté d'une tuile en mètres à cette latitude.
-  const side = (360 / 2 ** TILE_Z) * M_PER_DEG * Math.cos(lat * (Math.PI / 180));
-  // Nombre de tuiles à parcourir de chaque côté.
-  const n = Math.ceil(radiusM / side) + 1;
-  // Tuiles retenues.
-  const out = [];
-  // Pour chaque ligne voisine, dans la grille de Paris (début).
-  for (let y = Math.max(GRID.y0, c.y - n); y <= Math.min(GRID.y1, c.y + n); y++) {
-    // Pour chaque colonne voisine, dans la grille de Paris (début).
-    for (let x = Math.max(GRID.x0, c.x - n); x <= Math.min(GRID.x1, c.x + n); x++) {
-      // Emprise de la tuile.
-      const b = tileBounds(x, y);
-      // Point de la tuile le plus proche du point survolé.
-      const px = Math.min(Math.max(lon, b.west), b.east), py = Math.min(Math.max(lat, b.south), b.north);
-      // Distance à la tuile.
-      const d = groundDistance(lon, lat, px, py);
-      // Assez proche : retenue, avec sa clé et sa distance.
-      if (d <= radiusM) out.push({ x, y, key: `${TILE_Z}/${x}/${y}`, d });
-    // Fin des colonnes.
+// Déclare et exporte cellsAround : le point et le rayon.
+export function cellsAround(lon, lat, radiusM) {
+  // Point de départ sur la sphère.
+  const p = lonLatToXYZ(lon, lat);
+  // Cellules retenues, clés déjà vues, file d'attente.
+  const out = [], seen = new Set(), queue = [cellAt(p)];
+  // Clé de la première.
+  seen.add(queue[0].key);
+  // Tant qu'il reste des cellules à examiner (début).
+  while (queue.length) {
+    // La suivante.
+    const c = queue.shift();
+    // Distance au sol du point à la cellule : du centre, moins son rayon (0 dedans).
+    const d = Math.max(0, groundDistance(lon, lat, c.lon, c.lat) - c.cell.rho * EARTH_RADIUS_M);
+    // Trop loin : ni gardée, ni parcourue au-delà.
+    if (d > radiusM) continue;
+    // Dans Paris : gardée (copie : la distance est propre à ce parcours).
+    if (touchesParis(c.bounds)) out.push({ ...c, d });
+    // Ses six voisines : le centre est reflété par le milieu de chaque côté.
+    for (const m of c.cell.mids) {
+      // Point au-delà du côté, dans la cellule voisine.
+      const q = [2 * m[0] - c.cell.center[0], 2 * m[1] - c.cell.center[1], 2 * m[2] - c.cell.center[2]];
+      // Clé de la voisine.
+      const k = cellKeyOf(q, HEX_F);
+      // Déjà vue : suivante.
+      if (seen.has(k)) continue;
+      // Notée et mise en file.
+      seen.add(k); queue.push(cellAt(q));
+    // Fin des voisines.
     }
-  // Fin des lignes.
+    // Garde-fou : jamais plus de 600 cellules examinées.
+    if (seen.size > 600) break;
+  // Fin du parcours.
   }
   // Trie de la plus proche à la plus lointaine.
   return out.sort((a, b) => a.d - b.d);
-// Fin de tilesAround.
+// Fin de cellsAround.
 }
 
 /**
- * Coins d'une tuile sur la sphère unité de la Terre, au sol et à `topM` mètres : huit points [x, y, z] qui
- * enveloppent les bâtiments de la tuile (pour le test du champ de la caméra).
+ * Coins d'une cellule sur la sphère unité de la Terre : son contour au sol et à `topM` mètres, points [x, y, z] qui
+ * enveloppent ses bâtiments (pour le test du champ de la caméra).
  */
-// Déclare et exporte tileCorners : l'emprise et la hauteur du haut.
-export function tileCorners({ west, east, north, south }, topM = 120) {
-  // Points renvoyés.
-  const out = [];
-  // Au sol, puis en haut.
-  for (const r of [1, 1 + topM / EARTH_RADIUS_M]) {
-    // Les quatre coins à ce rayon.
-    for (const [lo, la] of [[west, south], [east, south], [east, north], [west, north]]) out.push(lonLatToXYZ(lo, la, r));
-  // Fin des rayons.
-  }
-  // Renvoie les points.
-  return out;
-// Fin de tileCorners.
+// Déclare et exporte cellCorners : la cellule et la hauteur du haut.
+export function cellCorners(cell, topM = 120) {
+  // Rayon du haut.
+  const top = 1 + topM / EARTH_RADIUS_M;
+  // Le contour au sol, puis en haut.
+  return [...cell.ring, ...cell.ring.map((q) => [q[0] * top, q[1] * top, q[2] * top])];
+// Fin de cellCorners.
+}
+
+/**
+ * Bâtiments qui appartiennent à la cellule : ceux dont le centre de l'emprise tombe dedans. La requête WFS, faite sur
+ * le rectangle de la cellule, renvoie aussi des bâtiments des cellules voisines ; ce tri évite qu'un bâtiment soit
+ * dessiné deux fois.
+ */
+// Déclare et exporte featuresInCell : les entités, la clé de la cellule et son centre.
+export function featuresInCell(features, key, lon0, lat0) {
+  // Axes inversés par le serveur ?
+  const swap = needsSwap(features, lon0, lat0);
+  // Garde les bâtiments dont le centre est dans la cellule (début).
+  return features.filter((f) => {
+    // Contour extérieur du premier polygone.
+    const ring = polygonsOf(f?.geometry)[0]?.[0];
+    // Sans contour : écarté.
+    if (!Array.isArray(ring) || !ring.length) return false;
+    // Moyenne des points, dans le bon ordre des axes.
+    let lo = 0, la = 0;
+    // Somme.
+    for (const c of ring) { lo += swap ? c[1] : c[0]; la += swap ? c[0] : c[1]; }
+    // Clé de la cellule du centre : la même que celle-ci ?
+    return cellKeyOf(lonLatToXYZ(lo / ring.length, la / ring.length), HEX_F) === key;
+  // Fin du tri.
+  });
+// Fin de featuresInCell.
 }
 
 /**

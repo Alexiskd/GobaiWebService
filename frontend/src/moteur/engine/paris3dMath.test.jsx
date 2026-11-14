@@ -3,7 +3,11 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les fonctions testées de Paris en 3D.
-import { GRID, PARIS_BOUNDS, TILE_Z, buildingHeight, extrudeBuildings, mercatorXY, needsSwap, projectRing, ringArea, simplifyRing, tileBounds, tileCorners, tileFrame, tileIndexAt, tilesAround, viewRange, wfsUrl } from './paris3dMath';
+import { HEX_F, PARIS_BOUNDS, buildingHeight, cellAt, cellCorners, cellsAround, extrudeBuildings, featuresInCell, needsSwap, projectRing, ringArea, simplifyRing, tileFrame, viewRange, wfsUrl } from './paris3dMath';
+// Importe la clé de cellule de la carte et la conversion en point de la sphère.
+import { cellKeyOf } from './tiles/hexCells';
+// Importe la conversion d'une longitude et d'une latitude en point de la sphère.
+import { lonLatToXYZ } from './tiles/mercator';
 // Importe le rayon de la Terre en mètres.
 import { EARTH_RADIUS_M } from './gps';
 
@@ -23,46 +27,58 @@ function square(lon0, lat0, side, clockwise = false) {
   return [...ring, ring[0]];
 }
 
-// Test : la grille des tuiles.
-test('tuiles : découpage Web Mercator de la carte au niveau 16, grille de Paris', () => {
-  // Niveau 16.
-  assert.equal(TILE_Z, 16);
-  // Notre-Dame : tuile 16/33195/22547 (même numérotation que les tuiles de la carte).
-  assert.deepEqual(tileIndexAt(2.3499, 48.853), { x: 33195, y: 22547 });
-  // L'emprise d'une tuile contient son centre, et le centre retombe dans la tuile.
-  const b = tileBounds(33195, 22547);
-  // Même tuile.
-  assert.deepEqual(tileIndexAt(b.lon, b.lat), { x: 33195, y: 22547 });
-  // Bords cohérents avec la position fractionnaire.
-  assert.ok(Math.abs(mercatorXY(b.west, b.north).x - 33195) < 1e-6 && Math.abs(mercatorXY(b.west, b.north).y - 22547) < 1e-6);
-  // La grille couvre Paris : le nord a la plus petite ligne.
-  assert.ok(GRID.x0 < GRID.x1 && GRID.y0 < GRID.y1);
-  // Coins de Paris dans la grille.
-  assert.ok(tileBounds(GRID.x0, GRID.y0).west <= PARIS_BOUNDS.west && tileBounds(GRID.x1, GRID.y1).east >= PARIS_BOUNDS.east);
+// Test : les cellules hexagonales.
+test('cellules : grille hexagonale de la carte, ≈ 550 m à Paris, emprise qui contient le contour', () => {
+  // Cellule de Notre-Dame.
+  const c = cellAt(lonLatToXYZ(2.3499, 48.853));
+  // Même clé que la grille de la carte à la même fréquence.
+  assert.equal(c.key, cellKeyOf(lonLatToXYZ(2.3499, 48.853), HEX_F));
+  // Six côtés (hexagone) : contour de douze points (coins et milieux).
+  assert.equal(c.cell.ring.length, 12);
+  // Rayon entre 200 et 350 m.
+  const r = c.cell.rho * EARTH_RADIUS_M;
+  // Bornes.
+  assert.ok(r > 200 && r < 350, String(r));
+  // L'emprise rectangulaire contient le centre.
+  assert.ok(c.bounds.west < c.lon && c.lon < c.bounds.east && c.bounds.south < c.lat && c.lat < c.bounds.north);
+  // Contour au sol puis en haut : 24 points, le haut 120 m plus loin du centre de la Terre.
+  const k = cellCorners(c.cell, 120);
+  // Vingt-quatre points.
+  assert.equal(k.length, 24);
+  // Hauteur du haut.
+  assert.ok(Math.abs((Math.hypot(...k[12]) - 1) * EARTH_RADIUS_M - 120) < 1e-6);
 });
 
-// Test : les tuiles autour d'un point.
-test('tuiles voisines : triées par distance, bornées à Paris, aucune loin de Paris', () => {
-  // Autour de Notre-Dame, sur 800 m.
-  const list = tilesAround(2.3499, 48.853, 800);
-  // Il y en a plusieurs.
-  assert.ok(list.length >= 9);
-  // La première contient le point (distance nulle) et porte une clé « 16/x/y ».
-  assert.equal(list[0].d, 0); assert.equal(list[0].key, '16/33195/22547');
-  // Triées par distance.
-  for (let i = 1; i < list.length; i++) assert.ok(list[i].d >= list[i - 1].d);
-  // Toutes dans le rayon et dans la grille.
-  for (const t of list) { assert.ok(t.d <= 800); assert.ok(t.x >= GRID.x0 && t.x <= GRID.x1 && t.y >= GRID.y0 && t.y <= GRID.y1); }
+// Test : les cellules autour d'un point.
+test('cellules voisines : triées par distance, sans doublon, aucune loin de Paris', () => {
+  // Autour de Notre-Dame, sur 1 200 m.
+  const list = cellsAround(2.3499, 48.853, 1200);
+  // Plusieurs cellules : au moins la cellule et ses six voisines.
+  assert.ok(list.length >= 7, String(list.length));
+  // La première contient le point (distance nulle).
+  assert.equal(list[0].d, 0);
+  // Clés toutes différentes.
+  assert.equal(new Set(list.map((c) => c.key)).size, list.length);
+  // Triées par distance, toutes dans le rayon.
+  for (let i = 1; i < list.length; i++) { assert.ok(list[i].d >= list[i - 1].d); assert.ok(list[i].d <= 1200); }
   // À Lyon, rien.
-  assert.equal(tilesAround(4.835, 45.764, 4000).length, 0);
+  assert.equal(cellsAround(4.835, 45.764, 4000).length, 0);
+  // Près du bord de Paris, seules les cellules qui touchent Paris.
+  for (const c of cellsAround(PARIS_BOUNDS.west, 48.86, 1500)) assert.ok(c.bounds.east > PARIS_BOUNDS.west);
   // La portée est bornée.
   assert.equal(viewRange(10), 800); assert.equal(viewRange(1e6), 4000);
-  // Les coins d'une tuile : quatre au sol (rayon 1) et quatre en haut.
-  const c = tileCorners(tileBounds(33195, 22547), 120);
-  // Huit coins.
-  assert.equal(c.length, 8);
-  // Au sol, puis 120 m plus haut.
-  assert.ok(Math.abs(Math.hypot(...c[0]) - 1) < 1e-12 && Math.abs((Math.hypot(...c[7]) - 1) * EARTH_RADIUS_M - 120) < 1e-6);
+});
+
+// Test : un bâtiment n'appartient qu'à une cellule.
+test('bâtiments : chacun dans la seule cellule qui contient son centre', () => {
+  // Deux cellules voisines autour de Notre-Dame.
+  const [a, b] = cellsAround(2.3499, 48.853, 600);
+  // Un petit bâtiment au centre de la cellule a.
+  const f = { id: 'x', properties: {}, geometry: { type: 'Polygon', coordinates: [square(a.lon, a.lat, 10)] } };
+  // Gardé par a.
+  assert.equal(featuresInCell([f], a.key, a.lon, a.lat).length, 1);
+  // Écarté par b.
+  assert.equal(featuresInCell([f], b.key, b.lon, b.lat).length, 0);
 });
 
 // Test : l'adresse WFS.

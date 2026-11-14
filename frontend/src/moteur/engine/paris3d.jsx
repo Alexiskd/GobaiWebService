@@ -5,18 +5,19 @@ import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la longitude et la latitude d'un point de la sphère, depuis mercator.
 import { xyzToLonLat } from './tiles/mercator';
 // Importe les constantes et les calculs de Paris en 3D, depuis paris3dMath.
-import { PARIS_BOUNDS, SHOW_ALTITUDE_M, extrudeBuildings, groundDistance, tileBounds, tileCorners, tileFrame, tilesAround, viewRange, wfsUrl } from './paris3dMath';
+import { PARIS_BOUNDS, SHOW_ALTITUDE_M, cellCorners, cellsAround, extrudeBuildings, featuresInCell, groundDistance, tileFrame, viewRange, wfsUrl } from './paris3dMath';
 
 // Paris en 3D, sur le modèle du TP iTowns de l'IGN (github.com/IGNF/TP_iTowns) : les bâtiments de la BD TOPO v3
 // (service WFS de la Géoplateforme, couche BDTOPO_V3:batiment), extrudés à leur hauteur et posés sur le globe.
 // Remplace les dalles LiDAR en points 3D.
 //
-// Chargement : Paris est découpée selon les tuiles de la carte (Web Mercator, niveau 16, ≈ 400 m ; voir
-// paris3dMath.jsx). Sous 4 km d'altitude, au-dessus de Paris, seules les tuiles dans le champ de la caméra sont
-// demandées au WFS, celles de l'axe de visée d'abord, quelques-unes à la fois ; un téléchargement est abandonné dès
-// que sa tuile sort du champ. Une tuile reçue est allégée (contours simplifiés à 1 m, bâtiments et cours de moins de
-// 25 m² écartés) puis extrudée en un seul maillage (un appel de dessin par tuile). Les tuiles déjà reçues restent en
-// mémoire, masquées, pour revenir sans attente ; au-delà du plafond, les plus anciennes sortent.
+// Chargement : Paris est découpée en cellules hexagonales, celles de la grille géodésique de la carte (niveau 13,
+// ≈ 550 m de large ; voir paris3dMath.jsx). Sous 4 km d'altitude, au-dessus de Paris, seules les cellules dans le
+// champ de la caméra sont demandées au WFS (sur le rectangle qui les entoure), celles de l'axe de visée d'abord,
+// quelques-unes à la fois ; un téléchargement est abandonné dès que sa cellule sort du champ. Une cellule reçue ne garde
+// que ses propres bâtiments (centre de l'emprise dans l'hexagone), allégés (contours simplifiés à 2 m, bâtiments et
+// cours de moins de 40 m² écartés), puis extrudés en un seul maillage (un appel de dessin par cellule). Les cellules
+// déjà reçues restent en mémoire, masquées, pour revenir sans attente ; au-delà du plafond, les plus anciennes sortent.
 //
 // Pose : les bâtiments sont rattachés au groupe de la Terre et recopient sa rotation propre, comme les tuiles. Carte à
 // plat : leur pied est posé sur la carte (le sol des tuiles, légèrement soulevé selon le niveau affiché). Relief en
@@ -111,7 +112,7 @@ export class Paris3D {
     // Soulèvement du sol des tuiles (m), sur une carte à plat.
     this.groundLiftM = 0;
     // Carreaux, par clé.
-    this.tiles = new Map(); // clé « 16/x/y » → { key, x, y, bounds, state, mesh, groundM, usedAt, retryAt, abort }
+    this.tiles = new Map(); // clé de la cellule hexagonale → { key, cell, bounds, state, mesh, groundM, usedAt, retryAt, abort }
     // Carreaux reçus, en attente d'extrusion (un par image, pour ne pas faire chuter l'affichage).
     this.arrived = [];
     // Téléchargements en cours : 0.
@@ -216,7 +217,13 @@ export class Paris3D {
     // Carreau retiré entre-temps : rien.
     if (!this.tiles.has(tile.key)) return;
     // Extrusion des bâtiments, avec la triangulation des toits de three.js.
-    const m = extrudeBuildings(features, tile.bounds.lon, tile.bounds.lat, (shape, holes) => THREE.ShapeUtils.triangulateShape(shape, holes));
+    // three.js attend de vrais THREE.Vector2 (il appelle leur méthode `equals`) : les points { x, y } sont convertis.
+    // toV2 : convertit un contour en THREE.Vector2.
+    const toV2 = (ring) => ring.map((q) => new THREE.Vector2(q.x, q.y));
+    // Seulement les bâtiments de cette cellule (la requête rectangulaire en renvoie aussi des voisines).
+    const own = featuresInCell(features, tile.key, tile.bounds.lon, tile.bounds.lat);
+    // Extrusion, avec la triangulation des toits de three.js sur des THREE.Vector2.
+    const m = extrudeBuildings(own, tile.bounds.lon, tile.bounds.lat, (shape, holes) => THREE.ShapeUtils.triangulateShape(toV2(shape), holes.map(toV2)));
     // Carreau prêt.
     tile.state = 'ready';
     // Altitude de son sol.
@@ -285,7 +292,15 @@ export class Paris3D {
     // Fin de ce cas.
     }
     // Un bâtiment reçu par image est extrudé.
-    if (this.arrived.length) this.build(this.arrived.shift());
+    // Une tuile qui échoue (géométrie inattendue) est notée en échec et réessayée plus tard : elle ne doit jamais
+    // interrompre la boucle d'affichage du moteur.
+    if (this.arrived.length) {
+      // La tuile reçue la plus ancienne.
+      const a = this.arrived.shift();
+      // Extrusion protégée ; en cas d'erreur : échec, nouvel essai dans 30 s.
+      try { this.build(a); } catch { a.tile.state = 'failed'; a.tile.retryAt = now + RETRY_AFTER_MS; }
+    // Fin de ce cas.
+    }
     // Le repère suit la rotation propre de la Terre (le maillage peut être masqué, pas ce repère).
     // Le maillage de la Terre et le repère.
     const mesh = this.engine.earth.mesh, frame = this.root;
@@ -334,9 +349,9 @@ export class Paris3D {
     // Direction de visée dans le repère de la sphère unité.
     const fwd = cam.getWorldDirection(this.fwd).transformDirection(this.tmpM.copy(frame.matrixWorld).invert());
     // Tuiles voulues : à portée, et dans le champ de la caméra (boîte élargie d'un quart pour ne pas les voir apparaître au bord).
-    const wanted = tilesAround(lon, lat, radiusM).filter((w) => {
-      // Boîte de la tuile, du sol à 120 m.
-      this.box.setFromPoints(tileCorners(tileBounds(w.x, w.y)).map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+    const wanted = cellsAround(lon, lat, radiusM).filter((w) => {
+      // Boîte de la cellule hexagonale, du sol à 120 m.
+      this.box.setFromPoints(cellCorners(w.cell).map(([x, y, z]) => new THREE.Vector3(x, y, z)));
       // Élargie d'un quart de sa taille.
       this.box.expandByScalar(this.box.min.distanceTo(this.box.max) * 0.25);
       // Hors du champ : écartée.
@@ -358,7 +373,7 @@ export class Paris3D {
       // Le carreau, créé s'il manque.
       let t = this.tiles.get(w.key);
       // S'il manque : créé, à charger.
-      if (!t) { t = { key: w.key, x: w.x, y: w.y, bounds: tileBounds(w.x, w.y), state: 'idle', mesh: null, groundM: 0, buildings: 0, usedAt: 0, retryAt: 0, abort: null }; this.tiles.set(w.key, t); }
+      if (!t) { t = { key: w.key, cell: w.cell, bounds: w.bounds, state: 'idle', mesh: null, groundM: 0, buildings: 0, usedAt: 0, retryAt: 0, abort: null }; this.tiles.set(w.key, t); }
       // Utilisé maintenant.
       t.usedAt = now;
       // À charger et de la place : lancé (celle de l'axe de visée d'abord).
