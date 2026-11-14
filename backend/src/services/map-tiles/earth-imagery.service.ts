@@ -20,8 +20,8 @@ import {
   type LiveSource,
 // Fin de l'import.
 } from './earth-live';
-// Fonds marins (GEBCO, NOAA NCEI) : leur liste et leur table par identifiant de couche.
-import { SEAFLOOR_BY_ID, SEAFLOOR_LAYERS } from './earth-seafloor';
+// Fonds marins (GEBCO, NOAA NCEI) : leur liste, leur table par identifiant de couche, et la fusion dans la couche unique.
+import { SEAFLOOR_BY_ID, SEAFLOOR_LAYERS, seafloorFusion } from './earth-seafloor';
 
 // Même chargement que mars-fusion.service.ts (module CommonJS natif).
 // Charge la bibliothèque d'images sharp, sans typage (la ligne du dessous autorise ce « any » pour ESLint).
@@ -164,8 +164,8 @@ export class EarthImageryService implements TileProvider {
     return [{
       // les valeurs communes, l'identifiant « earth-hd », son nom, sa nature et son zoom maximal ;
       ...base, id: 'earth-hd', label: 'Satellite HD (couche unique)', kind: 'imagery', maxZoom: EARTH_HD_MAX_ZOOM,
-      // sa description, avec la liste des sources.
-      description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}. Zoom jusqu’au niveau 19.`,
+      // sa description, avec la liste des sources, et les fonds marins quand ils y sont fondus.
+      description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}.${seafloorFusion() ? ' Au large, le relief des fonds marins (GEBCO 2026).' : ''} Zoom jusqu’au niveau 19.`,
     // Seconde couche :
     }, {
       // les valeurs communes, l'identifiant de la couche en direct, son nom, sa nature et son zoom maximal ;
@@ -231,6 +231,8 @@ export class EarthImageryService implements TileProvider {
     }
     // Ancienne couche, s'il y en a une sous cet identifiant.
     const legacy = LEGACY[id];
+    // Réglage de la fusion des fonds marins, ou null si elle est coupée.
+    const fusion = seafloorFusion();
     // Description :
     const info: TileLayerInfo = legacy
       // celle de l'ancienne couche, avec le nom de sa source ;
@@ -254,8 +256,10 @@ export class EarthImageryService implements TileProvider {
       // mondiale. `EARTH_COLOR_MATCH=0` coupe cet accord.
       // l'accord de couleur (faux si EARTH_COLOR_MATCH est coupé), absent pour une ancienne couche ;
       ...(legacy ? {} : { colorMatch: !isOff(process.env.EARTH_COLOR_MATCH) }),
-      // la mention : celles des sources de la couche.
-      attribution: { text: this.sourcesOf(id).map((s) => s.attribution).join(' · ') },
+      // les fonds marins fondus par le navigateur (absents si EARTH_SEAFLOOR est coupé), pas pour une ancienne couche ;
+      ...(legacy || !fusion ? {} : { seafloor: fusion }),
+      // la mention : celles des sources de la couche, puis celle de GEBCO quand les fonds sont fondus.
+      attribution: { text: [...this.sourcesOf(id).map((s) => s.attribution), ...(legacy || !fusion ? [] : [SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution])].join(' · ') },
     // Fin de l'objet.
     };
   // Fin de resolveSync.

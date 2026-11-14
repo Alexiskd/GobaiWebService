@@ -11,8 +11,8 @@
  * Fonctions pures, testées dans earth-seafloor.spec.ts.
  */
 
-// Ouvre l'import du module des sources de la Terre : l'emprise Web Mercator d'une tuile, l'adresse WMS d'une tuile, et le type d'une source.
-import { mercatorBbox, wms, type EarthSource } from './earth-sources';
+// Ouvre l'import du module des sources de la Terre : l'emprise Web Mercator d'une tuile, l'adresse WMS d'une tuile, le test d'un interrupteur coupé et le type d'une source.
+import { isOff, mercatorBbox, wms, type EarthSource } from './earth-sources';
 
 // Adresse du service WMS de GEBCO : GEBCO_WMS_URL si elle est définie, sinon l'adresse officielle ; les « ? » et « & » de fin sont retirés.
 const GEBCO_BASE = (process.env.GEBCO_WMS_URL?.trim() || 'https://wms.gebco.net/mapserv').replace(/[?&]+$/, '');
@@ -79,3 +79,30 @@ export const SEAFLOOR_LAYERS: SeafloorLayer[] = [
 
 // Table qui donne un fond marin à partir de l'identifiant de sa couche.
 export const SEAFLOOR_BY_ID = new Map(SEAFLOOR_LAYERS.map((l) => [l.id, l]));
+
+/**
+ * Fusion des fonds marins dans la couche unique « earth-hd », faite par le navigateur : là où les altitudes Terrarium
+ * (AWS Terrain Tiles, déjà lues par le relief) sont sous la mer, la tuile GEBCO remplace peu à peu l'imagerie
+ * satellite — l'eau peu profonde des côtes garde l'image satellite, le large montre le relief des fonds, comme sur
+ * Google Earth. Les deux sont prises au niveau 10 au plus : une tuile sert toutes les tuiles affichées qu'elle couvre.
+ * `EARTH_SEAFLOOR=0` coupe la fusion.
+ */
+// Altitudes Terrarium d'AWS : TERRARIUM_URL si elle est définie, sinon l'adresse publique.
+const TERRARIUM = process.env.TERRARIUM_URL?.trim() || 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+// Niveau maximal des tuiles des fonds et des altitudes lues pour la fusion : 10 (≈ 150 m par pixel à l'équateur).
+export const SEAFLOOR_FUSION_MAX_ZOOM = 10;
+
+// Fonction seafloorFusion : le réglage de la fusion pour le navigateur, ou null si elle est coupée ; par défaut, l'environnement du processus.
+export function seafloorFusion(env: Record<string, string | undefined> = process.env): { template: string; maxZoom: number; mask: { template: string; maxZoom: number } } | null {
+  // EARTH_SEAFLOOR coupé : null.
+  if (isOff(env.EARTH_SEAFLOOR)) return null;
+  // Renvoie :
+  return {
+    // les tuiles GEBCO, par le relais de ce serveur, jusqu'au niveau 10 ;
+    template: '/api/v1/tiles/earth/earth-gebco/{z}/{x}/{y}', maxZoom: SEAFLOOR_FUSION_MAX_ZOOM,
+    // les altitudes Terrarium, jusqu'au niveau 10.
+    mask: { template: TERRARIUM, maxZoom: SEAFLOOR_FUSION_MAX_ZOOM },
+  // Fin de l'objet.
+  };
+// Fin de seafloorFusion.
+}

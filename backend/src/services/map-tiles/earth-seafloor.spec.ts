@@ -1,5 +1,5 @@
-// Importe ce qui est testé : les fonds marins, leur table, la couche GEBCO, la fonction de rendu et l'adresse NOAA.
-import { GEBCO_LAYER, NCEI_RENDERING, SEAFLOOR_BY_ID, SEAFLOOR_LAYERS, nceiTileUrl } from './earth-seafloor';
+// Importe ce qui est testé : les fonds marins, leur table, la couche GEBCO, la fonction de rendu, l'adresse NOAA et la fusion.
+import { GEBCO_LAYER, NCEI_RENDERING, SEAFLOOR_BY_ID, SEAFLOOR_FUSION_MAX_ZOOM, SEAFLOOR_LAYERS, nceiTileUrl, seafloorFusion } from './earth-seafloor';
 // Importe l'emprise Web Mercator d'une tuile.
 import { mercatorBbox } from './earth-sources';
 
@@ -51,6 +51,21 @@ describe('fonds marins de la Terre', () => {
     expect(decodeURIComponent(url)).toContain(`{"rasterFunction":"${NCEI_RENDERING}"}`);
     // Renvoyée comme image.
     expect(url.endsWith('&f=image')).toBe(true);
+  // Fin du test.
+  });
+
+  // Test : la fusion dans la couche unique donne les tuiles GEBCO relayées et les altitudes Terrarium, et se coupe.
+  it('décrit la fusion des fonds marins, et EARTH_SEAFLOOR=0 la coupe', () => {
+    // Réglage par défaut.
+    const fusion = seafloorFusion({});
+    // Les tuiles GEBCO passent par le relais de ce serveur.
+    expect(fusion?.template).toBe('/api/v1/tiles/earth/earth-gebco/{z}/{x}/{y}');
+    // Jusqu'au niveau 10.
+    expect(fusion?.maxZoom).toBe(SEAFLOOR_FUSION_MAX_ZOOM);
+    // Les altitudes viennent des tuiles Terrarium.
+    expect(fusion?.mask.template).toContain('terrarium/{z}/{x}/{y}.png');
+    // Coupée : null.
+    expect(seafloorFusion({ EARTH_SEAFLOOR: '0' })).toBe(null);
   // Fin du test.
   });
 // Fin du groupe.

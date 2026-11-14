@@ -26,13 +26,13 @@ export const API_GROUPS = [
       // API « USGS National Map », appelée à l'adresse basemap.nationalmap.gov.
       { name: 'USGS National Map', host: 'basemap.nationalmap.gov', use: 'Imagerie des États-Unis' },
       // API « GEBCO WMS », appelée à l'adresse wms.gebco.net.
-      { name: 'GEBCO WMS', host: 'wms.gebco.net', use: 'Fond « Fonds marins · GEBCO 2026 » : relief des océans et des terres (tuiles lues par le serveur)' },
+      { name: 'GEBCO WMS', host: 'wms.gebco.net', use: 'Fonds marins : fondus au large dans le satellite HD, et fond « Fonds marins · GEBCO 2026 » (tuiles lues par le serveur)' },
       // API « NOAA NCEI DEM Global Mosaic », appelée à l'adresse gis.ngdc.noaa.gov.
       { name: 'NOAA NCEI DEM Global Mosaic', host: 'gis.ngdc.noaa.gov', use: 'Fond « Fonds marins · NOAA NCEI » : relief en couleurs des océans et des terres (tuiles lues par le serveur)' },
       // API « Mapterhorn », appelée à l'adresse tiles.mapterhorn.com.
       { name: 'Mapterhorn', host: 'tiles.mapterhorn.com', use: 'Altitudes de la Terre (Copernicus GLO-30) : relief en volume et ombrage des pentes' },
       // API « AWS Terrain Tiles (Mapzen) », appelée à l'adresse s3.amazonaws.com.
-      { name: 'AWS Terrain Tiles (Mapzen)', host: 's3.amazonaws.com', use: 'Altitudes de la Terre : source de secours du relief, et profondeur des fonds marins (GEBCO, ETOPO1)' },
+      { name: 'AWS Terrain Tiles (Mapzen)', host: 's3.amazonaws.com', use: 'Altitudes de la Terre : source de secours du relief, profondeur des fonds marins (GEBCO, ETOPO1), et limite terre-mer de la fusion des fonds dans le satellite HD' },
       // API « Open-Meteo (API d’altitude) », appelée à l'adresse api.open-meteo.com.
       { name: 'Open-Meteo (API d’altitude)', host: 'api.open-meteo.com', use: 'Dénivelé des trajets, demandé par le serveur' },
       // API « NASA EONET », appelée à l'adresse eonet.gsfc.nasa.gov.

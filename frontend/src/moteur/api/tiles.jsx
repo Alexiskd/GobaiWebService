@@ -15,8 +15,8 @@ export const tilesApi = {
   // Les tuiles relayées par le backend renvoient un chemin relatif : on le rend absolu ici.
   // layer : une couche, par son identifiant ;
   layer: (id, signal) => get(`/tiles/layers/${encodeURIComponent(id)}`, { signal })
-    // son modèle d'adresse est rendu absolu.
-    .then((info) => ({ ...info, urlTemplate: resolveApiUrl(info.urlTemplate) })),
+    // son modèle d'adresse est rendu absolu, comme celui des fonds marins quand la couche en a.
+    .then((info) => ({ ...info, urlTemplate: resolveApiUrl(info.urlTemplate), ...(info.seafloor ? { seafloor: { ...info.seafloor, template: resolveApiUrl(info.seafloor.template) } } : {}) })),
   // attribution : la mention d'une couche pour une zone et un zoom,
   attribution: (id, { zoom, north, south, east, west }, signal) =>
     // demandée avec ces valeurs en paramètres.
