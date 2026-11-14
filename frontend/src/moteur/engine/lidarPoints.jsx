@@ -8,8 +8,10 @@ import { xyzToLonLat } from './tiles/mercator';
 import { LidarDrape } from './lidarDrape';
 // Importe drapePlan et nodeDrape, le plan du drapage et son calage par nœud, depuis lidarDrapeMath.
 import { drapePlan, nodeDrape } from './lidarDrapeMath';
+// Importe la base de données des nuages, en mémoire, et ses capacités, depuis lidarStore.
+import { LIDAR_STORE_BYTES, LidarStore } from './lidarStore';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
-import { DOWNSCALE_FILL, LIDAR_PALETTE, boxDistance2D, densityOrder, domeBudget, domeRadius, expandLonLatBox, inDome, lonLatDistanceM, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, boxShiftM, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { DOWNSCALE_FILL, LIDAR_PALETTE, boxDistance2D, budgetForHeight, densityOrder, domeBudget, domeRadius, expandLonLatBox, inDome, lonLatDistanceM, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, boxShiftM, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 
 // Dalles LiDAR en vrais points 3D sur la Terre (LiDAR HD de l'IGN). Chaque dalle est un octree additif servi par
 // l'API (GET /lidar) : la racine donne la dalle entière, les niveaux suivants la densifient.
@@ -18,7 +20,9 @@ import { DOWNSCALE_FILL, LIDAR_PALETTE, boxDistance2D, densityOrder, domeBudget,
 // dessiné. Chaque nuage dans le dôme est téléchargé et chargé par densité : les racines de toutes les dalles d'abord,
 // puis le niveau suivant de chacune, uniformément (voir pump). La densité est adaptée à la taille du dôme, quel que
 // soit le zoom : le budget de points est réparti sur tout le cercle, niveau par niveau, du centre vers le bord
-// (domeBudget) ; plus le dôme est grand, moins il est dense. Dès que le dôme bouge et qu'un nuage (ou
+// (domeBudget) ; plus le dôme est grand, moins il est dense. Le budget lui-même est fixé par la hauteur de la caméra
+// (budgetForHeight). Chaque nœud téléchargé s'écrit en même temps dans une base de données en mémoire (1 Go sur
+// ordinateur, 256 Mo sur téléphone, voir lidarStore.jsx) : un nœud qui revient dans le dôme y est relu sans réseau. Dès que le dôme bouge et qu'un nuage (ou
 // une partie de nuage) en sort, il est supprimé aussitôt : points libérés, téléchargements abandonnés, dalle retirée.
 // Rien n'est gardé sur l'appareil : les nœuds sont téléchargés sans cache (`cache: 'no-store'`), et à la mise à jour
 // de l'app les nuages déjà téléchargés sont désinstallés (voir storagePurge.jsx). Seuls les nœuds dans le champ de la
@@ -42,8 +46,8 @@ import { DOWNSCALE_FILL, LIDAR_PALETTE, boxDistance2D, densityOrder, domeBudget,
 
 // La hauteur d'affichage du nuage (750 m, soit 0,75 km au HUD) et la règle d'affichage vivent dans le module de
 // calcul, avec les autres fonctions pures : voir lidarPointsMath.jsx.
-/** Budget du dôme : points dans tout le dôme, points gardés en mémoire, écart minimal entre deux points (px), chargements simultanés. */
-// Réglages sur ordinateur : 3 millions de points dessinés, 5 millions gardés, écart de 1,5 px, 6 chargements, orthophoto au niveau 18 sur 4 096 px.
+/** Budget maximal du dôme (le budget réel suit la hauteur, voir budgetForHeight), points gardés, écart minimal (px), chargements simultanés. */
+// Réglages sur ordinateur : 3 millions de points dessinés au plus, 5 millions gardés, écart de 1,5 px, 6 chargements, orthophoto au niveau 18 sur 4 096 px.
 const DESKTOP = { budget: 3_000_000, keep: 5_000_000, maxSpacingPx: 1.5, parallel: 6, drapeZoom: 18, drapeSize: 4096 };
 // Réglages sur téléphone ou tablette : 1,2 million dessinés, 2 millions gardés, écart de 2,2 px, 4 chargements, orthophoto au niveau 17 sur 2 048 px.
 const HANDHELD = { budget: 1_200_000, keep: 2_000_000, maxSpacingPx: 2.2, parallel: 4, drapeZoom: 17, drapeSize: 2048 };
@@ -143,6 +147,10 @@ export class LidarPoints {
     this.resolveUrl = resolveUrl;
     // Réglages selon l'appareil.
     this.profile = engine.power?.handheld ? HANDHELD : DESKTOP;
+    // Base de données des nuages, en mémoire : 1 Go sur ordinateur, 256 Mo sur téléphone.
+    this.store = new LidarStore(engine.power?.handheld ? LIDAR_STORE_BYTES.handheld : LIDAR_STORE_BYTES.desktop);
+    // Budget de points du moment, fixé par la hauteur de la caméra.
+    this.budget = this.profile.budget;
     // Rayon de la Terre dans la scène, ou 1.
     this.radius = engine.earth.def.radius || 1;
     // Repère des points.
@@ -603,11 +611,16 @@ export class LidarPoints {
     tile.loading.add(node);
     // Un chargement de plus.
     this.active++;
-    // Télécharge le fichier.
-    // Sans cache : rien n'est gardé sur l'appareil, le nuage est retéléchargé s'il revient dans le dôme.
-    fetch(this.resolveUrl(nodeUrl(tile.manifest, node)), { signal: abort.signal, cache: 'no-store' })
-      // Puis : erreur si la réponse est mauvaise, sinon les octets.
+    // Adresse du fichier : c'est aussi sa clé dans la base de données.
+    const url = this.resolveUrl(nodeUrl(tile.manifest, node));
+    // Déjà dans la base : relu sans réseau.
+    const stored = this.store.get(url);
+    // Sinon téléchargé sans cache du navigateur (rien n'est écrit sur l'appareil), puis écrit dans la base en même temps.
+    (stored ? Promise.resolve(stored) : fetch(url, { signal: abort.signal, cache: 'no-store' })
+      // Puis : erreur si la réponse est mauvaise, sinon les octets, écrits dans la base.
       .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); })
+      // Écrit le fichier dans la base de données (les plus anciens sortent si elle est pleine).
+      .then((buffer) => { this.store.put(url, buffer); return buffer; }))
       // Puis : crée les points, si rien n'a été abandonné et si la dalle existe toujours.
       .then((buffer) => { if (!abort.signal.aborted && this.tiles.get(tile.manifest.id) === tile) this.addNode(tile, node, buffer); })
       // Réseau ou fichier illisible : nouvel essai plus tard. Abandon voulu (nœud sorti du champ) : pas de délai.
@@ -809,6 +822,10 @@ export class LidarPoints {
     const dn = Math.log2(DEPTH_NEAR_M * unit);
     // Transmet la profondeur proche et l'inverse de l'étendue.
     this.shared.uDepth.value.set(dn, 1 / (Math.log2(DEPTH_FAR_M * unit) - dn));
+    // Hauteur de la caméra au-dessus de la Terre (m) : elle fixe le budget de points du dôme.
+    const camAlt = (this.tmpN.copy(cam.position).applyMatrix4(this.tmpM.copy(frame.matrixWorld).invert()).divideScalar(this.radius).length() - 1) * EARTH_RADIUS_M;
+    // Budget du moment, borné par celui de l'appareil.
+    this.budget = budgetForHeight(camAlt, this.profile.budget);
     // Sélection à refaire si demandé, ou si le délai est écoulé.
     const select = this.dirty || now - this.selectAt >= SELECT_EVERY_MS;
     // Aucune dalle affichée et aucun avancement pour l'instant.
@@ -911,7 +928,7 @@ export class LidarPoints {
     // Seconde passe, à une sélection : le budget est réparti sur tout le dôme, puis appliqué à chaque dalle.
     if (select) {
       // Nœuds retenus, toutes dalles confondues : niveau par niveau, du centre vers le bord, dans le budget.
-      const picked = domeBudget(wanted, this.profile.budget);
+      const picked = domeBudget(wanted, this.budget);
       // Clés retenues par dalle, dans l'ordre (niveau croissant).
       const byTile = new Map(domed.map((t) => [t, []]));
       // Range chaque nœud retenu avec sa dalle.
@@ -945,7 +962,7 @@ export class LidarPoints {
   // snapshot : l'état pour l'interface (début).
   snapshot() {
     // Nombre de dalles, points en mémoire, chargements en cours et avancement.
-    return { tiles: this.tiles.size, loaded: this.loaded, loading: this.active, progress: this.progress };
+    return { tiles: this.tiles.size, loaded: this.loaded, loading: this.active, progress: this.progress, budget: this.budget, store: this.store.snapshot() };
   // Fin de snapshot.
   }
 

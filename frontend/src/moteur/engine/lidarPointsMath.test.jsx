@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, inDome, domeRadius, domeBudget, lonLatDistanceM, boxDistance2D, expandLonLatBox, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, inDome, domeRadius, domeBudget, budgetForHeight, lonLatDistanceM, boxDistance2D, expandLonLatBox, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -530,4 +530,14 @@ test('inDome / selectNodes : dôme net, densité uniforme dedans, rien dehors', 
   assert.ok(all.every((k, i) => i === 0 || tree.get(all[i - 1]).level <= tree.get(k).level));
   // Dôme loin de la dalle : rien, pas même la racine.
   assert.deepEqual(selectNodes(tree, { ...view, dome: { center: [1e6, 1e6], radius: 100 } }, () => false), { show: [], load: [] });
+});
+
+// Budget fixé par la hauteur : 6·10⁸ / hauteur, arrondi à 50 000, entre 200 000 et le maximum de l'appareil.
+test('budgetForHeight : budget de points fixé par la hauteur de la caméra', () => {
+  // 600 m : 1 million ; 200 m et moins : 3 millions ; 2 900 m : 200 000 (le plancher).
+  assert.deepEqual([budgetForHeight(600), budgetForHeight(200), budgetForHeight(50), budgetForHeight(2900)], [1_000_000, 3_000_000, 3_000_000, 200_000]);
+  // Téléphone : plafonné à 1,2 million.
+  assert.equal(budgetForHeight(100, 1_200_000), 1_200_000);
+  // Hauteur inconnue : le maximum.
+  assert.equal(budgetForHeight(NaN), 3_000_000);
 });
