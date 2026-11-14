@@ -5,7 +5,7 @@ import { MIN_DISTANCE_WITH_TILES } from './tiles/tileManager';
  * Modèle commun des astres cartographiés en tuiles, construit sur le moteur lunaire.
  *
  * Chaque entrée décrit un astre ; le moteur (SolarEngine) en tire tout le reste, sans code propre à l'astre :
- * repère et éclairage des tuiles, caches (GPU, RAM, disque du navigateur), préchargement prédictif, altitude
+ * repère et éclairage des tuiles, caches (GPU, RAM ; rien sur le disque du navigateur), préchargement prédictif, altitude
  * minimale, survol d'un lieu, boussole, modèle 3D facultatif et état publié pour l'interface.
  * Ajouter un astre = ajouter une entrée ici (et ses couches `body: <id>` côté API).
  *
@@ -23,7 +23,6 @@ import { MIN_DISTANCE_WITH_TILES } from './tiles/tileManager';
  *  pinnedMaxZoom    niveaux 0 à n de tout l'astre chargés au départ et jamais évincés
  *  prefetch         préchargement prédictif (vue de la caméra dans 1,5 s, cône de 120°) vers le cache RAM
  *  ramCapacity      taille du cache RAM d'images décodées (préchargement), bureau ; plafonnée sur mobile
- *  persistentCache  cache persistant du navigateur (Cache Storage) pour les fichiers de tuiles
  *  surfaceMaterial  la sphère de fond prend l'éclairage et les couleurs des tuiles (au lieu d'une teinte unie)
  *  backdrop         couleur de la sphère de fond pendant le chargement des tuiles, au lieu de la couleur
  *                   d'interface de l'astre : un astre entièrement cartographié n'a pas à montrer sa teinte vive
@@ -68,12 +67,11 @@ export const TILED_BODIES = [
     // plus le bleu clair d'interface de la Terre (#3d8bff), qui les dessinait une par une au premier affichage.
     backdrop: '#0b0f16',
     // Fond instantané, sur le modèle de la Lune : toute la Terre aux niveaux 0 à 3 (85 tuiles) gardée en mémoire sur
-    // ordinateur (niveaux 0 à 2 sur téléphone), et les fichiers des tuiles chargées en direct jusqu'au niveau 7, plus
-    // ceux de la vue de loin, gardés sur le disque du navigateur : aux visites suivantes, le globe s'affiche sans réseau.
+    // ordinateur (niveaux 0 à 2 sur téléphone). Rien n'est gardé sur le disque du navigateur.
     // Préchargement prédictif comme la Lune : les tuiles de la zone vers laquelle la caméra se dirige sont chargées
     // d'avance, et celles qui sortent de l'écran restent en mémoire (300 images, 96 sur téléphone) pour revenir sans réseau.
-    // Niveaux 0 à 3 gardés en mémoire, préchargement actif, 300 images en mémoire vive, et cache sur disque des tuiles chargées en direct jusqu'au niveau 7.
-    pinnedMaxZoom: 3, prefetch: true, ramCapacity: 300, directCache: { name: 'earth-direct-v1', maxZoom: 7 },
+    // Niveaux 0 à 3 gardés en mémoire, préchargement actif, 300 images en mémoire vive.
+    pinnedMaxZoom: 3, prefetch: true, ramCapacity: 300,
     // Couche unique : tuiles chargées chez leurs fournisseurs (plusieurs serveurs, HTTP/2), le reste relayé par l'API :
     // 16 tuiles en parallèle (8 sur téléphone) au lieu de 6.
     // Seize téléchargements simultanés.
@@ -114,9 +112,6 @@ export const TILED_BODIES = [
     // Toute la Lune aux niveaux 0 à 3 (170 tuiles Kaguya) gardée en mémoire : aucune zone vide où que l'on regarde.
     // Niveaux 0 à 3 gardés en mémoire, préchargement actif, 400 images en mémoire vive.
     pinnedMaxZoom: 3, prefetch: true, ramCapacity: 400,
-    // v3 : tuiles en WebP, zones vides reconstruites, pôles fondus avec LROC ; les anciens caches sont supprimés.
-    // Cache persistant en version 3 ; les versions 1 et 2 sont à supprimer.
-    persistentCache: 'moon-tiles-v3', retiredCaches: ['moon-tiles-v1', 'moon-tiles-v2'],
     // Tuiles servies par l'API seule (HTTP/2, fichiers légers) : 12 en parallèle (6 sur téléphone) au lieu de 6.
     // Douze téléchargements simultanés.
     concurrency: 12,
@@ -132,8 +127,8 @@ export const TILED_BODIES = [
     radiusKm: 3389.5, minAltitudeKm: 3, siteAltitudeKm: 300, obliquity: 0.439, // 25,19°
     // Sans atmosphère pour l'éclairage des tuiles, calque fondu par transparence.
     airless: true, overlayMode: 'blend',
-    // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive, cache persistant.
-    pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200, persistentCache: 'mars-tiles-v1',
+    // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive.
+    pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200,
     // Pas de tuiles d'altitude branchées pour cet astre : relief estimé d'après l'image (ombrage seul, pas une mesure).
     // Relief estimé d'après l'image, force 0,4.
     relief: { kind: 'image', strength: 0.4 },
@@ -149,8 +144,8 @@ export const TILED_BODIES = [
     radiusKm: 2439.7, minAltitudeKm: 3, siteAltitudeKm: 200,
     // Sans atmosphère, calque fondu par transparence.
     airless: true, overlayMode: 'blend',
-    // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive, cache persistant.
-    pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200, persistentCache: 'mercury-tiles-v1',
+    // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive.
+    pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200,
     // Pas de tuiles d'altitude branchées pour cet astre : relief estimé d'après l'image (ombrage seul, pas une mesure).
     // Relief estimé d'après l'image, force 0,4.
     relief: { kind: 'image', strength: 0.4 },
@@ -166,8 +161,8 @@ export const TILED_BODIES = [
     radiusKm: 6051.8, minAltitudeKm: 3, siteAltitudeKm: 300,
     // Avec atmosphère, calque fondu par transparence.
     airless: false, overlayMode: 'blend', // pas de fond de carte : atmosphère et nuages dessinés par atmosphere.jsx
-    // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive, cache persistant.
-    pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200, persistentCache: 'venus-tiles-v1',
+    // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive.
+    pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200,
     // Modèle 3D au-delà de 2,2 rayons.
     modelSwitchRadii: 2.2,
   // Fin de Vénus.
@@ -195,8 +190,8 @@ export const TILED_BODIES = [
     // Titan a une atmosphère épaisse : terminateur adouci ; les autres sont sans atmosphère.
     // Sans atmosphère, sauf Titan ; calque fondu par transparence.
     airless: id !== 'titan', overlayMode: 'blend',
-    // Niveaux 0 et 1 gardés en mémoire, pas de préchargement, cache persistant en version 2.
-    pinnedMaxZoom: 1, prefetch: false, persistentCache: `${id}-tiles-v2`,
+    // Niveaux 0 et 1 gardés en mémoire, pas de préchargement.
+    pinnedMaxZoom: 1, prefetch: false,
   // Fin du traitement d'un satellite.
   })),
   // Géantes gazeuses : cartes globales de l'USGS (pas de portail NASA Trek pour ces planètes). Pas de sol : la caméra
@@ -224,8 +219,8 @@ export const TILED_BODIES = [
     radiusKm, minAltitudeKm: 0, siteAltitudeKm: Math.round(radiusKm * 0.3), pole,
     // Avec atmosphère, calque fondu par transparence.
     airless: false, overlayMode: 'blend',
-    // Niveaux 0 et 1 gardés en mémoire, pas de préchargement, cache persistant en version 2.
-    pinnedMaxZoom: 1, prefetch: false, persistentCache: `${id}-tiles-v2`,
+    // Niveaux 0 et 1 gardés en mémoire, pas de préchargement.
+    pinnedMaxZoom: 1, prefetch: false,
   // Fin du traitement d'une géante.
   })),
 // Fin de la liste.
@@ -286,8 +281,8 @@ function satelliteTiledBody({ id, name, radiusKm }) {
     ...satelliteZoom(id, radiusKm), siteAltitudeKm: Math.round(radiusKm * 0.15),
     // Sans atmosphère, sauf Titan ; calque fondu par transparence.
     airless: id !== 'titan', overlayMode: 'blend',
-    // Niveaux 0 et 1 gardés en mémoire, pas de préchargement, cache persistant en version 2.
-    pinnedMaxZoom: 1, prefetch: false, persistentCache: `${id}-tiles-v2`,
+    // Niveaux 0 et 1 gardés en mémoire, pas de préchargement.
+    pinnedMaxZoom: 1, prefetch: false,
     // Pas de tuiles d'altitude branchées pour cet astre : relief estimé d'après l'image (ombrage seul, pas une mesure).
     // Relief estimé d'après l'image, force 0,4.
     relief: { kind: 'image', strength: 0.4 },

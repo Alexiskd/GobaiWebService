@@ -66,8 +66,6 @@ const PREFETCH_PRIORITY = 1e3;  // préchargement prédictif : après les tuiles
 const PREFETCH_EVERY = 4;       // calcul de la vue prédite toutes les 4 images
 // Demandes prédictives en file, au plus : 48.
 const PREFETCH_MAX_QUEUED = 48; // demandes prédictives en file au plus (les plus utiles d'abord)
-// Tuiles d'altitude préchargées par passe, au plus : 4.
-const PREFETCH_RELIEF = 4;      // tuiles d'altitude préchargées au plus par passe (une tuile d'altitude sert plusieurs images)
 // Relance des demandes, vue immobile : toutes les 15 images.
 const REQUEST_SWEEP_EVERY = 15; // vue immobile : relance des demandes (échecs expirés, L2) toutes les 15 images
 // Vue inchangée à ces tolérances près : la sélection précédente est réutilisée (pas de nouveau parcours du quadtree).
@@ -132,9 +130,8 @@ export class TileLayer {
    *  ramCapacity    cache L2 : images décodées hors GPU (tuiles évincées du GPU ou préchargées)
    *  overzoom       niveaux affichés au-delà du niveau natif de la source (3 par défaut ; davantage avec le détail simulé)
    *
-   * Caches : L1 = textures sur le GPU (LRU `cache` + `pinned`), L2 = images décodées en RAM
-   * (`ram`, LRU), L3 = fichiers bruts sur le disque du navigateur (TileSource `persistentCache`). Le serveur ajoute
-   * son propre cache disque (Lune).
+   * Caches : L1 = textures sur le GPU (LRU `cache` + `pinned`), L2 = images décodées en RAM (`ram`, LRU). Rien
+   * n'est gardé sur le disque du navigateur : les fichiers sont téléchargés sans cache (voir loadImage).
    */
   // Constructeur (début des réglages) :
   constructor({
@@ -270,8 +267,6 @@ export class TileLayer {
     this.overlay = source;
     // Le préchargement est à revérifier.
     this.preloadComplete = false;
-    // Le préchargement vers le disque repart de zéro.
-    this.warmList = null; this.warmFinished = false; this.warmGen = (this.warmGen || 0) + 1; // le calque change : on recompte
     // Retire le calque de chaque tuile.
     for (const e of [...this.entries()]) this.dropOverlay(e);
   // Fin de setOverlaySource.
@@ -342,8 +337,6 @@ export class TileLayer {
     if (!this.zooming) {
       // Précharge l'astre entier aux niveaux bas.
       this.preloadWorld();
-      // Précharge le niveau suivant vers le disque.
-      this.warmNext();
     // Fin de ce cas.
     }
 
@@ -554,8 +547,6 @@ export class TileLayer {
     }
     // Les plus utiles d'abord.
     todo.sort((a, b) => a.t.p - b.t.p);
-    // Tuiles d'altitude préchargées.
-    let relief = 0;
     // Pour les 48 premières (début).
     for (const { key, t } of todo.slice(0, PREFETCH_MAX_QUEUED)) {
       // Note la clé.
@@ -564,9 +555,6 @@ export class TileLayer {
       if (this.loader.has(key)) this.loader.load(key, t.p);
       // Sinon : la demande.
       else this.request(key, t);
-      // Le relief de la zone vers laquelle la caméra se dirige part aussi : il est là quand l'image s'affiche.
-      // Précharge aussi son relief, 4 fois au plus.
-      if (relief < PREFETCH_RELIEF && this.prefetchRelief(t)) relief++;
     // Fin de la boucle.
     }
     // Garde les clés prédictives.
@@ -574,23 +562,6 @@ export class TileLayer {
     // Vrai.
     return true;
   // Fin de prefetch.
-  }
-
-  /**
-   * Précharge vers le disque du navigateur la tuile d'altitude d'une tuile pas encore affichée (sans décodage).
-   * Renvoie true si une requête est partie. Rien tant que l'adresse de la source n'est pas connue.
-   */
-  // prefetchRelief : précharge la tuile d'altitude d'une tuile vers le disque (début).
-  prefetchRelief(t) {
-    // Source des altitudes.
-    const src = this.reliefSource;
-    // Coordonnées de la tuile.
-    const coord = { z: t.z, x: t.x, y: t.y };
-    // Sans source, sans adresse ou sans relief pour cette tuile : faux.
-    if (!src || !src.template || !this.reliefFor(coord)) return false;
-    // Précharge la tuile d'altitude native correspondante.
-    return src.warm(nativeTile(coord, src.levelFor(t.z)).coord);
-  // Fin de prefetchRelief.
   }
 
   /** Range une tuile décodée en RAM (L2). */
@@ -676,58 +647,12 @@ export class TileLayer {
   // Fin de preloadWorld.
   }
 
-  /** Avancement du préchargement : { done, total } (+ warm : niveau suivant mis sur le disque du navigateur). */
+  /** Avancement du préchargement en mémoire : { done, total }. */
   // preload : l'avancement du préchargement (début).
   get preload() {
-    // Tuiles prêtes et total, en mémoire puis sur le disque.
-    return { done: this.preloadDone ?? 0, total: this.pinList?.length ?? 0, warmDone: this.warmDone ?? 0, warmTotal: this.warmList?.length ?? 0 };
+    // Tuiles prêtes et total.
+    return { done: this.preloadDone ?? 0, total: this.pinList?.length ?? 0 };
   // Fin de preload.
-  }
-
-  /**
-   * Une fois le préchargement en mémoire terminé et la file réseau vide : le niveau suivant (toute la Lune au niveau
-   * pinnedMaxZoom + 1, fond et calque) est téléchargé tranquillement vers le cache disque du navigateur (L3), sans
-   * décodage ni GPU. Zoomer n'importe où ensuite ne demande plus rien au réseau.
-   */
-  // warmNext : précharge le niveau suivant vers le disque (début).
-  warmNext() {
-    // Préchargement en mémoire pas terminé, pas de cache sur disque, ou déjà fini : rien.
-    if (!this.preloadComplete || !this.source.persistentCache || this.warmFinished) return;
-    // Si la liste n'existe pas (début).
-    if (!this.warmList) {
-      // Projection et niveau suivant.
-      const proj = this.projection, z = this.pinnedMaxZoom + 1;
-      // Liste vide.
-      this.warmList = [];
-      // Pour la source et le calque (début).
-      for (const src of [this.source, this.overlay].filter(Boolean)) {
-        // Niveau au-delà de la source, ou sans cache sur disque : suivante.
-        if (z > src.maxZoom || !src.persistentCache) continue;
-        // Ajoute chaque tuile du niveau.
-        for (let y = 0; y < proj.rows(z); y++) for (let x = 0; x < proj.cols(z); x++) this.warmList.push({ src, coord: { z, x, y } });
-      // Fin de la boucle.
-      }
-      // Remet les compteurs à zéro.
-      this.warmIndex = 0; this.warmDone = 0; this.warmActive = 0; this.warmGen = this.warmGen || 0;
-    // Fin de ce cas.
-    }
-    // La file n'est pas vide : la vue passe d'abord.
-    if (this.loader.active + this.loader.queued > 0) return; // la vue d'abord
-    // Deux téléchargements à la fois (début).
-    while (this.warmActive < 2 && this.warmIndex < this.warmList.length) {
-      // Tuile suivante.
-      const { src, coord } = this.warmList[this.warmIndex++];
-      // Un téléchargement de plus.
-      this.warmActive++;
-      // Génération en cours.
-      const gen = this.warmGen;
-      // La précharge ; à la fin, met à jour les compteurs si le calque n'a pas changé.
-      src.warm(coord).catch(() => {}).finally(() => { if (gen === this.warmGen) { this.warmActive--; this.warmDone++; } });
-    // Fin de la boucle.
-    }
-    // Tout est parti et terminé : fini.
-    if (this.warmIndex >= this.warmList.length && this.warmActive === 0) this.warmFinished = true;
-  // Fin de warmNext.
   }
 
   // ------------------------------------------------------------- chargement

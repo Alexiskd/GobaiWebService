@@ -10,8 +10,6 @@ import { LidarDrape } from './lidarDrape';
 import { drapePlan, nodeDrape } from './lidarDrapeMath';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
 import { DOWNSCALE_FILL, LIDAR_PALETTE, boxDistance2D, densityOrder, domeBudget, domeRadius, expandLonLatBox, inDome, lonLatDistanceM, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, boxShiftM, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
-// Importe purgeLidarDownloads, la désinstallation des nuages déjà téléchargés à la mise à jour, depuis lidarPurge.
-import { purgeLidarDownloads } from './lidarPurge';
 
 // Dalles LiDAR en vrais points 3D sur la Terre (LiDAR HD de l'IGN). Chaque dalle est un octree additif servi par
 // l'API (GET /lidar) : la racine donne la dalle entière, les niveaux suivants la densifient.
@@ -23,7 +21,7 @@ import { purgeLidarDownloads } from './lidarPurge';
 // (domeBudget) ; plus le dôme est grand, moins il est dense. Dès que le dôme bouge et qu'un nuage (ou
 // une partie de nuage) en sort, il est supprimé aussitôt : points libérés, téléchargements abandonnés, dalle retirée.
 // Rien n'est gardé sur l'appareil : les nœuds sont téléchargés sans cache (`cache: 'no-store'`), et à la mise à jour
-// de l'app les nuages déjà téléchargés sont désinstallés (voir lidarPurge.jsx). Seuls les nœuds dans le champ de la
+// de l'app les nuages déjà téléchargés sont désinstallés (voir storagePurge.jsx). Seuls les nœuds dans le champ de la
 // caméra sont dessinés. Les points sont rattachés au groupe de la Terre et recopient sa rotation propre, comme les tuiles et les
 // frontières : la sphère de fond, elle, est masquée dès que la carte couvre toute la vue, et ses enfants avec elle.
 //
@@ -209,8 +207,6 @@ export class LidarPoints {
     this.onTiles = null;
     // Rayon du dôme à la dernière recherche (m).
     this.domeR = 0;
-    // Mise à jour de l'app : désinstalle les nuages LiDAR déjà téléchargés (une fois par version).
-    purgeLidarDownloads();
   // Fin du constructeur.
   }
 

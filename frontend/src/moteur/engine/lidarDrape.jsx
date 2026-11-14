@@ -2,10 +2,8 @@
 import * as THREE from 'three';
 // Importe fillTemplate, qui remplit l'adresse d'une tuile, depuis tiles/mercator.
 import { fillTemplate } from './tiles/mercator';
-// Importe le chargement d'une image, direct ou avec cache, depuis tiles/tileSource.
-import { loadImage, loadImageCached } from './tiles/tileSource';
-// Importe l'ouverture du cache sur disque et le suivi de ses écritures, depuis tiles/diskCache.
-import { diskWritten, openDisk } from './tiles/diskCache';
+// Importe le chargement d'une image (sans cache, en mémoire seulement), depuis tiles/tileSource.
+import { loadImage } from './tiles/tileSource';
 // Importe la liste des tuiles à charger et le rectangle d'une tuile, depuis lidarDrapeMath.
 import { drapeTiles, tileRect } from './lidarDrapeMath';
 
@@ -18,10 +16,6 @@ import { drapeTiles, tileRect } from './lidarDrapeMath';
 const PARALLEL = 8;
 // Délai entre deux envois de l'image à la carte graphique : 350 ms.
 const FLUSH_MS = 350;          // l'image est renvoyée à la carte graphique au plus 3 fois par seconde
-// Nom du cache sur disque.
-const DISK = 'lidar-drape-v1'; // photos déjà chargées : gardées sur le disque du navigateur
-// Nombre maximal d'images gardées dans ce cache : 400.
-const DISK_MAX = 400;
 
 // Déclare et exporte la classe LidarDrape (début).
 export class LidarDrape {
@@ -73,10 +67,6 @@ export class LidarDrape {
     this.disposed = false;
     // Aucune minuterie d'envoi en attente.
     this.timer = null;
-    // Ouvre le cache sur disque.
-    this.disk = openDisk(DISK);
-    // Compteurs des images venues du réseau et du disque.
-    this.stats = { network: 0, disk: 0 };
     // Lance le chargement de chaque tuile grossière.
     for (const tile of coarse) this.fetch(tile, true);
     // Sans tuile grossière : lance tout de suite les tuiles fines.
@@ -90,10 +80,8 @@ export class LidarDrape {
 
   // load : charge l'image d'une adresse (début).
   load(url) {
-    // Sans cache sur disque : chargement direct.
-    if (!this.disk) return loadImage(url);
-    // Sinon, chargement par le cache, avec le suivi des écritures ; en cas d'échec, chargement direct.
-    return loadImageCached(url, this.disk, this.stats, false, () => diskWritten(DISK, this.disk, DISK_MAX)).catch(() => loadImage(url));
+    // Chargement sans cache : rien n'est gardé sur l'appareil.
+    return loadImage(url);
   // Fin de load.
   }
 

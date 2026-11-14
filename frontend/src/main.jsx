@@ -12,10 +12,14 @@ import { FailoverBoundary, consumeFailoverParams, redirectToFailover } from './m
 import { installFetchGuard, refreshServerBlocked } from './moteur/lib/apiBlock';
 // Importe la garde de la racine React : dépôt, retrait du contenu de départ et démontage.
 import { removeSeoShell, setAppRoot, unmountApp } from './moteur/lib/appRoot';
+// Importe la désinstallation de tout ce que l'app gardait sur l'appareil (tuiles, nuages), à la mise à jour.
+import { purgeStoredTiles } from './moteur/engine/storagePurge';
 
 // Arrivée par une redirection de secours : la redirection est notée pour la session et
 // « ?__gobai_failover=1&__gobai_reason=… » est retiré de l'adresse.
 consumeFailoverParams();
+// Mise à jour de l'app : supprime une fois tous les caches de tuiles et de nuages de l'appareil (rien n'y est plus gardé).
+purgeStoredTiles();
 /** Durée du démarrage (ms) : passé ce délai, une erreur JavaScript ne fait plus changer de domaine. */
 // Durée du démarrage : 15 secondes.
 const STARTUP_MS = 15000;
