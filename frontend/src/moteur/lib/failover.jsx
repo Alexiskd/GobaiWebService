@@ -48,6 +48,44 @@ function getFallbackUrl() {
 // Fin de getFallbackUrl.
 }
 
+// Marque de session : la page est déjà arrivée par une redirection de secours (évite l'aller-retour entre domaines).
+const SESSION_KEY = 'gobai:failover';
+// Paramètres ajoutés à l'adresse par une redirection de secours.
+const PARAMS = ['__gobai_failover', '__gobai_reason'];
+
+/**
+ * À l'arrivée par une redirection de secours : note la redirection pour la session, puis retire de l'adresse
+ * « ?__gobai_failover=1&__gobai_reason=… », pour que la barre d'adresse, les favoris et les partages restent propres.
+ * Renvoie la raison de la redirection, ou null.
+ */
+// Déclare et exporte consumeFailoverParams (début).
+export function consumeFailoverParams() {
+  // Hors navigateur : rien.
+  if (typeof window === 'undefined') return null;
+  // Adresse de la page.
+  const url = new URL(window.location.href);
+  // Pas arrivée par une redirection de secours : rien.
+  if (url.searchParams.get('__gobai_failover') !== '1') return null;
+  // La raison donnée.
+  const reason = url.searchParams.get('__gobai_reason');
+  // Note la redirection pour toute la session ; un stockage refusé est ignoré.
+  try { window.sessionStorage?.setItem(SESSION_KEY, '1'); } catch { /* stockage refusé */ }
+  // Retire les deux paramètres.
+  for (const p of PARAMS) url.searchParams.delete(p);
+  // Remplace l'adresse affichée, sans recharger la page.
+  window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+  // Renvoie la raison.
+  return reason;
+// Fin de consumeFailoverParams.
+}
+
+// Vrai si la session est déjà arrivée par une redirection de secours.
+function alreadyFailedOver() {
+  // Lit la marque de session ; stockage refusé : faux.
+  try { return window.sessionStorage?.getItem(SESSION_KEY) === '1'; } catch { return false; }
+// Fin de alreadyFailedOver.
+}
+
 // Évite les redirections en boucle et conserve le chemin de la page demandée.
 export function redirectToFailover(reason = 'application-error') {
   // Hors navigateur : faux.
@@ -55,8 +93,8 @@ export function redirectToFailover(reason = 'application-error') {
 
   // Adresse de la page.
   const current = new URL(window.location.href);
-  // Page déjà arrivée par une redirection de secours : faux.
-  if (current.searchParams.get('__gobai_failover') === '1') return false;
+  // Page déjà arrivée par une redirection de secours (adresse ou session) : faux, jamais d'aller-retour.
+  if (current.searchParams.get('__gobai_failover') === '1' || alreadyFailedOver()) return false;
 
   // Adresse de secours.
   const target = getFallbackUrl();
