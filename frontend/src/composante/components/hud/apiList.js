@@ -25,6 +25,10 @@ export const API_GROUPS = [
       { name: 'NOAA NESDIS Satellite Maps', host: 'satellitemaps.nesdis.noaa.gov', use: 'Terre à l’instant T : mosaïque GOES la plus récente, en secours' },
       // API « USGS National Map », appelée à l'adresse basemap.nationalmap.gov.
       { name: 'USGS National Map', host: 'basemap.nationalmap.gov', use: 'Imagerie des États-Unis' },
+      // API « GEBCO WMS », appelée à l'adresse wms.gebco.net.
+      { name: 'GEBCO WMS', host: 'wms.gebco.net', use: 'Fond « Fonds marins · GEBCO 2026 » : relief des océans et des terres (tuiles lues par le serveur)' },
+      // API « NOAA NCEI DEM Global Mosaic », appelée à l'adresse gis.ngdc.noaa.gov.
+      { name: 'NOAA NCEI DEM Global Mosaic', host: 'gis.ngdc.noaa.gov', use: 'Fond « Fonds marins · NOAA NCEI » : relief en couleurs des océans et des terres (tuiles lues par le serveur)' },
       // API « Mapterhorn », appelée à l'adresse tiles.mapterhorn.com.
       { name: 'Mapterhorn', host: 'tiles.mapterhorn.com', use: 'Altitudes de la Terre (Copernicus GLO-30) : relief en volume et ombrage des pentes' },
       // API « AWS Terrain Tiles (Mapzen) », appelée à l'adresse s3.amazonaws.com.

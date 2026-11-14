@@ -708,8 +708,10 @@ export class TilesController {
     description: 'earth-hd : la meilleure source pour chaque tuile parmi toutes celles actives (orthophotos nationales de quatorze pays, Sentinel-2, NASA GIBS), '
       // suite (cascade, niveau maximal) ;
       + 'interrogées en cascade rapprochée, jusqu’au niveau 19 (au-delà du niveau natif, la tuile est '
-      // fin (en-tête X-Tile-Source).
-      + 'découpée dans son ancêtre et agrandie). En-tête X-Tile-Source : source qui a servi la tuile.',
+      // fin (en-tête X-Tile-Source) ;
+      + 'découpée dans son ancêtre et agrandie). En-tête X-Tile-Source : source qui a servi la tuile. '
+      // les fonds marins.
+      + 'earth-gebco et earth-ncei : fonds marins (GEBCO 2026, NOAA NCEI), une requête par tuile sur son emprise.',
   // Fin de la description.
   })
   // Réponse 200 documentée : une image JPEG.
