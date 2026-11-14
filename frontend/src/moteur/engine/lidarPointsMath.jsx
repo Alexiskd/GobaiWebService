@@ -257,19 +257,13 @@ export function boxDistance2D(p, min, size) {
 }
 
 /**
- * Dôme de densité : comme une masse qui se charge en énergie et la perd, en cercle autour de la caméra. Au centre,
- * tous les niveaux sont permis ; vers le bord, le niveau permis descend en demi-sphère (√(1 − (d / R)²)) ; au-delà du
- * rayon, la racine seule (le nuage entier, peu dense). Le dôme suit la caméra : il se charge niveau par niveau du
- * centre vers le bord et, derrière elle, se décharge depuis le bord, toujours par densité.
+ * Dôme : un cercle net autour de la caméra, comme une masse qui se charge en énergie et la perd. Dedans, la densité
+ * est uniforme et monte partout à la fois, niveau par niveau ; dehors, rien (pas même la racine). Le dôme n'est pas
+ * dessiné : il délimite seulement ce qui est chargé et affiché. Quand la caméra s'en va, ce qui sort du cercle se
+ * décharge par densité, le niveau le plus fin d'abord.
  */
-// Déclare et exporte domeLevel : la distance au centre (m), le rayon du dôme (m) et la profondeur de l'arbre.
-export function domeLevel(distM, radiusM, depth) {
-  // Hors du cercle (ou rayon nul) : la racine seule.
-  if (!(radiusM > 0) || distM >= radiusM) return 0;
-  // Hauteur du dôme à cette distance, en niveaux.
-  return depth * Math.sqrt(1 - (distM / radiusM) ** 2);
-// Fin de domeLevel.
-}
+// Déclare et exporte inDome : la distance horizontale au centre (m) et le rayon du dôme (m).
+export const inDome = (distM, radiusM) => radiusM > 0 && distM < radiusM;
 
 /** Rayon du dôme (m) d'après la hauteur de la caméra : quatre fois la hauteur, entre 800 m et 4 km. */
 // Déclare et exporte domeRadius : la hauteur de la caméra au-dessus de la dalle (m).
@@ -297,7 +291,7 @@ export const domeRadius = (heightM) => Math.min(4000, Math.max(800, heightM * 4)
  */
 // Déclare et exporte selectNodes : l'arbre, la vue et le test de chargement.
 export function selectNodes(tree, view, isReady) {
-  // Les champs de la vue (dome : dôme de densité facultatif, voir domeLevel).
+  // Les champs de la vue (dome : dôme facultatif { center, radius }, voir inDome).
   const { eye, pxPerUnit, spacing, maxSpacingPx, budget, visible, dome } = view;
   // Liste des nœuds voulus.
   const wanted = [];
@@ -309,22 +303,23 @@ export function selectNodes(tree, view, isReady) {
     if (!node) return;
     // Hors du champ de la caméra, sauf la racine : ignoré.
     if (key !== ROOT_KEY && visible && !visible(node)) return;
-    // Au-dessus du dôme de densité, sauf la racine : ignoré (plus le nœud est loin du centre du cercle, plus le niveau permis est bas).
-    if (key !== ROOT_KEY && dome && node.level > domeLevel(boxDistance2D(dome.center, node.min, node.size), dome.radius, dome.depth)) return;
+    // Hors du dôme (racine comprise) : ignoré, rien n'est chargé ni affiché hors du cercle.
+    if (dome && !inDome(boxDistance2D(dome.center, node.min, node.size), dome.radius)) return;
     // Écart à l'écran entre deux de ses points : son espacement, vu à la distance de son cube (au moins 0,5 m).
     const px = (levelSpacing(spacing, node.level) * pxPerUnit) / Math.max(boxDistance(eye, node.min, node.size), 0.5);
     // L'ajoute aux nœuds voulus.
-    wanted.push({ key, px, n: node.n });
-    // Écart trop grand : examine ses enfants.
-    if (px > maxSpacingPx) for (const child of node.children) visit(child);
+    wanted.push({ key, px, n: node.n, level: node.level });
+    // Écart trop grand, ou dans le dôme (densité uniforme, jusqu'au niveau le plus fin) : examine ses enfants.
+    if (dome || px > maxSpacingPx) for (const child of node.children) visit(child);
   // Fin de visit.
   };
   // Part de la racine.
   visit(ROOT_KEY);
   // Un enfant a toujours un écart à l'écran au moins deux fois plus petit que son parent : trier par écart
   // décroissant place les ancêtres avant leurs descendants, et les nœuds proches avant les lointains.
-  // Trie par écart décroissant.
-  wanted.sort((a, b) => b.px - a.px);
+  // Trie par écart décroissant ; dans le dôme, par niveau d'abord, pour que le budget coupe la densité de façon
+  // uniforme (tout un niveau avant le suivant), puis par écart.
+  wanted.sort(dome ? (a, b) => a.level - b.level || b.px - a.px : (a, b) => b.px - a.px);
   // Nœuds à dessiner, nœuds à charger et nœuds écartés.
   const show = [], load = [], dropped = new Set();
   // Nombre de points retenus.

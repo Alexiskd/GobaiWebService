@@ -9,7 +9,7 @@ import { LidarDrape } from './lidarDrape';
 // Importe drapePlan et nodeDrape, le plan du drapage et son calage par nœud, depuis lidarDrapeMath.
 import { drapePlan, nodeDrape } from './lidarDrapeMath';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
-import { DOWNSCALE_FILL, LIDAR_PALETTE, densityOrder, domeRadius, expandLonLatBox, unloadPick, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, lonLatBox, boxShiftM, nodeUrl, selectNodes, shareBudget, showCloud, tileFrame, viewFootprint } from './lidarPointsMath';
+import { DOWNSCALE_FILL, LIDAR_PALETTE, densityOrder, domeRadius, expandLonLatBox, inDome, unloadPick, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, lonLatBox, boxShiftM, nodeUrl, selectNodes, shareBudget, showCloud, tileFrame, viewFootprint } from './lidarPointsMath';
 
 // Dalles LiDAR en vrais points 3D sur la Terre (LiDAR HD de l'IGN). Chaque dalle est un octree additif servi par
 // l'API (GET /lidar) : la racine donne la dalle entière, les niveaux suivants arrivent autour de la caméra.
@@ -18,8 +18,9 @@ import { DOWNSCALE_FILL, LIDAR_PALETTE, densityOrder, domeRadius, expandLonLatBo
 // marge de 250 m autour du champ sert seulement à les précharger. Une dalle hors de ce champ élargi (ou derrière
 // l'horizon) ne télécharge rien, et un téléchargement en cours est abandonné dès que son nœud sort du champ. Ce qui
 // n'est plus demandé est déchargé toujours par densité, à l'inverse du chargement : le niveau le plus fin d'abord, la
-// racine en dernier (voir unloadByDensity). La densité suit un dôme circulaire autour de la caméra (domeLevel) : pleine
-// au centre, elle descend vers le bord du cercle, comme une masse qui se charge en énergie et la perd. Les points sont rattachés au groupe de la Terre et recopient sa rotation propre, comme les tuiles et les
+// racine en dernier (voir unloadByDensity). Ce qui est chargé et affiché tient dans un dôme : un cercle net autour de la
+// caméra (inDome), densité uniforme dedans, rien dehors, comme une masse qui se charge en énergie et la perd. Le dôme
+// n'est pas dessiné. Les points sont rattachés au groupe de la Terre et recopient sa rotation propre, comme les tuiles et les
 // frontières : la sphère de fond, elle, est masquée dès que la carte couvre toute la vue, et ses enfants avec elle.
 //
 // Affichage sans effet : un point apparaît dès que son fichier est décodé, à sa couleur définitive (classe du point
@@ -444,8 +445,6 @@ export class LidarPoints {
 
     // Arbre des nœuds de la dalle.
     const tree = buildTree(manifest);
-    // Profondeur de l'arbre : le niveau le plus fin (sommet du dôme de densité).
-    const depth = Math.max(0, ...[...tree.values()].map((n) => n.level));
     // Drapage : plan des tuiles de l'orthophoto qui couvrent la dalle (photo chargée au premier affichage).
     // Modèle d'adresse de l'orthophoto.
     const template = manifest.imagery?.template;
@@ -457,8 +456,8 @@ export class LidarPoints {
     for (const node of tree.values()) Object.assign(node, { points: null, loading: false, abort: null, failedAt: 0, usedAt: 0 });
     // La dalle (début).
     const tile = {
-      // Sa fiche, son groupe, son arbre (et sa profondeur), ses dimensions, sa boîte et ses deux passes.
-      manifest, group, tree, depth, side, height, boxGeo, reset, seal,
+      // Sa fiche, son groupe, son arbre, ses dimensions, sa boîte et ses deux passes.
+      manifest, group, tree, side, height, boxGeo, reset, seal,
       // Sa teinte jour / nuit.
       uTint: { value: new THREE.Vector3(1, 1, 1) },
       // Son plan de drapage, sa photo (transparente au départ) et l'interrupteur du drapage.
@@ -815,12 +814,17 @@ export class LidarPoints {
       const inView = inCam || (e.z > 0 && this.frustum.intersectsBox(this.box));
       // Dessinée à bout portant seulement : la hauteur de la caméra au-dessus du plan de la dalle est `e.z`, la
       // grandeur même que la distance du zoom affichée par le HUD. Au-dessus de 0,75 km, le nuage reste masqué.
-      // Affichée : dans la caméra (sans la marge) et sous la hauteur d'affichage.
-      const show = showCloud(e.z, inCam);
+      // Rayon du dôme, d'après la hauteur de la caméra.
+      const radius = domeRadius(e.z);
+      // Dalle touchée par le dôme : sa distance horizontale au point sous la caméra est sous le rayon.
+      const domed = inDome(Math.hypot(dx, dy), radius);
+      // Affichée : dans la caméra (sans la marge), dans le dôme et sous la hauteur d'affichage.
+      const show = domed && showCloud(e.z, inCam);
       // Règle la visibilité du groupe.
       tile.group.visible = show;
-      // Poids de la dalle dans le partage du budget : nul si elle n'est pas affichée, plus fort si elle est proche.
-      tile.weight = show ? 1 / Math.max(dist, 150) ** 2 : 0;
+      // Poids de la dalle dans le partage du budget : nul si elle n'est pas affichée.
+      // Dans le dôme, la densité est uniforme : toutes les dalles affichées ont le même poids.
+      tile.weight = show ? 1 : 0;
       // Ajouté à la somme.
       weightSum += tile.weight;
       // Racine de l'arbre.
@@ -830,7 +834,7 @@ export class LidarPoints {
         // Hors champ : rien n'est chargé. Dans le champ mais encore loin : la racine (un fichier de 330 ko), puis le
         // premier niveau de détail quand la caméra approche. À l'arrivée, la dalle est déjà là.
         // File d'attente : vide hors champ ; sinon la racine, puis ses enfants à moins de 400 km.
-        tile.queue = !root || !inView ? [] : [ROOT_KEY, ...(dist < PRELOAD_RANGE_M ? root.children : [])];
+        tile.queue = !root || !inView || !domed ? [] : [ROOT_KEY, ...(dist < PRELOAD_RANGE_M ? root.children : [])];
         // Ce que la dalle demande : ces nœuds-là seulement ; tout le reste se décharge par densité (rien hors du champ élargi).
         tile.keep = new Set(tile.queue);
         // Abandonne les téléchargements devenus inutiles.
@@ -881,8 +885,8 @@ export class LidarPoints {
         // visible : teste un nœud contre le champ de vision (début).
         // Champ élargi de la marge : les nœuds juste hors de la caméra sont préchargés.
         visible: (node) => this.nodeInView(node, half, top, VIEW_MARGIN_M),
-        // Dôme de densité : cercle centré sous la caméra, rayon selon sa hauteur, sommet au niveau le plus fin.
-        dome: { center: tile.eye, radius: domeRadius(e.z), depth: tile.depth },
+        // Dôme : cercle net centré sous la caméra, rayon selon sa hauteur (densité uniforme dedans, rien dehors).
+        dome: { center: tile.eye, radius },
       // Dernier argument : dit si un nœud a déjà ses points.
       }, (key) => Boolean(tile.tree.get(key)?.points));
       // Nœuds à dessiner, en ensemble.
