@@ -122,6 +122,13 @@ export interface ResolvedTileLayer extends TileLayerInfo {
   /** Couche unique de la Terre : le navigateur accorde les couleurs des sources nationales sur la mosaïque mondiale. */
   // colorMatch : vrai si le navigateur doit accorder les couleurs.
   colorMatch?: boolean;
+  /**
+   * Couche unique de la Terre : fonds marins fondus dans l'imagerie par le navigateur (voir earth-seafloor.ts).
+   * `template` : tuiles des fonds (relais du serveur), jusqu'à `maxZoom` ; `mask` : tuiles d'altitude Terrarium
+   * qui disent où est la mer, jusqu'à leur `maxZoom`. Absent : pas de fusion.
+   */
+  // seafloor : les tuiles des fonds marins et celles des altitudes qui disent où est la mer.
+  seafloor?: { template: string; maxZoom: number; mask: { template: string; maxZoom: number } };
 // Fin de ResolvedTileLayer.
 }
 

@@ -16,6 +16,10 @@ import { readLayerInfo, saveLayerInfo } from './layerInfoCache';
 import { AdaptiveTimeout, HostGate, NET_STATS, SharedLoads, hostOf } from './netLoads';
 // Importe la lecture des pixels hors du fil principal et la mémoire des fichiers d'origine, depuis tilePixels.
 import { pixelsOffThread, rememberBlob } from './tilePixels';
+// Importe le cache borné, depuis lru.
+import { LruCache } from './lru';
+// Importe la fusion des fonds marins : décodage des altitudes, part des fonds par pixel et mélange, depuis seafloorFusion.
+import { blendSea, decodeTerrarium, seaMask } from './seafloorFusion';
 
 // Délai minimal entre deux renouvellements du modèle d'adresse : 30 secondes.
 const MIN_REFRESH_GAP_MS = 30_000;
@@ -36,6 +40,10 @@ const DIRECT_SWITCH = 'gobai:tuiles-directes'; // « 0 » dans le stockage du na
 const COLOR_SWITCH = 'gobai:couleurs';       // « 0 » : pas d'accord des couleurs entre les couches
 // Clé des mesures de couleur gardées.
 const COLOR_STORE = 'gobai:couleurs-v1';     // mesures de couleur par source, gardées d'une visite à l'autre
+// Clé de l'interrupteur de la fusion des fonds marins.
+const SEA_SWITCH = 'gobai:fonds-marins';     // « 0 » : l'imagerie de la Terre reste sans les fonds marins
+// Pause de la fusion après un échec (fonds ou altitudes injoignables) : une minute.
+const SEA_PAUSE_MS = 60_000;
 // Taille des vignettes de comparaison des couleurs : 32 px.
 const COLOR_PX = 32;                         // les couleurs sont comparées sur des vignettes de 32 px (tons d'ensemble)
 // Part de vignette sans image au-delà de laquelle la tuile est vide : 99,5 %.
@@ -46,6 +54,12 @@ function colorAllowed() {
   // Vrai sauf si l'interrupteur vaut « 0 » ; vrai aussi si le stockage est refusé.
   try { return globalThis.localStorage?.getItem(COLOR_SWITCH) !== '0'; } catch { return true; }
 // Fin de colorAllowed.
+}
+// seaAllowed : la fusion des fonds marins est-elle permise dans ce navigateur (début).
+function seaAllowed() {
+  // Vrai sauf si l'interrupteur vaut « 0 » ; vrai aussi si le stockage est refusé.
+  try { return globalThis.localStorage?.getItem(SEA_SWITCH) !== '0'; } catch { return true; }
+// Fin de seaAllowed.
 }
 /** Stockage du navigateur, ou null (navigation privée stricte, tests). */
 // storage : le stockage du navigateur (début).
@@ -153,6 +167,14 @@ export class TileSource {
     // Demandes urgentes (tuiles à l'écran) : repérées par leur signal d'annulation, transmis tel quel jusqu'au réseau.
     // Signaux des demandes urgentes.
     this.urgent = new WeakSet();
+    // Fusion des fonds marins permise ?
+    this.seaOn = seaAllowed();
+    // Altitudes décodées des tuiles Terrarium, par tuile (promesses partagées) : 64 au plus.
+    this.seaElev = new LruCache(64);
+    // Images des fonds, par tuile (promesses partagées) : 32 au plus.
+    this.seaImages = new LruCache(32);
+    // Instant jusqu'auquel la fusion est en pause après un échec.
+    this.seaPauseUntil = 0;
   // Fin du constructeur.
   }
 
@@ -347,11 +369,110 @@ export class TileSource {
   url(coord) { return fillTemplate(this.info.urlTemplate, coord); }
 
   /**
+   * Charge l'image d'une tuile, avec les fonds marins fondus dedans quand la couche les prévoit (voir withSeafloor).
+   * Rejette en AbortError si `signal` est déclenché.
+   */
+  // loadImage, asynchrone : l'image d'une tuile, puis la fusion des fonds marins.
+  async loadImage(coord, signal, urgent = false) { return this.withSeafloor(await this.loadBaseImage(coord, signal, urgent), coord, signal); }
+
+  /**
+   * Fonds marins (couche unique de la Terre, champ `seafloor` de sa description) : là où les altitudes Terrarium
+   * sont sous la mer, l'image des fonds remplace peu à peu l'image satellite (voir seafloorFusion.jsx). Les deux sont
+   * lues au niveau `maxZoom` au plus, puis découpées : une tuile grossière sert toutes celles qu'elle couvre. Une
+   * tuile sans mer ne demande que ses altitudes. En cas d'échec, l'image satellite est rendue telle quelle et la
+   * fusion se met en pause une minute.
+   */
+  // withSeafloor, asynchrone : l'image d'une tuile avec les fonds marins (début).
+  async withSeafloor(img, { z, x, y }, signal) {
+    // Réglage de la fusion, donné par la couche.
+    const sf = this.info?.seafloor;
+    // Sans réglage, fusion coupée ou en pause : l'image telle quelle.
+    if (!sf || !this.seaOn || Date.now() < this.seaPauseUntil) return img;
+    // Essai (début).
+    try {
+      // Part de l'image des fonds par pixel, d'après les altitudes ; null sans mer.
+      const mask = await this.seaMaskAt(sf.mask, z, x, y);
+      // Sans mer : l'image telle quelle.
+      if (!mask) return img;
+      // Demande annulée : erreur d'abandon.
+      if (signal?.aborted) throw abortError();
+      // Pixels de l'image des fonds.
+      const sea = await this.seaPixelsAt(sf, z, x, y);
+      // Pixels de l'image satellite, avec sa correction de couleur.
+      const out = sea && await this.basePixels(img);
+      // Pixels illisibles : l'image telle quelle.
+      if (!out) return img;
+      // Mélange les fonds dans l'image satellite.
+      blendSea(out, sea, mask);
+      // Renvoie le canevas.
+      return this.canvasFrom(out);
+    // En cas d'erreur (début).
+    } catch (e) {
+      // Une annulation est relancée.
+      if (e.name === 'AbortError') throw e;
+      // Sinon : pause d'une minute.
+      this.seaPauseUntil = Date.now() + SEA_PAUSE_MS;
+      // L'image telle quelle.
+      return img;
+    // Fin de l'essai.
+    }
+  // Fin de withSeafloor.
+  }
+
+  /** Part de l'image des fonds pour chaque pixel de la tuile, d'après les altitudes de son ancêtre ; null sans mer. */
+  // seaMaskAt, asynchrone : les parts des fonds d'une tuile (début).
+  async seaMaskAt(mask, z, x, y) {
+    // Niveau des altitudes, écart avec la tuile, et clé de l'ancêtre.
+    const mz = Math.min(z, mask.maxZoom), d = z - mz, key = `${mz}/${x >> d}/${y >> d}`;
+    // Altitudes de l'ancêtre, déjà demandées ?
+    let p = this.seaElev.get(key);
+    // Sinon (début).
+    if (!p) {
+      // Charge la tuile Terrarium (sans annulation : elle sert aux tuiles voisines), lit ses pixels et les décode.
+      p = this.sharedImage(fillTemplate(mask.template, { z: mz, x: x >> d, y: y >> d })).then((im) => this.pixelsAsync(im, 256))
+        // Pixels illisibles : erreur ; sinon les altitudes.
+        .then((px) => { if (!px) throw new Error('Altitudes illisibles'); return decodeTerrarium(px); });
+      // Gardée pour les tuiles suivantes.
+      this.seaElev.set(key, p);
+      // En cas d'échec : oubliée, pour être redemandée plus tard.
+      p.catch(() => this.seaElev.delete(key));
+    // Fin de ce cas.
+    }
+    // Parts des fonds de la tuile, dans la portion de l'ancêtre qu'elle couvre.
+    return seaMask(await p, d, x, y);
+  // Fin de seaMaskAt.
+  }
+
+  /** Pixels (256 px) de l'image des fonds de la tuile, découpés dans un ancêtre au-delà du niveau `maxZoom`. */
+  // seaPixelsAt, asynchrone : les pixels des fonds d'une tuile (début).
+  async seaPixelsAt(sf, z, x, y) {
+    // Niveau des fonds, écart avec la tuile, et clé de l'ancêtre.
+    const gz = Math.min(z, sf.maxZoom), d = z - gz, key = `${gz}/${x >> d}/${y >> d}`;
+    // Image de l'ancêtre, déjà demandée ?
+    let p = this.seaImages.get(key);
+    // Sinon (début).
+    if (!p) {
+      // Charge l'image des fonds (sans annulation : elle sert aux tuiles voisines).
+      p = this.sharedImage(fillTemplate(sf.template, { z: gz, x: x >> d, y: y >> d }));
+      // Gardée pour les tuiles suivantes.
+      this.seaImages.set(key, p);
+      // En cas d'échec : oubliée, pour être redemandée plus tard.
+      p.catch(() => this.seaImages.delete(key));
+    // Fin de ce cas.
+    }
+    // L'image.
+    const im = await p;
+    // Ses pixels, ou ceux de la portion couverte par la tuile.
+    return this.pixelsAsync(im, 256, d ? cropRect(im.naturalWidth || im.width || 256, d, x, y) : null);
+  // Fin de seaPixelsAt.
+  }
+
+  /**
    * Charge l'image d'une tuile (avec 1 nouvel essai). Rejette en AbortError si `signal` est déclenché.
    * `urgent` : tuile à l'écran, demandée au réseau en priorité haute (les préchargements gardent la priorité normale).
    */
-  // loadImage, asynchrone : charge l'image d'une tuile (début).
-  async loadImage(coord, signal, urgent = false) {
+  // loadBaseImage, asynchrone : charge l'image d'une tuile, sans les fonds marins (début).
+  async loadBaseImage(coord, signal, urgent = false) {
     // Demande urgente : note son signal.
     if (urgent && signal) this.urgent.add(signal);
     // Plan de chargement direct.
@@ -418,7 +539,7 @@ export class TileSource {
     }
     // Les deux essais ont échoué : relance la dernière erreur.
     throw lastError;
-  // Fin de loadImage.
+  // Fin de loadBaseImage.
   }
 
   /**

@@ -121,6 +121,19 @@ export class ResolvedTileLayerDto extends TileLayerDto {
   @ApiProperty({ required: false, description: 'Couche unique de la Terre : accord des couleurs des sources nationales sur la mosaïque mondiale, fait par le navigateur.' })
   // colorMatch : vrai si le navigateur doit accorder les couleurs des sources nationales sur la mosaïque mondiale.
   colorMatch?: boolean;
+
+  // Ouvre la documentation du champ seafloor :
+  @ApiProperty({
+    // facultatif, un objet ;
+    required: false, type: 'object',
+    // sa description.
+    description: 'Couche unique de la Terre : fonds marins fondus dans l’imagerie par le navigateur ({ template, maxZoom, mask: { template, maxZoom } }) : '
+      // suite : là où les altitudes de `mask` sont sous la mer, l'image de `template` remplace peu à peu l'imagerie.
+      + 'là où les altitudes Terrarium de `mask` sont sous la mer, l’image des fonds (`template`) remplace peu à peu l’imagerie.',
+  // Fin de la documentation.
+  })
+  // seafloor : les tuiles des fonds marins et celles des altitudes qui disent où est la mer.
+  seafloor?: { template: string; maxZoom: number; mask: { template: string; maxZoom: number } };
 // Fin de ResolvedTileLayerDto.
 }
 
