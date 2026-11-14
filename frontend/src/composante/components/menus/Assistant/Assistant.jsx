@@ -69,17 +69,17 @@ const Bubble = ({ from, error, done, children }) => (
     // Message de l'utilisateur…
     sx={from === 'user'
       // … pastille grise alignée à droite, de 85 % de la largeur au plus…
-      ? { alignSelf: 'flex-end', maxWidth: '85%', px: 1.5, py: 0.9, borderRadius: '14px', bgcolor: C.row }
-      // … réponse de Claude : sur toute la largeur, avec un trait rouge à gauche en cas d'erreur.
-      : { alignSelf: 'stretch', px: 0.5, py: 0.25, ...(error ? { pl: 1.25, borderLeft: `2px solid ${C.error}` } : {}) }}
+      ? { alignSelf: 'flex-end', maxWidth: '85%', minWidth: 0, flex: 'none', px: 1.5, py: 0.9, borderRadius: '14px', bgcolor: C.row }
+      // … réponse de Claude : sur toute la largeur, avec un trait rouge à gauche en cas d'erreur ; jamais écrasée par ses voisines.
+      : { alignSelf: 'stretch', minWidth: 0, flex: 'none', px: 0.5, py: 0.25, ...(error ? { pl: 1.25, borderLeft: `2px solid ${C.error}` } : {}) }}
   // Fin de la balise ouvrante.
   >
     {/* L'auteur du message, pour les lecteurs d'écran seulement. */}
     <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'Claude : '}</Typography>
     {/* S'il y a un texte (début). */}
     {children && (
-      // Le texte : retours à la ligne gardés, rouge en cas d'erreur, police et taille selon l'auteur.
-      <Typography sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: error ? C.error : C.text, fontFamily: from === 'user' ? SANS : SERIF, fontSize: from === 'user' ? 14 : 15, lineHeight: 1.5 }}>
+      // Le texte : retours à la ligne gardés, mots trop longs coupés (césure française), rouge en cas d'erreur, police et taille selon l'auteur.
+      <Typography lang="fr" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', wordBreak: 'break-word', hyphens: 'auto', color: error ? C.error : C.text, fontFamily: from === 'user' ? SANS : SERIF, fontSize: from === 'user' ? 14 : 15, lineHeight: 1.5 }}>
         {/* Son contenu. */}
         {children}
       {/* Fin du texte. */}
@@ -90,8 +90,8 @@ const Bubble = ({ from, error, done, children }) => (
     {done?.length > 0 && (
       // Rangée d'étiquettes, nommée pour les lecteurs d'écran.
       <Stack direction="row" useFlexGap spacing={0.5} sx={{ flexWrap: 'wrap', mt: children ? 0.75 : 0 }} aria-label="Actions effectuées">
-        {/* Une étiquette par action, précédée d'une coche. */}
-        {done.map((label, i) => <Chip key={i} size="small" variant="outlined" icon={<CheckIcon />} label={label} sx={{ color: C.muted, borderColor: C.border, fontFamily: SANS }} />)}
+        {/* Une étiquette par action, précédée d'une coche ; son libellé passe à la ligne au lieu d'être coupé ou de déborder. */}
+        {done.map((label, i) => <Chip key={i} size="small" variant="outlined" icon={<CheckIcon />} label={label} sx={chipWrap} />)}
       {/* Fin de la rangée. */}
       </Stack>
     // Fin du cas.
@@ -100,6 +100,18 @@ const Bubble = ({ from, error, done, children }) => (
   </Box>
 // Fin de Bubble.
 );
+
+/** Étiquette dont le texte passe sur plusieurs lignes : hauteur libre, libellé coupé proprement, coche alignée en haut. */
+// Style d'une étiquette à libellé long (début de l'objet).
+const chipWrap = {
+  // Couleurs et police du menu ; hauteur libre et largeur bornée à celle du panneau.
+  color: C.muted, borderColor: C.border, fontFamily: SANS, height: 'auto', minHeight: 24, maxWidth: '100%', alignItems: 'flex-start', py: 0.25,
+  // Le libellé : retour à la ligne autorisé, mots longs coupés, interligne serré.
+  '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.35, py: '2px' },
+  // La coche : alignée sur la première ligne du libellé.
+  '& .MuiChip-icon': { mt: '3px' },
+// Fin de l'objet.
+};
 
 /** Texte lu par les lecteurs d'écran, absent de l'affichage. */
 // Style d'un texte invisible à l'écran mais lu par les lecteurs d'écran.
@@ -116,6 +128,8 @@ const Row = ({ children, ...props }) => (
     sx={{
       // Texte à gauche, toute la largeur, coins arrondis.
       justifyContent: 'flex-start', textAlign: 'left', width: '100%', px: 1.25, py: 0.8, borderRadius: '8px',
+      // Bloc souple qui garde sa hauteur : le texte passe à la ligne au lieu de chevaucher la ligne suivante.
+      display: 'flex', flex: 'none', minWidth: 0, whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word',
       // Couleur et police du texte.
       color: C.text, fontFamily: SANS, fontSize: 14, lineHeight: 1.35,
       // Au survol ou au focus clavier : fond gris.
@@ -349,6 +363,8 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
         bgcolor: C.panel, color: C.text, backgroundImage: 'none', border: `1px solid ${C.border}`, borderRadius: '14px', fontFamily: SANS,
         // Largeur : toute la bande du bas en mode réduit, celle du rail en position « hud », 340 px sinon.
         width: bare && hud ? 'auto' : compact ? 'min(340px, calc(100vw - 16px))' : hud ? RAIL : 340,
+        // Jamais plus large que l'écran, et ses enfants peuvent rétrécir sans déborder.
+        maxWidth: 'calc(100vw - 16px)', minWidth: 0, boxSizing: 'border-box',
         // Mode réduit : pas d'angles arrondis en bas, la barre est collée au bord de l'écran.
         ...(bare && hud ? { borderRadius: '14px 14px 0 0', borderBottom: 'none' } : {}),
         // Téléphone : au plus 46 % de la hauteur, le menu est en haut et le clavier en bas, la scène reste visible entre.
@@ -362,13 +378,14 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
     >
       {/* L'en-tête du menu, souligné d'un filet ; masqué en mode réduit, où le logo passe dans la barre de saisie (début). */}
       {!bare && (
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, py: 1.1, borderBottom: `1px solid ${C.border}` }}>
+      // En-tête de hauteur fixe (jamais écrasé par la conversation) ; ses éléments passent à la ligne s'ils manquent de place.
+      <Stack direction="row" alignItems="center" useFlexGap spacing={1} sx={{ flex: 'none', flexWrap: 'wrap', rowGap: 0.75, px: 1.5, py: 1.1, borderBottom: `1px solid ${C.border}` }}>
         {/* Le logo. */}
         <Box component="img" src="/claude-logo.png" alt="" sx={{ width: 20, height: 20, flex: 'none' }} />
         {/* Le titre « Claude », en empattements. */}
-        <Typography component="h2" sx={{ flex: 1, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Claude</Typography>
-        {/* L'étiquette « Démonstration », si l'assistant n'est pas branché. */}
-        {enabled === false && <Chip size="small" variant="outlined" label="Démonstration" sx={{ color: C.muted, borderColor: C.border, fontFamily: SANS }} />}
+        {/* Il prend la place restante et peut rétrécir ; trop étroit, il se termine par « … » au lieu de passer sous les boutons. */}
+        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Claude</Typography>
+        {/* L'état « Démonstration » n'est plus dans l'en-tête, trop étroit dans le rail : l'encadré sous l'en-tête le dit déjà. */}
         {/* Le bouton de l'arborescence des astres, quand le parent en propose une. */}
         {onNavigator && (
           <Chip
@@ -381,7 +398,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
             // Infobulle.
             title="Arborescence des astres"
             // Couleurs du menu, qui s'éclaircissent au survol.
-            sx={{ color: C.muted, borderColor: C.border, fontFamily: SANS, '&:hover': { bgcolor: C.row, color: C.text } }}
+            sx={{ flex: 'none', color: C.muted, borderColor: C.border, fontFamily: SANS, '&:hover': { bgcolor: C.row, color: C.text } }}
           // Fin de la pastille.
           />
         )}
@@ -393,7 +410,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           // Nom pour les lecteurs d'écran.
           aria-label="Fermer"
           // Carré arrondi de 28 px, qui s'éclaire au survol.
-          sx={{ width: 28, height: 28, borderRadius: '8px', color: C.muted, fontSize: 16, '&:hover, &.Mui-focusVisible': { bgcolor: C.row, color: C.text } }}
+          sx={{ flex: 'none', width: 28, height: 28, borderRadius: '8px', color: C.muted, fontSize: 16, '&:hover, &.Mui-focusVisible': { bgcolor: C.row, color: C.text } }}
         // Fin de la balise ouvrante.
         >
           {/* La croix. */}
@@ -406,11 +423,12 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       {/* Fin de l'en-tête conditionnel. */}
       {/* Zone de conversation, qui défile sans entraîner la page ; absente en mode réduit (début). */}
       {!bare && (
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, px: 1.25, pt: 1.25, pb: 1.25, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+      // Seule partie qui rétrécit quand la place manque : elle défile, ses blocs gardent leur hauteur et ne se chevauchent pas.
+      <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 1, px: 1.25, pt: 1.25, pb: 1.25, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain' }}>
         {/* Si l'assistant n'est pas branché (début). */}
         {enabled === false && (
           // Encadré d'avertissement (début de la balise).
-          <Typography role="status" sx={{ px: 1.25, py: 1, borderRadius: '10px', bgcolor: C.field, border: `1px solid ${C.border}`, color: C.muted, fontFamily: SANS, fontSize: 13 }}>
+          <Typography role="status" sx={{ flex: 'none', px: 1.25, py: 1, lineHeight: 1.45, borderRadius: '10px', bgcolor: C.field, border: `1px solid ${C.border}`, color: C.muted, fontFamily: SANS, fontSize: 13 }}>
             {/* Son texte. */}
             Fenêtre de démonstration : l’assistant n’est pas encore branché, aucune réponse n’est générée.
           {/* Fin de l'encadré. */}
@@ -419,15 +437,16 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
         )}
 
         {/* La conversation, annoncée aux lecteurs d'écran ; hauteur minimale tant qu'elle est vide, hors mode compact. */}
-        <Stack spacing={1} sx={{ minHeight: messages.length === 0 ? (compact ? 0 : 72) : 0 }} aria-live="polite">
+        {/* Hauteur fixée par son contenu (flex: none) : elle ne peut plus être écrasée sous les suggestions. */}
+        <Stack spacing={1} sx={{ flex: 'none', minWidth: 0 }} aria-live="polite">
           {/* S'il n'y a aucun message (début). */}
           {messages.length === 0 ? (
             // Bloc d'accueil, centré.
-            <Box sx={{ m: 'auto', textAlign: 'center', px: 2 }}>
+            <Box sx={{ textAlign: 'center', px: 1, py: 1.5 }}>
               {/* L'invitation. */}
               <Typography sx={{ fontFamily: SERIF, fontSize: 18, lineHeight: 1.3, color: C.text }}>Posez une question ou demandez une action</Typography>
               {/* L'avertissement (début de la balise). */}
-              <Typography sx={{ mt: 0.5, fontFamily: SANS, fontSize: 13, color: C.muted }}>
+              <Typography sx={{ mt: 0.75, fontFamily: SANS, fontSize: 13, lineHeight: 1.45, color: C.muted }}>
                 {/* Son texte. */}
                 Les réponses sont générées par une IA et peuvent contenir des erreurs.
               {/* Fin de l'avertissement. */}
@@ -443,7 +462,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           {/* Pendant l'attente d'une réponse (début). */}
           {busy && (
             // Ligne d'attente, alignée à gauche.
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ alignSelf: 'flex-start', px: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 'none', alignSelf: 'flex-start', px: 1 }}>
               {/* Une petite roue orange. */}
               <CircularProgress size={14} sx={{ color: C.accent }} />
               {/* Le texte « Claude répond… ». */}
@@ -461,7 +480,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
         {/* Avant le premier message (début). */}
         {messages.length === 0 && (
           // La liste des suggestions.
-          <Stack spacing={0.25}>
+          <Stack spacing={0.25} sx={{ flex: 'none' }}>
             {/* Une ligne par suggestion (deux seulement en mode compact) ; un clic l'envoie. */}
             {(compact ? SUGGESTIONS.slice(0, 2) : SUGGESTIONS).map((s) => <Row key={s} disabled={busy} onClick={() => send(s)}>{s}</Row>)}
           {/* Fin de la liste. */}
@@ -471,7 +490,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
         {/* Avant le premier message (début). */}
         {messages.length === 0 && (
           // Note de confidentialité (début de la balise).
-          <Typography sx={{ fontFamily: SANS, fontSize: 11.5, lineHeight: 1.4, color: C.muted }}>
+          <Typography sx={{ flex: 'none', fontFamily: SANS, fontSize: 11.5, lineHeight: 1.45, color: C.muted }}>
             {/* Son texte. */}
             Vos messages sont envoyés à l’API Claude d’Anthropic pour générer la réponse. N’y mettez pas d’informations personnelles.
           {/* Fin de la note. */}
@@ -485,15 +504,20 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       {/* Zone de saisie ; sans filet en mode réduit, où elle est seule dans le panneau. */}
       <Box sx={{ flex: 'none', px: 1.25, py: 1, ...(bare ? {} : { borderTop: `1px solid ${C.border}` }) }}>
         {/* Le formulaire : à la validation, envoie le texte sans recharger la page. */}
-        <Stack component="form" direction="row" spacing={1} alignItems="center" onSubmit={(e) => { e.preventDefault(); send(); }}>
+        {/* Boutons alignés en bas : le champ peut grandir sur plusieurs lignes sans les recouvrir. */}
+        <Stack component="form" direction="row" spacing={1} alignItems="flex-end" onSubmit={(e) => { e.preventDefault(); send(); }}>
           {/* Mode réduit : le logo tient la place de l'en-tête, à gauche de la barre de recherche. */}
-          {bare && <Box component="img" src="/claude-logo.png" alt="Claude" sx={{ width: 22, height: 22, flex: 'none', ml: 0.25 }} />}
+          {bare && <Box component="img" src="/claude-logo.png" alt="Claude" sx={{ width: 22, height: 22, flex: 'none', ml: 0.25, mb: '9px' }} />}
           {/* Le champ de texte (début de la balise). */}
           <TextField
             // Petite taille.
             size="small"
             // Toute la largeur.
             fullWidth
+            // Sur plusieurs lignes : le texte long reste visible en entier (jusqu'à 4 lignes, puis il défile).
+            multiline maxRows={4}
+            // Entrée envoie le message ; Maj + Entrée passe à la ligne.
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
             // Le texte saisi.
             value={text}
             // À chaque frappe : met le texte à jour.
@@ -507,7 +531,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
               // Le cadre du champ (début).
               '& .MuiOutlinedInput-root': {
                 // Couleurs du menu, coins arrondis, texte de 16 px en mode compact.
-                bgcolor: C.field, color: C.text, borderRadius: '12px', fontFamily: SANS, fontSize: compact ? 16 : 14,
+                bgcolor: C.field, color: C.text, borderRadius: '12px', fontFamily: SANS, fontSize: compact ? 16 : 14, lineHeight: 1.4, py: '9px',
                 // Bordure au repos.
                 '& fieldset': { borderColor: C.border },
                 // Bordure au survol.
@@ -517,7 +541,11 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
               // Fin du cadre.
               },
               // Couleur du texte indicatif.
-              '& input::placeholder': { color: C.muted, opacity: 1 },
+              '& textarea::placeholder': { color: C.muted, opacity: 1 },
+              // Le texte saisi : mots longs coupés, pas de défilement horizontal.
+              '& textarea': { overflowWrap: 'anywhere' },
+              // Le champ peut rétrécir à côté des boutons.
+              minWidth: 0,
             // Fin du style.
             }}
           // Fin du champ.
