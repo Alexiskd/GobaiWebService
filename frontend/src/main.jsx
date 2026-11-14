@@ -7,11 +7,20 @@ import { API_ROOT } from './moteur/api/client';
 // Lecture et surveillance de la version du serveur.
 import { buildOf, watchBuild } from './moteur/lib/autoReload';
 // Protection contre les erreurs React et redirection vers le domaine de secours.
-import { FailoverBoundary, redirectToFailover } from './moteur/lib/failover';
+import { FailoverBoundary, consumeFailoverParams, redirectToFailover } from './moteur/lib/failover';
 // Importe le blocage des API externes : le garde de fetch et la lecture de l'état du serveur.
 import { installFetchGuard, refreshServerBlocked } from './moteur/lib/apiBlock';
 // Importe la garde de la racine React : dépôt, retrait du contenu de départ et démontage.
 import { removeSeoShell, setAppRoot, unmountApp } from './moteur/lib/appRoot';
+
+// Arrivée par une redirection de secours : la redirection est notée pour la session et
+// « ?__gobai_failover=1&__gobai_reason=… » est retiré de l'adresse.
+consumeFailoverParams();
+/** Durée du démarrage (ms) : passé ce délai, une erreur JavaScript ne fait plus changer de domaine. */
+// Durée du démarrage : 15 secondes.
+const STARTUP_MS = 15000;
+// Vrai pendant le démarrage de la page.
+const starting = () => performance.now() < STARTUP_MS;
 
 // Pose le garde avant de lancer l'application : une API déconnectée n'est plus appelée par le navigateur.
 installFetchGuard();
@@ -36,16 +45,18 @@ root.render(
 // pas laisser dans la page une seconde présentation que le traducteur et les lecteurs d'écran parcourraient.
 removeSeoShell();
 
-// Erreurs JavaScript globales : exceptions hors rendu React et promesses rejetées.
-window.addEventListener('error', (event) => {
-  // Redirige vers le secours.
-  redirectToFailover('frontend-runtime-error');
+// Erreurs JavaScript globales : exceptions hors rendu React et promesses rejetées. Seulement au démarrage : les deux
+// domaines servent le même code, donc une erreur pendant l'utilisation (une tuile mal formée, un calque) se
+// reproduirait de l'autre côté ; changer de domaine n'aurait fait que recharger toute l'application.
+window.addEventListener('error', () => {
+  // Au démarrage : redirige vers le secours.
+  if (starting()) redirectToFailover('frontend-runtime-error');
 // Fin de l'écoute des erreurs.
 });
 // À une promesse rejetée sans traitement (début).
 window.addEventListener('unhandledrejection', () => {
-  // Redirige vers le secours.
-  redirectToFailover('frontend-unhandled-rejection');
+  // Au démarrage : redirige vers le secours.
+  if (starting()) redirectToFailover('frontend-unhandled-rejection');
 // Fin de cette écoute.
 });
 
