@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, inDome, domeRadius, boxDistance2D, expandLonLatBox, unloadPick, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, inDome, domeRadius, domeBudget, lonLatDistanceM, boxDistance2D, expandLonLatBox, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -492,16 +492,22 @@ test('expandLonLatBox : élargit l\'emprise de la marge de chaque côté', () =>
   assert.equal(expandLonLatBox(null, 100), null);
 });
 
-// Déchargement par densité : le niveau le plus fin part d'abord, la racine en dernier.
-test('unloadPick : décharge le niveau le plus fin d\'abord', () => {
-  // Nœuds non demandés de deux dalles, niveaux 0 à 2.
-  const idle = [{ id: 'A0', level: 0 }, { id: 'A2', level: 2 }, { id: 'B1', level: 1 }, { id: 'B2', level: 2 }];
-  // Les deux nœuds de niveau 2 d'abord.
-  assert.deepEqual(unloadPick(idle).map((x) => x.id), ['A2', 'B2']);
-  // Puis le niveau 1, puis la racine.
-  assert.deepEqual(unloadPick(idle.filter((x) => x.level < 2)).map((x) => x.id), ['B1']);
-  // Rien à décharger : liste vide.
-  assert.deepEqual(unloadPick([]), []);
+// Budget du dôme : niveau par niveau, du centre vers le bord, rien de plus fin dès qu'un nœud ne tient plus.
+test('domeBudget : densité uniforme sur tout le dôme, adaptée au budget', () => {
+  // Deux racines, trois nœuds de niveau 1 (proche, moyen, lointain), un de niveau 2.
+  const wanted = [
+    { id: 'B0', level: 0, n: 50, dist: 900 }, { id: 'A0', level: 0, n: 50, dist: 0 },
+    { id: 'A1far', level: 1, n: 40, dist: 800 }, { id: 'A1near', level: 1, n: 40, dist: 10 },
+    { id: 'A1mid', level: 1, n: 40, dist: 300 }, { id: 'A2', level: 2, n: 10, dist: 0 },
+  ];
+  // Budget 200 : les racines (100), puis les deux nœuds de niveau 1 les plus proches (180) ; le troisième ne tient plus, et rien de plus fin.
+  assert.deepEqual(domeBudget(wanted, 200).map((e) => e.id), ['A0', 'B0', 'A1near', 'A1mid']);
+  // Budget large : tout, niveau par niveau.
+  assert.deepEqual(domeBudget(wanted, 1e9).map((e) => e.id), ['A0', 'B0', 'A1near', 'A1mid', 'A1far', 'A2']);
+  // Budget nul : les racines seules.
+  assert.deepEqual(domeBudget(wanted, 0).map((e) => e.id), ['A0', 'B0']);
+  // Distance entre deux points à 1 km l'un de l'autre en latitude (≈ 0,009°).
+  assert.ok(Math.abs(lonLatDistanceM(2.35, 48.85, 2.35, 48.85 + 1000 / 111_195) - 1000) < 1e-6);
 });
 
 // Dôme : cercle net autour de la caméra, densité uniforme dedans, rien dehors.

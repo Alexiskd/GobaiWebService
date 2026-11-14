@@ -100,8 +100,8 @@ export class LidarTilesController {
     res.setHeader('Content-Encoding', 'gzip');
     // Taille du corps compressé.
     res.setHeader('Content-Length', body.length);
-    // Les nuages de l'IGN ne changent pas et la version du format est dans l'adresse (?v=) : cache d'un an, immuable.
-    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    // Rien n'est gardé sur l'appareil : le nuage est téléchargé à son entrée dans le dôme et supprimé à sa sortie.
+    res.setHeader('Cache-Control', 'no-store');
     // Envoie les octets.
     res.send(body);
   // Fin de node.
