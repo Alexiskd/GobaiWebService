@@ -5,16 +5,18 @@ import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la longitude et la latitude d'un point de la sphère, depuis mercator.
 import { xyzToLonLat } from './tiles/mercator';
 // Importe les constantes et les calculs de Paris en 3D, depuis paris3dMath.
-import { PARIS_BOUNDS, SHOW_ALTITUDE_M, extrudeBuildings, groundDistance, loadRadius, tileBounds, tileFrame, tilesAround, wfsUrl } from './paris3dMath';
+import { PARIS_BOUNDS, SHOW_ALTITUDE_M, extrudeBuildings, groundDistance, tileBounds, tileCorners, tileFrame, tilesAround, viewRange, wfsUrl } from './paris3dMath';
 
 // Paris en 3D, sur le modèle du TP iTowns de l'IGN (github.com/IGNF/TP_iTowns) : les bâtiments de la BD TOPO v3
 // (service WFS de la Géoplateforme, couche BDTOPO_V3:batiment), extrudés à leur hauteur et posés sur le globe.
 // Remplace les dalles LiDAR en points 3D.
 //
-// Chargement : Paris est découpée en carreaux d'environ 450 m (voir paris3dMath.jsx). Sous 4 km d'altitude, au-dessus
-// de Paris, les carreaux autour du point survolé sont demandés au WFS, du plus proche au plus lointain, quelques-uns
-// à la fois ; un carreau reçu est extrudé en un seul maillage (un appel de dessin par carreau). Les carreaux déjà
-// reçus restent en mémoire, masqués, pour revenir sans attente ; au-delà du plafond, les plus anciens sortent.
+// Chargement : Paris est découpée selon les tuiles de la carte (Web Mercator, niveau 16, ≈ 400 m ; voir
+// paris3dMath.jsx). Sous 4 km d'altitude, au-dessus de Paris, seules les tuiles dans le champ de la caméra sont
+// demandées au WFS, celles de l'axe de visée d'abord, quelques-unes à la fois ; un téléchargement est abandonné dès
+// que sa tuile sort du champ. Une tuile reçue est allégée (contours simplifiés à 1 m, bâtiments et cours de moins de
+// 25 m² écartés) puis extrudée en un seul maillage (un appel de dessin par tuile). Les tuiles déjà reçues restent en
+// mémoire, masquées, pour revenir sans attente ; au-delà du plafond, les plus anciennes sortent.
 //
 // Pose : les bâtiments sont rattachés au groupe de la Terre et recopient sa rotation propre, comme les tuiles. Carte à
 // plat : leur pied est posé sur la carte (le sol des tuiles, légèrement soulevé selon le niveau affiché). Relief en
@@ -109,7 +111,7 @@ export class Paris3D {
     // Soulèvement du sol des tuiles (m), sur une carte à plat.
     this.groundLiftM = 0;
     // Carreaux, par clé.
-    this.tiles = new Map(); // clé → { key, ix, iy, bounds, state, mesh, groundM, usedAt, retryAt, abort }
+    this.tiles = new Map(); // clé « 16/x/y » → { key, x, y, bounds, state, mesh, groundM, usedAt, retryAt, abort }
     // Carreaux reçus, en attente d'extrusion (un par image, pour ne pas faire chuter l'affichage).
     this.arrived = [];
     // Téléchargements en cours : 0.
@@ -134,6 +136,16 @@ export class Paris3D {
     this.tmpV = new THREE.Vector3();
     // Matrice de travail.
     this.tmpM = new THREE.Matrix4();
+    // Matrice de travail : de la sphère unité de la Terre à l'écran.
+    this.viewM = new THREE.Matrix4();
+    // Champ de vision de travail, dans le repère de la sphère unité.
+    this.frustum = new THREE.Frustum();
+    // Boîte de travail.
+    this.box = new THREE.Box3();
+    // Vecteurs de travail : direction de visée et centre d'une tuile.
+    this.fwd = new THREE.Vector3(); this.tc = new THREE.Vector3();
+    // Position de la caméra dans le repère de la sphère unité.
+    this.camL = new THREE.Vector3();
   // Fin du constructeur.
   }
 
@@ -284,15 +296,15 @@ export class Paris3D {
     // Et sa matrice dans la scène.
     frame.updateWorldMatrix(true, false);
     // Caméra dans le repère de la Terre, ramenée à la sphère unité.
-    const local = this.tmpV.copy(cam.position).applyMatrix4(this.tmpM.copy(frame.matrixWorld).invert()).divideScalar(this.radius);
+    const local = this.camL.copy(cam.position).applyMatrix4(this.tmpM.copy(frame.matrixWorld).invert()).divideScalar(this.radius);
     // Altitude de la caméra (m).
     const altitude = (local.length() - 1) * EARTH_RADIUS_M;
     // Longitude et latitude du point survolé.
     const [lon, lat] = xyzToLonLat([local.x, local.y, local.z]);
     // Distance de ce point à Paris (0 dedans).
     const away = groundDistance(lon, lat, Math.min(Math.max(lon, PARIS_BOUNDS.west), PARIS_BOUNDS.east), Math.min(Math.max(lat, PARIS_BOUNDS.south), PARIS_BOUNDS.north));
-    // Rayon de chargement.
-    const radiusM = loadRadius(altitude);
+    // Portée de la recherche des tuiles.
+    const radiusM = viewRange(altitude);
     // Actif : permis, Terre visible, sous l'altitude d'affichage et assez près de Paris.
     const on = this.enabled && !hidden && altitude > 0 && altitude < SHOW_ALTITUDE_M && away < radiusM;
     // Inactif : masque le repère et s'arrête.
@@ -315,8 +327,30 @@ export class Paris3D {
     this.dirty = false;
     // Instant du choix.
     this.selectAt = now;
-    // Carreaux voulus, du plus proche au plus lointain.
-    const wanted = tilesAround(lon, lat, radiusM);
+    // Champ de la caméra dans le repère de la sphère unité : projection × vue × repère de la Terre × rayon.
+    this.viewM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse).multiply(frame.matrixWorld).multiply(this.tmpM.makeScale(this.radius, this.radius, this.radius));
+    // Plans du champ.
+    this.frustum.setFromProjectionMatrix(this.viewM);
+    // Direction de visée dans le repère de la sphère unité.
+    const fwd = cam.getWorldDirection(this.fwd).transformDirection(this.tmpM.copy(frame.matrixWorld).invert());
+    // Tuiles voulues : à portée, et dans le champ de la caméra (boîte élargie d'un quart pour ne pas les voir apparaître au bord).
+    const wanted = tilesAround(lon, lat, radiusM).filter((w) => {
+      // Boîte de la tuile, du sol à 120 m.
+      this.box.setFromPoints(tileCorners(tileBounds(w.x, w.y)).map(([x, y, z]) => new THREE.Vector3(x, y, z)));
+      // Élargie d'un quart de sa taille.
+      this.box.expandByScalar(this.box.min.distanceTo(this.box.max) * 0.25);
+      // Hors du champ : écartée.
+      if (!this.frustum.intersectsBox(this.box)) return false;
+      // Centre de la tuile.
+      this.box.getCenter(this.tc);
+      // Écart angulaire à l'axe de visée : 0 au centre de l'écran.
+      const off = Math.acos(Math.max(-1, Math.min(1, this.tc.sub(local).normalize().dot(fwd))));
+      // Priorité : distance, allongée pour les tuiles loin de l'axe.
+      w.p = (w.d + 50) * (1 + 2 * off);
+      // Gardée.
+      return true;
+    // Fin du filtre ; tri par priorité, l'axe de visée d'abord.
+    }).sort((a, b) => a.p - b.p);
     // Clés voulues.
     const keys = new Set(wanted.map((w) => w.key));
     // Pour chaque carreau voulu (début).
@@ -324,10 +358,10 @@ export class Paris3D {
       // Le carreau, créé s'il manque.
       let t = this.tiles.get(w.key);
       // S'il manque : créé, à charger.
-      if (!t) { t = { key: w.key, ix: w.ix, iy: w.iy, bounds: tileBounds(w.ix, w.iy), state: 'idle', mesh: null, groundM: 0, buildings: 0, usedAt: 0, retryAt: 0, abort: null }; this.tiles.set(w.key, t); }
+      if (!t) { t = { key: w.key, x: w.x, y: w.y, bounds: tileBounds(w.x, w.y), state: 'idle', mesh: null, groundM: 0, buildings: 0, usedAt: 0, retryAt: 0, abort: null }; this.tiles.set(w.key, t); }
       // Utilisé maintenant.
       t.usedAt = now;
-      // À charger et de la place : lancé (le plus proche d'abord).
+      // À charger et de la place : lancé (celle de l'axe de visée d'abord).
       if ((t.state === 'idle' || (t.state === 'failed' && now >= t.retryAt)) && this.active < this.profile.parallel) this.load(t);
     // Fin des carreaux voulus.
     }
