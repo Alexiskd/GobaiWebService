@@ -1,9 +1,9 @@
 // Outils NestJS : Controller, Get, Param, Res (accès direct à la réponse).
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Query, Res } from '@nestjs/common';
 // SkipThrottle : dispense de la limite de débit.
 import { SkipThrottle } from '@nestjs/throttler';
 // Décorateurs Swagger pour la documentation.
-import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 // Matches : validation par expression régulière.
 import { Matches } from 'class-validator';
 // Forme commune des réponses d'erreur.
@@ -29,7 +29,7 @@ interface BinaryResponse {
 // Fin de BinaryResponse.
 }
 
-/** Dalles LiDAR en vrais points 3D : manifeste des dalles et fichiers des nœuds de leur octree. */
+/** Nuages LiDAR HD de l'IGN en vrais points 3D, lus en direct : dalles autour d'un point et fichiers des nœuds de leur octree. */
 // Rubrique « LiDAR 3D » de la documentation.
 @ApiTags('LiDAR 3D')
 // Routes sous /api/v1/lidar.
@@ -44,19 +44,25 @@ export class LidarTilesController {
   // Ouvre la description de la route :
   @ApiOperation({
     // son titre ;
-    summary: 'Dalles LiDAR affichées en points 3D',
+    summary: 'Dalles LiDAR HD de l’IGN autour d’un point',
     // début de son texte ;
-    description: 'Pour chaque dalle : emprise, calage GPS, pas des coordonnées et nœuds de l’octree (clé, nombre de points, '
-      // suite du texte (les deux chaînes sont collées par « + »).
-      + 'empreinte). `nodeUrl` est le modèle d’adresse des fichiers ; `storage` indique s’ils viennent de PostgreSQL.',
+    description: 'Dalles du jeu IGNF_NUAGES-DE-POINTS-LIDAR-HD (Géoplateforme) autour du point, lues en direct : emprise, '
+      // suite du texte (les chaînes sont collées par « + ») ;
+      + 'calage GPS, pas des coordonnées et nœuds de l’octree COPC (clé, nombre de points). `nodeUrl` est le modèle '
+      // fin du texte.
+      + 'd’adresse des fichiers ; `available` est faux si le décodeur LAZ manque sur le serveur.',
   // Fin de la description.
   })
   // Réponse 200 documentée.
-  @ApiOkResponse({ description: 'Dalles et nœuds disponibles.' })
-  // Méthode list : renvoie les dalles et leurs nœuds.
-  list() {
-    // Délègue au service.
-    return this.lidar.list();
+  @ApiOkResponse({ description: 'Dalles et nœuds disponibles autour du point.' })
+  // Documente la longitude, avec un exemple (Beaubourg).
+  @ApiQuery({ name: 'lon', example: 2.3526 })
+  // Documente la latitude, avec un exemple.
+  @ApiQuery({ name: 'lat', example: 48.8608 })
+  // Méthode list : reçoit la longitude et la latitude, renvoie les dalles et leurs nœuds.
+  list(@Query('lon') lon?: string, @Query('lat') lat?: string) {
+    // Délègue au service, avec les coordonnées converties en nombres.
+    return this.lidar.list(Number(lon), Number(lat));
   // Fin de list.
   }
 
@@ -69,11 +75,11 @@ export class LidarTilesController {
     // son titre ;
     summary: 'Points d’un nœud de l’octree',
     // son texte (format du fichier).
-    description: 'Fichier binaire compressé (gzip, décompressé par le navigateur) : 8 octets par point, voir lidar-tiles.ts.',
+    description: 'Bloc LAZ du nœud lu chez l’IGN, décodé et converti : fichier binaire compressé (gzip, décompressé par le navigateur), 8 octets par point, voir lidar-tiles.ts.',
   // Fin de la description.
   })
   // Documente le paramètre tile, avec un exemple.
-  @ApiParam({ name: 'tile', example: 'paris-0652-6863' })
+  @ApiParam({ name: 'tile', example: 'lhd-0652-6863' })
   // Documente le paramètre node, avec un exemple (la racine).
   @ApiParam({ name: 'node', example: '0-0-0-0' })
   // Réponse 200 documentée.
@@ -90,8 +96,7 @@ export class LidarTilesController {
     res.setHeader('Content-Encoding', 'gzip');
     // Taille du corps compressé.
     res.setHeader('Content-Length', body.length);
-    // L'empreinte du fichier est dans l'adresse (?v=) : le navigateur le garde sans jamais le redemander.
-    // Cache d'un an, immuable.
+    // Les nuages de l'IGN ne changent pas et la version du format est dans l'adresse (?v=) : cache d'un an, immuable.
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     // Envoie les octets.
     res.send(body);

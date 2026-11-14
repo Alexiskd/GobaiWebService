@@ -21,7 +21,8 @@ function storedOn() {
 }
 
 /**
- * Dalles LiDAR en vrais points 3D (GET /lidar) : envoyées au moteur dès le démarrage, affichées par défaut.
+ * Nuages LiDAR HD de l'IGN en vrais points 3D (GET /lidar?lon&lat) : cherchés par le moteur sous la caméra, partout
+ * en France, affichés par défut.
  * Renvoie { on, setOn, color, setColor, places } ; `color` : « photo » (orthophoto drapée sur les points) ou « classes » ; `places` : lieux des dalles ([{ id, name, lat, lon, points }]) pour s'y rendre.
  */
 // Déclare et exporte le crochet useLidarPoints : reçoit le moteur.
@@ -33,28 +34,23 @@ export function useLidarPoints(engine) {
   // État : le mode de couleur, lu dans le stockage.
   const [color, setColorState] = useState(storedColor);
 
-  // Effet qui charge les dalles.
+  // Effet qui branche la recherche des nuages LiDAR HD de l'IGN : le moteur demande les dalles sous la caméra quand
+  // elle descend sous 3 km, partout en France ; le serveur les lit en direct sur la Géoplateforme.
   useEffect(() => {
-    // Sans moteur, ou si le moteur ne gère pas les dalles de points, rien à faire.
-    if (!engine?.setLidarPointTiles) return undefined;
-    // Crée un contrôleur d'annulation.
+    // Sans moteur, ou si le moteur ne gère pas la recherche, rien à faire.
+    if (!engine?.setLidarDiscovery) return undefined;
+    // Contrôleur d'annulation des requêtes en cours.
     const controller = new AbortController();
-    // Charge la liste des dalles, avec le signal d'annulation.
-    fetchLidarTiles(controller.signal)
-      // Réponse reçue : extrait les dalles (début).
-      .then(({ items }) => {
-        // Liste des dalles (vide si ce n'est pas un tableau), avec l'adresse complète de chaque nœud.
-        const list = (Array.isArray(items) ? items : []).map((m) => ({ ...m, nodeUrl: resolveApiUrl(m.nodeUrl) }));
-        // Envoie les dalles au moteur.
-        engine.setLidarPointTiles(list);
-        // Garde, pour chaque dalle, son identifiant, son nom, la position de son point d'ancrage et son nombre de points.
-        setPlaces(list.map((m) => ({ id: m.id, name: m.name, lat: m.anchor.lat, lon: m.anchor.lon, points: m.points })));
-      // Fin du traitement de la réponse.
-      })
-      // Un échec est ignoré.
-      .catch(() => {}); // pas de dalle : rien à afficher
-    // Nettoyage : annule la requête en cours.
-    return () => controller.abort();
+    // Branche la recherche (début) :
+    engine.setLidarDiscovery(
+      // les dalles autour du point, avec l'adresse complète de chaque nœud ;
+      (lon, lat) => fetchLidarTiles(controller.signal, { lon, lat }).then(({ items }) => (Array.isArray(items) ? items : []).map((m) => ({ ...m, nodeUrl: resolveApiUrl(m.nodeUrl) }))),
+      // à chaque nouvelle liste : les lieux des dalles (identifiant, nom, position, nombre de points).
+      (list) => setPlaces(list),
+    // Fin du branchement.
+    );
+    // Nettoyage : annule les requêtes et débranche la recherche.
+    return () => { controller.abort(); engine.setLidarDiscovery(null, null); };
   // Fin de l'effet ; dépendance : le moteur.
   }, [engine]);
 

@@ -86,8 +86,8 @@ test('assistant : modèle, ville et couleur du LiDAR HD', () => {
   assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'types' } }, BODIES, LISTS).mode, 'classes');
   // Une couleur inventée est refusée.
   assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'arc_en_ciel' } }, BODIES, LISTS), null);
-  // Paris en 3D est un réglage d'affichage.
-  assert.equal(r({ name: 'regler_affichage', input: { reglage: 'paris_3d', actif: true } }, BODIES).setting, 'paris_3d');
+  // Paris en 3D a été retiré : ce réglage n'existe plus.
+  assert.equal(r({ name: 'regler_affichage', input: { reglage: 'paris_3d', actif: true } }, BODIES), null);
   // Protection du prototype, comme pour les fenêtres.
   assert.equal(r({ name: 'choisir_modele_lidar', input: { modele: '__proto__' } }, BODIES, LISTS), null);
 // Fin du test.

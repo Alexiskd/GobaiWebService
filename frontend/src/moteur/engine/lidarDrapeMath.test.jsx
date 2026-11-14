@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { drapePlan, drapeTiles, drapeUv, localToMercator, mercatorOf, nodeDrape, tileRect } from './lidarDrapeMath';
 
 // Manifeste de la dalle LiDAR de Paris, lu dans les données du backend.
-const manifest = JSON.parse(readFileSync(new URL('../../../../backend/data/lidar/paris-0652-6863/manifest.json', import.meta.url), 'utf8'));
+const manifest = JSON.parse(readFileSync(new URL('./__fixtures__/lidar-paris/manifest.json', import.meta.url), 'utf8'));
 
 // Test : la projection Web Mercator normalisée.
 test('Web Mercator normalisé : origine, équateur, sens des axes', () => {

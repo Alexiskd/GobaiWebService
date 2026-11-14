@@ -1,232 +1,297 @@
-// Outils NestJS : Injectable, Logger (journal), erreur 404, et les interfaces d'un service qui agit au démarrage et à l'arrêt de son module.
-import { Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-// Fonctions de fichiers synchrones : tester la présence, lister un dossier, lire un fichier.
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-// readFile : lit un fichier de façon asynchrone.
-import { readFile } from 'node:fs/promises';
+// Outils NestJS : Injectable, Logger (journal), et les erreurs 404, 502 et 503.
+import { BadGatewayException, Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+// execFile : lance un programme ; existsSync : teste la présence d'un fichier.
+import { execFile } from 'node:child_process';
+// existsSync : teste la présence d'un fichier.
+import { existsSync } from 'node:fs';
+// Fonctions de fichiers asynchrones : dossier temporaire, écriture, lecture, suppression.
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+// tmpdir : le dossier temporaire du système.
+import { tmpdir } from 'node:os';
 // join : assemble des morceaux de chemin.
 import { join } from 'node:path';
-// Pool : un groupe de connexions à PostgreSQL.
-import { Pool } from 'pg';
-// Cache mémoire, fonctions de vérification, types du manifeste et d'un nœud, et fabrication du manifeste public.
-import { ByteCache, isLidarManifest, isLidarNodeKey, isLidarTileId, type LidarManifest, type LidarNode, publicLidarManifest } from './lidar-tiles';
+// gzipSync : compression gzip.
+import { gzipSync } from 'node:zlib';
+// Conversion Lambert-93 → WGS84 et cap de la grille.
+import { gridNorthHeading, lambert93ToWgs84 } from '../contributions/lambert93';
+// Fonctions et constantes des nuages LiDAR HD de l'IGN.
+import {
+  ByteCache, COPC_HEADER_BYTES, type CopcEntry, type CopcInfo, IGN_LIDAR_LAYER, type IgnLidarTile, LAZDEC_POINT_BYTES, LIDAR_IMAGERY, LIDAR_STEP,
+  encodeNode, isLidarNodeKey, isLidarTileId, lidarWfsUrl, parseCopcHeader, parseHierarchyPage, tileKmFromId, tilesFromWfs,
+} from './lidar-tiles';
 
 /**
- * Dalles LiDAR en vrais points 3D (voir lidar-tiles.ts pour le format).
- * Les fichiers sont versionnés dans backend/data/lidar/<dalle>/. Au démarrage, si DATABASE_URL est renseigné, ils sont
- * copiés dans PostgreSQL (table lidar_nodes) puis servis depuis la base ; sinon ils sont servis depuis le dossier.
- * Un nœud déjà en base (même empreinte) n'est pas renvoyé. Les nœuds demandés restent en mémoire (cache borné) :
- * la racine et les premiers niveaux, demandés par tout le monde, partent sans lecture de la base.
+ * Nuages de points LiDAR HD de l'IGN, lus en direct (voir lidar-tiles.ts) : rien n'est stocké dans le dépôt ni en base.
+ *
+ *  - list(lon, lat) : demande au WFS de la Géoplateforme les dalles autour du point, lit l'en-tête et la hiérarchie
+ *    COPC de chacune (requêtes partielles HTTP Range, quelques kilo-octets) et renvoie leurs manifestes ;
+ *  - node(dalle, nœud) : lit le seul bloc LAZ du nœud (HTTP Range), le décode avec tools/lidar/lazdec (compilé au
+ *    build) et le convertit au format compact du navigateur, compressé en gzip. Les nœuds servis restent en mémoire.
  */
-
-// Requête SQL de création, envoyée telle quelle à PostgreSQL : la table lidar_nodes (dalle, nœud, empreinte, nombre de points, données binaires, date de création ; clé : dalle + nœud), créée seulement si elle n'existe pas ; puis le stockage « externe », non compressé, de la colonne data. Les lignes de cette requête sont du texte : elles ne peuvent pas recevoir de commentaire sans modifier la requête.
-// Détail du texte SQL, ligne par ligne (les lignes d'une chaîne ne peuvent pas porter de commentaire) :
-// ligne 1 : crée la table lidar_nodes si elle n'existe pas (début) ;
-// ligne 2 : tile, l'identifiant de la dalle, obligatoire ;
-// ligne 3 : node, la clé du nœud, obligatoire ;
-// ligne 4 : sha, l'empreinte du fichier, obligatoire ;
-// ligne 5 : points, le nombre de points, obligatoire ;
-// ligne 6 : data, les octets du nœud, obligatoires ;
-// ligne 7 : created_at, la date de création, l'instant présent par défaut ;
-// ligne 8 : clé primaire sur la dalle et le nœud ;
-// ligne 9 : fin de la table ;
-// ligne 10 : la colonne data est rangée hors ligne, sans compression ;
-// ligne 11 : fin du texte.
-const SCHEMA = `
-  CREATE TABLE IF NOT EXISTS lidar_nodes (
-    tile TEXT NOT NULL,
-    node TEXT NOT NULL,
-    sha TEXT NOT NULL,
-    points INTEGER NOT NULL,
-    data BYTEA NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (tile, node)
-  );
-  ALTER TABLE lidar_nodes ALTER COLUMN data SET STORAGE EXTERNAL;
-`;
-
 /** Mémoire réservée aux nœuds déjà servis (le service gratuit de Render a 512 Mo en tout). */
-// Taille du cache mémoire : 40 Mo (40 × 1024 × 1024 octets).
-const CACHE_BYTES = 40 * 1024 * 1024;
+// Taille du cache mémoire : 48 Mo.
+const CACHE_BYTES = 48 * 1024 * 1024;
+/** Dalles dont le manifeste est gardé en mémoire. */
+// Nombre maximal de manifestes gardés : 64.
+const MAX_MANIFESTS = 64;
+/** Décodages simultanés au plus (mémoire et processeur du serveur). */
+// Deux décodages à la fois.
+const MAX_DECODES = 2;
+/** Délai maximal d'une requête vers l'IGN (ms). */
+// 20 secondes.
+const FETCH_TIMEOUT_MS = 20_000;
+/** Version du format des nœuds servis : change l'adresse (cache du navigateur) si la conversion change. */
+// Version « ign1 ».
+const NODE_VERSION = 'ign1';
+
+/** Dalle préparée : son manifeste public, l'adresse du nuage, l'en-tête COPC et les blocs de ses nœuds. */
+interface PreparedTile { manifest: Record<string, unknown>; url: string; info: CopcInfo; entries: Map<string, CopcEntry> }
 
 // Rend la classe injectable par NestJS.
 @Injectable()
-// Classe du service des dalles LiDAR ; elle agit au démarrage et à l'arrêt de son module.
-export class LidarTilesService implements OnModuleInit, OnModuleDestroy {
+// Classe du service des nuages LiDAR HD de l'IGN.
+export class LidarTilesService {
   // Journal préfixé par le nom de la classe.
   private readonly logger = new Logger(LidarTilesService.name);
-  // Dossier backend/data/lidar, calculé depuis l'emplacement du fichier compilé.
-  private readonly dir = join(__dirname, '..', '..', '..', 'data', 'lidar');
-  // Manifestes des dalles, par identifiant.
-  private readonly tiles = new Map<string, LidarManifest>();
-  // Nœuds, par « dalle/clé ».
-  private readonly nodes = new Map<string, LidarNode>();
-  // Groupe de connexions à PostgreSQL, ou null sans base.
-  private readonly pool: Pool | null = null;
-  /** Nœuds présents en base (« dalle/clé », remplis après la copie) : les autres sont servis depuis le dossier. */
-  // Nœuds présents en base.
-  private readonly stored = new Set<string>();
-  // Cache mémoire des fichiers déjà servis.
+  // Décodeur LAZ compilé au build (backend/tools/lidar/lazdec), calculé depuis l'emplacement du fichier compilé.
+  private readonly lazdec = join(__dirname, '..', '..', '..', 'tools', 'lidar', 'lazdec');
+  // Couche WFS des métadonnées des dalles (remplaçable par LIDAR_IGN_WFS_LAYER).
+  private readonly layer = process.env.LIDAR_IGN_WFS_LAYER?.trim() || IGN_LIDAR_LAYER;
+  // Dalles préparées, par identifiant (les plus anciennes sortent au-delà du plafond).
+  private readonly tiles = new Map<string, Promise<PreparedTile>>();
+  // Cache mémoire des nœuds déjà convertis et compressés.
   private readonly cache = new ByteCache(CACHE_BYTES);
+  // Décodages en cours, et file d'attente des suivants.
+  private running = 0;
+  // File d'attente : fonctions qui libèrent la place suivante.
+  private readonly waiting: (() => void)[] = [];
 
-  // Constructeur.
-  constructor() {
-    // Pour chaque dossier de backend/data/lidar (aucun si le dossier manque) :
-    for (const name of existsSync(this.dir) ? readdirSync(this.dir) : []) {
-      // chemin de son manifeste ;
-      const file = join(this.dir, name, 'manifest.json');
-      // pas de manifeste : on passe.
-      if (!existsSync(file)) continue;
-      // Essaie
-      try {
-        // de lire et d'analyser le manifeste ;
-        const manifest: unknown = JSON.parse(readFileSync(file, 'utf8'));
-        // invalide, ou identifiant différent du nom du dossier : erreur ;
-        if (!isLidarManifest(manifest) || manifest.id !== name) throw new Error('manifeste invalide');
-        // range le manifeste ;
-        this.tiles.set(manifest.id, manifest);
-        // et range chacun de ses nœuds.
-        for (const node of manifest.nodes) this.nodes.set(`${manifest.id}/${node.k}`, node);
-      // En cas d'erreur : la dalle est ignorée, avec une ligne dans le journal.
-      } catch (e) { this.logger.warn(`Dalle LiDAR ${name} ignorée : ${(e as Error).message}`); }
-    // Fin de la boucle.
-    }
-    // Adresse de la base, espaces retirés.
-    const url = process.env.DATABASE_URL?.trim();
-    // Si elle est définie et qu'il y a au moins une dalle :
-    if (url && this.tiles.size) {
-      // crée le groupe de connexions : 4 au plus, en TLS sans vérification du certificat quand la base est chez Render ;
-      this.pool = new Pool({ connectionString: url, max: 4, ssl: url.includes('render.com') ? { rejectUnauthorized: false } : undefined });
-      // et note dans le journal toute erreur de connexion.
-      this.pool.on('error', (e: Error) => this.logger.warn(`PostgreSQL : ${e.message}`));
-    // Fin du cas.
-    }
-  // Fin du constructeur.
+  /** Le décodeur est-il disponible ? */
+  // Accesseur available.
+  get available(): boolean { return existsSync(this.lazdec); }
+
+  /** Requête vers l'IGN avec délai maximal ; `range` [début, fin[ demande une partie du fichier (réponse 206 exigée). */
+  // Méthode fetchBytes : l'adresse et la plage facultative.
+  private async fetchBytes(url: string, range?: [number, number]): Promise<Buffer> {
+    // Contrôleur d'annulation, déclenché au délai maximal.
+    const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    // Essai (début).
+    try {
+      // Requête, avec la plage demandée.
+      const res = await fetch(url, { signal: ctrl.signal, headers: range ? { Range: `bytes=${range[0]}-${range[1] - 1}` } : {} });
+      // Plage demandée mais fichier entier renvoyé (des centaines de Mo) : abandon.
+      if (range && res.status !== 206) { ctrl.abort(); throw new Error(`IGN : lecture partielle refusée (${res.status}).`); }
+      // Réponse en erreur.
+      if (!res.ok) throw new Error(`IGN : réponse ${res.status}.`);
+      // Les octets.
+      return Buffer.from(await res.arrayBuffer());
+    // Dans tous les cas : arrête le minuteur.
+    } finally { clearTimeout(timer); }
+  // Fin de fetchBytes.
   }
 
-  // Méthode appelée par NestJS quand le module est prêt.
-  onModuleInit(): void {
-    // En arrière-plan : le démarrage du serveur n'attend pas la copie des dalles.
-    // Avec une base : lance la copie des nœuds sans l'attendre ; un échec est noté dans le journal.
-    if (this.pool) void this.sync().catch((e: Error) => this.logger.warn(`LiDAR : copie vers PostgreSQL impossible (${e.message}). Fichiers servis depuis le dossier.`));
-    // Sans base mais avec des dalles : le note dans le journal.
-    else if (this.tiles.size) this.logger.warn('DATABASE_URL absent : les dalles LiDAR sont servies depuis backend/data/lidar.');
-  // Fin de onModuleInit.
-  }
-
-  // Méthode appelée par NestJS à l'arrêt : ferme les connexions à la base, s'il y en a.
-  async onModuleDestroy(): Promise<void> { await this.pool?.end(); }
-
-  /** Copie en base les nœuds absents ou modifiés, sans supprimer les lignes préexistantes. */
-  // Méthode privée sync, asynchrone.
-  private async sync(): Promise<void> {
-    // Sans aucun nœud valide :
-    if (this.nodes.size === 0) {
-      // on le note,
-      this.logger.warn('LiDAR : aucun nœud valide dans les manifestes, synchronisation PostgreSQL ignorée pour protéger les données existantes.');
-      // et on ne touche pas à la base.
-      return;
-    // Fin du cas.
-    }
-    // Groupe de connexions ; le « ! » affirme à TypeScript qu'il n'est pas null ici.
-    const pool = this.pool!;
-    // Crée la table si elle n'existe pas.
-    await pool.query(SCHEMA);
-    // Lit la dalle, la clé et l'empreinte de chaque nœud déjà en base.
-    const { rows } = await pool.query<{ tile: string; node: string; sha: string }>('SELECT tile, node, sha FROM lidar_nodes');
-    // Table « dalle/clé » → empreinte de ce qui est en base.
-    const inDb = new Map(rows.map((r: { tile: string; node: string; sha: string }) => [`${r.tile}/${r.node}`, r.sha]));
-    // Compteur des nœuds ajoutés ou mis à jour.
-    let added = 0;
-    // Pour chaque nœud des manifestes :
-    for (const [id, node] of this.nodes) {
-      // si la base ne l'a pas avec la même empreinte,
-      if (inDb.get(id) !== node.h) {
-        // identifiant de sa dalle : ce qui précède la barre oblique ;
-        const tile = id.slice(0, id.indexOf('/'));
-        // lit son fichier ;
-        const data = await readFile(this.file(tile, node.k));
-        // envoie la requête d'insertion,
-        await pool.query(
-          // dont le texte SQL insère la ligne ou, si elle existe déjà, remplace son empreinte, son nombre de points et ses données ;
-          // ligne 2 du texte : en cas de conflit sur la dalle et le nœud, remplace l'empreinte, le nombre de points et les données ;
-          `INSERT INTO lidar_nodes (tile, node, sha, points, data) VALUES ($1,$2,$3,$4,$5)
-           ON CONFLICT (tile, node) DO UPDATE SET sha=EXCLUDED.sha, points=EXCLUDED.points, data=EXCLUDED.data`,
-          // avec les cinq valeurs, dans l'ordre des colonnes ;
-          [tile, node.k, node.h, node.n, data],
-        // fin de l'envoi ;
-        );
-        // et on compte ce nœud.
-        added++;
-      // Fin du cas.
-      }
-      // Le nœud est maintenant en base.
-      this.stored.add(id);
-    // Fin de la boucle.
-    }
-    // Ne pas supprimer les nœuds absents des manifestes : le jeu de données peut être partiel.
-    // Le nettoyage doit être séparé, sauvegardé et explicitement validé.
-    // Note le bilan dans le journal.
-    this.logger.log(`LiDAR : ${this.stored.size} nœuds synchronisés depuis les manifestes (${added} ajoutés ou mis à jour). Aucune suppression automatique.`);
-  // Fin de sync.
-  }
-
-  // Méthode privée file : chemin du fichier d'un nœud sur le disque.
-  private file(tile: string, key: string): string { return join(this.dir, tile, 'nodes', `${key}.bin`); }
-
-  // Accesseur storage : d'où viennent les fichiers.
-  get storage(): 'postgres' | 'files' {
-    // « postgres » si tous les nœuds sont en base, sinon « files ».
-    return this.stored.size > 0 && this.stored.size === this.nodes.size ? 'postgres' : 'files';
-  // Fin de storage.
-  }
-
-  /** Dalles disponibles, avec la liste de leurs nœuds et le modèle d'adresse des fichiers. */
-  // Méthode list.
-  list() {
-    // Origine des fichiers.
-    const storage = this.storage;
-    // Renvoie cette origine et le manifeste public de chaque dalle.
-    return { storage, items: [...this.tiles.values()].map((m) => publicLidarManifest(m, storage)) };
+  /** Dalles autour d'un point (degrés), avec leurs manifestes. Rien hors de France ou si le décodeur manque. */
+  // Méthode list : la longitude et la latitude.
+  async list(lon: number, lat: number) {
+    // Réponse vide, avec l'état du décodeur.
+    const empty = { storage: 'ign', available: this.available, items: [] as unknown[] };
+    // Point invalide, ou décodeur absent : rien.
+    if (!Number.isFinite(lon) || !Number.isFinite(lat) || !this.available) return empty;
+    // Dalles trouvées dans le WFS de l'IGN.
+    let found: IgnLidarTile[];
+    // Essai (début).
+    try {
+      // Requête WFS, réponse JSON.
+      found = tilesFromWfs(JSON.parse((await this.fetchBytes(lidarWfsUrl(lon, lat, 600, this.layer))).toString('utf8')));
+    // Échec : journalisé, rien.
+    } catch (e) { this.logger.warn(`WFS LiDAR HD : ${(e as Error).message}`); return empty; }
+    // Manifestes préparés, les échecs étant écartés.
+    const items = (await Promise.all(found.slice(0, 6).map((t) => this.prepare(t).then((p) => p.manifest).catch((e: Error) => { this.logger.warn(`Dalle ${t.id} : ${e.message}`); return null; })))).filter(Boolean);
+    // Renvoie les dalles.
+    return { ...empty, items };
   // Fin de list.
   }
 
-  /** Fichier compressé (gzip) d'un nœud : mémoire, puis base, puis dossier. */
-  // Méthode node : le fichier d'un nœud.
+  /** Prépare une dalle (en-tête, hiérarchie, manifeste), une seule fois. */
+  // Méthode prepare : la dalle trouvée dans le WFS.
+  private prepare(t: IgnLidarTile): Promise<PreparedTile> {
+    // Déjà préparée ou en cours : la même promesse.
+    const known = this.tiles.get(t.id);
+    // Trouvée.
+    if (known) return known;
+    // Plafond atteint : la plus ancienne sort.
+    if (this.tiles.size >= MAX_MANIFESTS) this.tiles.delete(this.tiles.keys().next().value as string);
+    // Préparation (début).
+    const job = (async () => {
+      // En-tête LAS et VLR « copc info ».
+      const info = parseCopcHeader(await this.fetchBytes(t.url, [0, COPC_HEADER_BYTES]));
+      // Seul le format de point 6 (celui du LiDAR HD) est décodé.
+      if (info.pointFormat !== 6) throw new Error(`format de point ${info.pointFormat} non pris en charge`);
+      // Entrées de la hiérarchie, page par page.
+      const entries = new Map<string, CopcEntry>();
+      // Pages à lire : la racine.
+      const pages: [number, number][] = [[info.rootOffset, info.rootSize]];
+      // Tant qu'il reste des pages (100 au plus) (début).
+      for (let i = 0; pages.length && i < 100; i++) {
+        // Page suivante.
+        const [off, size] = pages.shift() as [number, number];
+        // Pour chaque entrée lue : une page à lire, ou un nœud avec des points.
+        for (const e of parseHierarchyPage(await this.fetchBytes(t.url, [off, off + size]))) { if (e.count === -1) pages.push([e.offset, e.size]); else if (e.count > 0) entries.set(e.key, e); }
+      // Fin des pages.
+      }
+      // Sans nœud : erreur.
+      if (!entries.size) throw new Error('hiérarchie COPC vide');
+      // Coin et côté du cube racine (m).
+      const minX = info.cx - info.half, minY = info.cy - info.half, minZ = info.cz - info.half, side = 2 * info.half;
+      // Calage : centre de l'emprise, bas du cube, cap de la grille.
+      const g = lambert93ToWgs84(info.cx, info.cy);
+      // Nom affiché : le numéro de la dalle.
+      const km = tileKmFromId(t.id);
+      // Manifeste public (début).
+      const manifest = {
+        // Identifiant, nom et nom IGN de la dalle.
+        id: t.id, name: km ? `LiDAR HD ${km.x}-${km.y}` : t.id, tile: t.url.split('/').pop()?.split('.')[0] ?? t.id,
+        // Source, licence, date du relevé et système.
+        source: 'IGN – LiDAR HD (Géoplateforme, en direct)', license: 'Licence Ouverte 2.0 (Etalab)', acquired: t.acquired ?? '', crs: 'EPSG:2154 — RGF93 / Lambert-93, altitudes NGF-IGN69',
+        // Points (annoncés par l'IGN, sinon la somme des nœuds), format, pas et écart des points de la racine.
+        points: t.points ?? [...entries.values()].reduce((s, e) => s + e.count, 0), format: 1, step: LIDAR_STEP, spacing: info.spacing,
+        // Emprise : le cube racine, et l'altitude maximale des points.
+        bounds: { minX, minY, minZ, maxX: minX + side, maxY: minY + side, maxZ: Math.max(minZ + 1, info.maxZ) },
+        // Calage GPS.
+        anchor: { lat: g.lat, lon: g.lon, alt: minZ, heading: gridNorthHeading(info.cx, info.cy) },
+        // Nœuds : clé, nombre de points annoncé, taille du bloc et version.
+        nodes: [...entries.values()].map((e) => ({ k: e.key, n: e.count, b: e.size, h: NODE_VERSION })),
+        // Origine, modèle d'adresse des nœuds et orthophoto à draper.
+        storage: 'ign', nodeUrl: `/api/v1/lidar/${t.id}/{k}?v={h}`, imagery: LIDAR_IMAGERY,
+      // Fin du manifeste.
+      };
+      // Renvoie la dalle préparée.
+      return { manifest, url: t.url, info, entries };
+    // Fin de la préparation.
+    })();
+    // Échec : la dalle est oubliée (nouvel essai à la demande suivante).
+    job.catch(() => this.tiles.delete(t.id));
+    // Garde la préparation.
+    this.tiles.set(t.id, job);
+    // La renvoie.
+    return job;
+  // Fin de prepare.
+  }
+
+  /** Retrouve une dalle d'après son identifiant (redémarrage du serveur : nouvelle recherche dans le WFS). */
+  // Méthode tileById : l'identifiant.
+  private async tileById(id: string): Promise<PreparedTile> {
+    // Déjà préparée : la renvoie.
+    const known = this.tiles.get(id);
+    // Trouvée.
+    if (known) return known;
+    // Kilomètres Lambert-93 de la dalle.
+    const km = tileKmFromId(id);
+    // Identifiant inconnu : 404.
+    if (!km) throw new NotFoundException('Dalle LiDAR inconnue.');
+    // Centre de la dalle (bord ouest + 500 m, bord nord − 500 m), en degrés.
+    const c = lambert93ToWgs84(km.x * 1000 + 500, km.y * 1000 - 500);
+    // Dalles du WFS au centre.
+    const found = tilesFromWfs(JSON.parse((await this.fetchBytes(lidarWfsUrl(c.lon, c.lat, 100, this.layer))).toString('utf8')));
+    // La bonne dalle.
+    const t = found.find((f) => f.id === id);
+    // Absente : 404.
+    if (!t) throw new NotFoundException('Dalle LiDAR introuvable chez l’IGN.');
+    // La prépare.
+    return this.prepare(t);
+  // Fin de tileById.
+  }
+
+  /** Attend une place de décodage, puis la libère à la fin. */
+  // Méthode slot : la tâche à lancer.
+  private async slot<T>(task: () => Promise<T>): Promise<T> {
+    // Pas de place : attend la libération d'une place.
+    if (this.running >= MAX_DECODES) await new Promise<void>((resolve) => this.waiting.push(resolve));
+    // Une place prise.
+    this.running++;
+    // Lance la tâche (début).
+    try { return await task(); }
+    // Dans tous les cas : libère la place et réveille le suivant.
+    finally { this.running--; this.waiting.shift()?.(); }
+  // Fin de slot.
+  }
+
+  /** Fichier d'un nœud, converti et compressé en gzip. */
+  // Méthode node : l'identifiant de la dalle et la clé du nœud.
   async node(tile: string, key: string): Promise<Buffer> {
-    // Identifiant « dalle/clé ».
-    const id = `${tile}/${key}`;
-    // Si la dalle ou la clé sont mal formées, ou si le nœud n'existe pas :
-    if (!isLidarTileId(tile) || !isLidarNodeKey(key) || !this.nodes.has(id)) {
-      // erreur 404.
-      throw new NotFoundException(`Nœud LiDAR « ${id} » introuvable.`);
-    // Fin du cas.
-    }
-    // Cherche dans le cache mémoire.
-    const hit = this.cache.get(id);
-    // Trouvé : on le rend.
+    // Identifiant ou clé mal formés : 404.
+    if (!isLidarTileId(tile) || !isLidarNodeKey(key)) throw new NotFoundException('Nœud LiDAR inconnu.');
+    // Clé du cache.
+    const ck = `${tile}/${key}`;
+    // Déjà converti : renvoyé tout de suite.
+    const hit = this.cache.get(ck);
+    // Trouvé.
     if (hit) return hit;
-    // Contenu à lire.
-    let body: Buffer | null = null;
-    // Si une base est configurée et contient ce nœud :
-    if (this.pool && this.stored.has(id)) {
-      // essaie
+    // Décodeur absent : 503.
+    if (!this.available) throw new ServiceUnavailableException('Décodeur LAZ absent sur le serveur.');
+    // La dalle.
+    const t = await this.tileById(tile);
+    // Le nœud.
+    const e = t.entries.get(key);
+    // Absent : 404.
+    if (!e) throw new NotFoundException('Nœud LiDAR inconnu.');
+    // Conversion, dans une place de décodage (début).
+    const body = await this.slot(async () => {
+      // Essai (début).
       try {
-        // de le lire en base ;
-        const { rows } = await this.pool.query<{ data: Buffer }>('SELECT data FROM lidar_nodes WHERE tile = $1 AND node = $2', [tile, key]);
-        // et de le garder si la ligne existe.
-        if (rows[0]) body = rows[0].data;
-      // En cas d'erreur de la base : notée dans le journal, on continue.
-      } catch (e) { this.logger.warn(`Nœud ${id} : ${(e as Error).message}`); }
-    // Fin du cas « base ».
-    }
-    // Toujours rien : lit le fichier sur le disque.
-    body ??= await readFile(this.file(tile, key));
-    // Le range dans le cache mémoire.
-    this.cache.set(id, body);
-    // Le renvoie.
+        // Bloc LAZ du nœud.
+        const chunk = await this.fetchBytes(t.url, [e.offset, e.offset + e.size]);
+        // Points décodés.
+        const raw = await this.decode(chunk, e, t.info);
+        // Côté du nœud et son coin (m).
+        const side = (2 * t.info.half) / 2 ** e.level, minX = t.info.cx - t.info.half + e.x * side, minY = t.info.cy - t.info.half + e.y * side;
+        // Conversion au format du navigateur.
+        const { bytes } = encodeNode(raw, { scale: t.info.scale, offset: t.info.offset, minX, minY, z0: t.info.cz - t.info.half, step: LIDAR_STEP });
+        // Compressé.
+        return gzipSync(bytes, { level: 6 });
+      // Échec : 502, l'IGN ou le décodage ont échoué.
+      } catch (err) { this.logger.warn(`Nœud ${ck} : ${(err as Error).message}`); throw new BadGatewayException('Nuage LiDAR de l’IGN illisible pour ce nœud.'); }
+    // Fin de la conversion.
+    });
+    // Gardé en mémoire.
+    this.cache.set(ck, body);
+    // Renvoyé.
     return body;
   // Fin de node.
+  }
+
+  /** Décode un bloc LAZ avec lazdec, dans un dossier temporaire supprimé ensuite. Renvoie 16 octets par point. */
+  // Méthode decode : le bloc, son entrée et l'en-tête.
+  private async decode(chunk: Buffer, e: CopcEntry, info: CopcInfo): Promise<Buffer> {
+    // Dossier temporaire.
+    const dir = await mkdtemp(join(tmpdir(), 'lidar-'));
+    // Essai (début).
+    try {
+      // Fichiers : le bloc, la liste et la sortie.
+      const laz = join(dir, 'chunk.laz'), list = join(dir, 'list.txt'), out = join(dir, 'points.bin');
+      // Côté du nœud en unités brutes du fichier, et son coin (une unité de marge pour les arrondis).
+      const side = (2 * info.half) / 2 ** e.level;
+      // Unités brutes : (mètres − décalage) / échelle.
+      const rawX = (m: number) => Math.floor((m - info.offset[0]) / info.scale[0]) - 1, rawY = (m: number) => Math.floor((m - info.offset[1]) / info.scale[1]) - 1, rawZ = (m: number) => Math.floor((m - info.offset[2]) / info.scale[2]) - 1;
+      // Coin du nœud en unités brutes.
+      const mx = rawX(info.cx - info.half + e.x * side), my = rawY(info.cy - info.half + e.y * side), mz = rawZ(info.cz - info.half + e.z * side);
+      // Côté en unités brutes, avec marge.
+      const s = Math.ceil(side / Math.min(...info.scale)) + 2;
+      // Écrit le bloc.
+      await writeFile(laz, chunk);
+      // Écrit la liste : niveau, position (0 : le bloc est seul dans son fichier), taille, points, coin et côté.
+      await writeFile(list, `${e.level} 0 ${e.size} ${e.count} ${mx} ${my} ${mz} ${s}\n`);
+      // Lance lazdec ; un code de sortie non nul est toléré si tous les points sont là (points en bord de cube).
+      await new Promise<void>((resolve) => execFile(this.lazdec, [laz, list, out], { timeout: 30_000 }, () => resolve()));
+      // Points décodés.
+      const raw = await readFile(out).catch(() => Buffer.alloc(0));
+      // Nombre de points incorrect : erreur.
+      if (raw.length !== e.count * LAZDEC_POINT_BYTES) throw new Error(`décodage incomplet (${raw.length / LAZDEC_POINT_BYTES}/${e.count} points)`);
+      // Renvoie les points.
+      return raw;
+    // Dans tous les cas : supprime le dossier temporaire.
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  // Fin de decode.
   }
 // Fin du service.
 }

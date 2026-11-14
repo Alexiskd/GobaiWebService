@@ -6,3 +6,5 @@ dist
 cache
 # Nuages de points LiDAR.
 /pointclouds
+# Décodeur LAZ compilé au build (gcc -O2 -o tools/lidar/lazdec tools/lidar/lazdec.c).
+/tools/lidar/lazdec

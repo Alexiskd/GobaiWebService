@@ -112,7 +112,7 @@ import { LidarTilesModule } from './lidar-tiles.module';
     ContributionsModule,
     // Blocage des API externes.
     ApisModule,
-    // Dalles LiDAR en vrais points 3D, stockées dans PostgreSQL : /api/v1/lidar
+    // Nuages LiDAR HD de l'IGN en vrais points 3D, lus en direct sur la Géoplateforme : /api/v1/lidar
     LidarTilesModule,
   // Fin de la liste des modules importés.
   ],

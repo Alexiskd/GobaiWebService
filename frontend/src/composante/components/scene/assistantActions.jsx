@@ -24,8 +24,8 @@ const SETTINGS = {
   noms_villes: 'Noms des villes', noms_pays: 'Noms des pays', frontieres_et_littoraux: 'Frontières et littoraux',
   // rues, routes, volcans en éruption et coordonnées GPS.
   rues: 'Rues et routes', routes: 'Routes', volcans: 'Volcans en éruption', coordonnees_gps: 'Coordonnées GPS',
-  // Cartographie en relief : relief 3D, calque LiDAR HD, points LiDAR 3D et Paris en 3D.
-  relief_3d: 'Relief 3D', lidar_hd: 'LiDAR HD (France)', points_lidar: 'Points LiDAR 3D', paris_3d: 'Paris en 3D',
+  // Cartographie en relief : relief 3D, calque LiDAR HD et points LiDAR 3D.
+  relief_3d: 'Relief 3D', lidar_hd: 'LiDAR HD (France)', points_lidar: 'Points LiDAR 3D',
   // Appareil : noir pur, économie d'énergie et moniteur de performance.
   noir_pur: 'Noir pur', economie_energie: 'Économie d’énergie', moniteur_performance: 'Moniteur de performance',
 // Fin de l'objet.

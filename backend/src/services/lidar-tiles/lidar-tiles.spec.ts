@@ -1,170 +1,140 @@
-// Fonctions de fichiers : tester la présence, lire, lire la taille.
-import { existsSync, readFileSync, statSync } from 'node:fs';
-// createHash : calcule une empreinte.
-import { createHash } from 'node:crypto';
-// gunzipSync : décompresse du gzip.
-import { gunzipSync } from 'node:zlib';
-// join : assemble des morceaux de chemin.
-import { join } from 'node:path';
-// Ce qui est testé : le cache, les vérifications, le type du manifeste, l'adresse d'un nœud, le manifeste public.
-import { ByteCache, isLidarManifest, isLidarNodeKey, isLidarTileId, type LidarManifest, lidarNodeUrl, publicLidarManifest } from './lidar-tiles';
+// Ce qui est testé : les fonctions pures des nuages LiDAR HD de l'IGN lus en direct.
+import {
+  COPC_HEADER_BYTES, LAZDEC_POINT_BYTES, displayClass, encodeNode, isLidarNodeKey, isLidarTileId, lidarWfsUrl, luminosity,
+  parseCopcHeader, parseHierarchyPage, tileIdFromUrl, tileKmFromId, tilesFromWfs,
+} from './lidar-tiles';
 
-// Dossier de la dalle de Paris.
-const dir = join(__dirname, '..', '..', '..', 'data', 'lidar', 'paris-0652-6863');
-// Son manifeste, lu une fois pour tous les tests.
-const manifest: LidarManifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+/** En-tête COPC synthétique : LAS 1.4, format 6, échelle 0,01, cube de Beaubourg. */
+// header : fabrique les 589 premiers octets d'un fichier COPC.
+function header(): Buffer {
+  // Tampon nul.
+  const b = Buffer.alloc(COPC_HEADER_BYTES);
+  // Signature et version 1.4.
+  b.write('LASF', 0, 'latin1'); b[24] = 1; b[25] = 4;
+  // Format de point 6 (bit de compression posé, comme dans un LAZ).
+  b[104] = 0x80 | 6;
+  // Échelle 0,01 et décalage nul.
+  [0.01, 0.01, 0.01, 0, 0, 0].forEach((v, i) => b.writeDoubleLE(v, 131 + 8 * i));
+  // Altitudes maximale et minimale.
+  b.writeDoubleLE(98.05, 211); b.writeDoubleLE(25.52, 219);
+  // VLR « copc ».
+  b.write('copc', 377, 'latin1');
+  // Cube : centre, demi-côté, écart des points.
+  [652500, 6862500, 525.52, 500, 6.8].forEach((v, i) => b.writeDoubleLE(v, 429 + 8 * i));
+  // Première page de la hiérarchie.
+  b.writeBigUInt64LE(123456n, 469); b.writeBigUInt64LE(64n, 477);
+  // Renvoie l'en-tête.
+  return b;
+}
 
-// Groupe de tests des dalles LiDAR.
-describe('dalles LiDAR 3D', () => {
-  // Premier test : identifiants et clés.
-  it('reconnaît les identifiants de dalle et les clés de nœud', () => {
-    // Un identifiant normal : accepté.
-    expect(isLidarTileId('paris-0652-6863')).toBe(true);
-    // Une tentative de sortir du dossier : refusée.
-    expect(isLidarTileId('../secret')).toBe(false);
-    // Un identifiant vide : refusé.
-    expect(isLidarTileId('')).toBe(false);
-    // La racine : acceptée.
-    expect(isLidarNodeKey('0-0-0-0')).toBe(true);
-    // Un nœud de niveau 3 dans la grille : accepté.
-    expect(isLidarNodeKey('3-7-7-0')).toBe(true);
-    // Un nœud de niveau 3 hors de la grille : refusé.
-    expect(isLidarNodeKey('3-8-0-0')).toBe(false); // hors de la grille du niveau 3 (8 × 8 × 8)
-    // Un niveau 13 : refusé.
-    expect(isLidarNodeKey('13-0-0-0')).toBe(false);
-    // Trois nombres seulement : refusé.
-    expect(isLidarNodeKey('0-0-0')).toBe(false);
-    // Une clé suivie d'un chemin : refusée.
-    expect(isLidarNodeKey('0-0-0-0/../x')).toBe(false);
-  // Fin du test.
+/** Décode un nœud converti (plans, écarts en zigzag) : même algorithme que le navigateur (lidarPointsMath.decodeNode). */
+// decode : les octets et le nombre de points.
+function decode(buf: Buffer, n: number) {
+  // Positions et attributs.
+  const pos: number[] = [], attr: number[] = [];
+  // Pour chaque axe (début).
+  for (let axis = 0; axis < 3; axis++) {
+    // Valeur cumulée.
+    let acc = 0;
+    // Pour chaque point : écart en zigzag, cumulé.
+    for (let i = 0; i < n; i++) { const v = buf[axis * 2 * n + i] | (buf[axis * 2 * n + n + i] << 8); acc += (v >>> 1) ^ -(v & 1); pos[i * 3 + axis] = acc; }
+  // Fin des axes.
+  }
+  // Classes et luminosités.
+  for (let i = 0; i < n; i++) attr.push(buf[6 * n + i], buf[7 * n + i]);
+  // Renvoie les deux tableaux.
+  return { pos, attr };
+}
+
+// Groupe de tests.
+describe('nuages LiDAR HD de l’IGN en direct', () => {
+  // Identifiants et clés.
+  it('reconnaît les dalles de l’IGN et les clés de nœud', () => {
+    // Identifiant tiré de l'adresse du nuage.
+    expect(tileIdFromUrl('https://data.geopf.fr/telechargement/download/LiDARHD/LHD_FXX_0652_6863_PTS_LAMB93_IGN69.copc.laz')).toBe('lhd-0652-6863');
+    // Adresse sans nom de dalle : null.
+    expect(tileIdFromUrl('https://exemple.fr/nuage.laz')).toBe(null);
+    // Kilomètres de la dalle.
+    expect(tileKmFromId('lhd-0652-6863')).toEqual({ x: 652, y: 6863 });
+    // Identifiant et clés valables ou non.
+    expect(isLidarTileId('lhd-0652-6863')).toBe(true); expect(isLidarTileId('../x')).toBe(false);
+    // Clés.
+    expect(isLidarNodeKey('0-0-0-0')).toBe(true); expect(isLidarNodeKey('1-2-0-0')).toBe(false);
   });
 
-  // Deuxième test : le manifeste de Paris.
-  it('le manifeste de la dalle de Paris est valide et complet', () => {
-    // Il est valide.
-    expect(isLidarManifest(manifest)).toBe(true);
-    // Son premier nœud est la racine.
-    expect(manifest.nodes[0].k).toBe('0-0-0-0');
-    // La somme des points des nœuds égale le total annoncé.
-    expect(manifest.nodes.reduce((sum, n) => sum + n.n, 0)).toBe(manifest.points);
-    // La somme des tailles des fichiers égale le total annoncé.
-    expect(manifest.nodes.reduce((sum, n) => sum + n.b, 0)).toBe(manifest.bytes);
-    // Aucune clé n'apparaît deux fois.
-    expect(new Set(manifest.nodes.map((n) => n.k)).size).toBe(manifest.nodes.length);
-    // Calage : centre de la dalle, à Paris (Centre Pompidou), axe Y de Lambert-93 à 0,47° à l'ouest du nord.
-    // Latitude du calage, à 3 décimales près.
-    expect(manifest.anchor.lat).toBeCloseTo(48.8608, 3);
-    // Longitude du calage.
-    expect(manifest.anchor.lon).toBeCloseTo(2.3526, 3);
-    // Cap du calage, à 2 décimales près.
-    expect(manifest.anchor.heading).toBeCloseTo(-0.468, 2);
-  // Fin du test.
+  // Requête WFS et lecture de la réponse.
+  it('interroge la couche des métadonnées et garde les dalles qui ont un nuage COPC', () => {
+    // Adresse autour de Beaubourg.
+    const u = new URL(lidarWfsUrl(2.3526, 48.8608));
+    // Couche des métadonnées LiDAR HD.
+    expect(u.searchParams.get('TYPENAMES')).toBe('IGNF_LIDAR-HD_METADONNEE:metadata');
+    // Emprise latitude d'abord.
+    expect(u.searchParams.get('BBOX')).toMatch(/^48\.85\d+,2\.34\d+,48\.86\d+,2\.36\d+,urn:ogc:def:crs:EPSG::4326$/);
+    // Réponse : une dalle valable, un doublon, une sans nuage, une en http.
+    const items = tilesFromWfs({ features: [
+      { properties: { url_npl: 'https://data.geopf.fr/x/LHD_FXX_0652_6863_PTS_LAMB93_IGN69.copc.laz', nombre_points: 16618577, date_fin_acquisition: '2023-03-03Z' } },
+      { properties: { url_npl: 'https://data.geopf.fr/y/LHD_FXX_0652_6863_PTS_LAMB93_IGN69.copc.laz' } },
+      { properties: { url_npl: null } },
+      { properties: { url_npl: 'http://data.geopf.fr/z/LHD_FXX_0653_6863_PTS_LAMB93_IGN69.copc.laz' } },
+    ] });
+    // Une seule dalle, avec ses points et sa date.
+    expect(items).toEqual([{ id: 'lhd-0652-6863', url: 'https://data.geopf.fr/x/LHD_FXX_0652_6863_PTS_LAMB93_IGN69.copc.laz', points: 16618577, acquired: '2023-03-03' }]);
+    // Réponse invalide : rien.
+    expect(tilesFromWfs(null)).toEqual([]);
   });
 
-  // Troisième test : les fichiers des nœuds.
-  it('chaque nœud a son fichier, de la taille et de l’empreinte annoncées', () => {
-    // Pour chaque nœud :
-    for (const node of manifest.nodes) {
-      // chemin de son fichier ;
-      const file = join(dir, 'nodes', `${node.k}.bin`);
-      // il existe ;
-      expect(existsSync(file)).toBe(true);
-      // et sa taille est celle annoncée.
-      expect(statSync(file).size).toBe(node.b);
-    // Fin de la boucle.
-    }
-    // Pour les six premiers nœuds :
-    for (const node of manifest.nodes.slice(0, 6)) {
-      // lit le fichier ;
-      const body = readFileSync(join(dir, 'nodes', `${node.k}.bin`));
-      // les 16 premiers caractères de son SHA-256 sont ceux annoncés.
-      expect(createHash('sha256').update(body).digest('hex').slice(0, 16)).toBe(node.h);
-    // Fin de la boucle.
-    }
-  // Fin du test.
+  // En-tête et hiérarchie COPC.
+  it('lit l’en-tête COPC et une page de la hiérarchie', () => {
+    // En-tête lu.
+    const info = parseCopcHeader(header());
+    // Format, échelle, cube et première page.
+    expect(info.pointFormat).toBe(6); expect(info.scale).toEqual([0.01, 0.01, 0.01]);
+    // Cube.
+    expect([info.cx, info.cy, info.half, info.spacing]).toEqual([652500, 6862500, 500, 6.8]);
+    // Page racine.
+    expect([info.rootOffset, info.rootSize, info.maxZ]).toEqual([123456, 64, 98.05]);
+    // Fichier qui n'est pas un LAS : erreur.
+    expect(() => parseCopcHeader(Buffer.alloc(COPC_HEADER_BYTES))).toThrow();
+    // Page de deux entrées : un nœud, une sous-page.
+    const page = Buffer.alloc(64);
+    // Nœud 1-0-1-0 : bloc de 500 octets à 1000, 42 points.
+    [1, 0, 1, 0].forEach((v, i) => page.writeInt32LE(v, 4 * i)); page.writeBigUInt64LE(1000n, 16); page.writeInt32LE(500, 24); page.writeInt32LE(42, 28);
+    // Sous-page 2-0-0-0 : nombre de points −1.
+    [2, 0, 0, 0].forEach((v, i) => page.writeInt32LE(v, 32 + 4 * i)); page.writeBigUInt64LE(9000n, 48); page.writeInt32LE(320, 56); page.writeInt32LE(-1, 60);
+    // Entrées lues.
+    expect(parseHierarchyPage(page)).toEqual([
+      { key: '1-0-1-0', level: 1, x: 0, y: 1, z: 0, offset: 1000, size: 500, count: 42 },
+      { key: '2-0-0-0', level: 2, x: 0, y: 0, z: 0, offset: 9000, size: 320, count: -1 },
+    ]);
   });
 
-  // Quatrième test : le contenu d'un nœud.
-  it('un nœud décompressé fait 8 octets par point, avec des points dans son cube', () => {
-    // Prend le premier nœud de niveau 3.
-    const node = manifest.nodes.find((n) => n.k.startsWith('3-'))!;
-    // Lit et décompresse son fichier.
-    const raw = gunzipSync(readFileSync(join(dir, 'nodes', `${node.k}.bin`)));
-    // 8 octets par point.
-    expect(raw.length).toBe(node.n * 8);
-    // Côté d'un nœud de niveau 3, compté en pas : le côté de la dalle divisé par 8, puis par le pas.
-    const side = (manifest.bounds.maxX - manifest.bounds.minX) / 8 / manifest.step; // côté d'un nœud de niveau 3, en pas
-    // Position x courante, maximum et minimum rencontrés.
-    let x = 0, max = 0, min = 0;
-    // Pour chaque point :
-    for (let i = 0; i < node.n; i++) {
-      // son écart de x sur 16 bits : octet bas, puis octet haut rangé n octets plus loin ;
-      const v = raw[i] | (raw[node.n + i] << 8);
-      // décodage zigzag de l'écart, ajouté à la position ;
-      x += (v >>> 1) ^ -(v & 1);
-      // nouveau maximum ;
-      max = Math.max(max, x);
-      // nouveau minimum.
-      min = Math.min(min, x);
-    // Fin de la boucle.
-    }
-    // Aucun x négatif.
-    expect(min >= 0).toBe(true);
-    // Aucun x au-delà du côté du nœud.
-    expect(max <= side).toBe(true);
-    // Classes d'affichage 0 à 9.
-    // Les octets de classe : le septième plan du fichier.
-    const classes = raw.subarray(node.n * 6, node.n * 7);
-    // Toutes les classes sont entre 0 et 9.
-    expect(classes.every((c) => c <= 9)).toBe(true);
-  // Fin du test.
+  // Classes et luminosité.
+  it('classe les points et calcule leur luminosité', () => {
+    // Sol, végétation, bâti, eau, pont, autre.
+    expect([2, 3, 5, 6, 67, 9, 17, 1].map(displayClass)).toEqual([1, 2, 4, 5, 5, 7, 8, 0]);
+    // Luminosité neutre vers 170, bornée.
+    expect(luminosity(2200)).toBe(170); expect(luminosity(0)).toBe(Math.round((0.48 + 0.52 * 0.25) * 170));
   });
 
-  // Cinquième test : les adresses.
-  it('donne au navigateur l’adresse des nœuds, empreinte comprise', () => {
-    // L'adresse d'un nœud contient la dalle, la clé et l'empreinte.
-    expect(lidarNodeUrl('paris-0652-6863', manifest.nodes[0])).toBe(`/api/v1/lidar/paris-0652-6863/0-0-0-0?v=${manifest.nodes[0].h}`);
-    // Manifeste public, pour une origine « postgres ».
-    const pub = publicLidarManifest(manifest, 'postgres');
-    // Son modèle d'adresse a les trous {k} et {h}.
-    expect(pub.nodeUrl).toBe('/api/v1/lidar/paris-0652-6863/{k}?v={h}');
-    // Il porte l'origine des fichiers.
-    expect(pub.storage).toBe('postgres');
-    // Orthophoto drapée sur les points : tuiles de l'IGN, adresse à trous {z} {x} {y}.
-    // L'orthophoto vient de la couche d'orthophotos de l'IGN.
-    expect(pub.imagery.template).toContain('ORTHOIMAGERY.ORTHOPHOTOS');
-    // Son adresse a les trous {z}, {y}, {x}.
-    expect(pub.imagery.template).toContain('TILEMATRIX={z}&TILEROW={y}&TILECOL={x}');
-    // Les nœuds sont tous là.
-    expect(pub.nodes.length).toBe(manifest.nodes.length);
-  // Fin du test.
+  // Conversion d'un nœud.
+  it('convertit les points décodés au format du navigateur : bruit écarté, toit et façade séparés', () => {
+    // Quatre points (16 octets chacun) : sol, bruit, toit, façade (même cellule, 10 m plus bas).
+    const pts = [[652000_10, 6862000_20, 30_00, 2], [652000_50, 6862000_50, 31_00, 7], [652010_20, 6862010_20, 60_00, 6], [652010_40, 6862010_40, 50_00, 6]];
+    // Tampon des points décodés.
+    const raw = Buffer.alloc(pts.length * LAZDEC_POINT_BYTES);
+    // Remplit chaque point : X, Y, Z, intensité, classe.
+    pts.forEach(([x, y, z, c], i) => { const o = i * LAZDEC_POINT_BYTES; raw.writeInt32LE(x, o); raw.writeInt32LE(y, o + 4); raw.writeInt32LE(z, o + 8); raw.writeUInt16LE(2200, o + 12); raw[o + 14] = c; });
+    // Conversion : coin du nœud (652 000 ; 6 862 000), bas du cube à 25 m, pas de 4 cm.
+    const { bytes, count } = encodeNode(raw, { scale: [0.01, 0.01, 0.01], offset: [0, 0, 0], minX: 652000, minY: 6862000, z0: 25, step: 0.04 });
+    // Trois points gardés, 8 octets chacun.
+    expect(count).toBe(3); expect(bytes.length).toBe(24);
+    // Décodé comme le fait le navigateur.
+    const { pos, attr } = decode(bytes, count);
+    // Sol : (10 cm, 20 cm, 5 m) en pas de 4 cm.
+    expect(pos.slice(0, 3)).toEqual([2, 5, 125]);
+    // Toit à 60 m : (10,2 m, 10,2 m, 35 m).
+    expect(pos.slice(3, 6)).toEqual([255, 255, 875]);
+    // Classes : sol, toit, façade ; luminosités neutres.
+    expect(attr).toEqual([1, 170, 5, 170, 6, 170]);
   });
-
-  // Sixième test : le cache mémoire.
-  it('le cache mémoire reste sous sa capacité et garde les derniers lus', () => {
-    // Un cache de 10 octets.
-    const cache = new ByteCache(10);
-    // Range « a », 4 octets.
-    cache.set('a', Buffer.alloc(4));
-    // Range « b », 4 octets.
-    cache.set('b', Buffer.alloc(4));
-    // Lit « a ».
-    expect(cache.get('a')?.length).toBe(4); // « a » redevient le plus récent
-    // Range « c », 4 octets.
-    cache.set('c', Buffer.alloc(4));        // dépasse : « b », le plus ancien, sort
-    // « b » a été retiré.
-    expect(cache.get('b')).toBe(undefined);
-    // « a » est toujours là.
-    expect(cache.get('a')?.length).toBe(4);
-    // 8 octets occupés.
-    expect(cache.bytes).toBe(8);
-    // Range un fichier de 11 octets.
-    cache.set('gros', Buffer.alloc(11));    // plus grand que le cache : jamais gardé
-    // Il n'est pas gardé.
-    expect(cache.get('gros')).toBe(undefined);
-    // Deux fichiers dans le cache.
-    expect(cache.size).toBe(2);
-  // Fin du test.
-  });
-// Fin du groupe.
 });
