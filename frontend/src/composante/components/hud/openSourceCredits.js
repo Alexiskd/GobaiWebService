@@ -251,7 +251,7 @@ export const SERVICE_ORGS = [
   // « Université Queen’s » et ce que cette organisation fournit.
   { org: 'Université Queen’s', what: ['Tseng et Poppenk (2020) : 6 200 transitions de pensée par jour'] },
   // « Stripe » et ce que cette organisation fournit.
-  { org: 'Stripe', what: ['Paiement des dons par carte bancaire'] },
+  { org: 'Stripe', what: ['Paiement de la boutique par carte bancaire'] },
   // « Anthropic » et ce que cette organisation fournit.
   { org: 'Anthropic', what: ['Claude : aide à la génération du code de l’application', 'API Claude : assistant de la barre d’outils'] },
 // Fin de la liste des organisations.

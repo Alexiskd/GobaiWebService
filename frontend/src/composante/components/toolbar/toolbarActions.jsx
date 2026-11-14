@@ -14,9 +14,9 @@ import { HIDDEN } from './hiddenActions';
 import {
   // Recherche, vue d'ensemble, ombre, rotation, vue 3/4 et verrouillage.
   SearchIcon, PublicIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
-  // Son, langue, contribution, boutique, sources, aide, partage, galerie, performances, don et paramètres.
+  // Son, langue, contribution, boutique, sources, aide, partage, galerie, performances et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, StoreIcon, CopyrightIcon, HelpIcon, ShareIcon,
-  GalleryIcon, SpeedIcon, FavoriteIcon, SettingsIcon,
+  GalleryIcon, SpeedIcon, SettingsIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons';
 // Logo du bouton « Claude » : une image du dossier public.
@@ -29,7 +29,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute, onStore,
+  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute, onStore,
 // Fin de la liste des paramètres.
 }) {
   // Renvoie la liste des actions (début du tableau).
@@ -88,8 +88,6 @@ export function toolbarActions({
     onGallery && { id: 'gallery', group: 'help', icon: GalleryIcon, label: 'Galerie', iconOnly: true, onClick: onGallery, title: 'Galerie : planètes, géantes, planètes naines et satellites (P)' },
     // Moniteur de performance : activation/désactivation depuis la barre sur ordinateur.
     onTogglePerformanceMonitor && { id: 'performance', group: 'help', icon: SpeedIcon, label: 'Performances', short: 'Perf', iconOnly: true, pressed: performanceMonitorVisible, onClick: onTogglePerformanceMonitor, title: performanceMonitorVisible ? 'Masquer le moniteur de performance' : 'Afficher le moniteur de performance' },
-    // Faire un don : accessible directement depuis la barre d'outils sur ordinateur.
-    onDonate && { id: 'donate', group: 'help', icon: FavoriteIcon, label: 'Faire un don', onClick: onDonate, title: 'Soutenir Gobai Space' },
     // Anthropic Node Open Source (si le rappel existe) : icône seule, posée juste avant Paramètres — les deux
     // fenêtres vont ensemble (ce dont le site est fait, et comment on le règle).
     onSources && { id: 'sources', group: 'help', icon: CopyrightIcon, label: 'Anthropic Node Open Source', short: 'Node', iconOnly: true, onClick: onSources, title: 'Anthropic Node Open Source (S)' },

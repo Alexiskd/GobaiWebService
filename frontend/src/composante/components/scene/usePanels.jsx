@@ -10,7 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 // Déclare et exporte le crochet usePanels : reçoit le mode compact.
 export function usePanels({ compact }) {
   // État : le panneau ouvert, aucun au départ.
-  const [panel, setPanel] = useState(null); // 'layers' | 'search' | 'help' | 'sources' | 'donate' | null
+  const [panel, setPanel] = useState(null); // 'layers' | 'search' | 'help' | 'sources' | null
 
   // Vrai si le panneau d'informations est ouvert.
   const layersOpen = panel === 'layers'; // sans astre ciblé : Informations sur le Soleil

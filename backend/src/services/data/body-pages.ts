@@ -63,8 +63,6 @@ export const WINDOW_PAGES: BodyPage[] = [
   windowPage('galerie', 'Galerie', 'Galerie d’images du système solaire', 'La galerie de Gobai Space : images et vidéos NASA des planètes, des planètes naines, des géantes et de leurs satellites, classées par astre.'),
   // la fenêtre des sources, à l'adresse /node.
   windowPage('node', 'Anthropic Node Open Source', 'Anthropic Node Open Source : sources des données', 'Anthropic Node Open Source : les sources de données et les projets libres derrière Gobai Space, des cartes NASA Trek à l’imagerie IGN et Sentinel-2.'),
-  // la fenêtre des dons, à l'adresse /faire-un-don.
-  windowPage('faire-un-don', 'Dons au développeur de l’application Gobai', 'Dons au développeur de l’application Gobai', 'Soutenir le développeur de l’application Gobai : un don par carte bancaire aide à garder le système solaire en 3D gratuit, sans publicité et en ligne.'),
 // Fin de la liste.
 ];
 
