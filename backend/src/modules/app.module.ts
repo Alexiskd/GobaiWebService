@@ -41,8 +41,6 @@ import { SunModule } from './sun.module';
 import { VolcanoesModule } from './volcanoes.module';
 // Module du blocage des API externes : liste des API déconnectées.
 import { ApisModule } from './apis.module';
-// Module du globe Google : clé de l'API Maps JavaScript pour la page /google-earth.html.
-import { GoogleEarthModule } from './google-earth.module';
 // Module des contributions : comptes, placements LiDAR et votes.
 import { ContributionsModule } from './contributions.module';
 // Module de la boutique : catalogue payant, paiement Stripe et exports.
@@ -111,8 +109,6 @@ import { EngineModule } from './engine.module';
     ContributionsModule,
     // Blocage des API externes.
     ApisModule,
-    // Globe Google (3D Maps de l'API Maps JavaScript) : /api/v1/google-earth/config
-    GoogleEarthModule,
     // Moteur 3D chiffré, servi par l’API.
     EngineModule,
     // Nuages LiDAR HD de l'IGN en vrais points 3D, lus en direct sur la Géoplateforme : /api/v1/lidar

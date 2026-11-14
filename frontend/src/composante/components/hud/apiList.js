@@ -15,8 +15,8 @@ export const API_GROUPS = [
       { name: 'IGN Géoplateforme', host: 'data.geopf.fr', use: 'Orthophotos de la France, calques LiDAR HD (ombrages des modèles de surface, de terrain et de hauteur) et nuages de points LiDAR HD (WFS des dalles et fichiers COPC, lus par le serveur)' },
       // API « EOX Sentinel-2 cloudless », appelée à l'adresse tiles.maps.eox.at.
       { name: 'EOX Sentinel-2 cloudless', host: 'tiles.maps.eox.at', use: 'Imagerie satellite du monde' },
-      // Globe Google : globe 3D photoréaliste, ouvert depuis la Terre (clé GOOGLE_MAPS_API_KEY).
-      { name: 'Google Maps JavaScript API (3D Maps)', host: 'maps.googleapis.com', key: true, use: 'Globe Google : globe 3D photoréaliste qui remplace le globe Terre, dans un iframe (page /google-earth.html)' },
+      // Site « Google Earth », affiché tel quel dans un iframe depuis la Terre.
+      { name: 'Google Earth (web)', host: 'earth.google.com', use: 'Globe Google : le site Google Earth, dans un iframe qui remplace le globe Terre' },
       // API « NASA GIBS », appelée à l'adresse gibs.earthdata.nasa.gov.
       { name: 'NASA GIBS', host: 'gibs.earthdata.nasa.gov', use: 'Imagerie satellite de la Terre ; Terre à l’instant T : GOES-East, GOES-West et Himawari, une image toutes les 10 minutes' },
       // API « EUMETView (EUMETSAT) », appelée à l'adresse view.eumetsat.int.
