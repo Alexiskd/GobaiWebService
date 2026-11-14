@@ -14,8 +14,8 @@ export const fetchPointClouds = (signal) => get('/pointclouds', { signal });
  * Dalles LiDAR HD de l'IGN autour d'un point, lues en direct par le serveur : { storage, available, items: [manifeste +
  * nodeUrl] } (voir engine/lidarPoints.jsx).
  */
-// fetchLidarTiles : les dalles LiDAR autour de { lon, lat }.
-export const fetchLidarTiles = (signal, { lon, lat }) => get('/lidar', { signal, query: { lon: lon.toFixed(5), lat: lat.toFixed(5) } });
+// fetchLidarTiles : les dalles LiDAR autour de { lon, lat }, dans un rayon `r` en mètres (facultatif).
+export const fetchLidarTiles = (signal, { lon, lat, r }) => get('/lidar', { signal, query: { lon: lon.toFixed(5), lat: lat.toFixed(5), r: Number.isFinite(r) ? Math.round(r) : undefined } });
 /** Recherche mondiale de lieux (Photon, via le backend) : { provider, items: [{ name, context, lon, lat }], attribution }. */
 // searchPlaces : la recherche de lieux, 8 résultats au plus.
 export const searchPlaces = (q, signal) => get('/places', { signal, query: { q, limit: 8 } });

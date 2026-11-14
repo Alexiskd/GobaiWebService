@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, searchRadius, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -362,19 +362,17 @@ test('carte à plat : hauteur du sol du nuage, et dalle posée le sol sur la car
 });
 
 // Test : la hauteur d'affichage du nuage de points.
-test('nuage LiDAR : dessiné seulement sous 0,15 km de hauteur', () => {
-  // La hauteur limite vaut 150 m, soit les 0,15 km affichés par le HUD.
-  assert.equal(CLOUD_HEIGHT_M, 150);
+test('nuage LiDAR : dessiné sous 1 km de hauteur, dans le champ', () => {
+  // La hauteur limite vaut 1 000 m, soit 1 km au HUD.
+  assert.equal(CLOUD_HEIGHT_M, 1000);
   // Juste en dessous de la limite, dans le champ : dessiné.
-  assert.equal(showCloud(149, true), true);
+  assert.equal(showCloud(999, true), true);
   // Tout près du sol : dessiné.
   assert.equal(showCloud(5, true), true);
   // À la limite exacte : pas encore dessiné.
-  assert.equal(showCloud(150, true), false);
-  // Au-dessus de la limite : masqué.
-  assert.equal(showCloud(151, true), false);
-  // Bien au-dessus, à 1 km : masqué.
   assert.equal(showCloud(1000, true), false);
+  // Au-dessus de la limite : masqué.
+  assert.equal(showCloud(1500, true), false);
   // Sous la limite mais hors du champ de la caméra : masqué.
   assert.equal(showCloud(100, false), false);
   // Caméra sous le plan de la dalle : masqué, elle est de l'autre côté.
@@ -384,6 +382,28 @@ test('nuage LiDAR : dessiné seulement sous 0,15 km de hauteur', () => {
   // Une autre limite peut être donnée.
   assert.equal(showCloud(200, true, 300), true);
 // Fin du test.
+});
+
+// Test : le point visé au sol, qui oriente la recherche des dalles dans le champ de la caméra.
+test('point visé : intersection de l’axe de visée avec le sol, rien vers le ciel', () => {
+  // Caméra à 1 000 m au-dessus du point (1, 0, 0), en rayons.
+  const h = 1000 / EARTH_RADIUS_M, cam = [1 + h, 0, 0];
+  // Regard vers le bas : le point juste en dessous, à 1 000 m.
+  const down = viewTarget(cam, [-1, 0, 0]);
+  // Point au sol et distance.
+  assert.ok(Math.abs(down.point[0] - 1) < 1e-12 && Math.abs(down.dist * EARTH_RADIUS_M - 1000) < 1e-6);
+  // Regard incliné à 45° vers le nord (+y) : point au sol devant, à ≈ 1 414 m.
+  const k = Math.SQRT1_2, tilted = viewTarget(cam, [-k, k, 0]);
+  // Distance proche de 1 000 × √2 (la courbure l'allonge à peine).
+  assert.ok(Math.abs(tilted.dist * EARTH_RADIUS_M - 1414.2) < 1, String(tilted.dist * EARTH_RADIUS_M));
+  // Point visé au nord du point sous la caméra.
+  assert.ok(tilted.point[1] > 0);
+  // Regard vers le ciel : rien.
+  assert.equal(viewTarget(cam, [1, 0, 0]), null);
+  // Caméra sous la surface : rien.
+  assert.equal(viewTarget([0.5, 0, 0], [-1, 0, 0]), null);
+  // Rayon de recherche borné entre 600 et 1 500 m.
+  assert.equal(searchRadius(100), 600); assert.equal(searchRadius(1000), 900); assert.equal(searchRadius(1e6), 1500);
 });
 
 // Réduction automatique ×4 : un point gardé sur quatre, dans l'ordre, et points agrandis de √4.

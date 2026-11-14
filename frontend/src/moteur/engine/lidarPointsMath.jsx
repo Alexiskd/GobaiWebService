@@ -390,15 +390,47 @@ export function dayTint(sunDot, shade = 1) {
 }
 
 /**
- * Hauteur de caméra (m) en deçà de laquelle le nuage de points LiDAR est dessiné : 150 m, soit les 0,15 km que le
- * HUD affiche. C'est la même grandeur que la distance du zoom lue à l'écran — la hauteur au-dessus du sol — et non
- * la distance à la dalle : à 0,15 km, le nuage apparaît, au-dessus il reste masqué.
- *
- * Le nuage ne sert qu'à bout portant : un bâtiment vu point par point. Le garder masqué plus haut épargne au
- * téléphone le dessin de centaines de milliers de points qui ne couvriraient que quelques pixels.
+ * Point visé au sol par la caméra : intersection de l'axe de visée avec la sphère unité de la Terre. `cam` et `dir`
+ * sont dans le repère de la sphère unité (`dir` unitaire). Renvoie { point, dist } (dist en rayons), ou null si l'axe
+ * ne touche pas le sol (regard vers le ciel) ou si la caméra est sous la surface.
  */
-// Hauteur d'affichage du nuage de points : 150 mètres.
-export const CLOUD_HEIGHT_M = 150;
+// Déclare et exporte viewTarget : la position de la caméra et la direction de visée.
+export function viewTarget(cam, dir) {
+  // Coefficients de l'équation |cam + t·dir|² = 1.
+  const b = cam[0] * dir[0] + cam[1] * dir[1] + cam[2] * dir[2], c = cam[0] * cam[0] + cam[1] * cam[1] + cam[2] * cam[2] - 1;
+  // Caméra sous la surface : rien.
+  if (c <= 0) return null;
+  // Discriminant : négatif, l'axe passe à côté de la Terre.
+  const disc = b * b - c;
+  // À côté : rien.
+  if (disc < 0) return null;
+  // Première intersection, devant la caméra.
+  const t = -b - Math.sqrt(disc);
+  // Derrière la caméra : rien.
+  if (t <= 0) return null;
+  // Renvoie le point et la distance.
+  return { point: [cam[0] + t * dir[0], cam[1] + t * dir[1], cam[2] + t * dir[2]], dist: t };
+// Fin de viewTarget.
+}
+
+/**
+ * Rayon de recherche des dalles autour du point visé (m) : la moitié de la distance de visée, 1 km de marge, borné
+ * entre 600 m et 1,5 km. Vue de dessus, il couvre l'écran ; en vue 3/4, le terrain jusqu'au point visé.
+ */
+// Déclare et exporte searchRadius : la distance de visée en mètres.
+export const searchRadius = (distM) => Math.min(1500, Math.max(600, distM * 0.5 + 400));
+
+/**
+ * Hauteur de caméra (m) en deçà de laquelle le nuage de points LiDAR est dessiné : 1 000 m, soit 1 km au HUD.
+ * C'est la même grandeur que la distance du zoom lue à l'écran — la hauteur au-dessus du sol — et non la distance à
+ * la dalle : sous 1 km, le nuage apparaît, au-dessus il reste masqué.
+ *
+ * Le nuage se charge au fur et à mesure : de haut, seule la racine de chaque dalle du champ (quelques dizaines de
+ * milliers de points) ; en descendant, les niveaux plus fins, seulement dans le champ de la caméra et dans le budget de
+ * points. Au-dessus de 1 km, il ne couvrirait que quelques pixels : il reste masqué.
+ */
+// Hauteur d'affichage du nuage de points : 1 000 mètres (le niveau de détail suit la distance : de haut, la racine).
+export const CLOUD_HEIGHT_M = 1000;
 
 /**
  * Le nuage de points est-il dessiné ? Deux conditions : la dalle est dans le champ de la caméra, et la caméra est

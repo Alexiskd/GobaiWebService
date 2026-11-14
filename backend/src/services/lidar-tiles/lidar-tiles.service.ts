@@ -90,9 +90,14 @@ export class LidarTilesService {
   // Fin de fetchBytes.
   }
 
-  /** Dalles autour d'un point (degrés), avec leurs manifestes. Rien hors de France ou si le décodeur manque. */
-  // Méthode list : la longitude et la latitude.
-  async list(lon: number, lat: number) {
+  /**
+   * Dalles autour d'un point (degrés) dans un rayon (m, 100 à 1 500, 600 par défaut), avec leurs manifestes, les plus
+   * proches d'abord. Rien hors de France ou si le décodeur manque.
+   */
+  // Méthode list : la longitude, la latitude et le rayon.
+  async list(lon: number, lat: number, radiusM = 600) {
+    // Rayon borné, 600 m s'il est absent ou invalide.
+    const r = Number.isFinite(radiusM) && radiusM > 0 ? Math.min(1500, Math.max(100, radiusM)) : 600;
     // Réponse vide, avec l'état du décodeur.
     const empty = { storage: 'ign', available: this.available, items: [] as unknown[] };
     // Point invalide, ou décodeur absent : rien.
@@ -102,14 +107,30 @@ export class LidarTilesService {
     // Essai (début).
     try {
       // Requête WFS, réponse JSON.
-      found = tilesFromWfs(JSON.parse((await this.fetchBytes(lidarWfsUrl(lon, lat, 600, this.layer))).toString('utf8')));
+      found = tilesFromWfs(JSON.parse((await this.fetchBytes(lidarWfsUrl(lon, lat, r, this.layer, 16))).toString('utf8')));
     // Échec : journalisé, rien.
     } catch (e) { this.logger.warn(`WFS LiDAR HD : ${(e as Error).message}`); return empty; }
-    // Manifestes préparés, les échecs étant écartés.
-    const items = (await Promise.all(found.slice(0, 6).map((t) => this.prepare(t).then((p) => p.manifest).catch((e: Error) => { this.logger.warn(`Dalle ${t.id} : ${e.message}`); return null; })))).filter(Boolean);
+    // Les plus proches du point d'abord (centre de chaque dalle tiré de son identifiant).
+    found.sort((a, b) => this.distanceTo(a.id, lon, lat) - this.distanceTo(b.id, lon, lat));
+    // Manifestes préparés (8 dalles au plus), les échecs étant écartés.
+    const items = (await Promise.all(found.slice(0, 8).map((t) => this.prepare(t).then((p) => p.manifest).catch((e: Error) => { this.logger.warn(`Dalle ${t.id} : ${e.message}`); return null; })))).filter(Boolean);
     // Renvoie les dalles.
     return { ...empty, items };
   // Fin de list.
+  }
+
+  /** Distance approchée (m) du centre d'une dalle à un point (degrés) ; infinie si l'identifiant est illisible. */
+  // Méthode distanceTo : l'identifiant, la longitude et la latitude.
+  private distanceTo(id: string, lon: number, lat: number): number {
+    // Kilomètres de la dalle.
+    const km = tileKmFromId(id);
+    // Illisible : infinie.
+    if (!km) return Infinity;
+    // Centre de la dalle en degrés.
+    const c = lambert93ToWgs84(km.x * 1000 + 500, km.y * 1000 - 500);
+    // Distance approchée.
+    return Math.hypot((c.lon - lon) * Math.cos(lat * (Math.PI / 180)), c.lat - lat) * 111_195;
+  // Fin de distanceTo.
   }
 
   /** Prépare une dalle (en-tête, hiérarchie, manifeste), une seule fois. */

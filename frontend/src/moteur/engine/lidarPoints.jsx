@@ -9,7 +9,7 @@ import { LidarDrape } from './lidarDrape';
 // Importe drapePlan et nodeDrape, le plan du drapage et son calage par nœud, depuis lidarDrapeMath.
 import { drapePlan, nodeDrape } from './lidarDrapeMath';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
-import { DOWNSCALE_FILL, LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { DOWNSCALE_FILL, LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, searchRadius, selectNodes, showCloud, tileFrame, viewTarget } from './lidarPointsMath';
 
 // Dalles LiDAR en vrais points 3D sur la Terre (LiDAR HD de l'IGN). Chaque dalle est un octree additif servi par
 // l'API (GET /lidar) : la racine donne la dalle entière, les niveaux suivants arrivent autour de la caméra.
@@ -33,7 +33,7 @@ import { DOWNSCALE_FILL, LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, build
 // (2) les points se dessinent avec leur propre profondeur logarithmique, précise au millimètre près du sol,
 // (3) la boîte réécrit une profondeur normale pour ce qui est dessiné ensuite (atmosphère, nuages).
 
-// La hauteur d'affichage du nuage (150 m, soit les 0,15 km du HUD) et la règle d'affichage vivent dans le module de
+// La hauteur d'affichage du nuage (1 000 m, soit 1 km au HUD) et la règle d'affichage vivent dans le module de
 // calcul, avec les autres fonctions pures : voir lidarPointsMath.jsx.
 /** En deçà (m), le premier niveau de détail d'une dalle dans le champ de la caméra est chargé d'avance, après la racine. */
 // Distance de préchargement du premier niveau de détail : 400 km.
@@ -45,12 +45,15 @@ const DESKTOP = { budget: 6_000_000, keep: 10_000_000, maxSpacingPx: 1.5, parall
 const HANDHELD = { budget: 2_200_000, keep: 3_400_000, maxSpacingPx: 2.2, parallel: 4, drapeZoom: 17, drapeSize: 2048 };
 // Délai entre deux sélections des nœuds : 120 ms.
 const SELECT_EVERY_MS = 120;
-/** Recherche des dalles LiDAR HD de l'IGN autour de la caméra : sous 3 km d'altitude, au plus toutes les 3 s, après 300 m de déplacement. */
+/** Recherche des dalles LiDAR HD de l'IGN dans le champ de la caméra : sous 3 km d'altitude, au plus toutes les 3 s, après 300 m de déplacement du point visé. */
 // Altitude de recherche, délai et déplacement minimal.
 const DISCOVER_ALT_M = 3000, DISCOVER_EVERY_MS = 3000, DISCOVER_MOVE_M = 300;
-/** Dalles gardées au plus (les plus éloignées de la caméra sortent les premières). */
-// Six dalles.
-const MAX_TILES = 6;
+/** Dalles gardées au plus (les plus éloignées du point visé sortent les premières). */
+// Huit dalles.
+const MAX_TILES = 8;
+/** Distance de visée (m) au-delà de laquelle on cherche sous la caméra plutôt qu'au point visé (regard vers l'horizon). */
+// 4 km.
+const MAX_VIEW_M = 4000;
 // Délai avant un nouvel essai après un échec : 15 secondes.
 const RETRY_AFTER_MS = 15_000;
 /** Profondeur des points : logarithme de la distance, de 10 cm à 1 000 km. */
@@ -233,8 +236,10 @@ export class LidarPoints {
   }
 
   /**
-   * Recherche des dalles LiDAR HD de l'IGN sous la caméra : sous 3 km d'altitude, au plus toutes les 3 secondes et
-   * seulement après 300 m de déplacement. Les dalles reçues s'ajoutent à celles en place.
+   * Recherche des dalles LiDAR HD de l'IGN dans le champ de la caméra : autour du point du sol visé au centre de
+   * l'écran (sous la caméra si elle regarde l'horizon), sur un rayon qui suit la distance de visée. Sous 3 km
+   * d'altitude, au plus toutes les 3 secondes et seulement après 300 m de déplacement du point visé. Les dalles reçues
+   * s'ajoutent à celles en place ; leurs nœuds se chargent ensuite au fur et à mesure, dans le champ de la caméra.
    */
   // discover : la caméra, le repère et l'instant (début).
   discover(cam, frame, now) {
@@ -246,8 +251,16 @@ export class LidarPoints {
     const alt = (local.length() - 1) * EARTH_RADIUS_M;
     // Trop haut : rien.
     if (!(alt > 0 && alt < DISCOVER_ALT_M)) return;
-    // Longitude et latitude du point survolé.
-    const [lon, lat] = xyzToLonLat([local.x, local.y, local.z]);
+    // Direction de visée dans le repère de la sphère unité.
+    const dir = cam.getWorldDirection(this.tmpV).transformDirection(this.tmpM);
+    // Point du sol visé au centre de l'écran, s'il est assez proche.
+    const hit = viewTarget([local.x, local.y, local.z], [dir.x, dir.y, dir.z]);
+    // Distance de visée (m), infinie sans point visé.
+    const distM = hit ? hit.dist * EARTH_RADIUS_M : Infinity;
+    // Point de recherche : le point visé, sinon le point sous la caméra.
+    const [lon, lat] = xyzToLonLat(distM < MAX_VIEW_M ? hit.point : [local.x, local.y, local.z]);
+    // Rayon de recherche : selon la distance de visée (vue de dessus : l'altitude).
+    const radiusM = searchRadius(distM < MAX_VIEW_M ? distM : alt);
     // Déplacement depuis la dernière recherche (m).
     const moved = Number.isFinite(this.discoverLat) ? Math.hypot((lon - this.discoverLon) * Math.cos(lat * (Math.PI / 180)), lat - this.discoverLat) * 111_195 : Infinity;
     // Trop tôt, ou pas assez loin : rien.
@@ -255,7 +268,7 @@ export class LidarPoints {
     // Recherche en cours, notée à cet instant et à ce lieu.
     this.discovering = true; this.discoverAt = now; this.discoverLon = lon; this.discoverLat = lat;
     // Demande les dalles, les ajoute ; un échec est ignoré (nouvel essai au prochain déplacement).
-    Promise.resolve(this.discovery(lon, lat)).then((items) => this.addTiles(items)).catch(() => {}).finally(() => { this.discovering = false; });
+    Promise.resolve(this.discovery(lon, lat, radiusM)).then((items) => this.addTiles(items)).catch(() => {}).finally(() => { this.discovering = false; });
   // Fin de discover.
   }
 
