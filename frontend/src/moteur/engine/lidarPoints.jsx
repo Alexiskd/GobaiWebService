@@ -9,14 +9,17 @@ import { LidarDrape } from './lidarDrape';
 // Importe drapePlan et nodeDrape, le plan du drapage et son calage par nœud, depuis lidarDrapeMath.
 import { drapePlan, nodeDrape } from './lidarDrapeMath';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
-import { DOWNSCALE_FILL, LIDAR_PALETTE, densityOrder, expandLonLatBox, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, lonLatBox, boxShiftM, nodeUrl, selectNodes, shareBudget, showCloud, tileFrame, viewFootprint } from './lidarPointsMath';
+import { DOWNSCALE_FILL, LIDAR_PALETTE, densityOrder, domeRadius, expandLonLatBox, unloadPick, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, lonLatBox, boxShiftM, nodeUrl, selectNodes, shareBudget, showCloud, tileFrame, viewFootprint } from './lidarPointsMath';
 
 // Dalles LiDAR en vrais points 3D sur la Terre (LiDAR HD de l'IGN). Chaque dalle est un octree additif servi par
 // l'API (GET /lidar) : la racine donne la dalle entière, les niveaux suivants arrivent autour de la caméra.
 // Toutes les dalles se chargent en même temps et c'est la densité qui monte (racines de toutes les dalles, puis le
-// niveau suivant de chacune, voir pump). Seuls les points dans le champ de la caméra, plus une marge de 250 m autour,
-// sont chargés : une dalle hors de ce champ élargi (ou derrière l'horizon) ne télécharge rien, et un téléchargement en cours est abandonné dès que son nœud sort du champ. Les points déjà
-// reçus restent en mémoire, masqués, pour revenir sans attente. Les points sont rattachés au groupe de la Terre et recopient sa rotation propre, comme les tuiles et les
+// niveau suivant de chacune, voir pump). Seules les dalles et les nœuds dans le champ de la caméra sont affichés ; une
+// marge de 250 m autour du champ sert seulement à les précharger. Une dalle hors de ce champ élargi (ou derrière
+// l'horizon) ne télécharge rien, et un téléchargement en cours est abandonné dès que son nœud sort du champ. Ce qui
+// n'est plus demandé est déchargé toujours par densité, à l'inverse du chargement : le niveau le plus fin d'abord, la
+// racine en dernier (voir unloadByDensity). La densité suit un dôme circulaire autour de la caméra (domeLevel) : pleine
+// au centre, elle descend vers le bord du cercle, comme une masse qui se charge en énergie et la perd. Les points sont rattachés au groupe de la Terre et recopient sa rotation propre, comme les tuiles et les
 // frontières : la sphère de fond, elle, est masquée dès que la carte couvre toute la vue, et ses enfants avec elle.
 //
 // Affichage sans effet : un point apparaît dès que son fichier est décodé, à sa couleur définitive (classe du point
@@ -56,7 +59,7 @@ const MAX_TILES = 64;
 // 4 km (le serveur accepte une emprise de 8 km de côté au plus).
 const FOOTPRINT_MAX_M = 4000;
 /** Marge (m) ajoutée autour du champ de la caméra : un peu plus de dalles que le champ sont cherchées, chargées et affichées. */
-// 400 m pour la recherche des dalles, 250 m pour l'affichage des dalles et de leurs nœuds.
+// 400 m pour la recherche des dalles, 250 m pour le préchargement des dalles et de leurs nœuds (l'affichage, lui, reste dans le champ).
 const DISCOVER_MARGIN_M = 400, VIEW_MARGIN_M = 250;
 /** Rayons de l'écran qui dessinent l'emprise au sol : les coins, les milieux des bords et le centre (coordonnées normalisées). */
 const SCREEN_RAYS = [-1, 0, 1].flatMap((x) => [-1, 0, 1].map((y) => [x, y]));
@@ -441,6 +444,8 @@ export class LidarPoints {
 
     // Arbre des nœuds de la dalle.
     const tree = buildTree(manifest);
+    // Profondeur de l'arbre : le niveau le plus fin (sommet du dôme de densité).
+    const depth = Math.max(0, ...[...tree.values()].map((n) => n.level));
     // Drapage : plan des tuiles de l'orthophoto qui couvrent la dalle (photo chargée au premier affichage).
     // Modèle d'adresse de l'orthophoto.
     const template = manifest.imagery?.template;
@@ -452,8 +457,8 @@ export class LidarPoints {
     for (const node of tree.values()) Object.assign(node, { points: null, loading: false, abort: null, failedAt: 0, usedAt: 0 });
     // La dalle (début).
     const tile = {
-      // Sa fiche, son groupe, son arbre, ses dimensions, sa boîte et ses deux passes.
-      manifest, group, tree, side, height, boxGeo, reset, seal,
+      // Sa fiche, son groupe, son arbre (et sa profondeur), ses dimensions, sa boîte et ses deux passes.
+      manifest, group, tree, depth, side, height, boxGeo, reset, seal,
       // Sa teinte jour / nuit.
       uTint: { value: new THREE.Vector3(1, 1, 1) },
       // Son plan de drapage, sa photo (transparente au départ) et l'interrupteur du drapage.
@@ -668,6 +673,38 @@ export class LidarPoints {
   // Fin de pump.
   }
 
+  /**
+   * Déchargement par densité, à l'inverse du chargement : parmi les nœuds chargés qui ne sont plus demandés (hors du
+   * champ de la caméra et de sa marge, ou détail devenu inutile), toutes dalles confondues, ceux du niveau le plus fin
+   * sont libérés à chaque sélection. La densité descend ainsi niveau par niveau, la racine part en dernier.
+   */
+  // unloadByDensity : décharge le niveau le plus fin des nœuds non demandés (début).
+  unloadByDensity() {
+    // Nœuds chargés et non demandés, de toutes les dalles.
+    const idle = [];
+    // Pour chaque dalle (début).
+    for (const tile of this.tiles.values()) {
+      // Pour chacun de ses nœuds : chargé et absent de ce que la dalle demande, il est candidat.
+      for (const node of tile.tree.values()) if (node.points && !tile.keep?.has(node.key)) idle.push({ tile, node, level: node.level });
+    // Fin des dalles.
+    }
+    // Libère ceux du niveau le plus fin.
+    for (const { tile, node } of unloadPick(idle)) this.dropNode(tile, node);
+  // Fin de unloadByDensity.
+  }
+
+  /** Teste la boîte d'un nœud contre le champ de la caméra (déjà réglé sur la dalle), élargie de `margin` mètres. */
+  // nodeInView : le nœud, le demi-côté, le haut de la dalle et la marge (début).
+  nodeInView(node, half, top, margin = 0) {
+    // Coin bas de la boîte du nœud, limité au haut de la dalle, élargi de la marge.
+    this.box.min.set(node.min[0] - half - margin, node.min[1] - half - margin, Math.min(node.min[2], top));
+    // Coin haut de la boîte du nœud, élargi de la marge.
+    this.box.max.set(node.min[0] - half + node.size + margin, node.min[1] - half + node.size + margin, Math.min(node.min[2] + node.size, top));
+    // Vrai si le nœud commence sous le haut de la dalle et touche le champ.
+    return node.min[2] <= top && this.frustum.intersectsBox(this.box);
+  // Fin de nodeInView.
+  }
+
   /** Mémoire : au-delà du plafond, les nœuds les plus anciennement affichés sortent, les plus fins d'abord. */
   // evict : libère de la mémoire au-delà du plafond (début).
   evict(tile) {
@@ -740,6 +777,8 @@ export class LidarPoints {
     let any = false, progress = null;
     // Poids des dalles affichées à cette sélection (le budget de points est partagé selon la dernière somme).
     let weightSum = 0;
+    // Nouvelle sélection : un seul numéro pour toutes les dalles.
+    if (select) this.stamp++;
 
     // Pour chaque dalle (début).
     for (const tile of this.tiles.values()) {
@@ -762,17 +801,22 @@ export class LidarPoints {
       this.frustum.setFromProjectionMatrix(this.tmpM.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse).multiply(tile.world));
       // Haut de la dalle, avec 1 m de marge.
       const top = tile.height + 1;
-      // Coin bas de la boîte, élargie de la marge : une dalle juste hors du champ compte comme dedans.
+      // Coin bas de la boîte de la dalle.
+      this.box.min.set(-half, -half, 0);
+      // Coin haut de la boîte de la dalle.
+      this.box.max.set(half, half, top);
+      // Dans la caméra : du bon côté de l'horizon (caméra au-dessus du plan de la dalle) et boîte visible.
+      const inCam = e.z > 0 && this.frustum.intersectsBox(this.box);
+      // Boîte élargie de la marge, pour le préchargement seulement.
       this.box.min.set(-half - VIEW_MARGIN_M, -half - VIEW_MARGIN_M, 0);
-      // Coin haut de la boîte, élargie de la marge.
+      // Coin haut de la boîte élargie.
       this.box.max.set(half + VIEW_MARGIN_M, half + VIEW_MARGIN_M, top);
-      // Dans le champ : du bon côté de l'horizon (caméra au-dessus du plan de la dalle) et emprise à l'écran.
-      // Dans le champ (marge comprise) : caméra au-dessus du plan de la dalle et boîte visible.
-      const inView = e.z > 0 && this.frustum.intersectsBox(this.box);
+      // Dans le champ élargi : la dalle se précharge (racine, puis premier niveau), sans être affichée.
+      const inView = inCam || (e.z > 0 && this.frustum.intersectsBox(this.box));
       // Dessinée à bout portant seulement : la hauteur de la caméra au-dessus du plan de la dalle est `e.z`, la
-      // grandeur même que la distance du zoom affichée par le HUD. Au-dessus de 0,15 km, le nuage reste masqué.
-      // Affichée : dans le champ et sous la hauteur d'affichage.
-      const show = showCloud(e.z, inView);
+      // grandeur même que la distance du zoom affichée par le HUD. Au-dessus de 0,75 km, le nuage reste masqué.
+      // Affichée : dans la caméra (sans la marge) et sous la hauteur d'affichage.
+      const show = showCloud(e.z, inCam);
       // Règle la visibilité du groupe.
       tile.group.visible = show;
       // Poids de la dalle dans le partage du budget : nul si elle n'est pas affichée, plus fort si elle est proche.
@@ -787,6 +831,8 @@ export class LidarPoints {
         // premier niveau de détail quand la caméra approche. À l'arrivée, la dalle est déjà là.
         // File d'attente : vide hors champ ; sinon la racine, puis ses enfants à moins de 400 km.
         tile.queue = !root || !inView ? [] : [ROOT_KEY, ...(dist < PRELOAD_RANGE_M ? root.children : [])];
+        // Ce que la dalle demande : ces nœuds-là seulement ; tout le reste se décharge par densité (rien hors du champ élargi).
+        tile.keep = new Set(tile.queue);
         // Abandonne les téléchargements devenus inutiles.
         this.cancelStale(tile);
         // Filtre la file :
@@ -833,27 +879,22 @@ export class LidarPoints {
         // La caméra, l'échelle à l'écran, l'écart des points, l'écart toléré et le budget.
         eye: tile.eye, pxPerUnit, spacing: tile.manifest.spacing, maxSpacingPx: this.profile.maxSpacingPx * dpr, budget: shareBudget(this.profile.budget, tile.weight, this.weightSum),
         // visible : teste un nœud contre le champ de vision (début).
-        visible: (node) => {
-          // Coin bas de la boîte du nœud, limité au haut de la dalle, élargi de la marge autour du champ.
-          this.box.min.set(node.min[0] - half - VIEW_MARGIN_M, node.min[1] - half - VIEW_MARGIN_M, Math.min(node.min[2], top));
-          // Coin haut de la boîte du nœud, élargi de la marge.
-          this.box.max.set(node.min[0] - half + node.size + VIEW_MARGIN_M, node.min[1] - half + node.size + VIEW_MARGIN_M, Math.min(node.min[2] + node.size, top));
-          // Vrai si le nœud commence sous le haut de la dalle et touche le champ.
-          return node.min[2] <= top && this.frustum.intersectsBox(this.box);
-        // Fin de visible.
-        },
+        // Champ élargi de la marge : les nœuds juste hors de la caméra sont préchargés.
+        visible: (node) => this.nodeInView(node, half, top, VIEW_MARGIN_M),
+        // Dôme de densité : cercle centré sous la caméra, rayon selon sa hauteur, sommet au niveau le plus fin.
+        dome: { center: tile.eye, radius: domeRadius(e.z), depth: tile.depth },
       // Dernier argument : dit si un nœud a déjà ses points.
       }, (key) => Boolean(tile.tree.get(key)?.points));
-      // Nouvelle sélection.
-      this.stamp++;
       // Nœuds à dessiner, en ensemble.
       const visible = new Set(shown);
+      // Ce que la dalle demande (dessinés et à charger) : le reste se décharge par densité.
+      tile.keep = new Set([...shown, ...load]);
       // Pour chaque nœud (début).
       for (const node of tile.tree.values()) {
         // Sans points : suivant.
         if (!node.points) continue;
-        // À dessiner ?
-        const draw = visible.has(node.key);
+        // À dessiner : retenu par la sélection et dans la caméra (sans la marge, qui ne sert qu'au préchargement).
+        const draw = visible.has(node.key) && (node.key === ROOT_KEY || this.nodeInView(node, half, top));
         // Règle sa visibilité.
         node.points.visible = draw;
         // S'il est dessiné (début).
@@ -885,6 +926,8 @@ export class LidarPoints {
     this.weightSum = weightSum;
     // Si une sélection a eu lieu (début).
     if (select) {
+      // Décharge par densité ce qui n'est plus demandé (le niveau le plus fin d'abord).
+      this.unloadByDensity();
       // Note l'instant.
       this.selectAt = now;
       // Plus rien à recalculer.

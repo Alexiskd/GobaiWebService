@@ -244,6 +244,37 @@ export function boxDistance(p, min, size) {
 // Fin de boxDistance.
 }
 
+/** Distance horizontale (m) d'un point [x, y] au carré d'un nœud (0 à l'intérieur) : le cercle du dôme est à plat. */
+// Déclare et exporte boxDistance2D : le point, le coin du cube et son côté.
+export function boxDistance2D(p, min, size) {
+  // Écart sur X, nul entre les deux faces.
+  const dx = Math.max(min[0] - p[0], 0, p[0] - (min[0] + size));
+  // Écart sur Y, nul entre les deux faces.
+  const dy = Math.max(min[1] - p[1], 0, p[1] - (min[1] + size));
+  // Distance horizontale.
+  return Math.hypot(dx, dy);
+// Fin de boxDistance2D.
+}
+
+/**
+ * Dôme de densité : comme une masse qui se charge en énergie et la perd, en cercle autour de la caméra. Au centre,
+ * tous les niveaux sont permis ; vers le bord, le niveau permis descend en demi-sphère (√(1 − (d / R)²)) ; au-delà du
+ * rayon, la racine seule (le nuage entier, peu dense). Le dôme suit la caméra : il se charge niveau par niveau du
+ * centre vers le bord et, derrière elle, se décharge depuis le bord, toujours par densité.
+ */
+// Déclare et exporte domeLevel : la distance au centre (m), le rayon du dôme (m) et la profondeur de l'arbre.
+export function domeLevel(distM, radiusM, depth) {
+  // Hors du cercle (ou rayon nul) : la racine seule.
+  if (!(radiusM > 0) || distM >= radiusM) return 0;
+  // Hauteur du dôme à cette distance, en niveaux.
+  return depth * Math.sqrt(1 - (distM / radiusM) ** 2);
+// Fin de domeLevel.
+}
+
+/** Rayon du dôme (m) d'après la hauteur de la caméra : quatre fois la hauteur, entre 800 m et 4 km. */
+// Déclare et exporte domeRadius : la hauteur de la caméra au-dessus de la dalle (m).
+export const domeRadius = (heightM) => Math.min(4000, Math.max(800, heightM * 4));
+
 /**
  * Nœuds à afficher et à charger pour une vue.
  *
@@ -266,8 +297,8 @@ export function boxDistance(p, min, size) {
  */
 // Déclare et exporte selectNodes : l'arbre, la vue et le test de chargement.
 export function selectNodes(tree, view, isReady) {
-  // Les champs de la vue.
-  const { eye, pxPerUnit, spacing, maxSpacingPx, budget, visible } = view;
+  // Les champs de la vue (dome : dôme de densité facultatif, voir domeLevel).
+  const { eye, pxPerUnit, spacing, maxSpacingPx, budget, visible, dome } = view;
   // Liste des nœuds voulus.
   const wanted = [];
   // visit : examine un nœud (début).
@@ -278,6 +309,8 @@ export function selectNodes(tree, view, isReady) {
     if (!node) return;
     // Hors du champ de la caméra, sauf la racine : ignoré.
     if (key !== ROOT_KEY && visible && !visible(node)) return;
+    // Au-dessus du dôme de densité, sauf la racine : ignoré (plus le nœud est loin du centre du cercle, plus le niveau permis est bas).
+    if (key !== ROOT_KEY && dome && node.level > domeLevel(boxDistance2D(dome.center, node.min, node.size), dome.radius, dome.depth)) return;
     // Écart à l'écran entre deux de ses points : son espacement, vu à la distance de son cube (au moins 0,5 m).
     const px = (levelSpacing(spacing, node.level) * pxPerUnit) / Math.max(boxDistance(eye, node.min, node.size), 0.5);
     // L'ajoute aux nœuds voulus.
@@ -483,6 +516,19 @@ export const shareBudget = (budget, weight, total, floor = 60_000) => (total > 0
  */
 // Déclare et exporte densityOrder : compare deux chargements { level, dist, rank } (niveau, distance de la dalle, rang dans sa file).
 export const densityOrder = (a, b) => a.level - b.level || a.dist - b.dist || a.rank - b.rank;
+
+/**
+ * Déchargement par densité, à l'inverse du chargement : parmi les nœuds chargés qui ne sont plus demandés, ne garde
+ * que ceux du niveau le plus fin, à libérer maintenant. La densité descend ainsi niveau par niveau, la racine en dernier.
+ */
+// Déclare et exporte unloadPick : reçoit les nœuds { level } non demandés, renvoie ceux du niveau le plus fin.
+export function unloadPick(idle) {
+  // Niveau le plus fin présent (−1 s'il n'y a rien).
+  const deepest = idle.reduce((m, x) => Math.max(m, x.level), -1);
+  // Ceux de ce niveau.
+  return idle.filter((x) => x.level === deepest);
+// Fin de unloadPick.
+}
 
 /** Emprise [ouest, sud, est, nord] (degrés) élargie de `marginM` mètres de chaque côté ; null reste null. */
 // Déclare et exporte expandLonLatBox : l'emprise et la marge en mètres.

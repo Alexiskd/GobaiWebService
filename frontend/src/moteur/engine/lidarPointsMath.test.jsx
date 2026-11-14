@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, expandLonLatBox, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, domeLevel, domeRadius, boxDistance2D, expandLonLatBox, unloadPick, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -490,4 +490,32 @@ test('expandLonLatBox : élargit l\'emprise de la marge de chaque côté', () =>
   [-1, -1, 2, 2].forEach((v, i) => assert.ok(Math.abs(b[i] - v) < 1e-3));
   // Sans emprise : rien.
   assert.equal(expandLonLatBox(null, 100), null);
+});
+
+// Déchargement par densité : le niveau le plus fin part d'abord, la racine en dernier.
+test('unloadPick : décharge le niveau le plus fin d\'abord', () => {
+  // Nœuds non demandés de deux dalles, niveaux 0 à 2.
+  const idle = [{ id: 'A0', level: 0 }, { id: 'A2', level: 2 }, { id: 'B1', level: 1 }, { id: 'B2', level: 2 }];
+  // Les deux nœuds de niveau 2 d'abord.
+  assert.deepEqual(unloadPick(idle).map((x) => x.id), ['A2', 'B2']);
+  // Puis le niveau 1, puis la racine.
+  assert.deepEqual(unloadPick(idle.filter((x) => x.level < 2)).map((x) => x.id), ['B1']);
+  // Rien à décharger : liste vide.
+  assert.deepEqual(unloadPick([]), []);
+});
+
+// Dôme de densité : plein au centre, en demi-sphère vers le bord, la racine seule au-delà du cercle.
+test('domeLevel : dôme circulaire de densité autour de la caméra', () => {
+  // Au centre : tous les niveaux.
+  assert.equal(domeLevel(0, 1000, 6), 6);
+  // À mi-rayon : 6 × √0,75 ≈ 5,2.
+  assert.ok(Math.abs(domeLevel(500, 1000, 6) - 6 * Math.sqrt(0.75)) < 1e-9);
+  // Au bord et au-delà : la racine seule.
+  assert.equal(domeLevel(1000, 1000, 6), 0);
+  // Même à 2 km.
+  assert.equal(domeLevel(2000, 1000, 6), 0);
+  // Rayon : quatre fois la hauteur, entre 800 m et 4 km.
+  assert.deepEqual([domeRadius(50), domeRadius(500), domeRadius(5000)], [800, 2000, 4000]);
+  // Distance horizontale au carré d'un nœud : nulle dedans, 5 m à (3, 4) du coin.
+  assert.deepEqual([boxDistance2D([5, 5], [0, 0, 0], 10), boxDistance2D([-3, -4], [0, 0, 0], 10)], [0, 5]);
 });
