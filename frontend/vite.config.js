@@ -11,6 +11,10 @@ export default defineConfig({
   plugins: [react()],
   // Construction (début).
   build: {
+    // Seuil de l'avertissement de taille des fichiers produits : 2 500 ko (500 ko par défaut). Les fichiers sont déjà
+    // découpés (three.js, MUI, React, séries VSOP87A) ; three.js (~700 ko) et les séries VSOP87A (~1,3 Mo de source)
+    // dépassent à eux seuls les 500 ko par défaut sans que ce soit un problème : ils restent en cache dans le navigateur.
+    chunkSizeWarningLimit: 2500,
     // Options de Rollup (début).
     rollupOptions: {
       // Sortie (début).
