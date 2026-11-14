@@ -12,6 +12,8 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { JwtError, bearerToken, verifyJwt } from './jwt';
 import { scopeAllows } from '../services/store/catalogue';
+// Sites partenaires autorisés sans paiement.
+import { isFreeOrigin } from './free-origins';
 
 /** Clé des métadonnées posées par le décorateur. */
 export const SCOPE_KEY = 'gobai:requiredScope';
@@ -28,6 +30,7 @@ export const JWT_AUDIENCE = 'gobai-api';
 
 /** Clé de signature des jetons d'accès : la même que celle des sessions du site. */
 export const accessSecret = (env: NodeJS.ProcessEnv = process.env): string => env.SESSION_SECRET?.trim() || '';
+
 
 // Garde injectable par NestJS.
 @Injectable()
@@ -46,6 +49,8 @@ export class ScopeGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>();
     // Le droit attendu pour cette requête.
     const needed = typeof rule === 'function' ? rule(req) : rule;
+    // Site partenaire autorisé sans paiement : la requête passe, avec un droit total noté sur la requête.
+    if (isFreeOrigin(req)) { (req as Request & { jwt?: unknown }).jwt = { scope: ['*'], free: true }; return true; }
     // La clé de signature du serveur.
     const secret = accessSecret();
     // Sans clé configurée, aucun jeton ne peut être vérifié : mieux vaut fermer que laisser passer.

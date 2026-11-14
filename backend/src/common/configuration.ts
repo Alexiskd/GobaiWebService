@@ -2,6 +2,8 @@
 import { join } from 'node:path';
 // Dossier des fichiers de dépôts tiers importés dans le projet.
 import { VENDOR_DIR } from './local-source';
+// Sites partenaires autorisés sans paiement (ajoutés aux origines CORS).
+import { freeApiOrigins } from './free-origins';
 
 /** Configuration de l'application, lue une seule fois au démarrage depuis l'environnement. */
 // Forme de la configuration de l'application.
@@ -124,8 +126,9 @@ export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConf
   return {
     // port : PORT, ou 3001 par défaut.
     port: positiveNumber('PORT', env.PORT, 3001),
-    // corsOrigins : la liste si elle contient au moins une origine, sinon true (toutes les origines).
-    corsOrigins: cors && cors.length ? cors : true,
+    // corsOrigins : la liste si elle contient au moins une origine (plus les sites partenaires autorisés sans
+    // paiement), sinon true (toutes les origines).
+    corsOrigins: cors && cors.length ? [...new Set([...cors, ...freeApiOrigins(env)])] : true,
     // Limite de débit :
     throttle: {
       // fenêtre : THROTTLE_TTL_SECONDS (60 par défaut), convertie en millisecondes ;
