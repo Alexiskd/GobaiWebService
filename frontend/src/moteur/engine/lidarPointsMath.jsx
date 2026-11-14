@@ -513,16 +513,38 @@ export const shareBudget = (budget, weight, total, floor = 60_000) => (total > 0
 export const densityOrder = (a, b) => a.level - b.level || a.dist - b.dist || a.rank - b.rank;
 
 /**
- * Déchargement par densité, à l'inverse du chargement : parmi les nœuds chargés qui ne sont plus demandés, ne garde
- * que ceux du niveau le plus fin, à libérer maintenant. La densité descend ainsi niveau par niveau, la racine en dernier.
+ * Budget du dôme : la densité est adaptée à la taille du dôme, quel que soit le zoom. Les nœuds voulus de toutes les
+ * dalles ({ level, n, dist }) sont pris niveau par niveau, et dans un niveau du centre du dôme vers le bord, tant que
+ * le total de points tient dans le budget. Dès qu'un nœud ne tient plus, rien de plus fin n'est pris : la densité
+ * reste uniforme sur tout le cercle. Les racines (niveau 0) sont toujours prises.
  */
-// Déclare et exporte unloadPick : reçoit les nœuds { level } non demandés, renvoie ceux du niveau le plus fin.
-export function unloadPick(idle) {
-  // Niveau le plus fin présent (−1 s'il n'y a rien).
-  const deepest = idle.reduce((m, x) => Math.max(m, x.level), -1);
-  // Ceux de ce niveau.
-  return idle.filter((x) => x.level === deepest);
-// Fin de unloadPick.
+// Déclare et exporte domeBudget : les nœuds voulus et le budget de points.
+export function domeBudget(entries, budget) {
+  // Copie triée : niveau croissant, puis distance au centre croissante.
+  const sorted = [...entries].sort((a, b) => a.level - b.level || a.dist - b.dist);
+  // Nœuds retenus et total de points.
+  const out = []; let points = 0;
+  // Pour chaque nœud, dans cet ordre (début).
+  for (const e of sorted) {
+    // Hors racine, le budget serait dépassé : arrêt, rien de plus fin.
+    if (e.level > 0 && points + e.n > budget) break;
+    // Ajoute ses points au total.
+    points += e.n;
+    // Le retient.
+    out.push(e);
+  // Fin de la boucle.
+  }
+  // Renvoie les nœuds retenus.
+  return out;
+// Fin de domeBudget.
+}
+
+/** Distance approchée (m) entre deux points en degrés (projection locale, juste sur quelques kilomètres). */
+// Déclare et exporte lonLatDistanceM : longitude et latitude du premier point, puis du second.
+export function lonLatDistanceM(lon1, lat1, lon2, lat2) {
+  // Écart en longitude, réduit par la latitude moyenne, et écart en latitude, en degrés, puis en mètres (111 195 m par degré).
+  return Math.hypot((lon1 - lon2) * Math.cos(((lat1 + lat2) / 2) * (Math.PI / 180)), lat1 - lat2) * 111_195;
+// Fin de lonLatDistanceM.
 }
 
 /** Emprise [ouest, sud, est, nord] (degrés) élargie de `marginM` mètres de chaque côté ; null reste null. */

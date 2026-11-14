@@ -41,8 +41,8 @@ const MAX_DECODES = 2;
 // 20 secondes.
 const FETCH_TIMEOUT_MS = 20_000;
 /** Version du format des nœuds servis : change l'adresse (cache du navigateur) si la conversion change. */
-// Version « ign1 ».
-const NODE_VERSION = 'ign1';
+// Version « ign2 » : les nuages gardés par les navigateurs sous l'ancienne adresse ne sont plus jamais demandés.
+const NODE_VERSION = 'ign2';
 
 /** Dalle préparée : son manifeste public, l'adresse du nuage, l'en-tête COPC et les blocs de ses nœuds. */
 interface PreparedTile { manifest: Record<string, unknown>; url: string; info: CopcInfo; entries: Map<string, CopcEntry> }
