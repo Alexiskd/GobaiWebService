@@ -15,6 +15,13 @@ const cachesTitle = (c) => (c
   // … sinon aucune infobulle.
   : undefined);
 
+// perfTitle : compteurs de performance des tuiles, s'ils sont connus (début)…
+const perfTitle = (p) => (p
+  // … première tuile, débit, envoi au GPU, réseau de la session (Mo, annulés, délais dépassés, pannes)…
+  ? `Performance — première tuile : ${p.firstTileMs ?? '…'} ms · ${p.tilesPerSec} tuiles/s · envoi GPU : ${p.uploadMs} ms/image · réseau : ${(p.net.bytes / 1e6).toFixed(1)} Mo, ${p.net.done}/${p.net.requests} reçues, ${p.net.aborted} annulées, ${p.net.timeouts} délais dépassés, ${p.net.errors} pannes`
+  // … sinon rien.
+  : '');
+
 /** État des tuiles de la Lune, de Mars, de Mercure ou de Vénus. */
 // Déclare et exporte le composant TileStatus : HUD, clé de l'état des tuiles, nom de l'astre et indicateur de mise en cache.
 export function TileStatus({ hud, source, label }) {
@@ -43,6 +50,6 @@ export function TileStatus({ hud, source, label }) {
   // Sinon, si le niveau de zoom est connu : l'ajoute au texte.
   else if (t.zoom) text += ` · niveau ${t.zoom}`;
   // Rend la ligne d'état, avec l'infobulle des caches.
-  return <StatusLine text={text} tone={tone} title={cachesTitle(t.caches)} />;
+  return <StatusLine text={text} tone={tone} title={[cachesTitle(t.caches), perfTitle(t.perf)].filter(Boolean).join('\n') || undefined} />;
 // Fin de TileStatus.
 }

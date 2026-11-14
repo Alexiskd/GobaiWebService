@@ -12,6 +12,8 @@ import {
 } from './earthDirect';
 // Importe la lecture et l'enregistrement de la description d'une couche, depuis layerInfoCache.
 import { readLayerInfo, saveLayerInfo } from './layerInfoCache';
+// Importe le partage avec annulation réelle, le délai adaptatif, la limite par serveur et les compteurs, depuis netLoads.
+import { AdaptiveTimeout, HostGate, NET_STATS, SharedLoads, hostOf } from './netLoads';
 
 // Délai minimal entre deux renouvellements du modèle d'adresse : 30 secondes.
 const MIN_REFRESH_GAP_MS = 30_000;
@@ -19,8 +21,10 @@ const MIN_REFRESH_GAP_MS = 30_000;
 const SHARED_IMAGE_MS = 30_000; // une image reste partagée 30 s (tuiles filles sur-zoomées qui réutilisent la même)
 // Délai maximal d'une minuterie : 2³¹ − 1 millisecondes.
 const MAX_TIMER_MS = 2 ** 31 - 1;
-// Délai d'un chargement direct avant le repli sur le relais : 4 secondes.
-const DIRECT_TIMEOUT_MS = 4000;  // tuile chargée chez son fournisseur : au-delà, on la demande au relais du serveur
+// Délai d'un chargement direct avant le repli sur le relais : mesuré par source (1,5 à 8 s, 4 s au départ).
+const DIRECT_TIMEOUTS = new AdaptiveTimeout({ initial: 4000, min: 1500, max: 8000 });
+// Téléchargements simultanés par serveur, réglés sur ce qu'il supporte (2 à 12, 6 au départ), pour toutes les couches.
+export const HOST_GATE = new HostGate({ initial: 6, min: 2, max: 12 });
 // Nombre maximal de sources essayées pour une tuile : 12.
 const DIRECT_MAX_STEPS = 12;     // sources essayées au plus pour une tuile (vides comprises) avant le relais
 // Clé de l'interrupteur du chargement direct, dans le stockage du navigateur.
@@ -111,8 +115,8 @@ export class TileSource {
     this.disposed = false;
     // Renouvellement en cours : aucun.
     this.refreshing = null;
-    // Images partagées, par adresse.
-    this.shared = new Map();    // url → promesse d'image (évite de télécharger 64 fois l'ancêtre d'une zone sur-zoomée)
+    // Téléchargements partagés, par adresse : annulés pour de bon quand plus aucune tuile n'attend l'image.
+    this.loads = new SharedLoads(fetchTile, { keepMs: SHARED_IMAGE_MS });
     // Compteurs : réseau, direct et relais.
     this.stats = { network: 0, direct: 0, relay: 0 };
     // Chargement direct permis ?
@@ -567,8 +571,8 @@ export class TileSource {
       const k = (first + i) % templates.length;
       // Essai (début).
       try {
-        // Charge l'image, 4 secondes au plus, en la gardant sur le disque.
-        const img = await withTimeout(this.sharedImage(fillDirect(templates[k], z, x, y), signal, true), DIRECT_TIMEOUT_MS);
+        // Charge l'image, dans le délai mesuré pour cette source.
+        const img = await this.timedImage(fillDirect(templates[k], z, x, y), signal, source.id);
         // La source sert ce niveau.
         this.levelGate.ok(source.id, z);
         // Renvoie l'image.
@@ -703,8 +707,8 @@ export class TileSource {
       const k = (first + i) % templates.length;
       // Essai (début).
       try {
-        // Charge l'image, 4 secondes au plus.
-        const img = await withTimeout(this.sharedImage(fillDirect(templates[k], z, x, y), signal), DIRECT_TIMEOUT_MS);
+        // Charge l'image, dans le délai mesuré pour cette source.
+        const img = await this.timedImage(fillDirect(templates[k], z, x, y), signal, source.id);
         // Retient la variante.
         this.directVariant.set(source.id, k);
         // Note le succès de la source.
@@ -805,30 +809,57 @@ export class TileSource {
   // Fin de canvasFrom.
   }
 
-  /** Chargement partagé : un seul téléchargement par URL, chaque appelant garde son propre signal d'annulation. */
-  // sharedImage : un seul téléchargement par adresse (début).
-  sharedImage(url, signal) {
-    // Chargement déjà en cours ou récent.
-    let p = this.shared.get(url);
-    // S'il n'y en a pas (début).
-    if (!p) {
-      // Le lance, en priorité haute pour une demande urgente.
-      p = loadImage(url, undefined, Boolean(signal) && this.urgent.has(signal));
-      // Le partage.
-      this.shared.set(url, p);
-      // À la fin (début) :
-      p.then(
-        // réussi : il reste partagé 30 secondes ;
-        () => setTimeout(() => { if (this.shared.get(url) === p) this.shared.delete(url); }, SHARED_IMAGE_MS),
-        // échoué : il est retiré tout de suite.
-        () => { if (this.shared.get(url) === p) this.shared.delete(url); },
-      // Fin de ce bloc.
-      );
-    // Fin de ce cas.
-    }
-    // Renvoie la promesse, liée au signal de l'appelant.
-    return withSignal(p, signal);
-  // Fin de sharedImage.
+  /**
+   * Chargement partagé : un seul téléchargement par adresse, chaque appelant garde son propre signal d'annulation ;
+   * quand plus aucun appelant n'attend l'image, le téléchargement est annulé (voir SharedLoads).
+   */
+  // sharedImage : un seul téléchargement par adresse.
+  sharedImage(url, signal) { return this.loads.get(url, signal, Boolean(signal) && this.urgent.has(signal)); }
+
+  /**
+   * Image d'une source en direct, dans le délai mesuré pour cette source (AdaptiveTimeout). Délai dépassé : le
+   * téléchargement est annulé s'il ne sert plus personne, le serveur perd des places (HostGate), et l'erreur
+   * « TimeoutError » mène à la source suivante ou au relais.
+   */
+  // timedImage, asynchrone : l'adresse, le signal de l'appelant et la source (début).
+  async timedImage(url, signal, id) {
+    // Déjà annulée : rejet.
+    if (signal?.aborted) throw abortError();
+    // Délai de la source.
+    const ms = DIRECT_TIMEOUTS.timeoutFor(id);
+    // Contrôleur propre à cet essai : abandonné par l'appelant ou par le délai.
+    const ctrl = new AbortController();
+    // L'abandon de l'appelant se transmet.
+    const onAbort = () => ctrl.abort();
+    // Écoute l'appelant.
+    signal?.addEventListener('abort', onAbort, { once: true });
+    // Délai dépassé ? Non pour l'instant.
+    let timedOut = false;
+    // Minuterie du délai.
+    const timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, ms);
+    // Instant du départ.
+    const t0 = performance.now();
+    // Urgence : celle de l'appelant.
+    if (signal && this.urgent.has(signal)) this.urgent.add(ctrl.signal);
+    // Essai (début).
+    try {
+      // L'image, partagée.
+      const img = await this.sharedImage(url, ctrl.signal);
+      // Durée de la réponse ; une image déjà là (moins de 15 ms) ne compte pas dans la mesure.
+      const dt = performance.now() - t0;
+      // La note pour la source.
+      if (dt > 15) DIRECT_TIMEOUTS.record(id, dt);
+      // Renvoie l'image.
+      return img;
+    // En cas d'erreur (début).
+    } catch (e) {
+      // Délai dépassé : compté, le serveur perd des places, erreur « TimeoutError ».
+      if (timedOut) { NET_STATS.timeouts++; HOST_GATE.failure(hostOf(url)); throw Object.assign(new Error('Délai dépassé'), { name: 'TimeoutError' }); }
+      // Sinon : l'erreur telle quelle.
+      throw e;
+    // Dans tous les cas : minuterie arrêtée, écoute retirée.
+    } finally { clearTimeout(timer); signal?.removeEventListener('abort', onAbort); }
+  // Fin de timedImage.
   }
 
   // dispose : libère la source (début).
@@ -836,7 +867,7 @@ export class TileSource {
     // Note la libération.
     this.disposed = true;
     // Oublie les images partagées.
-    this.shared.clear();
+    this.loads.clear();
     // Annule la minuterie.
     clearTimeout(this.timer);
   // Fin de dispose.
@@ -914,41 +945,6 @@ function cropFromAncestor(img, depth, x, y) {
 // Fin de cropFromAncestor.
 }
 
-/** Rejette (« Délai dépassé ») si la promesse n'a pas abouti après `ms`. La promesse d'origine continue : son résultat reste partagé. */
-// withTimeout : rejette si la promesse n'a pas abouti après un délai (début).
-function withTimeout(p, ms) {
-  // Renvoie une promesse (début).
-  return new Promise((resolve, reject) => {
-    // Minuterie : rejet « Délai dépassé ».
-    const t = setTimeout(() => reject(Object.assign(new Error('Délai dépassé'), { name: 'TimeoutError' })), ms);
-    // À la fin de la promesse : annule la minuterie et transmet le résultat ou l'erreur.
-    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
-  // Fin de la promesse.
-  });
-// Fin de withTimeout.
-}
-
-// withSignal : lie une promesse à un signal d'annulation (début).
-function withSignal(p, signal) {
-  // Sans signal : la promesse elle-même.
-  if (!signal) return p;
-  // Signal déjà déclenché : rejet immédiat.
-  if (signal.aborted) return Promise.reject(abortError());
-  // Renvoie une promesse (début).
-  return new Promise((resolve, reject) => {
-    // onAbort : rejet par une erreur d'abandon.
-    const onAbort = () => reject(abortError());
-    // Écoute l'annulation, une seule fois.
-    signal.addEventListener('abort', onAbort, { once: true });
-    // À la réussite : retire l'écoute et transmet l'image ;
-    p.then((img) => { signal.removeEventListener('abort', onAbort); resolve(img); },
-      // à l'échec : retire l'écoute et transmet l'erreur.
-      (e) => { signal.removeEventListener('abort', onAbort); reject(e); });
-  // Fin de la promesse.
-  });
-// Fin de withSignal.
-}
-
 // sleep : attend une durée, sauf annulation (début).
 const sleep = (ms, signal) => new Promise((resolve, reject) => {
   // Minuterie.
@@ -957,6 +953,33 @@ const sleep = (ms, signal) => new Promise((resolve, reject) => {
   signal?.addEventListener('abort', () => { clearTimeout(t); reject(abortError()); }, { once: true });
 // Fin de sleep.
 });
+
+/**
+ * Téléchargement d'une tuile à travers la limite de son serveur (HOST_GATE) : une réponse rapide peut lui donner une
+ * place de plus, une panne réseau lui en retire la moitié. Une tuile absente (erreur HTTP) ne compte pas comme panne.
+ */
+// fetchTile, asynchrone : l'adresse, le signal et l'urgence (début).
+function fetchTile(url, signal, urgent) {
+  // Serveur de l'adresse.
+  const host = hostOf(url);
+  // Attend une place chez ce serveur, puis télécharge (début).
+  return HOST_GATE.run(host, async () => {
+    // Instant du départ.
+    const t0 = performance.now();
+    // Essai (début).
+    try {
+      // L'image.
+      const img = await loadImage(url, signal, urgent);
+      // Réussite notée avec sa durée.
+      HOST_GATE.success(host, performance.now() - t0);
+      // Renvoie l'image.
+      return img;
+    // Panne réseau : le serveur perd des places ; l'erreur est relancée.
+    } catch (e) { if (e.name === 'NetworkError') HOST_GATE.failure(host); throw e; }
+  // Fin de la tâche, liée au signal (annulée tant qu'elle attend sa place).
+  }, signal);
+// Fin de fetchTile.
+}
 
 /**
  * Charge une image par son adresse, sans aucun cache : le fichier est téléchargé à chaque demande (`cache: 'no-store'`,
@@ -970,16 +993,20 @@ export async function loadImage(url, signal, urgent = false) {
   if (signal?.aborted) throw abortError();
   // Réponse du téléchargement.
   let res;
+  // Une requête de plus.
+  NET_STATS.requests++;
   // Essai (début).
   try {
     // Téléchargement sans cache ni identifiants ; une tuile à l'écran passe devant.
     res = await fetch(url, { signal, cache: 'no-store', credentials: 'omit', priority: urgent ? 'high' : 'auto' });
-  // Échec : annulation voulue, sinon tuile indisponible.
-  } catch (e) { throw signal?.aborted ? abortError() : new Error('Tuile indisponible'); }
-  // Réponse en erreur : tuile indisponible.
-  if (!res.ok) throw new Error('Tuile indisponible');
+  // Échec : annulation voulue, sinon panne réseau (« NetworkError », comptée).
+  } catch (e) { if (signal?.aborted) throw abortError(); NET_STATS.errors++; throw Object.assign(new Error('Tuile indisponible'), { name: 'NetworkError' }); }
+  // Réponse en erreur (tuile absente chez le fournisseur) : « HttpError », sans pénaliser le serveur.
+  if (!res.ok) throw Object.assign(new Error('Tuile indisponible'), { name: 'HttpError', status: res.status });
   // Les octets de l'image.
   const blob = await res.blob();
+  // Comptés, requête terminée.
+  NET_STATS.bytes += blob.size; NET_STATS.done++;
   // Adresse locale du fichier en mémoire (même origine : ses pixels restent lisibles).
   const blobUrl = URL.createObjectURL(blob);
   // Essai (début).

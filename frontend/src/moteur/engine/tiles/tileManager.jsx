@@ -2,8 +2,10 @@
 import { uploadShare } from '../powerSaver';
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
-// Importe la source d'images des tuiles et le chargement d'une image (sans cache), depuis tileSource.
-import { TileSource, loadImage } from './tileSource';
+// Importe la source d'images des tuiles, le chargement d'une image (sans cache) et la limite par serveur, depuis tileSource.
+import { HOST_GATE, TileSource, loadImage } from './tileSource';
+// Importe les compteurs réseau des tuiles, depuis netLoads.
+import { NET_STATS } from './netLoads';
 // Importe la source des tuiles d'altitude et les fonctions de réglage du relief, depuis relief.
 import { ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
@@ -595,6 +597,8 @@ export class TileManager {
         net: b.source.stats.network,
       // Fin des caches.
       } : null,
+      // Performance : première tuile, débit, envoi au GPU, réseau de la session et places par serveur.
+      perf: b ? { ...b.layer.perfSnapshot(), net: { ...NET_STATS }, hosts: HOST_GATE.limits() } : null,
       // Limites de la vue, arrondies, avec le niveau borné entre 0 et 22.
       bounds: bounds ? { north: r(bounds.north), south: r(bounds.south), east: r(bounds.east), west: r(bounds.west), zoom: Math.max(0, Math.min(22, b.layer.visibleZoom)) } : null,
     // Fin de l'état.
