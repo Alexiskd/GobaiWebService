@@ -122,7 +122,9 @@ export class Paris3D {
     // Choix à refaire.
     this.dirty = true;
     // État pour l'interface : carreaux affichés, en cours, bâtiments affichés.
-    this.status = { shown: 0, loading: 0, buildings: 0 };
+    this.status = { on: false, shown: 0, loading: 0, buildings: 0, failed: 0, error: null };
+    // Dernière erreur rencontrée (téléchargement ou extrusion), affichée par la jauge « Paris 3D », ou null.
+    this.lastError = null;
     // Matériau partagé par tous les carreaux (début).
     this.material = new THREE.ShaderMaterial({
       // Ses variables uniformes : Soleil et ombre (reliés à ceux de la Terre à la première image), relief.
@@ -205,7 +207,7 @@ export class Paris3D {
       // Reçu : mis en attente d'extrusion.
       .then((json) => { if (tile.state === 'loading') { tile.state = 'arrived'; this.arrived.push({ tile, features: Array.isArray(json?.features) ? json.features : [] }); } })
       // Échec (hors annulation) : nouvel essai plus tard ; annulé : redevient à charger.
-      .catch((e) => { if (tile.state !== 'loading') return; tile.state = e?.name === 'AbortError' ? 'idle' : 'failed'; tile.retryAt = performance.now() + RETRY_AFTER_MS; if (e?.name === 'AbortError') tile.retryAt = 0; })
+      .catch((e) => { if (tile.state !== 'loading') return; tile.state = e?.name === 'AbortError' ? 'idle' : 'failed'; tile.retryAt = performance.now() + RETRY_AFTER_MS; if (e?.name === 'AbortError') tile.retryAt = 0; else this.lastError = `Téléchargement IGN : ${e?.message || 'échec'}`; })
       // Dans tous les cas : un téléchargement de moins.
       .finally(() => { this.active--; tile.abort = null; this.dirty = true; });
   // Fin de load.
@@ -298,7 +300,7 @@ export class Paris3D {
       // La tuile reçue la plus ancienne.
       const a = this.arrived.shift();
       // Extrusion protégée ; en cas d'erreur : échec, nouvel essai dans 30 s.
-      try { this.build(a); } catch { a.tile.state = 'failed'; a.tile.retryAt = now + RETRY_AFTER_MS; }
+      try { this.build(a); this.lastError = null; } catch (e) { a.tile.state = 'failed'; a.tile.retryAt = now + RETRY_AFTER_MS; this.lastError = `Construction 3D : ${e?.message || 'échec'}`; }
     // Fin de ce cas.
     }
     // Le repère suit la rotation propre de la Terre (le maillage peut être masqué, pas ce repère).
@@ -323,7 +325,7 @@ export class Paris3D {
     // Actif : permis, Terre visible, sous l'altitude d'affichage et assez près de Paris.
     const on = this.enabled && !hidden && altitude > 0 && altitude < SHOW_ALTITUDE_M && away < radiusM;
     // Inactif : masque le repère et s'arrête.
-    if (!on) { if (this.root.visible) this.root.visible = false; this.setStatus(0, this.active, 0); return; }
+    if (!on) { if (this.root.visible) this.root.visible = false; this.setStatus({ on: false, shown: 0, loading: this.active, buildings: 0, failed: 0, error: null }); return; }
     // Repère visible.
     this.root.visible = true;
     // Relief en volume : chaque bâtiment à l'altitude de son sol.
@@ -380,8 +382,8 @@ export class Paris3D {
       if ((t.state === 'idle' || (t.state === 'failed' && now >= t.retryAt)) && this.active < this.profile.parallel) this.load(t);
     // Fin des carreaux voulus.
     }
-    // Compteurs pour l'interface.
-    let shown = 0, buildings = 0;
+    // Compteurs pour l'interface : affichées, bâtiments, en échec.
+    let shown = 0, buildings = 0, failed = 0;
     // Pour chaque carreau en mémoire (début).
     for (const t of [...this.tiles.values()]) {
       // Voulu ?
@@ -392,6 +394,8 @@ export class Paris3D {
       if (t.mesh) t.mesh.visible = want;
       // Compte ce qui est affiché.
       if (want && t.state === 'ready') { shown++; buildings += t.buildings; }
+      // Compte les cellules voulues en échec.
+      if (want && t.state === 'failed') failed++;
     // Fin des carreaux.
     }
     // Plafond dépassé : les plus anciennement utilisés, hors carreaux voulus, sortent.
@@ -403,19 +407,19 @@ export class Paris3D {
     // Fin du plafond.
     }
     // État pour l'interface.
-    this.setStatus(shown, this.active, buildings);
+    this.setStatus({ on: true, shown, loading: this.active, buildings, failed, error: failed ? this.lastError : null });
   // Fin de update.
   }
 
   /** État pour l'interface : objet remplacé seulement quand une valeur change (le HUD ne se redessine pas pour rien). */
-  // setStatus : les carreaux affichés, en cours, et les bâtiments affichés (début).
-  setStatus(shown, loading, buildings) {
+  // setStatus : actif, cellules affichées, en cours, bâtiments affichés, cellules en échec et dernière erreur (début).
+  setStatus(next) {
     // L'état actuel.
     const s = this.status;
     // Inchangé : rien à faire.
-    if (s.shown === shown && s.loading === loading && s.buildings === buildings) return;
+    if (Object.keys(next).every((k) => s[k] === next[k])) return;
     // Nouvel état.
-    this.status = { shown, loading, buildings };
+    this.status = next;
   // Fin de setStatus.
   }
 

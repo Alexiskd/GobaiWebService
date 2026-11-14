@@ -37,6 +37,8 @@ import { GpsFrame } from './hud/GpsFrame';
 // Importe l'indicateur de chargement des tuiles.
 // Importe la jauge LiDAR.
 import { LidarJauge } from './hud/LidarJauge';
+// Importe la jauge de Paris en 3D.
+import { Paris3DJauge } from './hud/Paris3DJauge';
 import { TuilesLoader } from './hud/TuilesLoader';
 // Importe le compteur d'images par seconde.
 import { FpsCounter } from './hud/FpsCounter';
@@ -729,6 +731,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
       <ZoomPad onZoom={actions.zoom} />
       {/* La jauge LiDAR. */}
       <LidarJauge hud={hud} />
+      {/* La jauge de Paris en 3D : chargement, bâtiments et erreurs. */}
+      <Paris3DJauge hud={hud} />
       {/* L'indicateur de chargement des tuiles de l'astre visé. */}
       <TuilesLoader hud={hud} bodyId={currentBodyId} bodyName={currentBodyName} />
       {/* Le compteur d'images par seconde. */}
