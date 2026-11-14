@@ -51,6 +51,7 @@ import { AssistantModule } from './assistant.module';
 import { PointCloudsModule } from './pointclouds.module';
 // Module des dalles LiDAR en vrais points 3D.
 import { LidarTilesModule } from './lidar-tiles.module';
+import { EngineModule } from './engine.module';
 
 // Ouvre la déclaration du module racine.
 @Module({
@@ -108,6 +109,8 @@ import { LidarTilesModule } from './lidar-tiles.module';
     ContributionsModule,
     // Blocage des API externes.
     ApisModule,
+    // Moteur 3D chiffré, servi par l’API.
+    EngineModule,
     // Nuages LiDAR HD de l'IGN en vrais points 3D, lus en direct sur la Géoplateforme : /api/v1/lidar
     LidarTilesModule,
   // Fin de la liste des modules importés.
