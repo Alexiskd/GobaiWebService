@@ -6,8 +6,6 @@ import { Group } from '../../ui/Group';
 import { Switch } from '../../ui/Switch';
 // Importe MenuDeroulant, le menu déroulant générique.
 import { MenuDeroulant } from '../../ui/MenuDeroulant';
-// Importe le lieu d'arrivée au-dessus de Paris.
-import { PARIS_PLACE } from '../../scene/useParis3D';
 
 /** Altitude d'arrivée au-dessus d'une dalle de points 3D (m) : la dalle de 1 km tient dans l'écran, en vue 3/4. */
 // Altitude d'arrivée au-dessus d'une dalle de points : 900 m.
@@ -65,7 +63,7 @@ export function Cartographie({
 /**
  * Cartographie en relief de la Terre : tout ce qui donne du volume à la carte. Relief 3D du globe (montagnes, fonds
  * marins), LiDAR HD de l'IGN sur la France (ombrage du modèle de surface, du sol nu ou des hauteurs), avec un menu
- * des villes où s'y rendre en direct, Paris en 3D (bâtiments de l'IGN) et la dalle LiDAR en vrais points 3D, fusionnés au même endroit, avec des boutons pour s'y rendre.
+ * des villes où s'y rendre en direct, et dalles LiDAR en vrais points 3D, avec un bouton pour s'y rendre.
  */
 // Déclare et exporte le composant CartographieRelief (début de la liste des propriétés).
 export function CartographieRelief({
@@ -75,8 +73,6 @@ export function CartographieRelief({
   lidarId = null, lidarLayers = [], onLidar,
   // Les villes de France du LiDAR HD et l'altitude d'arrivée au-dessus d'une ville.
   lidarCities = [], lidarCityAltitudeM = 2000,
-  // Paris en 3D et son rappel.
-  paris3d = false, onParis3d,
   // Les points LiDAR, leurs lieux, leur couleur, leurs rappels, l'aller à un lieu et le rappel de fin.
   lidarPoints = false, lidarPlaces = [], onLidarPoints, lidarColor = 'photo', onLidarColor, onGoPlace, onDone,
 // Fin de la liste des propriétés.
@@ -179,50 +175,6 @@ export function CartographieRelief({
         {/* Fin du fragment. */}
         </>
       // Fin du bloc LiDAR HD.
-      )}
-      {/* Interrupteur de Paris en 3D (début de la balise). */}
-      <Switch
-        // Son état.
-        checked={paris3d}
-        // Son rappel.
-        onChange={onParis3d}
-        // Son libellé.
-        label="Paris en 3D"
-        // Son texte d'aide.
-        hint="Bâtiments de l’IGN (BD TOPO) à leur hauteur, sous 4 km d’altitude"
-      // Fin de l'interrupteur.
-      />
-      {/* S'il est actif : le bouton pour s'y rendre (début). */}
-      {paris3d && (
-        // Conteneur en colonne.
-        <Box sx={{ px: 1.5, pb: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-          {/* Le bouton (début de la balise). */}
-          <Button
-            // Petite taille.
-            size="small"
-            // À contour.
-            variant="outlined"
-            // Au clic (début).
-            onClick={() => {
-              // Va au-dessus du centre de Paris, en vol.
-              onGoPlace?.({ ...PARIS_PLACE, fly: true });
-              // Signale la fin.
-              onDone?.();
-            // Fin du clic.
-            }}
-            // Nom et invitation aux deux extrémités, casse d'origine.
-            sx={{ textTransform: 'none', justifyContent: 'space-between', lineHeight: 1.25, textAlign: 'left' }}
-          // Fin de la balise ouvrante.
-          >
-            {/* Le nom du lieu. */}
-            <span>Paris</span>
-            {/* L'invitation « Y aller », décorative. */}
-            <span aria-hidden="true">Y aller →</span>
-          {/* Fin du bouton. */}
-          </Button>
-        {/* Fin du conteneur. */}
-        </Box>
-      // Fin du cas.
       )}
       {/* S'il y a des dalles de points (début). */}
       {lidarPlaces.length > 0 && (

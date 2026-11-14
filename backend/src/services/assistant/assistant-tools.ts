@@ -28,7 +28,7 @@ export const DISPLAY_SETTINGS = [
   // cartographie de la Terre à plat,
   'noms_villes', 'noms_pays', 'frontieres_et_littoraux', 'rues', 'routes', 'volcans', 'coordonnees_gps',
   // cartographie en relief,
-  'relief_3d', 'lidar_hd', 'points_lidar', 'paris_3d',
+  'relief_3d', 'lidar_hd', 'points_lidar',
   // appareil.
   'noir_pur', 'economie_energie', 'moniteur_performance',
 // Fin de la liste.
@@ -82,7 +82,7 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
   }),
   // Outil « regler_affichage » : active ou désactive un interrupteur.
   tool('regler_affichage', 'Active ou désactive un interrupteur de l’interface : repères du système solaire, caméra, '
-    + 'cartographie de la Terre (noms, frontières, rues, volcans, relief 3D, LiDAR HD, points LiDAR 3D, Paris en 3D) et réglages '
+    + 'cartographie de la Terre (noms, frontières, rues, volcans, relief 3D, LiDAR HD, points LiDAR 3D) et réglages '
     + 'de l’appareil. Ce sont les interrupteurs de la fenêtre Paramètres et de la barre d’outils.', {
     // Paramètre reglage : un texte parmi les réglages autorisés.
     reglage: { type: 'string', enum: [...DISPLAY_SETTINGS] },

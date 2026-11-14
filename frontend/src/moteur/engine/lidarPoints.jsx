@@ -245,7 +245,7 @@ export class LidarPoints {
   // placeTile : pose la dalle sur le globe (début).
   placeTile(tile) {
     // Repère local de la dalle (sol posé sur la carte à plat, sinon vraie altitude) et rayon.
-    // Carte à plat : sol du nuage posé sur le sol dessiné (soulevé de `groundLiftM`, comme les bâtiments de Paris en 3D).
+    // Carte à plat : sol du nuage posé sur le sol dessiné (soulevé de `groundLiftM` selon le niveau des tuiles affiché).
     const f = tileFrame(tile.manifest, this.flat ? this.groundLiftM - (tile.groundM ?? 0) : tile.manifest.anchor.alt), R = this.radius;
     // Écrit la matrice du groupe (début) :
     tile.group.matrix.set(

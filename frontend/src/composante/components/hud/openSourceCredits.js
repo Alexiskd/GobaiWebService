@@ -40,8 +40,6 @@ export const OPEN_SOURCE_CREDITS = [
       { name: 'Draco', repo: 'google/draco', updated: '2026-10-16', people: ['Ondrej Stava', 'Frank Galligan'], org: 'Google' },
       // Dépôt « meshoptimizer » (zeux/meshoptimizer), dernier envoi relevé le 14 octobre 2026.
       { name: 'meshoptimizer', repo: 'zeux/meshoptimizer', updated: '2026-10-14', people: ['Arseny Kapoulkine (zeux)'] },
-      // Dépôt « TP iTowns » (IGNF/TP_iTowns), dernier envoi relevé le 3 juillet 2026 ; organisation : IGN. Modèle de Paris en 3D.
-      { name: 'TP iTowns (Paris en 3D)', repo: 'IGNF/TP_iTowns', updated: '2026-07-03', people: ['IGN'], org: 'IGN' },
     // Fin de la liste des entrées du groupe.
     ],
   // Fin du groupe.
@@ -217,7 +215,7 @@ export const SERVICE_ORGS = [
   // « EUMETSAT » et ce que cette organisation fournit.
   { org: 'EUMETSAT', what: ['Meteosat : image de la Terre à l’instant T (Europe, Afrique), une toutes les 10 minutes'] },
   // « IGN » et ce que cette organisation fournit.
-  { org: 'IGN', what: ['Orthophotos de la Géoplateforme', 'LiDAR HD : modèles de surface, de terrain et de hauteur (Licence Ouverte 2.0)', 'LiDAR HD : nuage de points 3D de la dalle de Paris LHD_FXX_0652_6863, relevé du 3 mars 2023, colorisé avec les orthophotos de la Géoplateforme (Licence Ouverte 2.0)', 'BD TOPO® v3 : bâtiments de Paris en 3D, servis par le WFS de la Géoplateforme (Licence Ouverte 2.0)'] },
+  { org: 'IGN', what: ['Orthophotos de la Géoplateforme', 'LiDAR HD : modèles de surface, de terrain et de hauteur (Licence Ouverte 2.0)', 'LiDAR HD : nuage de points 3D de la dalle de Paris LHD_FXX_0652_6863, relevé du 3 mars 2023, colorisé avec les orthophotos de la Géoplateforme (Licence Ouverte 2.0)'] },
   // « Mapterhorn (© Mapterhorn, mapterhorn.com/attribution) » et ce que cette organisation fournit.
   { org: 'Mapterhorn (© Mapterhorn, mapterhorn.com/attribution)', what: ['Altitudes de la Terre en tuiles Terrarium, d’après Copernicus GLO-30 (ESA) et des relevés nationaux ouverts'] },
   // « Mapzen / Tilezen (Terrain Tiles, hébergées par AWS Open Data) » et ce que cette organisation fournit.
