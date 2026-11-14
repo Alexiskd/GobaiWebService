@@ -38,7 +38,7 @@ export const DISPLAY_SETTINGS = [
 export const LIDAR_MODELS = ['surface', 'sol_nu', 'hauteurs'] as const;
 /** Couleur des points LiDAR 3D : celles de la photo aérienne, ou le type de chaque point. */
 // Modes de couleur des points LiDAR.
-export const LIDAR_COLORS = ['photo', 'types'] as const;
+export const LIDAR_COLORS = ['carte', 'photo', 'types'] as const;
 /** Villes de France où le calque LiDAR HD est proposé : valeurs acceptées par l'outil des villes. */
 // Noms des villes du LiDAR HD.
 export const LIDAR_CITY_NAMES: string[] = LIDAR_HD_CITIES.map((c) => c.name);
@@ -129,7 +129,7 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
   // Outil « choisir_couleur_points_lidar » : choisit la couleur des points LiDAR 3D.
   tool('choisir_couleur_points_lidar', 'Choisit la couleur des points LiDAR 3D (boutons de Paramètres).', {
     // Paramètre couleur : un texte parmi les modes autorisés.
-    couleur: { type: 'string', enum: [...LIDAR_COLORS], description: 'photo = couleurs de la photo aérienne ; types = couleur selon le type de point.' },
+    couleur: { type: 'string', enum: [...LIDAR_COLORS], description: 'carte = couleur de la carte satellite dessous ; photo = photo aérienne nuancée par le relief ; types = couleur selon le type de point.' },
   // Fin de l'outil.
   }),
   // Outil « aller_a_un_lieu_de_la_terre » : survole un lieu nommé de la Terre.

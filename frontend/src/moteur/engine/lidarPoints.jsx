@@ -74,7 +74,7 @@ const pointVertex = [
   // Variables uniformes : taille, pixels par unité, bornes de taille, profondeur, teinte et palette des dix classes.
   'uniform float uSize;uniform float uPx;uniform vec2 uRange;uniform vec2 uDepth;uniform vec3 uTint;uniform vec3 uPal[10];',
   // Drapage : uOrtho = atlas de l'orthophoto (transparent là où elle n'est pas arrivée), uUvA / uUvB = affine des
-  // coordonnées du nœud vers l'atlas, uDrape = 1 en mode photo.
+  // coordonnées du nœud vers l'atlas, uDrape = 1 en mode photo, 2 en mode carte (couleur de la photo, sans retouche).
   // Variables uniformes du drapage : l'atlas, les deux parties du calage et l'interrupteur.
   'uniform sampler2D uOrtho;uniform vec4 uUvA;uniform vec2 uUvB;uniform float uDrape;',
   // Couleur transmise au shader de fragment.
@@ -101,6 +101,8 @@ const pointVertex = [
   // Façades (classe 6) : mélange avec la teinte de classe.
   `if(attr.x>5.5&&attr.x<6.5)photo=mix(photo,col,${DRAPE_FACADE.toFixed(2)});`,
   // Mélange selon la transparence de la photo ; fin du mode photo.
+  // Mode carte : la couleur de la photo telle quelle, comme la carte satellite dessous.
+  'if(uDrape>1.5)photo=t.rgb;',
   'col=mix(col,photo,t.a);}',
   // Couleur finale, avec la teinte jour / nuit.
   'vCol=col*uTint;',
@@ -169,8 +171,8 @@ export class LidarPoints {
     this.selectAt = 0;
     // Rien à recalculer.
     this.dirty = false;
-    // Mode de couleur : photo.
-    this.colorMode = 'photo';        // « photo » (drapage de l'orthophoto) ou « classes »
+    // Mode de couleur : carte.
+    this.colorMode = 'carte';        // « carte » (couleur de la carte satellite), « photo » (drapage retouché) ou « classes »
     // Texture transparente d'un pixel.
     this.blank = new THREE.DataTexture(new Uint8Array(4), 1, 1, THREE.RGBAFormat); // photo pas encore reçue : transparente
     // À envoyer à la carte graphique.
@@ -304,14 +306,22 @@ export class LidarPoints {
   // Fin de setEnabled.
   }
 
-  /** Couleur des points : « photo » (orthophoto drapée, par défaut) ou « classes » (type de point). */
+  /** Couleur des points : « carte » (couleur de la carte satellite, par défaut), « photo » (photo retouchée par le relief) ou « classes » (type de point). */
   // setColorMode : choisit le mode de couleur (début).
   setColorMode(mode) {
-    // « classes » si demandé, sinon « photo ».
-    this.colorMode = mode === 'classes' ? 'classes' : 'photo';
-    // Règle l'interrupteur du drapage de chaque dalle : 1 en mode photo avec un plan, sinon 0.
-    for (const tile of this.tiles.values()) tile.uDrape.value = this.colorMode === 'photo' && tile.plan ? 1 : 0;
+    // « classes » ou « photo » si demandé, sinon « carte ».
+    this.colorMode = mode === 'classes' || mode === 'photo' ? mode : 'carte';
+    // Règle l'interrupteur du drapage de chaque dalle.
+    for (const tile of this.tiles.values()) tile.uDrape.value = this.drapeValue(tile.plan);
   // Fin de setColorMode.
+  }
+
+  /** Valeur de l'interrupteur du drapage : 0 sans photo (classes, ou dalle sans plan), 1 en mode photo, 2 en mode carte. */
+  drapeValue(plan) {
+    // Pas de plan ou mode « classes » : pas de photo.
+    if (!plan || this.colorMode === 'classes') return 0;
+    // Mode « photo » : 1 ; mode « carte » : 2.
+    return this.colorMode === 'photo' ? 1 : 2;
   }
 
   /** Lieux des dalles, pour s'y rendre : [{ id, name, lat, lon, points }]. */
@@ -430,7 +440,7 @@ export class LidarPoints {
       // Sa teinte jour / nuit.
       uTint: { value: new THREE.Vector3(1, 1, 1) },
       // Son plan de drapage, sa photo (transparente au départ) et l'interrupteur du drapage.
-      plan, drape: null, uOrtho: { value: this.blank }, uDrape: { value: plan && this.colorMode === 'photo' ? 1 : 0 },
+      plan, drape: null, uOrtho: { value: this.blank }, uDrape: { value: this.drapeValue(plan) },
       // Ses matrices, la position de la caméra, la file d'attente et l'avancement.
       world: new THREE.Matrix4(), inverse: new THREE.Matrix4(), eye: [0, 0, 0], queue: [], progress: null,
       // Nœuds en cours de téléchargement.
@@ -757,7 +767,7 @@ export class LidarPoints {
       progress = progress || tile.progress;
       // Dalle à l'écran en mode photo : l'orthophoto qui la couvre est chargée (une fois) et drapée sur les points.
       // Si la dalle a un plan, pas encore de photo, et que le mode est « photo » (début).
-      if (tile.plan && !tile.drape && this.colorMode === 'photo') {
+      if (tile.plan && !tile.drape && this.colorMode !== 'classes') {
         // Charge l'orthophoto.
         tile.drape = new LidarDrape(tile.plan, tile.manifest.imagery.template);
         // Branche sa texture.
