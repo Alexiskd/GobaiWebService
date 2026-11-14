@@ -2,8 +2,8 @@
 //
 // Même source que le TP iTowns de l'IGN (github.com/IGNF/TP_iTowns) : les bâtiments de la BD TOPO® v3, servis en
 // GeoJSON par le service WFS de la Géoplateforme (couche BDTOPO_V3:batiment), avec leur hauteur. Chaque bâtiment est
-// extrudé de son emprise au sol jusqu'à sa hauteur. Paris est découpée en carreaux d'environ 450 m, chargés autour
-// de la caméra quand elle descend sous quelques kilomètres.
+// extrudé de son emprise au sol jusqu'à sa hauteur, puis allégé (contours simplifiés, petits bâtiments écartés). Paris est
+// découpée selon les tuiles de la carte (niveau 16, ≈ 400 m) ; seuls les carreaux dans le champ de la caméra sont chargés.
 
 // Importe lonLatToXYZ, la conversion d'une longitude et d'une latitude en point de la sphère unité, depuis mercator.
 import { lonLatToXYZ } from './tiles/mercator';
@@ -13,9 +13,13 @@ import { EARTH_RADIUS_M } from './gps';
 /** Emprise de Paris (degrés) : la ville entière, bois de Boulogne et de Vincennes compris. */
 // Déclare et exporte l'emprise de Paris : ouest, sud, est, nord.
 export const PARIS_BOUNDS = { west: 2.224, south: 48.815, east: 2.47, north: 48.903 };
-/** Taille d'un carreau (degrés) : ≈ 445 m en latitude, ≈ 440 m en longitude à Paris. */
-// Déclare et exporte la taille d'un carreau : 0,004° en latitude, 0,006° en longitude.
-export const TILE_DEG = { lat: 0.004, lon: 0.006 };
+/**
+ * Niveau des carreaux : le découpage est celui des tuiles de la carte (Web Mercator, comme les images de la Terre),
+ * au niveau 16, soit des carreaux d'environ 400 m de côté à Paris. Un carreau de bâtiments couvre exactement une tuile
+ * de la carte de ce niveau.
+ */
+// Déclare et exporte le niveau des carreaux : 16.
+export const TILE_Z = 16;
 /** Altitude de la caméra (m) sous laquelle les bâtiments sont chargés et dessinés : 4 km. */
 // Déclare et exporte l'altitude d'affichage : 4 000 m.
 export const SHOW_ALTITUDE_M = 4000;
@@ -28,6 +32,12 @@ export const FLOOR_M = 3;
 /** Nombre maximal de bâtiments demandés par carreau (un carreau dense du centre en compte environ 1 500). */
 // Déclare et exporte la limite de bâtiments par requête : 5 000.
 export const WFS_COUNT = 5000;
+/** Allègement : tolérance de simplification des contours (m), au-delà de laquelle un point est gardé. */
+// Déclare et exporte la tolérance de simplification : 1 m.
+export const SIMPLIFY_M = 1;
+/** Allègement : emprise au sol minimale d'un bâtiment, et d'une cour intérieure (m²) ; plus petit, il est écarté. */
+// Déclare et exporte l'emprise minimale : 25 m².
+export const MIN_AREA_M2 = 25;
 /** Adresse du service WFS de la Géoplateforme de l'IGN. */
 // Déclare et exporte l'adresse du service WFS.
 export const WFS_URL = 'https://data.geopf.fr/wfs/ows';
@@ -38,33 +48,51 @@ export const WFS_LAYER = 'BDTOPO_V3:batiment';
 // Mètres par degré de latitude.
 const M_PER_DEG = (Math.PI * EARTH_RADIUS_M) / 180;
 
-/** Carreau qui contient un point : indices de colonne et de ligne depuis le coin sud-ouest de Paris. */
+/** Colonne et ligne (fractionnaires) d'un point dans les tuiles Web Mercator du niveau z. */
+// Déclare et exporte mercatorXY : la longitude, la latitude et le niveau.
+export function mercatorXY(lon, lat, z = TILE_Z) {
+  // Nombre de tuiles par côté.
+  const n = 2 ** z;
+  // Latitude en radians, bornée à celle de la projection.
+  const la = Math.max(-85.05112878, Math.min(85.05112878, lat)) * (Math.PI / 180);
+  // Colonne et ligne.
+  return { x: ((lon + 180) / 360) * n, y: ((1 - Math.log(Math.tan(la) + 1 / Math.cos(la)) / Math.PI) / 2) * n };
+// Fin de mercatorXY.
+}
+
+/** Tuile du niveau 16 qui contient un point. */
 // Déclare et exporte tileIndexAt : la longitude et la latitude.
 export function tileIndexAt(lon, lat) {
-  // Colonne et ligne, arrondies vers le bas.
-  return { ix: Math.floor((lon - PARIS_BOUNDS.west) / TILE_DEG.lon), iy: Math.floor((lat - PARIS_BOUNDS.south) / TILE_DEG.lat) };
+  // Position fractionnaire.
+  const { x, y } = mercatorXY(lon, lat);
+  // Arrondie vers le bas.
+  return { x: Math.floor(x), y: Math.floor(y) };
 // Fin de tileIndexAt.
 }
 
-/** Emprise d'un carreau (degrés). */
-// Déclare et exporte tileBounds : les indices du carreau.
-export function tileBounds(ix, iy) {
-  // Bord ouest et bord sud.
-  const west = PARIS_BOUNDS.west + ix * TILE_DEG.lon, south = PARIS_BOUNDS.south + iy * TILE_DEG.lat;
-  // Renvoie les quatre bords et le centre.
-  return { west, south, east: west + TILE_DEG.lon, north: south + TILE_DEG.lat, lon: west + TILE_DEG.lon / 2, lat: south + TILE_DEG.lat / 2 };
+/** Emprise d'une tuile du niveau 16 (degrés), avec son centre. */
+// Déclare et exporte tileBounds : la colonne et la ligne.
+export function tileBounds(x, y, z = TILE_Z) {
+  // Nombre de tuiles par côté.
+  const n = 2 ** z;
+  // Latitude du bord nord d'une ligne.
+  const latOf = (row) => Math.atan(Math.sinh(Math.PI * (1 - (2 * row) / n))) * (180 / Math.PI);
+  // Les quatre bords.
+  const west = (x / n) * 360 - 180, east = ((x + 1) / n) * 360 - 180, north = latOf(y), south = latOf(y + 1);
+  // Renvoie les bords et le centre.
+  return { west, east, north, south, lon: (west + east) / 2, lat: (north + south) / 2 };
 // Fin de tileBounds.
 }
 
-/** Nombre de colonnes et de lignes de carreaux qui couvrent Paris. */
-// Déclare et exporte le nombre de colonnes et de lignes.
-export const GRID = {
-  // Colonnes : la largeur de Paris divisée par celle d'un carreau, arrondie au-dessus.
-  cols: Math.ceil((PARIS_BOUNDS.east - PARIS_BOUNDS.west) / TILE_DEG.lon - 1e-9),
-  // Lignes : la hauteur de Paris divisée par celle d'un carreau, arrondie au-dessus.
-  rows: Math.ceil((PARIS_BOUNDS.north - PARIS_BOUNDS.south) / TILE_DEG.lat - 1e-9),
-// Fin de l'objet.
-};
+/** Tuiles qui couvrent Paris : colonnes x0 à x1, lignes y0 à y1 (le nord a la plus petite ligne). */
+// Déclare et exporte la grille de Paris (début).
+export const GRID = (() => {
+  // Coin nord-ouest et coin sud-est.
+  const nw = tileIndexAt(PARIS_BOUNDS.west, PARIS_BOUNDS.north), se = tileIndexAt(PARIS_BOUNDS.east, PARIS_BOUNDS.south);
+  // Renvoie les bornes.
+  return { x0: nw.x, x1: se.x, y0: nw.y, y1: se.y };
+// Fin de la grille.
+})();
 
 /** Distance au sol approchée (m) entre deux points proches. */
 // Déclare et exporte groundDistance : deux longitudes et deux latitudes.
@@ -78,43 +106,65 @@ export function groundDistance(lon1, lat1, lon2, lat2) {
 // Fin de groundDistance.
 }
 
-/** Rayon de chargement (m) autour du point survolé : plus large quand on monte, borné entre 600 m et 3 km. */
-// Déclare et exporte loadRadius : l'altitude de la caméra en mètres.
-export const loadRadius = (altitudeM) => Math.min(3000, Math.max(600, altitudeM * 1.2));
+/**
+ * Portée (m) autour du point survolé dans laquelle on cherche les carreaux du champ de la caméra : assez loin pour
+ * une vue 3/4 vers l'horizon, bornée entre 800 m et 4 km.
+ */
+// Déclare et exporte viewRange : l'altitude de la caméra en mètres.
+export const viewRange = (altitudeM) => Math.min(4000, Math.max(800, altitudeM * 6));
 
 /**
- * Carreaux de Paris à moins de `radiusM` du point (lon, lat), du plus proche au plus lointain.
- * Rien si le point est loin de Paris.
+ * Tuiles de Paris à moins de `radiusM` du point (lon, lat), du plus proche au plus lointain. Rien si le point est loin
+ * de Paris. Le choix final (seulement celles du champ de la caméra) est fait par le moteur.
  */
 // Déclare et exporte tilesAround : le point et le rayon.
 export function tilesAround(lon, lat, radiusM) {
-  // Carreau du point.
-  const { ix, iy } = tileIndexAt(lon, lat);
-  // Nombre de carreaux à parcourir de chaque côté, en colonnes et en lignes.
-  const nx = Math.ceil(radiusM / (TILE_DEG.lon * M_PER_DEG * Math.cos(lat * (Math.PI / 180)))) + 1;
-  // Nombre de lignes à parcourir.
-  const ny = Math.ceil(radiusM / (TILE_DEG.lat * M_PER_DEG)) + 1;
-  // Carreaux retenus.
+  // Tuile du point.
+  const c = tileIndexAt(lon, lat);
+  // Côté d'une tuile en mètres à cette latitude.
+  const side = (360 / 2 ** TILE_Z) * M_PER_DEG * Math.cos(lat * (Math.PI / 180));
+  // Nombre de tuiles à parcourir de chaque côté.
+  const n = Math.ceil(radiusM / side) + 1;
+  // Tuiles retenues.
   const out = [];
   // Pour chaque ligne voisine, dans la grille de Paris (début).
-  for (let y = Math.max(0, iy - ny); y <= Math.min(GRID.rows - 1, iy + ny); y++) {
+  for (let y = Math.max(GRID.y0, c.y - n); y <= Math.min(GRID.y1, c.y + n); y++) {
     // Pour chaque colonne voisine, dans la grille de Paris (début).
-    for (let x = Math.max(0, ix - nx); x <= Math.min(GRID.cols - 1, ix + nx); x++) {
-      // Emprise du carreau.
+    for (let x = Math.max(GRID.x0, c.x - n); x <= Math.min(GRID.x1, c.x + n); x++) {
+      // Emprise de la tuile.
       const b = tileBounds(x, y);
-      // Point du carreau le plus proche du point survolé.
-      const cx = Math.min(Math.max(lon, b.west), b.east), cy = Math.min(Math.max(lat, b.south), b.north);
-      // Distance au carreau.
-      const d = groundDistance(lon, lat, cx, cy);
-      // Assez proche : retenu, avec sa clé et sa distance.
-      if (d <= radiusM) out.push({ ix: x, iy: y, key: `${x}_${y}`, d });
+      // Point de la tuile le plus proche du point survolé.
+      const px = Math.min(Math.max(lon, b.west), b.east), py = Math.min(Math.max(lat, b.south), b.north);
+      // Distance à la tuile.
+      const d = groundDistance(lon, lat, px, py);
+      // Assez proche : retenue, avec sa clé et sa distance.
+      if (d <= radiusM) out.push({ x, y, key: `${TILE_Z}/${x}/${y}`, d });
     // Fin des colonnes.
     }
   // Fin des lignes.
   }
-  // Trie du plus proche au plus lointain.
+  // Trie de la plus proche à la plus lointaine.
   return out.sort((a, b) => a.d - b.d);
 // Fin de tilesAround.
+}
+
+/**
+ * Coins d'une tuile sur la sphère unité de la Terre, au sol et à `topM` mètres : huit points [x, y, z] qui
+ * enveloppent les bâtiments de la tuile (pour le test du champ de la caméra).
+ */
+// Déclare et exporte tileCorners : l'emprise et la hauteur du haut.
+export function tileCorners({ west, east, north, south }, topM = 120) {
+  // Points renvoyés.
+  const out = [];
+  // Au sol, puis en haut.
+  for (const r of [1, 1 + topM / EARTH_RADIUS_M]) {
+    // Les quatre coins à ce rayon.
+    for (const [lo, la] of [[west, south], [east, south], [east, north], [west, north]]) out.push(lonLatToXYZ(lo, la, r));
+  // Fin des rayons.
+  }
+  // Renvoie les points.
+  return out;
+// Fin de tileCorners.
 }
 
 /**
@@ -256,6 +306,53 @@ export function projectRing(coords, lon0, lat0, swap = false) {
 // Fin de projectRing.
 }
 
+/** Distance (m) d'un point au segment [a, b]. */
+// segDist : le point et les deux extrémités du segment.
+function segDist([px, py], [ax, ay], [bx, by]) {
+  // Vecteur du segment et sa longueur au carré.
+  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  // Position du projeté sur le segment, bornée entre 0 et 1.
+  const t = l2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l2)) : 0;
+  // Distance au projeté.
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+// Fin de segDist.
+}
+
+/**
+ * Simplifie un contour fermé (Douglas-Peucker) : seuls les points à plus de `tol` mètres du tracé simplifié sont
+ * gardés, toujours au moins trois. Les murs d'un immeuble haussmannien passent de dizaines de points à quelques-uns.
+ */
+// Déclare et exporte simplifyRing : le contour et la tolérance.
+export function simplifyRing(ring, tol = SIMPLIFY_M) {
+  // Trois points ou moins : rien à simplifier.
+  if (ring.length <= 3 || tol <= 0) return ring;
+  // Point le plus éloigné du premier : le contour fermé est coupé en deux chaînes entre ces deux points.
+  let far = 0, best = -1;
+  // Le cherche.
+  for (let i = 1; i < ring.length; i++) { const d = Math.hypot(ring[i][0] - ring[0][0], ring[i][1] - ring[0][1]); if (d > best) { best = d; far = i; } }
+  // Points gardés.
+  const keep = new Uint8Array(ring.length);
+  // Les deux extrémités sont gardées.
+  keep[0] = 1; keep[far] = 1;
+  // dp : simplifie la chaîne de i à j (indices dans le contour, j pouvant valoir la longueur pour revenir au début).
+  const dp = (i, j) => {
+    // Point le plus éloigné du segment.
+    let idx = -1, max = tol;
+    // Le cherche entre les deux bouts.
+    for (let k = i + 1; k < j; k++) { const d = segDist(ring[k], ring[i], ring[j % ring.length]); if (d > max) { max = d; idx = k; } }
+    // Au-delà de la tolérance : gardé, et les deux moitiés sont simplifiées.
+    if (idx >= 0) { keep[idx] = 1; dp(i, idx); dp(idx, j); }
+  // Fin de dp.
+  };
+  // Première chaîne, puis la seconde (qui revient au premier point).
+  dp(0, far); dp(far, ring.length);
+  // Points gardés.
+  const out = ring.filter((_, i) => keep[i]);
+  // Toujours au moins trois points : sinon le contour d'origine.
+  return out.length >= 3 ? out : ring;
+// Fin de simplifyRing.
+}
+
 /**
  * Faut-il inverser les axes ? Vrai si le premier point lu (longitude, latitude) est plus loin du centre du carreau
  * que lu à l'envers : un serveur WFS en EPSG:4326 peut rendre la latitude en premier.
@@ -315,7 +412,7 @@ export function buildingColor(id = '') {
  * @returns {{ positions: Float32Array, normals: Float32Array, colors: Float32Array, lifts: Float32Array, count: number, buildings: number, groundM: number }}
  */
 // Déclare et exporte extrudeBuildings : les entités GeoJSON, le centre du carreau et la fonction de triangulation.
-export function extrudeBuildings(features, lon0, lat0, triangulate) {
+export function extrudeBuildings(features, lon0, lat0, triangulate, { simplifyM = SIMPLIFY_M, minAreaM2 = MIN_AREA_M2 } = {}) {
   // Axes inversés par le serveur ?
   const swap = needsSwap(features, lon0, lat0);
   // Altitude du sol du carreau : médiane de celle des bâtiments.
@@ -344,10 +441,12 @@ export function extrudeBuildings(features, lon0, lat0, triangulate) {
     let any = false;
     // Pour chaque polygone du bâtiment (début).
     for (const poly of polygonsOf(f?.geometry)) {
-      // Contours projetés en mètres.
-      const rings = poly.map((r) => projectRing(r, lon0, lat0, swap)).filter((r) => r.length >= 3);
-      // Sans contour extérieur valable : polygone suivant.
-      if (!rings.length) continue;
+      // Contours projetés en mètres et simplifiés.
+      const projected = poly.map((r) => simplifyRing(projectRing(r, lon0, lat0, swap), simplifyM));
+      // Contour extérieur : sans lui (moins de trois points) ou trop petit, le polygone est écarté.
+      if (!projected.length || projected[0].length < 3 || Math.abs(ringArea(projected[0])) < minAreaM2) continue;
+      // Contour extérieur, puis les cours intérieures assez grandes.
+      const rings = [projected[0], ...projected.slice(1).filter((r) => r.length >= 3 && Math.abs(ringArea(r)) >= minAreaM2)];
       // Contour extérieur dans le sens inverse des aiguilles d'une montre, trous dans le sens des aiguilles :
       // la normale (dy, −dx) de chaque côté pointe alors vers l'extérieur du bâtiment.
       // Oriente chaque contour.

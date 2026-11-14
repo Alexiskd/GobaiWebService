@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les fonctions testées de Paris en 3D.
-import { GRID, PARIS_BOUNDS, buildingHeight, extrudeBuildings, loadRadius, needsSwap, projectRing, ringArea, tileBounds, tileFrame, tileIndexAt, tilesAround, wfsUrl } from './paris3dMath';
+import { GRID, PARIS_BOUNDS, TILE_Z, buildingHeight, extrudeBuildings, mercatorXY, needsSwap, projectRing, ringArea, simplifyRing, tileBounds, tileCorners, tileFrame, tileIndexAt, tilesAround, viewRange, wfsUrl } from './paris3dMath';
 // Importe le rayon de la Terre en mètres.
 import { EARTH_RADIUS_M } from './gps';
 
@@ -23,36 +23,46 @@ function square(lon0, lat0, side, clockwise = false) {
   return [...ring, ring[0]];
 }
 
-// Test : la grille des carreaux.
-test('carreaux : indices, emprise et grille de Paris', () => {
-  // Le coin sud-ouest est dans le carreau 0, 0.
-  assert.deepEqual(tileIndexAt(PARIS_BOUNDS.west + 1e-6, PARIS_BOUNDS.south + 1e-6), { ix: 0, iy: 0 });
-  // L'emprise d'un carreau contient son centre, et le carreau du centre est bien lui.
-  const b = tileBounds(10, 7);
-  // Même carreau.
-  assert.deepEqual(tileIndexAt(b.lon, b.lat), { ix: 10, iy: 7 });
-  // La grille couvre toute la ville.
-  assert.ok(tileBounds(GRID.cols - 1, GRID.rows - 1).east >= PARIS_BOUNDS.east - 1e-9);
-  // Et pas plus d'un carreau au-delà.
-  assert.ok(tileBounds(GRID.cols - 1, GRID.rows - 1).west < PARIS_BOUNDS.east);
+// Test : la grille des tuiles.
+test('tuiles : découpage Web Mercator de la carte au niveau 16, grille de Paris', () => {
+  // Niveau 16.
+  assert.equal(TILE_Z, 16);
+  // Notre-Dame : tuile 16/33195/22547 (même numérotation que les tuiles de la carte).
+  assert.deepEqual(tileIndexAt(2.3499, 48.853), { x: 33195, y: 22547 });
+  // L'emprise d'une tuile contient son centre, et le centre retombe dans la tuile.
+  const b = tileBounds(33195, 22547);
+  // Même tuile.
+  assert.deepEqual(tileIndexAt(b.lon, b.lat), { x: 33195, y: 22547 });
+  // Bords cohérents avec la position fractionnaire.
+  assert.ok(Math.abs(mercatorXY(b.west, b.north).x - 33195) < 1e-6 && Math.abs(mercatorXY(b.west, b.north).y - 22547) < 1e-6);
+  // La grille couvre Paris : le nord a la plus petite ligne.
+  assert.ok(GRID.x0 < GRID.x1 && GRID.y0 < GRID.y1);
+  // Coins de Paris dans la grille.
+  assert.ok(tileBounds(GRID.x0, GRID.y0).west <= PARIS_BOUNDS.west && tileBounds(GRID.x1, GRID.y1).east >= PARIS_BOUNDS.east);
 });
 
-// Test : les carreaux autour d'un point.
-test('carreaux voisins : triés par distance, bornés à Paris, aucun loin de Paris', () => {
+// Test : les tuiles autour d'un point.
+test('tuiles voisines : triées par distance, bornées à Paris, aucune loin de Paris', () => {
   // Autour de Notre-Dame, sur 800 m.
   const list = tilesAround(2.3499, 48.853, 800);
   // Il y en a plusieurs.
   assert.ok(list.length >= 9);
-  // Le premier contient le point (distance nulle).
-  assert.equal(list[0].d, 0);
-  // Triés par distance.
+  // La première contient le point (distance nulle) et porte une clé « 16/x/y ».
+  assert.equal(list[0].d, 0); assert.equal(list[0].key, '16/33195/22547');
+  // Triées par distance.
   for (let i = 1; i < list.length; i++) assert.ok(list[i].d >= list[i - 1].d);
-  // Tous dans le rayon et dans la grille.
-  for (const t of list) { assert.ok(t.d <= 800); assert.ok(t.ix >= 0 && t.ix < GRID.cols && t.iy >= 0 && t.iy < GRID.rows); }
+  // Toutes dans le rayon et dans la grille.
+  for (const t of list) { assert.ok(t.d <= 800); assert.ok(t.x >= GRID.x0 && t.x <= GRID.x1 && t.y >= GRID.y0 && t.y <= GRID.y1); }
   // À Lyon, rien.
-  assert.equal(tilesAround(4.835, 45.764, 3000).length, 0);
-  // Le rayon de chargement est borné.
-  assert.equal(loadRadius(10), 600); assert.equal(loadRadius(1e6), 3000);
+  assert.equal(tilesAround(4.835, 45.764, 4000).length, 0);
+  // La portée est bornée.
+  assert.equal(viewRange(10), 800); assert.equal(viewRange(1e6), 4000);
+  // Les coins d'une tuile : quatre au sol (rayon 1) et quatre en haut.
+  const c = tileCorners(tileBounds(33195, 22547), 120);
+  // Huit coins.
+  assert.equal(c.length, 8);
+  // Au sol, puis 120 m plus haut.
+  assert.ok(Math.abs(Math.hypot(...c[0]) - 1) < 1e-12 && Math.abs((Math.hypot(...c[7]) - 1) * EARTH_RADIUS_M - 120) < 1e-6);
 });
 
 // Test : l'adresse WFS.
@@ -160,4 +170,28 @@ test('extrusion : murs tournés vers l’extérieur, toit vers le haut, à la bo
   assert.ok((bx - ax) * (cy - ay) - (by - ay) * (cx - ax) > 0);
   // Sans bâtiment : rien.
   assert.equal(extrudeBuildings([], 2.35, 48.85, fan).count, 0);
+  // Un abri de 3 m × 3 m (9 m²) est écarté par l'allègement.
+  assert.equal(extrudeBuildings([{ id: 'c', properties: { hauteur: 3 }, geometry: { type: 'Polygon', coordinates: [square(2.35, 48.85, 3)] } }], 2.35, 48.85, fan).buildings, 0);
+});
+
+// Test : l'allègement des contours.
+test('allègement : les points alignés à moins d’un mètre disparaissent, les coins restent', () => {
+  // Carré de 20 m dont chaque côté porte des points intermédiaires, légèrement décalés (30 cm).
+  const ring = [];
+  // Quatre côtés de dix points.
+  for (let i = 0; i < 10; i++) ring.push([i * 2, (i % 2) * 0.3]);
+  // Côté est.
+  for (let i = 0; i < 10; i++) ring.push([20 + (i % 2) * 0.3, i * 2]);
+  // Côté nord.
+  for (let i = 0; i < 10; i++) ring.push([20 - i * 2, 20 + (i % 2) * 0.3]);
+  // Côté ouest.
+  for (let i = 0; i < 10; i++) ring.push([(i % 2) * 0.3, 20 - i * 2]);
+  // Simplifié à 1 m.
+  const out = simplifyRing(ring, 1);
+  // Il ne reste que les quatre coins (à quelques points près).
+  assert.ok(out.length >= 4 && out.length <= 6, String(out.length));
+  // L'aire reste celle du carré, à 2 % près.
+  assert.ok(Math.abs(ringArea(out) - 400) / 400 < 0.02);
+  // Un triangle n'est jamais réduit.
+  assert.equal(simplifyRing([[0, 0], [1, 0], [0, 1]], 5).length, 3);
 });
