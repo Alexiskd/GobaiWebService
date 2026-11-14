@@ -1705,6 +1705,33 @@ export class SolarEngine {
   // ------------------------------------------------------------ Lune en direct
 
   /**
+   * Position de la vue au-dessus de la Terre, pour ouvrir le globe Google au même endroit : { lat, lon, altitudeM }
+   * (point au centre de l'écran, hauteur de la caméra au-dessus du sol), ou null sans Terre.
+   */
+  // earthCameraGeo : la position de la vue sur la Terre (début).
+  earthCameraGeo() {
+    // Maillage de la Terre.
+    const mesh = this.earth?.mesh;
+    // Sans Terre : rien.
+    if (!mesh) return null;
+    // Sa matrice dans la scène, à jour.
+    mesh.updateWorldMatrix(true, false);
+    // Son inverse.
+    const inv = new THREE.Matrix4().copy(mesh.matrixWorld).invert();
+    // Point au centre de l'écran, dans le repère de la Terre.
+    const aim = this.tiltAim.clone().applyMatrix4(inv);
+    // Centre de la Terre dans la scène.
+    const center = new THREE.Vector3().setFromMatrixPosition(mesh.matrixWorld);
+    // Rayon de la Terre dans la scène (échelle comprise).
+    const R = (this.earth.def?.radius || 1) * new THREE.Vector3().setFromMatrixScale(mesh.matrixWorld).x;
+    // Longitude et latitude du point visé.
+    const [lon, lat] = xyzToLonLat([aim.x, aim.y, aim.z]);
+    // Renvoie la position, avec la hauteur de la caméra au-dessus du sol en mètres.
+    return { lat, lon, altitudeM: Math.max(0, (this.cam.position.distanceTo(center) / R - 1) * EARTH_RADIUS_M) };
+  // Fin de earthCameraGeo.
+  }
+
+  /**
    * Survole un lieu d'un astre tuilé (clic sur un nom, repère du catalogue). Altitude par défaut : `siteAltitudeKm`
    * du modèle (≈ 50 km pour la Lune, 200 à 300 km pour les planètes).
    */
