@@ -32,8 +32,8 @@ import {
 // Taille du cache mémoire : 48 Mo.
 const CACHE_BYTES = 48 * 1024 * 1024;
 /** Dalles dont le manifeste est gardé en mémoire. */
-// Nombre maximal de manifestes gardés : 64.
-const MAX_MANIFESTS = 64;
+// Nombre maximal de manifestes gardés : 128 (deux champs de caméra complets de 64 dalles).
+const MAX_MANIFESTS = 128;
 /** Décodages simultanés au plus (mémoire et processeur du serveur). */
 // Deux décodages à la fois.
 const MAX_DECODES = 2;
@@ -92,7 +92,7 @@ export class LidarTilesService {
 
   /**
    * Dalles autour d'un point (degrés) dans un rayon (m, 100 à 1 500, 600 par défaut), ou, si `bbox` est donnée, toutes
-   * celles qui touchent cette emprise (le champ de la caméra, 8 km de côté au plus, 32 dalles au plus), avec leurs
+   * celles qui touchent cette emprise (le champ de la caméra et sa marge, 8 km de côté au plus, 64 dalles au plus), avec leurs
    * manifestes, les plus proches du point d'abord. Rien hors de France ou si le décodeur manque.
    */
   // Méthode list : la longitude, la latitude, le rayon et l'emprise facultative.
@@ -115,8 +115,8 @@ export class LidarTilesService {
     } catch (e) { this.logger.warn(`WFS LiDAR HD : ${(e as Error).message}`); return empty; }
     // Les plus proches du point d'abord (centre de chaque dalle tiré de son identifiant).
     found.sort((a, b) => this.distanceTo(a.id, lon, lat) - this.distanceTo(b.id, lon, lat));
-    // Manifestes préparés (32 dalles au plus avec une emprise, 8 sinon), les échecs étant écartés.
-    const items = (await Promise.all(found.slice(0, box ? 32 : 8).map((t) => this.prepare(t).then((p) => p.manifest).catch((e: Error) => { this.logger.warn(`Dalle ${t.id} : ${e.message}`); return null; })))).filter(Boolean);
+    // Manifestes préparés (64 dalles au plus avec une emprise, 8 sinon), les échecs étant écartés.
+    const items = (await Promise.all(found.slice(0, box ? 64 : 8).map((t) => this.prepare(t).then((p) => p.manifest).catch((e: Error) => { this.logger.warn(`Dalle ${t.id} : ${e.message}`); return null; })))).filter(Boolean);
     // Renvoie les dalles.
     return { ...empty, items };
   // Fin de list.

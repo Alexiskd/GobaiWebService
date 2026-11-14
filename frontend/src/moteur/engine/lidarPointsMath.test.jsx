@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, inDome, domeRadius, boxDistance2D, expandLonLatBox, unloadPick, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from './gps';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -461,4 +461,67 @@ test('downscalePoints garde un point sur quatre et agrandit les points de 2', ()
   assert.deepEqual([...r.attr], [0, 200, 4, 196, 8, 192]);
   // Facteur 1 : tableaux inchangés.
   assert.equal(downscalePoints(position, attr, 1).position, position);
+});
+
+// Ordre des chargements : toutes les dalles au même niveau d'abord, puis la plus proche, puis le rang dans la file.
+test('densityOrder : la densité monte sur toutes les dalles en même temps', () => {
+  // Deux dalles (A proche, B lointaine), deux niveaux chacune.
+  const jobs = [
+    // Niveau 1 de A, premier de sa file.
+    { id: 'A1', level: 1, dist: 10, rank: 0 },
+    // Racine de B, lointaine.
+    { id: 'B0', level: 0, dist: 900, rank: 0 },
+    // Niveau 1 de B.
+    { id: 'B1', level: 1, dist: 900, rank: 1 },
+    // Racine de A, proche.
+    { id: 'A0', level: 0, dist: 10, rank: 0 },
+    // Second nœud de niveau 1 de A.
+    { id: 'A1b', level: 1, dist: 10, rank: 2 },
+  ];
+  // Les deux racines d'abord (A puis B), puis le niveau 1 de A, puis celui de B.
+  assert.deepEqual(jobs.sort(densityOrder).map((j) => j.id), ['A0', 'B0', 'A1', 'A1b', 'B1']);
+});
+
+// Emprise élargie d'une marge en mètres.
+test('expandLonLatBox : élargit l\'emprise de la marge de chaque côté', () => {
+  // Emprise d'un degré autour de l'équateur, élargie de 111 195 m (un degré).
+  const b = expandLonLatBox([0, 0, 1, 1], 111_195);
+  // Un degré de plus de chaque côté (à l'arrondi près).
+  [-1, -1, 2, 2].forEach((v, i) => assert.ok(Math.abs(b[i] - v) < 1e-3));
+  // Sans emprise : rien.
+  assert.equal(expandLonLatBox(null, 100), null);
+});
+
+// Déchargement par densité : le niveau le plus fin part d'abord, la racine en dernier.
+test('unloadPick : décharge le niveau le plus fin d\'abord', () => {
+  // Nœuds non demandés de deux dalles, niveaux 0 à 2.
+  const idle = [{ id: 'A0', level: 0 }, { id: 'A2', level: 2 }, { id: 'B1', level: 1 }, { id: 'B2', level: 2 }];
+  // Les deux nœuds de niveau 2 d'abord.
+  assert.deepEqual(unloadPick(idle).map((x) => x.id), ['A2', 'B2']);
+  // Puis le niveau 1, puis la racine.
+  assert.deepEqual(unloadPick(idle.filter((x) => x.level < 2)).map((x) => x.id), ['B1']);
+  // Rien à décharger : liste vide.
+  assert.deepEqual(unloadPick([]), []);
+});
+
+// Dôme : cercle net autour de la caméra, densité uniforme dedans, rien dehors.
+test('inDome / selectNodes : dôme net, densité uniforme dedans, rien dehors', () => {
+  // Dedans, au bord, dehors.
+  assert.deepEqual([inDome(0, 1000), inDome(999, 1000), inDome(1000, 1000), inDome(10, 0)], [true, true, false, false]);
+  // Rayon : quatre fois la hauteur, entre 800 m et 4 km.
+  assert.deepEqual([domeRadius(50), domeRadius(500), domeRadius(5000)], [800, 2000, 4000]);
+  // Distance horizontale au carré d'un nœud : nulle dedans, 5 m à (3, 4) du coin.
+  assert.deepEqual([boxDistance2D([5, 5], [0, 0, 0], 10), boxDistance2D([-3, -4], [0, 0, 0], 10)], [0, 5]);
+  // Arbre de la dalle de Paris, caméra haute au centre (le critère d'écart seul n'irait pas au-delà de la racine).
+  const tree = buildTree(manifest), side = manifest.bounds.maxX - manifest.bounds.minX;
+  // Vue : budget illimité, dôme qui couvre toute la dalle.
+  const view = { eye: [side / 2, side / 2, 1e7], pxPerUnit: 1000, spacing: manifest.spacing, maxSpacingPx: 1.5, budget: Infinity };
+  // Dans le dôme : tous les nœuds, niveau par niveau.
+  const all = selectNodes(tree, { ...view, dome: { center: view.eye, radius: 1e6 } }, () => false).load;
+  // Tous les nœuds de l'arbre sont demandés.
+  assert.equal(all.length, tree.size);
+  // Et triés par niveau croissant (densité uniforme).
+  assert.ok(all.every((k, i) => i === 0 || tree.get(all[i - 1]).level <= tree.get(k).level));
+  // Dôme loin de la dalle : rien, pas même la racine.
+  assert.deepEqual(selectNodes(tree, { ...view, dome: { center: [1e6, 1e6], radius: 100 } }, () => false), { show: [], load: [] });
 });

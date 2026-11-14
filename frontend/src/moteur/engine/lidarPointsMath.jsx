@@ -244,6 +244,31 @@ export function boxDistance(p, min, size) {
 // Fin de boxDistance.
 }
 
+/** Distance horizontale (m) d'un point [x, y] au carré d'un nœud (0 à l'intérieur) : le cercle du dôme est à plat. */
+// Déclare et exporte boxDistance2D : le point, le coin du cube et son côté.
+export function boxDistance2D(p, min, size) {
+  // Écart sur X, nul entre les deux faces.
+  const dx = Math.max(min[0] - p[0], 0, p[0] - (min[0] + size));
+  // Écart sur Y, nul entre les deux faces.
+  const dy = Math.max(min[1] - p[1], 0, p[1] - (min[1] + size));
+  // Distance horizontale.
+  return Math.hypot(dx, dy);
+// Fin de boxDistance2D.
+}
+
+/**
+ * Dôme : un cercle net autour de la caméra, comme une masse qui se charge en énergie et la perd. Dedans, la densité
+ * est uniforme et monte partout à la fois, niveau par niveau ; dehors, rien (pas même la racine). Le dôme n'est pas
+ * dessiné : il délimite seulement ce qui est chargé et affiché. Quand la caméra s'en va, ce qui sort du cercle se
+ * décharge par densité, le niveau le plus fin d'abord.
+ */
+// Déclare et exporte inDome : la distance horizontale au centre (m) et le rayon du dôme (m).
+export const inDome = (distM, radiusM) => radiusM > 0 && distM < radiusM;
+
+/** Rayon du dôme (m) d'après la hauteur de la caméra : quatre fois la hauteur, entre 800 m et 4 km. */
+// Déclare et exporte domeRadius : la hauteur de la caméra au-dessus de la dalle (m).
+export const domeRadius = (heightM) => Math.min(4000, Math.max(800, heightM * 4));
+
 /**
  * Nœuds à afficher et à charger pour une vue.
  *
@@ -266,8 +291,8 @@ export function boxDistance(p, min, size) {
  */
 // Déclare et exporte selectNodes : l'arbre, la vue et le test de chargement.
 export function selectNodes(tree, view, isReady) {
-  // Les champs de la vue.
-  const { eye, pxPerUnit, spacing, maxSpacingPx, budget, visible } = view;
+  // Les champs de la vue (dome : dôme facultatif { center, radius }, voir inDome).
+  const { eye, pxPerUnit, spacing, maxSpacingPx, budget, visible, dome } = view;
   // Liste des nœuds voulus.
   const wanted = [];
   // visit : examine un nœud (début).
@@ -278,20 +303,23 @@ export function selectNodes(tree, view, isReady) {
     if (!node) return;
     // Hors du champ de la caméra, sauf la racine : ignoré.
     if (key !== ROOT_KEY && visible && !visible(node)) return;
+    // Hors du dôme (racine comprise) : ignoré, rien n'est chargé ni affiché hors du cercle.
+    if (dome && !inDome(boxDistance2D(dome.center, node.min, node.size), dome.radius)) return;
     // Écart à l'écran entre deux de ses points : son espacement, vu à la distance de son cube (au moins 0,5 m).
     const px = (levelSpacing(spacing, node.level) * pxPerUnit) / Math.max(boxDistance(eye, node.min, node.size), 0.5);
     // L'ajoute aux nœuds voulus.
-    wanted.push({ key, px, n: node.n });
-    // Écart trop grand : examine ses enfants.
-    if (px > maxSpacingPx) for (const child of node.children) visit(child);
+    wanted.push({ key, px, n: node.n, level: node.level });
+    // Écart trop grand, ou dans le dôme (densité uniforme, jusqu'au niveau le plus fin) : examine ses enfants.
+    if (dome || px > maxSpacingPx) for (const child of node.children) visit(child);
   // Fin de visit.
   };
   // Part de la racine.
   visit(ROOT_KEY);
   // Un enfant a toujours un écart à l'écran au moins deux fois plus petit que son parent : trier par écart
   // décroissant place les ancêtres avant leurs descendants, et les nœuds proches avant les lointains.
-  // Trie par écart décroissant.
-  wanted.sort((a, b) => b.px - a.px);
+  // Trie par écart décroissant ; dans le dôme, par niveau d'abord, pour que le budget coupe la densité de façon
+  // uniforme (tout un niveau avant le suivant), puis par écart.
+  wanted.sort(dome ? (a, b) => a.level - b.level || b.px - a.px : (a, b) => b.px - a.px);
   // Nœuds à dessiner, nœuds à charger et nœuds écartés.
   const show = [], load = [], dropped = new Set();
   // Nombre de points retenus.
@@ -474,6 +502,44 @@ export function boxShiftM(a, b) {
  */
 // Déclare et exporte shareBudget : le budget, le poids de la dalle, la somme des poids et le plancher.
 export const shareBudget = (budget, weight, total, floor = 60_000) => (total > 0 ? Math.max(floor, Math.round(budget * weight / total)) : budget);
+
+/**
+ * Ordre des chargements, toutes dalles confondues : toutes les dalles se chargent en même temps et c'est la densité
+ * qui monte. D'abord le niveau le plus grossier de chaque dalle (toutes les racines), puis le niveau suivant de
+ * chacune, et ainsi de suite ; à niveau égal, la dalle la plus proche de la caméra passe d'abord, puis l'ordre
+ * d'utilité propre à la dalle (sa file d'attente).
+ */
+// Déclare et exporte densityOrder : compare deux chargements { level, dist, rank } (niveau, distance de la dalle, rang dans sa file).
+export const densityOrder = (a, b) => a.level - b.level || a.dist - b.dist || a.rank - b.rank;
+
+/**
+ * Déchargement par densité, à l'inverse du chargement : parmi les nœuds chargés qui ne sont plus demandés, ne garde
+ * que ceux du niveau le plus fin, à libérer maintenant. La densité descend ainsi niveau par niveau, la racine en dernier.
+ */
+// Déclare et exporte unloadPick : reçoit les nœuds { level } non demandés, renvoie ceux du niveau le plus fin.
+export function unloadPick(idle) {
+  // Niveau le plus fin présent (−1 s'il n'y a rien).
+  const deepest = idle.reduce((m, x) => Math.max(m, x.level), -1);
+  // Ceux de ce niveau.
+  return idle.filter((x) => x.level === deepest);
+// Fin de unloadPick.
+}
+
+/** Emprise [ouest, sud, est, nord] (degrés) élargie de `marginM` mètres de chaque côté ; null reste null. */
+// Déclare et exporte expandLonLatBox : l'emprise et la marge en mètres.
+export function expandLonLatBox(box, marginM) {
+  // Pas d'emprise : rien à élargir.
+  if (!box) return box;
+  // Les quatre bords.
+  const [w, s, e, n] = box;
+  // Marge en latitude (degrés) : 111 195 m par degré.
+  const dLat = marginM / 111_195;
+  // Marge en longitude (degrés), plus large loin de l'équateur.
+  const dLon = dLat / Math.max(0.1, Math.cos(((s + n) / 2) * (Math.PI / 180)));
+  // Emprise élargie, bornée aux limites du globe.
+  return [Math.max(-180, w - dLon), Math.max(-90, s - dLat), Math.min(180, e + dLon), Math.min(90, n + dLat)];
+// Fin de expandLonLatBox.
+}
 
 /**
  * Hauteur de caméra (m) en deçà de laquelle le nuage de points LiDAR est dessiné : 750 m, soit 0,75 km au HUD.
