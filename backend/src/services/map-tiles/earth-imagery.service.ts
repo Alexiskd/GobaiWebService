@@ -20,6 +20,8 @@ import {
   type LiveSource,
 // Fin de l'import.
 } from './earth-live';
+// Fonds marins (GEBCO, NOAA NCEI) : leur liste et leur table par identifiant de couche.
+import { SEAFLOOR_BY_ID, SEAFLOOR_LAYERS } from './earth-seafloor';
 
 // Même chargement que mars-fusion.service.ts (module CommonJS natif).
 // Charge la bibliothèque d'images sharp, sans typage (la ligne du dessous autorise ce « any » pour ESLint).
@@ -156,7 +158,7 @@ export class EarthImageryService implements TileProvider {
   // Fin du constructeur.
   }
 
-  // Méthode layers : les deux couches proposées.
+  // Méthode layers : les couches proposées (la couche unique, la Terre en direct, puis les fonds marins).
   layers(): TileLayerInfo[] {
     // Première couche :
     return [{
@@ -173,13 +175,13 @@ export class EarthImageryService implements TileProvider {
       experimental: true,
       // sa description, avec la liste des satellites.
       description: `Le monde vu il y a moins d’une heure, renouvelé toutes les 10 minutes : ${LIVE_SOURCES.map((s) => s.label).join(', ')}, posés sur le fond habituel (pôles et zones sans image). Zoom jusqu’au niveau ${LIVE_MAX_ZOOM}.`,
-    // Fin de la liste.
-    }];
+    // Puis les fonds marins : les valeurs communes, leur identifiant, leur nom, leur description et le zoom maximal de leur source.
+    }, ...SEAFLOOR_LAYERS.map((l): TileLayerInfo => ({ ...base, id: l.id, label: l.label, kind: 'imagery', maxZoom: l.source.maxZoom, description: l.description }))];
   // Fin de layers.
   }
 
-  // Méthode has : vrai pour « earth-hd », la couche en direct et les anciennes couches.
-  has(id: string): boolean { return id === 'earth-hd' || id === LIVE_LAYER_ID || id in LEGACY; }
+  // Méthode has : vrai pour « earth-hd », la couche en direct, les fonds marins et les anciennes couches.
+  has(id: string): boolean { return id === 'earth-hd' || id === LIVE_LAYER_ID || SEAFLOOR_BY_ID.has(id) || id in LEGACY; }
 
   // Méthode resolve : la version asynchrone de resolveSync.
   async resolve(id: string): Promise<ResolvedTileLayer> { return this.resolveSync(id); }
@@ -205,6 +207,24 @@ export class EarthImageryService implements TileProvider {
         colorMatch: false,
         // la mention : celles des satellites et l'instant de l'image.
         attribution: { text: `${LIVE_SOURCES.map((s) => s.attribution).join(' · ')} · image du ${liveTime(slot)}` },
+      // Fin de l'objet.
+      };
+    // Fin du cas.
+    }
+    // Si c'est un fond marin :
+    if (SEAFLOOR_BY_ID.has(id)) {
+      // renvoie
+      return {
+        // sa description ;
+        ...this.layers().find((l) => l.id === id)!,
+        // le modèle d'adresse, qui passe par ce serveur : chaque tuile est une requête sur son emprise, faite ici ;
+        urlTemplate: `/api/v1/tiles/earth/${id}/{z}/{x}/{y}`,
+        // pas d'expiration ;
+        expiresAt: null,
+        // pas d'accord de couleur (le relief garde sa palette) ;
+        colorMatch: false,
+        // la mention de sa source.
+        attribution: { text: SEAFLOOR_BY_ID.get(id)!.source.attribution },
       // Fin de l'objet.
       };
     // Fin du cas.
@@ -266,9 +286,13 @@ export class EarthImageryService implements TileProvider {
   // Fin de status.
   }
 
-  /** Sources d'une couche : toutes pour « earth-hd », une seule (tous niveaux, toute emprise) pour une ancienne couche. */
+  /** Sources d'une couche : toutes pour « earth-hd », une seule pour un fond marin ou une ancienne couche (tous niveaux, toute emprise). */
   // Méthode privée sourcesOf.
   private sourcesOf(id: string): EarthSource[] {
+    // Fond marin : sa source seule.
+    const seafloor = SEAFLOOR_BY_ID.get(id);
+    // S'il y en a un : la renvoie seule.
+    if (seafloor) return [seafloor.source];
     // Ancienne couche, s'il y en a une.
     const legacy = LEGACY[id];
     // Sinon : toutes les sources.
