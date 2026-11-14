@@ -216,7 +216,11 @@ export class Paris3D {
     // Carreau retiré entre-temps : rien.
     if (!this.tiles.has(tile.key)) return;
     // Extrusion des bâtiments, avec la triangulation des toits de three.js.
-    const m = extrudeBuildings(features, tile.bounds.lon, tile.bounds.lat, (shape, holes) => THREE.ShapeUtils.triangulateShape(shape, holes));
+    // three.js attend de vrais THREE.Vector2 (il appelle leur méthode `equals`) : les points { x, y } sont convertis.
+    // toV2 : convertit un contour en THREE.Vector2.
+    const toV2 = (ring) => ring.map((q) => new THREE.Vector2(q.x, q.y));
+    // Extrusion, avec la triangulation des toits de three.js sur des THREE.Vector2.
+    const m = extrudeBuildings(features, tile.bounds.lon, tile.bounds.lat, (shape, holes) => THREE.ShapeUtils.triangulateShape(toV2(shape), holes.map(toV2)));
     // Carreau prêt.
     tile.state = 'ready';
     // Altitude de son sol.
@@ -285,7 +289,15 @@ export class Paris3D {
     // Fin de ce cas.
     }
     // Un bâtiment reçu par image est extrudé.
-    if (this.arrived.length) this.build(this.arrived.shift());
+    // Une tuile qui échoue (géométrie inattendue) est notée en échec et réessayée plus tard : elle ne doit jamais
+    // interrompre la boucle d'affichage du moteur.
+    if (this.arrived.length) {
+      // La tuile reçue la plus ancienne.
+      const a = this.arrived.shift();
+      // Extrusion protégée ; en cas d'erreur : échec, nouvel essai dans 30 s.
+      try { this.build(a); } catch { a.tile.state = 'failed'; a.tile.retryAt = now + RETRY_AFTER_MS; }
+    // Fin de ce cas.
+    }
     // Le repère suit la rotation propre de la Terre (le maillage peut être masqué, pas ce repère).
     // Le maillage de la Terre et le repère.
     const mesh = this.engine.earth.mesh, frame = this.root;
