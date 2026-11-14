@@ -9,7 +9,7 @@ import { LidarDrape } from './lidarDrape';
 // Importe drapePlan et nodeDrape, le plan du drapage et son calage par nœud, depuis lidarDrapeMath.
 import { drapePlan, nodeDrape } from './lidarDrapeMath';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
-import { DOWNSCALE_FILL, LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, searchRadius, selectNodes, showCloud, tileFrame, viewTarget } from './lidarPointsMath';
+import { DOWNSCALE_FILL, LIDAR_PALETTE, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, lonLatBox, boxShiftM, nodeUrl, selectNodes, shareBudget, showCloud, tileFrame, viewFootprint } from './lidarPointsMath';
 
 // Dalles LiDAR en vrais points 3D sur la Terre (LiDAR HD de l'IGN). Chaque dalle est un octree additif servi par
 // l'API (GET /lidar) : la racine donne la dalle entière, les niveaux suivants arrivent autour de la caméra.
@@ -45,15 +45,17 @@ const DESKTOP = { budget: 3_000_000, keep: 5_000_000, maxSpacingPx: 1.5, paralle
 const HANDHELD = { budget: 1_200_000, keep: 2_000_000, maxSpacingPx: 2.2, parallel: 4, drapeZoom: 17, drapeSize: 2048 };
 // Délai entre deux sélections des nœuds : 120 ms.
 const SELECT_EVERY_MS = 120;
-/** Recherche des dalles LiDAR HD de l'IGN dans le champ de la caméra : sous 3 km d'altitude, au plus toutes les 3 s, après 300 m de déplacement du point visé. */
+/** Recherche des dalles LiDAR HD de l'IGN dans le champ de la caméra : sous 3 km d'altitude, au plus toutes les 1,5 s, après 300 m de déplacement d'un bord du champ. */
 // Altitude de recherche, délai et déplacement minimal.
-const DISCOVER_ALT_M = 3000, DISCOVER_EVERY_MS = 3000, DISCOVER_MOVE_M = 300;
-/** Dalles gardées au plus (les plus éloignées du point visé sortent les premières). */
-// Huit dalles.
-const MAX_TILES = 8;
-/** Distance de visée (m) au-delà de laquelle on cherche sous la caméra plutôt qu'au point visé (regard vers l'horizon). */
-// 4 km.
-const MAX_VIEW_M = 4000;
+const DISCOVER_ALT_M = 3000, DISCOVER_EVERY_MS = 1500, DISCOVER_MOVE_M = 300;
+/** Dalles gardées au plus (celles hors du champ sortent les premières, puis les plus éloignées de la caméra). */
+// Trente-deux dalles : tout le champ de la caméra, vue de dessus comme en vue 3/4.
+const MAX_TILES = 32;
+/** Portée du champ au sol (m) : en vue 3/4, le terrain est couvert jusqu'à 3 km de la caméra (au-delà, le nuage ne ferait que quelques pixels). */
+// 3 km.
+const FOOTPRINT_MAX_M = 3000;
+/** Rayons de l'écran qui dessinent l'emprise au sol : les coins, les milieux des bords et le centre (coordonnées normalisées). */
+const SCREEN_RAYS = [-1, 0, 1].flatMap((x) => [-1, 0, 1].map((y) => [x, y]));
 // Délai avant un nouvel essai après un échec : 15 secondes.
 const RETRY_AFTER_MS = 15_000;
 /** Profondeur des points : logarithme de la distance, de 10 cm à 1 000 km. */
@@ -201,15 +203,17 @@ export class LidarPoints {
     // Recherche des dalles autour de la caméra : fonction (lon, lat) → promesse des manifestes, fournie par l'interface.
     this.discovery = null;
     // Recherche en cours, instant et lieu de la dernière.
-    this.discovering = false; this.discoverAt = -Infinity; this.discoverLon = NaN; this.discoverLat = NaN;
+    this.discovering = false; this.discoverAt = -Infinity; this.discoverLon = NaN; this.discoverLat = NaN; this.discoverBox = null;
+    // Somme des poids des dalles affichées à la dernière sélection (partage du budget de points).
+    this.weightSum = 0;
     // Rappel à chaque nouvelle liste de dalles (lieux pour l'interface), ou null.
     this.onTiles = null;
   // Fin du constructeur.
   }
 
   /**
-   * Ajoute des dalles (GET /lidar?lon&lat → items) sans retirer celles déjà en place ; au-delà de MAX_TILES, les plus
-   * éloignées du point de recherche sortent.
+   * Ajoute des dalles (GET /lidar?bbox → items) sans retirer celles déjà en place ; au-delà de MAX_TILES, celles hors
+   * du champ de la caméra sortent les premières, puis les plus éloignées de la caméra.
    */
   // addTiles : ajoute les dalles reçues (début).
   addTiles(manifests = []) {
@@ -221,10 +225,14 @@ export class LidarPoints {
       this.tiles.set(m.id, this.createTile(m));
     // Fin de la boucle.
     }
-    // Trop de dalles : les plus éloignées du dernier point de recherche sortent.
+    // Trop de dalles : celles hors du champ, puis les plus éloignées de la caméra, sortent.
     if (this.tiles.size > MAX_TILES && Number.isFinite(this.discoverLat)) {
-      // Distance (degrés pondérés) d'une dalle au point de recherche.
-      const far = (t) => Math.hypot((t.manifest.anchor.lon - this.discoverLon) * Math.cos(this.discoverLat * (Math.PI / 180)), t.manifest.anchor.lat - this.discoverLat);
+      // Emprise du dernier champ, s'il y en a une.
+      const b = this.discoverBox;
+      // Hors du champ : 1 ; dans le champ : 0.
+      const out = (t) => (b && (t.manifest.anchor.lon < b[0] || t.manifest.anchor.lon > b[2] || t.manifest.anchor.lat < b[1] || t.manifest.anchor.lat > b[3]) ? 1 : 0);
+      // Clé de sortie : hors champ d'abord (grand bonus), puis distance (degrés pondérés) à la caméra.
+      const far = (t) => out(t) * 1e3 + Math.hypot((t.manifest.anchor.lon - this.discoverLon) * Math.cos(this.discoverLat * (Math.PI / 180)), t.manifest.anchor.lat - this.discoverLat);
       // Dalles de la plus lointaine à la plus proche.
       const order = [...this.tiles.values()].sort((a, b) => far(b) - far(a));
       // Retire les plus lointaines.
@@ -239,9 +247,9 @@ export class LidarPoints {
   }
 
   /**
-   * Recherche des dalles LiDAR HD de l'IGN dans le champ de la caméra : autour du point du sol visé au centre de
-   * l'écran (sous la caméra si elle regarde l'horizon), sur un rayon qui suit la distance de visée. Sous 3 km
-   * d'altitude, au plus toutes les 3 secondes et seulement après 300 m de déplacement du point visé. Les dalles reçues
+   * Recherche de toutes les dalles LiDAR HD de l'IGN dans le champ de la caméra : l'emprise au sol des rayons de
+   * l'écran (coins, milieux des bords, centre), vue de dessus comme en vue 3/4, jusqu'à 3 km de la caméra. Sous 3 km
+   * d'altitude, au plus toutes les 1,5 seconde et seulement quand un bord du champ a bougé de 300 m. Les dalles reçues
    * s'ajoutent à celles en place ; leurs nœuds se chargent ensuite au fur et à mesure, dans le champ de la caméra.
    */
   // discover : la caméra, le repère et l'instant (début).
@@ -254,24 +262,27 @@ export class LidarPoints {
     const alt = (local.length() - 1) * EARTH_RADIUS_M;
     // Trop haut : rien.
     if (!(alt > 0 && alt < DISCOVER_ALT_M)) return;
-    // Direction de visée dans le repère de la sphère unité.
-    const dir = cam.getWorldDirection(this.tmpV).transformDirection(this.tmpM);
-    // Point du sol visé au centre de l'écran, s'il est assez proche.
-    const hit = viewTarget([local.x, local.y, local.z], [dir.x, dir.y, dir.z]);
-    // Distance de visée (m), infinie sans point visé.
-    const distM = hit ? hit.dist * EARTH_RADIUS_M : Infinity;
-    // Point de recherche : le point visé, sinon le point sous la caméra.
-    const [lon, lat] = xyzToLonLat(distM < MAX_VIEW_M ? hit.point : [local.x, local.y, local.z]);
-    // Rayon de recherche : selon la distance de visée (vue de dessus : l'altitude).
-    const radiusM = searchRadius(distM < MAX_VIEW_M ? distM : alt);
-    // Déplacement depuis la dernière recherche (m).
-    const moved = Number.isFinite(this.discoverLat) ? Math.hypot((lon - this.discoverLon) * Math.cos(lat * (Math.PI / 180)), lat - this.discoverLat) * 111_195 : Infinity;
-    // Trop tôt, ou pas assez loin : rien.
-    if (now - this.discoverAt < DISCOVER_EVERY_MS || moved < DISCOVER_MOVE_M) return;
-    // Recherche en cours, notée à cet instant et à ce lieu.
-    this.discovering = true; this.discoverAt = now; this.discoverLon = lon; this.discoverLat = lat;
-    // Demande les dalles, les ajoute ; un échec est ignoré (nouvel essai au prochain déplacement).
-    Promise.resolve(this.discovery(lon, lat, radiusM)).then((items) => this.addTiles(items)).catch(() => {}).finally(() => { this.discovering = false; });
+    // Trop tôt : rien.
+    if (now - this.discoverAt < DISCOVER_EVERY_MS) return;
+    // Position de la caméra, en tableau.
+    const eye = [local.x, local.y, local.z];
+    // Directions des rayons de l'écran, dans le repère de la sphère unité.
+    const dirs = SCREEN_RAYS.map(([x, y]) => {
+      // Point du rayon dans la scène, puis direction depuis la caméra, ramenée au repère de la Terre.
+      const d = this.tmpV.set(x, y, 0.5).unproject(cam).sub(cam.position).transformDirection(this.tmpM);
+      // En tableau.
+      return [d.x, d.y, d.z];
+    });
+    // Emprise au sol du champ, en degrés.
+    const box = lonLatBox(viewFootprint(eye, dirs, FOOTPRINT_MAX_M / EARTH_RADIUS_M).map((p) => xyzToLonLat(p)));
+    // Point sous la caméra (tri des dalles, de la plus proche à la plus lointaine).
+    const [lon, lat] = xyzToLonLat(eye);
+    // Aucun bord n'a assez bougé : rien.
+    if (boxShiftM(this.discoverBox, box) < DISCOVER_MOVE_M) return;
+    // Recherche en cours, notée à cet instant, à ce lieu et sur ce champ.
+    this.discovering = true; this.discoverAt = now; this.discoverLon = lon; this.discoverLat = lat; this.discoverBox = box;
+    // Demande les dalles du champ, les ajoute ; un échec est ignoré (nouvel essai au prochain déplacement).
+    Promise.resolve(this.discovery(lon, lat, box)).then((items) => this.addTiles(items)).catch(() => { this.discoverBox = null; }).finally(() => { this.discovering = false; });
   // Fin de discover.
   }
 
@@ -709,6 +720,8 @@ export class LidarPoints {
     const select = this.dirty || now - this.selectAt >= SELECT_EVERY_MS;
     // Aucune dalle affichée et aucun avancement pour l'instant.
     let any = false, progress = null;
+    // Poids des dalles affichées à cette sélection (le budget de points est partagé selon la dernière somme).
+    let weightSum = 0;
 
     // Pour chaque dalle (début).
     for (const tile of this.tiles.values()) {
@@ -742,6 +755,10 @@ export class LidarPoints {
       const show = showCloud(e.z, inView);
       // Règle la visibilité du groupe.
       tile.group.visible = show;
+      // Poids de la dalle dans le partage du budget : nul si elle n'est pas affichée, plus fort si elle est proche.
+      tile.weight = show ? 1 / Math.max(dist, 150) ** 2 : 0;
+      // Ajouté à la somme.
+      weightSum += tile.weight;
       // Racine de l'arbre.
       const root = tile.tree.get(ROOT_KEY);
       // Si la dalle n'est pas affichée (début).
@@ -794,7 +811,7 @@ export class LidarPoints {
       // Choisit les nœuds à dessiner et à charger (début).
       const { show: shown, load } = selectNodes(tile.tree, {
         // La caméra, l'échelle à l'écran, l'écart des points, l'écart toléré et le budget.
-        eye: tile.eye, pxPerUnit, spacing: tile.manifest.spacing, maxSpacingPx: this.profile.maxSpacingPx * dpr, budget: this.profile.budget,
+        eye: tile.eye, pxPerUnit, spacing: tile.manifest.spacing, maxSpacingPx: this.profile.maxSpacingPx * dpr, budget: shareBudget(this.profile.budget, tile.weight, this.weightSum),
         // visible : teste un nœud contre le champ de vision (début).
         visible: (node) => {
           // Coin bas de la boîte du nœud, limité au haut de la dalle.
@@ -844,6 +861,8 @@ export class LidarPoints {
       this.evict(tile);
     // Fin des dalles.
     }
+    // Garde la somme des poids pour le partage du budget à la prochaine sélection.
+    this.weightSum = weightSum;
     // Si une sélection a eu lieu (début).
     if (select) {
       // Note l'instant.

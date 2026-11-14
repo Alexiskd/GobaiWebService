@@ -45,8 +45,9 @@ export function useLidarPoints(engine) {
     const controller = new AbortController();
     // Branche la recherche (début) :
     engine.setLidarDiscovery(
-      // les dalles autour du point visé, dans le rayon demandé, avec l'adresse complète de chaque nœud ;
-      (lon, lat, r) => fetchLidarTiles(controller.signal, { lon, lat, r }).then(({ items }) => (Array.isArray(items) ? items : []).map((m) => ({ ...m, nodeUrl: resolveApiUrl(m.nodeUrl) }))),
+      // toutes les dalles du champ de la caméra (emprise [ouest, sud, est, nord]), les plus proches de la caméra
+      // (lon, lat) d'abord, avec l'adresse complète de chaque nœud ;
+      (lon, lat, bbox) => fetchLidarTiles(controller.signal, { lon, lat, bbox }).then(({ items }) => (Array.isArray(items) ? items : []).map((m) => ({ ...m, nodeUrl: resolveApiUrl(m.nodeUrl) }))),
       // à chaque nouvelle liste : les lieux des dalles (identifiant, nom, position, nombre de points).
       (list) => setPlaces(list),
     // Fin du branchement.

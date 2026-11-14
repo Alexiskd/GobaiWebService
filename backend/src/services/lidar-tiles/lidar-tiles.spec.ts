@@ -1,6 +1,6 @@
 // Ce qui est testé : les fonctions pures des nuages LiDAR HD de l'IGN lus en direct.
 import {
-  COPC_HEADER_BYTES, LAZDEC_POINT_BYTES, displayClass, encodeNode, isLidarNodeKey, isLidarTileId, lidarWfsUrl, luminosity,
+  COPC_HEADER_BYTES, LAZDEC_POINT_BYTES, displayClass, encodeNode, isLidarNodeKey, isLidarTileId, lidarWfsBboxUrl, lidarWfsUrl, luminosity, parseLidarBox,
   parseCopcHeader, parseHierarchyPage, tileIdFromUrl, tileKmFromId, tilesFromWfs,
 } from './lidar-tiles';
 
@@ -60,6 +60,19 @@ describe('nuages LiDAR HD de l’IGN en direct', () => {
     expect(isLidarTileId('lhd-0652-6863')).toBe(true); expect(isLidarTileId('../x')).toBe(false);
     // Clés.
     expect(isLidarNodeKey('0-0-0-0')).toBe(true); expect(isLidarNodeKey('1-2-0-0')).toBe(false);
+  });
+
+  // Emprise du champ de la caméra.
+  it('lit l’emprise du champ de la caméra et la borne à 8 km de côté', () => {
+    // Emprise valable : gardée telle quelle.
+    expect(parseLidarBox('2.33,48.85,2.37,48.87')).toEqual([2.33, 48.85, 2.37, 48.87]);
+    // Illisible, vide ou à l'envers : rien.
+    expect(parseLidarBox('a,b,c,d')).toBeNull(); expect(parseLidarBox('2.37,48.85,2.33,48.87')).toBeNull(); expect(parseLidarBox(undefined)).toBeNull();
+    // Trop grande : ramenée à 8 km de côté autour de son centre.
+    const big = parseLidarBox('2,48,3,49') as number[];
+    expect((big[3] - big[1]) * 111_195).toBeCloseTo(8000, 0);
+    // Adresse WFS : latitude d'abord.
+    expect(new URL(lidarWfsBboxUrl([2.33, 48.85, 2.37, 48.87], undefined, 64)).searchParams.get('BBOX')).toBe('48.85,2.33,48.87,2.37,urn:ogc:def:crs:EPSG::4326');
   });
 
   // Requête WFS et lecture de la réponse.

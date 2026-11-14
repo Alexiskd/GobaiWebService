@@ -100,6 +100,42 @@ export function tileKmFromId(id: string): { x: number; y: number } | null {
 export function lidarWfsUrl(lon: number, lat: number, radiusM = 600, layer = IGN_LIDAR_LAYER, count = 9): string {
   // Demi-largeur en degrés de latitude, puis de longitude.
   const dLat = radiusM / 111_195, dLon = dLat / Math.max(0.1, Math.cos(lat * (Math.PI / 180)));
+  // Requête sur l'emprise carrée autour du point.
+  return lidarWfsBboxUrl([lon - dLon, lat - dLat, lon + dLon, lat + dLat], layer, count);
+// Fin de lidarWfsUrl.
+}
+
+/** Emprise [ouest, sud, est, nord] (degrés). */
+export type LonLatBox = [number, number, number, number];
+
+/**
+ * Emprise de recherche lue dans le paramètre `bbox` (« ouest,sud,est,nord » en degrés), ramenée à au plus
+ * `maxSideM` mètres de côté autour de son centre ; null si elle est illisible ou vide.
+ */
+// Fonction parseLidarBox : le texte du paramètre et le côté maximal en mètres.
+export function parseLidarBox(text: unknown, maxSideM = 8000): LonLatBox | null {
+  // Quatre nombres séparés par des virgules.
+  const v = typeof text === 'string' ? text.split(',').map(Number) : [];
+  // Illisible : rien.
+  if (v.length !== 4 || !v.every(Number.isFinite)) return null;
+  // Les quatre bords.
+  let [w, s, e, n] = v;
+  // Vide ou à l'envers, ou hors des bornes du globe : rien.
+  if (!(w < e && s < n) || s < -90 || n > 90 || w < -180 || e > 180) return null;
+  // Centre de l'emprise.
+  const cLon = (w + e) / 2, cLat = (s + n) / 2;
+  // Demi-côtés maximaux en degrés.
+  const hLat = maxSideM / 2 / 111_195, hLon = hLat / Math.max(0.1, Math.cos(cLat * (Math.PI / 180)));
+  // Ramène chaque bord dans la limite.
+  w = Math.max(w, cLon - hLon); e = Math.min(e, cLon + hLon); s = Math.max(s, cLat - hLat); n = Math.min(n, cLat + hLat);
+  // Renvoie l'emprise.
+  return [w, s, e, n];
+// Fin de parseLidarBox.
+}
+
+/** Adresse WFS des dalles LiDAR HD qui touchent une emprise [ouest, sud, est, nord] (degrés). */
+// Fonction lidarWfsBboxUrl : l'emprise, la couche et le nombre maximal.
+export function lidarWfsBboxUrl([w, s, e, n]: LonLatBox, layer = IGN_LIDAR_LAYER, count = 9): string {
   // Paramètres de la requête.
   const q = new URLSearchParams({
     // Service, version et requête.
@@ -107,12 +143,12 @@ export function lidarWfsUrl(lon: number, lat: number, radiusM = 600, layer = IGN
     // Couche, format et système.
     TYPENAMES: layer, OUTPUTFORMAT: 'application/json', SRSNAME: 'EPSG:4326',
     // Emprise, latitude d'abord, et nombre maximal de dalles.
-    BBOX: `${lat - dLat},${lon - dLon},${lat + dLat},${lon + dLon},urn:ogc:def:crs:EPSG::4326`, COUNT: String(count),
+    BBOX: `${s},${w},${n},${e},urn:ogc:def:crs:EPSG::4326`, COUNT: String(count),
   // Fin des paramètres.
   });
   // Renvoie l'adresse.
   return `${IGN_WFS_URL}?${q}`;
-// Fin de lidarWfsUrl.
+// Fin de lidarWfsBboxUrl.
 }
 
 /** Une dalle trouvée dans le WFS : identifiant, adresse du nuage, nombre de points annoncé, date du relevé. */
