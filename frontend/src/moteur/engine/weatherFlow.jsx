@@ -13,8 +13,6 @@
 export const FLOW_PERIOD_S = 10;        // durée d'une boucle à l'écran
 // Déclare et exporte la durée de vent simulée pendant une boucle : 86 400 secondes.
 export const FLOW_SPAN_S = 24 * 3600;   // vent simulé pendant une boucle : une journée
-// Déclare et exporte l'accélération : le rapport des deux durées.
-export const FLOW_ACCELERATION = FLOW_SPAN_S / FLOW_PERIOD_S; // ×8 640
 // Déclare et exporte la largeur de la texture de vent : 36 cases.
 export const WIND_TEXTURE_WIDTH = 36;   // cases de 10° de longitude, depuis -180°
 // Déclare et exporte sa hauteur : 18 cases.

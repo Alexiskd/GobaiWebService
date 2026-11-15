@@ -7,7 +7,9 @@
 //
 // Terre   : valeurs de référence de la littérature (air au niveau de la mer, aérosols bas). `simClouds` : couche de
 //           nuages simulés, semi-transparente, qui s'efface quand la caméra descend vers le sol pour laisser voir
-//           les cartes (entre `fadeFarKm` et `fadeNearKm` d'altitude).
+//           les cartes (entre `fadeFarKm` et `fadeNearKm` d'altitude). `aerial` : perspective aérienne complète —
+//           l'air diffuse toute sa lumière devant le sol et atténue ce qu'il y a derrière (sol, nuages, étoiles),
+//           ce qui donne au limbe son voile bleu ; les autres atmosphères ajoutent seulement 15 % de leur voile.
 // Vénus   : seule la partie située au-dessus des nuages est visible de l'espace. Niveau de référence = sommet des
 //           nuages d'acide sulfurique (≈ 70 km), qui couvrent toute la planète et cachent le sol ; au-dessus, du CO₂
 //           raréfié et une brume fine jaunâtre. La couche de nuages elle-même est une sphère opaque, au motif
@@ -31,6 +33,8 @@ export const ATMOSPHERES = {
     mie: [21e-6, 21e-6, 21e-6], mieExt: [1.1, 1.1, 1.1], mieScaleKm: 1.2, mieG: 0.76,
     // Nuages simulés : à 8 km d'altitude, opacité de 0,9, effacés entre 3000 et 600 km d'altitude de la caméra.
     simClouds: { altitudeKm: 8, opacity: 0.9, fadeNearKm: 600, fadeFarKm: 3000 },
+    // Perspective aérienne complète : voile entier devant le sol, fond atténué par l'air.
+    aerial: true,
   // Fin de la Terre.
   },
   // Vénus (début).
@@ -175,4 +179,22 @@ export function scatterParams(id) {
   // Fin des paramètres.
   };
 // Fin de scatterParams.
+}
+
+/**
+ * Épaisseur optique verticale de l'atmosphère (du sol à l'espace, en visant le zénith), pour le rouge, le vert et le
+ * bleu : τ = β × H, somme de la diffusion de Rayleigh et de l'extinction de Mie (mêmes coefficients et hauteurs
+ * d'échelle que la coquille de diffusion). La lumière du Soleil qui traverse `m` fois cette épaisseur (masse d'air)
+ * est atténuée de exp(−τ·m) : c'est ce qui rougit et assombrit le sol et les nuages près du terminateur.
+ * Terre : ≈ (0,074 ; 0,136 ; 0,293). null si l'astre n'a pas d'atmosphère modélisée.
+ */
+// Déclare et exporte verticalOpticalDepth : l'identifiant de l'astre.
+export function verticalOpticalDepth(id) {
+  // Son atmosphère.
+  const a = ATMOSPHERES[id];
+  // Aucune : null.
+  if (!a) return null;
+  // Pour chaque couleur : Rayleigh (coefficient × hauteur d'échelle) plus Mie (coefficient × extinction × hauteur d'échelle), en mètres.
+  return a.rayleigh.map((b, i) => b * a.rayleighScaleKm * 1000 + a.mie[i] * a.mieExt[i] * a.mieScaleKm * 1000);
+// Fin de verticalOpticalDepth.
 }

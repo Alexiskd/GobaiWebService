@@ -739,6 +739,8 @@ export class SolarEngine {
           pinnedMaxZoom: cfg.pinnedMaxZoom, prefetch: cfg.prefetch, ramCapacity: cfg.ramCapacity,
           // le relief, le rayon en kilomètres et les lumières de la nuit (la Terre) ;
           relief: cfg.relief, radiusKm: cfg.radiusKm, nightLights: cfg.nightLights,
+          // le modèle d'éclairage et le masque de l'eau (la Terre) ;
+          lighting: cfg.lighting, waterMask: cfg.waterMask,
           // Planètes : le repère des tuiles suit la rotation propre (le maillage), pas l'inclinaison portée par le groupe.
           // Lune : le groupe est déjà orienté (rotation synchrone, libration).
           syncRotation: host.syncMesh ? (root) => { root.rotation.y = host.mesh.rotation.y; } : undefined,

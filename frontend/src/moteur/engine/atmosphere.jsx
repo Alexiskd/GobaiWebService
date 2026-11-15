@@ -23,6 +23,10 @@ import { WIND_TEXTURE_HEIGHT, WIND_TEXTURE_WIDTH, flowState, isWindGrid, windTex
 const SUN_INTENSITY = 14;   // éclat du Soleil dans le calcul de diffusion
 // Part du voile gardée devant le sol : 0,15.
 const DISC_GAIN = 0.15;     // part du voile gardée devant le sol, pour ne pas délaver les cartes
+// Perspective aérienne (Terre) : moitié du voile devant le sol, le fond étant en plus atténué par l'air. Le mélange se
+// fait sur les couleurs de l'écran (déjà corrigées en gamma) : le voile entier y serait surestimé et délaverait les
+// déserts et les mers ; la moitié rend le bleu du disque et du limbe des photos prises depuis l'espace (DSCOVR, ISS).
+const AERIAL_DISC_GAIN = 0.5;
 // Accélération de la super-rotation de Vénus : 2880 fois.
 const SUPER_ROTATION_ACCELERATION = 2880; // Vénus : un tour de nuages (4 jours) en 2 minutes d'écran
 // Distance, en rayons de l'astre, au-delà de laquelle la coquille n'est plus dessinée : 400.
@@ -141,6 +145,8 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null) {
         uniforms: {
           // Le Soleil et l'ombre partagés, le fondu à 1 et l'opacité de la description.
           sunV: uniforms.sunV, shade: uniforms.shade, fade: { value: 1 }, opacity: { value: spec.simClouds.opacity },
+          // Vue de la pollution lumineuse (toute la Terre de nuit), partagée avec les tuiles : nuages éteints.
+          lightView: uniforms.lightView || { value: 0 },
           // La carte de couverture, vide, et son mode à 0.
           coverMap: { value: null }, coverOn: { value: 0 },
           // La carte du vent du modèle, l'état de l'animation et son interrupteur à 1.
@@ -253,6 +259,8 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null) {
     uniforms: {
       // La direction du Soleil, partagée, et le rayon de l'astre.
       sunV: uniforms.sunV, planetR: { value: radius },
+      // Vue de la pollution lumineuse (toute la Terre de nuit), partagée avec les tuiles : pas de lumière du jour diffusée.
+      lightView: uniforms.lightView || { value: 0 },
       // Les coefficients et la hauteur d'échelle de Rayleigh.
       betaR: { value: new THREE.Vector3(...p.betaR) }, hR: { value: p.hR },
       // Les coefficients de Mie et d'extinction.
@@ -261,14 +269,19 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null) {
       hM: { value: p.hM }, gM: { value: p.g },
       // Le niveau de référence et le sommet de l'atmosphère.
       rGround: { value: p.ground }, rTop: { value: p.top },
-      // L'intensité du Soleil et la part du voile devant le sol.
-      sunI: { value: SUN_INTENSITY }, discGain: { value: DISC_GAIN },
+      // L'intensité du Soleil et la part du voile devant le sol : entière en perspective aérienne.
+      sunI: { value: SUN_INTENSITY }, discGain: { value: spec.aerial ? AERIAL_DISC_GAIN : DISC_GAIN },
+      // Perspective aérienne : le fond est atténué par l'air traversé.
+      aerial: { value: spec.aerial ? 1 : 0 },
     // Fin des variables uniformes.
     },
     // Les shaders de la coquille.
     vertexShader: shellVertexShader, fragmentShader: shellFragmentShader,
-    // Transparent, en mélange additif, sans écriture de la profondeur, face avant.
-    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.FrontSide,
+    // Transparent, sans écriture de la profondeur, face avant. Mélange : perspective aérienne, lumière diffusée plus le
+    // fond multiplié par la part qui traverse l'air (opacité du fragment) ; sinon additif.
+    transparent: true, depthWrite: false, side: THREE.FrontSide,
+    // Mélange choisi : additif, ou personnalisé en perspective aérienne.
+    ...(spec.aerial ? { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.SrcAlphaFactor } : { blending: THREE.AdditiveBlending }),
   // Fin du matériau.
   });
   // Autorise le shader à écrire la profondeur du fragment.

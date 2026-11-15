@@ -1,7 +1,14 @@
 // Shader des tuiles : image du fournisseur + calque optionnel (routes, noms) fondu dans le même passage,
 // puis éclairage jour/nuit. `airless` = 1 pour un astre sans atmosphère (Lune) : terminateur net, réflexion de
 // Lommel-Seeliger (disque uniformément brillant), nuit éclairée par la lumière cendrée, pas de halo bleu.
+// `surfModel` = 1 pour la Terre : modèle d'éclairage physique (surfaceLight.jsx) — lumière du Soleil atténuée par
+// l'air, lumière du ciel, relief éclairé par le vrai Soleil, reflet du Soleil sur la mer ; le voile bleu du limbe est
+// laissé à la coquille de diffusion de l'atmosphère. Les autres astres gardent le modèle général, inchangé.
 // Compatible tampon de profondeur logarithmique.
+
+// Importe les GLSL d'éclairage : modèle général et modèle de la Terre, depuis surfaceLight.
+import { EARTH_LIGHT_GLSL, GENERIC_LIGHT_GLSL } from '../surfaceLight';
+
 // Déclare et exporte le shader de sommets des tuiles (début).
 export const tileVertexShader = [
   // Inclusion de three.js : fonctions communes.
@@ -10,6 +17,8 @@ export const tileVertexShader = [
   '#include <logdepthbuf_pars_vertex>',
   // Variables transmises au shader de fragments : coordonnées de texture, normale et direction de la caméra.
   'varying vec2 vUv;varying vec3 vN;varying vec3 vV;',
+  // Directions de l'est et du nord au sommet, dans le repère de la caméra : pente du relief éclairée par le Soleil (Terre).
+  'varying vec3 vE;varying vec3 vNo;',
   // Relief (voir relief.jsx) : hMap = tuile d'altitude Terrarium, hRect = portion affichée par cette tuile, hHas = 1 quand
   // elle est chargée, hUnit = 1 / rayon de l'astre en mètres, reliefExag = exagération (0 : relief coupé).
   // Le sommet est soulevé le long de sa normale ; le fond des mers (altitudes négatives) reste à 0, sauf avec le fond
@@ -28,6 +37,10 @@ export const tileVertexShader = [
   'if(oHas>.5)return clamp(tDec(texture2D(oMap,oRect.xy+q*oRect.zw)),-11500.,0.);return min(0.,h);}',
   // Fonction principale : coordonnées de texture, normale dans le repère de la caméra et position du sommet.
   'void main(){vUv=uv;vN=normalize(normalMatrix*normal);vec3 p=position;',
+  // Est : perpendiculaire à l'axe des pôles (+Y) et à la normale ; au pôle, où il n'est pas défini, l'axe x.
+  'vec3 ea=vec3(normal.z,0.,-normal.x);float el=length(ea);ea=el>1e-5?ea/el:vec3(1.,0.,0.);',
+  // Est et nord (normale × est) passés dans le repère de la caméra.
+  'vE=normalize((modelViewMatrix*vec4(ea,0.)).xyz);vNo=normalize((modelViewMatrix*vec4(cross(normal,ea),0.)).xyz);',
   // Avec une tuile d'altitude et une exagération : le sommet est déplacé le long de sa normale.
   'if(hHas>.5&&reliefExag>0.){p+=normal*(hMeters(uv)*hUnit*reliefExag);}',
   // Position dans le repère de la caméra, direction vers la caméra et position à l'écran.
@@ -151,7 +164,11 @@ export const tileFragmentShader = [
   // Lumière ×1,5, halo orangé ×1,2 ; le tout multiplié par l'intensité. Fin de cityLights.
   'return (c*1.5+vec3(1.,.7,.4)*h*1.2)*k;}',
   // Variables reçues du shader de sommets.
-  'varying vec2 vUv;varying vec3 vN;varying vec3 vV;',
+  'varying vec2 vUv;varying vec3 vN;varying vec3 vV;varying vec3 vE;varying vec3 vNo;',
+  // Modèle d'éclairage (0 : général ; 1 : la Terre) ; masque de l'eau (1 = mer), lu avec globalRect, et sa présence.
+  'uniform float surfModel;uniform sampler2D wMap;uniform float wOn;',
+  // Fonctions d'éclairage partagées : modèle général et modèle de la Terre (surfaceLight.jsx).
+  GENERIC_LIGHT_GLSL, EARTH_LIGHT_GLSL,
   // Détail simulé au-delà de la résolution des images (géantes gazeuses, satellites) : voir `synthDetail` plus bas.
   // Variables uniformes du détail simulé : son type et sa force, et les coordonnées de la tuile.
   'uniform vec2 detail;uniform vec3 tileCoord;',
@@ -200,6 +217,8 @@ export const tileFragmentShader = [
   'else{col=nat*clamp(dot(col,lw)/.71,.3,1.7);}',
   // Avec le détail simulé actif : l'ajoute à la couleur.
   'if(detail.x>.5){col=synthDetail(col);}',
+  // Pente du terrain (rlS, sans unité, x vers l'est, y vers le nord) et force de son ombrage (rlW) : nulles sans relief.
+  'vec2 rlS=vec2(0.);float rlW=0.;',
   // hSize : côté de la tuile d'altitude en pixels (256 ou 512 selon la source).
   // Avec une tuile d'altitude et un ombrage actif : position du point dans la tuile, en pixels, partie entière et partie fractionnaire.
   'if(hHas>.5&&reliefShade>0.&&reliefExag>0.){vec2 q=(hRect.xy+vUv*hRect.zw)*hSize-.5;vec2 i=floor(q),f=q-i;',
@@ -214,20 +233,23 @@ export const tileFragmentShader = [
   'float o00=oTex((oi+vec2(.5,.5))/oSize),o10=oTex((oi+vec2(1.5,.5))/oSize),o01=oTex((oi+vec2(.5,1.5))/oSize),o11=oTex((oi+vec2(1.5,1.5))/oSize);',
   // Pente du fond, calculée de la même façon et accentuée.
   's=vec2(mix(o10-o00,o11-o01,ofr.y),mix(o01-o00,o11-o10,ofr.x))*2.*oSlope*max(reliefExag,1.)*oBoost;}',
-  // Applique l'éclairement de la pente, selon la force de l'ombrage. Fin de ce cas.
-  'col*=mix(1.,reliefLight(s),reliefShade);}',
+  // Garde la pente et la force de l'ombrage. Fin de ce cas.
+  'rlS=s;rlW=reliefShade;}',
   // Sans altitudes, avec l'ombrage par l'image : position dans l'image et pas de mesure.
   'else if(reliefImg>0.){vec2 q=baseRect.xy+vUv*baseRect.zw;float e=1.5/256.;',
   // Pente estimée par les différences de luminosité de part et d'autre du point.
   'vec2 s=vec2(dot(texture2D(map,q+vec2(e,0.)).rgb-texture2D(map,q-vec2(e,0.)).rgb,lw),dot(texture2D(map,q+vec2(0.,e)).rgb-texture2D(map,q-vec2(0.,e)).rgb,lw))*4.;',
-  // Applique l'éclairement de cette pente, selon sa force. Fin de ce cas.
-  'col*=mix(1.,reliefLight(s),reliefImg);}',
+  // Garde cette pente et sa force. Fin de ce cas.
+  'rlS=s;rlW=reliefImg;}',
+  // Ombrage de carte (lumière fixe du nord-ouest) : partout dans le modèle général ; sur la Terre, seulement pour la
+  // part sans ombre jour/nuit (réglage « Ombre » coupé), le vrai Soleil éclairant la pente sinon.
+  'if(rlW>0.)col*=mix(1.,reliefLight(rlS),surfModel>.5?rlW*(1.-shade):rlW);',
   // Normale et direction de la caméra ; cosinus de l'angle avec le Soleil, de l'angle de vue et de l'éclairement.
   'vec3 N=normalize(vN),V=normalize(vV);float d=dot(N,sunV);float mu=max(dot(N,V),0.),m0=max(d,0.);',
   // Part de jour : transition large avec atmosphère, nette sans.
-  'float day=mix(smoothstep(-.12,.22,d),smoothstep(-.02,.04,d),airless);',
+  'float day=dayWeight(d,airless);',
   // Couleur éclairée : simple avec atmosphère, loi de Lommel-Seeliger sans.
-  'vec3 lit=mix(col*(.38+.72*m0),col*min(1.4,.04+2.*m0/(m0+mu+.001)),airless);',
+  'vec3 lit=litColor(col,m0,mu,airless);',
   // Lumière cendrée (Lune) : la Terre éclaire la face de nuit, d'autant plus qu'elle est « pleine » vue de la Lune.
   // Face nuit très sombre (ombre opaque) : environ le quart de l'ancienne luminosité, avec ou sans atmosphère.
   // Couleur de nuit : bleutée avec atmosphère, très sombre et modulée par la lumière cendrée sans.
@@ -236,18 +258,36 @@ export const tileFragmentShader = [
   'float lv=lightView;float dayV=day*(1.-lv);float sh=max(shade,lv);night*=1.+2.*lv;',
   // Couleur de base : sans ombre l'image brute, avec ombre le mélange nuit/jour.
   'vec3 base=mix(col,mix(night,lit,dayV),sh);',
-  // Halo bleu au limbe, côté jour, seulement avec atmosphère.
-  'float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);',
+  // Modèle général : halo bleu au limbe, côté jour, seulement avec atmosphère.
+  'if(surfModel<.5){float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);}',
+  // Modèle de la Terre (début) : couleur de la surface en lumière linéaire.
+  'else{vec3 cl=pow(col,vec3(2.2));',
+  // Normale du terrain : la sphère inclinée par la pente du relief (vers l'est et le nord), selon la force de l'ombrage.
+  'vec3 Nt=rlW>0.?normalize(N-(rlS.x*normalize(vE)+rlS.y*normalize(vNo))*rlW):N;',
+  // Éclairement : Soleil sur la pente, atténué par l'air, et lumière du ciel ; plus la faible lueur de la nuit.
+  'vec3 E=earthIrradiance(d,dot(Nt,sunV))+pow(vec3(.024,.034,.06),vec3(2.2));',
+  // Eau : part de mer du point, lue dans le masque mondial.
+  'float wm=wOn>.5?texture2D(wMap,globalRect.xy+vUv*globalRect.zw).r:0.;',
+  // Lumière renvoyée : la surface éclairée, plus le reflet du Soleil là où il y a de l'eau (rien à calculer sur terre).
+  'vec3 o=cl*E;if(wm>.01)o+=oceanGlint(N,V,sunV,d,mu)*wm;',
+  // Ramenée à l'écran, avec le léger fond bleuté de la nuit.
+  'vec3 eb=pow(o,vec3(.4545))+vec3(0.,.0015,.004)*(1.-smoothstep(-.1,.1,d));',
+  // Vue de la pollution lumineuse : la nuit du modèle général, trois fois plus claire.
+  'vec3 nv=(col*vec3(.024,.034,.06)+vec3(0.,.0015,.004))*3.;',
+  // Couleur de base : sans ombre l'image brute, avec ombre l'éclairage de la Terre, en vue de nuit la nuit. Fin du modèle de la Terre.
+  'base=mix(mix(col,eb,shade),nv,lv);}',
   // Lumières de la nuit (cityLights) : elles s'allument quand le Soleil passe sous l'horizon du lieu (d < 0,02) et
   // brillent pleinement à 10° dessous (d < −0,17), en suivant le terminateur. Rien de jour, rien sans ombre.
   // Image des lumières : celle de la tuile si elle est arrivée, sinon la mosaïque mondiale (vue de la pollution lumineuse).
   // Vue de la pollution lumineuse : allumées partout, moitié plus vives.
   // Si des lumières sont là et allumées (ou la vue de nuit) : poids de la nuit selon le Soleil, ou toute la Terre en vue de nuit.
   'if((ltHas>.5||lgOn>.5)&&(lightsOn>.5||lv>.5)){float lwt=max(1.-smoothstep(-.17,.02,d),lv);',
+  // Côté jour (poids nul) : rien à lire, ce qui épargne cinq lectures de texture par pixel sur la moitié éclairée.
+  'if(lwt>0.){',
   // Cœurs et halos, lus dans la tuile ou dans la mosaïque mondiale.
-  'vec3 cl=ltHas>.5?cityLights(ltMap,ltRect.xy+vUv*ltRect.zw,1.+.5*lv):cityLights(lgMap,globalRect.xy+vUv*globalRect.zw,1.+.5*lv);',
-  // Ajoutés du côté nuit. Fin du cas.
-  'base+=cl*lwt*sh;}',
+  'vec3 lc=ltHas>.5?cityLights(ltMap,ltRect.xy+vUv*ltRect.zw,1.+.5*lv):cityLights(lgMap,globalRect.xy+vUv*globalRect.zw,1.+.5*lv);',
+  // Ajoutés du côté nuit. Fin des deux cas.
+  'base+=lc*lwt*sh;}}',
   // Couleur finale, avec l'opacité de la cellule. Fin de la fonction principale.
   'gl_FragColor=vec4(base,alpha);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
