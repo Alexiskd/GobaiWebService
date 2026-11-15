@@ -78,10 +78,179 @@ function projectSurface(item, { cam, W, H, earthMesh, earthPos, camRel, camDist,
 // Fin de projectSurface.
 }
 
+// ------------------------------------------------------------------ Repères des astres
+
+// Rayon de l'anneau d'un repère, en pixels CSS (la moitié de sa taille dans SceneStyles.jsx) : planète, planète visée,
+// satellite, satellite visé.
+const DOT_R = { planet: 6.5, planetFocus: 7.5, satellite: 4, satelliteFocus: 5 };
+// Écart entre l'anneau et le nom, en pixels CSS (le « gap » de SceneStyles.jsx) : planète, satellite.
+const NAME_GAP = { planet: 5, satellite: 4 };
+// Hauteur d'une étiquette de nom, en pixels CSS : planète, satellite.
+const NAME_H = { planet: 20, satellite: 15 };
+// Deux anneaux plus proches que cette distance (pixels CSS) : le plus lointain est masqué, il ferait une tache.
+const DOT_MERGE_PX = 7;
+// Intervalle entre deux mesures de la largeur d'un nom (la langue peut changer le texte), en millisecondes.
+const MEASURE_EVERY_MS = 2000;
+
+// rectHit : vrai quand deux rectangles { x0, x1, y0, y1 } se recouvrent.
+const rectHit = (a, b) => a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+
+/**
+ * Largeur du nom d'un repère, en pixels CSS : mesurée dans la page, gardée MEASURE_EVERY_MS, estimée à défaut.
+ * @param {HTMLElement} el   le repère (el._name : l'élément du nom)
+ * @param {number}      now  instant présent, en millisecondes
+ * @param {string}      text le nom, pour l'estimation
+ */
+// nameWidth : le repère, l'instant et le nom (début).
+function nameWidth(el, now, text) {
+  // Pas d'élément de nom : estimation à 7 pixels par lettre, plus les marges.
+  if (!el?._name) return 16 + 7 * text.length;
+  // Mesure trop ancienne ou absente (début) :
+  if (el._nameW === undefined || now - el._nameAt > MEASURE_EVERY_MS) {
+    // largeur réelle de l'étiquette (le repère n'est jamais retiré de la mise en page : opacité seule) ;
+    el._nameW = el._name.offsetWidth || 16 + 7 * text.length;
+    // instant de la mesure.
+    el._nameAt = now;
+  // Fin de la mesure.
+  }
+  // Renvoie la largeur gardée.
+  return el._nameW;
+// Fin de nameWidth.
+}
+
+/**
+ * Affiche un repère : fondu d'entrée, côté du nom (droite, gauche ou aucun), mise en avant, position. Écritures dans
+ * la page seulement quand quelque chose change (chaque écriture de style coûte un recalcul de mise en page).
+ * @param {object}      o     le repère placé : el, x, y, r (rayon de l'anneau), focused
+ * @param {string|null} side  « right », « left », ou null (anneau seul, faute de place pour le nom)
+ */
+// showMarker : le repère et le côté de son nom (début).
+function showMarker(o, side) {
+  // Son élément.
+  const el = o.el;
+  // Aucun : rien.
+  if (!el) return;
+  // Pas encore affiché : fondu d'entrée.
+  if (el._shown !== true) { el.classList.add('on'); el._shown = true; }
+  // Nom affiché ou non.
+  const named = side !== null;
+  // Changement : bascule de la classe « anneau seul ».
+  if (el._named !== named) { el.classList.toggle('dot-only', !named); el._named = named; }
+  // Nom à gauche de l'anneau ?
+  const left = side === 'left';
+  // Changement de côté : bascule de la classe, et position à réécrire.
+  if (el._left !== left) { el.classList.toggle('left', left); el._left = left; el._x = undefined; }
+  // Changement de mise en avant : bascule de la classe, et position à réécrire (l'anneau change de taille).
+  if (el._focus !== o.focused) { el.classList.toggle('is-focus', o.focused); el._focus = o.focused; el._x = undefined; }
+  // Position jamais écrite, ou déplacée de plus de 0,05 pixel (début) :
+  if (el._x === undefined || Math.abs(el._x - o.x) > 0.05 || Math.abs(el._y - o.y) > 0.05) {
+    // mémorise la position ;
+    el._x = o.x; el._y = o.y;
+    // centre de l'anneau sur le point de l'astre : bord gauche (nom à droite) ou bord droit (nom à gauche) de
+    // l'élément à un rayon de l'astre, et milieu de sa hauteur à la hauteur de l'astre.
+    el.style.transform = `translate(${o.x}px,${o.y}px) translate(${left ? `calc(-100% + ${o.r}px)` : `${-o.r}px`},-50%)`;
+  // Fin de la mise à jour de la position.
+  }
+// Fin de showMarker.
+}
+
+// hideMarker : masque un repère en fondu de sortie (début).
+function hideMarker(o) {
+  // Son élément.
+  const el = o.el;
+  // Affiché : fondu de sortie.
+  if (el && el._shown !== false) { el.classList.remove('on'); el._shown = false; }
+// Fin de hideMarker.
+}
+
+/**
+ * Place les repères des astres : l'astre visé d'abord, puis les planètes avant les satellites, puis du plus proche au
+ * plus lointain. Deux passages : d'abord les anneaux (chacun garde le sien, sauf s'il se confond avec un anneau déjà
+ * retenu), puis les noms : à droite de l'anneau, sinon à gauche, sinon pas de nom, sans jamais recouvrir un anneau,
+ * un autre nom ni le bord de l'écran. Les astres hors de l'écran sont masqués.
+ * @param {object[]} bodies  repères du moteur : { el, name, pos, kind, enabled, focused }
+ */
+// layoutBodies : les repères, la caméra et la taille de l'écran (début).
+function layoutBodies(bodies, cam, W, H) {
+  // Instant présent, pour les mesures des noms.
+  const now = performance.now();
+  // Pour chaque repère : sa position à l'écran et ses mesures (début).
+  const items = bodies.map((b) => {
+    // Projection de sa position à l'écran.
+    v3.copy(b.pos).project(cam);
+    // Abscisse en pixels CSS.
+    const x = ((v3.x + 1) / 2) * W;
+    // Ordonnée en pixels CSS.
+    const y = ((1 - v3.y) / 2) * H;
+    // Satellite ?
+    const sat = b.kind === 'satellite';
+    // Astre visé ?
+    const focused = Boolean(b.focused);
+    // Renvoie l'objet de placement (début) :
+    return {
+      // l'élément, le nom, la famille, la mise en avant et l'activation ;
+      el: b.el, name: b.name, sat, focused, enabled: b.enabled,
+      // la distance à la caméra (priorité) ;
+      q: b.pos.distanceTo(cam.position),
+      // visible s'il est devant la caméra et à l'écran (marge de 30 pixels) ;
+      ok: v3.z <= 1 && x > -30 && x < W + 30 && y > -30 && y < H + 30,
+      // sa position ;
+      x, y,
+      // le rayon de son anneau.
+      r: sat ? (focused ? DOT_R.satelliteFocus : DOT_R.satellite) : (focused ? DOT_R.planetFocus : DOT_R.planet),
+    // Fin de l'objet.
+    };
+  // Fin des mesures.
+  });
+  // Ordre de priorité : l'astre visé, puis les planètes avant les satellites, puis du plus proche au plus lointain.
+  items.sort((a, b) => (b.focused - a.focused) || (a.sat - b.sat) || (a.q - b.q));
+  // Premier passage : les anneaux. Chaque repère visible garde son anneau, sauf s'il se confond avec un anneau déjà
+  // retenu (astres alignés vus de loin) ; les noms seront placés ensuite en évitant TOUS les anneaux.
+  // Repères retenus, dans l'ordre de priorité.
+  const kept = [];
+  // Rectangles déjà occupés : anneaux, puis noms.
+  const taken = [];
+  // Pour chaque repère, dans l'ordre de priorité (début).
+  for (const o of items) {
+    // Désactivé (case décochée, astre assez grand pour être vu, caché derrière un autre) ou hors de l'écran : masqué.
+    if (o.enabled === false || !o.ok) { hideMarker(o); continue; }
+    // Anneau confondu avec un anneau déjà retenu : masqué, sauf l'astre visé.
+    if (!o.focused && kept.some((d) => Math.hypot(d.x - o.x, d.y - o.y) < DOT_MERGE_PX)) { hideMarker(o); continue; }
+    // Retenu.
+    kept.push(o);
+    // Rectangle de son anneau, occupé.
+    taken.push({ x0: o.x - o.r, x1: o.x + o.r, y0: o.y - o.r, y1: o.y + o.r });
+  // Fin du premier passage.
+  }
+  // Second passage : les noms, dans le même ordre de priorité (début).
+  for (const o of kept) {
+    // Largeur du nom.
+    const w = nameWidth(o.el, now, o.name);
+    // Écart entre l'anneau et le nom.
+    const gap = o.sat ? NAME_GAP.satellite : NAME_GAP.planet;
+    // Demi-hauteur du nom.
+    const hh = (o.sat ? NAME_H.satellite : NAME_H.planet) / 2;
+    // Rectangle du nom à droite de l'anneau.
+    const right = { x0: o.x + o.r + gap, x1: o.x + o.r + gap + w, y0: o.y - hh, y1: o.y + hh };
+    // Rectangle du nom à gauche de l'anneau.
+    const left = { x0: o.x - o.r - gap - w, x1: o.x - o.r - gap, y0: o.y - hh, y1: o.y + hh };
+    // Place libre : dans l'écran (2 pixels de marge), sans recouvrir aucun anneau ni aucun nom déjà placé.
+    const free = (rc) => rc.x0 >= 2 && rc.x1 <= W - 2 && rc.y0 >= 2 && rc.y1 <= H - 2 && !taken.some((t) => rectHit(rc, t));
+    // Côté du nom : à droite si possible, sinon à gauche, sinon aucun.
+    const side = free(right) ? 'right' : free(left) ? 'left' : null;
+    // Le nom placé occupe sa place.
+    if (side) taken.push(side === 'right' ? right : left);
+    // Affiche le repère.
+    showMarker(o, side);
+  // Fin du second passage.
+  }
+// Fin de layoutBodies.
+}
+
 /**
  * @param {object} s
  *  cam, W, H            caméra et taille de l'écran
- *  bodies               [{ el, name, pos }]  soleil + planètes (pos = position scène)
+ *  bodies               [{ el, name, pos, kind, focused }]  Soleil, planètes et satellites (pos = position scène)
  *                       enabled: false masque le repère (case décochée, ou astre assez grand pour être vu)
  *  cities               [{ el, name, lv, ok, x, y, w }]  objets persistants (le moteur les réutilise)
  *  earthGroup, earthMesh
@@ -91,51 +260,8 @@ export function layoutLabels(s) {
   // La caméra et la taille de l'écran.
   const { cam, W, H } = s;
 
-  // Soleil et planètes : les plus proches de la caméra ont priorité.
-  // Pour chaque astre (début).
-  const bodies = s.bodies.map((b) => {
-    // Projection de sa position à l'écran.
-    v3.copy(b.pos).project(cam);
-    // Renvoie un objet de placement (début).
-    return {
-      // Son élément HTML.
-      el: b.el,
-      // Son activation.
-      enabled: b.enabled,
-      // Sa distance à la caméra.
-      q: b.pos.distanceTo(cam.position),
-      // Visible s'il est devant le plan lointain.
-      ok: v3.z <= 1,
-      // Abscisse en pixels.
-      x: ((v3.x + 1) / 2) * W,
-      // Ordonnée en pixels, remontée de 8 pixels.
-      y: ((1 - v3.y) / 2) * H - 8,
-      // Largeur estimée : 14 pixels plus 7 par lettre.
-      w: 14 + 7 * b.name.length,
-      // Vrai pour l'astre ciblé.
-      focused: Boolean(b.focused),
-    // Fin de l'objet.
-    };
-  // Fin de la boucle.
-  });
-  // L'astre ciblé d'abord (un satellite vu de loin chevauche sa planète), puis les plus proches de la caméra.
-  // Trie : l'astre ciblé d'abord, puis par distance croissante.
-  bodies.sort((a, b) => (b.focused - a.focused) || (a.q - b.q));
-  // Liste des étiquettes d'astres déjà affichées.
-  const shownBodies = [];
-  // Pour chaque astre, dans cet ordre (début).
-  bodies.forEach((o) => {
-    // S'il est activé, visible et ne chevauche aucune étiquette déjà affichée, à 18 pixels près en hauteur (début).
-    if (o.enabled !== false && o.ok && !shownBodies.some((p) => overlaps(o, p, 0, 18))) {
-      // L'ajoute à la liste.
-      shownBodies.push(o);
-      // L'affiche.
-      show(o);
-    // Sinon : le masque.
-    } else hide(o);
-  // Fin de la boucle.
-  });
-
+  // Repères des astres (Soleil, planètes, satellites) : voir layoutBodies.
+  layoutBodies(s.bodies, cam, W, H);
   // Villes (Terre uniquement).
   // Position de la Terre.
   const earthPos = s.earthGroup.position;

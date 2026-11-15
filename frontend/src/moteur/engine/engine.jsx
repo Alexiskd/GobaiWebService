@@ -52,8 +52,8 @@ import { MoonOrbiters } from './moonOrbiters';
 import { MoonOrbit } from './moonOrbit';
 // Importe le ruban des orbites et la mise à jour de ses réglages partagés (taille du tampon de dessin, densité).
 import { OrbitRibbon, updateOrbitShared } from './orbitRibbon';
-// Importe les opacités de la traînée d'une orbite fermée et le point le plus proche d'une position.
-import { loopTrailAlphas, nearestPointIndex } from './orbitRibbonMath';
+// Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
+import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath';
 // Importe le matériau de la surface de la Lune et le chargement d'un modèle 3D.
 import { createMoonSurfaceMaterial, loadMoonModel } from './moonModel';
 // Importe ShadowCamLayer, les mosaïques polaires de ShadowCam.
@@ -1122,25 +1122,40 @@ export class SolarEngine {
     });
     // Fiches des villes.
     this.cityItems = this.data.cities.map((c, i) => surfaceItem(L.cities[i], c.name, c.lon, c.lat));
-    // Repères des astres : point de la couleur de l'astre posé à son emplacement, et son nom. Ils servent seulement
-    // à situer les astres trop petits pour être vus ; dès qu'un astre fait quelques pixels, son repère s'efface.
+    // Repères des astres : un anneau de la couleur de l'astre posé à son emplacement, et son nom dans une étiquette.
+    // Ils servent seulement à situer les astres trop petits pour être vus ; dès qu'un astre fait quelques pixels,
+    // son repère s'efface en fondu. Placement et chevauchements : voir labelLayout.jsx ; style : SceneStyles.jsx.
     const { sun, moon } = this.data.bodies;
     // Parent des repères : celui du conteneur, ou la page.
     const parent = this.container.parentNode || document.body;
-    // marker : l'élément d'un repère (début).
-    const marker = (existing, name, color) => {
+    // marker : l'élément d'un repère, sa famille (« planet » ou « satellite ») (début).
+    const marker = (existing, name, color, kind = 'planet') => {
       // Déjà fourni : c'est lui.
       if (existing) return existing;
       // Sinon : crée un div.
       const el = document.createElement('div');
+      // Sa classe, et celle de sa famille pour un satellite (repère plus discret).
+      el.className = kind === 'satellite' ? 'l body-marker is-satellite' : 'l body-marker';
+      // L'anneau de couleur.
+      const dot = document.createElement('span');
       // Sa classe.
-      el.className = 'l body-marker';
-      // Son texte : le nom.
-      el.textContent = name;
-      // Sa couleur.
+      dot.className = 'bm-dot';
+      // Le nom.
+      const label = document.createElement('span');
+      // Sa classe.
+      label.className = 'bm-name';
+      // Son texte.
+      label.textContent = name;
+      // Les deux, dans l'ordre : anneau puis nom.
+      el.append(dot, label);
+      // Garde le nom, pour mesurer sa largeur (voir labelLayout.jsx).
+      el._name = label;
+      // Couleur de l'astre.
       el.style.setProperty('--c', color);
-      // Caché au départ.
-      el.style.display = 'none';
+      // Sa lueur : la même couleur, translucide.
+      el.style.setProperty('--cg', rgbaOf(color, 0.55));
+      // Le repère est toujours dans la page ; caché par opacité, pour apparaître et disparaître en fondu.
+      el._shown = false;
       // L'ajoute au parent.
       parent.appendChild(el);
       // Le note parmi les repères créés.
@@ -1164,11 +1179,11 @@ export class SolarEngine {
       // fin de la planète ;
       })),
       // la Lune ;
-      { el: marker(null, moon.name, '#d8d2c4'), name: moon.name, pos: this.moonGroup.position, radius: moon.radius, kind: 'satellite', isHidden: () => this.moonHidden },
+      { el: marker(null, moon.name, '#d8d2c4', 'satellite'), name: moon.name, pos: this.moonGroup.position, radius: moon.radius, kind: 'satellite', isHidden: () => this.moonHidden },
       // chaque satellite (début) :
       ...this.satellites.list.map((sat) => ({
         // son repère, son nom, sa position, son rayon et sa famille ;
-        el: marker(null, sat.def.name, sat.def.color || '#d8d2c4'), name: sat.def.name, pos: sat.group.position, radius: sat.def.radius, kind: 'satellite',
+        el: marker(null, sat.def.name, sat.def.color || '#d8d2c4', 'satellite'), name: sat.def.name, pos: sat.group.position, radius: sat.def.radius, kind: 'satellite',
         // masqué ou non ;
         isHidden: () => Boolean(sat.hidden || sat.lodHidden),
       // fin du satellite.

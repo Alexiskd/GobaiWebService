@@ -33,6 +33,9 @@ const sceneStyles = (theme) => ({
     'img, a': { WebkitUserDrag: 'none' },
     // Champs de saisie : la sélection reste possible.
     'input, textarea, [contenteditable="true"]': { WebkitUserSelect: 'text', userSelect: 'text' },
+    // Repères des astres : noms un peu plus grands, lisibles à bout de bras (classe doublée : cette règle passe avant
+    // la règle générale des repères, écrite plus bas).
+    '.l.body-marker.body-marker': { fontSize: '11.5px' },
   // Fin du cas.
   },
   // Panneau en cours de déplacement (useDraggable) : au premier plan, curseur « main fermée ».
@@ -86,8 +89,38 @@ const sceneStyles = (theme) => ({
   ".l.map-label[data-script=\"cyrillic\"]": { "--script-scale": "1", "--tracking": "0.005em", fontFamily: "system-ui, \"Segoe UI\", \"PT Sans\", \"Noto Sans\", sans-serif" },
   // Nom d'un lieu lunaire.
   ".l.moon-label": { "--dot": "var(--c, #fff)" },
-  // Repère d'un astre.
-  ".l.body-marker": { marginLeft: "-4px" },
+  // ---------------------------------------------------------------- Repères des astres (voir labelLayout.jsx)
+  // Repère d'un astre : anneau puis nom, alignés ; caché par opacité (jamais retiré de la mise en page, pour que son
+  // nom puisse être mesuré), il apparaît et disparaît en fondu de 0,3 s. Le moteur fixe --c (couleur de l'astre) et
+  // --cg (sa lueur), et la position par une translation.
+  ".l.body-marker": { display: "flex", alignItems: "center", gap: "5px", padding: "0", margin: "0", fontSize: "11px", lineHeight: "1", textShadow: "none", opacity: "0", visibility: "hidden", transition: "opacity 0.3s ease, visibility 0s linear 0.3s", willChange: "transform, opacity" },
+  // Repère affiché : visible, fondu d'entrée.
+  ".l.body-marker.on": { opacity: "1", visibility: "visible", transition: "opacity 0.3s ease, visibility 0s linear 0s" },
+  // Plus de pastille générique des étiquettes : l'anneau la remplace.
+  ".l.body-marker::before": { content: "none" },
+  // Nom à gauche de l'anneau (pas de place à droite).
+  ".l.body-marker.left": { flexDirection: "row-reverse" },
+  // Anneau d'une planète : 13 px, bord de la couleur de l'astre, point central plein, lueur de la même couleur.
+  ".l.body-marker .bm-dot": { flex: "none", boxSizing: "border-box", width: "13px", height: "13px", borderRadius: "50%", border: "1.5px solid var(--c)", background: "radial-gradient(circle at center, var(--c) 0 2px, transparent 2.6px)", boxShadow: "0 0 8px var(--cg), inset 0 0 3px var(--cg)", transition: "width 0.2s ease, height 0.2s ease" },
+  // Nom d'une planète : capitales espacées dans une pastille sombre translucide, bord fin.
+  ".l.body-marker .bm-name": { padding: "4px 8px 4px 9px", borderRadius: "999px", background: "rgba(5, 8, 18, 0.62)", border: "1px solid rgba(255, 255, 255, 0.12)", color: "#eef2fb", fontWeight: "600", letterSpacing: "0.14em", textTransform: "uppercase", whiteSpace: "nowrap", transition: "opacity 0.2s ease, border-color 0.2s ease" },
+  // Anneau seul, faute de place pour le nom : le nom s'efface.
+  ".l.body-marker.dot-only .bm-name": { opacity: "0" },
+  // Astre visé : anneau plus grand, cerné d'un liseré clair.
+  ".l.body-marker.is-focus .bm-dot": { width: "15px", height: "15px", borderWidth: "2px", boxShadow: "0 0 10px var(--cg), 0 0 0 3px rgba(255, 255, 255, 0.08)" },
+  // Astre visé : nom en blanc, bord de la couleur de l'astre.
+  ".l.body-marker.is-focus .bm-name": { color: "#fff", background: "rgba(8, 12, 26, 0.8)", borderColor: "var(--cg)" },
+  // Satellite : repère plus discret, écart plus court.
+  ".l.body-marker.is-satellite": { gap: "4px" },
+  // Anneau d'un satellite : 8 px, rempli de sa lueur.
+  ".l.body-marker.is-satellite .bm-dot": { width: "8px", height: "8px", borderWidth: "1px", background: "var(--cg)", boxShadow: "0 0 4px var(--cg)" },
+  // Nom d'un satellite : sans pastille, en minuscules, gris clair, contour sombre pour rester lisible.
+  ".l.body-marker.is-satellite .bm-name": { padding: "1px 4px", background: "none", border: "none", fontWeight: "500", letterSpacing: "0.03em", textTransform: "none", color: "#c9d3e6", textShadow: "0 0 2px #000, 0 0 4px rgba(0, 0, 0, 0.9)" },
+  // Satellite visé : anneau un peu plus grand.
+  ".l.body-marker.is-satellite.is-focus .bm-dot": { width: "10px", height: "10px" },
+  // Satellite visé : nom en blanc, plus appuyé.
+  ".l.body-marker.is-satellite.is-focus .bm-name": { color: "#fff", fontWeight: "600" },
+
   // Nom de pays.
   ".l.country-label": { padding: "0", margin: "0", pointerEvents: "none", userSelect: "none", "--label-size": "11px", "--script-scale": "1", "--tracking": "0.1em", fontSize: "calc(var(--label-size) * var(--script-scale))", textTransform: "uppercase", letterSpacing: "var(--tracking)", color: "#fff", fontWeight: "600", lineHeight: "1", textShadow: "0 0 1px rgba(0, 0, 0, 0.95), 0 0 3px rgba(0, 0, 0, 0.8), 0 1px 4px rgba(0, 0, 0, 0.65)" },
   // Nom de pays : pas de pastille.
