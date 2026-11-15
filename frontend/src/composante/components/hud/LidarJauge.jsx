@@ -63,9 +63,10 @@ export function LidarJauge({ hud }) {
       // Début du style.
       sx={{
         // Fixée, sans capter les clics.
-        position: 'fixed', zIndex: 26, pointerEvents: 'none',
-        // Sous le bandeau du haut (plus bas en mode compact), à 5 px du bord droit.
-        top: `calc(var(--gps-top, 0px) + ${safe('top')} + ${compact ? 46 : 34}px)`, right: `calc(${safe('right')} + 5px)`,
+        pointerEvents: 'none',
+        // Ordinateur : sous le bandeau du haut, à 5 px du bord droit. Téléphone : dans la rangée des indicateurs de la
+        // zone du titre (MobileTopBar), dans le flux.
+        ...(compact ? { position: 'relative' } : { position: 'fixed', zIndex: 26, top: `calc(var(--gps-top, 0px) + ${safe('top')} + 34px)`, right: `calc(${safe('right')} + 5px)` }),
         // Largeur selon l'écran, petites marges, coins arrondis.
         width: compact ? 164 : 210, px: 1, py: 0.75, borderRadius: 1,
       // Fin du style.

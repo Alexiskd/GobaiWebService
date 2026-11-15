@@ -84,9 +84,10 @@ export function TuilesLoader({ hud, bodyId, bodyName }) {
       // Début du style.
       sx={{
         // Fixée, sans capter les clics.
-        position: 'fixed', zIndex: 26, pointerEvents: 'none',
-        // Sous le bandeau du haut, à gauche : sous le compteur d'images sur ordinateur, à sa place sur téléphone.
-        top: `calc(var(--gps-top, 0px) + ${safe('top')} + ${compact ? 46 : 60}px)`, left: `calc(${safe('left')} + 5px)`,
+        pointerEvents: 'none',
+        // Ordinateur : sous le bandeau du haut, à gauche, sous le compteur d'images. Téléphone : dans la rangée des
+        // indicateurs de la zone du titre (MobileTopBar), sous le bandeau, à sa place dans le flux.
+        ...(compact ? { position: 'relative' } : { position: 'fixed', zIndex: 26, top: `calc(var(--gps-top, 0px) + ${safe('top')} + 60px)`, left: `calc(${safe('left')} + 5px)` }),
         // Largeur selon l'écran, petites marges, coins arrondis, apparition en fondu.
         width: compact ? 150 : 180, px: 1, py: 0.6, borderRadius: 1, animation: `${appear} 180ms ease-out`,
         // Si l'appareil demande moins d'animations : pas de fondu.

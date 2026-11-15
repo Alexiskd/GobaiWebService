@@ -36,9 +36,13 @@ export const MQ = {
 // Fin de MQ.
 };
 
-/** Marge de sécurité des écrans à encoche (iOS, Android). */
+/**
+ * Marge de sécurité des écrans à encoche (iOS, Android) : celle du système (`env(safe-area-inset-*)`), sauf si la
+ * variable CSS `--safe-<côté>` est posée sur la page (banc d'essai, simulation d'un appareil à encoche). Un seul
+ * point d'entrée pour tous les composants.
+ */
 // Fonction safe : la marge de sécurité d'un côté de l'écran.
-export const safe = (side) => `env(safe-area-inset-${side}, 0px)`;
+export const safe = (side) => `var(--safe-${side}, env(safe-area-inset-${side}, 0px))`;
 
 /** Hauteur minimale d'une cible tactile (Material Design). */
 // Hauteur minimale d'une cible tactile : 44 pixels.

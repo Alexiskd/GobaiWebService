@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useMemo, useRef, useState et useSyncExternalStore.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-// Importe de MUI Box (conteneur), Button (bouton) et Typography (texte).
-import { Box, Button, Typography } from '@mui/material';
+// Importe de MUI Box (conteneur), IconButton (bouton à icône) et Typography (texte).
+import { Box, IconButton, Typography } from '@mui/material';
 // Importe safe, la marge de sécurité de l'écran.
 import { safe } from '@/composante/theme/mediaQueries';
 // Importe bodyId, qui donne l'identifiant d'un astre.
@@ -38,10 +38,6 @@ import { GpsFrame } from './hud/GpsFrame';
 // Importe la jauge LiDAR.
 import { LidarJauge } from './hud/LidarJauge';
 import { TuilesLoader } from './hud/TuilesLoader';
-// Importe le compteur d'images par seconde.
-import { FpsCounter } from './hud/FpsCounter';
-// Importe le moniteur de performance.
-import { PerfMonitor } from './hud/PerfMonitor';
 // Importe le bandeau du haut.
 import { HudTop } from './hud/HudTop';
 // Importe la fenêtre des paramètres.
@@ -130,6 +126,8 @@ import { useStageResize } from './scene/useStageResize';
 import { useTileBases } from './scene/useTileBases';
 // Icône du bouton de don.
 import { FavoriteIcon } from './ui/icons';
+// Importe les deux zones de commandes du téléphone.
+import { MobileDock, MobileTopBar } from './ui/MobileZones';
 
 // Scène complète : moteur 3D, calques, panneaux et barre d’outils.
 // La logique vit dans les hooks de `scene/` ; ce composant assemble et place les composantes.
@@ -240,14 +238,16 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const [sound, toggleSound] = useBubbleSound();
   // Langue de l'interface.
   const language = useInterfaceLanguage();
-  // État : fenêtre de la langue ouverte ou non.
-  const [languageOpen, setLanguageOpen] = useState(false);
-  // État : galerie ouverte ou non.
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  // Globe Google ouvert ou non (il remplace le globe Terre de l'app).
-  const [googleEarthOpen, setGoogleEarthOpen] = useState(false);
-  // État : paramètres ouverts ou non.
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  // Fenêtres : une seule ouverte à la fois, gérées en un seul endroit (voir scene/usePanels).
+  const panels = usePanels({ compact });
+  // Langue : ouverte ou non, et son ouverture (le même nom qu'avant pour les appels existants).
+  const languageOpen = panels.panel === 'language'; const setLanguageOpen = (on) => panels.show('language', on);
+  // Galerie : ouverte ou non, et son ouverture.
+  const galleryOpen = panels.panel === 'gallery'; const setGalleryOpen = (on) => panels.show('gallery', on);
+  // Globe Google (il remplace le globe Terre de l'app) : ouvert ou non, et son ouverture.
+  const googleEarthOpen = panels.panel === 'googleEarth'; const setGoogleEarthOpen = (on) => panels.show('googleEarth', on);
+  // Paramètres : ouverts ou non, et leur ouverture.
+  const settingsOpen = panels.panel === 'settings'; const setSettingsOpen = (on) => panels.show('settings', on);
   // Moniteur de performance masqué par défaut ; activable depuis les paramètres.
   const [performanceMonitorVisible, setPerformanceMonitorVisible] = useState(false);
   // Claude : posé dans le HUD à la place de la navigation, indépendant des autres fenêtres (il reste ouvert quand il
@@ -257,8 +257,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Navigation : Claude tient sa place dans le HUD, l'arborescence des astres s'ouvre à la demande, par son bouton.
   // État : arborescence de navigation ouverte ou non, fermée au départ.
   const [navigatorOpen, setNavigatorOpen] = useState(false);
-  // État : plateau tournant ouvert ou non.
-  const [plateauOpen, setPlateauOpen] = useState(false);
+  // Plateau tournant : ouvert ou non, et son ouverture.
+  const plateauOpen = panels.panel === 'plateau'; const setPlateauOpen = (on) => panels.show('plateau', on);
   // Touches P (galerie) et T (plateau tournant), sauf pendant une saisie.
   // Effet exécuté une seule fois : deux raccourcis clavier.
   useEffect(() => {
@@ -273,9 +273,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
       // La touche, en minuscule.
       const k = e.key.toLowerCase();
       // P : ouvre ou ferme la galerie.
-      if (k === 'p') setGalleryOpen((v) => !v);
+      if (k === 'p') panels.toggle('gallery');
       // T : ouvre ou ferme le plateau tournant.
-      else if (k === 't') setPlateauOpen((v) => !v);
+      else if (k === 't') panels.toggle('plateau');
     // Fin de onKey.
     };
     // Écoute les touches sur toute la fenêtre.
@@ -452,8 +452,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Dalles LiDAR en vrais points 3D (Paris) : chargées par le moteur à l'approche, interrupteur dans Paramètres.
   // Dalles LiDAR en points 3D.
   const lidarPoints = useLidarPoints(engine);
-  // Panneaux ouverts et raccourcis clavier.
-  const panels = usePanels({ compact });
   // Retour de Stripe : rouvre la fenêtre pour confirmer le don ou signaler son annulation.
   useEffect(() => { if (hasDonationReturn()) panels.setPanel('donate'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Adresse d'une fenêtre (https://www.gobaispace.com/galerie, /node) : ouverte dès l'arrivée.
@@ -596,35 +594,12 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Tient la barre d'adresse à jour selon la fenêtre ouverte et l'astre visé.
   useSiteAddress({ ready: Boolean(engine), galleryOpen, panel: panels.panel, bodyName: bodyNames[focus] });
 
-  // Début du rendu.
-  return (
-    // Conteneur racine, qui couvre la fenêtre et porte la taille d'écran en attribut.
-    <Box data-vp={viewport.size} sx={{ position: 'fixed', inset: 0 }}>
-      {/* Scène 3D : le moteur y ajoute son canvas WebGL, plein écran sous tout le HUD. */}
-      {/* Le conteneur de la scène 3D (début de la balise). */}
-      <Box
-        // Référence donnée au moteur.
-        ref={containerRef}
-        // Marqueur data-scene.
-        data-scene
-        // Début du style.
-        sx={{
-          // Couvre tout le conteneur racine.
-          position: 'absolute', inset: 0,
-          // Le canvas du moteur : plein écran, sans geste tactile du navigateur, curseur en main ouverte.
-          '& > canvas': { display: 'block', position: 'fixed', inset: 0, width: '100%', height: '100%', touchAction: 'none', cursor: 'grab' },
-          // Pendant l'appui : curseur en main fermée.
-          '& > canvas:active': { cursor: 'grabbing' },
-        // Fin du style.
-        }}
-      // Fin du conteneur de la scène.
-      />
-   
-
-
-      {/* Le bandeau du haut. */}
-      <HudTop hud={hud} />
-      {/* Le panneau d'informations (début de la balise). */}
+  // Éléments du HUD posés différemment selon l'écran : sur ordinateur, chacun à sa place fixe ; sur téléphone,
+  // rangés dans les deux zones de l'écran (MobileTopBar, MobileDock), où rien ne se recouvre (voir theme/layout).
+  // Le bandeau du haut.
+  const hudTopEl = <HudTop hud={hud} perf={performanceMonitorVisible} />;
+  // Le panneau d'informations (début de la balise).
+  const informationsEl = (
       <Informations
         // Le magasin du HUD.
         hud={hud}
@@ -690,8 +665,11 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onShade={earth.setShade}
       // Fin du panneau d'informations.
       />
-      {/* Claude à la place de la navigation : on lui demande d'aller sur un astre, et il agit sur la scène pendant
-          que l'utilisateur continue de la manipuler (le panneau n'est jamais modal). */}
+  // Fin de la constante.
+  );
+  // Claude à la place de la navigation : on lui demande d'aller sur un astre, et il agit sur la scène pendant que
+  // l'utilisateur continue de la manipuler (le panneau n'est jamais modal).
+  const assistantEl = (
       <Assistant
         // Affiché ou non : le bouton « Claude » de la barre d'outils le montre et le masque.
         open={assistantOpen}
@@ -709,83 +687,17 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onAction={runAssistantAction}
       // Fin du panneau de Claude.
       />
-      {/* L'arborescence des astres, ouverte par son bouton : elle garde son pilotage du zoom par le menu des
-          satellites (planète seule quand il est fermé, système complet quand il est ouvert). */}
-      {navigatorOpen && <Navigator bodies={shownBodies} focus={focus} onSelect={actions.selectFocus} />}
-      {/* La navball de pilotage : nord verrouillé, recalibrage, arrêt de la rotation automatique, messages, et
-          « Ma position » en icône sous la boule (suivi en cours, attente, et action). */}
-      <NavballPilote
-        hud={hud} engine={engine} locked={actions.northLocked} onRecalibrate={actions.recalibrateNorth}
-        onStopAuto={() => camera.setAuto(false)} push={push}
-        positionLive={myPosition.live} positionWaiting={myPosition.waiting} onMyPosition={myPosition.goToMe}
-      />
-      {/* Le pavé de zoom. */}
-      <ZoomPad onZoom={actions.zoom} />
-      {/* La jauge LiDAR. */}
-      <LidarJauge hud={hud} />
-      {/* L'indicateur de chargement des tuiles de l'astre visé. */}
-      <TuilesLoader hud={hud} bodyId={currentBodyId} bodyName={currentBodyName} />
-      {/* Le compteur d'images par seconde. */}
-      <FpsCounter hud={hud} />
-      {/* Le moniteur de performance. */}
-      {performanceMonitorVisible && <PerfMonitor hud={hud} />}
-      {/* Sur petit écran, accès aux dons hors de la barre compacte ; sur ordinateur, bouton intégré à la barre du bas. */}
-      {compact && (
-        // Bouton de don (début).
-        <Button
-          // Au clic : ouvre la fenêtre de don.
-          onClick={() => panels.setPanel('donate')}
-          // Nom pour les lecteurs d'écran.
-          aria-label="Faire un don à Gobai Space"
-          // Icône : un cœur.
-          startIcon={<FavoriteIcon />}
-          // Style (début).
-          sx={{
-            // Position fixe.
-            position: 'fixed',
-            // Sous le bandeau logo/titre, dans l'angle supérieur gauche ; marge adaptée à la hauteur du logo.
-            top: `calc(${safe('top')} + ${compact ? 132 : 172}px)`,
-            // À 12 px du bord gauche, après la marge de sécurité.
-            left: `calc(${safe('left')} + 12px)`,
-            // Au-dessus de la scène.
-            zIndex: 30,
-            // Hauteur minimale de 36 px.
-            minHeight: 36,
-            // Marge intérieure horizontale.
-            px: 1.5,
-            // Bords arrondis en pilule.
-            borderRadius: 99,
-            // Texte blanc.
-            color: '#fff',
-            // Fond bleu sombre presque opaque.
-            bgcolor: 'rgba(26, 38, 61, .92)',
-            // Bordure claire et fine.
-            border: '1px solid rgba(255,255,255,.22)',
-            // Flou de l'arrière-plan.
-            backdropFilter: 'blur(14px)',
-            // Le même, pour Safari.
-            WebkitBackdropFilter: 'blur(14px)',
-            // Texte de 11 px.
-            fontSize: 11,
-            // En gras.
-            fontWeight: 700,
-            // Lettres légèrement espacées.
-            letterSpacing: '.02em',
-            // Sans majuscules forcées.
-            textTransform: 'none',
-            // Fond plus clair au survol.
-            '&:hover': { bgcolor: 'rgba(48, 65, 96, .98)' },
-          // Fin du style.
-          }}
-        // Fin des réglages du bouton.
-        >
-          {/* Son texte. */}
-          Faire un don
-        {/* Fin du bouton. */}
-        </Button>
-        // Fin du cas « petit écran ».
-        )}
-      {/* La barre d'outils (début de la balise). */}
+  // Fin de la constante.
+  );
+  // L'arborescence des astres, ouverte par son bouton : elle garde son pilotage du zoom par le menu des satellites
+  // (planète seule quand il est fermé, système complet quand il est ouvert).
+  const navigatorEl = navigatorOpen ? <Navigator bodies={shownBodies} focus={focus} onSelect={actions.selectFocus} /> : null;
+  // La jauge LiDAR.
+  const lidarEl = <LidarJauge hud={hud} />;
+  // L'indicateur de chargement des tuiles de l'astre visé.
+  const tuilesEl = <TuilesLoader hud={hud} bodyId={currentBodyId} bodyName={currentBodyName} />;
+  // La barre d'outils (début de la balise).
+  const toolbarEl = (
       <Toolbar
         // Le magasin du HUD.
         hud={hud}
@@ -799,6 +711,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onAssistant={() => setAssistantOpen((v) => !v)}
         // Menu de l'assistant ouvert ou non.
         assistantOpen={assistantOpen}
+        // Astres : ouvre ou ferme l'arborescence (bande des astres sur téléphone, rail sur ordinateur).
+        onNavigator={() => setNavigatorOpen((v) => !v)}
+        // Arborescence ouverte ou non.
+        navigatorOpen={navigatorOpen}
         // Mode nuit actif ou non.
         night={night}
         // Ombre : bascule jour/nuit, avec la transition de thème.
@@ -841,6 +757,101 @@ export function SolarScene({ data, onSettled, covered = false }) {
         languageLabel={language.effective ? (language.effective.entry.autonym || language.effective.entry.name) : ''}
       // Fin de la barre d'outils.
       />
+  // Fin de la constante.
+  );
+
+  // Début du rendu.
+  return (
+    // Conteneur racine, qui couvre la fenêtre et porte la taille d'écran en attribut.
+    <Box data-vp={viewport.size} sx={{ position: 'fixed', inset: 0 }}>
+      {/* Scène 3D : le moteur y ajoute son canvas WebGL, plein écran sous tout le HUD. */}
+      {/* Le conteneur de la scène 3D (début de la balise). */}
+      <Box
+        // Référence donnée au moteur.
+        ref={containerRef}
+        // Marqueur data-scene.
+        data-scene
+        // Début du style.
+        sx={{
+          // Couvre tout le conteneur racine.
+          position: 'absolute', inset: 0,
+          // Le canvas du moteur : plein écran, sans geste tactile du navigateur, curseur en main ouverte.
+          '& > canvas': { display: 'block', position: 'fixed', inset: 0, width: '100%', height: '100%', touchAction: 'none', cursor: 'grab' },
+          // Pendant l'appui : curseur en main fermée.
+          '& > canvas:active': { cursor: 'grabbing' },
+        // Fin du style.
+        }}
+      // Fin du conteneur de la scène.
+      />
+   
+
+
+      {/* Le bandeau du haut (ordinateur ; sur téléphone, dans la zone du titre). */}
+      {!compact && hudTopEl}
+      {/* Le panneau d'informations (ordinateur ; sur téléphone, dans le dock). */}
+      {!compact && informationsEl}
+      {/* Claude (ordinateur ; sur téléphone, dans le dock). */}
+      {!compact && assistantEl}
+      {/* L'arborescence des astres (ordinateur ; sur téléphone, bande du dock). */}
+      {!compact && navigatorEl}
+      {/* La navball de pilotage : nord verrouillé, recalibrage, arrêt de la rotation automatique, messages, et
+          « Ma position » en icône sous la boule (suivi en cours, attente, et action). */}
+      <NavballPilote
+        // Le magasin du HUD, le moteur, l'état du nord verrouillé et son recalibrage.
+        hud={hud} engine={engine} locked={actions.northLocked} onRecalibrate={actions.recalibrateNorth}
+        // Arrêt de la rotation automatique et messages temporaires.
+        onStopAuto={() => camera.setAuto(false)} push={push}
+        // « Ma position » : suivi en cours, attente et action.
+        positionLive={myPosition.live} positionWaiting={myPosition.waiting} onMyPosition={myPosition.goToMe}
+      // Fin de la navball.
+      />
+      {/* Le pavé de zoom. */}
+      <ZoomPad onZoom={actions.zoom} />
+      {/* La jauge LiDAR (ordinateur ; sur téléphone, sous le titre). */}
+      {!compact && lidarEl}
+      {/* L'indicateur de chargement des tuiles (ordinateur ; sur téléphone, sous le titre). */}
+      {!compact && tuilesEl}
+      {/* La barre d'outils (ordinateur). */}
+      {!compact && toolbarEl}
+      {/* Téléphone : les deux zones de commandes, où chaque élément a sa place et rien ne se recouvre. */}
+      {/* En mode compact (début). */}
+      {compact && (
+        // Fragment : zone du titre et dock.
+        <>
+          {/* Zone du titre : bandeau, bouton de don à droite, indicateurs dessous. */}
+          <MobileTopBar
+            // Bouton de don : icône seule, cible tactile de 44 px ; aussi dans la feuille « Menu ».
+            actions={(
+              // Bouton (début de la balise).
+              <IconButton
+                // Au clic : ouvre la fenêtre de don.
+                onClick={() => panels.setPanel('donate')}
+                // Nom pour les lecteurs d'écran et infobulle.
+                aria-label="Faire un don à Gobai Space"
+                // Style : rond de 44 px, fond bleu sombre, bordure claire, cœur blanc.
+                sx={{ width: 44, height: 44, color: '#fff', bgcolor: 'rgba(26, 38, 61, .92)', border: '1px solid rgba(255,255,255,.22)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', '&:hover': { bgcolor: 'rgba(48, 65, 96, .98)' } }}
+              // Fin de la balise ouvrante.
+              >
+                {/* Le cœur. */}
+                <FavoriteIcon fontSize="small" />
+              {/* Fin du bouton. */}
+              </IconButton>
+            // Fin des boutons.
+            )}
+            // Indicateurs : chargement des tuiles et LiDAR.
+            status={<>{tuilesEl}{lidarEl}</>}
+          // Fin de la balise ouvrante.
+          >
+            {/* Le bandeau titre. */}
+            {hudTopEl}
+          {/* Fin de la zone du titre. */}
+          </MobileTopBar>
+          {/* Dock du bas : tiroir Informations et Claude, puis bande des astres et navigation. */}
+          <MobileDock surfaces={<>{informationsEl}{assistantEl}</>} base={<>{navigatorEl}{toolbarEl}</>} />
+        {/* Fin du fragment. */}
+        </>
+      // Fin du mode compact.
+      )}
       {/* La fenêtre des sources (début de la balise). */}
       <Attribution
         // Le magasin du HUD.

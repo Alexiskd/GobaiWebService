@@ -10,8 +10,14 @@ import { useHud } from '@/moteur/engine/hudStore';
 import { useHudDraggable } from '@/composante/hooks/useHudDraggable';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/composante/hooks/useViewport';
-// Importe la largeur du bouton ⋯ et edge, la distance à un bord de l'écran.
-import { MORE_W, edge } from '@/composante/theme/layout';
+// Importe edge (distance à un bord de l'écran) et PANEL_W (largeur du panneau d'informations).
+import { PANEL_W, edge } from '@/composante/theme/layout';
+// Importe safe, la marge de sécurité d'un bord de l'écran.
+import { safe } from '@/composante/theme/mediaQueries';
+// Importe le compteur d'images par seconde (forme en ligne, à la suite de la date).
+import { FpsCounter } from './FpsCounter';
+// Importe le moniteur de performance (forme en ligne, sous la date).
+import { PerfMonitor } from './PerfMonitor';
 // Importe le badge « En direct ».
 import { LiveBadge } from '../ui/LiveBadge';
 // Importe le menu déroulant générique.
@@ -22,8 +28,8 @@ import { MenuDeroulant } from '../ui/MenuDeroulant';
 // Mesures du logo dans l'image d'origine : largeur totale, puis position et taille de l'emblème.
 const LOGO = { fullW: 1379, x: 372, y: 90, w: 736, h: 594 };
 
-// Déclare et exporte le composant HudTop : reçoit le magasin du HUD.
-export function HudTop({ hud }) {
+// Déclare et exporte le composant HudTop : reçoit le magasin du HUD et l'affichage du moniteur de performance.
+export function HudTop({ hud, perf = false }) {
   // Lit le mode compact.
   const { compact } = useViewport();
   // Lit la date affichée.
@@ -55,11 +61,15 @@ export function HudTop({ hud }) {
       {...drag.handleProps}
       // Début du style.
       sx={{
-        // Fixé en haut à gauche, au niveau du HUD, plus près des bords en mode compact.
-        position: 'fixed', zIndex: (t) => t.zIndex.hud, top: edge('top', compact ? 6 : 12), left: edge('left', compact ? 6 : 14),
-        // Téléphone : le bandeau s'arrête avant le bouton ⋯ posé en haut à droite.
-        // Pas d'ancrage à droite ; largeur maximale qui laisse la place du bouton ⋯ en mode compact.
-        right: 'auto', maxWidth: compact ? `calc(100vw - 12px - ${MORE_W}px)` : 'calc(100vw - 28px)',
+        // Ordinateur : fixé en haut à gauche, au niveau du HUD, sans ancrage à droite, jamais plus large que l'écran.
+        // Téléphone : dans le flux de la zone du titre (MobileTopBar), qui le place et le borne à côté de ses boutons.
+        ...(compact
+          // Téléphone : dans le flux.
+          ? { position: 'relative' }
+          // Ordinateur : fixé.
+          // Ordinateur : fixé ; sa largeur s'arrête avant le panneau d'informations, posé en haut à droite (à 76 px du
+          // bord, PANEL_W de large, 8 px d'écart) : le bandeau passe à la ligne au lieu de glisser sous le panneau.
+          : { position: 'fixed', zIndex: (t) => t.zIndex.hud, top: edge('top', 12), left: edge('left', 14), right: 'auto', maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 98px - ${PANEL_W})` }),
         // Même marge intérieure à gauche (avant le logo) et à droite (après le texte) : le bandeau épouse son contenu.
         // Contenu en ligne, centré verticalement.
         display: 'flex', alignItems: 'center',
@@ -123,9 +133,17 @@ export function HudTop({ hud }) {
         {/* Fin du titre. */}
         </Typography>
         {/* La date, en petit, en chiffres de largeur fixe. */}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontVariantNumeric: 'tabular-nums' }}>{date}</Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontVariantNumeric: 'tabular-nums' }}>
+          {/* La date. */}
+          {date}
+          {/* Le compteur d'images par seconde, à la suite (ordinateur ; rien sur téléphone). */}
+          <FpsCounter hud={hud} />
+        {/* Fin de la ligne de la date. */}
+        </Typography>
         {/* Le texte de l'astre visé, s'il existe, hors mode compact. */}
         {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontVariantNumeric: 'tabular-nums' }}>{focusText}</Typography>}
+        {/* Le moniteur de performance, s'il est affiché, sous les textes (ordinateur ; rien sur téléphone). */}
+        {perf && <PerfMonitor hud={hud} />}
       {/* Fin de la zone des textes. */}
       </Box>
     {/* Fin du bandeau. */}
