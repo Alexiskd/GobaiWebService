@@ -394,3 +394,17 @@ test('la source des fonds marins sert une tuile grossière à toutes les tuiles 
   assert.deepEqual(asked, ['https://o/8/130/90.png']);
 // Fin du test.
 });
+
+test('relief de la Lune : découpage géographique et altitudes signées', () => {
+  // Rayon de la Lune en mètres.
+  const R = 1_737_400;
+  // Découpage géographique : hauteur d'un pixel, πR / 2^z / taille, la même à toutes les latitudes.
+  assert.ok(Math.abs(metersPerTexel(7, 0, R, 256, 'equirectangular') - (Math.PI * R) / 128 / 256) < 1e-6);
+  assert.equal(metersPerTexel(7, 60, R, 256, 'equirectangular'), metersPerTexel(7, 0, R, 256, 'equirectangular'));
+  // Option « signed » gardée par normalizeRelief, absente par défaut.
+  const moon = normalizeRelief({ kind: 'terrarium', template: '/api/v1/tiles/moon-relief/{z}/{x}/{y}.png', minZoom: 3, maxZoom: 8, signed: true }, 1737.4);
+  assert.equal(moon.signed, true);
+  assert.equal(moon.minZoom, 3);
+  assert.equal(moon.maxZoom, 8);
+  assert.equal(normalizeRelief({ kind: 'terrarium', template: 'x' }, 6371).signed, undefined);
+});

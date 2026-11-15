@@ -13,7 +13,7 @@ import { buildTileGrid, levelGap, tileRadius } from './tileGeometry';
 // Importe les deux shaders des tuiles, depuis tileShaders.
 import { tileFragmentShader, tileVertexShader } from './tileShaders';
 // Importe la projection Mercator, le choix d'une projection et l'emprise d'une tuile, depuis projection.
-import { MERCATOR, projectionOf, tileBoundsIn } from './projection';
+import { EQUIRECTANGULAR, MERCATOR, projectionOf, tileBoundsIn } from './projection';
 // Importe les constantes et les fonctions du relief, depuis relief.
 import { MAX_HEIGHT_M, OCEAN_SHADE_BOOST, RELIEF_SKIRT, metersPerTexel, pointInTile, terrariumMeters, texelAt } from './relief';
 // Importe nativeTile et OVERZOOM_LEVELS, la tuile native d'une tuile sur-zoomée et le nombre de niveaux, depuis overzoom.
@@ -1132,8 +1132,8 @@ export class TileLayer {
   reliefFor(coord) {
     // Relief demandé.
     const r = this.reliefWanted;
-    // Sans relief, sans source, hors Mercator ou sous le niveau minimal : null.
-    if (!r || !this.reliefSource || this.projection !== MERCATOR || coord.z < r.minZoom) return null;
+    // Sans relief, sans source, découpage inconnu (ni Mercator ni géographique) ou sous le niveau minimal : null.
+    if (!r || !this.reliefSource || (this.projection !== MERCATOR && this.projection !== EQUIRECTANGULAR) || coord.z < r.minZoom) return null;
     // Le renvoie.
     return r;
   // Fin de reliefFor.
@@ -1189,7 +1189,7 @@ export class TileLayer {
         // La transmet.
         u.hSize.value = size;
         // Facteur de pente : l'inverse de deux fois la taille d'un pixel au sol.
-        u.hSlope.value = 1 / (2 * metersPerTexel(nh.coord.z, midLat, r.radiusM, size));
+        u.hSlope.value = 1 / (2 * metersPerTexel(nh.coord.z, midLat, r.radiusM, size, this.projection.id));
         // Altitude disponible.
         u.hHas.value = 1;
       // Fin de l'arrivée.
@@ -1246,7 +1246,7 @@ export class TileLayer {
         // La transmet.
         u.oSize.value = size;
         // Facteur de pente.
-        u.oSlope.value = 1 / (2 * metersPerTexel(no.coord.z, midLat, r.radiusM, size));
+        u.oSlope.value = 1 / (2 * metersPerTexel(no.coord.z, midLat, r.radiusM, size, this.projection.id));
         // Profondeurs disponibles.
         u.oHas.value = 1;
       // Fin de l'arrivée.

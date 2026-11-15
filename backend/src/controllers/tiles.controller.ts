@@ -48,6 +48,8 @@ import { TilesService } from '../services/map-tiles/map-imagery.service';
 import { MoonColorService } from '../services/map-tiles/moon-color.service';
 // Service du cache disque des tuiles de la Lune.
 import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
+// Importe le relief de la Lune en tuiles Terrarium.
+import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
 // Service du modèle 3D de la Lune.
 import { MoonModelService } from '../services/map-tiles/moon-model.service';
 // Service des modèles 3D des autres astres.
@@ -111,7 +113,7 @@ interface RedirectableResponse {
 @Controller('tiles')
 // Classe du contrôleur des tuiles.
 export class TilesController {
-  // Constructeur : NestJS y injecte treize services, gardés en propriétés privées non modifiables.
+  // Constructeur : NestJS y injecte quatorze services, gardés en propriétés privées non modifiables.
   constructor(
     // Le service principal des tuiles.
     private readonly tiles: TilesService,
@@ -119,6 +121,8 @@ export class TilesController {
     private readonly moonColor: MoonColorService,
     // Le cache des tuiles de la Lune.
     private readonly moonTiles: MoonTileCacheService,
+    // Le relief de la Lune.
+    private readonly moonRelief: MoonReliefService,
     // Le modèle 3D de la Lune.
     private readonly moonModel: MoonModelService,
     // Les modèles 3D des autres astres.
@@ -773,6 +777,27 @@ export class TilesController {
     // Envoie la tuile : cache long (une semaine) si elle vient de la source préférée, cache court (dix minutes) si elle vient d'une source de repli ; l'en-tête X-Tile-Source nomme la source.
     sendTile(req, res, tile, tile.preferred ? EARTH_TILE : EARTH_FALLBACK_TILE, { 'X-Tile-Source': tile.source });
   // Fin de earthTile.
+  }
+
+  // Route GET /api/v1/tiles/moon-relief/:z/:x/:y : relief de la Lune en Terrarium.
+  @Get('moon-relief/:z/:x/:y')
+  // Pas de limite de débit : le moteur en demande beaucoup d'un coup.
+  @SkipThrottle()
+  // Description de la route.
+  @ApiOperation({
+    summary: 'Relief de la Lune (Terrarium)',
+    description: 'Altitudes LOLA (LRO, NASA Moon Trek, ≈ 118 m) réencodées en Terrarium PNG de 256 px : altitude (m) = R × 256 + G + B / 256 − 32768, '
+      + 'par rapport à la sphère de 1 737,4 km. Découpage géographique 2^(z+1) × 2^z (celui des images de la Lune), niveaux 0 à 8.',
+  })
+  // Réponses documentées.
+  @ApiOkResponse({ description: 'Tuile Terrarium PNG.' })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  // Méthode moonReliefTile : z, x, y en texte (« .png » final toléré), la requête et la réponse.
+  async moonReliefTile(@Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
+    const tile = await this.moonRelief.tile(parseTileCoordinate(z), parseTileCoordinate(x), parseTileCoordinate(y.replace(/\.png$/, '')));
+    // Altitudes figées (relevés LOLA publiés) : cache d'un an, comme les images de la Lune.
+    sendTile(req, res, tile, MOON_TILE, { 'X-Cache': tile.cached ? 'HIT' : 'MISS' });
   }
 
   // Route GET /api/v1/tiles/moon/:layerId/:z/:x/:y.

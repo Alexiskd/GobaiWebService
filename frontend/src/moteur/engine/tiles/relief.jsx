@@ -89,9 +89,16 @@ export function terrariumPixel(meters) {
 // Fin de terrariumPixel.
 }
 
-/** Taille au sol (m) d'un pixel d'une tuile Mercator de `size` px de côté au niveau `z`, à la latitude `latDeg`. */
-// Déclare et exporte metersPerTexel : le niveau, la latitude, le rayon en mètres et la taille de la tuile (256 par défaut).
-export function metersPerTexel(z, latDeg, radiusM, size = 256) {
+/**
+ * Taille au sol (m) d'un pixel d'une tuile de `size` px de côté au niveau `z`, à la latitude `latDeg`.
+ * Mercator : le tour de l'astre sur 2^z tuiles, réduit par le cosinus de la latitude (pixels carrés au sol).
+ * Géographique (`projId` = 'equirectangular', la Lune) : la hauteur d'un pixel, demi-tour sur 2^z tuiles, la même
+ * partout (la largeur se resserre vers les pôles ; l'ombrage des pentes est-ouest y est un peu atténué).
+ */
+// Déclare et exporte metersPerTexel : le niveau, la latitude, le rayon en mètres, la taille de la tuile (256 par défaut) et le découpage.
+export function metersPerTexel(z, latDeg, radiusM, size = 256, projId = 'mercator') {
+  // Découpage géographique : hauteur d'un pixel au sol.
+  if (projId === 'equirectangular') return (Math.PI * radiusM) / 2 ** z / size;
   // Renvoie le tour de l'astre divisé par le nombre de pixels du niveau, multiplié par le cosinus de la latitude (au moins 0,05).
   return ((2 * Math.PI * radiusM) / 2 ** z / size) * Math.max(Math.cos((latDeg * Math.PI) / 180), 0.05);
 // Fin de metersPerTexel.
@@ -132,6 +139,9 @@ export function normalizeRelief(cfg, radiusKm) {
       exaggeration: clamp(cfg.exaggeration ?? 1, 0, 10), shade: clamp(cfg.shade ?? 0.8, 0, 1),
       // Le fond des océans, s'il existe.
       ...(ocean ? { ocean } : {}),
+      // Altitudes signées (la Lune : bassins sous la sphère de référence) : les valeurs négatives creusent la surface
+      // sans source de fonds marins ; sur la Terre, elles restent à 0 (la mer).
+      ...(cfg.signed ? { signed: true } : {}),
     // Fin du réglage.
     };
   // Fin du cas Terrarium.
