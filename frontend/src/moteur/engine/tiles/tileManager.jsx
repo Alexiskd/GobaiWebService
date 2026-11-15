@@ -464,6 +464,10 @@ export class TileManager {
       nightLights: this.lightsSource,
       // Tuiles envoyées au GPU par image : 8.
       uploadsPerFrame: 8,
+      // Rayon de l'astre en km : la distance affichée choisit le palier de zoom de la table du serveur.
+      radiusKm: this.body.radiusKm || 0,
+      // Appareil : tenu en main (budget du téléphone) et économie d'énergie (budget réduit), lus à chaque image.
+      device: () => ({ handheld: Boolean(engine.power?.handheld), saving: Boolean(engine.saving) }),
     // Fin de la couche.
     });
   // Fin de buildLayer.
@@ -733,6 +737,8 @@ export class TileManager {
       } : null,
       // Performance : première tuile, débit, envoi au GPU, réseau de la session et places par serveur.
       perf: b ? { ...b.layer.perfSnapshot(), net: { ...NET_STATS }, hosts: HOST_GATE.limits() } : null,
+      // Palier de zoom en cours (table du serveur) : identifiant, nom, niveau le plus fin et budget de tuiles ; null sans palier.
+      tier: b?.layer.tier ? { id: b.layer.tier.id, label: b.layer.tier.label, maxZoom: b.layer.tier.maxZoom, budget: b.layer.budget } : null,
       // Limites de la vue, arrondies, avec le niveau borné entre 0 et 22.
       bounds: bounds ? { north: r(bounds.north), south: r(bounds.south), east: r(bounds.east), west: r(bounds.west), zoom: Math.max(0, Math.min(22, b.layer.visibleZoom)) } : null,
     // Fin de l'état.
