@@ -83,6 +83,36 @@ Le travail se fait en cinq lots, une PR chacun :
 
   C'est là que se relèvent les mesures sur iPhone.
 
+## Lot 2 : couche fusionnée et table de priorité des sources
+
+- **Table de priorité servie par le serveur** : `GET /api/v1/tiles/earth/plan` (`earth-plan.ts`), gardée un jour par le
+  navigateur (`Cache-Control: public, max-age=86400, stale-while-revalidate=604800`). Pour chaque source :
+  - son rang (1 = la plus prioritaire), dans l'ordre de la liste des sources ;
+  - son emprise, ses niveaux natifs et son niveau bas de vue de loin ;
+  - ses adresses chargeables par le navigateur ; sans adresse, la tuile passe par le relais.
+
+  Les rangs : orthophotos nationales, de la plus petite emprise à la plus grande (l'IGN sur la France), puis Sentinel-2
+  partout ailleurs, puis NASA GIBS pour les plus petits niveaux.
+- **Le navigateur ne garde aucune règle en dur** : la description de la couche donne l'adresse de la table (`plan`) ; la
+  source la lit (`earthPlan.jsx`) et en tire son plan de chargement direct.
+- **Choix par cellule hexagonale** (`cellCandidates`, `earthDirect.jsx`) :
+  - chaque tuile est rattachée à la cellule hexagonale qui contient son centre (fréquence 2^(z−3), une cellule couvre
+    environ une tuile et demie de côté) ;
+  - les sources dont l'emprise contient le centre de la cellule passent en premier, dans l'ordre de la table ;
+  - toutes les tuiles d'une cellule prennent donc la même source ; les suivantes restent le repli (tuile vide hors du
+    territoire, panne).
+- **Aucun cache côté serveur** : le relais ne garde plus aucune tuile (seuls les téléchargements simultanés d'une même
+  tuile sont partagés pendant leur trajet) et ses tuiles sont envoyées en `Cache-Control: no-store`.
+- **Gardés tels quels** : colorimétrie commune (`ColorStats`), fondus entre niveaux des cellules, mosaïque instantanée
+  (niveaux 0 à 3) comme fond immédiat.
+
+Contrôle au banc, avec une table d'essai (une source « France », une source « monde ») :
+- la table est lue une fois ;
+- autour de Paris, les tuiles de France viennent de la source nationale, le reste de la source mondiale.
+
+Sur le banc, la carte graphique logicielle ralentit tant la page que des chargements directs dépassent leur délai et
+repassent par le relais (16 sur 70). Ce n'est pas le cas sur un vrai appareil.
+
 ## Mesures avant et après le lot 1 (banc)
 
 Banc d'interface : Chrome sans écran, carte graphique logicielle (SwiftShader, environ 1 image par seconde), tuiles
