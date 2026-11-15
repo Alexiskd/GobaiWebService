@@ -172,7 +172,9 @@ export class TileLayer {
     this.uploadShare = 1; // part autorisée cette image (réglée par TileManager quand le rythme d'images fléchit)
     // Compteurs de performance : naissance de la couche, première tuile (ms), tuiles mises en place, temps d'envoi
     // à la carte graphique par image (ms, lissé) et débit de mise en place (tuiles/s, sur 5 s glissantes).
-    this.perf = { bornAt: performance.now(), firstTileMs: null, installs: 0, uploadMs: 0, rate: 0, windowAt: performance.now(), windowCount: 0 };
+    // firstTileAtMs et worldReadyMs se comptent depuis l'ouverture de la page (performance.now()) : première image posée,
+    // puis fond instantané complet (toutes les tuiles gardées en mémoire, le globe entier affiché).
+    this.perf = { bornAt: performance.now(), firstTileMs: null, firstTileAtMs: null, worldReadyMs: null, installs: 0, uploadMs: 0, rate: 0, windowAt: performance.now(), windowCount: 0 };
     // Affichage en cellules hexagonales (voir hexDisplay.jsx) : le modèle par défaut. `hex: false` garde l'ancien
     // affichage en tuiles carrées (tests, dépannage).
     // Affichage en hexagones demandé ?
@@ -471,7 +473,7 @@ export class TileLayer {
         // La met en place sur la carte graphique.
         this.install(a);
         // Une mise en place de plus ; la première date le temps avant la première tuile.
-        if (this.perf.firstTileMs === null) this.perf.firstTileMs = Math.round(performance.now() - this.perf.bornAt);
+        if (this.perf.firstTileMs === null) { this.perf.firstTileMs = Math.round(performance.now() - this.perf.bornAt); this.perf.firstTileAtMs = Math.round(performance.now()); }
         // Comptée.
         this.perf.installs++; this.perf.windowCount++;
         // Affichage à recalculer.
@@ -742,10 +744,15 @@ export class TileLayer {
     // Terminé (le calque peut changer : on revérifie alors, voir setOverlaySource).
     // Terminé si toutes le sont.
     this.preloadComplete = done === this.pinList.length;
+    // La première fois : note l'instant où le globe entier est affiché, depuis l'ouverture de la page.
+    if (this.preloadComplete && this.pinList.length && this.perf.worldReadyMs === null) this.perf.worldReadyMs = Math.round(performance.now());
   // Fin de preloadWorld.
   }
 
-  /** Compteurs de performance : première tuile (ms), tuiles mises en place, tuiles/s, envoi au GPU par image (ms). */
+  /**
+   * Compteurs de performance : première tuile (ms depuis la création de la couche, et depuis l'ouverture de la page),
+   * globe entier affiché (ms depuis l'ouverture), tuiles mises en place, tuiles/s, envoi au GPU par image (ms).
+   */
   // perfSnapshot : les compteurs (début).
   perfSnapshot(now = performance.now()) {
     // Compteurs.
@@ -753,7 +760,7 @@ export class TileLayer {
     // Fenêtre de 5 s écoulée : débit recalculé, fenêtre repartie.
     if (now - p.windowAt >= 5000) { p.rate = Math.round((p.windowCount * 10000) / (now - p.windowAt)) / 10; p.windowAt = now; p.windowCount = 0; }
     // Renvoie les valeurs lisibles.
-    return { firstTileMs: p.firstTileMs, installs: p.installs, tilesPerSec: p.rate, uploadMs: Math.round(p.uploadMs * 100) / 100 };
+    return { firstTileMs: p.firstTileMs, firstTileAtMs: p.firstTileAtMs, worldReadyMs: p.worldReadyMs, installs: p.installs, tilesPerSec: p.rate, uploadMs: Math.round(p.uploadMs * 100) / 100 };
   // Fin de perfSnapshot.
   }
 
