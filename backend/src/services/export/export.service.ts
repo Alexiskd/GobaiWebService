@@ -20,6 +20,10 @@ import { EarthChlorophyllService } from '../map-tiles/earth-chlorophyll.service'
 import { CHL_ATTRIBUTION, CHL_MAX, CHL_MIN } from '../map-tiles/earth-chlorophyll';
 // Modèle d'adresse des altitudes Terrarium et table des fonds marins (mentions).
 import { SEAFLOOR_BY_ID, TERRARIUM } from '../map-tiles/earth-seafloor';
+// Régions actives du Soleil (NOAA SWPC, NASA DONKI).
+import { SolarRegionsService } from '../sun/solar-regions.service';
+// Modèle du Soleil : régions, texture du plasma, boucles et protubérances.
+import { coronalLoops, prominences, sunRegions, sunTexture } from './sun-model';
 // Océans du modèle de la Terre : altitudes, textures et relief.
 import { composeSeabed, decodeChlorophyll, decodeTerrarium, fillGaps, reliefMesh, waterTexture, type ChlorophyllGrid, type MercatorGrid } from './earth-oceans';
 import { SUN_KEY, bodyKey } from '../store/catalogue';
@@ -60,6 +64,8 @@ const ELEVATION_MAX_ZOOM = 3;
 const WATER_TEXTURE_MAX = 2048;
 /** Tuiles demandées en même temps pour le modèle de la Terre. */
 const EARTH_PARALLEL = 8;
+/** Taille de la texture du plasma du Soleil selon la finesse demandée (équirectangulaire, deux fois plus large que haute). */
+const SUN_TEXTURE = { basse: [1024, 512], normale: [2048, 1024], haute: [4096, 2048] } as const;
 /** Niveau maximal des textures du modèle de la Terre : 4 (4 096 px de côté, ≈ 50 Mo de pixels par image en mémoire). */
 const EARTH_MAX_ZOOM = 4;
 
@@ -71,7 +77,7 @@ export class ExportService {
   private readonly log = new Logger('Exports');
 
   // Constructeur : NestJS y injecte les tuiles, l'assemblage, et, s'ils sont là, l'imagerie de la Terre et la chlorophylle.
-  constructor(private readonly tiles: TilesService, private readonly mosaic: MosaicService, @Optional() private readonly earth?: EarthImageryService, @Optional() private readonly chlorophyll?: EarthChlorophyllService) {}
+  constructor(private readonly tiles: TilesService, private readonly mosaic: MosaicService, @Optional() private readonly earth?: EarthImageryService, @Optional() private readonly chlorophyll?: EarthChlorophyllService, @Optional() private readonly solarRegions?: SolarRegionsService) {}
 
   /** Les astres exportables : les planètes du catalogue, la Lune, et le Soleil. */
   bodies(): ExportableBody[] {
@@ -143,7 +149,7 @@ export class ExportService {
    * Modèle 3D complet d'un astre, au format GLB : sphéroïde aux dimensions réelles, texturé par ses tuiles.
    * Sans tuiles disponibles, le modèle est rendu sans texture plutôt que refusé.
    */
-  async model(key: string, { zoom, quality, layerId, oceans = true, exaggeration = 20 }: { zoom: number; quality: MeshQuality; layerId?: string; oceans?: boolean; exaggeration?: number }) {
+  async model(key: string, { zoom, quality, layerId, oceans = true, exaggeration = 20, eruptions = true }: { zoom: number; quality: MeshQuality; layerId?: string; oceans?: boolean; exaggeration?: number; eruptions?: boolean }) {
     // L'astre.
     const body = this.body(key);
     // Finesse du maillage.
@@ -152,6 +158,8 @@ export class ExportService {
     if (!grid) throw new BadRequestException(`Finesse inconnue. Valeurs acceptées : ${Object.keys(MESH).join(', ')}.`);
     // La Terre, sans couche imposée, quand son imagerie est là : satellite HD (niveau 4 au plus), et ses océans si demandé.
     if (body.key === 'terre' && !layerId && this.earth) return this.earthModel(body, grid, Math.min(zoom, EARTH_MAX_ZOOM), oceans, exaggeration);
+    // Le Soleil, sans couche imposée : plasma lumineux, et ses éruptions si demandé.
+    if (body.key === SUN_KEY && !layerId) return this.sunModel(body, grid, quality, eruptions);
     // Les tuiles assemblées, si l'astre en a.
     const layer = layerId ?? (await this.layerFor(key));
     const texture = layer ? await this.mosaic.build(layer, zoom) : null;
@@ -169,8 +177,52 @@ export class ExportService {
       generator: 'Gobai Space — export de modèle 3D',
     });
     // Le modèle et ce qui le décrit.
-    return { body, file, texture, mesh: { vertices: mesh.vertexCount, triangles: mesh.triangleCount }, oceans: false };
+    return { body, file, texture, mesh: { vertices: mesh.vertexCount, triangles: mesh.triangleCount }, oceans: false, eruptions: false };
   // Fin de model.
+  }
+
+  /**
+   * Modèle 3D du Soleil (voir sun-model.ts) : sphère aux dimensions réelles, plasma lumineux (texture procédurale), et,
+   * avec les éruptions, boucles coronales et protubérances en objets à part, sur les régions actives du jour.
+   */
+  private async sunModel(body: ExportableBody, grid: readonly [number, number], quality: MeshQuality, eruptions: boolean) {
+    // Régions actives et éruptions du jour, ou null si le service ne répond pas.
+    const data = this.solarRegions ? await this.solarRegions.regions().catch(() => null) : null;
+    // Régions du modèle ; les numéros des régions qui ont fait une éruption les rendent plus actives.
+    const regions = sunRegions(data?.regions ?? [], (data?.flares ?? []).map((f) => f.region).filter((n): n is number => n !== null));
+    // Vrai si les régions viennent des données du jour.
+    const live = Boolean(data?.regions.length);
+    // Taille de la texture.
+    const [w, h] = SUN_TEXTURE[quality];
+    // Texture du plasma, en JPEG.
+    const image = await sharp(Buffer.from(sunTexture(w, h, regions)), { raw: { width: w, height: h, channels: 3 } }).jpeg({ quality: 88, mozjpeg: true }).toBuffer();
+    // Mention : origine des régions, et nature de la texture.
+    const credit = `${live ? `Régions actives : NOAA SWPC (${data!.generatedAt.slice(0, 10)}), éruptions : NASA DONKI` : 'Régions actives tirées au hasard (données du jour indisponibles)'} · plasma procédural aux couleurs de SDO/AIA (NASA)`;
+    // La sphère, texture équirectangulaire.
+    const sphere = sphereMesh(body.radiusKm, grid[0], grid[1], 0, 'equirectangular');
+    // Boucles et protubérances, si demandé.
+    const loops = eruptions ? coronalLoops(regions, body.radiusKm) : null, proms = eruptions ? prominences(regions, body.radiusKm) : null;
+    // Le fichier : le plasma lumineux, puis les boucles et les protubérances, lumineuses aussi.
+    const file = buildGlb({
+      // Nom, maillage et texture du plasma, qui éclaire.
+      name: `${body.name} — plasma`, mesh: sphere, image, emissive: true, emissiveStrength: 4,
+      // Mention et outil.
+      copyright: credit, generator: 'Gobai Space — export de modèle 3D (Soleil)',
+      // Les éruptions : boucles orangées, protubérances rouge-orangé, plus vives.
+      parts: loops && proms ? [
+        // Boucles coronales.
+        { name: `${body.name} — boucles coronales`, mesh: loops, color: [1, 0.55, 0.12, 1], emissive: [1, 0.5, 0.1], emissiveStrength: 6 },
+        // Protubérances et éruption.
+        { name: `${body.name} — protubérances et éruption`, mesh: proms, color: [1, 0.35, 0.05, 1], emissive: [1, 0.32, 0.06], emissiveStrength: 9 },
+      // Sans éruptions : aucune pièce.
+      ] : [],
+    // Fin du fichier.
+    });
+    // Nombre total de sommets et de triangles.
+    const all = [sphere, ...(loops && proms ? [loops, proms] : [])];
+    // Le modèle et ce qui le décrit.
+    return { body, file, texture: { projection: 'equirectangular' as const, width: w, height: h, attribution: credit }, mesh: { vertices: all.reduce((t, m) => t + m.vertexCount, 0), triangles: all.reduce((t, m) => t + m.triangleCount, 0) }, oceans: false, eruptions: Boolean(loops) };
+  // Fin de sunModel.
   }
 
   /**
@@ -194,7 +246,7 @@ export class ExportService {
       // Le fichier.
       const file = buildGlb({ name: body.name, mesh: flat, image: await this.jpeg(land.raw, land.size), copyright: credits.join(' · '), generator: 'Gobai Space — export de modèle 3D' });
       // Le modèle et ce qui le décrit.
-      return { body, file, texture: { projection: 'mercator' as const, width: land.size, height: land.size, attribution: credits.join(' · ') }, mesh: { vertices: flat.vertexCount, triangles: flat.triangleCount }, oceans: false };
+      return { body, file, texture: { projection: 'mercator' as const, width: land.size, height: land.size, attribution: credits.join(' · ') }, mesh: { vertices: flat.vertexCount, triangles: flat.triangleCount }, oceans: false, eruptions: false };
     // Fin de ce cas.
     }
     // Altitudes : tuiles Terrarium jusqu'au niveau 3.
@@ -228,7 +280,7 @@ export class ExportService {
     // Fin du fichier.
     });
     // Le modèle et ce qui le décrit.
-    return { body, file, texture: { projection: 'mercator' as const, width: land.size, height: land.size, attribution: credits.join(' · ') }, mesh: { vertices: relief.vertexCount + surface.vertexCount, triangles: relief.triangleCount + surface.triangleCount }, oceans: true };
+    return { body, file, texture: { projection: 'mercator' as const, width: land.size, height: land.size, attribution: credits.join(' · ') }, mesh: { vertices: relief.vertexCount + surface.vertexCount, triangles: relief.triangleCount + surface.triangleCount }, oceans: true, eruptions: false };
   // Fin de earthModel.
   }
 

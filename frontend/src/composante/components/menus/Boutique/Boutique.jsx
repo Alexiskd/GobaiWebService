@@ -234,8 +234,9 @@ export function Boutique({ open, onClose }) {
           données, et chaque article d’astre donne les <strong>deux formes</strong> : le modèle 3D complet au
           format GLB, aux dimensions réelles en kilomètres, que three.js ou Blender ouvrent directement, et le
           fond de carte de l’astre assemblé en une seule image. La Terre est livrée avec ses océans : relief
-          exagéré des terres et des fonds marins, et surface de l’eau en objet à part, à sa couleur réelle. À part,
-          loués à l’heure : le calcul d’orbite et la position apparente du Soleil.
+          exagéré des terres et des fonds marins, et surface de l’eau en objet à part, à sa couleur réelle. Le
+          Soleil est livré avec son plasma lumineux et ses éruptions (boucles coronales, protubérances), placées sur
+          les régions actives du jour. À part, loués à l’heure : le calcul d’orbite et la position apparente du Soleil.
         {/* Fin du texte. */}
         </Typography>
         {/* Le compte : c'est lui qui achète, et sans lui la fenêtre s'arrête là. */}

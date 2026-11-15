@@ -15,8 +15,8 @@ import { SolarRegionsService } from '../services/sun/solar-regions.service';
   controllers: [SunController],
   // Les trois services du module, construits directement par NestJS.
   providers: [SunService, SolarActivityService, SolarRegionsService],
-  // Exporte SunService pour les modules qui importent celui-ci.
-  exports: [SunService],
+  // Exporte SunService, et les régions actives pour le modèle 3D du Soleil (module de la boutique).
+  exports: [SunService, SolarRegionsService],
 // Fin de la déclaration.
 })
 // Classe du module du Soleil, importée par le module racine.

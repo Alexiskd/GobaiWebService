@@ -59,6 +59,13 @@ export class ModelQueryDto extends ExportQueryDto {
   @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(100)
   // exaggeration : l'exagération du relief.
   exaggeration?: number;
+
+  // Documente le champ suivant : les éruptions du Soleil.
+  @ApiPropertyOptional({ example: true, description: 'Soleil : boucles coronales, protubérances et éruption en objets à part, aux régions actives du jour (vrai par défaut ; « false » ou « 0 » les retire).' })
+  // Facultatif ; « true » ou « 1 » donnent vrai, toute autre valeur faux ; doit être un booléen.
+  @IsOptional() @Transform(({ value }: { value: unknown }) => value === true || value === 'true' || value === '1') @IsBoolean()
+  // eruptions : vrai pour modéliser les éruptions du Soleil.
+  eruptions?: boolean;
 }
 
 /** Paramètres du calcul d'orbite. */
