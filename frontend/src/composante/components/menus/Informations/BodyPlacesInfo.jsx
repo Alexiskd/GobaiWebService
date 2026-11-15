@@ -6,8 +6,8 @@ import { Section } from '../../ui/Section';
 import { Facts } from './Facts';
 // Importe les sections propres à la Lune.
 import { MoonExtras } from './MoonExtras';
-// Importe le relief 3D de la Lune (préchargement dans BP et modèle .glb).
-import { MoonRelief3D } from './MoonRelief3D';
+// Importe le Blend de la Lune (modèle 3D complet enregistré dans BP).
+import { MoonBlend } from './MoonBlend';
 
 /** Composante adaptative : recherche de lieux, fiche et sections du panneau « en direct ». */
 // Déclare et exporte le composant BodyPlacesInfo : la vue de l'astre, les rappels et le composant de recherche.
@@ -55,8 +55,8 @@ export function BodyPlacesInfo({ view, handlers, Search }) {
         <Section title="Caractéristiques">
           {/* La liste des caractéristiques. */}
           <Facts items={facts} />
-          {/* Pour la Lune : relief 3D préchargé dans BP et modèle à télécharger. */}
-          {moon && <MoonRelief3D />}
+          {/* Pour la Lune : le Blend (modèle complet carte réelle + relief, enregistré dans BP). */}
+          {moon && <MoonBlend />}
         {/* Fin de la section. */}
         </Section>
       // Fin du cas.

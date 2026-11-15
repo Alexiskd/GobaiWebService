@@ -88,6 +88,8 @@ export const API_DOC_GROUPS = [
       ['GET', '/tiles/moon-relief/{z}/{x}/{y}.png', 'Relief de la Lune en Terrarium (altitudes LOLA, ≈ 118 m) : R × 256 + G + B / 256 − 32768.'],
       ['GET', '/tiles/moon-relief/model.glb?cols=&exaggeration=', 'Modèle 3D du relief de la Lune (glTF binaire, km, Y vers le nord), pour Blender ou Three.js.'],
       ['GET', '/tiles/moon-relief/status', 'Préchargement du relief de la Lune dans la base du serveur.'],
+      ['GET', '/tiles/moon-blend/{1|5|10}/model.glb', 'Blend de la Lune : modèle 3D complet (carte réelle SVS × Kaguya sur le relief LOLA), texture intégrée.'],
+      ['GET', '/tiles/moon-blend/status', 'Variantes du blend de la Lune enregistrées dans la base du serveur.'],
       ['GET', '/tiles/satellite/{body}/{z}/{x}/{y}', 'Tuile d’un satellite ou d’une géante gazeuse (paramètre layer : couche NASA Trek).'],
       ['GET', '/tiles/bodies/availability', 'Astres dont la carte NASA Trek est disponible.'],
       ['GET', '/moon · /mars · /mercury', 'Fournisseurs, couches, capacités WMTS/WMS et tuiles relayées de chaque astre.'],
