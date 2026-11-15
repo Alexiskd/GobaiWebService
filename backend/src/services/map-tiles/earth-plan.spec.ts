@@ -2,6 +2,8 @@
 import { EARTH_PLAN_CACHE, EARTH_PLAN_PATH, EARTH_PLAN_VERSION, EARTH_TIERS, earthPlan } from './earth-plan';
 // Importe les sources actives, pour comparer l'ordre.
 import { enabledSources } from './earth-sources';
+// Importe la carte marine, pour la comparer à celle de la table.
+import { earthMarine } from './earth-seafloor';
 
 // Environnement sans clé ni interrupteur.
 const env: Record<string, string | undefined> = {};
@@ -77,6 +79,25 @@ describe('table de priorité des sources de la Terre', () => {
     for (const t of EARTH_TIERS) expect(t.maxTiles.phone <= t.maxTiles.desktop && t.maxTiles.phone >= 85).toBe(true);
     // La carte marine passe de la teinte NOAA (loin) à GEBCO seule (près).
     expect([EARTH_TIERS[EARTH_TIERS.length - 1].details.marine, EARTH_TIERS[0].details.marine]).toEqual(['noaa', 'gebco']);
+  // Fin du test.
+  });
+
+  // Test : la carte marine est dans la table, ses seuils sont la colonne « marine » des paliers, et elle se coupe.
+  it('décrit la carte marine : NOAA loin, fondu, puis GEBCO seule, sans retour en arrière', () => {
+    // La table.
+    const plan = earthPlan(enabledSources(env), env);
+    // Version 3, avec la carte marine du serveur.
+    expect([plan.version, plan.marine]).toEqual([3, earthMarine(env)]);
+    // Ordre des étapes, du plus lointain au plus proche.
+    const order = ['noaa', 'fondu', 'gebco'];
+    // Étapes des paliers, du plus lointain au plus proche.
+    const steps = [...EARTH_TIERS].reverse().map((t) => order.indexOf(t.details.marine));
+    // Jamais de retour en arrière (NOAA → fondu → GEBCO).
+    for (let i = 1; i < steps.length; i++) expect(steps[i]).toBeGreaterThanOrEqual(steps[i - 1]);
+    // Les trois étapes sont présentes.
+    expect(new Set(steps).size).toBe(3);
+    // Fonds marins coupés : pas de carte marine.
+    expect(earthPlan(enabledSources(env), { ...env, EARTH_SEAFLOOR: '0' }).marine).toBe(null);
   // Fin du test.
   });
 // Fin du groupe.

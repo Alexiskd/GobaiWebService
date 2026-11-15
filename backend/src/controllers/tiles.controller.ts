@@ -738,9 +738,11 @@ export class TilesController {
       // fin (en-tête X-Tile-Source) ;
       + 'découpée dans son ancêtre et agrandie). En-tête X-Tile-Source : source qui a servi la tuile. '
       // les fonds marins.
-      + 'earth-gebco et earth-ncei : relais du relief des fonds marins, non listés (GEBCO 2026, fondu au large dans earth-hd ; '
-      // suite (la NOAA, réservée à la carte marine).
-      + 'NOAA NCEI ETOPO 2022, réservé à la carte marine), une requête par tuile sur son emprise.',
+      + 'earth-ncei, earth-gebco et earth-gebco-flat : relais de la carte marine de earth-hd, non listés (NOAA NCEI '
+      // suite (les trois relais de la carte marine).
+      + 'ETOPO 2022 vu de l’espace ; GEBCO 2026 en relief ombré ; GEBCO 2026 en carte plate pour les isobathes), '
+      // fin (une requête par tuile).
+      + 'une requête par tuile sur son emprise.',
   // Fin de la description.
   })
   // Réponse 200 documentée : une image JPEG.

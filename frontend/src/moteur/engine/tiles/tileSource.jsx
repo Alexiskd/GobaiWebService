@@ -22,6 +22,8 @@ import { pixelsOffThread, rememberBlob } from './tilePixels';
 import { LruCache } from './lru';
 // Importe la fusion des fonds marins : décodage des altitudes, part des fonds par pixel et mélange, depuis seafloorFusion.
 import { blendSea, decodeTerrarium, seaMask } from './seafloorFusion';
+// Importe la carte marine : part de GEBCO par niveau, mélange NOAA / GEBCO et isobathes, depuis marineChart.
+import { drawIsobaths, marineMix, mixSea } from './marineChart';
 
 // Délai minimal entre deux renouvellements du modèle d'adresse : 30 secondes.
 const MIN_REFRESH_GAP_MS = 30_000;
@@ -173,8 +175,8 @@ export class TileSource {
     this.seaOn = seaAllowed();
     // Altitudes décodées des tuiles Terrarium, par tuile (promesses partagées) : 64 au plus.
     this.seaElev = new LruCache(64);
-    // Images des fonds, par tuile (promesses partagées) : 32 au plus.
-    this.seaImages = new LruCache(32);
+    // Images des fonds (NOAA, GEBCO, carte plate), par couche et par tuile (promesses partagées) : 48 au plus.
+    this.seaImages = new LruCache(48);
     // Instant jusqu'auquel la fusion est en pause après un échec.
     this.seaPauseUntil = 0;
   // Fin du constructeur.
@@ -381,16 +383,19 @@ export class TileSource {
   async loadImage(coord, signal, urgent = false) { return this.withSeafloor(await this.loadBaseImage(coord, signal, urgent), coord, signal); }
 
   /**
-   * Fonds marins (couche unique de la Terre, champ `seafloor` de sa description) : là où les altitudes Terrarium
-   * sont sous la mer, l'image des fonds remplace peu à peu l'image satellite (voir seafloorFusion.jsx). Les deux sont
+   * Fonds marins (couche unique de la Terre : carte marine `marine` de sa table, sinon champ `seafloor` de sa
+   * description) : là où les altitudes Terrarium sont sous la mer, l'image des fonds (NOAA, GEBCO ou leur mélange,
+   * voir marinePixelsAt) remplace peu à peu l'image satellite (voir seafloorFusion.jsx). Les deux sont
    * lues au niveau `maxZoom` au plus, puis découpées : une tuile grossière sert toutes celles qu'elle couvre. Une
    * tuile sans mer ne demande que ses altitudes. En cas d'échec, l'image satellite est rendue telle quelle et la
    * fusion se met en pause une minute.
    */
   // withSeafloor, asynchrone : l'image d'une tuile avec les fonds marins (début).
   async withSeafloor(img, { z, x, y }, signal) {
-    // Réglage de la fusion, donné par la couche.
-    const sf = this.info?.seafloor;
+    // Carte marine de la table (NOAA, GEBCO, isobathes), s'il y en a une.
+    const marine = this.info?.marine;
+    // Réglage de la fusion : la carte marine, sinon les fonds GEBCO de la description de la couche.
+    const sf = marine || this.info?.seafloor;
     // Sans réglage, fusion coupée ou en pause : l'image telle quelle.
     if (!sf || !this.seaOn || Date.now() < this.seaPauseUntil) return img;
     // Essai (début).
@@ -401,8 +406,8 @@ export class TileSource {
       if (!mask) return img;
       // Demande annulée : erreur d'abandon.
       if (signal?.aborted) throw abortError();
-      // Pixels de l'image des fonds.
-      const sea = await this.seaPixelsAt(sf, z, x, y);
+      // Pixels de l'image des fonds : la carte marine de la table, ou GEBCO seule sans table.
+      const sea = marine ? await this.marinePixelsAt(marine, z, x, y, mask) : await this.seaPixelsAt(sf, z, x, y);
       // Pixels de l'image satellite, avec sa correction de couleur.
       const out = sea && await this.basePixels(img);
       // Pixels illisibles : l'image telle quelle.
@@ -448,11 +453,36 @@ export class TileSource {
   // Fin de seaMaskAt.
   }
 
+  /**
+   * Pixels de la carte marine d'une tuile (voir marineChart.jsx) : la NOAA seule vue de l'espace, la NOAA fondue dans
+   * GEBCO aux zooms moyens, GEBCO seule avec les isobathes de sa carte plate aux zooms forts, d'après la colonne
+   * « marine » des paliers de la table. Seules les images utiles au niveau de la tuile sont demandées. null si une
+   * image manque.
+   */
+  // marinePixelsAt, asynchrone : les pixels de la carte marine d'une tuile (début).
+  async marinePixelsAt(m, z, x, y, mask) {
+    // Part de GEBCO et isobathes, pour le niveau de la tuile.
+    const mix = marineMix(this.info?.tiers, z);
+    // Images demandées en même temps : la NOAA si sa part n'est pas nulle, GEBCO si la sienne ne l'est pas.
+    const [noaa, gebco] = await Promise.all([mix.gebco < 1 ? this.seaPixelsAt(m.noaa, z, x, y) : null, mix.gebco > 0 ? this.seaPixelsAt(m.gebco, z, x, y) : null]);
+    // Image des fonds : GEBCO seule, NOAA seule, ou leur mélange (null si une image manque).
+    const sea = mix.gebco >= 1 ? gebco : mix.gebco <= 0 ? noaa : (noaa && gebco ? mixSea(noaa, gebco, mix.gebco) : null);
+    // Sans image, ou sans isobathes à ce niveau : l'image telle quelle.
+    if (!sea || !mix.isobaths) return sea;
+    // Carte plate de GEBCO, d'où sont tirées les isobathes.
+    const flat = await this.seaPixelsAt(m.flat, z, x, y);
+    // Isobathes tracées en pleine mer, si la carte plate est arrivée.
+    if (flat) drawIsobaths(sea, flat, mask, m.isobaths);
+    // Renvoie l'image des fonds.
+    return sea;
+  // Fin de marinePixelsAt.
+  }
+
   /** Pixels (256 px) de l'image des fonds de la tuile, découpés dans un ancêtre au-delà du niveau `maxZoom`. */
   // seaPixelsAt, asynchrone : les pixels des fonds d'une tuile (début).
   async seaPixelsAt(sf, z, x, y) {
-    // Niveau des fonds, écart avec la tuile, et clé de l'ancêtre.
-    const gz = Math.min(z, sf.maxZoom), d = z - gz, key = `${gz}/${x >> d}/${y >> d}`;
+    // Niveau des fonds, écart avec la tuile, et clé de l'ancêtre (avec la couche : NOAA, GEBCO et carte plate).
+    const gz = Math.min(z, sf.maxZoom), d = z - gz, key = `${sf.template}|${gz}/${x >> d}/${y >> d}`;
     // Image de l'ancêtre, déjà demandée ?
     let p = this.seaImages.get(key);
     // Sinon (début).

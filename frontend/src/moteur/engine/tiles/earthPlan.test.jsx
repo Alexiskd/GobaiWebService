@@ -66,3 +66,14 @@ test('description de la couche complétée par la table', () => {
   assert.equal(withPlan(info, null).urlTemplate, '/relais/{z}/{x}/{y}');
 // Fin du test.
 });
+
+// Test : la carte marine de la table passe dans la description si elle est utilisable.
+test('carte marine de la table recopiée dans la description', () => {
+  // Carte marine bien formée, comme le serveur la sert.
+  const marine = { noaa: { template: '/n', maxZoom: 10 }, gebco: { template: '/g', maxZoom: 10 }, flat: { template: '/f', maxZoom: 10 }, mask: { template: '/t', maxZoom: 10 }, fadeMs: 600, isobaths: { bands: 12, strength: 0.45 } };
+  // Recopiée telle quelle.
+  assert.deepEqual(withPlan({ id: 'earth-hd' }, { ...PLAN, marine }).marine, marine);
+  // Coupée sur le serveur (null) ou mal formée : absente, la description garde ses fonds GEBCO d'avant.
+  assert.deepEqual(['marine' in withPlan({ id: 'earth-hd' }, { ...PLAN, marine: null }), 'marine' in withPlan({ id: 'earth-hd' }, { ...PLAN, marine: { ...marine, flat: null } })], [false, false]);
+// Fin du test.
+});

@@ -114,6 +114,20 @@ export class HexDisplay {
   // Fin du constructeur.
   }
 
+  /**
+   * Durée des fondus entre niveaux donnée par la table du serveur (Terre : `marine.fadeMs`, qui règle aussi le passage
+   * de la teinte NOAA au relief GEBCO). « Réduire les animations » garde le changement immédiat ; une valeur absente ou
+   * nulle garde la durée en cours.
+   */
+  // setFadeMs : règle la durée des fondus (début).
+  setFadeMs(ms) {
+    // Animations réduites, ou durée absente, nulle ou invalide : rien ne change.
+    if (reducedMotion() || !(Number.isFinite(ms) && ms > 0)) return;
+    // Sinon : la durée de la table.
+    this.fadeMs = ms;
+  // Fin de setFadeMs.
+  }
+
   /** Ce qui ne dépend que de la cellule : calculé une fois, gardé tant que la cellule revient. */
   // info : ce qui ne dépend que de la cellule (début).
   info(cell) {

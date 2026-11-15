@@ -40,8 +40,8 @@ const sharp = createRequire(__filename)('sharp') as any;
  * earth-plan.ts ; le navigateur charge lui-même toutes les sources qui l'autorisent et ne demande ici que le reste.
  *
  * C'est la seule couche d'imagerie de la Terre listée. Le serveur relaie aussi, sans les lister, les tuiles des fonds
- * marins (earth-seafloor.ts) : « earth-gebco », que le navigateur fond au large dans la couche unique, et « earth-ncei »,
- * le relief de la NOAA réservé à la carte marine.
+ * marins de la carte marine (earth-seafloor.ts) : « earth-ncei » (NOAA, vue de l'espace), « earth-gebco » (relief ombré
+ * des fonds) et « earth-gebco-flat » (carte plate de GEBCO, pour les isobathes).
  */
 
 // Niveau de zoom maximal de la couche unique : 19.
@@ -122,7 +122,7 @@ export class EarthImageryService implements TileProvider {
       // les valeurs communes, l'identifiant « earth-hd », son nom, sa nature et son zoom maximal ;
       ...base, id: 'earth-hd', label: 'Terre', kind: 'imagery', maxZoom: EARTH_HD_MAX_ZOOM,
       // sa description, avec la liste des sources, et les fonds marins quand ils y sont fondus.
-      description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}.${seafloorFusion() ? ' Au large, le relief des fonds marins (GEBCO 2026).' : ''} Zoom jusqu’au niveau 19.`,
+      description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}.${seafloorFusion() ? ' Au large, la carte marine : teinte des océans de la NOAA (ETOPO 2022) vue de l’espace, relief des fonds et isobathes de GEBCO 2026 en zoomant.' : ''} Zoom jusqu’au niveau 19.`,
     // Fin de la liste.
     }];
   // Fin de layers.
@@ -162,8 +162,8 @@ export class EarthImageryService implements TileProvider {
       colorMatch: !isOff(process.env.EARTH_COLOR_MATCH),
       // les fonds marins fondus par le navigateur (absents si EARTH_SEAFLOOR est coupé) ;
       ...(fusion ? { seafloor: fusion } : {}),
-      // la mention : celles des sources, puis celle de GEBCO quand les fonds sont fondus.
-      attribution: { text: [...this.sources.map((s) => s.attribution), ...(fusion ? [SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution] : [])].join(' · ') },
+      // la mention : celles des sources, puis celles de la NOAA et de GEBCO quand la carte marine est active.
+      attribution: { text: [...this.sources.map((s) => s.attribution), ...(fusion ? ['earth-ncei', 'earth-gebco'].map((id) => SEAFLOOR_BY_ID.get(id)!.source.attribution) : [])].join(' · ') },
     // Fin de l'objet.
     };
   // Fin de resolveSync.

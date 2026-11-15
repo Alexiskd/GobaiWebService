@@ -31,8 +31,9 @@ export type EarthSourceId =
   | 'lu' | 'ch' | 'be' | 'nl' | 'at' | 'cz' | 'de-sn' | 'de-he' | 'de-nw' | 'de-by' | 'ign' | 'es' | 'it' | 'pl' | 'jp'
   // la Nouvelle-Galles du Sud, les États-Unis, et les deux sources mondiales ;
   | 'au-nsw' | 'usgs' | 'sentinel2' | 'gibs'
-  // les deux fonds marins, chacun seul dans sa couche (voir earth-seafloor.ts).
-  | 'gebco' | 'ncei';
+  // les fonds marins, chacun seul dans sa couche (voir earth-seafloor.ts) : GEBCO en relief ombré, GEBCO en carte
+  // plate colorée (isobathes) et la NOAA.
+  | 'gebco' | 'gebco-flat' | 'ncei';
 
 /** Emprise [ouest, sud, est, nord] en degrés. */
 // Type Bbox : quatre nombres.
@@ -171,12 +172,12 @@ export function mercatorBbox(z: number, x: number, y: number): string {
  * `base` peut déjà porter des paramètres (« ?map=… »). WMS 1.1.1 (paramètre SRS) pour les services qui n'annoncent
  * pas la version 1.3.0 ; en EPSG:3857 l'ordre des axes est le même dans les deux versions.
  */
-// Fonction wms, exportée (fonds marins, earth-seafloor.ts) : l'adresse d'une tuile dans un service WMS ; version 1.3.0 par défaut.
-export const wms = (base: string, layer: string, z: number, x: number, y: number, version: '1.3.0' | '1.1.1' = '1.3.0') =>
+// Fonction wms, exportée (fonds marins, earth-seafloor.ts) : l'adresse d'une tuile dans un service WMS ; version 1.3.0 et JPEG par défaut.
+export const wms = (base: string, layer: string, z: number, x: number, y: number, version: '1.3.0' | '1.1.1' = '1.3.0', format: 'image/jpeg' | 'image/png' = 'image/jpeg') =>
   // La base, suivie de « & » si elle a déjà un « ? » et de « ? » sinon, puis le service, la version, la requête, la couche, aucun style ;
   `${base}${base.includes('?') ? '&' : '?'}SERVICE=WMS&VERSION=${version}&REQUEST=GetMap&LAYERS=${layer}&STYLES=`
-  // puis la projection (CRS en 1.3.0, SRS en 1.1.1), l'emprise, 256 × 256 pixels, et le format JPEG.
-  + `&${version === '1.3.0' ? 'CRS' : 'SRS'}=EPSG:3857&BBOX=${mercatorBbox(z, x, y)}&WIDTH=256&HEIGHT=256&FORMAT=image/jpeg`;
+  // puis la projection (CRS en 1.3.0, SRS en 1.1.1), l'emprise, 256 × 256 pixels, et le format (JPEG par défaut).
+  + `&${version === '1.3.0' ? 'CRS' : 'SRS'}=EPSG:3857&BBOX=${mercatorBbox(z, x, y)}&WIDTH=256&HEIGHT=256&FORMAT=${format}`;
 
 // Adresse de NASA GIBS : GIBS_BASE_URL si elle est définie, sinon l'adresse officielle ; la barre finale est retirée.
 const GIBS_BASE = (process.env.GIBS_BASE_URL?.trim() || 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best').replace(/\/$/, '');
