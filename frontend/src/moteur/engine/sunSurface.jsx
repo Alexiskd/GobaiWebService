@@ -191,16 +191,16 @@ const eruptionFragment = [
 
 /**
  * Crée le Soleil de rayon `radius` (unités de la scène) : renvoie le maillage de la surface, auquel les éruptions
- * sont rattachées (`mesh.userData.eruptions`). `lite` (téléphone) : bruit moins détaillé, moins de régions actives
- * et moins de grains. Les éruptions ne sont dessinées que si le Soleil fait au moins 24 pixels de rayon à l'écran.
+ * sont rattachées (`mesh.userData.eruptions`). Les éruptions ne sont dessinées que si le Soleil fait au moins
+ * 24 pixels de rayon à l'écran.
  *
  * Les régions sont simulées au départ (eruptionSites), et `mesh.userData.setEruptionSites(sites)` les remplace par
  * les régions actives réelles quand le moteur les reçoit du serveur ; `setEruptionSites(null)` ramène les simulées.
  */
-// Déclare et exporte createSunSurface : le rayon du Soleil et le profil allégé.
-export function createSunSurface(radius, { lite = false } = {}) {
-  // Nombre de régions affichées : 5 sur téléphone, 8 sinon.
-  const siteBudget = lite ? 5 : MAX_SITES;
+// Déclare et exporte createSunSurface : le rayon du Soleil.
+export function createSunSurface(radius) {
+  // Nombre de régions affichées : 8, sur tous les appareils.
+  const siteBudget = MAX_SITES;
   // Régions simulées, utilisées jusqu'à l'arrivée des régions réelles et en cas de panne du serveur.
   const fallbackSites = eruptionSites(siteBudget);
   // Régions affichées à cet instant : les simulées au départ, remplacées par setSites.
@@ -218,8 +218,8 @@ export function createSunSurface(radius, { lite = false } = {}) {
     new THREE.SphereGeometry(radius, 64, 48),
     // Matériau à shader (début).
     new THREE.ShaderMaterial({
-      // Nombre d'octaves du bruit : 3 sur téléphone, 5 sinon.
-      defines: { OCTAVES: lite ? 3 : 5 },
+      // Nombre d'octaves du bruit : 5.
+      defines: { OCTAVES: 5 },
       // Variables uniformes : le temps, la durée d'une gerbe, les régions actives.
       uniforms: { time, burst: { value: ERUPTION_BURST_S }, siteCount: { value: siteBudget }, siteDir: { value: siteDir }, siteCycle: { value: siteCycle } },
       // Les deux shaders.
@@ -229,8 +229,8 @@ export function createSunSurface(radius, { lite = false } = {}) {
   // Fin du maillage.
   );
 
-  // Nombre de grains par région : 130 sur téléphone, 320 sinon.
-  const perSite = lite ? 130 : 320;
+  // Nombre de grains par région : 320.
+  const perSite = 320;
   // Géométrie des éruptions.
   const geometry = new THREE.BufferGeometry();
   // Les tableaux sont dimensionnés pour MAX_SITES régions une fois pour toutes : le nombre de régions réelles

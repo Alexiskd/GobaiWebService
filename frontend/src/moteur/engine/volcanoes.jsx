@@ -105,14 +105,13 @@ const fragmentShader = [
 /**
  * Calque des volcans en éruption. `root` s'ajoute au groupe de la Terre ; `set(liste)` pose les volcans reçus du
  * serveur, `setVisible` affiche ou masque le calque, `sync` lui fait suivre la rotation de la Terre.
- * `lite` (téléphone) : moins de grains par volcan.
  */
 // Déclare et exporte la classe VolcanoLayer.
 export class VolcanoLayer {
-  // Constructeur : le profil allégé.
-  constructor({ lite = false } = {}) {
-    // Grains par volcan : 20 sur téléphone, 48 sinon.
-    this.grains = lite ? 20 : 48;
+  // Constructeur.
+  constructor() {
+    // Grains par volcan : 48, sur tous les appareils.
+    this.grains = 48;
     // Repère du calque.
     this.root = new THREE.Object3D();
     // Son nom.

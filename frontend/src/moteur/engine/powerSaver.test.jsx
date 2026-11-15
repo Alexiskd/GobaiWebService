@@ -4,12 +4,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // Importe depuis powerSaver (début de la liste).
 import {
-  // Les durées d'image, les deux profils, les deux qualités et les premières fonctions testées.
-  COVERED_FRAME_MS, DESKTOP_PROFILE, IDLE_FRAME_MS, targetFrameMs, FULL_QUALITY, HANDHELD_PROFILE, LITE_QUALITY, fbmNorm, isHandheld, normalizedFrameMs,
-  // Le cadenceur, le profil de rendu, la qualité des shaders, le limiteur, le rythme visé et la part des envois.
-  paceFrame, renderProfile, shaderQuality, skipFrame, TARGET_FPS, TARGET_FRAME_MS, uploadShare,
-  // Le profil du système d'une planète et le changement des constantes d'un shader.
-  SYSTEM_PROFILE, setShaderDefines,
+  // Les durées d'image, les deux profils, la qualité des shaders et les premières fonctions testées.
+  COVERED_FRAME_MS, DESKTOP_PROFILE, IDLE_FRAME_MS, targetFrameMs, QUALITY, HANDHELD_PROFILE, fbmNorm, isHandheld, normalizedFrameMs,
+  // Le cadenceur, le profil de rendu, le limiteur, le rythme visé et la part des envois.
+  paceFrame, renderProfile, skipFrame, TARGET_FPS, TARGET_FRAME_MS, uploadShare,
+  // Le profil du système d'une planète.
+  SYSTEM_PROFILE,
 // Fin de la liste : le module powerSaver.
 } from './powerSaver';
 
@@ -34,19 +34,19 @@ test('appareil tenu en main : tactile sans pointeur fin', () => {
 });
 
 // Test : la comparaison des deux profils.
-test('profil téléphone : moins de pixels et moins d’images que l’ordinateur', () => {
-  // La densité maximale du téléphone est inférieure à celle de l'ordinateur.
-  assert.ok(HANDHELD_PROFILE.dprMax < DESKTOP_PROFILE.dprMax);
-  // Elle vaut au moins 1.
-  assert.ok(HANDHELD_PROFILE.dprMax >= 1);
+test('profil téléphone : la même qualité que l’ordinateur', () => {
+  // Même densité maximale et de départ, même anticrénelage, même anisotropie.
+  for (const k of ['dprMax', 'dprStart', 'antialias', 'anisotropy']) assert.equal(HANDHELD_PROFILE[k], DESKTOP_PROFILE[k], k);
+  // Aucun réglage allégé.
+  assert.equal(HANDHELD_PROFILE.lite, undefined);
   // L'ordinateur vise la durée d'image commune.
   assert.equal(DESKTOP_PROFILE.frameMs, TARGET_FRAME_MS);
   // Le téléphone aussi.
   assert.equal(HANDHELD_PROFILE.frameMs, TARGET_FRAME_MS);
   // Le rythme visé est de 50 images par seconde.
   assert.equal(TARGET_FPS, 50);
-  // Le téléphone n'a pas d'anticrénelage.
-  assert.equal(HANDHELD_PROFILE.antialias, false);
+  // Le téléphone a l'anticrénelage.
+  assert.equal(HANDHELD_PROFILE.antialias, true);
 // Fin du test.
 });
 
@@ -161,24 +161,12 @@ test('durée d’image normalisée : 20 ms à 50 images par seconde vaut 16,7 ms
 // Fin du test.
 });
 
-// Test : les réglages allégés du téléphone.
-test('téléphone : shaders allégés, démarrage à la densité 1, filtrage réduit', () => {
-  // Le téléphone utilise la qualité allégée.
-  assert.equal(shaderQuality(HANDHELD_PROFILE.lite), LITE_QUALITY);
-  // L'ordinateur utilise la qualité complète.
-  assert.equal(shaderQuality(DESKTOP_PROFILE.lite), FULL_QUALITY);
-  // cost : nombre d'échantillons de diffusion d'une qualité.
-  const cost = (q) => q.scatterSteps * q.lightSteps;
-  // La qualité allégée en demande au moins quatre fois moins.
-  assert.ok(cost(LITE_QUALITY) * 4 <= cost(FULL_QUALITY)); // diffusion : au moins 4 fois moins d'échantillons
-  // Elle a moins d'octaves.
-  assert.ok(LITE_QUALITY.octaves < FULL_QUALITY.octaves);
-  // Le téléphone démarre à la densité 1.
-  assert.equal(HANDHELD_PROFILE.dprStart, 1);
-  // L'ordinateur démarre à sa densité maximale.
-  assert.equal(DESKTOP_PROFILE.dprStart, DESKTOP_PROFILE.dprMax);
-  // L'anisotropie du téléphone est inférieure à celle de l'ordinateur.
-  assert.ok(HANDHELD_PROFILE.anisotropy < DESKTOP_PROFILE.anisotropy);
+// Test : la qualité des shaders.
+test('shaders : 16 pas de diffusion × 6 vers le Soleil et 5 octaves, sur tous les appareils', () => {
+  // La qualité complète.
+  assert.deepEqual(QUALITY, { scatterSteps: 16, lightSteps: 6, octaves: 5 });
+  // L'ordinateur et le téléphone démarrent à leur densité maximale.
+  assert.equal(DESKTOP_PROFILE.dprStart, DESKTOP_PROFILE.dprMax); assert.equal(HANDHELD_PROFILE.dprStart, HANDHELD_PROFILE.dprMax);
 // Fin du test.
 });
 
@@ -226,27 +214,14 @@ test('rythme visé : 20 images par seconde au repos sur téléphone et en mode �
 });
 
 // Test : téléphone dans le système d'une planète.
-test('système d’une planète sur téléphone : qualité d’ordinateur, rythme maximal même au repos', () => {
-  // Densité, shaders et anisotropie d'un ordinateur.
-  assert.equal(SYSTEM_PROFILE.dprMax, DESKTOP_PROFILE.dprMax); assert.equal(SYSTEM_PROFILE.lite, false); assert.equal(SYSTEM_PROFILE.anisotropy, DESKTOP_PROFILE.anisotropy);
+test('système d’une planète sur téléphone : même qualité, rythme maximal même au repos', () => {
+  // Densité et anisotropie d'un ordinateur.
+  assert.equal(SYSTEM_PROFILE.dprMax, DESKTOP_PROFILE.dprMax); assert.equal(SYSTEM_PROFILE.anisotropy, DESKTOP_PROFILE.anisotropy);
   // Toujours un téléphone (stockages et LiDAR dimensionnés au départ).
   assert.equal(SYSTEM_PROFILE.handheld, true);
   // Sans limite, en mouvement comme au repos.
   assert.equal(targetFrameMs(SYSTEM_PROFILE), 0); assert.equal(targetFrameMs(SYSTEM_PROFILE, { idle: true }), 0);
   // L'économie d'énergie et l'écran de chargement restent prioritaires.
   assert.equal(targetFrameMs(SYSTEM_PROFILE, { saving: true }), IDLE_FRAME_MS); assert.equal(targetFrameMs(SYSTEM_PROFILE, { covered: true }), COVERED_FRAME_MS);
-// Fin du test.
-});
-
-// Test : constantes d'un shader.
-test('les constantes d’un shader ne le font recompiler que si elles changent', () => {
-  // Faux matériau allégé.
-  const m = { defines: { CLOUD_OCTAVES: 3, CLOUD_NORM: '0.87500' } };
-  // Mêmes valeurs (même en texte) : rien.
-  assert.equal(setShaderDefines(m, { CLOUD_OCTAVES: '3' }), false); assert.equal(m.needsUpdate, undefined);
-  // Qualité complète : changées, recompilation demandée.
-  assert.equal(setShaderDefines(m, { CLOUD_OCTAVES: 5, CLOUD_NORM: '0.96875' }), true); assert.equal(m.needsUpdate, true); assert.equal(m.defines.CLOUD_OCTAVES, 5);
-  // Sans matériau : rien.
-  assert.equal(setShaderDefines(null, { A: 1 }), false);
 // Fin du test.
 });

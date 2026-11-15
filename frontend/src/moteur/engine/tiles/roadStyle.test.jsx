@@ -407,9 +407,8 @@ test('source des rues : adresse lue dans la fiche, tuile de niveau 14 partagée 
   const aborted = new AbortController(); aborted.abort();
   // Le chargement est rejeté avec une erreur AbortError.
   await assert.rejects(source.loadImage({ z: 12, x: 10, y: 20 }, aborted.signal), { name: 'AbortError' });
-  // Téléphone : 256 px partout.
-  // Sur un appareil tenu en main : 256 pixels au niveau 16.
-  assert.equal(new RoadSource({ io, handheld: true }).sizeFor(16), 256);
+  // Le même canevas sur tous les appareils : 512 pixels au niveau 16, 256 au niveau 12.
+  assert.equal(new RoadSource({ io }).sizeFor(16), 512); assert.equal(new RoadSource({ io }).sizeFor(12), 256);
   // Libère la source.
   source.dispose();
 // Fin du test.

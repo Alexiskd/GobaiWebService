@@ -114,17 +114,14 @@ const browserIo = {
 // Déclare et exporte la classe RoadSource (début).
 export class RoadSource {
   /**
-   * @param {{ onChange?: () => void, handheld?: boolean, io?: Partial<typeof browserIo> }} options
-   *  handheld  téléphone ou tablette : canevas de 256 px à tous les niveaux (quatre fois moins de mémoire)
+   * @param {{ onChange?: () => void, io?: Partial<typeof browserIo> }} options
    */
-  // Constructeur : la fonction de changement, le mode tenu en main et les accès de remplacement (début).
-  constructor({ onChange = () => {}, handheld = false, io = {} } = {}) {
+  // Constructeur : la fonction de changement et les accès de remplacement (début).
+  constructor({ onChange = () => {}, io = {} } = {}) {
     // Identifiant du calque.
     this.layerId = ROADS_LAYER_ID;
     // Garde la fonction de changement.
     this.onChange = onChange;
-    // Garde le mode tenu en main.
-    this.handheld = handheld;
     // Accès : les réels, remplacés par ceux reçus.
     this.io = { ...browserIo, ...io };
     // État : en chargement.
@@ -277,9 +274,9 @@ export class RoadSource {
   // Fin de loadImage.
   }
 
-  /** Côté du canevas : 512 px là où les noms s'écrivent (ordinateur), 256 px sinon. */
-  // sizeFor : 512 pixels à partir du niveau 13 sur ordinateur, sinon 256.
-  sizeFor(z) { return !this.handheld && z >= 13 ? 512 : 256; }
+  /** Côté du canevas : 512 px là où les noms s'écrivent (à partir du niveau 13), 256 px sinon, sur tous les appareils. */
+  // sizeFor : 512 pixels à partir du niveau 13, sinon 256.
+  sizeFor(z) { return z >= 13 ? 512 : 256; }
 
   // emptyCanvas : le canevas vide partagé (début).
   emptyCanvas() {

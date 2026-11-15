@@ -4,7 +4,7 @@
 
 // Code GLSL du bruit (début).
 const NOISE_GLSL = [
-  // Octaves du bruit et leur somme (pour garder la même couverture) : réglables par `defines` (allégés sur téléphone).
+  // Octaves du bruit et leur somme (pour garder la même couverture) : réglables par `defines` (voir QUALITY dans powerSaver.jsx).
   // Nombre d'octaves du bruit (5 par défaut) et somme de leurs poids.
   '#ifndef CLOUD_OCTAVES', '#define CLOUD_OCTAVES 5', '#define CLOUD_NORM .96875', '#endif',
   // Fonction cHash : nombre pseudo-aléatoire entre 0 et 1 à partir d'un point.

@@ -95,11 +95,11 @@ export class NightLightsSource {
 
 /**
  * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit. Pour que le globe entier soit allumé d'un
- * coup, ses lumières sont chargées en une seule mosaïque Web Mercator (niveau 4 : 256 tuiles, 4 096 px de côté ;
- * niveau 3 sur téléphone : 64 tuiles, 2 048 px), posée sous les tuiles plus fines qui arrivent ensuite.
+ * coup, ses lumières sont chargées en une seule mosaïque Web Mercator (niveau 4 : 256 tuiles, 4 096 px de côté, sur
+ * tous les appareils), posée sous les tuiles plus fines qui arrivent ensuite.
  */
-// Déclare et exporte le niveau de la mosaïque mondiale : 4 sur ordinateur, 3 sur téléphone.
-export const LIGHTS_MOSAIC_LEVEL = { desktop: 4, phone: 3 };
+// Déclare et exporte le niveau de la mosaïque mondiale : 4.
+export const LIGHTS_MOSAIC_LEVEL = 4;
 // Tuiles de la mosaïque demandées en même temps.
 const MOSAIC_PARALLEL = 16;
 

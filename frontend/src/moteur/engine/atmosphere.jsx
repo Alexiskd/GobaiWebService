@@ -5,7 +5,7 @@ import { ATMOSPHERES, cloudRadiusFactor, scatterParams, simCloudFade } from './a
 // Importe les cinq shaders des nuages et de la coquille, depuis atmosphereShaders.
 import { cloudVertexShader, earthCloudFragmentShader, shellFragmentShader, shellVertexShader, venusCloudFragmentShader } from './atmosphereShaders';
 // Importe la somme des amplitudes du bruit et la qualité des shaders, depuis powerSaver.
-import { fbmNorm, setShaderDefines, shaderQuality } from './powerSaver';
+import { QUALITY, fbmNorm } from './powerSaver';
 // Importe la taille de la texture de vent, l'état de l'animation, le contrôle d'une grille et la construction de la texture, depuis weatherFlow.
 import { WIND_TEXTURE_HEIGHT, WIND_TEXTURE_WIDTH, flowState, isWindGrid, windTexels } from './weatherFlow';
 
@@ -77,20 +77,18 @@ export function decodeCover(grid) {
  * Atmosphère de l'astre `id` (rayon `radius` en unités de la scène), à ajouter au groupe de l'astre.
  * `uniforms` : uniforms partagés de ses cartes (TileManager.uniforms). Renvoie null si l'astre n'en a pas de modélisée.
  * `getSpin` : rotation propre de l'astre (radians), pour que les nuages tournent avec lui.
- * `lite` : shaders allégés pour téléphone (voir powerSaver.jsx).
  * `group.userData.track(cameraPosition)` est à appeler à chaque image (voir plus bas).
- * `group.userData.setLite(lite)` change la qualité des shaders en cours de route (système d'une planète sur téléphone).
  */
 // Déclare et exporte createAtmosphere : l'identifiant, le rayon, les variables uniformes partagées, la rotation propre et l'option d'allègement.
-export function createAtmosphere(id, radius, uniforms, getSpin = null, { lite = false } = {}) {
+export function createAtmosphere(id, radius, uniforms, getSpin = null) {
   // La description de l'atmosphère de l'astre.
   const spec = ATMOSPHERES[id];
   // Ses paramètres de diffusion.
   const p = scatterParams(id);
   // L'un des deux manque : null.
   if (!spec || !p) return null;
-  // Qualité des shaders, complète ou allégée.
-  const q = shaderQuality(lite);
+  // Qualité des shaders, la même sur tous les appareils.
+  const q = QUALITY;
   // Constantes des shaders de nuages : le nombre d'octaves et la somme de leurs amplitudes.
   const cloudDefines = { CLOUD_OCTAVES: q.octaves, CLOUD_NORM: fbmNorm(q.octaves).toFixed(5) };
   // Groupe de l'atmosphère.
@@ -109,7 +107,7 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null, { lite = 
       // Matériau à shader (début).
       new THREE.ShaderMaterial({
         // Ses constantes.
-        defines: { ...cloudDefines },
+        defines: cloudDefines,
         // Ses variables uniformes : la direction du Soleil et l'ombre, partagées.
         uniforms: { sunV: uniforms.sunV, shade: uniforms.shade },
         // Les shaders des nuages de Vénus, les deux faces dessinées.
@@ -138,7 +136,7 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null, { lite = 
       // Matériau à shader (début).
       new THREE.ShaderMaterial({
         // Ses constantes.
-        defines: { ...cloudDefines },
+        defines: cloudDefines,
         // Ses variables uniformes (début).
         uniforms: {
           // Le Soleil et l'ombre partagés, le fondu à 1 et l'opacité de la description.
@@ -328,16 +326,6 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null, { lite = 
     // Signale à three.js que le matériau a changé.
     material.needsUpdate = true;
   // Fin de track.
-  };
-  // setLite : passe les shaders de l'atmosphère en qualité allégée ou complète (recompilés une fois) (début).
-  group.userData.setLite = (lite) => {
-    // La qualité demandée.
-    const nq = shaderQuality(lite);
-    // Nuages : le nombre d'octaves et la somme de leurs amplitudes.
-    for (const layer of cloudLayers) setShaderDefines(layer.material, { CLOUD_OCTAVES: nq.octaves, CLOUD_NORM: fbmNorm(nq.octaves).toFixed(5) });
-    // Coquille de diffusion : les pas de diffusion et les pas vers le Soleil.
-    setShaderDefines(material, { SCATTER_STEPS: nq.scatterSteps, LIGHT_STEPS: nq.lightSteps });
-  // Fin de setLite.
   };
   // Renvoie le groupe.
   return group;

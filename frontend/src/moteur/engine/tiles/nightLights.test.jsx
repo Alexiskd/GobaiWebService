@@ -35,8 +35,8 @@ test('Black Marble de GIBS, niveaux 0 à 8, interrupteur gardé dans le navigate
 test('la mosaïque mondiale couvre toute la Terre, ligne par ligne', () => {
   // Niveau 1 : quatre tuiles, du nord-ouest au sud-est.
   assert.deepEqual(mosaicTiles(1), [{ z: 1, x: 0, y: 0 }, { z: 1, x: 1, y: 0 }, { z: 1, x: 0, y: 1 }, { z: 1, x: 1, y: 1 }]);
-  // Niveau de l'ordinateur : 256 tuiles ; du téléphone : 64.
-  assert.equal(mosaicTiles(LIGHTS_MOSAIC_LEVEL.desktop).length, 256); assert.equal(mosaicTiles(LIGHTS_MOSAIC_LEVEL.phone).length, 64);
+  // Niveau de la mosaïque, sur tous les appareils : 256 tuiles.
+  assert.equal(mosaicTiles(LIGHTS_MOSAIC_LEVEL).length, 256);
 // Fin du test.
 });
 

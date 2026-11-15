@@ -180,9 +180,8 @@ export class HexDisplay {
     const minZoom = Math.max(0, opts.minZoom ?? 0);
     // Choisit les cellules (début).
     const cells = selectHexCells(view, {
-      // Téléphone (la couche y envoie moins de textures par image) : moins de cellules à la fois.
-      // 130 cellules au plus sur téléphone, 200 sinon.
-      maxCells: layer.uploadsPerFrame <= 4 ? 130 : 200,
+      // 200 cellules au plus, sur tous les appareils.
+      maxCells: 200,
       // Relief en volume : marge de la hauteur des plus hautes montagnes (≈ 9 km, exagération comprise).
       // Marge de hauteur avec le relief en volume : 0,0015 rayon × l'exagération, sinon 0.
       lift: layer.reliefWanted ? 0.0015 * Math.max(1, layer.uniforms.reliefExag?.value || 1) : 0,

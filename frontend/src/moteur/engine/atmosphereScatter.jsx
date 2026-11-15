@@ -17,7 +17,7 @@ export const SCATTER_UNIFORMS_GLSL = [
 
 // Déclare et exporte le code GLSL de la diffusion (début).
 export const SCATTER_GLSL = [
-  // Nombre de pas le long du rayon de vue et vers le Soleil : réglables par `defines` (allégés sur téléphone).
+  // Nombre de pas le long du rayon de vue et vers le Soleil : réglables par `defines` (voir QUALITY dans powerSaver.jsx).
   // Nombre de pas le long du rayon de vue : 16 par défaut.
   '#ifndef SCATTER_STEPS', '#define SCATTER_STEPS 16', '#endif',
   // Nombre de pas vers le Soleil : 6 par défaut.

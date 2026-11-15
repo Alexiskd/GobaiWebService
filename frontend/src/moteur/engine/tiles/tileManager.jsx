@@ -123,9 +123,8 @@ export class TileManager {
     // Fin des variables uniformes.
     };
     // Relief de l'astre : vraies altitudes (« terrarium ») ou estimation d'après l'image (« image »), ou aucun.
-    // Sur téléphone, un relief allégé (maillage, niveau des tuiles d'altitude) : voir tuneRelief.
-    // Relief de l'astre : mis en forme, puis allégé sur téléphone.
-    this.relief = tuneRelief(normalizeRelief(body.relief, body.radiusKm), /Mobi|Android|iPhone|iPad/.test(globalThis.navigator?.userAgent || ''));
+    // Relief de l'astre : mis en forme et réglé (voir tuneRelief), le même sur tous les appareils.
+    this.relief = tuneRelief(normalizeRelief(body.relief, body.radiusKm));
     // Accès du relief : le chargement d'une image (sans cache, en mémoire seulement) et la lecture d'une fiche JSON.
     const reliefIo = { loadImage: (url) => loadImage(url), fetchJson };
     // Source des tuiles d'altitude, pour un relief Terrarium.
@@ -224,7 +223,7 @@ export class TileManager {
    */
   /**
    * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit, ses lumières allumées partout. Le monde
-   * entier est chargé d'un coup en une mosaïque (niveau 4, 3 sur téléphone), puis affiné par les tuiles affichées.
+   * entier est chargé d'un coup en une mosaïque (niveau 4), puis affiné par les tuiles affichées.
    */
   // setLightView : allume ou coupe la vue de nuit ; renvoie l'état (début).
   setLightView(on) {
@@ -244,10 +243,8 @@ export class TileManager {
   loadLightsMosaic() {
     // Déjà chargée ou en cours : la même promesse.
     if (this.lightsMosaic) return this.lightsMosaic;
-    // Niveau : 3 sur téléphone, 4 sinon.
-    const level = /Mobi|Android|iPhone|iPad/.test(globalThis.navigator?.userAgent || '') ? LIGHTS_MOSAIC_LEVEL.phone : LIGHTS_MOSAIC_LEVEL.desktop;
     // Assemble les tuiles du monde entier (début).
-    this.lightsMosaic = assembleLightsMosaic(this.lightsSource, level).then(({ canvas, got }) => {
+    this.lightsMosaic = assembleLightsMosaic(this.lightsSource, LIGHTS_MOSAIC_LEVEL).then(({ canvas, got }) => {
       // Aucune tuile : échec, à réessayer.
       if (!got) throw new Error('Lumières indisponibles');
       // Texture du canevas.
@@ -389,9 +386,7 @@ export class TileManager {
   buildLayer(source) {
     // Le moteur.
     const { engine } = this;
-    // Vrai sur téléphone ou tablette.
-    const small = /Mobi|Android|iPhone|iPad/.test(navigator.userAgent);
-    // Renvoie la couche (début).
+    // Renvoie la couche, réglée de la même façon sur tous les appareils (début).
     return new TileLayer({
       // Son repère.
       root: this.root,
@@ -399,20 +394,18 @@ export class TileManager {
       source,
       // Les variables uniformes partagées.
       uniforms: this.uniforms,
-      // Filtrage anisotrope : 8 sur ordinateur, 2 sur téléphone (moins de lectures de texture par pixel).
-      // Filtrage anisotrope : celui du profil, sans dépasser celui de la carte graphique.
+      // Filtrage anisotrope : celui du profil (8), sans dépasser celui de la carte graphique.
       maxAnisotropy: Math.min(engine.power?.anisotropy ?? 8, engine.renderer.capabilities.getMaxAnisotropy()),
-      // Nombre de tuiles gardées : 120 sur téléphone, 260 sinon.
-      capacity: small ? 120 : 260,
-      // Téléchargements simultanés : 6 par défaut (4 sur mobile) ; davantage pour un astre servi en HTTP/2 par l'API.
-      // Téléchargements simultanés : ceux de l'astre (la moitié sur téléphone), sinon 4 ou 6.
-      concurrency: this.body.concurrency ? (small ? Math.ceil(this.body.concurrency / 2) : this.body.concurrency) : (small ? 4 : 6),
-      // Niveaux gardés en mémoire : ceux de l'astre, 2 au plus sur téléphone et 4 sinon.
-      pinnedMaxZoom: Math.min(small ? 2 : 4, this.body.pinnedMaxZoom ?? 2),
+      // Nombre de tuiles gardées : 260.
+      capacity: 260,
+      // Téléchargements simultanés : ceux de l'astre (davantage pour un astre servi en HTTP/2 par l'API), sinon 6.
+      concurrency: this.body.concurrency || 6,
+      // Niveaux gardés en mémoire : ceux de l'astre, 4 au plus.
+      pinnedMaxZoom: Math.min(4, this.body.pinnedMaxZoom ?? 2),
       // Préchargement prédictif.
       prefetch: Boolean(this.body.prefetch),
-      // Images gardées en mémoire vive : celles de l'astre, 96 au plus sur téléphone ; 0 sans préchargement.
-      ramCapacity: this.body.prefetch ? Math.min(small ? 96 : Infinity, this.body.ramCapacity ?? 400) : 0,
+      // Images gardées en mémoire vive : celles de l'astre ; 0 sans préchargement.
+      ramCapacity: this.body.prefetch ? this.body.ramCapacity ?? 400 : 0,
       // Niveaux au-delà du niveau natif.
       overzoom: this.body.overzoom,
       // Relief en volume coupé : tuiles à plat (maillage simple), aucune tuile d'altitude ni de profondeur demandée.
@@ -424,11 +417,8 @@ export class TileManager {
       oceanSource: this.oceanSource,
       // Source des lumières de la nuit.
       nightLights: this.lightsSource,
-      // Tuiles envoyées au GPU par image : 8 sur ordinateur, 4 sur téléphone (pas de saccade).
-      // Envois par image : 4 sur téléphone, 8 sinon.
-      uploadsPerFrame: small ? 4 : 8,
-      // Textures de 256 px au plus sur téléphone (les images de 512 px sont réduites) : 4 fois moins de mémoire graphique.
-      maxTexturePx: small ? 256 : 0,
+      // Tuiles envoyées au GPU par image : 8.
+      uploadsPerFrame: 8,
     // Fin de la couche.
     });
   // Fin de buildLayer.
@@ -457,7 +447,7 @@ export class TileManager {
     // Source : pour le calque des rues,
     const source = layerId === ROADS_LAYER_ID
       // la source des rues ;
-      ? new RoadSource({ onChange: this.onChange, handheld: HANDHELD.test(globalThis.navigator?.userAgent || '') })
+      ? new RoadSource({ onChange: this.onChange })
       // sinon une source d'images.
       : new TileSource({ api: this.api, layerId, onChange: this.onChange });
     // Attend son démarrage.
@@ -733,8 +723,6 @@ function readReliefChoice() {
 }
 
 /** Lit une fiche JSON d'un fournisseur (5 s au plus). */
-// Motif qui reconnaît un téléphone ou une tablette.
-const HANDHELD = /Mobi|Android|iPhone|iPad/;
 
 // fetchJson, asynchrone : lit un document JSON (début).
 async function fetchJson(url) {
