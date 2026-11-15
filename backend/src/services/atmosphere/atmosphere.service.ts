@@ -16,12 +16,20 @@ import { LIGHTNING_RADIUS_KM, LIGHTNING_WINDOW_MIN, LightningStats, Strike, ligh
 import { StormTrack, parseEonetStorms, parseEonetWildfires } from './eonet';
 // Points chauds FIRMS : lecture, fusion, agrégation, détail par emprise, format commun.
 import { FireCells, FireDetail, Hotspot, HotspotStats, aggregateHotspots, hotspotToEvent, hotspotsInBounds, parseFirmsCsv, prepareHotspots } from './firms';
-// Cache à durée de vie et tuiles.
-import { CacheResult, TILE_DEG, TtlCache, isTile, tileBounds, tileOf } from './geo-cache';
+// Cache à durée de vie, tuiles et limite de débit.
+import { CacheResult, RateGate, TILE_DEG, TtlCache, isTile, tileBounds, tileOf } from './geo-cache';
+// Lecture et écriture du format PNG (tuiles radar).
+import { decodePng, encodePngRgb, type DecodedPng } from './png';
+// Radar Rain Viewer : index des images, adresses des tuiles, décodage des réflectivités.
+import { RADAR_MAX_ZOOM, RADAR_STALE_MS, RADAR_TILE_SIZE, RadarFrame, RadarIndex, coverageMask, coverageTileUrl, decodeRadarTile, isRadarTile, parseWeatherMaps, radarTileUrl, radarToRgb } from './radar';
+// Cellules orageuses estimées : détection, suivi, format commun.
+import { CELL_CORE_DBZ, CELL_EDGE_DBZ, RadarCell, cellToEvent, detectCells, trackCells } from './storms';
+// Avertissements officiels d'orages violents et de tornades (NWS).
+import { NWS_STORM_EVENTS, nwsAlertsUrl, parseNwsAlerts } from './nws-alerts';
 // Registre des fournisseurs.
 import { ProviderPublic, listProviders, provider } from './providers';
 
-// Service du moteur atmosphérique (lot 1 : WildfireEngine et CycloneEngine, partie données).
+// Service du moteur atmosphérique (partie données) : incendies et cyclones (lots 1-2), foudre (lot 3), radar des précipitations et orages (lot 4).
 // Aucun appel aux fournisseurs par requête du navigateur : chaque fournisseur est lu au plus une fois par période de
 // rafraîchissement (registre), sa réponse est gardée et partagée ; en panne, sa dernière réponse est rendue, marquée
 // périmée. Les appels passent par le fetch global du serveur, qui respecte la liste des API déconnectées.
@@ -35,6 +43,14 @@ export const FIRE_CELL_DEG = 0.5;
 const TIMEOUT_MS = 30_000;
 // Identification du serveur auprès des fournisseurs.
 const USER_AGENT = 'GobaiSpace/1.0 (+https://www.gobaispace.com)';
+/** Niveau de la grille mondiale de détection des cellules : 2 (4 × 4 tuiles de 512 px, environ 20 km par pixel à l'équateur). */
+// Déclare et exporte le niveau de détection.
+export const STORM_DETECT_ZOOM = 2;
+/** Nombre d'images suivies pour les cellules : 3 (20 minutes, durée minimale d'un déplacement mesuré). */
+// Déclare et exporte le nombre d'images suivies.
+export const STORM_TRACK_FRAMES = 3;
+// Durée de vie d'une image radar chez Rain Viewer (2 h) et marge : 2 h 10.
+const FRAME_LIFE_MS = 130 * 60_000;
 
 /** État d'un fournisseur pour une réponse : heure de lecture, péremption et dernier échec. */
 // Forme de l'état.
@@ -110,6 +126,50 @@ export interface LightningResponse {
 // Fin de LightningResponse.
 }
 
+/** Réponse du radar : images disponibles, fraîcheur et codage des tuiles. */
+// Forme de la réponse.
+export interface RadarResponse {
+  // generatedAt : l'heure de fabrication.
+  generatedAt: string;
+  // available : faux si aucune image n'est disponible (reason dit pourquoi).
+  available: boolean;
+  // reason : la raison d'une indisponibilité, ou null.
+  reason: string | null;
+  // frames : les images, de la plus ancienne à la plus récente (identifiant et heure ISO).
+  frames: { id: string; time: string }[];
+  // ageMin : l'âge de la dernière image, en minutes, ou null.
+  ageMin: number | null;
+  // stale : vrai si la dernière image a plus de 30 minutes ou si le fournisseur ne répond plus.
+  stale: boolean;
+  // tile : côté, niveau maximal et codage des tuiles servies.
+  tile: { size: number; maxZoom: number; encoding: string };
+  // source : l'état du fournisseur.
+  source: SourceState;
+// Fin de RadarResponse.
+}
+
+/** Réponse des orages : cellules estimées d'après le radar et avertissements officiels. */
+// Forme de la réponse.
+export interface StormsResponse {
+  // generatedAt : l'heure de fabrication.
+  generatedAt: string;
+  // frame : l'image radar des cellules (identifiant et heure ISO), ou null.
+  frame: { id: string; time: string } | null;
+  // cells : les cellules convectives estimées (non confirmées).
+  cells: AtmosphericEvent[];
+  // warnings : les avertissements officiels en vigueur (États-Unis).
+  warnings: AtmosphericEvent[];
+  // stats : décompte des cellules (fortes, très fortes, suivies, en mouvement), des avertissements et qualité du décodage.
+  stats: { cells: number; strong: number; veryStrong: number; persistent: number; moving: number; warnings: number; tornado: number; framesUsed: number; unknownShare: number };
+  // method : la méthode de détection, en clair.
+  method: string;
+  // sources : l'état de chaque fournisseur.
+  sources: SourceState[];
+  // stale : vrai si une source est en panne ou périmée.
+  stale: boolean;
+// Fin de StormsResponse.
+}
+
 // Données des incendies préparées : signature des lectures, points, statistiques, cellules et points par tuile.
 interface FireData {
   // signature : heures de lecture des fichiers (change quand un fichier est relu).
@@ -158,6 +218,14 @@ export class AtmosphereService {
   private readonly lightningCells = new TtlCache<Strike[]>(provider('xweather-lightning').refreshMs, 256);
   // Foudre : tuiles de la couche mondiale (niveaux 0 à 3), gardées 2 minutes.
   private readonly lightningTiles = new TtlCache<{ body: Buffer; type: string }>(2 * 60_000, 128);
+  // Radar : limite des requêtes vers Rain Viewer (80 par minute, sous les 100 permises par adresse IP).
+  private readonly radarGate = new RateGate(80);
+  // Radar : tuiles décodées puis réencodées (codes de réflectivité), gardées le temps de vie d'une image.
+  private readonly radarTiles = new TtlCache<Buffer>(FRAME_LIFE_MS, 192, 20_000);
+  // Radar : masque de couverture par tuile, gardé 6 heures (Rain Viewer le met rarement à jour).
+  private readonly coverageTiles = new TtlCache<Uint8Array>(6 * 3_600_000, 64, 60_000);
+  // Orages : cellules détectées par image (et part de couleurs inconnues), gardées le temps de vie d'une image.
+  private readonly radarCells = new TtlCache<{ cells: RadarCell[]; unknownShare: number }>(FRAME_LIFE_MS, 16, 60_000);
 
   // Méthode privée xweatherKeys : identifiants Xweather valides, ou null (jamais renvoyés au navigateur).
   private xweatherKeys(): { id: string; secret: string } | null {
@@ -232,6 +300,204 @@ export class AtmosphereService {
     // Image, ou null.
     return r.data;
   // Fin de lightningTile.
+  }
+
+  // Méthode privée fetchPng : une image PNG de Rain Viewer, sous la limite de débit, décodée.
+  private async fetchPng(url: string): Promise<DecodedPng> {
+    // Place prise dans la limite (attente de 15 s au plus, sinon refus).
+    await this.radarGate.take();
+    // Appel, avec abandon au bout du délai et identification du serveur.
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'User-Agent': USER_AGENT } });
+    // Réponse en erreur : son code.
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // Image décodée.
+    return decodePng(new Uint8Array(await res.arrayBuffer()));
+  // Fin de fetchPng.
+  }
+
+  // Méthode privée radarIndex : l'index des images radar (lu au plus toutes les 5 minutes).
+  private radarIndex(): Promise<CacheResult<RadarIndex>> {
+    // Lecture par le registre ; index illisible ou hôte inattendu : format inattendu.
+    return this.read<RadarIndex>('rainviewer', (text) => parseWeatherMaps(json(text)));
+  // Fin de radarIndex.
+  }
+
+  /** Images radar disponibles (deux dernières heures, toutes les 10 minutes) et codage des tuiles servies. */
+  // Méthode radar.
+  async radar(): Promise<RadarResponse> {
+    // Index lu.
+    const r = await this.radarIndex();
+    // Instant de référence.
+    const now = Date.now();
+    // Images.
+    const frames = r.data?.frames ?? [];
+    // La plus récente, ou null.
+    const latest = frames[frames.length - 1] ?? null;
+    // Réponse (début).
+    return {
+      // Heure de fabrication ; disponibilité et raison.
+      generatedAt: new Date(now).toISOString(), available: frames.length > 0, reason: frames.length ? null : r.error ?? 'aucune image radar publiée',
+      // Images, heures en ISO.
+      frames: frames.map((f) => ({ id: f.id, time: new Date(f.time).toISOString() })),
+      // Âge de la dernière image et péremption.
+      ageMin: latest ? Math.round((now - latest.time) / 60_000) : null, stale: r.stale || (latest !== null && now - latest.time > RADAR_STALE_MS),
+      // Tuiles servies : côté, niveau maximal, codage.
+      tile: { size: RADAR_TILE_SIZE, maxZoom: RADAR_MAX_ZOOM, encoding: 'PNG RVB : rouge = pluie, vert = neige (code = dBZ + 11 ; 0 = aucun écho), bleu = couverture radar (255 couverte, 0 aucun radar, 128 inconnue)' },
+      // État du fournisseur.
+      source: this.state('rainviewer', r),
+    // Fin de la réponse.
+    };
+  // Fin de radar.
+  }
+
+  // Méthode privée coverage : masque de couverture d'une tuile, ou null (indisponible : la couverture est dite inconnue).
+  private async coverage(z: number, x: number, y: number): Promise<Uint8Array | null> {
+    // Lecture par le cache.
+    const r = await this.coverageTiles.get(`${z}/${x}/${y}`, async () => coverageMask(await this.fetchPng(coverageTileUrl(z, x, y))));
+    // Masque, ou null.
+    return r.data;
+  // Fin de coverage.
+  }
+
+  /**
+   * Tuile radar d'une image, décodée : PNG RVB dont les canaux portent la pluie, la neige (réflectivités codées) et la
+   * couverture radar. Null si l'image n'est pas (ou plus) dans l'index, si la tuile est hors des niveaux permis ou si
+   * Rain Viewer ne répond pas.
+   */
+  // Méthode radarTile : identifiant de l'image, niveau, colonne, ligne.
+  async radarTile(id: string, z: number, x: number, y: number): Promise<Buffer | null> {
+    // Identifiant mal formé ou tuile hors des niveaux : null.
+    if (!/^[A-Za-z0-9_-]{4,64}$/.test(id) || !isRadarTile(z, x, y)) return null;
+    // Index courant.
+    const idx = await this.radarIndex();
+    // Image inconnue de l'index : null (aucune requête vers une image inventée).
+    if (!idx.data?.frames.some((f) => f.id === id)) return null;
+    // Lecture par le cache (début de la fonction de lecture).
+    const r = await this.radarTiles.get(`${id}/${z}/${x}/${y}`, async () => {
+      // Tuile radar et masque de couverture, en parallèle.
+      const [img, cov] = await Promise.all([this.fetchPng(radarTileUrl(id, z, x, y)), this.coverage(z, x, y)]);
+      // Réflectivités.
+      const d = decodeRadarTile(img, cov);
+      // Réencodées en PNG RVB.
+      return encodePngRgb(d.width, d.height, radarToRgb(d));
+    // Fin de la lecture.
+    });
+    // Image, ou null.
+    return r.data;
+  // Fin de radarTile.
+  }
+
+  // Méthode privée cellsOf : cellules d'une image, détectées sur la mosaïque mondiale du niveau 2 (16 tuiles).
+  private cellsOf(f: RadarFrame): Promise<CacheResult<{ cells: RadarCell[]; unknownShare: number }>> {
+    // Lecture par le cache (début de la fonction de lecture).
+    return this.radarCells.get(f.id, async () => {
+      // Tuiles par côté, côté d'une tuile, côté du monde.
+      const n = 2 ** STORM_DETECT_ZOOM, size = RADAR_TILE_SIZE, W = n * size;
+      // Grilles mondiales de la pluie et de la neige.
+      const rain = new Uint8Array(W * W), snow = new Uint8Array(W * W);
+      // Bilan du décodage.
+      let echoes = 0, unknown = 0;
+      // Tuile par tuile, l'une après l'autre (mémoire bornée) (début).
+      for (let ty = 0; ty < n; ty++) for (let tx = 0; tx < n; tx++) {
+        // Réflectivités de la tuile (sans couverture : inutile à la détection).
+        const d = decodeRadarTile(await this.fetchPng(radarTileUrl(f.id, STORM_DETECT_ZOOM, tx, ty)), null);
+        // Taille inattendue : échec.
+        if (d.width !== size || d.height !== size) throw new Error('tuile radar de taille inattendue');
+        // Bilan.
+        echoes += d.echoes; unknown += d.unknown;
+        // Lignes recopiées à leur place dans la grille mondiale.
+        for (let row = 0; row < size; row++) { const o = (ty * size + row) * W + tx * size; rain.set(d.rain.subarray(row * size, (row + 1) * size), o); snow.set(d.snow.subarray(row * size, (row + 1) * size), o); }
+      // Fin des tuiles.
+      }
+      // Cellules et part des couleurs inconnues.
+      return { cells: detectCells({ rain, snow, width: W, height: W, worldPx: W, x0: 0, y0: 0 }), unknownShare: echoes + unknown ? Math.round((unknown / (echoes + unknown)) * 1000) / 1000 : 0 };
+    // Fin de la lecture.
+    });
+  // Fin de cellsOf.
+  }
+
+  // Méthode privée readNws : avertissements d'orages violents et de tornades en vigueur (une requête par nature).
+  private readNws(): Promise<CacheResult<AtmosphericEvent[]>> {
+    // Lecture par le cache du fournisseur (début de la fonction de lecture).
+    return this.cacheOf<AtmosphericEvent[]>('nws-alerts').get('all', async () => {
+      // Heure de lecture.
+      const at = new Date().toISOString();
+      // Une requête par nature, en parallèle (début).
+      const lists = await Promise.all(NWS_STORM_EVENTS.map(async (ev) => {
+        // Appel, en GeoJSON, avec identification du serveur (demandée par le NWS).
+        const res = await fetch(nwsAlertsUrl(ev), { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'User-Agent': USER_AGENT, Accept: 'application/geo+json' } });
+        // Réponse en erreur : son code.
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        // Corps lu.
+        const j = (await res.json().catch(() => null)) as { features?: unknown } | null;
+        // Sans liste : format inattendu.
+        if (!Array.isArray(j?.features)) throw new Error('format inattendu');
+        // Avertissements en vigueur.
+        return parseNwsAlerts(j, at, Date.now());
+      // Fin des requêtes.
+      }));
+      // Listes réunies.
+      return lists.flat();
+    // Fin de la lecture.
+    });
+  // Fin de readNws.
+  }
+
+  /**
+   * Orages : cellules convectives estimées d'après le radar (monde, là où des radars couvrent), suivies sur les
+   * 20 dernières minutes, et avertissements officiels d'orages violents et de tornades (États-Unis).
+   */
+  // Méthode storms.
+  async storms(): Promise<StormsResponse> {
+    // Index radar et avertissements, en parallèle.
+    const [idx, nws] = await Promise.all([this.radarIndex(), this.readNws()]);
+    // Instant de référence.
+    const now = Date.now();
+    // Dernières images de l'index.
+    const frames = (idx.data?.frames ?? []).slice(-STORM_TRACK_FRAMES);
+    // Cellules de chaque image.
+    const per = await Promise.all(frames.map((f) => this.cellsOf(f)));
+    // Images lues, de la plus ancienne à la plus récente.
+    const ok = frames.map((f, i) => ({ f, r: per[i] })).filter((x) => x.r.data !== null);
+    // Chaîne d'images consécutives (écart de 15 minutes au plus) se terminant par la plus récente lue.
+    const chain: typeof ok = [];
+    // Remontée depuis la plus récente.
+    for (let i = ok.length - 1; i >= 0; i--) { if (chain.length && chain[0].f.time - ok[i].f.time > 15 * 60_000) break; chain.unshift(ok[i]); }
+    // Image des cellules.
+    const last = chain[chain.length - 1] ?? null;
+    // Cellules suivies.
+    const tracked = last ? trackCells(chain.map((x) => ({ time: x.f.time, cells: x.r.data!.cells }))) : [];
+    // Cellules au format commun.
+    const cellEvents = last ? tracked.map((c) => cellToEvent(c, last.f.time, last.f.id, new Date(last.r.fetchedAt ?? now).toISOString())) : [];
+    // Avertissements encore en vigueur.
+    const warningEvents = (nws.data ?? []).filter((e) => Date.parse(e.validTo ?? '') >= now);
+    // État du radar : l'index, et le premier échec de décodage d'image.
+    const radarState: SourceState = { ...this.state('rainviewer', idx), error: idx.error ?? per.find((r) => r.error)?.error ?? null };
+    // Fournisseurs.
+    const sources = [radarState, this.state('nws-alerts', nws)];
+    // Péremption : une source en panne, ou une image des cellules de plus de 30 minutes.
+    const stale = sources.some((s) => s.stale || (s.error !== null && s.fetchedAt === null)) || (last !== null && now - last.f.time > RADAR_STALE_MS);
+    // Filtrage par le gestionnaire (sources, âge, confiance).
+    const snap = this.manager.update('orages', [...cellEvents, ...warningEvents], { stale, errors: sources.filter((s) => s.error).map((s) => `${s.id} : ${s.error}`) }, now);
+    // Cellules et avertissements gardés.
+    const cells = snap.events.filter((e) => e.sources[0]?.provider === 'rainviewer'), warnings = snap.events.filter((e) => e.sources[0]?.provider === 'nws-alerts');
+    // dbz : réflectivité maximale d'une cellule.
+    const dbz = (e: AtmosphericEvent): number => Number(e.intensity.value) || 0;
+    // Réponse (début).
+    return {
+      // Heure de fabrication et image des cellules.
+      generatedAt: new Date(now).toISOString(), frame: last ? { id: last.f.id, time: new Date(last.f.time).toISOString() } : null,
+      // Cellules et avertissements.
+      cells, warnings,
+      // Décomptes.
+      stats: { cells: cells.length, strong: cells.filter((e) => dbz(e) >= 50).length, veryStrong: cells.filter((e) => dbz(e) >= 55).length, persistent: cells.filter((e) => Number(e.details.frames) >= 2).length, moving: cells.filter((e) => e.details.motion).length, warnings: warnings.length, tornado: warnings.filter((e) => e.details.kind === 'tornade').length, framesUsed: chain.length, unknownShare: last?.r.data?.unknownShare ?? 0 },
+      // Méthode, en clair.
+      method: `Cellules estimées : zones d’au moins ${CELL_EDGE_DBZ} dBZ contenant un noyau d’au moins ${CELL_CORE_DBZ} dBZ sur le composite radar mondial (environ 20 km par pixel à l’équateur), suivies d’une image à l’autre ; déplacement mesuré sur 20 minutes.`,
+      // Fournisseurs et péremption.
+      sources, stale,
+    // Fin de la réponse.
+    };
+  // Fin de storms.
   }
 
   // Méthode privée cacheOf : le cache d'un fournisseur, créé à la première demande.
@@ -395,8 +661,8 @@ export class AtmosphereService {
    */
   // Méthode events : familles, emprise et limite.
   async events(types: AtmosphericEventType[] | undefined, bbox: [number, number, number, number] | undefined, limit = 2_000): Promise<{ generatedAt: string; count: number; events: AtmosphericEvent[]; notes: string[] }> {
-    // Données à jour.
-    await Promise.all([this.fires(), this.cyclones()]);
+    // Données à jour (les orages seulement s'ils sont demandés : leur détection lit 48 tuiles radar).
+    await Promise.all([this.fires(), this.cyclones(), ...(types?.includes('storm') ? [this.storms()] : [])]);
     // Événements du gestionnaire (incendies confirmés, cyclones).
     const events = this.manager.query({ types: types?.filter((t) => t !== 'hotspot'), bbox });
     // Remarques sur la réponse.

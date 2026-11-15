@@ -1,13 +1,17 @@
 // Importe de React les crochets useCallback, useEffect, useRef et useState.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe les lectures du moteur atmosphérique du serveur.
-import { fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, lightningTileUrl } from '@/moteur/api/scene';
+import { fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, fetchAtmosphereRadar, fetchAtmosphereStorms, lightningTileUrl, radarTileUrl } from '@/moteur/api/scene';
 // Importe l'assemblage d'une mosaïque de tuiles (le même que pour les nuages satellite).
 import { loadCloudMosaic } from '@/moteur/engine/earthCloudMosaic';
 // Importe le rafraîchissement qui ne tourne pas onglet caché.
 import { refreshWhileVisible } from './useMapFeeds';
 // Importe les réglages (lecture, bornes, mémoire) et les textes d'aide.
-import { cycloneHint, fireHint, lightningHint, rememberAtmosphere, sanitizeAtmosphere, storedAtmosphere } from './atmosphereSettings';
+import { cycloneHint, fireHint, lightningHint, precipitationHint, rememberAtmosphere, sanitizeAtmosphere, stormHint, storedAtmosphere } from './atmosphereSettings';
+// Importe le choix des images et des tuiles du radar.
+import { RADAR_DETAIL_ALT, RADAR_DETAIL_RELEASE_ALT, RADAR_GLOBAL_ZOOM, detailBlock, framesToShow, normalizeFrames } from '@/moteur/engine/atmosphere/radarMath';
+// Importe le chargement d'un bloc de tuiles radar décodées.
+import { loadRadarBlock } from '@/moteur/engine/atmosphere/radarTiles';
 // Importe le choix et la mise en forme des tuiles de détail des incendies.
 import { FIRE_DETAIL_ALT, FIRE_KIND, mergeDetailTiles, normalizeFireColumns, tilesAround, viewRadiusDeg } from '@/moteur/engine/atmosphere/fireMath';
 
@@ -31,10 +35,17 @@ const LIGHTNING_MAP_REFRESH_MS = 2 * 60_000;
 const LIGHTNING_REFRESH_MS = 60_000, LIGHTNING_CHECK_MS = 5_000;
 // Foudre : altitude (rayons terrestres) au-delà de laquelle les impacts un par un ne sont pas demandés (≈ 6 000 km).
 const LIGHTNING_MAX_ALT = 0.95;
+// Radar : index relu toutes les 5 minutes (une image toutes les 10 minutes chez Rain Viewer) ; nouvel essai d'une
+// image manquante au bout de 30 s ; contrôle de la vue pour le détail toutes les 2 s.
+const RADAR_REFRESH_MS = 5 * 60_000, RADAR_RETRY_MS = 30_000, RADAR_CHECK_MS = 2_000;
+// Radar : blocs de détail gardés en mémoire (images de deux blocs).
+const RADAR_DETAIL_CACHE = 14;
+// Orages : relus toutes les 3 minutes.
+const STORMS_REFRESH_MS = 3 * 60_000;
 
 /**
  * Moteur atmosphérique, côté interface : réglages des calques (gardés dans le navigateur), lectures du serveur à
- * leur rythme (jamais par image), détail des incendies par tuile autour du point visé, et textes d'aide.
+ * leur rythme (jamais par image), détail des incendies et du radar autour du point visé, et textes d'aide.
  */
 // Déclare et exporte le crochet useAtmosphere : reçoit le moteur.
 export function useAtmosphere({ engine }) {
@@ -48,8 +59,14 @@ export function useAtmosphere({ engine }) {
   const [lightningInfo, setLightningInfo] = useState(null);
   // État : point visé trop lointain pour les impacts un par un.
   const [lightningFar, setLightningFar] = useState(false);
+  // État : dernière réponse du radar (null : pas encore ; 'erreur' : échec).
+  const [radarInfo, setRadarInfo] = useState(null);
+  // État : dernière réponse des orages (null : pas encore ; 'erreur' : échec).
+  const [stormInfo, setStormInfo] = useState(null);
   // Tuiles de détail en mémoire : clé « colonne,ligne » → { points, at }.
   const tiles = useRef(new Map());
+  // Radar : images mondiales en mémoire (identifiant → { time, canvas }), images voulues, blocs de détail en mémoire.
+  const radarGlobal = useRef(new Map()), radarFrames = useRef([]), radarDetail = useRef(new Map());
 
   // update : modifie le réglage d'un calque et le garde ; début de la fonction mémorisée.
   const update = useCallback((layer, patch) => {
@@ -70,6 +87,10 @@ export function useAtmosphere({ engine }) {
   useEffect(() => { engine?.setAtmosphereLayer('fires', { visible: settings.fires.on, opacity: settings.fires.opacity, intensity: settings.fires.intensity, windowHours: settings.fires.windowHours }); }, [engine, settings.fires]);
   // Transmet les réglages de la foudre au moteur.
   useEffect(() => { engine?.setAtmosphereLayer('lightning', { visible: settings.lightning.on, opacity: settings.lightning.opacity, intensity: settings.lightning.intensity }); }, [engine, settings.lightning]);
+  // Transmet les réglages du radar au moteur.
+  useEffect(() => { engine?.setAtmosphereLayer('precipitation', { visible: settings.precipitation.on, opacity: settings.precipitation.opacity, intensity: settings.precipitation.intensity, animate: settings.precipitation.animate, coverage: settings.precipitation.coverage }); }, [engine, settings.precipitation]);
+  // Transmet les réglages des orages au moteur.
+  useEffect(() => { engine?.setAtmosphereLayer('storms', { visible: settings.storms.on, opacity: settings.storms.opacity, intensity: settings.storms.intensity }); }, [engine, settings.storms]);
   // Transmet les réglages des cyclones au moteur.
   useEffect(() => { engine?.setAtmosphereLayer('cyclones', { visible: settings.cyclones.on, opacity: settings.cyclones.opacity, intensity: settings.cyclones.intensity }); }, [engine, settings.cyclones]);
 
@@ -250,6 +271,147 @@ export function useAtmosphere({ engine }) {
   // Fin de l'effet.
   }, [engine, settings.lightning.on]);
 
+  // Radar allumé : index des images, puis images mondiales chargées une à une, la plus récente d'abord (début de l'effet).
+  useEffect(() => {
+    // Sans moteur, ou calque éteint : rien.
+    if (!engine || !settings.precipitation.on) return undefined;
+    // Contrôleur d'abandon.
+    const controller = new AbortController();
+    // Chargement en cours, nouvel essai programmé.
+    let busy = false, retry = null;
+    // push : pose dans le moteur les images voulues déjà chargées.
+    const push = () => engine.setAtmosphereData('radarGlobal', radarFrames.current.filter((f) => radarGlobal.current.has(f.id)).map((f) => radarGlobal.current.get(f.id)));
+    // loadFrames : charge les images manquantes (début).
+    const loadFrames = async () => {
+      // Déjà en cours : rien.
+      if (busy) return;
+      // Noté.
+      busy = true;
+      // Une image a échoué.
+      let failed = false;
+      // Images voulues, la plus récente d'abord (début).
+      for (const f of [...radarFrames.current].reverse()) {
+        // Déjà chargée : suivante.
+        if (radarGlobal.current.has(f.id)) continue;
+        // Essai (début).
+        try {
+          // Bloc mondial (2 × 2 tuiles du niveau 1).
+          const canvas = await loadRadarBlock((z, x, y) => radarTileUrl(f.id, z, x, y), { z: RADAR_GLOBAL_ZOOM, x0: 0, y0: 0, n: 2 }, controller.signal);
+          // Gardée et posée.
+          radarGlobal.current.set(f.id, { time: f.time, canvas }); push();
+        // Échec : abandon (calque éteint) → arrêt ; sinon noté, image suivante.
+        } catch (err) { if (err?.name === 'AbortError') { busy = false; return; } failed = true; }
+      // Fin des images.
+      }
+      // Terminé.
+      busy = false;
+      // Une image manque : nouvel essai dans 30 s.
+      if (failed && !controller.signal.aborted) { clearTimeout(retry); retry = setTimeout(loadFrames, RADAR_RETRY_MS); }
+    // Fin de loadFrames.
+    };
+    // load : lit l'index, choisit les images, oublie les anciennes, charge les nouvelles (début).
+    const load = () => fetchAtmosphereRadar(controller.signal).then((data) => {
+      // Réponse gardée pour le texte d'aide.
+      setRadarInfo(data);
+      // Images voulues : les dernières (animation) ou la dernière.
+      radarFrames.current = framesToShow(normalizeFrames(data), settings.precipitation.animate);
+      // Images mondiales qui ne sont plus voulues : oubliées.
+      for (const id of [...radarGlobal.current.keys()]) if (!radarFrames.current.some((f) => f.id === id)) radarGlobal.current.delete(id);
+      // Posées, puis chargement des manquantes.
+      push(); loadFrames();
+    // Échec (hors abandon) : noté ; les images déjà posées restent.
+    }).catch((err) => { if (err?.name !== 'AbortError') setRadarInfo((prev) => (prev && prev !== 'erreur' ? prev : 'erreur')); });
+    // Première lecture.
+    load();
+    // Lectures suivantes.
+    const stop = refreshWhileVisible(load, RADAR_REFRESH_MS);
+    // Nettoyage : abandon, arrêt, images retirées du moteur (gardées en mémoire pour un rallumage).
+    return () => { controller.abort(); stop(); clearTimeout(retry); engine.setAtmosphereData('radarGlobal', []); };
+  // Fin de l'effet.
+  }, [engine, settings.precipitation.on, settings.precipitation.animate]);
+
+  // Radar allumé : bloc de détail autour du point visé, contrôlé toutes les 2 s (début de l'effet).
+  useEffect(() => {
+    // Sans moteur, ou calque éteint : rien.
+    if (!engine || !settings.precipitation.on) return undefined;
+    // Contrôleur d'abandon.
+    const controller = new AbortController();
+    // Signature du bloc posé (bloc et images), chargement en cours.
+    let shown = '', busy = false;
+    // tick : contrôle de la vue (début).
+    const tick = async () => {
+      // Onglet caché ou chargement en cours : rien.
+      if (document.hidden || busy) return;
+      // Où regarde la caméra.
+      const view = engine.atmosphereView?.();
+      // Inconnu : rien.
+      if (!view) return;
+      // Trop haut : détail retiré.
+      if (view.alt > RADAR_DETAIL_RELEASE_ALT) { if (shown) { shown = ''; engine.setAtmosphereData('radarDetail', null); } return; }
+      // Entre les deux seuils : on garde ce qui est posé.
+      if (view.alt > RADAR_DETAIL_ALT) return;
+      // Images voulues.
+      const frames = radarFrames.current;
+      // Aucune encore : rien.
+      if (!frames.length) return;
+      // Bloc autour du point visé.
+      const block = detailBlock(view.lon, view.lat);
+      // Signature : bloc et images.
+      const sig = `${block.key}|${frames.map((f) => f.id).join(',')}`;
+      // Inchangée : rien.
+      if (sig === shown) return;
+      // Chargement noté.
+      busy = true;
+      // Images du bloc chargées.
+      const list = [];
+      // Images, la plus récente d'abord (début).
+      for (const f of [...frames].reverse()) {
+        // Clé en mémoire.
+        const k = `${f.id}|${block.key}`;
+        // Canevas en mémoire.
+        let canvas = radarDetail.current.get(k);
+        // Absent : chargé (échec : on s'arrête, nouvel essai au prochain contrôle).
+        if (!canvas) { try { canvas = await loadRadarBlock((z, x, y) => radarTileUrl(f.id, z, x, y), block, controller.signal); } catch { busy = false; return; } radarDetail.current.set(k, canvas); while (radarDetail.current.size > RADAR_DETAIL_CACHE) radarDetail.current.delete(radarDetail.current.keys().next().value); }
+        // Ajouté en tête (ordre chronologique).
+        list.unshift({ time: f.time, canvas });
+        // Posé au fur et à mesure.
+        engine.setAtmosphereData('radarDetail', { box: block.box, frames: [...list] });
+      // Fin des images.
+      }
+      // Bloc complet posé.
+      shown = sig; busy = false;
+    // Fin de tick.
+    };
+    // Contrôle régulier.
+    const timer = setInterval(tick, RADAR_CHECK_MS);
+    // Premier contrôle.
+    tick();
+    // Nettoyage : arrêt, abandon, détail retiré.
+    return () => { clearInterval(timer); controller.abort(); engine.setAtmosphereData('radarDetail', null); };
+  // Fin de l'effet.
+  }, [engine, settings.precipitation.on]);
+
+  // Orages allumés : lecture, puis toutes les 3 minutes onglet visible (début de l'effet).
+  useEffect(() => {
+    // Sans moteur, ou calque éteint : rien.
+    if (!engine || !settings.storms.on) return undefined;
+    // Contrôleur d'abandon.
+    const controller = new AbortController();
+    // load : lit la réponse et la pose dans le moteur.
+    const load = () => fetchAtmosphereStorms(controller.signal)
+      // Réponse reçue : posée et gardée pour le texte d'aide.
+      .then((data) => { engine.setAtmosphereData('storms', data, Date.now()); setStormInfo(data); })
+      // Échec (hors abandon) : noté ; les données déjà posées restent.
+      .catch((err) => { if (err?.name !== 'AbortError') setStormInfo((prev) => (prev && prev !== 'erreur' ? prev : 'erreur')); });
+    // Première lecture.
+    load();
+    // Lectures suivantes.
+    const stop = refreshWhileVisible(load, STORMS_REFRESH_MS);
+    // Nettoyage : abandon, arrêt, orages retirés.
+    return () => { controller.abort(); stop(); engine.setAtmosphereData('storms', null); };
+  // Fin de l'effet.
+  }, [engine, settings.storms.on]);
+
   // Renvoie les réglages, leur modification, les textes d'aide et les réponses (début).
   return {
     // Réglages des calques.
@@ -262,8 +424,12 @@ export function useAtmosphere({ engine }) {
     cycloneHint: cycloneHint(cycloneInfo),
     // Texte d'aide de la foudre.
     lightningHint: lightningHint(lightningInfo, lightningFar),
+    // Texte d'aide du radar.
+    precipitationHint: precipitationHint(radarInfo),
+    // Texte d'aide des orages.
+    stormHint: stormHint(stormInfo),
     // Dernières réponses (pour la mention des sources).
-    fireInfo, cycloneInfo, lightningInfo,
+    fireInfo, cycloneInfo, lightningInfo, radarInfo, stormInfo,
   // Fin du retour.
   };
 // Fin de useAtmosphere.
