@@ -19,7 +19,7 @@ import { MAX_HEIGHT_M, OCEAN_SHADE_BOOST, RELIEF_SKIRT, metersPerTexel, pointInT
 // Importe nativeTile et OVERZOOM_LEVELS, la tuile native d'une tuile sur-zoomée et le nombre de niveaux, depuis overzoom.
 import { nativeTile, OVERZOOM_LEVELS } from './overzoom';
 // Importe le repli des lumières de la nuit (ancêtre déjà chargé), depuis nightLights.
-import { lightsFallback, lightsPrefetchList } from './nightLights';
+import { LIGHTS_PAD, NEIGHBOUR_DIRS, fillPad, lightsFallback, lightsPrefetchList, neighbourTile, padLightsImage, paddedRect } from './nightLights';
 // Importe les outils du préchargement prédictif, depuis prefetch.
 import { CameraPredictor, coneTest, PREFETCH_FOV, tilePriority, ZoomWatch } from './prefetch';
 // Importe HexDisplay, l'affichage en cellules hexagonales, depuis hexDisplay.
@@ -209,6 +209,8 @@ export class TileLayer {
     // Lumières de la nuit déjà sur la carte graphique, par tuile native (z/x/y → image) : repli immédiat d'une tuile
     // fille en attendant la sienne. Une entrée vit tant que sa texture est utilisée.
     this.lightsByCoord = new Map();
+    // Textures de lumières dont la bordure vient de recevoir une voisine : renvoyées à la carte graphique, une par image.
+    this.lightsDirty = new Set();
     // Garde le niveau maximal des tuiles gardées.
     this.pinnedMaxZoom = pinnedMaxZoom;
     // Liste des tuiles à précharger : pas encore calculée.
@@ -549,6 +551,8 @@ export class TileLayer {
     // Pour chaque tuile affichée : demande son calque, son relief, son fond marin et ses lumières (dont elle avance le
     // fondu), puis la place.
     for (const e of this.visibleEntries) { this.wantOverlay(e); this.wantRelief(e, RELIEF_PRIORITY); this.wantOcean(e, RELIEF_PRIORITY + 1); this.wantLights(e, RELIEF_PRIORITY + 2); this.fadeLights(e, now); this.place(e); }
+    // Une texture de lumières recousue avec une voisine arrivée : renvoyée à la carte graphique (une par image).
+    this.flushLightsDirty();
     // En hexagones : avance les fondus et place les cellules.
     if (this.hexOn && this.hex) { this.hex.animate(now); this.hex.place(); }
   // Fin de update.
@@ -1236,7 +1240,7 @@ export class TileLayer {
     // une demande annulée puis relancée garde le repli déjà posé.
     const fb = e.lpMap ? null : lightsFallback(this.lightsByCoord, no.coord, { z: e.z, x: e.x, y: e.y });
     // Trouvé : posé en repli, avec la portion de la tuile affichée dans cet ancêtre.
-    if (fb) { e.lpMap = this.lightsTexture(fb.img); u.lpMap.value = e.lpMap; u.lpRect.value.set(...fb.rect); u.lpHas.value = 1; }
+    if (fb) { e.lpMap = this.lightsTexture(fb.img); u.lpMap.value = e.lpMap; u.lpRect.value.set(...this.lightsRect(fb.rect, e.lpMap)); u.lpHas.value = 1; }
     // Par la file de chargement,
     this.loader
       // sous la clé « lt: », charge l'image.
@@ -1247,8 +1251,8 @@ export class TileLayer {
         if (this.disposed || src !== this.lightsSource || !this.ready(e.key)) return;
         // Texture des lumières, connue par sa tuile native.
         e.ltMap = this.lightsTexture(img, no.coord);
-        // Pose la texture et sa portion.
-        u.ltMap.value = e.ltMap; u.ltRect.value.set(...no.rect);
+        // Pose la texture et sa portion (dans la texture bordée).
+        u.ltMap.value = e.ltMap; u.ltRect.value.set(...this.lightsRect(no.rect, e.ltMap));
         // Lumières disponibles.
         u.ltHas.value = 1;
         // Fondu par-dessus le repli (ancêtre ou mosaïque), ou d'un coup si les animations sont réduites.
@@ -1294,17 +1298,91 @@ export class TileLayer {
    */
   // lightsTexture : la texture partagée d'une image de lumières (début).
   lightsTexture(img, coord = null) {
+    // Bordure prise dans les voisines (WebGL 2 seulement : en WebGL 1 une taille hors puissance de 2 serait rééchantillonnée).
+    const p = this.lightsPad();
+    // Tuile native connue, avec bordure : son canevas bordé, déjà fait ou fait maintenant avec ses voisines déjà là.
+    if (coord && p > 0) img = this.lightsByCoord.get(lightsKey(coord)) ?? this.padLights(img, coord, p);
     // Nouvelle texture pour cette image ?
     const fresh = !this.textures.has(img);
-    // Texture partagée (mipmaps, lissage, bords).
+    // Texture partagée (mipmaps, lissage, filtrage anisotrope, bords).
     const t = this.texture(img);
-    // Première création : stockage sRGB si demandé, et image connue par sa tuile native.
-    if (fresh) { if (this.uniforms.ltLinear?.value > 0) t.internalFormat = 'SRGB8_ALPHA8'; t.lightsKey = coord ? lightsKey(coord) : null; }
-    // Tuile native connue : notée pour les replis.
+    // Première création : stockage sRGB si demandé.
+    if (fresh && this.uniforms.ltLinear?.value > 0) t.internalFormat = 'SRGB8_ALPHA8';
+    // Tuile native connue : notée pour les replis et les bordures.
     if (coord) { t.lightsKey = lightsKey(coord); this.lightsByCoord.set(t.lightsKey, img); }
     // La renvoie.
     return t;
   // Fin de lightsTexture.
+  }
+
+  /** Bordure des textures de lumières, en pixels : LIGHTS_PAD en WebGL 2, 0 sinon. */
+  // lightsPad : la bordure (début).
+  lightsPad() {
+    // Lecture en lumière linéaire (WebGL 2) : bordure ; sinon aucune.
+    return this.uniforms.ltLinear?.value > 0 ? LIGHTS_PAD : 0;
+  // Fin de lightsPad.
+  }
+
+  /** Portion d'une tuile native ramenée dans sa texture (bordée ou non). */
+  // lightsRect : la portion et la texture (début).
+  lightsRect(rect, tex) {
+    // Bordure.
+    const p = this.lightsPad();
+    // Sans bordure : la portion telle quelle ; sinon décalée et mise à l'échelle.
+    return p > 0 ? paddedRect(rect, tex.image.width - 2 * p, p) : rect;
+  // Fin de lightsRect.
+  }
+
+  /**
+   * Canevas bordé d'une tuile native arrivée : entouré des bords de ses voisines déjà sur la carte graphique (même
+   * niveau, antiméridien compris), et ces voisines reçoivent en retour le bord de celle-ci, renvoyées ensuite à la
+   * carte graphique. Les tuiles se raccordent sans couture quel que soit l'ordre d'arrivée.
+   */
+  // padLights : l'image, sa tuile native et la bordure (début).
+  padLights(img, coord, p) {
+    // Canevas d'une voisine déjà là, ou null.
+    const near = (dir) => { const nb = neighbourTile(coord, dir); return nb ? this.lightsByCoord.get(lightsKey(nb)) ?? null : null; };
+    // Canevas bordé de la tuile.
+    const c = padLightsImage(img, p, near);
+    // Côté de la tuile.
+    const N = c.width - 2 * p;
+    // Pour chaque direction (début).
+    for (const dir of NEIGHBOUR_DIRS) {
+      // La voisine.
+      const nb = neighbourTile(coord, dir);
+      // Au-delà d'un pôle : suivante.
+      if (!nb) continue;
+      // Voisine qui est la tuile elle-même (niveau 0 : elle se touche à l'antiméridien) : bande prise en elle-même.
+      if (lightsKey(nb) === lightsKey(coord)) { fillPad(c.getContext('2d'), null, c, dir, N, p); continue; }
+      // Son canevas bordé, s'il est là.
+      const nc = this.lightsByCoord.get(lightsKey(nb));
+      // Absente (ou sans bordure) : suivante.
+      if (!nc?.getContext) continue;
+      // Elle reçoit le bord de la nouvelle tuile, dans la direction opposée.
+      fillPad(nc.getContext('2d'), null, c, [-dir[0], -dir[1]], nc.width - 2 * p, p);
+      // Sa texture sera renvoyée à la carte graphique.
+      const shared = this.textures.get(nc);
+      // Notée.
+      if (shared) this.lightsDirty.add(shared.tex);
+    // Fin de la boucle.
+    }
+    // Renvoie le canevas.
+    return c;
+  // Fin de padLights.
+  }
+
+  /** Renvoie à la carte graphique une texture de lumières recousue (une par image, pour étaler le travail). */
+  // flushLightsDirty : une texture recousue renvoyée (début).
+  flushLightsDirty() {
+    // La première en attente.
+    const t = this.lightsDirty.values().next().value;
+    // Aucune : rien.
+    if (!t) return;
+    // Retirée de l'attente.
+    this.lightsDirty.delete(t);
+    // Toujours utilisée : à renvoyer.
+    if (this.textures.get(t.image)?.tex === t) t.needsUpdate = true;
+  // Fin de flushLightsDirty.
   }
 
   /** Texture d'une image d'altitude, partagée comme `texture` : sans lissage ni mipmaps (les couleurs codent un nombre). */
@@ -1525,6 +1603,8 @@ export class TileLayer {
   dispose() {
     // Note la libération.
     this.disposed = true;
+    // Plus aucune texture de lumières à renvoyer.
+    this.lightsDirty.clear();
     // Libère l'affichage en hexagones.
     this.hex?.dispose();
     // Annule tous les chargements.
