@@ -113,6 +113,47 @@ Contrôle au banc, avec une table d'essai (une source « France », une source �
 Sur le banc, la carte graphique logicielle ralentit tant la page que des chargements directs dépassent leur délai et
 repassent par le relais (16 sur 70). Ce n'est pas le cas sur un vrai appareil.
 
+## Lot 3 : paliers de zoom et budget de tuiles
+
+La table du serveur (version 2) donne huit paliers, de l'espace à la rue. Le palier se choisit d'après la distance
+affichée : l'altitude de la caméra en km. Chaque palier fixe le niveau de tuile le plus fin, un nombre maximal de tuiles
+(ordinateur, téléphone) et les détails affichés.
+
+| Palier | Jusqu'à | Niveau max | Tuiles ordinateur / téléphone | Océans | Côtes | Routes | Noms | Carte marine |
+|---|---|---|---|---|---|---|---|---|
+| Rue | 0,4 km | 19 | 280 / 210 | relief | oui | oui | oui | GEBCO |
+| Quartier | 3 km | 19 | 280 / 210 | relief | oui | oui | oui | GEBCO |
+| Ville | 40 km | 17 | 280 / 210 | relief | oui | oui | oui | GEBCO |
+| Région | 400 km | 14 | 260 / 200 | relief | oui | oui | oui | fondu NOAA → GEBCO |
+| Pays | 2 500 km | 10 | 220 / 170 | teinte | oui | non | oui | fondu NOAA → GEBCO |
+| Continent | 9 000 km | 8 | 180 / 140 | teinte | oui | non | oui | NOAA |
+| Planète | 120 000 km | 6 | 120 / 100 | teinte | non | non | non | NOAA |
+| Espace | au-delà | 3 | 85 / 85 | teinte | non | non | non | NOAA |
+
+- Le navigateur prend les paliers dans la table ; sans table, rien ne change (aucune limite).
+- Budget : les tuiles les plus prioritaires (centre de l'écran d'abord) ; les autres cellules gardent un niveau moins
+  fin. En mode économie d'énergie, le budget passe à 60 % (64 tuiles au moins).
+- Chargement limité au champ (`fieldOnly` dans la table) : pas de préchargement hors champ, et les tuiles hors champ
+  quittent la carte graphique dès qu'elles ne sont plus voulues (leurs ancêtres restent pour le repli ; la mosaïque
+  instantanée reste épinglée).
+- Les routes ne sont demandées qu'aux paliers qui les affichent.
+- Le moniteur de performance affiche le palier en cours, son niveau max et le budget de l'appareil.
+
+Mesures au banc (même banc que le lot 1 ; vue lointaine, puis vol vers Paris à 300 km d'altitude, 45 s) :
+
+| Mesure | Ordinateur, lot 2 | lot 3 | Téléphone, lot 2 | lot 3 |
+|---|---|---|---|---|
+| Palier, vue lointaine | aucun | Planète | aucun | Planète |
+| Budget de tuiles, vue lointaine | sans limite | 120 | sans limite | 100 |
+| Palier à 300 km | aucun | Région | aucun | Région |
+| Budget de tuiles à 300 km | sans limite | 260 | sans limite | 200 |
+| Tuiles sur la carte graphique à 300 km | 12 | 9 | 7 | 7 |
+| Requêtes de tuiles après le vol | 5 | 5 | 8 | 8 |
+| Requêtes hors du champ (à plus de 40° de Paris) | 0 | 0 | 0 | 0 |
+
+Sur le banc (environ 1 image par seconde), le vol n'atteint que les niveaux 7 et 8 : le budget n'y est pas atteint. Le
+plafond des niveaux et le budget se vérifient sur l'appareil, avec le moniteur (ligne « Palier »).
+
 ## Mesures avant et après le lot 1 (banc)
 
 Banc d'interface : Chrome sans écran, carte graphique logicielle (SwiftShader, environ 1 image par seconde), tuiles
