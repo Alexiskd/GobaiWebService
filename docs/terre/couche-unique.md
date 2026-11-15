@@ -154,6 +154,42 @@ Mesures au banc (même banc que le lot 1 ; vue lointaine, puis vol vers Paris à
 Sur le banc (environ 1 image par seconde), le vol n'atteint que les niveaux 7 et 8 : le budget n'y est pas atteint. Le
 plafond des niveaux et le budget se vérifient sur l'appareil, avec le moniteur (ligne « Palier »).
 
+## Lot 4 : carte marine NOAA / GEBCO
+
+La table du serveur (version 3) décrit la carte marine (`marine`) ; le navigateur la fait sous le masque de la mer des
+altitudes Terrarium, gardé tel quel (l'eau peu profonde des côtes, au-dessus de −10 m, garde l'image satellite ; la
+pleine mer, sous −50 m, montre la carte marine).
+
+| Niveau des tuiles | Étape (colonne « marine » des paliers) | Image des fonds |
+|---|---|---|
+| 0 à 8 (espace, planète, continent) | NOAA | Teinte des océans NOAA NCEI, ETOPO 2022 |
+| 9 à 14 (pays, région) | fondu | NOAA fondue dans GEBCO, part de GEBCO de 1/7 à 6/7 niveau par niveau |
+| 15 et plus (ville, quartier, rue) | GEBCO | GEBCO 2026 seule, en relief ombré, avec isobathes |
+
+- Seuils : la colonne « marine » des paliers de la table (dernier niveau NOAA, premier niveau GEBCO). Changer la table
+  sur le serveur déplace le passage, sans toucher au navigateur.
+- Durée du fondu : `marine.fadeMs` (600 ms), appliquée aux fondus entre niveaux de la Terre, donc au passage NOAA →
+  GEBCO. « Réduire les animations » du système garde un changement immédiat.
+- Isobathes : tirées de la carte plate colorée de GEBCO (`GEBCO_LATEST_2`, nouveau relais `earth-gebco-flat`, en PNG) ;
+  chaque limite entre deux bandes de couleur (12 bandes de luminance) suit une ligne d'égale profondeur. Tracées en
+  pleine mer seulement, trait assombri de 45 %. Pas de profondeur écrite sur les lignes.
+- Seules les images utiles au niveau de la tuile sont demandées : NOAA seule au loin, NOAA et GEBCO pendant le fondu,
+  GEBCO et sa carte plate de près ; au-delà du niveau 10, elles sont découpées dans leur ancêtre de niveau 10.
+- Mentions : dans la table (`marine.credits`) et dans la fenêtre Node, onglet « Sources et Entreprises » (NOAA NCEI
+  ETOPO 2022, GEBCO 2026, « pas pour la navigation »).
+- `EARTH_SEAFLOOR=0` coupe la carte marine (table `marine: null`).
+
+Contrôle dans le vrai navigateur (banc, images d'essai : NOAA bleu foncé, GEBCO bleu, carte plate en deux bandes) :
+
+| Tuile | Couleur obtenue | Images demandées |
+|---|---|---|
+| Niveau 5 | NOAA seule (20, 40, 120) | NOAA |
+| Niveau 12 | fondu à 4/7 (31, 69, 143) | NOAA et GEBCO (niveau 10) |
+| Niveau 15 | GEBCO seule (40, 90, 160), 1 024 pixels d'isobathe | GEBCO et carte plate (niveau 10) |
+
+Vue lointaine : 19 images NOAA (niveaux 0 à 2), aucune image GEBCO. Durée des fondus lue dans la table : 600 ms (0 avec
+« réduire les animations »).
+
 ## Mesures avant et après le lot 1 (banc)
 
 Banc d'interface : Chrome sans écran, carte graphique logicielle (SwiftShader, environ 1 image par seconde), tuiles
@@ -179,5 +215,5 @@ Le vrai bundle mobile (Vite, avec MUI) se mesure au build de Render.
 | NOAA NCEI, ETOPO 2022 (service « DEM Global Mosaic », relief ombré en couleurs) | Vue de l'espace : teinte des océans | CC0 1.0, domaine public | NOAA National Centers for Environmental Information. 2022 : ETOPO 2022 15 Arc-Second Global Relief Model. doi:10.25921/fd45-gt74 | Aucune limite publiée |
 | GEBCO, grille GEBCO_2026 (publiée en avril 2026 ; couches WMS `GEBCO_Latest` sur 2026 depuis août 2026) | Zoom : relief des fonds, isobathes | Domaine public, à ne pas utiliser pour la navigation | GEBCO Compilation Group (2026) GEBCO_2026 Grid, doi:10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa | Aucune limite publiée |
 
-Aucune autre source ne sera ajoutée sans accord. Le WMS de GEBCO n'a pas de couche d'isobathes : elles seront
-tirées des couleurs de `GEBCO_Latest_2`, sans nouvelle source.
+Aucune autre source ne sera ajoutée sans accord. Le WMS de GEBCO n'a pas de couche d'isobathes : elles sont tirées
+des couleurs de `GEBCO_LATEST_2` (même grille, même service), sans nouvelle source.
