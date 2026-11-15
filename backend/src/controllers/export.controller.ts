@@ -67,7 +67,9 @@ export class ExportController {
     description: 'Sphéroïde aux dimensions réelles, en kilomètres, texturé par les tuiles de l’astre assemblées. '
       + 'Un seul fichier, que Blender, three.js ou un visualiseur en ligne ouvrent directement. La mention '
       + 'd’origine des images est inscrite dedans. Terre : satellite HD, relief exagéré des terres et des fonds marins, '
-      + 'et surface des océans en objet à part (couleur réelle de l’eau selon la chlorophylle, transparente sur les côtes).',
+      + 'et surface des océans en objet à part (couleur réelle de l’eau selon la chlorophylle, transparente sur les côtes). '
+      + 'Soleil : plasma lumineux (texture procédurale aux couleurs de SDO), boucles coronales, protubérances et éruption '
+      + 'en objets à part, placées sur les régions actives du jour (NOAA SWPC, NASA DONKI).',
   })
   @ApiOkResponse({ description: 'Le fichier GLB.' })
   @ApiUnauthorizedResponse({ type: ApiErrorDto, description: 'Jeton absent, expiré ou refusé.' })
@@ -76,7 +78,7 @@ export class ExportController {
   // Méthode model.
   async model(@Param() p: BodyParamsDto, @Query() q: ModelQueryDto, @Res() res: Response): Promise<void> {
     // Le modèle.
-    const { body, file, texture, mesh, oceans } = await this.exports.model(p.body, {
+    const { body, file, texture, mesh, oceans, eruptions } = await this.exports.model(p.body, {
       zoom: q.zoom ?? DEFAULT_ZOOM,
       quality: q.quality ?? 'normale',
       layerId: q.layer,
@@ -84,6 +86,8 @@ export class ExportController {
       oceans: q.oceans ?? true,
       // Exagération du relief de la Terre : 20 par défaut.
       exaggeration: q.exaggeration ?? 20,
+      // Éruptions du Soleil : modélisées par défaut.
+      eruptions: q.eruptions ?? true,
     });
     // En-têtes : type du fichier, nom proposé, et ce qui décrit le modèle.
     res.setHeader('Content-Type', 'model/gltf-binary');
@@ -94,6 +98,8 @@ export class ExportController {
     res.setHeader('X-Model-Triangles', String(mesh.triangles));
     // Océans modélisés (Terre) : oui ou non.
     res.setHeader('X-Model-Oceans', oceans ? 'oui' : 'non');
+    // Éruptions modélisées (Soleil) : oui ou non.
+    res.setHeader('X-Model-Eruptions', eruptions ? 'oui' : 'non');
     // La projection de la texture et son origine, quand il y en a une.
     if (texture) {
       // Projection et dimensions.

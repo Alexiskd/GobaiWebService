@@ -171,6 +171,12 @@ export interface GlbPart {
   transparent?: boolean;
   // roughness : rugosité de la matière, de 0 (miroir) à 1 (mat, par défaut).
   roughness?: number;
+  // color : couleur de base [r, g, b, a] (0 … 1) d'une pièce sans texture (gris par défaut).
+  color?: [number, number, number, number];
+  // emissive : lumière propre de la pièce : true = sa texture éclaire, ou une couleur [r, g, b] (0 … 1).
+  emissive?: boolean | [number, number, number];
+  // emissiveStrength : intensité de cette lumière (extension KHR_materials_emissive_strength, lue par Blender).
+  emissiveStrength?: number;
 // Fin de GlbPart.
 }
 /** Ce qu'il faut pour écrire un modèle. */
@@ -189,6 +195,10 @@ export interface GlbOptions {
   generator?: string;
   /** Pièces ajoutées après l'astre (objets à part dans Blender). */
   parts?: GlbPart[];
+  /** Lumière propre de l'astre (le Soleil) : true = sa texture éclaire. */
+  emissive?: boolean;
+  /** Intensité de cette lumière. */
+  emissiveStrength?: number;
 }
 
 /** Minimum et maximum de chaque composante : glTF les exige sur l'accesseur des positions. */
@@ -216,7 +226,7 @@ function bounds(positions: Float32Array): { min: number[]; max: number[] } {
 const pad4 = (n: number): number => (4 - (n % 4)) % 4;
 
 /** Écrit le modèle complet d'un astre au format GLB, avec ses pièces supplémentaires. */
-export function buildGlb({ name, mesh, image, mimeType = 'image/jpeg', copyright, generator = 'Gobai Space', parts = [] }: GlbOptions): Buffer {
+export function buildGlb({ name, mesh, image, mimeType = 'image/jpeg', copyright, generator = 'Gobai Space', parts = [], emissive, emissiveStrength }: GlbOptions): Buffer {
   // Les morceaux binaires, dans l'ordre où ils seront rangés.
   const chunks: Buffer[] = [];
   // Les vues sur le tampon, décrites au fur et à mesure.
@@ -242,7 +252,9 @@ export function buildGlb({ name, mesh, image, mimeType = 'image/jpeg', copyright
   // bytes : les octets d'un tableau typé, sans copie.
   const bytes = (a: Float32Array | Uint32Array): Buffer => Buffer.from(a.buffer, a.byteOffset, a.byteLength);
   // Toutes les pièces : l'astre d'abord (matière mate, sous le nom « … — surface »), puis les pièces ajoutées.
-  const all: Array<GlbPart & { material: string }> = [{ name, mesh, image, mimeType, material: `${name} — surface` }, ...parts.map((p) => ({ ...p, material: p.name }))];
+  const all: Array<GlbPart & { material: string }> = [{ name, mesh, image, mimeType, emissive, emissiveStrength, material: `${name} — surface` }, ...parts.map((p) => ({ ...p, material: p.name }))];
+  // Vrai dès qu'une matière emploie l'intensité de lumière propre (extension à déclarer).
+  let strength = false;
   // Les listes de la description, remplies pièce par pièce.
   const accessors: Record<string, unknown>[] = [], meshes: Record<string, unknown>[] = [], materials: Record<string, unknown>[] = [];
   // Les nœuds, les images et les textures.
@@ -276,9 +288,13 @@ export function buildGlb({ name, mesh, image, mimeType = 'image/jpeg', copyright
       // Son nom.
       name: part.material,
       // Couleur, métal et rugosité.
-      pbrMetallicRoughness: { metallicFactor: 0, roughnessFactor: part.roughness ?? 1, ...(tex !== null ? { baseColorTexture: { index: tex } } : { baseColorFactor: [0.6, 0.6, 0.6, 1] }) },
+      pbrMetallicRoughness: { metallicFactor: 0, roughnessFactor: part.roughness ?? 1, ...(tex !== null ? { baseColorTexture: { index: tex } } : { baseColorFactor: part.color ?? [0.6, 0.6, 0.6, 1] }) },
       // Transparence gardée si demandé.
       ...(part.transparent ? { alphaMode: 'BLEND' } : {}),
+      // Lumière propre : la texture éclaire (facteur blanc), ou une couleur donnée.
+      ...(part.emissive === true && tex !== null ? { emissiveTexture: { index: tex }, emissiveFactor: [1, 1, 1] } : Array.isArray(part.emissive) ? { emissiveFactor: part.emissive } : {}),
+      // Intensité de cette lumière, par l'extension KHR_materials_emissive_strength (notée pour la déclarer).
+      ...(part.emissive && part.emissiveStrength ? ((strength = true), { extensions: { KHR_materials_emissive_strength: { emissiveStrength: part.emissiveStrength } } }) : {}),
     // Fin de la matière.
     });
     // Son maillage : un seul morceau, avec ses attributs, ses indices et sa matière.
@@ -299,6 +315,8 @@ export function buildGlb({ name, mesh, image, mimeType = 'image/jpeg', copyright
     bufferViews, buffers: [{ byteLength: offset }],
   // Fin de la description.
   };
+  // Extension d'intensité de lumière propre employée : déclarée.
+  if (strength) gltf.extensionsUsed = ['KHR_materials_emissive_strength'];
   // Les textures, quand il y a des images (début).
   if (images.length) {
     // Les images et les textures.

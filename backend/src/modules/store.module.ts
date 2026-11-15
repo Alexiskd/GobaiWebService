@@ -14,6 +14,8 @@ import { StripeCheckoutService } from '../services/donations/stripe-checkout.ser
 import { TilesModule } from './tiles.module';
 // Module des contributions, qui expose le service des comptes : un achat se fait depuis un compte connecté.
 import { ContributionsModule } from './contributions.module';
+// Module du Soleil, qui expose ses régions actives : elles placent les éruptions du modèle 3D du Soleil.
+import { SunModule } from './sun.module';
 // Configuration de l'application.
 import { APP_CONFIG } from './config.module';
 // Type de la configuration.
@@ -23,7 +25,7 @@ import type { AppConfig } from '../common/configuration';
 @Module({
   // Le module des tuiles fournit le service des couches, dont l'assemblage a besoin ; celui des contributions
   // fournit le service des comptes, qui reconnaît l'acheteur connecté.
-  imports: [TilesModule, ContributionsModule],
+  imports: [TilesModule, ContributionsModule, SunModule],
   // Routes du module : la boutique et les exports.
   controllers: [StoreController, ExportController],
   // Services du module.
