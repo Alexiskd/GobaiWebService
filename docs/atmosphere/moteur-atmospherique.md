@@ -41,6 +41,7 @@ Ce document décrit l'architecture du moteur atmosphérique, ce que contient le 
 | WildfireEngine | NASA FIRMS : VIIRS sur NOAA-20, NOAA-21 et Suomi NPP ; MODIS sur Terra et Aqua. NASA EONET pour les incendies déclarés | Points chauds avec position, heure de passage, satellite, puissance radiative (FRP), confiance, jour ou nuit. Incendies confirmés par une agence | Cellules agrégées vues de loin, points un par un vus de près, **anneaux pour les incendies confirmés**. Couleur selon la FRP, pâlissement avec l'âge, fenêtre de 3, 6, 12 ou 24 h |
 | CycloneEngine | NOAA NHC (`CurrentStorms.json`). NASA EONET (trajectoires JTWC et NHC). GDACS | Centre, vent soutenu, pression, catégorie de Saffir-Simpson, trajectoire observée, déplacement estimé, contradictions entre sources | Tourbillon procédural posé sur le globe : bandes spiralées, œil à partir de la catégorie 1, rotation antihoraire au nord et horaire au sud. Trajectoire observée en ruban |
 | CycloneEngine, lot 2 | NOAA NHC, prévision officielle au format ATCF (`ftp.nhc.noaa.gov/atcf/fst/<id>.fst`) | Trajectoire prévue jusqu'à 5 jours (vent, pression, catégorie à chaque échéance), rayons des vents de 34, 50 et 64 nœuds par quadrant | Trajectoire prévue en pointillés, contours des vents en jaune, orange et rouge, tourbillon à la taille réelle des vents de 34 nœuds |
+| LightningEngine, lot 3 | Xweather Lightning (réseau Vaisala) : API pour les impacts, Raster Maps (`lightning-strikes`) pour la couche mondiale | Impacts des 5 dernières minutes dans 100 km autour du point visé : position, heure, nature (nuage-sol ou intra-nuage), courant de crête et polarité, capteurs, chi². Fréquence, densité par km², zones actives | Couche mondiale des impacts récents vue de loin. De près, un point à chaque impact mesuré, puis une lueur et un éclair ramifié **procéduraux**, rejoués ×10 dans l'ordre réel |
 | AtmosphericEventManager | Toutes les sources ci-dessus | Format commun, déduplication, exclusions, contrôle | Sans objet |
 
 Le lot 1 ajoute aussi la catégorie **Atmosphère** dans Paramètres. On y trouve :
@@ -80,7 +81,7 @@ Routes du serveur, sous `/api/v1/atmosphere` :
 | Lot | Moteur | Sources | Prérequis |
 |---|---|---|---|
 | 2 (livré) | CycloneEngine (suite) | Rayons de vent et trajectoire prévue : NHC, format ATCF | Bassins du NHC seulement ; les autres bassins attendent une source vérifiable (ECMWF en BUFR, JTWC) |
-| 3 | LightningEngine | Xweather Lightning. Les clés `XWEATHER_CLIENT_ID` et `XWEATHER_CLIENT_SECRET` existent déjà sur Render | Vérifier que l'abonnement inclut la foudre. Prévoir un rendu procédural de l'éclair, distinct de la position mesurée |
+| 3 (livré) | LightningEngine | Xweather Lightning, avec les clés `XWEATHER_CLIENT_ID` et `XWEATHER_CLIENT_SECRET` déjà sur Render | Accès standard : 5 min, 100 km, 1 000 impacts par requête. L'option Enterprise ouvrirait les emprises rectangulaires et 24 h d'historique. Sans l'option foudre, la réponse d'erreur de Xweather est affichée telle quelle |
 | 3 | LightningEngine (repli) | NOAA GOES GLM, EUMETSAT MTG-LI, The Weather Company, AccuWeather | GLM : NetCDF public. LI : compte EUMETSAT. Les deux autres : clés `TWC_API_KEY` et `ACCUWEATHER_API_KEY` |
 | 4 | StormEngine et PrecipitationEngine | WeatherAPI Radar, EUMETNET OPERA, NOAA MRMS | `WEATHERAPI_KEY`, accord OPERA, lecture GRIB2 pour MRMS |
 | 5 | AerosolEngine | Copernicus CAMS, NASA Earthdata (AOD de MODIS et VIIRS) | `CAMS_ADS_KEY`, `EARTHDATA_TOKEN` |
@@ -97,6 +98,7 @@ Ces fournisseurs sont déjà inscrits dans le registre avec `implemented: false`
 | NOAA NHC | Domaine public | Fichier public | 15 min |
 | NOAA NHC, prévision ATCF | Domaine public | Fichier public par cyclone actif | 15 min |
 | GDACS | Utilisation libre avec mention | API publique sans clé | 30 min |
+| Xweather Lightning | Commerciale (abonnement, option foudre) | Selon l'abonnement : 1 000 impacts et 100 km par requête en accès standard | 1 min par cellule d'un demi-degré, partagée ; couche mondiale toutes les 2 min (16 tuiles) |
 
 Les mentions s'affichent dans la fenêtre des sources quand un calque est allumé.
 
