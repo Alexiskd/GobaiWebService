@@ -1,7 +1,11 @@
-// Chargement direct des tuiles de la Terre : le navigateur choisit lui-même la source de chaque tuile (mêmes règles
-// que le serveur, backend earth-sources.ts) et la charge chez son fournisseur, sans détour par le serveur de l'app.
-// Le relais du serveur ne sert plus que pour les sources qu'on ne peut pas charger d'ici (services WMS) et en secours.
+// Chargement direct des tuiles de la Terre : le navigateur choisit lui-même la source de chaque cellule hexagonale,
+// d'après la table de priorité lue sur le serveur (voir earthPlan.jsx et backend earth-plan.ts), et charge ses images
+// chez leur fournisseur, sans détour par le serveur de l'app. Le relais du serveur ne sert plus que pour les sources
+// qu'on ne peut pas charger d'ici (services WMS) et en secours.
 // Fonctions pures, sans navigateur ni three.js (testées dans earthDirect.test.jsx).
+
+// Importe le centre de la cellule hexagonale qui contient une direction, depuis le découpage hexagonal du globe.
+import { cellCenterOf } from '../hexGrid';
 
 // lon : longitude du bord ouest d'une colonne de tuiles.
 const lon = (x, z) => (x / 2 ** z) * 360 - 180;
@@ -22,6 +26,48 @@ export function candidatesAt(sources, z, x, y) {
   // Renvoie les sources dont les niveaux contiennent z et dont une emprise touche la tuile, ou qui n'ont pas d'emprise.
   return sources.filter((s) => z >= s.minZoom && z <= s.maxZoom && (!s.bboxes || s.bboxes.some((b) => tileTouches(b, z, x, y))));
 // Fin de candidatesAt.
+}
+
+/**
+ * Fréquence du découpage hexagonal qui sert au choix de la source d'une tuile de niveau z : une cellule couvre
+ * environ une tuile et demie de côté (une cellule de fréquence f mesure environ 64°/f, une tuile 360°/2^z).
+ */
+// Déclare et exporte selectionFrequency : le niveau de la tuile.
+export const selectionFrequency = (z) => 2 ** Math.max(1, z - 3);
+
+/** Centre [longitude, latitude] (degrés) de la cellule hexagonale de choix qui contient le centre de la tuile. */
+// Déclare et exporte cellCenterLonLat : les coordonnées de la tuile.
+export function cellCenterLonLat(z, x, y) {
+  // Centre de la tuile : longitude du milieu de la colonne, latitude du milieu de la ligne (Mercator).
+  const lo = lon(x + 0.5, z) * (Math.PI / 180), la = lat(y + 0.5, z) * (Math.PI / 180);
+  // Direction sur la sphère, dans le repère du découpage (axe des pôles = y, voir hexGrid.jsx).
+  const p = [Math.cos(la) * Math.cos(lo), Math.sin(la), -Math.cos(la) * Math.sin(lo)];
+  // Centre de la cellule qui contient cette direction.
+  const c = cellCenterOf(p, selectionFrequency(z));
+  // Retour en longitude et latitude, en degrés.
+  return [(Math.atan2(-c[2], c[0]) * 180) / Math.PI, (Math.asin(Math.max(-1, Math.min(1, c[1]))) * 180) / Math.PI];
+// Fin de cellCenterLonLat.
+}
+
+/**
+ * Sources candidates d'une tuile, rangées pour sa cellule hexagonale : d'abord les sources nationales dont une emprise
+ * contient le centre de la cellule (dans l'ordre de la table), puis les autres candidates dans l'ordre de la table.
+ * Toutes les tuiles d'une même cellule prennent ainsi la même source en premier ; les suivantes restent le repli
+ * (tuile vide hors du territoire, panne).
+ */
+// Déclare et exporte cellCandidates : les sources et les coordonnées de la tuile.
+export function cellCandidates(sources, z, x, y) {
+  // Candidates de la tuile, dans l'ordre de la table.
+  const all = candidatesAt(sources, z, x, y);
+  // Moins de deux : rien à ranger.
+  if (all.length < 2) return all;
+  // Centre de la cellule de choix.
+  const [clon, clat] = cellCenterLonLat(z, x, y);
+  // inside : la source a-t-elle une emprise qui contient ce centre ?
+  const inside = (s) => Boolean(s.bboxes?.some(([w, so, e, n]) => clon >= w && clon <= e && clat >= so && clat <= n));
+  // Les sources de la cellule d'abord, puis les autres, chaque groupe dans l'ordre de la table.
+  return [...all.filter(inside), ...all.filter((s) => !inside(s))];
+// Fin de cellCandidates.
 }
 
 /** Remplit un modèle d'adresse {z}/{x}/{y}. */
@@ -238,7 +284,8 @@ export function isBlankPixels(data) {
  *  - { kind: 'direct', source, z, x, y, depth }  charger la tuile (z, x, y) de cette source chez son fournisseur ;
  *    depth > 0 : c'est un ancêtre de la tuile demandée, à découper puis agrandir ;
  *  - { kind: 'relay' }  demander la tuile au relais du serveur (source non chargeable d'ici, ou en panne en direct).
- * Les sources sont parcourues dans l'ordre du serveur, la plus détaillée d'abord ; celles déjà vues vides à cet
+ * Les sources sont parcourues dans l'ordre de la table, rangées pour la cellule hexagonale de la tuile (voir
+ * cellCandidates), la plus détaillée d'abord ; celles déjà vues vides à cet
  * endroit sont sautées. La première source qui couvre l'endroit décide : chargeable en direct, ou relais.
  * @param isEmpty (source, z, x, y) => bool ; usable (id) => bool
  */
@@ -248,8 +295,8 @@ export function nextAttempt(sources, z, x, y, { isEmpty = () => false, usable = 
   for (let depth = 0; depth <= MAX_CROP_LEVELS && z - depth >= 0; depth++) {
     // Coordonnées de l'ancêtre à cette profondeur.
     const az = z - depth, ax = Math.floor(x / 2 ** depth), ay = Math.floor(y / 2 ** depth);
-    // Pour chaque source candidate à cet endroit (début).
-    for (const source of candidatesAt(sources, az, ax, ay)) {
+    // Pour chaque source candidate à cet endroit, rangée pour sa cellule hexagonale (début).
+    for (const source of cellCandidates(sources, az, ax, ay)) {
       // Déjà vue vide ici : sautée.
       if (isEmpty(source, az, ax, ay)) continue;
       // Sans adresse directe, ou coupée : relais.
