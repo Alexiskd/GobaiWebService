@@ -5,11 +5,23 @@
  * assemblées en une seule image, au format GLB — un fichier unique que Blender, three.js ou un visualiseur en
  * ligne ouvrent directement. La mention d'origine des images est inscrite dans le fichier.
  */
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional, ServiceUnavailableException } from '@nestjs/common';
+// Bibliothèque d'images : assemblage des tuiles et lecture des pixels du modèle de la Terre.
+import sharp from 'sharp';
 import { MOON, PLANETS, SUN } from '../data/bodies.data';
 import { TilesService } from '../map-tiles/map-imagery.service';
 import { MosaicService } from './mosaic.service';
 import { buildGlb, sphereMesh } from './glb';
+// Imagerie de la Terre (satellite HD et fonds GEBCO, sans passer par HTTP) et chlorophylle des océans.
+import { EarthImageryService } from '../map-tiles/earth-imagery.service';
+// Chlorophylle des océans (image grise du mois).
+import { EarthChlorophyllService } from '../map-tiles/earth-chlorophyll.service';
+// Bornes de l'échelle de la chlorophylle et mention de ses données.
+import { CHL_ATTRIBUTION, CHL_MAX, CHL_MIN } from '../map-tiles/earth-chlorophyll';
+// Modèle d'adresse des altitudes Terrarium et table des fonds marins (mentions).
+import { SEAFLOOR_BY_ID, TERRARIUM } from '../map-tiles/earth-seafloor';
+// Océans du modèle de la Terre : altitudes, textures et relief.
+import { composeSeabed, decodeChlorophyll, decodeTerrarium, fillGaps, reliefMesh, waterTexture, type ChlorophyllGrid, type MercatorGrid } from './earth-oceans';
 import { SUN_KEY, bodyKey } from '../store/catalogue';
 import { centuriesTT, earthPosition, heliocentricState, osculatingElements, AU_KM } from '../ephemeris/planet-orbits';
 import { solarPosition } from '../ephemeris/solar-position';
@@ -42,12 +54,24 @@ const MESH = { basse: [32, 64], normale: [64, 128], haute: [128, 256] } as const
 /** Niveaux de finesse acceptés. */
 export type MeshQuality = keyof typeof MESH;
 
+/** Niveau maximal des altitudes du modèle de la Terre : 3 (grille de 2 048 px, 64 tuiles Terrarium). */
+const ELEVATION_MAX_ZOOM = 3;
+/** Côté maximal de la texture de l'eau (px) : la couleur de l'eau varie lentement. */
+const WATER_TEXTURE_MAX = 2048;
+/** Tuiles demandées en même temps pour le modèle de la Terre. */
+const EARTH_PARALLEL = 8;
+/** Niveau maximal des textures du modèle de la Terre : 4 (4 096 px de côté, ≈ 50 Mo de pixels par image en mémoire). */
+const EARTH_MAX_ZOOM = 4;
+
 // Service injecté par NestJS.
 @Injectable()
 // Classe du service d'export.
 export class ExportService {
-  // Constructeur : NestJS y injecte les tuiles et l'assemblage.
-  constructor(private readonly tiles: TilesService, private readonly mosaic: MosaicService) {}
+  // Journal du service.
+  private readonly log = new Logger('Exports');
+
+  // Constructeur : NestJS y injecte les tuiles, l'assemblage, et, s'ils sont là, l'imagerie de la Terre et la chlorophylle.
+  constructor(private readonly tiles: TilesService, private readonly mosaic: MosaicService, @Optional() private readonly earth?: EarthImageryService, @Optional() private readonly chlorophyll?: EarthChlorophyllService) {}
 
   /** Les astres exportables : les planètes du catalogue, la Lune, et le Soleil. */
   bodies(): ExportableBody[] {
@@ -83,8 +107,8 @@ export class ExportService {
     // Chaque astre exportable, enrichi.
     return this.bodies().map((b) => ({
       ...b,
-      // Une couche existe-t-elle pour cet astre ?
-      hasTiles: layers.some((l) => bodyKey(l.body) === b.key),
+      // Une couche existe-t-elle pour cet astre ? La Terre a la sienne quand son imagerie est là.
+      hasTiles: layers.some((l) => bodyKey(l.body) === b.key) || (b.key === 'terre' && Boolean(this.earth)),
       // Le Soleil est au centre du repère héliocentrique : il n'a pas d'orbite.
       hasOrbit: b.key !== SUN_KEY,
     }));
@@ -119,13 +143,15 @@ export class ExportService {
    * Modèle 3D complet d'un astre, au format GLB : sphéroïde aux dimensions réelles, texturé par ses tuiles.
    * Sans tuiles disponibles, le modèle est rendu sans texture plutôt que refusé.
    */
-  async model(key: string, { zoom, quality, layerId }: { zoom: number; quality: MeshQuality; layerId?: string }) {
+  async model(key: string, { zoom, quality, layerId, oceans = true, exaggeration = 20 }: { zoom: number; quality: MeshQuality; layerId?: string; oceans?: boolean; exaggeration?: number }) {
     // L'astre.
     const body = this.body(key);
     // Finesse du maillage.
     const grid = MESH[quality];
     // Finesse inconnue : refus, en listant les valeurs acceptées.
     if (!grid) throw new BadRequestException(`Finesse inconnue. Valeurs acceptées : ${Object.keys(MESH).join(', ')}.`);
+    // La Terre, sans couche imposée, quand son imagerie est là : satellite HD (niveau 4 au plus), et ses océans si demandé.
+    if (body.key === 'terre' && !layerId && this.earth) return this.earthModel(body, grid, Math.min(zoom, EARTH_MAX_ZOOM), oceans, exaggeration);
     // Les tuiles assemblées, si l'astre en a.
     const layer = layerId ?? (await this.layerFor(key));
     const texture = layer ? await this.mosaic.build(layer, zoom) : null;
@@ -143,8 +169,139 @@ export class ExportService {
       generator: 'Gobai Space — export de modèle 3D',
     });
     // Le modèle et ce qui le décrit.
-    return { body, file, texture, mesh: { vertices: mesh.vertexCount, triangles: mesh.triangleCount } };
+    return { body, file, texture, mesh: { vertices: mesh.vertexCount, triangles: mesh.triangleCount }, oceans: false };
   // Fin de model.
+  }
+
+  /**
+   * Modèle 3D de la Terre (voir earth-oceans.ts) : le satellite HD assemblé au niveau `zoom` (Web Mercator). Avec les
+   * océans : le sphéroïde soulevé par les altitudes Terrarium (relief exagéré), les fonds GEBCO au large, et un second
+   * objet, la surface de l'eau, colorée par la chlorophylle du mois et transparente sur les côtes.
+   */
+  private async earthModel(body: ExportableBody, grid: readonly [number, number], zoom: number, oceans: boolean, exaggeration: number) {
+    // Imagerie de la Terre (présente : contrôlé par l'appelant).
+    const earth = this.earth!;
+    // Satellite HD assemblé : pixels RGB et côté.
+    const land = await this.assemble(zoom, (x, y) => earth.tile('earth-hd', zoom, x, y).then((t) => t.body));
+    // Aucune tuile : rien à vendre.
+    if (!land) throw new ServiceUnavailableException('Imagerie de la Terre indisponible.');
+    // Mentions : celles de la couche unique.
+    const credits = [(await earth.resolve('earth-hd')).attribution.text];
+    // Sans les océans : sphéroïde lisse, texture du satellite.
+    if (!oceans) {
+      // Le maillage, texture en Web Mercator.
+      const flat = sphereMesh(body.radiusKm, grid[0], grid[1], body.flattening, 'mercator');
+      // Le fichier.
+      const file = buildGlb({ name: body.name, mesh: flat, image: await this.jpeg(land.raw, land.size), copyright: credits.join(' · '), generator: 'Gobai Space — export de modèle 3D' });
+      // Le modèle et ce qui le décrit.
+      return { body, file, texture: { projection: 'mercator' as const, width: land.size, height: land.size, attribution: credits.join(' · ') }, mesh: { vertices: flat.vertexCount, triangles: flat.triangleCount }, oceans: false };
+    // Fin de ce cas.
+    }
+    // Altitudes : tuiles Terrarium jusqu'au niveau 3.
+    const elevation = await this.elevation(Math.min(zoom, ELEVATION_MAX_ZOOM));
+    // Fonds GEBCO assemblés au même niveau que le satellite.
+    const sea = await this.assemble(zoom, (x, y) => earth.tile('earth-gebco', zoom, x, y).then((t) => t.body));
+    // Texture du relief : le satellite, et les fonds GEBCO au large s'ils sont arrivés.
+    if (sea) composeSeabed(land.raw, sea.raw, land.size, elevation);
+    // Chlorophylle du mois, ou null (couleur par défaut).
+    const chl = await this.chlorophyllGrid();
+    // Côté de la texture de l'eau.
+    const waterSize = Math.min(land.size, WATER_TEXTURE_MAX);
+    // Texture de l'eau, en PNG avec transparence.
+    const water = await sharp(Buffer.from(waterTexture(waterSize, elevation, chl)), { raw: { width: waterSize, height: waterSize, channels: 4 } }).png({ compressionLevel: 9 }).toBuffer();
+    // Mentions : GEBCO, la NOAA, et la chlorophylle si elle a servi.
+    credits.push(SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution, 'Altitudes : AWS Terrain Tiles (Mapzen)', ...(chl ? [CHL_ATTRIBUTION] : []));
+    // Relief : sphéroïde soulevé par les altitudes, exagérées.
+    const relief = reliefMesh(body.radiusKm, grid[0], grid[1], body.flattening, elevation, exaggeration);
+    // Surface de l'eau : sphéroïde au niveau de la mer.
+    const surface = sphereMesh(body.radiusKm, grid[0], grid[1], body.flattening, 'mercator');
+    // Le fichier : la Terre en relief, puis la surface de l'eau, objet à part, transparente et presque lisse.
+    const file = buildGlb({
+      // Nom de l'objet principal.
+      name: `${body.name} — relief et fonds marins`,
+      // Son maillage et sa texture.
+      mesh: relief, image: await this.jpeg(land.raw, land.size),
+      // Mentions et outil.
+      copyright: credits.join(' · '), generator: 'Gobai Space — export de modèle 3D (océans)',
+      // La surface de l'eau.
+      parts: [{ name: 'Océans — surface de l’eau', mesh: surface, image: water, mimeType: 'image/png', transparent: true, roughness: 0.15 }],
+    // Fin du fichier.
+    });
+    // Le modèle et ce qui le décrit.
+    return { body, file, texture: { projection: 'mercator' as const, width: land.size, height: land.size, attribution: credits.join(' · ') }, mesh: { vertices: relief.vertexCount + surface.vertexCount, triangles: relief.triangleCount + surface.triangleCount }, oceans: true };
+  // Fin de earthModel.
+  }
+
+  /** Tuiles d'un niveau (Web Mercator) assemblées en pixels RGB bruts ; null si aucune n'est arrivée. */
+  private async assemble(zoom: number, get: (x: number, y: number) => Promise<Buffer>): Promise<{ raw: Uint8Array; size: number } | null> {
+    // Nombre de tuiles par côté, et côté de l'image.
+    const n = 2 ** zoom, size = n * 256;
+    // Les tuiles obtenues, prêtes à coller.
+    const pieces: { input: Buffer; left: number; top: number }[] = [];
+    // Toutes les positions du quadrillage.
+    const all = Array.from({ length: n * n }, (_, k) => ({ x: k % n, y: Math.floor(k / n) }));
+    // Par paquets (début).
+    for (let i = 0; i < all.length; i += EARTH_PARALLEL) {
+      // Chaque tuile du paquet : son image, ou null en cas d'échec.
+      const got = await Promise.all(all.slice(i, i + EARTH_PARALLEL).map(({ x, y }) => Promise.resolve().then(() => get(x, y)).then((input) => ({ input, left: x * 256, top: y * 256 })).catch(() => null)));
+      // Range celles qui sont arrivées.
+      for (const p of got) if (p) pieces.push(p);
+    // Fin des paquets.
+    }
+    // Aucune : null.
+    if (!pieces.length) return null;
+    // Manquantes : notées dans le journal.
+    if (pieces.length < all.length) this.log.warn(`Modèle de la Terre z${zoom} : ${all.length - pieces.length} tuiles sur ${all.length} manquantes.`);
+    // Collées sur un fond noir, en pixels RGB bruts.
+    const raw = await sharp({ create: { width: size, height: size, channels: 3, background: { r: 0, g: 0, b: 0 } } }).composite(pieces).raw().toBuffer();
+    // Les pixels et le côté.
+    return { raw: new Uint8Array(raw.buffer, raw.byteOffset, raw.length), size };
+  // Fin de assemble.
+  }
+
+  /** Grille des altitudes (m, Web Mercator) au niveau `zoom`, tirée des tuiles Terrarium ; 0 là où une tuile manque. */
+  private async elevation(zoom: number): Promise<MercatorGrid> {
+    // Tuiles Terrarium assemblées (PNG sans perte : les altitudes restent exactes).
+    const img = await this.assemble(zoom, async (x, y) => {
+      // Adresse de la tuile.
+      const res = await fetch(TERRARIUM.replace('{z}', String(zoom)).replace('{x}', String(x)).replace('{y}', String(y)));
+      // Réponse en erreur : tuile manquante.
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Les octets.
+      return Buffer.from(await res.arrayBuffer());
+    // Fin de la lecture d'une tuile.
+    });
+    // Côté de la grille.
+    const size = 256 * 2 ** zoom;
+    // Aucune tuile : relief plat (altitude 32 768 − 32 768 = 0 partout).
+    if (!img) return { size, values: new Int16Array(size * size) };
+    // Altitudes décodées.
+    return { size, values: decodeTerrarium(img.raw, 3) };
+  // Fin de elevation.
+  }
+
+  /** Chlorophylle du mois : grille comblée, ou null si le service ou ERDDAP ne répondent pas. */
+  private async chlorophyllGrid(): Promise<ChlorophyllGrid | null> {
+    // Pas de service : null.
+    if (!this.chlorophyll) return null;
+    // Essai (début).
+    try {
+      // L'image du mois.
+      const { png } = await this.chlorophyll.get();
+      // Ses pixels bruts : gris et transparence.
+      const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+      // Grille décodée et comblée, avec ses dimensions.
+      return { grid: fillGaps(decodeChlorophyll(new Uint8Array(data.buffer, data.byteOffset, data.length), info.channels, CHL_MIN, CHL_MAX), info.width, info.height), w: info.width, h: info.height };
+    // En cas d'échec : null.
+    } catch { return null; }
+  // Fin de chlorophyllGrid.
+  }
+
+  /** Pixels RGB bruts encodés en JPEG. */
+  private jpeg(raw: Uint8Array, size: number): Promise<Buffer> {
+    // Encodage JPEG de qualité 85.
+    return sharp(Buffer.from(raw.buffer, raw.byteOffset, raw.length), { raw: { width: size, height: size, channels: 3 } }).jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+  // Fin de jpeg.
   }
 
   /**

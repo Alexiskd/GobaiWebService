@@ -26,11 +26,11 @@ export const API_GROUPS = [
       // API « USGS National Map », appelée à l'adresse basemap.nationalmap.gov.
       { name: 'USGS National Map', host: 'basemap.nationalmap.gov', use: 'Imagerie des États-Unis' },
       // API « GEBCO WMS », appelée à l'adresse wms.gebco.net.
-      { name: 'GEBCO WMS', host: 'wms.gebco.net', use: 'Fonds marins : fondus au large dans le satellite HD, et fond « Fonds marins · GEBCO 2026 » (tuiles lues par le serveur)' },
+      { name: 'GEBCO WMS', host: 'wms.gebco.net', use: 'Fonds marins GEBCO 2026, fondus au large dans le satellite HD, et texture des fonds du modèle 3D de la Terre (tuiles lues par le serveur)' },
       // API « NOAA CoastWatch ERDDAP », appelée à l'adresse coastwatch.pfeg.noaa.gov.
       { name: 'NOAA CoastWatch ERDDAP', host: 'coastwatch.pfeg.noaa.gov', use: 'Chlorophylle des océans (composite mensuel MODIS Aqua de la NASA) : couleur réelle de l’eau du large dans le satellite HD (lue par le serveur)' },
       // API « NOAA NCEI DEM Global Mosaic », appelée à l'adresse gis.ngdc.noaa.gov.
-      { name: 'NOAA NCEI DEM Global Mosaic', host: 'gis.ngdc.noaa.gov', use: 'Fond « Fonds marins · NOAA NCEI » : relief en couleurs des océans et des terres (tuiles lues par le serveur)' },
+      { name: 'NOAA NCEI DEM Global Mosaic', host: 'gis.ngdc.noaa.gov', use: 'Fonds marins du satellite HD, en secours de GEBCO : relief en couleurs des océans et des terres (tuiles lues par le serveur)' },
       // API « Mapterhorn », appelée à l'adresse tiles.mapterhorn.com.
       { name: 'Mapterhorn', host: 'tiles.mapterhorn.com', use: 'Altitudes de la Terre (Copernicus GLO-30) : relief en volume et ombrage des pentes' },
       // API « AWS Terrain Tiles (Mapzen) », appelée à l'adresse s3.amazonaws.com.

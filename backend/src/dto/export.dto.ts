@@ -1,9 +1,9 @@
 // Décorateurs de documentation OpenAPI.
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 // Conversion des paramètres de requête.
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 // Validateurs des champs reçus.
-import { IsIn, IsInt, IsISO8601, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsIn, IsInt, IsISO8601, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 // Borne du niveau de zoom assemblable.
 import { MAX_ZOOM } from '../services/export/mosaic.service';
 
@@ -45,6 +45,20 @@ export class ModelQueryDto extends ExportQueryDto {
   @ApiPropertyOptional({ enum: ['basse', 'normale', 'haute'], description: 'Finesse du maillage.' })
   @IsOptional() @IsIn(['basse', 'normale', 'haute'])
   quality?: 'basse' | 'normale' | 'haute';
+
+  // Documente le champ suivant : les océans de la Terre.
+  @ApiPropertyOptional({ example: true, description: 'Terre : océans modélisés — fonds marins en relief et surface de l’eau en objet à part (vrai par défaut ; « false » ou « 0 » les retire).' })
+  // Facultatif ; « true » ou « 1 » donnent vrai, toute autre valeur faux ; doit être un booléen.
+  @IsOptional() @Transform(({ value }: { value: unknown }) => value === true || value === 'true' || value === '1') @IsBoolean()
+  // oceans : vrai pour modéliser les océans de la Terre.
+  oceans?: boolean;
+
+  // Documente le champ suivant : l'exagération du relief.
+  @ApiPropertyOptional({ example: 20, minimum: 1, maximum: 100, description: 'Terre : exagération du relief des terres et des fonds marins (20 par défaut).' })
+  // Facultatif, converti en nombre, entre 1 et 100.
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(100)
+  // exaggeration : l'exagération du relief.
+  exaggeration?: number;
 }
 
 /** Paramètres du calcul d'orbite. */

@@ -165,6 +165,27 @@ describe('glb', () => {
   });
 
   // Test : les fichiers refusés.
+  // Test : pièces supplémentaires (la surface des océans de la Terre).
+  it('ajoute des pièces à part, avec leur texture et leur transparence', () => {
+    // Deux maillages.
+    const terre = sphereMesh(6371, 8, 16), eau = sphereMesh(6371, 4, 8);
+    // Le modèle : la Terre, puis l'eau, transparente et presque lisse.
+    const { json } = readGlb(buildGlb({ name: 'Terre', mesh: terre, image: Buffer.from('JPEG'), parts: [{ name: 'Océans', mesh: eau, image: Buffer.from('PNG!'), mimeType: 'image/png', transparent: true, roughness: 0.15 }] }));
+    // Deux nœuds dans la scène, avec leurs noms.
+    expect((json.nodes as Record<string, unknown>[]).map((n) => n.name)).toEqual(['Terre', 'Océans']);
+    // Huit accesseurs : quatre par pièce, ceux de la seconde comptent ses sommets.
+    expect((json.accessors as Record<string, number>[])[4].count).toBe(eau.vertexCount);
+    // Deux images, la seconde en PNG.
+    expect((json.images as Record<string, string>[]).map((i) => i.mimeType)).toEqual(['image/jpeg', 'image/png']);
+    // Matière de l'eau : transparente, texture 1, rugosité 0,15.
+    const m = (json.materials as Record<string, Record<string, unknown>>[])[1];
+    // Mélange gardé.
+    expect(m.alphaMode).toBe('BLEND');
+    // Sa texture et sa rugosité.
+    expect(m.pbrMetallicRoughness).toEqual({ metallicFactor: 0, roughnessFactor: 0.15, baseColorTexture: { index: 1 } });
+  // Fin du test.
+  });
+
   it('refuse de relire ce qui n’est pas un GLB', () => {
     // Trop court, mauvaise magie, longueur fausse.
     expect(() => readGlb(Buffer.alloc(8))).toThrow(/tronqué/);

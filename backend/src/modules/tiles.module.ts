@@ -102,7 +102,8 @@ import { EphemerisModule } from './ephemeris.module';
   // Fin de la liste des services.
   ],
   // Le service des couches sert aussi aux exports payants (module de la boutique).
-  exports: [TilesService],
+  // L'imagerie de la Terre et la chlorophylle servent au modèle 3D de la Terre et à ses océans (exports).
+  exports: [TilesService, EarthImageryService, EarthChlorophyllService],
 // Fin de la déclaration.
 })
 // Classe du module des tuiles ; elle implémente OnApplicationBootstrap pour lancer des tâches au démarrage.

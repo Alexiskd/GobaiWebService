@@ -66,7 +66,8 @@ export class ExportController {
     summary: 'Modèle 3D complet d’un astre (GLB)',
     description: 'Sphéroïde aux dimensions réelles, en kilomètres, texturé par les tuiles de l’astre assemblées. '
       + 'Un seul fichier, que Blender, three.js ou un visualiseur en ligne ouvrent directement. La mention '
-      + 'd’origine des images est inscrite dedans.',
+      + 'd’origine des images est inscrite dedans. Terre : satellite HD, relief exagéré des terres et des fonds marins, '
+      + 'et surface des océans en objet à part (couleur réelle de l’eau selon la chlorophylle, transparente sur les côtes).',
   })
   @ApiOkResponse({ description: 'Le fichier GLB.' })
   @ApiUnauthorizedResponse({ type: ApiErrorDto, description: 'Jeton absent, expiré ou refusé.' })
@@ -75,10 +76,14 @@ export class ExportController {
   // Méthode model.
   async model(@Param() p: BodyParamsDto, @Query() q: ModelQueryDto, @Res() res: Response): Promise<void> {
     // Le modèle.
-    const { body, file, texture, mesh } = await this.exports.model(p.body, {
+    const { body, file, texture, mesh, oceans } = await this.exports.model(p.body, {
       zoom: q.zoom ?? DEFAULT_ZOOM,
       quality: q.quality ?? 'normale',
       layerId: q.layer,
+      // Océans de la Terre : modélisés par défaut.
+      oceans: q.oceans ?? true,
+      // Exagération du relief de la Terre : 20 par défaut.
+      exaggeration: q.exaggeration ?? 20,
     });
     // En-têtes : type du fichier, nom proposé, et ce qui décrit le modèle.
     res.setHeader('Content-Type', 'model/gltf-binary');
@@ -87,6 +92,8 @@ export class ExportController {
     res.setHeader('X-Model-Radius-Km', String(body.radiusKm));
     res.setHeader('X-Model-Vertices', String(mesh.vertices));
     res.setHeader('X-Model-Triangles', String(mesh.triangles));
+    // Océans modélisés (Terre) : oui ou non.
+    res.setHeader('X-Model-Oceans', oceans ? 'oui' : 'non');
     // La projection de la texture et son origine, quand il y en a une.
     if (texture) {
       // Projection et dimensions.

@@ -11,10 +11,6 @@ test('source de chaque famille de fonds de carte', () => {
   assert.equal(layerSource({ id: 'satellite', provider: 'gibs' }), 'NASA GIBS (Blue Marble)');
   // L'identifiant passe avant le fournisseur.
   assert.equal(layerSource({ id: 'ign-ortho', provider: 'earth-hd' }), 'IGN (Géoplateforme)');
-  // Fonds marins : leur source propre, pas celle de la couche unique.
-  assert.equal(layerSource({ id: 'earth-gebco', provider: 'earth-hd' }), 'GEBCO (IHO-IOC) : SIO, NOAA, U.S. Navy, NGA, IBCAO');
-  // La mosaïque de la NOAA.
-  assert.equal(layerSource({ id: 'earth-ncei', provider: 'earth-hd' }), 'NOAA NCEI');
   // Fond connu par son fournisseur.
   assert.equal(layerSource({ id: 'moon-kaguya', provider: 'nasa-trek' }), 'NASA / JPL-Caltech (Moon Trek)');
   // Fournisseur lu dans un identifiant « space-moon-… ».
