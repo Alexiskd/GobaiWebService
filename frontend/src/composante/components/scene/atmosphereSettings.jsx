@@ -98,7 +98,7 @@ export function fireHint(info) {
 // Déclare et exporte cycloneHint : la réponse, ou son état.
 export function cycloneHint(info) {
   // Sources, en clair.
-  const src = 'NOAA NHC, JTWC (NASA EONET), GDACS';
+  const src = 'NOAA NHC (positions, prévision officielle, rayons de vent), JTWC (NASA EONET), GDACS';
   // Pas encore de réponse.
   if (info === null || info === undefined) return `Cyclones actifs confirmés, trajectoire observée · ${src}`;
   // Échec.

@@ -40,6 +40,7 @@ Ce document décrit l'architecture du moteur atmosphérique, ce que contient le 
 |---|---|---|---|
 | WildfireEngine | NASA FIRMS : VIIRS sur NOAA-20, NOAA-21 et Suomi NPP ; MODIS sur Terra et Aqua. NASA EONET pour les incendies déclarés | Points chauds avec position, heure de passage, satellite, puissance radiative (FRP), confiance, jour ou nuit. Incendies confirmés par une agence | Cellules agrégées vues de loin, points un par un vus de près, **anneaux pour les incendies confirmés**. Couleur selon la FRP, pâlissement avec l'âge, fenêtre de 3, 6, 12 ou 24 h |
 | CycloneEngine | NOAA NHC (`CurrentStorms.json`). NASA EONET (trajectoires JTWC et NHC). GDACS | Centre, vent soutenu, pression, catégorie de Saffir-Simpson, trajectoire observée, déplacement estimé, contradictions entre sources | Tourbillon procédural posé sur le globe : bandes spiralées, œil à partir de la catégorie 1, rotation antihoraire au nord et horaire au sud. Trajectoire observée en ruban |
+| CycloneEngine, lot 2 | NOAA NHC, prévision officielle au format ATCF (`ftp.nhc.noaa.gov/atcf/fst/<id>.fst`) | Trajectoire prévue jusqu'à 5 jours (vent, pression, catégorie à chaque échéance), rayons des vents de 34, 50 et 64 nœuds par quadrant | Trajectoire prévue en pointillés, contours des vents en jaune, orange et rouge, tourbillon à la taille réelle des vents de 34 nœuds |
 | AtmosphericEventManager | Toutes les sources ci-dessus | Format commun, déduplication, exclusions, contrôle | Sans objet |
 
 Le lot 1 ajoute aussi la catégorie **Atmosphère** dans Paramètres. On y trouve :
@@ -65,13 +66,12 @@ Routes du serveur, sous `/api/v1/atmosphere` :
 - **Observé, estimé ou prévu.**
   - La trajectoire d'un cyclone est observée : ce sont les positions publiées par les agences.
   - Son déplacement est estimé à partir des deux dernières positions.
-  - Aucune trajectoire prévue n'est dessinée tant qu'aucune source de prévision n'est branchée.
-- **Symbole ou géométrie mesurée.** La taille du tourbillon est un symbole par catégorie, de 150 à 440 km de rayon, car les rayons de vent ne sont pas encore fournis. Le sens de rotation, lui, est physique.
+  - La trajectoire prévue (statut « prévu ») et les rayons de vent (statut « estimé ») viennent de la prévision officielle du NHC. Une prévision de plus de 18 h n'est pas affichée ; une alerte le signale.
+- **Symbole ou géométrie mesurée.** Quand le NHC publie les rayons de vent, le tourbillon prend le rayon moyen des vents de 34 nœuds. Sinon, sa taille est un symbole par catégorie, de 150 à 440 km de rayon. Le sens de rotation est physique.
 
 ### Ce que les sources du lot 1 ne permettent pas
 
-- **Rayons de vent des cyclones.** Le NHC les publie dans ses avis texte et ses fichiers SIG, mais pas dans le JSON.
-- **Trajectoires prévues.** Elles sont disponibles en KMZ ou shapefile au NHC, et en BUFR à l'ECMWF.
+- **Prévisions hors des bassins du NHC.** Pacifique Ouest, océan Indien et hémisphère sud (JTWC, JMA, ECMWF) : aucune source keyless au format vérifiable n'est branchée. Ces cyclones restent affichés sans trajectoire prévue ni rayons de vent.
 - **Panaches de fumée.** Il faut les aérosols du CAMS.
 - **Cyclones hors saison.** Un cyclone dont la dernière position date de plus de 36 h est écarté et listé avec sa raison. Le 15 novembre 2026, par exemple, Cempaka et Pena n'avaient plus de position récente.
 
@@ -79,7 +79,7 @@ Routes du serveur, sous `/api/v1/atmosphere` :
 
 | Lot | Moteur | Sources | Prérequis |
 |---|---|---|---|
-| 2 | CycloneEngine (suite) | Rayons de vent et trajectoire prévue : NHC SIG, ECMWF open data | Lecture KMZ/shapefile et BUFR, ou lecture des avis texte |
+| 2 (livré) | CycloneEngine (suite) | Rayons de vent et trajectoire prévue : NHC, format ATCF | Bassins du NHC seulement ; les autres bassins attendent une source vérifiable (ECMWF en BUFR, JTWC) |
 | 3 | LightningEngine | Xweather Lightning. Les clés `XWEATHER_CLIENT_ID` et `XWEATHER_CLIENT_SECRET` existent déjà sur Render | Vérifier que l'abonnement inclut la foudre. Prévoir un rendu procédural de l'éclair, distinct de la position mesurée |
 | 3 | LightningEngine (repli) | NOAA GOES GLM, EUMETSAT MTG-LI, The Weather Company, AccuWeather | GLM : NetCDF public. LI : compte EUMETSAT. Les deux autres : clés `TWC_API_KEY` et `ACCUWEATHER_API_KEY` |
 | 4 | StormEngine et PrecipitationEngine | WeatherAPI Radar, EUMETNET OPERA, NOAA MRMS | `WEATHERAPI_KEY`, accord OPERA, lecture GRIB2 pour MRMS |
@@ -95,6 +95,7 @@ Ces fournisseurs sont déjà inscrits dans le registre avec `implemented: false`
 | NASA FIRMS, fichiers 24 h | Données NASA libres, mention demandée | Fichiers publics sans clé | 30 min |
 | NASA EONET | Données NASA libres, mention demandée | API publique sans clé | 30 min |
 | NOAA NHC | Domaine public | Fichier public | 15 min |
+| NOAA NHC, prévision ATCF | Domaine public | Fichier public par cyclone actif | 15 min |
 | GDACS | Utilisation libre avec mention | API publique sans clé | 30 min |
 
 Les mentions s'affichent dans la fenêtre des sources quand un calque est allumé.

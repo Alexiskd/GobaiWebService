@@ -870,7 +870,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
           // Celle des incendies, s'ils sont allumés.
           atmosphere.settings.fires.on ? 'Incendies : NASA FIRMS (LANCE · VIIRS, MODIS) et NASA EONET' : '',
           // Celle des cyclones, s'ils sont allumés.
-          atmosphere.settings.cyclones.on ? 'Cyclones : NOAA NHC, JTWC (via NASA EONET), GDACS' : '',
+          atmosphere.settings.cyclones.on ? 'Cyclones : NOAA NHC (positions et prévision officielle), JTWC (via NASA EONET), GDACS' : '',
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
         // Ouverte si le panneau courant est celui des sources.

@@ -6,8 +6,10 @@ import { AtmosphericEvent, AtmosphericEventType } from './atmospheric-event';
 import { AtmosphericEventManager, inBbox } from './atmospheric-event-manager';
 // Lecture des positions courantes des cyclones (NHC, GDACS).
 import { CycloneFix, parseGdacsCyclones, parseNhcStorms } from './cyclone-sources';
-// Fusion des cyclones.
-import { mergeCyclones } from './cyclones';
+// Fusion des cyclones, prévisions officielles et adresse de leurs fichiers.
+import { attachForecasts, mergeCyclones, nhcForecastUrl } from './cyclones';
+// Prévision officielle au format ATCF.
+import { AtcfForecast, parseAtcf } from './atcf';
 // Lecture de NASA EONET (incendies déclarés, trajectoires de tempêtes).
 import { StormTrack, parseEonetStorms, parseEonetWildfires } from './eonet';
 // Points chauds FIRMS : lecture, fusion, agrégation, détail par emprise, format commun.
@@ -128,6 +130,8 @@ export class AtmosphereService {
   private readonly caches = new Map<string, TtlCache<unknown>>();
   // Données des incendies préparées, null avant la première lecture.
   private fire: FireData | null = null;
+  // Prévisions officielles du NHC, une par cyclone actif, gardées au rythme du fournisseur (15 min).
+  private readonly forecasts = new TtlCache<AtcfForecast>(provider('nhc-atcf').refreshMs, 32);
 
   // Méthode privée cacheOf : le cache d'un fournisseur, créé à la première demande.
   private cacheOf<T>(id: string): TtlCache<T> {
@@ -255,8 +259,26 @@ export class AtmosphereService {
     const sources = [this.state('nhc', nhc), this.state('eonet-storms', eonet), this.state('gdacs', gdacs)];
     // Heures de lecture par fournisseur.
     const fetchedAt = Object.fromEntries(sources.filter((s) => s.fetchedAt).map((s) => [s.id, s.fetchedAt as string]));
-    // Fusion des lectures.
+    // Prévisions officielles des cyclones actifs du NHC (aucun hors saison : aucun appel).
+    const fc = await Promise.all((nhc.data ?? []).map((s) => this.forecasts.get(s.key.toLowerCase(), async () => {
+      // Appel du fichier ATCF, avec abandon au bout du délai.
+      const res = await fetch(nhcForecastUrl(s.key), { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'User-Agent': USER_AGENT } });
+      // Réponse en erreur : échec, avec son code.
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Prévision lue ; aucune ligne utile : format inattendu.
+      const parsed = parseAtcf(await res.text(), s.key);
+      // Illisible : échec explicite.
+      if (!parsed) throw new Error('format inattendu');
+      // Prévision.
+      return parsed;
+    // Fin de la lecture.
+    })));
+    // État du fournisseur des prévisions, s'il a été appelé : le plus ancien relevé et le premier échec.
+    if (fc.length) sources.push({ id: 'nhc-atcf', attribution: provider('nhc-atcf').attribution, fetchedAt: fc.every((r) => r.fetchedAt) ? new Date(Math.min(...fc.map((r) => r.fetchedAt as number))).toISOString() : null, stale: fc.some((r) => r.stale), error: fc.find((r) => r.error)?.error ?? null });
+    // Fusion des lectures, puis prévisions attachées aux cyclones du NHC.
     const merged = mergeCyclones(eonet.data ?? [], [...(nhc.data ?? []), ...(gdacs.data ?? [])], fetchedAt, now);
+    // Prévisions lues.
+    merged.cyclones = attachForecasts(merged.cyclones, fc.map((r) => r.data).filter((d): d is AtcfForecast => d !== null), new Date(now).toISOString(), now);
     // Pannes, en clair.
     const errors = sources.filter((s) => s.error).map((s) => `${s.id} : ${s.error}`);
     // Filtrage et déduplication par le gestionnaire.
