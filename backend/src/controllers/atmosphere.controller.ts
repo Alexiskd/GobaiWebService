@@ -152,10 +152,51 @@ export class AtmosphereController {
   // Fin de lightningTile.
   }
 
+  // Route GET /api/v1/atmosphere/radar.
+  @Get('radar')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Images radar des précipitations disponibles', description: 'Source : Rain Viewer (composite des radars au sol, 2 dernières heures, toutes les 10 minutes). Identifiants et heures des images, âge de la dernière, codage des tuiles servies par /atmosphere/radar/{id}/{z}/{x}/{y}.' })
+  // Cache public d'une minute.
+  @Header('Cache-Control', 'public, max-age=60')
+  // Méthode radar.
+  radar() {
+    // Délègue au service.
+    return this.atmosphere.radar();
+  // Fin de radar.
+  }
+
+  // Route GET /api/v1/atmosphere/radar/:id/:z/:x/:y.
+  @Get('radar/:id/:z/:x/:y')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Tuile radar décodée', description: 'Tuile Web Mercator de 512 px (niveaux 0 à 7) d’une image de l’index : PNG RVB, rouge = pluie, vert = neige (code = dBZ + 11, 0 = aucun écho), bleu = couverture radar (255 couverte, 0 aucun radar, 128 inconnue). 404 si l’image n’est plus dans l’index ou si la source ne répond pas.' })
+  // Méthode radarTile : image, niveau, colonne, ligne et réponse brute.
+  async radarTile(@Param('id') id: string, @Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Res() res: Response) {
+    // Tuile lue par le service (extension « .png » tolérée).
+    const body = await this.atmosphere.radarTile(id, Number(z), Number(x), Number(String(y).replace(/\.png$/, '')));
+    // Indisponible : 404.
+    if (!body) throw new NotFoundException('Tuile radar indisponible (image hors de l’index, niveau au-delà de 7 ou source sans réponse)');
+    // Image, gardée une heure par les navigateurs (une image radar ne change plus).
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' }).send(body);
+  // Fin de radarTile.
+  }
+
+  // Route GET /api/v1/atmosphere/storms.
+  @Get('storms')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Orages : cellules estimées et avertissements officiels', description: 'Cellules convectives estimées d’après le radar Rain Viewer (≥ 40 dBZ avec noyau ≥ 45 dBZ, suivies sur 20 minutes : persistance, déplacement) et avertissements officiels d’orages violents et de tornades du NWS (États-Unis). Format commun.' })
+  // Cache public de 2 minutes.
+  @Header('Cache-Control', 'public, max-age=120')
+  // Méthode storms.
+  storms() {
+    // Délègue au service.
+    return this.atmosphere.storms();
+  // Fin de storms.
+  }
+
   // Route GET /api/v1/atmosphere/events.
   @Get('events')
   // Ce que fait la route.
-  @ApiOperation({ summary: 'Événements atmosphériques au format commun', description: 'Filtres : types=wildfire,cyclone,hotspot · bbox=ouest,sud,est,nord · limit (2 000 au plus). Les points chauds demandent une emprise.' })
+  @ApiOperation({ summary: 'Événements atmosphériques au format commun', description: 'Filtres : types=wildfire,cyclone,hotspot,storm (storm lance la détection des cellules radar) · bbox=ouest,sud,est,nord · limit (2 000 au plus). Les points chauds demandent une emprise.' })
   // Cache public de 5 minutes.
   @Header('Cache-Control', 'public, max-age=300')
   // Méthode events : familles, emprise et limite.
