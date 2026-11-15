@@ -40,6 +40,8 @@ import { MercuryModule } from './mercury.module';
 import { SunModule } from './sun.module';
 // Module des volcans : volcans en éruption en direct (NASA EONET).
 import { VolcanoesModule } from './volcanoes.module';
+// Module atmosphérique : incendies (NASA FIRMS, EONET) et cyclones (NHC, EONET, GDACS) au format commun.
+import { AtmosphereModule } from './atmosphere.module';
 // Module du blocage des API externes : liste des API déconnectées.
 import { ApisModule } from './apis.module';
 // Module des contributions : comptes, placements LiDAR et votes.
@@ -87,6 +89,8 @@ import { EngineModule } from './engine.module';
     SunModule,
     // Routes des volcans en éruption : /api/v1/volcanoes.
     VolcanoesModule,
+    // Routes du moteur atmosphérique : /api/v1/atmosphere.
+    AtmosphereModule,
     // World Atlas (pays en TopoJSON), source des frontières : /api/v1/world-atlas
     // Routes de World Atlas, importé avant les frontières qui s'en servent.
     WorldAtlasModule,

@@ -30,8 +30,8 @@ const WIND_REFRESH_MS = 3 * 60 * 60_000; // le vent à grande échelle change le
  * Rafraîchissement périodique qui ne tourne pas en arrière-plan : une échéance passée onglet caché est reportée
  * au retour de l'utilisateur. Renvoie la fonction d'arrêt.
  */
-// Déclare refreshWhileVisible : reçoit la fonction de chargement et la période.
-function refreshWhileVisible(load, everyMs) {
+// Déclare et exporte refreshWhileVisible (servi aussi au moteur atmosphérique) : la fonction de chargement et la période.
+export function refreshWhileVisible(load, everyMs) {
   // Drapeau : une échéance a été manquée pendant que l'onglet était caché.
   let missed = false;
   // À chaque échéance : si l'onglet est caché, on note l'échéance manquée ; sinon on charge.

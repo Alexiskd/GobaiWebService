@@ -149,4 +149,16 @@ export const fetchSolarRegions = (signal) => get('/sun/regions', { signal });
 /** Volcans en éruption dans le monde (NASA EONET) : { source, generatedAt, volcanoes: [{ id, name, lon, lat, date, link }] }. */
 // fetchVolcanoes : les volcans en éruption.
 export const fetchVolcanoes = (signal) => get('/volcanoes', { signal });
+/**
+ * Incendies (moteur atmosphérique) : { generatedAt, windowHours, tileDeg, cells: colonnes { lon, lat, frp, n, ageMin,
+ * conf, sats }, confirmed: [événements confirmés], stats, sources, stale }.
+ */
+// fetchAtmosphereFires : les points chauds agrégés et les incendies confirmés.
+export const fetchAtmosphereFires = (signal) => get('/atmosphere/fires', { signal });
+/** Points chauds d'une tuile de 10°, un par un : { tile, detail: colonnes { lon, lat, frp, ageMin, conf, sats, resM } }. */
+// fetchAtmosphereFireTile : la tuile (colonne depuis −180°, ligne depuis −90°).
+export const fetchAtmosphereFireTile = (tx, ty, signal) => get(`/atmosphere/fires/tiles/${tx}/${ty}`, { signal });
+/** Cyclones actifs confirmés : { generatedAt, cyclones: [événements], excluded: [{ name, reason }], sources, stale }. */
+// fetchAtmosphereCyclones : les cyclones.
+export const fetchAtmosphereCyclones = (signal) => get('/atmosphere/cyclones', { signal });
 
