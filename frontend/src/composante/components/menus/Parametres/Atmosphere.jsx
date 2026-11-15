@@ -10,6 +10,10 @@ import { FIRE_WINDOWS_H } from '@/moteur/engine/atmosphere/fireMath';
 import { ATMOSPHERE_UPCOMING } from '@/composante/components/scene/atmosphereSettings';
 // Importe les échelles de couleurs du radar et la légende de la pluie.
 import { SNOW_SCALE, radarLegend } from '@/moteur/engine/atmosphere/radarMath';
+// Importe les produits d'aérosols, leurs libellés et leurs légendes.
+import { AEROSOL_LABELS, AEROSOL_PRODUCTS, aerosolLegend } from '@/moteur/engine/atmosphere/aerosolMath';
+// Importe l'adresse de la légende de la prévision CAMS.
+import { aerosolLegendUrl } from '@/moteur/api/scene';
 
 /** Une réglette compacte, avec son libellé et sa valeur en pourcentage. */
 // Déclare Reglette : libellé, valeur, bornes, pas et rappel.
@@ -123,10 +127,57 @@ function LegendeRadar() {
 // Fin de LegendeRadar.
 }
 
+/** Légende des aérosols : échelle du produit observé, ou légende publiée de la prévision CAMS ; mentions des sources. */
+// Déclare LegendeAerosols : le produit.
+function LegendeAerosols({ product }) {
+  // Prévision des poussières (début).
+  if (product === 'dust') {
+    // Début du rendu.
+    return (
+      // Bloc en retrait.
+      <Box sx={{ pl: 3, pr: 1.5, pb: 0.75 }}>
+        {/* Légende publiée par l'ECMWF (image relayée par le serveur). */}
+        <Box component="img" src={aerosolLegendUrl()} alt="Légende de la prévision des poussières (CAMS)" sx={{ display: 'block', maxWidth: '100%', borderRadius: 1, bgcolor: 'common.white' }} />
+        {/* Explication et mention demandée par Copernicus. */}
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>Épaisseur optique des poussières prévue par le modèle CAMS, toutes les 6 heures sur 48 heures : une prévision, pas une mesure. Contains modified Copernicus Atmosphere Monitoring Service information.</Typography>
+      {/* Fin du bloc. */}
+      </Box>
+    // Fin du rendu.
+    );
+  // Fin de la prévision.
+  }
+  // Paliers du produit observé.
+  const stops = aerosolLegend(product);
+  // Dégradé CSS.
+  const gradient = `linear-gradient(90deg, ${stops.map((p, i) => `${p.color} ${Math.round((i / (stops.length - 1)) * 100)}%`).join(', ')})`;
+  // Début du rendu.
+  return (
+    // Bloc en retrait.
+    <Box sx={{ pl: 3, pr: 1.5, pb: 0.75 }}>
+      {/* Barre de l'échelle. */}
+      <Box aria-hidden sx={{ height: 8, borderRadius: 1, background: gradient }} />
+      {/* Bornes de l'échelle. */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        {/* Borne basse. */}
+        <Typography variant="caption" color="text.secondary">{product === 'ai' ? `Indice ${stops[0].label}` : `AOD ${stops[0].label}`}</Typography>
+        {/* Borne haute. */}
+        <Typography variant="caption" color="text.secondary">{`${stops[stops.length - 1].label} et plus`}</Typography>
+      {/* Fin des bornes. */}
+      </Box>
+      {/* Explication du produit. */}
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>{product === 'ai' ? 'Indice d’aérosols absorbants mesuré par OMPS : les poussières et les fumées ressortent, même au-dessus des nuages. Couleurs pâlies : mesure de la veille.' : 'Épaisseur optique des aérosols à 550 nm mesurée par VIIRS : l’air pur reste transparent ; sans couleur, aucune mesure (nuages, nuit, neige). Couleurs pâlies : mesure de la veille.'}</Typography>
+    {/* Fin du bloc. */}
+    </Box>
+  // Fin du rendu.
+  );
+// Fin de LegendeAerosols.
+}
+
 /**
  * Catégorie « Atmosphère » : l'atmosphère et les nuages des planètes solides, puis les phénomènes en direct de la
  * Terre, chacun allumé indépendamment avec son opacité et son intensité ; les incendies ont aussi leur fenêtre de
- * temps, le radar son animation et sa limite de portée. Les calques des lots suivants sont annoncés « à venir » :
+ * temps, le radar son animation et sa limite de portée, les aérosols leur produit (observé ou prévu). Les calques des
+ * lots suivants sont annoncés « à venir » :
  * aucun phénomène n'est représenté sans source.
  */
 // Déclare et exporte le composant Atmosphere (début de la liste des propriétés).
@@ -134,7 +185,7 @@ export function Atmosphere({
   // L'atmosphère et les nuages des planètes solides, leur rappel et leur texte d'aide.
   atmospheres, onAtmospheres, atmospheresHint,
   // Les réglages des calques, leur modification et les textes d'aide.
-  settings, onUpdate, fireHint, cycloneHint, lightningHint, precipitationHint, stormHint,
+  settings, onUpdate, fireHint, cycloneHint, lightningHint, precipitationHint, stormHint, aerosolHint,
 // Fin de la liste des propriétés.
 }) {
   // Début du rendu.
@@ -217,6 +268,42 @@ export function Atmosphere({
           {settings.storms.on && <Reglages value={settings.storms} onChange={(patch) => onUpdate('storms', patch)} />}
           {/* Si les orages sont allumés : légende, estimation et avertissements officiels distingués. */}
           {settings.storms.on && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: 3, pr: 1.5, pb: 0.5 }}>Anneaux : cellules convectives estimées d’après le radar, non confirmées (orange : 45 dBZ et plus, rouge : 50, magenta : 55 ; en tirets : vue sur une seule image) ; flèche : déplacement estimé sur 30 minutes. Contours : avertissements officiels du NWS aux États-Unis (rouge : tornade, jaune : orage violent ; doublé : phénomène observé).</Typography>}
+          {/* Interrupteur des aérosols. */}
+          <Switch checked={settings.aerosols.on} onChange={(on) => onUpdate('aerosols', { on })} label="Aérosols" hint={aerosolHint} />
+          {/* Si les aérosols sont allumés (début). */}
+          {settings.aerosols.on && (
+            // Fragment : réglages des aérosols.
+            <>
+              {/* Opacité et intensité. */}
+              <Reglages value={settings.aerosols} onChange={(patch) => onUpdate('aerosols', patch)} />
+              {/* Ligne du produit. */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pl: 3, pr: 1.5, py: 0.5 }}>
+                {/* Boutons des produits (début de la balise). */}
+                <ToggleButtonGroup
+                  // Un seul choix, petite taille, sur toute la largeur.
+                  exclusive size="small" fullWidth
+                  // Produit choisi.
+                  value={settings.aerosols.product}
+                  // Au choix (jamais vide) : transmet le produit.
+                  onChange={(e, v) => { if (v) onUpdate('aerosols', { product: v }); }}
+                  // Nom pour les lecteurs d'écran.
+                  aria-label="Produit d'aérosols"
+                // Fin de la balise ouvrante.
+                >
+                  {/* Un bouton par produit. */}
+                  {AEROSOL_PRODUCTS.map((p) => <ToggleButton key={p} value={p} sx={{ px: 1, py: 0.25, fontSize: 12 }}>{AEROSOL_LABELS[p]}</ToggleButton>)}
+                {/* Fin des boutons. */}
+                </ToggleButtonGroup>
+              {/* Fin de la ligne. */}
+              </Box>
+              {/* Prévision : animation des 48 heures. */}
+              {settings.aerosols.product === 'dust' && <Option label="Animation des 48 prochaines heures" checked={settings.aerosols.animate} onChange={(animate) => onUpdate('aerosols', { animate })} />}
+              {/* Légende et sources. */}
+              <LegendeAerosols product={settings.aerosols.product} />
+            {/* Fin des réglages des aérosols. */}
+            </>
+          // Fin du cas.
+          )}
           {/* Calques à venir, annoncés sans être représentés. */}
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 1.5, py: 1 }}>{`À venir : ${ATMOSPHERE_UPCOMING.join(', ').toLowerCase()}.`}</Typography>
         {/* Fin des calques en direct. */}

@@ -1,17 +1,19 @@
 // Importe de React les crochets useCallback, useEffect, useRef et useState.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe les lectures du moteur atmosphérique du serveur.
-import { fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, fetchAtmosphereRadar, fetchAtmosphereStorms, lightningTileUrl, radarTileUrl } from '@/moteur/api/scene';
+import { aerosolForecastUrl, aerosolObservedUrl, fetchAtmosphereAerosols, fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, fetchAtmosphereRadar, fetchAtmosphereStorms, lightningTileUrl, radarTileUrl } from '@/moteur/api/scene';
 // Importe l'assemblage d'une mosaïque de tuiles (le même que pour les nuages satellite).
 import { loadCloudMosaic } from '@/moteur/engine/earthCloudMosaic';
 // Importe le rafraîchissement qui ne tourne pas onglet caché.
 import { refreshWhileVisible } from './useMapFeeds';
 // Importe les réglages (lecture, bornes, mémoire) et les textes d'aide.
-import { cycloneHint, fireHint, lightningHint, precipitationHint, rememberAtmosphere, sanitizeAtmosphere, stormHint, storedAtmosphere } from './atmosphereSettings';
+import { aerosolHint, cycloneHint, fireHint, lightningHint, precipitationHint, rememberAtmosphere, sanitizeAtmosphere, stormHint, storedAtmosphere } from './atmosphereSettings';
 // Importe le choix des images et des tuiles du radar.
 import { RADAR_DETAIL_ALT, RADAR_DETAIL_RELEASE_ALT, RADAR_GLOBAL_ZOOM, detailBlock, framesToShow, normalizeFrames } from '@/moteur/engine/atmosphere/radarMath';
 // Importe le chargement d'un bloc de tuiles radar décodées.
-import { loadRadarBlock } from '@/moteur/engine/atmosphere/radarTiles';
+import { loadImageCanvas, loadRadarBlock } from '@/moteur/engine/atmosphere/radarTiles';
+// Importe la lecture de la réponse des aérosols.
+import { normalizeAerosols } from '@/moteur/engine/atmosphere/aerosolMath';
 // Importe le choix et la mise en forme des tuiles de détail des incendies.
 import { FIRE_DETAIL_ALT, FIRE_KIND, mergeDetailTiles, normalizeFireColumns, tilesAround, viewRadiusDeg } from '@/moteur/engine/atmosphere/fireMath';
 
@@ -42,10 +44,13 @@ const RADAR_REFRESH_MS = 5 * 60_000, RADAR_RETRY_MS = 30_000, RADAR_CHECK_MS = 2
 const RADAR_DETAIL_CACHE = 14;
 // Orages : relus toutes les 3 minutes.
 const STORMS_REFRESH_MS = 3 * 60_000;
+// Aérosols : relus toutes les 30 minutes (images observées refaites au plus toutes les heures côté serveur).
+const AEROSOLS_REFRESH_MS = 30 * 60_000;
 
 /**
  * Moteur atmosphérique, côté interface : réglages des calques (gardés dans le navigateur), lectures du serveur à
- * leur rythme (jamais par image), détail des incendies et du radar autour du point visé, et textes d'aide.
+ * leur rythme (jamais par image), détail des incendies et du radar autour du point visé, aérosols observés ou
+ * prévus, et textes d'aide.
  */
 // Déclare et exporte le crochet useAtmosphere : reçoit le moteur.
 export function useAtmosphere({ engine }) {
@@ -63,10 +68,14 @@ export function useAtmosphere({ engine }) {
   const [radarInfo, setRadarInfo] = useState(null);
   // État : dernière réponse des orages (null : pas encore ; 'erreur' : échec).
   const [stormInfo, setStormInfo] = useState(null);
+  // État : dernière réponse des aérosols (null : pas encore ; 'erreur' : échec).
+  const [aerosolInfo, setAerosolInfo] = useState(null);
   // Tuiles de détail en mémoire : clé « colonne,ligne » → { points, at }.
   const tiles = useRef(new Map());
   // Radar : images mondiales en mémoire (identifiant → { time, canvas }), images voulues, blocs de détail en mémoire.
   const radarGlobal = useRef(new Map()), radarFrames = useRef([]), radarDetail = useRef(new Map());
+  // Aérosols : images de la prévision en mémoire (heure ISO → canevas).
+  const aerosolForecast = useRef(new Map());
 
   // update : modifie le réglage d'un calque et le garde ; début de la fonction mémorisée.
   const update = useCallback((layer, patch) => {
@@ -91,6 +100,8 @@ export function useAtmosphere({ engine }) {
   useEffect(() => { engine?.setAtmosphereLayer('precipitation', { visible: settings.precipitation.on, opacity: settings.precipitation.opacity, intensity: settings.precipitation.intensity, animate: settings.precipitation.animate, coverage: settings.precipitation.coverage }); }, [engine, settings.precipitation]);
   // Transmet les réglages des orages au moteur.
   useEffect(() => { engine?.setAtmosphereLayer('storms', { visible: settings.storms.on, opacity: settings.storms.opacity, intensity: settings.storms.intensity }); }, [engine, settings.storms]);
+  // Transmet les réglages des aérosols au moteur.
+  useEffect(() => { engine?.setAtmosphereLayer('aerosols', { visible: settings.aerosols.on, opacity: settings.aerosols.opacity, intensity: settings.aerosols.intensity, product: settings.aerosols.product, animate: settings.aerosols.animate }); }, [engine, settings.aerosols]);
   // Transmet les réglages des cyclones au moteur.
   useEffect(() => { engine?.setAtmosphereLayer('cyclones', { visible: settings.cyclones.on, opacity: settings.cyclones.opacity, intensity: settings.cyclones.intensity }); }, [engine, settings.cyclones]);
 
@@ -412,6 +423,78 @@ export function useAtmosphere({ engine }) {
   // Fin de l'effet.
   }, [engine, settings.storms.on]);
 
+  // Aérosols allumés : réponse relue toutes les 30 minutes ; image observée du produit choisi, ou images de la prévision
+  // des poussières chargées une à une, de la plus proche à la plus lointaine (début de l'effet).
+  useEffect(() => {
+    // Sans moteur, ou calque éteint : rien.
+    if (!engine || !settings.aerosols.on) return undefined;
+    // Contrôleur d'abandon.
+    const controller = new AbortController();
+    // Produit choisi.
+    const product = settings.aerosols.product;
+    // Version de l'image observée posée, chargement en cours.
+    let version = '', busy = false;
+    // load : lit la réponse, puis l'image ou les images voulues (début).
+    const load = () => fetchAtmosphereAerosols(controller.signal).then(async (data) => {
+      // Réponse gardée pour le texte d'aide.
+      setAerosolInfo(data);
+      // Déjà en chargement : rien de plus.
+      if (busy) return;
+      // Mise en forme.
+      const n = normalizeAerosols(data);
+      // Chargement noté.
+      busy = true;
+      // Essai (début).
+      try {
+        // Produit observé (début).
+        if (product !== 'dust') {
+          // Indisponible : image retirée (aucune couleur sans mesure).
+          if (!n.products[product]?.available) { version = ''; engine.setAtmosphereData('aerosolObserved', null); return; }
+          // Version : le jour et l'heure (le serveur refait l'image au plus toutes les heures).
+          const v = `${n.days?.today ?? ''}-${Math.floor(Date.now() / 3_600_000)}`;
+          // Déjà posée : rien.
+          if (v === version) return;
+          // Image chargée puis posée.
+          const canvas = await loadImageCanvas(aerosolObservedUrl(product, v), controller.signal);
+          // Version notée.
+          version = v;
+          // Posée.
+          engine.setAtmosphereData('aerosolObserved', { product, canvas });
+          // Fin du produit observé.
+          return;
+        // Fin du cas.
+        }
+        // Prévision indisponible : images retirées.
+        if (!n.forecast.available) { engine.setAtmosphereData('aerosolForecast', []); return; }
+        // Images oubliées si leur heure n'est plus dans la liste.
+        for (const k of [...aerosolForecast.current.keys()]) if (!n.forecast.times.some((t) => t.iso === k)) aerosolForecast.current.delete(k);
+        // Images posées au fur et à mesure.
+        const frames = [];
+        // Heure par heure, la plus proche d'abord (début).
+        for (const t of n.forecast.times) {
+          // Canevas en mémoire.
+          let canvas = aerosolForecast.current.get(t.iso);
+          // Absent : chargé (échec : heure suivante ; abandon : arrêt).
+          if (!canvas) { try { canvas = await loadImageCanvas(aerosolForecastUrl(t.iso), controller.signal); } catch (err) { if (err?.name === 'AbortError') return; continue; } aerosolForecast.current.set(t.iso, canvas); }
+          // Ajouté.
+          frames.push({ time: t.t, canvas });
+          // Posées.
+          engine.setAtmosphereData('aerosolForecast', [...frames]);
+        // Fin des heures.
+        }
+      // Fin de l'essai : chargement terminé.
+      } finally { busy = false; }
+    // Échec (hors abandon) : noté ; les images déjà posées restent.
+    }).catch((err) => { if (err?.name !== 'AbortError') setAerosolInfo((prev) => (prev && prev !== 'erreur' ? prev : 'erreur')); });
+    // Première lecture.
+    load();
+    // Lectures suivantes.
+    const stop = refreshWhileVisible(load, AEROSOLS_REFRESH_MS);
+    // Nettoyage : abandon, arrêt, images retirées du moteur.
+    return () => { controller.abort(); stop(); engine.setAtmosphereData('aerosolObserved', null); engine.setAtmosphereData('aerosolForecast', []); };
+  // Fin de l'effet.
+  }, [engine, settings.aerosols.on, settings.aerosols.product]);
+
   // Renvoie les réglages, leur modification, les textes d'aide et les réponses (début).
   return {
     // Réglages des calques.
@@ -428,8 +511,10 @@ export function useAtmosphere({ engine }) {
     precipitationHint: precipitationHint(radarInfo),
     // Texte d'aide des orages.
     stormHint: stormHint(stormInfo),
+    // Texte d'aide des aérosols, pour le produit choisi.
+    aerosolHint: aerosolHint(aerosolInfo, settings.aerosols.product),
     // Dernières réponses (pour la mention des sources).
-    fireInfo, cycloneInfo, lightningInfo, radarInfo, stormInfo,
+    fireInfo, cycloneInfo, lightningInfo, radarInfo, stormInfo, aerosolInfo,
   // Fin du retour.
   };
 // Fin de useAtmosphere.
