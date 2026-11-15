@@ -2,6 +2,7 @@
 import { deflateSync, inflateSync } from 'node:zlib';
 import { cleanMoonHeights, moonReliefExportUrl, moonTileBounds, moonTileCount, moonVerticalStep } from './moon-relief.service';
 import { buildMoonMesh, meshToGlb, MOON_RADIUS_KM, sampleMosaic } from './moon-relief-model';
+import { realMoonPixel } from './moon-blend.service';
 import { crc32, decodeFloat32Tiff, decodeTerrariumPng, encodeTerrariumPng, terrariumMeters } from './terrarium';
 
 /** TIFF d'une bande en flottants 32 bits, une seule bande de lignes, petit-boutiste ; Deflate et prédicteur 3 au choix. */
@@ -144,5 +145,28 @@ describe('préchargement et modèle 3D du relief lunaire', () => {
     const json = JSON.parse(glb.toString('utf8', 20, 20 + glb.readUInt32LE(12)));
     expect(json.accessors[0].count).toBe(9 * 5);
     expect(json.accessors[3].count).toBe(8 * 4 * 6);
+  });
+});
+
+describe('blend de la Lune', () => {
+  it('compose la « Lune réelle » comme le moteur : luminosité du détail, teinte naturelle à 75 %', () => {
+    // Gris neutre : la luminosité du détail passe telle quelle.
+    realMoonPixel([0.5, 0.5, 0.5], 0.8).forEach((c) => expect(c).toBeCloseTo(0.8));
+    // Trou du détail : la luminosité naturelle prend sa place.
+    const hole = realMoonPixel([0.6, 0.5, 0.4], null);
+    expect(0.299 * hole[0] + 0.587 * hole[1] + 0.114 * hole[2]).toBeCloseTo(0.299 * 0.6 + 0.587 * 0.5 + 0.114 * 0.4, 2);
+    expect(hole[0]).toBeGreaterThan(hole[2]);
+  });
+  it('intègre la texture JPEG dans le glb, intacte, avec matériau texturé', () => {
+    const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8]), Buffer.alloc(101, 7), Buffer.from([0xff, 0xd9])]);
+    const glb = meshToGlb(buildMoonMesh({ width: 8, height: 4, data: new Float32Array(32) }, 8, 4, 1), 'Lune — blend', {}, jpeg);
+    const jl = glb.readUInt32LE(12);
+    const json = JSON.parse(glb.toString('utf8', 20, 20 + jl));
+    const view = json.bufferViews[json.images[0].bufferView];
+    const bin = 20 + jl + 8;
+    expect(json.images[0].mimeType).toBe('image/jpeg');
+    expect(json.materials[0].pbrMetallicRoughness.baseColorTexture.index).toBe(0);
+    expect(glb.subarray(bin + view.byteOffset, bin + view.byteOffset + view.byteLength).equals(jpeg)).toBe(true);
+    expect(glb.readUInt32LE(8)).toBe(glb.length);
   });
 });

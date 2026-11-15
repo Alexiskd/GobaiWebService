@@ -48,10 +48,11 @@ export function DownloadButton({ layerId, body, label }) {
 }
 
 /**
- * Option d'un fond de carte. `download` ({ layerId, body }) ajoute à droite le bouton de téléchargement de la couche.
+ * Option d'un fond de carte. `download` ({ layerId, body }) ajoute à droite le bouton de téléchargement de la couche ;
+ * `action` : tout autre bouton à placer à droite.
  */
 // Déclare et exporte le composant Radio : nom du groupe, état, rappel, libellé, description, source et téléchargement.
-export function Radio({ name, checked, onChange, label, description, source, download }) {
+export function Radio({ name, checked, onChange, label, description, source, download, action }) {
   // Début du rendu.
   return (
     // Ligne : option et bouton côte à côte, alignés en haut, avec fond de survol.
@@ -82,6 +83,8 @@ export function Radio({ name, checked, onChange, label, description, source, dow
       />
       {/* Si un téléchargement est prévu pour une couche : le bouton de téléchargement. */}
       {download?.layerId && <DownloadButton layerId={download.layerId} body={download.body} label={label} />}
+      {/* Action libre à droite (bouton propre à l'option), si elle est donnée. */}
+      {action}
     {/* Fin de la ligne. */}
     </Box>
   // Fin du rendu.

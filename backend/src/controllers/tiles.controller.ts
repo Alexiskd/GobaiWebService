@@ -10,6 +10,8 @@ import {
   NotFoundException,
   // paramètre de l'adresse ;
   Param,
+  Post,
+  HttpCode,
   // paramètre de requête (après le « ? ») ;
   Query,
   // accès à la requête brute ;
@@ -50,6 +52,8 @@ import { MoonColorService } from '../services/map-tiles/moon-color.service';
 import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
 // Importe le relief de la Lune en tuiles Terrarium.
 import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
+// Importe le blend de la Lune.
+import { MoonBlendService } from '../services/map-tiles/moon-blend.service';
 // Service du modèle 3D de la Lune.
 import { MoonModelService } from '../services/map-tiles/moon-model.service';
 // Service des modèles 3D des autres astres.
@@ -113,7 +117,7 @@ interface RedirectableResponse {
 @Controller('tiles')
 // Classe du contrôleur des tuiles.
 export class TilesController {
-  // Constructeur : NestJS y injecte quatorze services, gardés en propriétés privées non modifiables.
+  // Constructeur : NestJS y injecte quinze services, gardés en propriétés privées non modifiables.
   constructor(
     // Le service principal des tuiles.
     private readonly tiles: TilesService,
@@ -123,6 +127,8 @@ export class TilesController {
     private readonly moonTiles: MoonTileCacheService,
     // Le relief de la Lune.
     private readonly moonRelief: MoonReliefService,
+    // Le blend de la Lune.
+    private readonly moonBlend: MoonBlendService,
     // Le modèle 3D de la Lune.
     private readonly moonModel: MoonModelService,
     // Les modèles 3D des autres astres.
@@ -777,6 +783,39 @@ export class TilesController {
     // Envoie la tuile : cache long (une semaine) si elle vient de la source préférée, cache court (dix minutes) si elle vient d'une source de repli ; l'en-tête X-Tile-Source nomme la source.
     sendTile(req, res, tile, tile.preferred ? EARTH_TILE : EARTH_FALLBACK_TILE, { 'X-Tile-Source': tile.source });
   // Fin de earthTile.
+  }
+
+  // Route GET /api/v1/tiles/moon-blend/status : variantes du blend de la Lune enregistrées dans BP.
+  @Get('moon-blend/status')
+  @ApiOperation({ summary: 'Blend de la Lune : variantes enregistrées dans BP', description: 'Pour chaque relief (×1, ×5, ×10) : enregistré ou non, taille, date, fabrication en cours, dernière erreur.' })
+  @ApiOkResponse({ description: '{ database, variants: [{ exaggeration, stored, size, createdAt, building, error }] }' })
+  async moonBlendStatus(@Res() res: TileResponse): Promise<void> {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(Buffer.from(JSON.stringify(await this.moonBlend.list()), 'utf8'));
+  }
+
+  // Route POST /api/v1/tiles/moon-blend/:exaggeration : fabrique la variante et l'enregistre dans BP.
+  @Post('moon-blend/:exaggeration')
+  @HttpCode(202)
+  @ApiOperation({ summary: 'Blend de la Lune : fabriquer une variante', description: 'Relief LOLA + carte réelle (couleurs NASA SVS × détail Kaguya), en arrière-plan ; le fichier est enregistré dans BP. Suivre l’avancement avec /moon-blend/status.' })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiNotFoundResponse({ type: ApiErrorDto })
+  async moonBlendBuild(@Param('exaggeration') e: string): Promise<unknown> {
+    this.moonBlend.start(Number(e));
+    return this.moonBlend.list();
+  }
+
+  // Route GET /api/v1/tiles/moon-blend/:exaggeration/model.glb : le blend enregistré dans BP.
+  @Get('moon-blend/:exaggeration/model.glb')
+  @SkipThrottle()
+  @ApiOperation({ summary: 'Blend de la Lune (glTF binaire)', description: 'Modèle 3D complet de la Lune, texture « Lune réelle » intégrée (4 096 × 2 048), relief LOLA ×1, ×5 ou ×10, lu dans BP. Unités en km, Y vers le nord.' })
+  @ApiOkResponse({ description: 'Fichier .glb (model/gltf-binary).' })
+  @ApiNotFoundResponse({ type: ApiErrorDto })
+  async moonBlendModel(@Param('exaggeration') e: string, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
+    const body = await this.moonBlend.glb(Number(e));
+    res.setHeader('Content-Disposition', `attachment; filename="lune-blend-x${Number(e)}.glb"`);
+    sendTile(req, res, { body, contentType: 'model/gltf-binary' }, { maxAge: 0, noStore: true });
   }
 
   // Route GET /api/v1/tiles/moon-relief/status : préchargement du relief de la Lune dans BP.

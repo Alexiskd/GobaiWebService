@@ -79,13 +79,21 @@ function bounds3(a: Float32Array): { min: number[]; max: number[] } {
   return { min, max };
 }
 
-/** Fichier glTF binaire (.glb, version 2) du maillage, avec un matériau gris lunaire. */
-export function meshToGlb(mesh: Mesh, name = 'Lune — relief LOLA', extras: Record<string, unknown> = {}): Buffer {
-  // Blocs binaires, chacun aligné sur 4 octets.
-  const parts = [mesh.positions, mesh.normals, mesh.uvs, mesh.indices].map((a) => Buffer.from(a.buffer, a.byteOffset, a.byteLength));
+/**
+ * Fichier glTF binaire (.glb, version 2) du maillage. Sans `textureJpeg` : matériau gris lunaire. Avec : l'image
+ * JPEG (plate carrée, nord en haut) est intégrée au fichier et posée comme couleur de base du matériau.
+ */
+export function meshToGlb(mesh: Mesh, name = 'Lune — relief LOLA', extras: Record<string, unknown> = {}, textureJpeg?: Buffer): Buffer {
+  // Blocs binaires, chacun aligné sur 4 octets (l'image, si elle existe, en dernier).
+  const pad4 = (b: Buffer) => (b.length % 4 ? Buffer.concat([b, Buffer.alloc(4 - (b.length % 4))]) : b);
+  const parts: Buffer[] = [mesh.positions, mesh.normals, mesh.uvs, mesh.indices].map((a) => Buffer.from(a.buffer, a.byteOffset, a.byteLength));
+  if (textureJpeg) parts.push(pad4(textureJpeg));
   let offset = 0;
   const views = parts.map((p, i) => {
-    const v = { buffer: 0, byteOffset: offset, byteLength: p.length, target: i === 3 ? 34963 : 34962 };
+    // Vue de l'image : sa longueur exacte, sans cible (ce n'est pas un attribut de sommet).
+    const v: { buffer: number; byteOffset: number; byteLength: number; target?: number } = i === 4
+      ? { buffer: 0, byteOffset: offset, byteLength: textureJpeg!.length }
+      : { buffer: 0, byteOffset: offset, byteLength: p.length, target: i === 3 ? 34963 : 34962 };
     offset += p.length;
     return v;
   });
@@ -98,7 +106,15 @@ export function meshToGlb(mesh: Mesh, name = 'Lune — relief LOLA', extras: Rec
     scenes: [{ nodes: [0] }],
     nodes: [{ mesh: 0, name }],
     meshes: [{ name, primitives: [{ attributes: { POSITION: 0, NORMAL: 1, TEXCOORD_0: 2 }, indices: 3, material: 0, mode: 4 }], extras }],
-    materials: [{ name: 'Régolithe', pbrMetallicRoughness: { baseColorFactor: [0.55, 0.54, 0.52, 1], metallicFactor: 0, roughnessFactor: 0.95 } }],
+    materials: [textureJpeg
+      ? { name: 'Lune réelle', pbrMetallicRoughness: { baseColorTexture: { index: 0 }, metallicFactor: 0, roughnessFactor: 0.95 } }
+      : { name: 'Régolithe', pbrMetallicRoughness: { baseColorFactor: [0.55, 0.54, 0.52, 1], metallicFactor: 0, roughnessFactor: 0.95 } }],
+    // Texture intégrée : image JPEG de la 5e vue, filtrage linéaire, répétition en longitude seulement.
+    ...(textureJpeg ? {
+      images: [{ bufferView: 4, mimeType: 'image/jpeg', name: 'lune-reelle' }],
+      samplers: [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 33071 }],
+      textures: [{ sampler: 0, source: 0 }],
+    } : {}),
     buffers: [{ byteLength: bin.length }],
     bufferViews: views,
     accessors: [

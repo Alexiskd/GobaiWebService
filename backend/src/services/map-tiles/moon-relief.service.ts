@@ -247,7 +247,7 @@ export class MoonReliefService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Mosaïque mondiale des altitudes au niveau du modèle, rassemblée depuis BP (ou Moon Trek pour les manquantes). */
-  private async mosaic(): Promise<Mosaic> {
+  async mosaic(): Promise<Mosaic> {
     const z = MOON_MODEL_ZOOM, cols = 2 ** (z + 1), rows = 2 ** z, size = MOON_RELIEF_TILE;
     const width = cols * size, height = rows * size, data = new Float32Array(width * height);
     for (let ty = 0; ty < rows; ty++) for (let tx = 0; tx < cols; tx++) {
