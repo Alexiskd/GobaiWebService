@@ -875,6 +875,10 @@ export class TileLayer {
         ltHas: { value: 0 },
         // Interrupteur des lumières.
         lightsOn: this.uniforms.lightsOn || RELIEF_OFF,
+        // Mosaïque mondiale des lumières, partagée par l'astre (vue de la pollution lumineuse), et sa présence.
+        lgMap: this.uniforms.lgMap || { value: this.placeholder }, lgOn: this.uniforms.lgOn || RELIEF_OFF,
+        // Vue de la pollution lumineuse : toute la Terre de nuit.
+        lightView: this.uniforms.lightView || RELIEF_OFF,
         // Exagération du relief.
         reliefExag: this.uniforms.reliefExag || RELIEF_OFF,
         // Force de l'ombrage du relief.
@@ -1183,8 +1187,10 @@ export class TileLayer {
   wantLights(e, priority = 0) {
     // Source des lumières.
     const src = this.lightsSource;
-    // Sans source, déjà servie, demandée ou en échec, lumières coupées, ou carte sans ombre (pas de nuit) : rien.
-    if (!src || e.ltMap || e.ltRequested || e.ltFailed || !(this.uniforms.lightsOn?.value > 0) || !(this.uniforms.shade?.value > 0)) return;
+    // Vue de la pollution lumineuse (toute la Terre de nuit) ?
+    const view = this.uniforms.lightView?.value > 0;
+    // Sans source, déjà servie, demandée ou en échec, lumières coupées hors vue de nuit, ou carte sans ombre hors vue de nuit : rien.
+    if (!src || e.ltMap || e.ltRequested || e.ltFailed || !(this.uniforms.lightsOn?.value > 0 || view) || !(this.uniforms.shade?.value > 0 || view)) return;
     // Demande notée.
     e.ltRequested = true;
     // Tuile native des lumières et portion affichée.

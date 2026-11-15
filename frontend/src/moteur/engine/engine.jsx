@@ -877,6 +877,17 @@ export class SolarEngine {
   // Fin de setNightLights.
   }
 
+  /**
+   * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit, ses lumières (NASA Black Marble) allumées
+   * partout et chargées pour le monde entier. Coupée : la nuit suit à nouveau le Soleil.
+   */
+  // setLightView : allume ou coupe la vue de nuit pour chaque astre qui a des lumières (début).
+  setLightView(on) {
+    // L'applique à chaque astre tuilé qui a des lumières.
+    for (const tb of this.tiledBodies) if (tb.tiles.lightsSource) tb.tiles.setLightView(on);
+  // Fin de setLightView.
+  }
+
   /** Astre tuilé actuellement ciblé, ou null (Soleil, géantes gazeuses). */
   // focusedTiled : l'astre tuilé ciblé, ou null.
   focusedTiled() { return this.focusTarget().tiled || null; }

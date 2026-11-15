@@ -29,8 +29,8 @@ export function Cartographie({
   streets = false, onStreets,
   // Les volcans en éruption, leur rappel et leur texte d'aide.
   volcanoes = false, onVolcanoes, volcanoesHint,
-  // Les lumières de la nuit (allumées par défaut) et leur rappel.
-  nightLights = true, onNightLights,
+  // Les lumières de la nuit (allumées par défaut) et leur rappel ; la vue de la pollution lumineuse (coupée) et son rappel.
+  nightLights = true, onNightLights, lightView = false, onLightView,
 // Fin de la liste des propriétés.
 }) {
   // Début du rendu.
@@ -59,6 +59,12 @@ export function Cartographie({
       {onNightLights && (
         // Interrupteur des lumières de la nuit.
         <Switch checked={nightLights} onChange={onNightLights} label="Lumières de la nuit" hint="Pollution lumineuse vue de l’espace, allumée côté nuit au rythme du Soleil · NASA Black Marble" />
+      // Fin du cas.
+      )}
+      {/* Si le réglage de la vue de nuit est fourni (début). */}
+      {onLightView && (
+        // Interrupteur de la vue de la pollution lumineuse.
+        <Switch checked={lightView} onChange={onLightView} label="Pollution lumineuse de toute la Terre" hint="Toute la Terre de nuit, vue de l’espace : les lumières du monde entier chargées d’un coup · NASA Black Marble" />
       // Fin du cas.
       )}
     {/* Fin du groupe. */}

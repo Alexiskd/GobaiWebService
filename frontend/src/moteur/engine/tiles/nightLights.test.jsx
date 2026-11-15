@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe ce qui est testé.
-import { EARTH_NIGHT_LIGHTS, LIGHTS_FULL, LIGHTS_ON_START, nightLightsChoice, nightWeight } from './nightLights.jsx';
+import { EARTH_NIGHT_LIGHTS, LIGHTS_FULL, LIGHTS_MOSAIC_LEVEL, LIGHTS_ON_START, assembleLightsMosaic, mosaicTiles, nightLightsChoice, nightWeight } from './nightLights.jsx';
 
 // Test : allumage selon le Soleil.
 test('les lumières suivent le Soleil : éteintes de jour, allumées au crépuscule, pleines la nuit', () => {
@@ -26,5 +26,31 @@ test('Black Marble de GIBS, niveaux 0 à 8, interrupteur gardé dans le navigate
   assert.equal(EARTH_NIGHT_LIGHTS.maxZoom, 8);
   // Interrupteur : allumées sauf « 0 ».
   assert.equal(nightLightsChoice(null), true); assert.equal(nightLightsChoice('0'), false);
+// Fin du test.
+});
+
+// Test : tuiles de la mosaïque mondiale.
+test('la mosaïque mondiale couvre toute la Terre, ligne par ligne', () => {
+  // Niveau 1 : quatre tuiles, du nord-ouest au sud-est.
+  assert.deepEqual(mosaicTiles(1), [{ z: 1, x: 0, y: 0 }, { z: 1, x: 1, y: 0 }, { z: 1, x: 0, y: 1 }, { z: 1, x: 1, y: 1 }]);
+  // Niveau de l'ordinateur : 256 tuiles ; du téléphone : 64.
+  assert.equal(mosaicTiles(LIGHTS_MOSAIC_LEVEL.desktop).length, 256); assert.equal(mosaicTiles(LIGHTS_MOSAIC_LEVEL.phone).length, 64);
+// Fin du test.
+});
+
+// Test : assemblage.
+test('assemble les lumières du monde entier, une tuile manquante restant noire', async () => {
+  // Dessins faits sur le faux canevas.
+  const drawn = [];
+  // Faux canevas : enregistre les dessins.
+  const canvas = { getContext: () => ({ fillRect() {}, drawImage: (img, x, y) => drawn.push([img, x, y]) }) };
+  // Fausse source : la tuile (1, 1) manque.
+  const source = { loadImage: (t) => (t.x === 1 && t.y === 1 ? Promise.reject(new Error('absente')) : Promise.resolve(`${t.x},${t.y}`)) };
+  // Assemblage au niveau 1.
+  const r = await assembleLightsMosaic(source, 1, () => canvas);
+  // Canevas de 512 px ; trois tuiles sur quatre.
+  assert.equal(canvas.width, 512); assert.equal(r.got, 3); assert.equal(r.total, 4);
+  // Chaque tuile à sa place.
+  assert.deepEqual(drawn.sort(), [['0,0', 0, 0], ['0,1', 0, 256], ['1,0', 256, 0]]);
 // Fin du test.
 });
