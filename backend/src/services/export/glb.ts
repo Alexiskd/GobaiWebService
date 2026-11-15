@@ -154,6 +154,25 @@ export function sphereMesh(radiusKm: number, rings = 64, segments = 128, flatten
 // Fin de sphereMesh.
 }
 
+/**
+ * Une pièce de plus dans le modèle, après l'astre : un maillage avec sa texture et sa matière (la surface des océans
+ * de la Terre, par exemple). Dans Blender, chaque pièce devient un objet à part.
+ */
+export interface GlbPart {
+  // name : son nom, celui de l'objet dans Blender.
+  name: string;
+  // mesh : son maillage.
+  mesh: SphereMesh;
+  // image : sa texture (facultative).
+  image?: Buffer;
+  // mimeType : le type de la texture (« image/jpeg » par défaut).
+  mimeType?: string;
+  // transparent : vrai si la transparence de la texture doit être gardée (mélange glTF « BLEND »).
+  transparent?: boolean;
+  // roughness : rugosité de la matière, de 0 (miroir) à 1 (mat, par défaut).
+  roughness?: number;
+// Fin de GlbPart.
+}
 /** Ce qu'il faut pour écrire un modèle. */
 export interface GlbOptions {
   /** Nom de l'astre, inscrit dans le modèle. */
@@ -168,6 +187,8 @@ export interface GlbOptions {
   copyright?: string;
   /** Outil générateur, inscrit dans le fichier. */
   generator?: string;
+  /** Pièces ajoutées après l'astre (objets à part dans Blender). */
+  parts?: GlbPart[];
 }
 
 /** Minimum et maximum de chaque composante : glTF les exige sur l'accesseur des positions. */
@@ -194,10 +215,10 @@ function bounds(positions: Float32Array): { min: number[]; max: number[] } {
 /** Complète une longueur jusqu'au prochain multiple de quatre. */
 const pad4 = (n: number): number => (4 - (n % 4)) % 4;
 
-/** Écrit le modèle complet d'un astre au format GLB. */
-export function buildGlb({ name, mesh, image, mimeType = 'image/jpeg', copyright, generator = 'Gobai Space' }: GlbOptions): Buffer {
+/** Écrit le modèle complet d'un astre au format GLB, avec ses pièces supplémentaires. */
+export function buildGlb({ name, mesh, image, mimeType = 'image/jpeg', copyright, generator = 'Gobai Space', parts = [] }: GlbOptions): Buffer {
   // Les morceaux binaires, dans l'ordre où ils seront rangés.
-  const parts: Buffer[] = [];
+  const chunks: Buffer[] = [];
   // Les vues sur le tampon, décrites au fur et à mesure.
   const bufferViews: Record<string, number>[] = [];
   // Position d'écriture dans le tampon.
@@ -207,71 +228,90 @@ export function buildGlb({ name, mesh, image, mimeType = 'image/jpeg', copyright
     // Complément d'alignement sur quatre octets, exigé par glTF.
     const padding = pad4(offset);
     // Ajoute ce complément.
-    if (padding) { parts.push(Buffer.alloc(padding)); offset += padding; }
+    if (padding) { chunks.push(Buffer.alloc(padding)); offset += padding; }
     // La vue.
     bufferViews.push({ buffer: 0, byteOffset: offset, byteLength: data.length, ...(target ? { target } : {}) });
     // Les octets.
-    parts.push(data);
+    chunks.push(data);
+    // Avance la position d'écriture.
     offset += data.length;
     // Le rang de la vue.
     return bufferViews.length - 1;
   // Fin de push.
   };
-  // Les quatre jeux de données du maillage.
-  const vPos = push(Buffer.from(mesh.positions.buffer, mesh.positions.byteOffset, mesh.positions.byteLength), ARRAY_BUFFER);
-  const vNrm = push(Buffer.from(mesh.normals.buffer, mesh.normals.byteOffset, mesh.normals.byteLength), ARRAY_BUFFER);
-  const vUv = push(Buffer.from(mesh.uvs.buffer, mesh.uvs.byteOffset, mesh.uvs.byteLength), ARRAY_BUFFER);
-  const vIdx = push(Buffer.from(mesh.indices.buffer, mesh.indices.byteOffset, mesh.indices.byteLength), ELEMENT_ARRAY_BUFFER);
-  // L'image de la texture, s'il y en a une.
-  const vImg = image && image.length ? push(image) : null;
-  // Bornes des positions.
-  const { min, max } = bounds(mesh.positions);
+  // bytes : les octets d'un tableau typé, sans copie.
+  const bytes = (a: Float32Array | Uint32Array): Buffer => Buffer.from(a.buffer, a.byteOffset, a.byteLength);
+  // Toutes les pièces : l'astre d'abord (matière mate, sous le nom « … — surface »), puis les pièces ajoutées.
+  const all: Array<GlbPart & { material: string }> = [{ name, mesh, image, mimeType, material: `${name} — surface` }, ...parts.map((p) => ({ ...p, material: p.name }))];
+  // Les listes de la description, remplies pièce par pièce.
+  const accessors: Record<string, unknown>[] = [], meshes: Record<string, unknown>[] = [], materials: Record<string, unknown>[] = [];
+  // Les nœuds, les images et les textures.
+  const nodes: Record<string, unknown>[] = [], images: Record<string, unknown>[] = [], textures: Record<string, unknown>[] = [];
+  // Pour chaque pièce (début).
+  all.forEach((part, i) => {
+    // Les quatre jeux de données du maillage : positions, normales, coordonnées de texture et indices.
+    const vPos = push(bytes(part.mesh.positions), ARRAY_BUFFER), vNrm = push(bytes(part.mesh.normals), ARRAY_BUFFER);
+    // Coordonnées de texture et indices.
+    const vUv = push(bytes(part.mesh.uvs), ARRAY_BUFFER), vIdx = push(bytes(part.mesh.indices), ELEMENT_ARRAY_BUFFER);
+    // Bornes des positions.
+    const { min, max } = bounds(part.mesh.positions);
+    // Rang du premier accesseur de la pièce.
+    const a = accessors.length;
+    // Ses quatre accesseurs.
+    accessors.push(
+      // Positions, avec leurs bornes.
+      { bufferView: vPos, componentType: FLOAT, count: part.mesh.vertexCount, type: 'VEC3', min, max },
+      // Normales.
+      { bufferView: vNrm, componentType: FLOAT, count: part.mesh.vertexCount, type: 'VEC3' },
+      // Coordonnées de texture.
+      { bufferView: vUv, componentType: FLOAT, count: part.mesh.vertexCount, type: 'VEC2' },
+      // Indices des triangles.
+      { bufferView: vIdx, componentType: UNSIGNED_INT, count: part.mesh.indices.length, type: 'SCALAR' },
+    // Fin des accesseurs.
+    );
+    // Sa texture, si elle a une image : l'image, puis la texture qui l'échantillonne.
+    const tex = part.image && part.image.length ? (images.push({ bufferView: push(part.image), mimeType: part.mimeType ?? 'image/jpeg', name: `${part.name} — texture` }), textures.push({ sampler: 0, source: images.length - 1 }) - 1) : null;
+    // Sa matière : ni métallique, rugosité donnée (mate par défaut), texture ou gris.
+    materials.push({
+      // Son nom.
+      name: part.material,
+      // Couleur, métal et rugosité.
+      pbrMetallicRoughness: { metallicFactor: 0, roughnessFactor: part.roughness ?? 1, ...(tex !== null ? { baseColorTexture: { index: tex } } : { baseColorFactor: [0.6, 0.6, 0.6, 1] }) },
+      // Transparence gardée si demandé.
+      ...(part.transparent ? { alphaMode: 'BLEND' } : {}),
+    // Fin de la matière.
+    });
+    // Son maillage : un seul morceau, avec ses attributs, ses indices et sa matière.
+    meshes.push({ name: part.name, primitives: [{ attributes: { POSITION: a, NORMAL: a + 1, TEXCOORD_0: a + 2 }, indices: a + 3, material: i }] });
+    // Son nœud, qui porte son nom.
+    nodes.push({ mesh: i, name: part.name });
+  // Fin des pièces.
+  });
   // La description du modèle.
   const gltf: Record<string, unknown> = {
+    // Version, outil et mention d'origine.
     asset: { version: '2.0', generator, ...(copyright ? { copyright } : {}) },
-    scene: 0,
-    scenes: [{ nodes: [0] }],
-    nodes: [{ mesh: 0, name }],
-    meshes: [{
-      name,
-      primitives: [{
-        attributes: { POSITION: 0, NORMAL: 1, TEXCOORD_0: 2 },
-        indices: 3,
-        material: 0,
-      }],
-    }],
-    materials: [{
-      name: `${name} — surface`,
-      // Surface mate : une carte planétaire n'est ni métallique ni brillante.
-      pbrMetallicRoughness: {
-        metallicFactor: 0,
-        roughnessFactor: 1,
-        ...(vImg !== null ? { baseColorTexture: { index: 0 } } : { baseColorFactor: [0.6, 0.6, 0.6, 1] }),
-      },
-    }],
-    accessors: [
-      { bufferView: vPos, componentType: FLOAT, count: mesh.vertexCount, type: 'VEC3', min, max },
-      { bufferView: vNrm, componentType: FLOAT, count: mesh.vertexCount, type: 'VEC3' },
-      { bufferView: vUv, componentType: FLOAT, count: mesh.vertexCount, type: 'VEC2' },
-      { bufferView: vIdx, componentType: UNSIGNED_INT, count: mesh.indices.length, type: 'SCALAR' },
-    ],
-    bufferViews,
-    buffers: [{ byteLength: offset }],
+    // Une scène, avec tous les nœuds.
+    scene: 0, scenes: [{ nodes: nodes.map((_, i) => i) }],
+    // Les nœuds, les maillages, les matières et les accesseurs.
+    nodes, meshes, materials, accessors,
+    // Les vues et le tampon unique.
+    bufferViews, buffers: [{ byteLength: offset }],
+  // Fin de la description.
   };
-  // La texture, quand l'image existe.
-  if (vImg !== null) {
-    // L'image, son échantillonnage et la texture qui les réunit.
-    gltf.images = [{ bufferView: vImg, mimeType, name: `${name} — texture` }];
+  // Les textures, quand il y a des images (début).
+  if (images.length) {
+    // Les images et les textures.
+    gltf.images = images; gltf.textures = textures;
     // Filtrage linéaire, répétition en longitude, bord tenu en latitude.
     gltf.samplers = [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 33071 }];
-    gltf.textures = [{ sampler: 0, source: 0 }];
-  // Fin de la texture.
+  // Fin des textures.
   }
   // Le morceau JSON, complété par des espaces.
   const json = Buffer.from(JSON.stringify(gltf), 'utf8');
   const jsonPad = Buffer.alloc(pad4(json.length), 0x20);
   // Le morceau binaire, complété par des zéros.
-  const bin = Buffer.concat(parts);
+  const bin = Buffer.concat(chunks);
   const binPad = Buffer.alloc(pad4(bin.length), 0);
   // Longueur totale : en-tête, puis chaque morceau avec ses huit octets de description.
   const total = 12 + 8 + json.length + jsonPad.length + 8 + bin.length + binPad.length;
