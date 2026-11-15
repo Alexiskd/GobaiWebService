@@ -102,16 +102,20 @@ describe('registre des fournisseurs atmosphériques', () => {
 
   // Test : la présence des clés.
   it('rapporte la présence des clés sans jamais exposer leur valeur', () => {
-    // Environnement : clés Xweather renseignées.
-    const list = listProviders({ XWEATHER_CLIENT_ID: 'secret-id', XWEATHER_CLIENT_SECRET: 'secret' });
-    // Foudre Xweather : clés présentes, mais pas encore branchée.
+    // Environnement : clés Xweather et The Weather Company renseignées.
+    const list = listProviders({ XWEATHER_CLIENT_ID: 'secret-id', XWEATHER_CLIENT_SECRET: 'secret', TWC_API_KEY: 'secret-twc' });
+    // Foudre Xweather : clés présentes et branchée (lot 3).
     const x = list.find((p) => p.id === 'xweather-lightning')!;
     // Contrôle.
-    expect([x.keysPresent, x.available]).toEqual([true, false]);
+    expect([x.keysPresent, x.available]).toEqual([true, true]);
+    // The Weather Company : clé présente, pas encore branchée.
+    const twc = list.find((p) => p.id === 'twc-lightning')!;
+    // Contrôle.
+    expect([twc.keysPresent, twc.available]).toEqual([true, false]);
     // FIRMS : sans clé, branché, disponible.
     expect(list.find((p) => p.id === 'firms-viirs-n20')!.available).toBe(true);
     // Aucune valeur de clé dans la réponse.
-    expect(JSON.stringify(list).includes('secret-id')).toBe(false);
+    expect(['secret-id', 'secret-twc'].some((k) => JSON.stringify(list).includes(k))).toBe(false);
   // Fin du test.
   });
 // Fin du groupe.

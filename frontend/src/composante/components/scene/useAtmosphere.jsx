@@ -1,11 +1,13 @@
 // Importe de React les crochets useCallback, useEffect, useRef et useState.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe les lectures du moteur atmosphérique du serveur.
-import { fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires } from '@/moteur/api/scene';
+import { fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, lightningTileUrl } from '@/moteur/api/scene';
+// Importe l'assemblage d'une mosaïque de tuiles (le même que pour les nuages satellite).
+import { loadCloudMosaic } from '@/moteur/engine/earthCloudMosaic';
 // Importe le rafraîchissement qui ne tourne pas onglet caché.
 import { refreshWhileVisible } from './useMapFeeds';
 // Importe les réglages (lecture, bornes, mémoire) et les textes d'aide.
-import { cycloneHint, fireHint, rememberAtmosphere, sanitizeAtmosphere, storedAtmosphere } from './atmosphereSettings';
+import { cycloneHint, fireHint, lightningHint, rememberAtmosphere, sanitizeAtmosphere, storedAtmosphere } from './atmosphereSettings';
 // Importe le choix et la mise en forme des tuiles de détail des incendies.
 import { FIRE_DETAIL_ALT, FIRE_KIND, mergeDetailTiles, normalizeFireColumns, tilesAround, viewRadiusDeg } from '@/moteur/engine/atmosphere/fireMath';
 
@@ -23,6 +25,12 @@ const TILE_CACHE_MAX = 48;
 const TILE_PARALLEL = 4;
 // Altitude (rayons terrestres) au-dessus de laquelle le détail est libéré.
 const DETAIL_RELEASE_ALT = 0.7;
+// Foudre : couche mondiale relue toutes les 2 minutes (niveau 2 : 16 tuiles).
+const LIGHTNING_MAP_REFRESH_MS = 2 * 60_000;
+// Foudre : impacts relus toutes les minutes (rythme du fournisseur), contrôle de la vue toutes les 5 s.
+const LIGHTNING_REFRESH_MS = 60_000, LIGHTNING_CHECK_MS = 5_000;
+// Foudre : altitude (rayons terrestres) au-delà de laquelle les impacts un par un ne sont pas demandés (≈ 6 000 km).
+const LIGHTNING_MAX_ALT = 0.95;
 
 /**
  * Moteur atmosphérique, côté interface : réglages des calques (gardés dans le navigateur), lectures du serveur à
@@ -36,6 +44,10 @@ export function useAtmosphere({ engine }) {
   const [fireInfo, setFireInfo] = useState(null);
   // État : dernière réponse des cyclones (null : pas encore ; 'erreur' : échec).
   const [cycloneInfo, setCycloneInfo] = useState(null);
+  // État : dernière réponse de la foudre (null : pas encore ; 'erreur' : échec) et point visé trop lointain.
+  const [lightningInfo, setLightningInfo] = useState(null);
+  // État : point visé trop lointain pour les impacts un par un.
+  const [lightningFar, setLightningFar] = useState(false);
   // Tuiles de détail en mémoire : clé « colonne,ligne » → { points, at }.
   const tiles = useRef(new Map());
 
@@ -56,6 +68,8 @@ export function useAtmosphere({ engine }) {
 
   // Transmet les réglages des incendies au moteur.
   useEffect(() => { engine?.setAtmosphereLayer('fires', { visible: settings.fires.on, opacity: settings.fires.opacity, intensity: settings.fires.intensity, windowHours: settings.fires.windowHours }); }, [engine, settings.fires]);
+  // Transmet les réglages de la foudre au moteur.
+  useEffect(() => { engine?.setAtmosphereLayer('lightning', { visible: settings.lightning.on, opacity: settings.lightning.opacity, intensity: settings.lightning.intensity }); }, [engine, settings.lightning]);
   // Transmet les réglages des cyclones au moteur.
   useEffect(() => { engine?.setAtmosphereLayer('cyclones', { visible: settings.cyclones.on, opacity: settings.cyclones.opacity, intensity: settings.cyclones.intensity }); }, [engine, settings.cyclones]);
 
@@ -174,6 +188,68 @@ export function useAtmosphere({ engine }) {
   // Fin de l'effet.
   }, [engine, settings.cyclones.on]);
 
+  // Foudre allumée : couche mondiale, puis toutes les 2 minutes onglet visible (début de l'effet).
+  useEffect(() => {
+    // Sans moteur, ou calque éteint : rien.
+    if (!engine || !settings.lightning.on) return undefined;
+    // Contrôleur d'abandon.
+    const controller = new AbortController();
+    // load : assemble la mosaïque des tuiles relayées et la pose ; échec : la couche reste vide.
+    const load = () => loadCloudMosaic(lightningTileUrl, controller.signal, 2).then((canvas) => engine.setAtmosphereData('lightningMap', canvas)).catch(() => {});
+    // Première lecture.
+    load();
+    // Lectures suivantes.
+    const stop = refreshWhileVisible(load, LIGHTNING_MAP_REFRESH_MS);
+    // Nettoyage : abandon, arrêt, couche retirée.
+    return () => { controller.abort(); stop(); engine.setAtmosphereData('lightningMap', null); };
+  // Fin de l'effet.
+  }, [engine, settings.lightning.on]);
+
+  // Foudre allumée : impacts un par un autour du point visé, à la minute ou quand le point visé change (début de l'effet).
+  useEffect(() => {
+    // Sans moteur, ou calque éteint : rien.
+    if (!engine || !settings.lightning.on) return undefined;
+    // Contrôleur d'abandon.
+    const controller = new AbortController();
+    // Dernière cellule demandée et heure de la demande.
+    let lastKey = '', lastAt = 0, busy = false;
+    // tick : contrôle de la vue (début).
+    const tick = () => {
+      // Onglet caché ou lecture en cours : rien.
+      if (document.hidden || busy) return;
+      // Où regarde la caméra.
+      const view = engine.atmosphereView?.();
+      // Inconnu : rien.
+      if (!view) return;
+      // Trop haut : impacts retirés, couche mondiale seule.
+      if (view.alt > LIGHTNING_MAX_ALT) { setLightningFar(true); if (lastKey) { lastKey = ''; engine.setAtmosphereData('lightning', null, Date.now()); } return; }
+      // Assez près.
+      setLightningFar(false);
+      // Cellule d'un demi-degré du point visé (comme le serveur).
+      const key = `${Math.round(view.lon * 2) / 2},${Math.round(view.lat * 2) / 2}`;
+      // Même cellule, lue il y a moins d'une minute : rien.
+      if (key === lastKey && Date.now() - lastAt < LIGHTNING_REFRESH_MS) return;
+      // Demande notée.
+      lastKey = key; lastAt = Date.now(); busy = true;
+      // Lecture (début).
+      fetchAtmosphereLightning(view.lon, view.lat, controller.signal)
+        // Reçue : posée et gardée pour le texte d'aide.
+        .then((data) => { engine.setAtmosphereData('lightning', data, Date.now()); setLightningInfo(data); })
+        // Échec (hors abandon) : noté.
+        .catch((err) => { if (err?.name !== 'AbortError') setLightningInfo((prev) => (prev && prev !== 'erreur' ? prev : 'erreur')); })
+        // Lecture terminée.
+        .finally(() => { busy = false; });
+    // Fin de tick.
+    };
+    // Contrôle régulier.
+    const timer = setInterval(tick, LIGHTNING_CHECK_MS);
+    // Premier contrôle.
+    tick();
+    // Nettoyage : arrêt, abandon, impacts retirés.
+    return () => { clearInterval(timer); controller.abort(); engine.setAtmosphereData('lightning', null, Date.now()); };
+  // Fin de l'effet.
+  }, [engine, settings.lightning.on]);
+
   // Renvoie les réglages, leur modification, les textes d'aide et les réponses (début).
   return {
     // Réglages des calques.
@@ -184,8 +260,10 @@ export function useAtmosphere({ engine }) {
     fireHint: fireHint(fireInfo),
     // Texte d'aide des cyclones.
     cycloneHint: cycloneHint(cycloneInfo),
+    // Texte d'aide de la foudre.
+    lightningHint: lightningHint(lightningInfo, lightningFar),
     // Dernières réponses (pour la mention des sources).
-    fireInfo, cycloneInfo,
+    fireInfo, cycloneInfo, lightningInfo,
   // Fin du retour.
   };
 // Fin de useAtmosphere.

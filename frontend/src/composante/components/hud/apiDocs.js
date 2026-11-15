@@ -100,6 +100,10 @@ export const API_DOC_GROUPS = [
       ['GET', '/atmosphere/fires/tiles/{tx}/{ty}', 'Points chauds d’une tuile de 10°, un par un.'],
       // Cyclones.
       ['GET', '/atmosphere/cyclones', 'Cyclones actifs confirmés : position, vent, catégorie, trajectoire (NOAA NHC, JTWC, GDACS).'],
+      // Foudre autour d'un point, et couche mondiale.
+      ['GET', '/atmosphere/lightning', 'Foudre : impacts des 5 dernières minutes dans 100 km autour d’un point (Xweather).'],
+      // Tuiles de la couche mondiale de la foudre.
+      ['GET', '/atmosphere/lightning/tiles/{z}/{x}/{y}', 'Foudre : couche mondiale des impacts récents (Xweather Raster Maps).'],
       // Événements au format commun.
       ['GET', '/atmosphere/events', 'Événements atmosphériques au format commun (filtres types, bbox, limit).'],
       // Registre et contrôle.

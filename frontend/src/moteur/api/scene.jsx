@@ -161,4 +161,13 @@ export const fetchAtmosphereFireTile = (tx, ty, signal) => get(`/atmosphere/fire
 /** Cyclones actifs confirmés : { generatedAt, cyclones: [événements], excluded: [{ name, reason }], sources, stale }. */
 // fetchAtmosphereCyclones : les cyclones.
 export const fetchAtmosphereCyclones = (signal) => get('/atmosphere/cyclones', { signal });
+/**
+ * Foudre autour d'un point (Xweather, 5 dernières minutes, 100 km) : { available, reason, center, radiusKm, windowMin,
+ * strikes: colonnes { lon, lat, ageS, kind, peak, conf }, stats, source }.
+ */
+// fetchAtmosphereLightning : la longitude et la latitude visées.
+export const fetchAtmosphereLightning = (lon, lat, signal) => get('/atmosphere/lightning', { signal, query: { lon: lon.toFixed(3), lat: lat.toFixed(3) } });
+/** Adresse d'une tuile de la couche mondiale de la foudre (niveaux 0 à 3), relayée par le serveur. */
+// lightningTileUrl : la tuile.
+export const lightningTileUrl = (z, x, y) => `${API_BASE}/atmosphere/lightning/tiles/${z}/${x}/${y}`;
 
