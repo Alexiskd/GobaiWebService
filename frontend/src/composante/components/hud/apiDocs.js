@@ -85,6 +85,7 @@ export const API_DOC_GROUPS = [
       ['GET', '/tiles/earth/plan', 'Table de priorité des sources de la Terre : le navigateur choisit la source de chaque cellule hexagonale ; paliers de zoom et carte marine (NOAA, GEBCO).'],
       ['GET', '/tiles/earth/{layerId}/{z}/{x}/{y}', 'Tuile satellite HD de la Terre.'],
       ['GET', '/tiles/moon/{layerId}/{z}/{x}/{y}', 'Tuile de la Lune.'],
+      ['GET', '/tiles/moon-relief/{z}/{x}/{y}.png', 'Relief de la Lune en Terrarium (altitudes LOLA, ≈ 118 m) : R × 256 + G + B / 256 − 32768.'],
       ['GET', '/tiles/satellite/{body}/{z}/{x}/{y}', 'Tuile d’un satellite ou d’une géante gazeuse (paramètre layer : couche NASA Trek).'],
       ['GET', '/tiles/bodies/availability', 'Astres dont la carte NASA Trek est disponible.'],
       ['GET', '/moon · /mars · /mercury', 'Fournisseurs, couches, capacités WMTS/WMS et tuiles relayées de chaque astre.'],

@@ -221,8 +221,9 @@ export class TileManager {
     this.uniforms.reliefShade.value = this.reliefOn && r.kind === 'terrarium' ? r.shade : 0;
     // Relief estimé : sa force pour un relief par l'image actif, sinon 0.
     this.uniforms.reliefImg.value = this.reliefOn && r.kind === 'image' ? r.strength : 0;
-    // Fond des océans : actif avec un relief Terrarium actif et une source des fonds.
-    this.uniforms.oceanOn.value = this.reliefOn && r.kind === 'terrarium' && this.oceanSource ? 1 : 0;
+    // Fond des océans : actif avec un relief Terrarium actif et une source des fonds. Altitudes signées (la Lune) :
+    // même passage du shader sans source des fonds, les valeurs négatives de la tuile creusent alors la surface.
+    this.uniforms.oceanOn.value = this.reliefOn && r.kind === 'terrarium' && (this.oceanSource || r.signed) ? 1 : 0;
     // Remet à zéro la mesure de la hauteur du sol.
     this.reliefProbe = { at: 0, floor: 0 };
     // Relief en volume allumé ou coupé : les tuiles affichées sont reconstruites (maillage à plat, sans tuiles

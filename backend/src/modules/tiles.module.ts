@@ -22,6 +22,8 @@ import { TILE_PROVIDERS, TilesService } from '../services/map-tiles/map-imagery.
 import { MoonColorService } from '../services/map-tiles/moon-color.service';
 // Service du cache disque des tuiles de la Lune, avec préchargement et comblement des zones vides.
 import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
+// Relief de la Lune en tuiles Terrarium (altitudes LOLA de Moon Trek).
+import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
 // Service du modèle 3D de la Lune (GLB), téléchargé une fois et relayé.
 import { MoonModelService } from '../services/map-tiles/moon-model.service';
 // Service des modèles 3D des autres astres (GLB), sur le même principe.
@@ -87,6 +89,8 @@ import { EphemerisModule } from './ephemeris.module';
     { provide: MoonColorService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new MoonColorService(config) },
     // Cache des tuiles de la Lune : fabrique qui lui passe la configuration (dossier du cache, niveaux à précharger).
     { provide: MoonTileCacheService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new MoonTileCacheService(config) },
+    // Relief de la Lune : fabrique sans argument (fetch global).
+    { provide: MoonReliefService, useFactory: () => new MoonReliefService() },
     // Modèle 3D de la Lune : fabrique qui lui passe la configuration (adresse du modèle).
     { provide: MoonModelService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new MoonModelService(config) },
     // Modèles 3D des astres : fabrique qui lui passe la configuration.
