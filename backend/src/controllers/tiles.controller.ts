@@ -711,7 +711,9 @@ export class TilesController {
       // fin (en-tête X-Tile-Source) ;
       + 'découpée dans son ancêtre et agrandie). En-tête X-Tile-Source : source qui a servi la tuile. '
       // les fonds marins.
-      + 'earth-gebco et earth-ncei : fonds marins (GEBCO 2026, NOAA NCEI), une requête par tuile sur son emprise.',
+      + 'earth-gebco et earth-ncei : relais du relief des fonds marins, non listés (GEBCO 2026, fondu au large dans earth-hd ; '
+      // suite (la NOAA, réservée à la carte marine).
+      + 'NOAA NCEI ETOPO 2022, réservé à la carte marine), une requête par tuile sur son emprise.',
   // Fin de la description.
   })
   // Réponse 200 documentée : une image JPEG.

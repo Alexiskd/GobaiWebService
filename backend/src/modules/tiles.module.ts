@@ -10,8 +10,6 @@ import { MarsModule } from './mars.module';
 import { MercuryModule } from './mercury.module';
 // Module de la Lune : idem.
 import { MoonModule } from './moon.module';
-// Fournisseur de tuiles de la Terre : NASA GIBS.
-import { GibsTileProvider } from '../services/map-tiles/providers/gibs-tile.provider';
 // Fournisseur de tuiles de la Lune : NASA Moon Trek.
 import { NasaTrekMoonProvider } from '../services/map-tiles/providers/nasa-trek-moon.provider';
 // Fournisseur de tuiles de Mars : NASA Mars Trek.
@@ -59,10 +57,8 @@ import { EphemerisModule } from './ephemeris.module';
       provide: TILE_PROVIDERS,
       // NestJS injecte la configuration dans la fabrique ;
       inject: [APP_CONFIG],
-      // fabrique : rend un tableau de trois fournisseurs, chacun avec sa partie de la configuration :
+      // fabrique : rend un tableau de deux fournisseurs, chacun avec sa partie de la configuration (la Terre a son propre service, EarthImageryService) :
       useFactory: (config: AppConfig) => [
-        // GIBS pour la Terre (adresse de base config.tiles.gibs) ;
-        new GibsTileProvider(config.tiles.gibs),
         // Moon Trek pour la Lune (config.tiles.moon) ;
         new NasaTrekMoonProvider(config.tiles.moon),
         // Mars Trek pour Mars (config.tiles.mars).

@@ -1,11 +1,13 @@
 /**
- * Fonds marins de la Terre : deux fonds de carte du relief des océans et des terres, proposés à côté de la couche
- * unique « earth-hd » (menu Terre, fond de carte). Ce sont les données que le globe Google Earth attribue à
+ * Fonds marins de la Terre : deux relais de tuiles du relief des océans et des terres, qui ne sont plus des fonds de
+ * carte à part (la Terre n'a qu'une couche, « earth-hd »). Ce sont les données que le globe Google Earth attribue à
  * « SIO, NOAA, U.S. Navy, NGA, GEBCO » et « IBCAO » :
  *  - earth-gebco : grille mondiale GEBCO_2026 en relief ombré (service WMS de GEBCO), qui réunit la bathymétrie
- *    mondiale, SRTM15+ (SIO, NOAA, U.S. Navy, NGA) et les grilles régionales comme l'IBCAO (Arctique) ;
- *  - earth-ncei : mosaïque mondiale des modèles d'élévation de la NOAA (NCEI), terre et mer sans couture, en relief
- *    ombré coloré par l'altitude et la profondeur (service d'images ArcGIS, fonction « ColorHillshade »).
+ *    mondiale, SRTM15+ (SIO, NOAA, U.S. Navy, NGA) et les grilles régionales comme l'IBCAO (Arctique) ; le
+ *    navigateur la fond au large dans la couche unique (voir seafloorFusion plus bas) ;
+ *  - earth-ncei : mosaïque mondiale des modèles d'élévation de la NOAA (NCEI, ETOPO 2022), terre et mer sans couture,
+ *    en relief ombré coloré par l'altitude et la profondeur (service d'images ArcGIS, fonction « ColorHillshade ») ;
+ *    réservée à la teinte des océans vue de l'espace de la future carte marine.
  * Deux services sans clé, sans tuiles toutes faites : chaque tuile est une image demandée sur son emprise Web
  * Mercator, et le serveur la relaie comme les orthophotos WMS de la couche unique (voir earth-imagery.service.ts).
  * Fonctions pures, testées dans earth-seafloor.spec.ts.
@@ -33,17 +35,15 @@ export function nceiTileUrl(z: number, x: number, y: number, base: string = NCEI
 // Fin de nceiTileUrl.
 }
 
-// Forme d'un fond marin : identifiant de la couche, nom, description, et sa source unique.
-export interface SeafloorLayer { id: string; label: string; description: string; source: EarthSource }
+// Forme d'un fond marin : identifiant de son relais (tuiles /api/v1/tiles/earth/<id>/…) et sa source unique.
+export interface SeafloorLayer { id: string; source: EarthSource }
 
-// Les deux fonds marins, dans l'ordre du menu :
+// Les deux fonds marins relayés :
 export const SEAFLOOR_LAYERS: SeafloorLayer[] = [
   // GEBCO,
   {
-    // identifiant et nom ;
-    id: 'earth-gebco', label: 'Fonds marins · GEBCO 2026 (relief ombré)',
-    // sa description ;
-    description: 'Profondeur des océans et relief des terres en relief ombré : grille mondiale GEBCO_2026 (≈ 450 m), avec SRTM15+ (SIO, NOAA, U.S. Navy, NGA) et l’IBCAO pour l’Arctique. Zoom jusqu’au niveau 10.',
+    // identifiant du relais ;
+    id: 'earth-gebco',
     // sa source :
     source: {
       // identifiant, nom, monde entier, niveaux 0 à 10 (au-delà, la grille de ≈ 450 m n'a plus de détail) ;
@@ -58,10 +58,8 @@ export const SEAFLOOR_LAYERS: SeafloorLayer[] = [
   },
   // NOAA NCEI,
   {
-    // identifiant et nom ;
-    id: 'earth-ncei', label: 'Fonds marins · NOAA NCEI (relief en couleurs)',
-    // sa description ;
-    description: 'Mosaïque mondiale des modèles d’élévation de la NOAA, terre et mer sans couture, en relief ombré coloré par l’altitude et la profondeur ; plus fine le long des côtes des États-Unis. Zoom jusqu’au niveau 12.',
+    // identifiant du relais ;
+    id: 'earth-ncei',
     // sa source :
     source: {
       // identifiant, nom, monde entier, niveaux 0 à 12 ;
@@ -77,7 +75,7 @@ export const SEAFLOOR_LAYERS: SeafloorLayer[] = [
 // Fin de la liste.
 ];
 
-// Table qui donne un fond marin à partir de l'identifiant de sa couche.
+// Table qui donne un fond marin à partir de l'identifiant de son relais.
 export const SEAFLOOR_BY_ID = new Map(SEAFLOOR_LAYERS.map((l) => [l.id, l]));
 
 /**

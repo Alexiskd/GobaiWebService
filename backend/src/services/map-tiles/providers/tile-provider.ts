@@ -1,7 +1,5 @@
 // Type ProviderId : l'identifiant d'un fournisseur de tuiles, parmi :
 export type ProviderId =
-  // NASA GIBS (la Terre) ;
-  | 'gibs'
   // NASA Moon Trek ;
   | 'nasa-trek'
   // NASA Mars Trek ;

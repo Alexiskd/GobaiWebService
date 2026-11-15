@@ -10,8 +10,6 @@ import type { LocateDto, TileLayerListDto, AttributionDto } from '../../dto/tile
 import { fillTemplate, gridSize, isValidTile, lonLatToTile, tileBounds, TILE_SIZE, MAX_LATITUDE } from './tile-math';
 // Types (effacés à la compilation) d'une couche résolue, d'un fournisseur et d'une zone visible.
 import type { ResolvedTileLayer, TileProvider, Viewport } from './providers/tile-provider';
-// Fournisseur de la Terre : NASA GIBS.
-import { GibsTileProvider } from './providers/gibs-tile.provider';
 // Fournisseur de la Lune : NASA Moon Trek.
 import { NasaTrekMoonProvider } from './providers/nasa-trek-moon.provider';
 // Fournisseur de Mars : NASA Mars Trek.
@@ -107,14 +105,13 @@ const MARS_FUSION_LAYERS = MARS_FUSION_ALGORITHM_INFO.map((algorithm) => ({
 }));
 
 /**
- * La Terre utilise NASA GIBS ; la Lune et Mars viennent de NASA Solar System Treks (Moon et Mars Trek). Vénus n'a plus de fond de carte.
+ * La Terre a une seule couche, celle d'EarthImageryService (« earth-hd ») ; la Lune et Mars viennent de NASA Solar
+ * System Treks (Moon et Mars Trek). Vénus n'a plus de fond de carte.
  */
 // Rend la classe injectable par NestJS.
 @Injectable()
 // Classe du service principal des tuiles.
 export class TilesService {
-  // Fournisseur de la Terre.
-  private readonly gibs: TileProvider;
   // Fournisseur de la Lune.
   private readonly moon: TileProvider;
   // Fournisseur de Mars.
@@ -126,16 +123,14 @@ export class TilesService {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     // la liste des fournisseurs ;
     @Inject(TILE_PROVIDERS) providers: TileProvider[],
+    // le service de l'imagerie de la Terre, sa couche unique ;
+    private readonly earth: EarthImageryService,
     // le service des catalogues, facultatif ;
     @Optional() private readonly space?: SpaceLayersService,
-    // le service des satellites, facultatif ;
+    // le service des satellites, facultatif.
     @Optional() private readonly satellites?: SatelliteTilesService,
-    // le service de l'imagerie de la Terre, facultatif.
-    @Optional() private readonly earth?: EarthImageryService,
   // Corps du constructeur :
   ) {
-    // GIBS : celui de la liste, sinon un nouveau ;
-    this.gibs = providers.find((p) => p.id === 'gibs') ?? new GibsTileProvider(config.tiles.gibs);
     // Moon Trek : celui de la liste, sinon un nouveau ;
     this.moon = providers.find((p) => p.id === 'nasa-trek') ?? new NasaTrekMoonProvider(config.tiles.moon);
     // Mars Trek : celui de la liste, sinon un nouveau.
@@ -143,26 +138,14 @@ export class TilesService {
   // Fin du constructeur.
   }
 
-  /** Fond terrestre fixe : NASA GIBS, gratuit et sans clé. */
-  // Méthode active : le fournisseur de la Terre en service.
-  active(): { provider: TileProvider; fallback: boolean } {
-    // Toujours GIBS, jamais un repli.
-    return { provider: this.gibs, fallback: false };
-  // Fin de active.
-  }
-
   // Méthode list : toutes les couches.
   list(): TileLayerListDto {
-    // Fournisseur actif.
-    const { provider, fallback } = this.active();
     // Renvoie :
     return {
-      // son identifiant, le repli, la taille des tuiles, et la recherche de lieux disponible ;
-      provider: provider.id, fallback, tileSize: TILE_SIZE, placeSearch: true, // Photon (OpenStreetMap, sans clé)
-      // Terre : une seule couche d'imagerie (earth-hd), qui inclut déjà NASA GIBS parmi ses sources ; GIBS n'est
-      // listé seul que si le service de la couche unique est absent.
-      // les couches : celles de GIBS seulement si la couche unique de la Terre est absente, puis la Lune, Mars, le mélange et les fusions de Mars, les catalogues, les satellites, la couche unique de la Terre et le LiDAR HD.
-      layers: [...(this.earth ? [] : provider.layers()), ...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...(this.space?.list() ?? []), ...(this.satellites?.layers() ?? []), ...(this.earth?.layers() ?? []), ...lidarHdLayers()],
+      // le fournisseur de la Terre (sa couche unique), sans repli, la taille des tuiles, et la recherche de lieux disponible ;
+      provider: this.earth.id, fallback: false, tileSize: TILE_SIZE, placeSearch: true, // Photon (OpenStreetMap, sans clé)
+      // toutes les couches connues.
+      layers: this.allLayers(),
     // Fin de l'objet.
     };
   // Fin de list.
@@ -354,12 +337,12 @@ export class TilesService {
 
   // Méthode privée allLayers : toutes les couches connues.
   private allLayers() {
-    // GIBS, la Lune, Mars, le mélange et les fusions, les catalogues, les satellites, la Terre et le LiDAR HD.
-    return [...this.active().provider.layers(), ...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...(this.space?.list() ?? []), ...(this.satellites?.layers() ?? []), ...(this.earth?.layers() ?? []), ...lidarHdLayers()];
+    // La Lune, Mars, le mélange et les fusions, les catalogues, les satellites, la couche unique de la Terre et le LiDAR HD.
+    return [...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...(this.space?.list() ?? []), ...(this.satellites?.layers() ?? []), ...this.earth.layers(), ...lidarHdLayers()];
   // Fin de allLayers.
   }
 
-  /** Fournisseur qui sert cette couche : la Lune et Mars ont le leur, le reste va au fournisseur actif de la Terre. */
+  /** Fournisseur qui sert cette couche : la Lune, Mars, les satellites et la Terre ont chacun le leur ; inconnue : erreur 404. */
   // Méthode privée providerFor : le fournisseur d'une couche.
   private providerFor(layerId: string): TileProvider {
     // Une couche de la Lune : Moon Trek.
@@ -368,10 +351,10 @@ export class TilesService {
     if (this.mars.layers().some((l) => l.id === layerId)) return this.mars;
     // Une couche de satellite : le service des satellites.
     if (this.satellites?.has(layerId)) return this.satellites;
-    // Une couche de la Terre : le service de la Terre.
-    if (this.earth?.has(layerId)) return this.earth;
-    // Sinon le fournisseur actif.
-    return this.active().provider;
+    // La couche unique de la Terre : le service de la Terre.
+    if (this.earth.has(layerId)) return this.earth;
+    // Sinon : couche inconnue, erreur 404 qui liste les couches.
+    throw new NotFoundException(this.unknownLayer(layerId));
   // Fin de providerFor.
   }
 

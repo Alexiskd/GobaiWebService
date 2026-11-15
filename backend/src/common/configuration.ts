@@ -17,8 +17,6 @@ export interface AppConfig {
   throttle: { ttlMs: number; limit: number };
   // tiles : les réglages des tuiles de carte.
   tiles: {
-    // gibs : adresse de base de NASA GIBS (la Terre).
-    gibs: { baseUrl: string };
     /** Tuiles de la Lune (NASA Moon Trek), indépendantes du fournisseur de la Terre. */
     // moon : adresse de base des tuiles de la Lune.
     moon: { baseUrl: string };
@@ -139,12 +137,6 @@ export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConf
     },
     // Réglages des tuiles :
     tiles: {
-      // NASA GIBS :
-      gibs: {
-        // adresse de base : GIBS_BASE_URL ou l'adresse officielle, sans barre oblique finale.
-        baseUrl: (env.GIBS_BASE_URL?.trim() || 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best').replace(/\/$/, ''),
-      // Fin de gibs.
-      },
       // Modèle 3D de la Lune : MOON_MODEL_URL, ou le modèle du NASA Scientific Visualization Studio.
       moonModelUrl: env.MOON_MODEL_URL?.trim() || 'https://svs.gsfc.nasa.gov/vis/a010000/a014900/a014959/Moon_NASA_LRO_8k_Topo_Small.glb',
       // Couleurs de la Lune : MOON_COLOR_URL, ou la carte LROC 4096×2048 du même studio, pôles renseignés

@@ -20,7 +20,7 @@ export class TileLayerDto {
   // kind : image, plan, relief, hybride ou calque transparent.
   kind: string;
   // provider : le fournisseur qui sert réellement les images, parmi les valeurs listées.
-  @ApiProperty({ enum: ['gibs', 'nasa-trek', 'mars-trek', 'moon-trek', 'usgs-astro', 'lroc-lunaserv', 'usgs-astro-mars', 'opm-mars', 'murray-lab', 'satellite-trek', 'earth-hd', 'ign-lidar-hd'], description: 'Fournisseur qui sert réellement les images.' }) provider: string;
+  @ApiProperty({ enum: ['nasa-trek', 'mars-trek', 'moon-trek', 'usgs-astro', 'lroc-lunaserv', 'usgs-astro-mars', 'opm-mars', 'murray-lab', 'satellite-trek', 'earth-hd', 'ign-lidar-hd'], description: 'Fournisseur qui sert réellement les images.' }) provider: string;
   // body : l'astre sur lequel la couche se pose, parmi les valeurs listées.
   @ApiProperty({ enum: ['earth', 'moon', 'mars', 'mercury', 'venus', 'io', 'europa', 'ganymede', 'callisto', 'mimas', 'enceladus', 'tethys', 'dione', 'rhea', 'titan', 'iapetus', 'miranda', 'ariel', 'umbriel', 'titania', 'oberon', 'triton', 'charon', 'jupiter', 'saturn', 'uranus', 'neptune'], description: 'Astre sur lequel la couche se pose.' }) body: string;
   // Ouvre la documentation du champ projection :
@@ -50,10 +50,10 @@ export class TileLayerDto {
 
 // Forme de la réponse de GET /tiles/layers.
 export class TileLayerListDto {
-  // provider : le fournisseur actif pour la Terre.
-  @ApiProperty({ enum: ['gibs'], description: 'Fournisseur actif de la Terre (les couches de la Lune ont `body: moon`).' }) provider: string;
-  // fallback : vrai si ce fournisseur est un repli.
-  @ApiProperty({ description: 'Vrai si la couche active est un fournisseur de repli.' }) fallback: boolean;
+  // provider : le fournisseur de la Terre.
+  @ApiProperty({ enum: ['earth-hd'], description: 'Fournisseur de la Terre : sa couche unique (les couches de la Lune ont `body: moon`).' }) provider: string;
+  // fallback : toujours faux, la Terre n'a plus de fournisseur de repli (gardé pour les clients existants).
+  @ApiProperty({ description: 'Toujours faux : la Terre n’a qu’une couche, sans fournisseur de repli.' }) fallback: boolean;
   // tileSize : le côté d'une tuile, en pixels.
   @ApiProperty({ example: 256 }) tileSize: number;
   // placeSearch : vrai si la recherche de lieux est disponible.
@@ -66,7 +66,7 @@ export class TileLayerListDto {
 // Forme d'une mention de sources.
 export class TileAttributionDto {
   // text : le texte à afficher.
-  @ApiProperty({ example: 'NASA EOSDIS GIBS' }) text: string;
+  @ApiProperty({ example: 'Orthophotos : IGN (Géoplateforme) · Sentinel-2 cloudless 2016 (EOX, CC BY 4.0)' }) text: string;
 // Fin de TileAttributionDto.
 }
 
@@ -75,7 +75,7 @@ export class ResolvedTileLayerDto extends TileLayerDto {
   // Ouvre la documentation du champ urlTemplate :
   @ApiProperty({
     // un exemple de modèle d'adresse ;
-    example: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/…/{z}/{y}/{x}.jpeg',
+    example: '/api/v1/tiles/earth/earth-hd/{z}/{x}/{y}',
     // sa description.
     description: 'Modèle d’URL : remplacez {z}, {x}, {y}. À charger directement depuis le navigateur.',
   // Fin de la documentation.
@@ -179,11 +179,11 @@ export class AttributionQueryDto {
 // Forme de la réponse de l'attribution.
 export class AttributionDto {
   // Documente le champ suivant : texte des sources.
-  @ApiProperty({ example: 'Imagerie : NASA EOSDIS GIBS', description: 'Texte de sources de données pour la zone demandée.' })
+  @ApiProperty({ example: 'Orthophotos : IGN (Géoplateforme) · Sentinel-2 cloudless 2016 (EOX, CC BY 4.0)', description: 'Texte de sources de données pour la zone demandée.' })
   // copyright : le texte des sources pour la zone demandée.
   copyright: string;
   // provider : le fournisseur.
-  @ApiProperty({ example: 'gibs' }) provider: string;
+  @ApiProperty({ example: 'earth-hd' }) provider: string;
 // Fin de AttributionDto.
 }
 
