@@ -355,6 +355,8 @@ export class TileLayer {
       // Cellules hexagonales : ce sont elles qui disent quelles images carrées charger.
       // Crée l'affichage en hexagones à la première sélection.
       if (this.hexOn && !this.hex) this.hex = new HexDisplay(this);
+      // Durée des fondus entre niveaux : celle de la carte marine de la table, s'il y en a une.
+      this.hex?.setFadeMs(this.source.info?.marine?.fadeMs);
       // Tuiles voulues : par les cellules, ou par le quadtree.
       const wanted = this.hexOn ? this.hex.select(view, opts) : selectTiles(view, opts);
       // Priorité = 1 / (distance au centre de l'écran) × importance du niveau (sans visée connue : la distance).
