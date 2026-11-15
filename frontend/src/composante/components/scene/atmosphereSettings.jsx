@@ -16,11 +16,13 @@ export const ATMOSPHERE_DEFAULTS = {
   fires: { on: false, opacity: 0.9, intensity: 1, windowHours: 24 },
   // Cyclones.
   cyclones: { on: false, opacity: 0.9, intensity: 1 },
+  // Foudre.
+  lightning: { on: false, opacity: 0.9, intensity: 1 },
 // Fin des réglages par défaut.
 };
 /** Calques prévus aux lots suivants, affichés comme « à venir » (aucune donnée n'est représentée sans source). */
 // Déclare et exporte la liste des calques à venir.
-export const ATMOSPHERE_UPCOMING = ['Foudre', 'Orages', 'Précipitations', 'Radar', 'Vents', 'Courants-jets', 'Aérosols', 'Poussières', 'Pollution', 'Fumées', 'Brouillard'];
+export const ATMOSPHERE_UPCOMING = ['Orages', 'Précipitations', 'Radar', 'Vents', 'Courants-jets', 'Aérosols', 'Poussières', 'Pollution', 'Fumées', 'Brouillard'];
 
 // clamp : borne une valeur numérique ; illisible : la valeur par défaut.
 const clamp = (v, min, max, fallback) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Math.min(max, Math.max(min, Number(v))) : fallback);
@@ -28,16 +30,18 @@ const clamp = (v, min, max, fallback) => (Number.isFinite(Number(v)) && v !== nu
 /** Réglages complets et bornés, à partir d'un objet partiel (gardé dans le navigateur, ou modifié). */
 // Déclare et exporte sanitizeAtmosphere : l'objet partiel.
 export function sanitizeAtmosphere(raw) {
-  // Partie des incendies, et celle des cyclones.
-  const f = raw?.fires ?? {}, c = raw?.cyclones ?? {};
+  // Partie des incendies, celle des cyclones et celle de la foudre.
+  const f = raw?.fires ?? {}, c = raw?.cyclones ?? {}, l = raw?.lightning ?? {};
   // Valeurs par défaut.
-  const df = ATMOSPHERE_DEFAULTS.fires, dc = ATMOSPHERE_DEFAULTS.cyclones;
+  const df = ATMOSPHERE_DEFAULTS.fires, dc = ATMOSPHERE_DEFAULTS.cyclones, dl = ATMOSPHERE_DEFAULTS.lightning;
   // Réglages complets (début).
   return {
     // Incendies : allumés, opacité, intensité, fenêtre (une des fenêtres proposées, sinon 24 h).
     fires: { on: f.on === true, opacity: clamp(f.opacity, 0.1, 1, df.opacity), intensity: clamp(f.intensity, 0.5, 2, df.intensity), windowHours: FIRE_WINDOWS_H.includes(Number(f.windowHours)) ? Number(f.windowHours) : df.windowHours },
     // Cyclones : allumés, opacité, intensité.
     cyclones: { on: c.on === true, opacity: clamp(c.opacity, 0.1, 1, dc.opacity), intensity: clamp(c.intensity, 0.5, 2, dc.intensity) },
+    // Foudre : allumée, opacité, intensité.
+    lightning: { on: l.on === true, opacity: clamp(l.opacity, 0.1, 1, dl.opacity), intensity: clamp(l.intensity, 0.5, 2, dl.intensity) },
   // Fin des réglages.
   };
 // Fin de sanitizeAtmosphere.
@@ -116,4 +120,26 @@ export function cycloneHint(info) {
   // Liste des cyclones, puis les sources.
   return `${list.map(cycloneSummary).join(' ; ')}${ex} · ${src}${stale}`;
 // Fin de cycloneHint.
+}
+
+/** Texte d'aide de la foudre (null : chargement ; 'erreur' : échec ; `far` : point visé trop lointain pour le détail). */
+// Déclare et exporte lightningHint : la réponse, ou son état, et l'éloignement.
+export function lightningHint(info, far = false) {
+  // Source, en clair.
+  const src = 'Xweather (Vaisala)';
+  // Rappel du détail : rayon de 100 km en accès standard.
+  const zoom = far ? ' · rapprochez-vous (moins de 6 000 km) pour les impacts un par un' : '';
+  // Pas encore de réponse.
+  if (info === null || info === undefined) return `Zones orageuses du monde et impacts des 5 dernières minutes · ${src}${zoom}`;
+  // Échec.
+  if (info === 'erreur') return `Source indisponible pour le moment · ${src}`;
+  // Indisponible (identifiants absents) : la raison.
+  if (info.available === false) return `${info.reason || 'Indisponible'} · ${src}`;
+  // Accès refusé par l'API, sans aucune donnée.
+  if (info.reason) return `Accès refusé par Xweather (${info.reason}) : vérifier que l'abonnement inclut la foudre · ${src}`;
+  // Statistiques.
+  const st = info.stats ?? {};
+  // Texte complet.
+  return `${count(st.count)} impact${st.count > 1 ? 's' : ''} en 5 min dans 100 km autour du point visé (${count(st.cg)} nuage-sol, ${count(st.ic)} intra-nuage, ${st.perMin ?? 0}/min)${st.truncated ? ', limite de 1 000 atteinte' : ''} · relecture ×10 · ${src}${info.stale ? ' · dernières données connues' : ''}${zoom}`;
+// Fin de lightningHint.
 }

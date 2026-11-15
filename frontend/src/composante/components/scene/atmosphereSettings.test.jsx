@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les fonctions testées.
-import { ATMOSPHERE_DEFAULTS, cycloneHint, fireHint, sanitizeAtmosphere } from './atmosphereSettings';
+import { ATMOSPHERE_DEFAULTS, cycloneHint, fireHint, lightningHint, sanitizeAtmosphere } from './atmosphereSettings';
 
 // Test : les réglages.
 test('atmosphère : réglages bornés, calques éteints par défaut, fenêtre parmi celles proposées', () => {
@@ -41,5 +41,20 @@ test('atmosphère : le texte des cyclones dit clairement quand aucun cyclone act
   assert.match(cycloneHint({ cyclones: [], excluded: [{}, {}] }), /^Aucun cyclone actif confirmé · 2 suivis écartés \(aucune position récente\)/);
   // Un cyclone : son texte court.
   assert.match(cycloneHint({ cyclones: [{ id: 'a', name: 'Pena', lon: -173, lat: 10, details: { category: 'TS', windKt: 50 } }], excluded: [] }), /^Pena · TS 50 kt \(93 km\/h\)/);
+// Fin du test.
+});
+
+// Test : les textes d'aide de la foudre.
+test('atmosphère : le texte de la foudre dit ce qui est mesuré, et pourquoi rien n’arrive', () => {
+  // Sans identifiants : la raison.
+  assert.match(lightningHint({ available: false, reason: 'Identifiants Xweather absents' }), /^Identifiants Xweather absents/);
+  // Accès refusé par l'API : invitation à vérifier l'abonnement.
+  assert.match(lightningHint({ available: true, reason: 'Xweather : access denied' }), /vérifier que l'abonnement inclut la foudre/);
+  // Données : nombre, natures, fréquence.
+  assert.match(lightningHint({ available: true, reason: null, stats: { count: 12, cg: 9, ic: 3, perMin: 2.4 } }), /^12 impacts en 5 min dans 100 km autour du point visé \(9 nuage-sol, 3 intra-nuage, 2.4\/min\)/);
+  // Trop loin : invitation à se rapprocher.
+  assert.match(lightningHint(null, true), /rapprochez-vous/);
+  // Réglages de la foudre bornés.
+  assert.deepEqual(sanitizeAtmosphere({ lightning: { on: true, opacity: 3 } }).lightning, { on: true, opacity: 1, intensity: 1 });
 // Fin du test.
 });

@@ -69,7 +69,7 @@ export function Atmosphere({
   // L'atmosphère et les nuages des planètes solides, leur rappel et leur texte d'aide.
   atmospheres, onAtmospheres, atmospheresHint,
   // Les réglages des calques, leur modification et les textes d'aide.
-  settings, onUpdate, fireHint, cycloneHint,
+  settings, onUpdate, fireHint, cycloneHint, lightningHint,
 // Fin de la liste des propriétés.
 }) {
   // Début du rendu.
@@ -122,6 +122,12 @@ export function Atmosphere({
           {settings.cyclones.on && <Reglages value={settings.cyclones} onChange={(patch) => onUpdate('cyclones', patch)} />}
           {/* Si les cyclones sont allumés : légende des tracés. */}
           {settings.cyclones.on && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: 3, pr: 1.5, pb: 0.5 }}>Trajectoire observée en trait plein, prévue en pointillés ; vents de 34, 50 et 64 nœuds en jaune, orange et rouge.</Typography>}
+          {/* Interrupteur de la foudre. */}
+          <Switch checked={settings.lightning.on} onChange={(on) => onUpdate('lightning', { on })} label="Foudre" hint={lightningHint} />
+          {/* Si la foudre est allumée : opacité et intensité. */}
+          {settings.lightning.on && <Reglages value={settings.lightning} onChange={(patch) => onUpdate('lightning', patch)} />}
+          {/* Si la foudre est allumée : légende, mesure et animation distinguées. */}
+          {settings.lightning.on && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: 3, pr: 1.5, pb: 0.5 }}>Points : impacts mesurés (jaune : nuage-sol, anneau violet : intra-nuage). Lueurs et éclairs : animation rejouée ×10 dans l’ordre réel, pas la forme réelle de l’éclair.</Typography>}
           {/* Calques à venir, annoncés sans être représentés. */}
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 1.5, py: 1 }}>{`À venir : ${ATMOSPHERE_UPCOMING.join(', ').toLowerCase()}.`}</Typography>
         {/* Fin des calques en direct. */}

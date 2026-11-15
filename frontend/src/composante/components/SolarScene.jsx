@@ -871,6 +871,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
           atmosphere.settings.fires.on ? 'Incendies : NASA FIRMS (LANCE · VIIRS, MODIS) et NASA EONET' : '',
           // Celle des cyclones, s'ils sont allumés.
           atmosphere.settings.cyclones.on ? 'Cyclones : NOAA NHC (positions et prévision officielle), JTWC (via NASA EONET), GDACS' : '',
+          // Celle de la foudre, si elle est allumée.
+          atmosphere.settings.lightning.on ? 'Foudre : Xweather (réseau Vaisala)' : '',
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
         // Ouverte si le panneau courant est celui des sources.
@@ -968,8 +970,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
           atmospheresHint: `Vénus, Terre et Mars · ${CLOUD_SOURCE_TEXT[cloudSource]} ; décoché : globes nus`,
           // Réglages des calques et leur modification.
           settings: atmosphere.settings, onUpdate: atmosphere.update,
-          // Textes d'aide des incendies et des cyclones.
-          fireHint: atmosphere.fireHint, cycloneHint: atmosphere.cycloneHint,
+          // Textes d'aide des incendies, des cyclones et de la foudre.
+          fireHint: atmosphere.fireHint, cycloneHint: atmosphere.cycloneHint, lightningHint: atmosphere.lightningHint,
         // Fin de l'objet.
         }}
         // Relief.
