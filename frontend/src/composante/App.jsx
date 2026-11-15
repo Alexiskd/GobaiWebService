@@ -18,6 +18,11 @@ import { SceneStyles } from './theme/SceneStyles';
 import { makeTheme, statusBarColor } from './theme/theme';
 // Importe les styles de transition entre thèmes.
 import { themeTransitionStyles } from './theme/themeTransition';
+// Importe le diagnostic de l'interface (?diagnostic=interface) et sa condition.
+import { DiagnosticInterface, wantsDiagnostic } from './diagnostic/DiagnosticInterface';
+
+// Diagnostic demandé par l'adresse : lu une fois au chargement.
+const DIAGNOSTIC = wantsDiagnostic();
 
 // Thème Material Design de toute l'app : bleu nuit ou gris doux selon le bouton « Ombre » de la barre d'outils.
 // Le passage d'un thème à l'autre est fondu par le navigateur (voir theme/themeTransition.jsx).
@@ -53,6 +58,8 @@ export default function App() {
       <SceneStyles />
       {/* Appareil compatible : l'application ; sinon : l'écran d'excuse. */}
       {SUPPORTED ? <SolarSystem /> : <AppareilNonCompatible />}
+      {/* Diagnostic de la mise en page, seulement si l'adresse le demande. */}
+      {DIAGNOSTIC && <DiagnosticInterface />}
     {/* Fin du fournisseur de thème. */}
     </ThemeProvider>
   // Fin du rendu.
