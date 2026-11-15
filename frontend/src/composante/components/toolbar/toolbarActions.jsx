@@ -15,7 +15,7 @@ import {
   // Recherche, vue d'ensemble, ombre, rotation, vue 3/4 et verrouillage.
   SearchIcon, PublicIcon, ExploreIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
   // Son, langue, contribution, boutique, sources, aide, partage, galerie, performances et paramètres.
-  VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, StoreIcon, CopyrightIcon, HelpIcon, ShareIcon,
+  VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
   GalleryIcon, SpeedIcon, SettingsIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons';
@@ -29,7 +29,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute, onStore, onGoogleEarth,
+  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute, onGoogleEarth,
 // Fin de la liste des paramètres.
 }) {
   // Renvoie la liste des actions (début du tableau).
@@ -79,8 +79,6 @@ export function toolbarActions({
     onLanguage && { id: 'lang', group: 'help', icon: TranslateIcon, label: languageLabel ? `Langue : ${languageLabel}` : 'Langue', short: 'Langue', iconOnly: true, onClick: onLanguage, title: 'Langue de l’interface' },
     // Contribuer : placer une dalle LiDAR sur le globe et voter sur le placement des autres.
     onContribute && { id: 'contribute', group: 'data', icon: AddLocationIcon, label: 'Contribuer', onClick: onContribute, title: 'Contribuer : placer un relevé LiDAR sur le globe et voter sur les placements' },
-    // Boutique : acheter l'export des modèles 3D, des tuiles ou du calcul d'orbite.
-    onStore && { id: 'store', group: 'data', icon: StoreIcon, label: 'Exports', onClick: onStore, title: 'Boutique : exporter le modèle 3D d’un astre, ses tuiles ou son orbite' },
     // Aide (si le rappel existe) : icône seule, raccourcis clavier.
     onHelp && { id: 'help', group: 'help', icon: HelpIcon, label: 'Aide', iconOnly: true, onClick: onHelp, title: 'Raccourcis clavier (?)' },
     // Partager : feuille de partage du téléphone, ou copie du lien de la vue sur ordinateur.

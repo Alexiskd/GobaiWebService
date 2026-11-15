@@ -70,10 +70,6 @@ import { Plateau } from './menus/Plateau/Plateau';
 import { Galerie } from './menus/Galerie/Galerie';
 // Importe la fenêtre du globe Google (iframe qui remplace le globe Terre de l'app).
 import { GoogleEarthWindow } from './scene/GoogleEarthWindow';
-// Importe la composante Boutique : exports payants.
-import { Boutique } from './menus/Boutique/Boutique';
-// Importe le test du retour de la page de paiement d'un export.
-import { hasPurchaseReturn } from '@/moteur/api/store';
 // Importe le panneau d'informations.
 import { Informations } from './menus/Informations/Informations';
 // Importe la fenêtre de recherche.
@@ -240,8 +236,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const [galleryOpen, setGalleryOpen] = useState(false);
   // Globe Google ouvert ou non (il remplace le globe Terre de l'app).
   const [googleEarthOpen, setGoogleEarthOpen] = useState(false);
-  // Fenêtre « Boutique » ouverte ou non ; elle s'ouvre seule au retour d'un paiement.
-  const [storeOpen, setStoreOpen] = useState(hasPurchaseReturn);
   // État : paramètres ouverts ou non.
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Moniteur de performance masqué par défaut ; activable depuis les paramètres.
@@ -763,8 +757,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         performanceMonitorVisible={performanceMonitorVisible}
         // Galerie : ouvre la fenêtre.
         onGallery={() => setGalleryOpen(true)}
-        // Boutique : ouvre la fenêtre des exports payants.
-        onStore={() => setStoreOpen(true)}
         // Paramètres : ouvre la fenêtre.
         onSettings={() => setSettingsOpen(true)}
         // Plateau tournant : ouvre la fenêtre.
@@ -946,8 +938,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       <Galerie open={galleryOpen} onClose={() => setGalleryOpen(false)} />
       {/* Le globe Google : remplace le globe Terre de l'app tant qu'il est ouvert. */}
       <GoogleEarthWindow open={googleEarthOpen} onClose={() => setGoogleEarthOpen(false)} />
-      {/* La boutique des exports payants. */}
-      <Boutique open={storeOpen} onClose={() => setStoreOpen(false)} />
       {/* Le plateau tournant (début de la balise). */}
       <Plateau
         // Ouvert ou non.

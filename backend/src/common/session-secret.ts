@@ -16,7 +16,7 @@
  *      pas au redémarrage, et le journal le dit.
  *
  * Le secret résolu est reposé dans `process.env.SESSION_SECRET`, pour que tous les lecteurs existants
- * (jwt.guard, contributions.service) le trouvent là où ils le cherchent déjà, sans rien changer chez eux.
+ * (contributions.service) le trouvent là où ils le cherchent déjà, sans rien changer chez eux.
  */
 import { randomBytes } from 'node:crypto';
 

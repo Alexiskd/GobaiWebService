@@ -28,7 +28,7 @@ import {
 } from '@mui/icons-material';
 
 /**
- * Espace de compte partagé entre la Boutique et Contribuer.
+ * Espace de compte de la composante Contribuer.
  * Le JWT reste dans un cookie HttpOnly : le composant ne reçoit qu'un profil public et un marqueur de session.
  */
 export function CompteBox({ compte, hint = 'Connectez-vous pour publier un placement et voter.' }) {

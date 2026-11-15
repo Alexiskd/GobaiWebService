@@ -37,8 +37,6 @@ export { default as VolumeOffIcon } from '@mui/icons-material/VolumeOff';
 export { default as TranslateIcon } from '@mui/icons-material/Translate';
 // Contribuer : poser un relevé LiDAR sur le globe.
 export { default as AddLocationIcon } from '@mui/icons-material/AddLocation';
-// Boutique des exports.
-export { default as StoreIcon } from '@mui/icons-material/ShoppingCart';
 // Sources et mentions d'origine.
 export { default as CopyrightIcon } from '@mui/icons-material/Copyright';
 // Aide et raccourcis clavier.

@@ -19,7 +19,7 @@ export function Toolbar({
   // Les rappels de recherche, d'assistant, d'ombre, de rotation, de vue 3/4, de verrouillage, de vue globale et d'aide, avec leurs états.
   onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onToggleAuto, onToggleTilt, onToggleLock, onReset, onHelp,
   // Le son (actif par défaut), la langue, les sources, la galerie, les paramètres, le plateau et le partage.
-  sound = true, onToggleSound, onLanguage, languageLabel, onSources, onGallery, onSettings, onPlateau, onShare, onContribute, onStore,
+  sound = true, onToggleSound, onLanguage, languageLabel, onSources, onGallery, onSettings, onPlateau, onShare, onContribute,
   // Le globe Google (bouton présent seulement sur la Terre).
   onGoogleEarth,
 // Fin de la liste des propriétés.
@@ -42,7 +42,7 @@ export function Toolbar({
     // Les états affichés par les boutons.
     auto, tilt, sound,
     // Tous les autres rappels et libellés.
-    onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onGallery, onSettings, onPlateau, onShare, onContribute, onStore, onGoogleEarth,
+    onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onGallery, onSettings, onPlateau, onShare, onContribute, onGoogleEarth,
   // Fin de l'appel.
   });
   // Petit écran : la barre compacte ; sinon : la barre de l'ordinateur.
