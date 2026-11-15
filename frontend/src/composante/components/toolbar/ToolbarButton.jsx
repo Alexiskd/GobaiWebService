@@ -41,7 +41,8 @@ export function ToolbarButton({ action, compact, inMenu = false, onPick }) {
     // Début du rendu.
     return (
       // Entrée de menu, sélectionnée si l'action est enfoncée, avec infobulle.
-      <MenuItem {...common} selected={Boolean(pressed)} title={action.title}>
+      // Une bascule y est une case à cocher de menu (role menuitemcheckbox, état dans aria-checked).
+      <MenuItem {...common} selected={Boolean(pressed)} title={action.title} role={pressed === undefined ? 'menuitem' : 'menuitemcheckbox'} aria-checked={pressed}>
         {/* L'icône de l'entrée. */}
         <ListItemIcon><Icon>{iconNode(action.icon)}</Icon></ListItemIcon>
         {/* Le libellé de l'entrée. */}

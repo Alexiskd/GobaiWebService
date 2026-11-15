@@ -8,10 +8,10 @@ import { useHud } from '@/moteur/engine/hudStore';
 import { useDeviceCompass } from '@/composante/hooks/useDeviceCompass';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/composante/hooks/useViewport';
-// Importe la hauteur des étages du bas, celle du bandeau titre, la position du pavé de zoom et edge.
-import { BOTTOM_STACK, TITLE_H, ZOOM_BOTTOM, edge } from '@/composante/theme/layout';
-// Importe safe, qui donne une marge de sécurité de l'écran.
-import { safe } from '@/composante/theme/mediaQueries';
+// Importe la position du pavé de zoom, edge et le placement dans la zone libre du téléphone.
+import { HUD_TOP, ZOOM_BOTTOM, edge, freeZoneTop } from '@/composante/theme/layout';
+// Importe les zones mesurées du téléphone.
+import { useZoneValues } from '@/composante/hooks/useZones';
 // Importe le composant Navball.
 import Navball from '../Navball';
 // Importe C, la palette de la navball.
@@ -32,9 +32,7 @@ const DESIGN = 420;
 // Largeur de la colonne.
 const WIDTH = 48;          // largeur du bouton + du zoom
 // Hauteur d'un bouton sous la boule.
-const LOCK_H = 28;         // bouton N / cadenas sous la boule
-// Hauteur du panneau : la boule, un filet de 1 px et le bouton du verrou.
-const PANEL_H = WIDTH + 1 + LOCK_H;
+const LOCK_H = 28;         // bouton N / cadenas sous la boule (ordinateur ; adapté à la place sur téléphone)
 // Demi-hauteur du pavé de zoom.
 const ZOOM_HALF = 48.5;    // demi-hauteur du ZoomPad (48 + 1 + 48)
 // Écart entre le pavé de zoom et la navball.
@@ -62,7 +60,7 @@ const SPIN_RAD_PER_S = (2 * Math.PI) / 20; // boule toujours en mouvement : un t
 // Déclare et exporte le composant NavballPilote : HUD, moteur, verrou (faux par défaut), recalibrage, arrêt de la rotation automatique et messages.
 export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onStopAuto, push, positionLive, positionWaiting, onMyPosition }) {
   // Lit le mode compact.
-  const { compact } = useViewport();
+  const { compact, coarse } = useViewport();
   // Lit les données de la boussole dans le HUD.
   const compass = useHud(hud, (s) => s.compass);
   // Référence : l'état courant du verrou.
@@ -200,11 +198,31 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
 
   // Lit la sensibilité du zoom par inclinaison et s'y abonne.
   const zoomSensitivity = useSyncExternalStore(subscribeTiltZoomSensitivity, getTiltZoomSensitivity, getTiltZoomSensitivity);
+  // Zones du téléphone (zone du titre et dock), mesurées : la navball se place dans l'espace libre entre les deux.
+  const zones = useZoneValues();
 
   // Sans moteur, rien n'est affiché.
   if (!engine) return null;
-  // Hauteur du panneau : deux boutons de plus si le pilotage au téléphone est disponible, un de plus avec « Ma position ».
-  const panelH = PANEL_H + (pilot.available ? 2 * (1 + LOCK_H) : 0) + (onMyPosition ? 1 + LOCK_H : 0);
+  // Nombre de boutons sous la boule : le verrou, deux de plus si le pilotage au téléphone est disponible, un de plus
+  // avec « Ma position ».
+  const buttons = 1 + (pilot.available ? 2 : 0) + (onMyPosition ? 1 : 0);
+  // Espace libre entre les zones du téléphone (valeurs de repli avant la première mesure).
+  const free = (typeof window === 'undefined' ? 800 : window.innerHeight) - (zones.top || 64) - (zones.bottom || 60);
+  // Téléphone dont l'espace libre est trop bas pour une colonne aux boutons de 44 px (paysage, bande des astres ou
+  // tiroir ouvert) : la navball passe en rangée (boule puis boutons de 44 × 48 px côte à côte) sous la zone du titre.
+  const row = compact && free < WIDTH + buttons * 45 + 16;
+  // Plus de place du tout, même pour la rangée (tiroir Informations déplié jusqu'en haut) : la navball s'efface le
+  // temps que le tiroir soit déplié ; le replier la fait revenir.
+  const hidden = compact && free < WIDTH + 16;
+  // Hauteur d'un bouton : en rangée, toute la hauteur de la boule ; en colonne sur téléphone ou sur écran tactile
+  // (tablette), 44 px (cible tactile) ; ordinateur, 28 px.
+  const btnH = row ? WIDTH : compact || coarse ? 44 : LOCK_H;
+  // Largeur d'un bouton : 44 px en rangée, la largeur de la colonne sinon.
+  const btnW = row ? 44 : WIDTH;
+  // Hauteur du panneau : la boule, puis chaque bouton et son filet (en rangée : la boule seule).
+  const panelH = row ? WIDTH : WIDTH + buttons * (1 + btnH);
+  // Orientation des filets entre la boule et les boutons.
+  const rule = row ? { orientation: 'vertical', flexItem: true } : {};
   // Infobulle de « Ma position » : pendant l'attente, pendant le suivi, ou au repos.
   const positionHint = positionWaiting
     // Attente de la géolocalisation.
@@ -252,11 +270,13 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
   // Placement vertical : en mode compact…
   const vertical = compact
     // … centré dans la zone libre entre le bandeau titre et les étages du bas…
-    ? { top: `max(calc(${safe('top')} + ${TITLE_H}px), calc(${safe('top')} + ${TITLE_H}px + (100dvh - ${safe('top')} - ${safe('bottom')} - ${TITLE_H + BOTTOM_STACK + panelH}px) / 2))` }
+    ? (row ? { top: `calc(${HUD_TOP} + 8px)` } : { top: freeZoneTop(panelH) })
     // … sinon juste au-dessus du pavé de zoom.
     : { bottom: edge('bottom', ZOOM_BOTTOM + 2 * ZOOM_HALF + GAP) };
   // Distance au bord droit : 8 px en mode compact, 14 px sinon.
   const side = compact ? 8 : 14;
+  // Aucune place sur l'écran du téléphone (tiroir déplié jusqu'en haut) : rien, le temps qu'il soit replié.
+  if (hidden) return null;
 
   // Début du rendu.
   return (
@@ -275,10 +295,12 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
         aria-label="Sensibilité avancer / reculer"
         // Début du style.
         sx={{
-          // Fixée à gauche de la navball, au même niveau vertical.
-          position: 'fixed', zIndex: (t) => t.zIndex.hud, right: edge('right', side + WIDTH + 6), ...vertical,
-          // Colonne de 40 px, de la hauteur du panneau, contenu centré.
-          width: 40, height: panelH, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, py: 0.75,
+          // Fixée à gauche de la navball, au même niveau vertical ; navball en rangée : sous elle, au bord droit.
+          position: 'fixed', zIndex: (t) => t.zIndex.hud,
+          // Position : sous la rangée, ou à gauche de la colonne.
+          ...(row ? { right: edge('right', side), top: `calc(${HUD_TOP} + ${8 + WIDTH + 6}px)` } : { right: edge('right', side + WIDTH + 6), ...vertical }),
+          // Colonne de 40 px, de la hauteur du panneau (en rangée : la place restante, entre 80 et 160 px), contenu centré.
+          width: 40, height: row ? Math.max(80, Math.min(160, free - WIDTH - 30)) : panelH, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, py: 0.75,
           // Couleurs de la navball, sans dégradé, gestes tactiles réservés.
           bgcolor: C.bg, color: C.fg, backgroundImage: 'none', touchAction: 'none',
         // Fin du style.
@@ -334,8 +356,8 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
         // titre et les étages du bas (tiroir, bande des astres).
         // Le placement vertical calculé plus haut.
         ...vertical,
-        // Colonne de 48 px ; ce qui dépasse est masqué.
-        width: WIDTH, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        // Colonne de 48 px (en rangée sur un téléphone à court de hauteur) ; ce qui dépasse est masqué.
+        width: row ? 'auto' : WIDTH, display: 'flex', flexDirection: row ? 'row' : 'column', overflow: 'hidden',
         // Couleurs de la navball, sans dégradé.
         bgcolor: C.bg, color: C.fg, backgroundImage: 'none',
       // Fin du style.
@@ -387,7 +409,7 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
             // Nom, état enfoncé, désactivation sans boussole, et action au clic.
             aria-label={lockHint} aria-pressed={locked} disabled={!compass} onClick={onLock}
             // Taille, police et graisse du bouton…
-            sx={{ width: WIDTH, height: LOCK_H, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 700, fontFamily: C.display,
+            sx={{ width: btnW, height: btnH, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 700, fontFamily: C.display,
               // … et ses couleurs : ambre s'il est verrouillé, transparent sinon, avec un fond de survol.
               color: locked ? C.bg : C.fg, bgcolor: locked ? C.amber : 'transparent', '&:hover': { bgcolor: locked ? C.amber : 'rgba(255,255,255,.08)' } }}
           // Fin de la balise ouvrante.
@@ -415,7 +437,7 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
               // Nom, infobulle, état enfoncé, et action au clic.
               aria-label={hint} title={hint} aria-pressed={on} onClick={() => onMode(id)}
               // Taille du bouton…
-              sx={{ width: WIDTH, height: LOCK_H, display: 'grid', placeItems: 'center', fontSize: 14, lineHeight: 1,
+              sx={{ width: btnW, height: btnH, display: 'grid', placeItems: 'center', fontSize: 14, lineHeight: 1,
                 // … et ses couleurs : ambre s'il est actif, transparent sinon, avec un fond de survol.
                 bgcolor: on ? C.amber : 'transparent', '&:hover': { bgcolor: on ? C.amber : 'rgba(255,255,255,.08)' } }}
             // Fin de la balise ouvrante.
@@ -445,7 +467,7 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
                 // Nom, état enfoncé pendant le suivi, coupé pendant l'attente, et action au clic.
                 aria-label="Ma position" aria-pressed={Boolean(positionLive)} disabled={Boolean(positionWaiting)} onClick={onMyPosition}
                 // Taille du bouton et taille de l'icône…
-                sx={{ width: WIDTH, height: LOCK_H, display: 'grid', placeItems: 'center', fontSize: 17, lineHeight: 1,
+                sx={{ width: btnW, height: btnH, display: 'grid', placeItems: 'center', fontSize: 17, lineHeight: 1,
                   // … ses couleurs : ambre pendant le suivi, transparent sinon, avec un fond de survol…
                   color: positionLive ? C.bg : C.fg, bgcolor: positionLive ? C.amber : 'transparent',
                   '&:hover': { bgcolor: positionLive ? C.amber : 'rgba(255,255,255,.08)' },

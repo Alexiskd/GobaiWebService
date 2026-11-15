@@ -1,5 +1,7 @@
 // Importe de MUI la boîte et le bouton.
 import { Box, Button } from '@mui/material';
+// Importe les marges de sécurité des écrans à encoche.
+import { safe } from '@/composante/theme/mediaQueries';
 
 /** Adresse du site Google Earth affiché dans l'iframe : la Terre entière, vue de face. */
 // Lien Google Earth.
@@ -17,11 +19,12 @@ export function GoogleEarthWindow({ open, onClose }) {
   // Rend la fenêtre (début).
   return (
     // Toute la fenêtre, par-dessus le globe de l'app.
-    <Box sx={{ position: 'fixed', inset: 0, zIndex: 1250, bgcolor: '#05070c' }} role="dialog" aria-label="Globe Google">
+    // Fenêtre modale : elle couvre toute l'interface, qui n'est plus atteignable tant qu'elle est ouverte.
+    <Box sx={{ position: 'fixed', inset: 0, zIndex: 1250, bgcolor: '#05070c' }} role="dialog" aria-modal="true" aria-label="Globe Google">
       {/* L'iframe du site Google Earth. */}
       <Box component="iframe" src={GOOGLE_EARTH_URL} title="Google Earth" allow="fullscreen" sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', border: 0 }} />
-      {/* Bouton de retour au globe de l'app, en haut à droite. */}
-      <Button variant="contained" size="small" onClick={onClose} sx={{ position: 'absolute', top: 12, right: 12, zIndex: 1 }}>Revenir au globe de l’app</Button>
+      {/* Bouton de retour au globe de l'app, en haut à droite, hors de l'encoche et des coins arrondis, cible de 44 px. */}
+      <Button variant="contained" size="small" onClick={onClose} sx={{ position: 'absolute', top: `calc(${safe('top')} + 12px)`, right: `calc(${safe('right')} + 12px)`, zIndex: 1, minHeight: 44 }}>Revenir au globe de l’app</Button>
     </Box>
   // Fin du rendu.
   );

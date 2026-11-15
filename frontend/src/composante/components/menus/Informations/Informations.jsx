@@ -11,9 +11,7 @@ import { useViewport } from '@/composante/hooks/useViewport';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/moteur/engine/hudStore';
 // Importe la largeur du panneau, la hauteur de la bande et edge.
-import { PANEL_W, STRIP_H, edge } from '@/composante/theme/layout';
-// Importe safe, qui donne une marge de sécurité de l'écran.
-import { safe } from '@/composante/theme/mediaQueries';
+import { PANEL_W, edge } from '@/composante/theme/layout';
 // Importe les icônes de repli et de dépliage.
 import { ExpandLessIcon, ExpandMoreIcon } from '../../ui/icons';
 // Importe l'en-tête commun des fenêtres.
@@ -24,6 +22,8 @@ import { BodyLayersMenu } from './BodyLayersMenu';
 import { BodyPlacesInfo } from './BodyPlacesInfo';
 // Importe la fiche du Soleil.
 import { SunInfo } from './SunInfo';
+// Importe la hauteur maximale d'une surface du dock du téléphone.
+import { DOCK_SURFACE_MAX } from '../../ui/MobileZones';
 // Importe le crochet qui résout l'astre visé.
 import { useBodyView } from './useBodyView';
 
@@ -75,16 +75,17 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
   // Fin de l'effet ; dépendances : le mode compact et layersOpen.
   }, [compact, layersOpen]);
 
-  // Ordinateur : fenêtre flottante à droite (déplaçable). Mobile : tiroir posé au-dessus de la bande des astres
-  // (jamais dessus : la bande reste utilisable, tiroir ouvert ou replié).
+  // Ordinateur : fenêtre flottante à droite (déplaçable). Mobile : tiroir dans le flux du dock du bas (MobileDock),
+  // au-dessus de la barre de Claude, de la bande des astres et de la navigation : il ne recouvre jamais ces étages.
   // Placement du panneau : en mode compact (début).
   const placement = compact ? {
-    // Sur toute la largeur, posé au-dessus de la bande des astres.
-    left: 0, right: 0, bottom: `calc(${STRIP_H}px + ${safe('bottom')})`, width: 'auto',
-    // Hauteur limitée à 62 % de l'écran, et à la place disponible.
-    maxHeight: `min(62dvh, calc(100dvh - ${STRIP_H}px - ${safe('bottom')} - ${safe('top')} - 76px))`,
-    // Arrondi en haut seulement, au-dessus des barres d'outils.
-    borderRadius: '18px 18px 0 0', zIndex: (t) => t.zIndex.toolbar + 5,
+    // Dans le flux du dock, sur toute sa largeur.
+    position: 'relative', width: 'auto',
+    // Peut se réduire quand la place manque (son contenu défile alors) ; jamais plus haut que l'espace entre la zone
+    // du titre et la base du dock.
+    flex: '0 1 auto', minHeight: 0, maxHeight: DOCK_SURFACE_MAX,
+    // Arrondi en haut seulement ; carte arrondie en écran large (surfaces côte à côte).
+    borderRadius: '18px 18px 0 0', '@media (min-width: 700px)': { borderRadius: '18px' },
   // Sinon (début).
   } : {
     // À droite, près du haut, de la largeur d'un panneau, de hauteur limitée.
@@ -166,8 +167,8 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
       />
       {/* Zone repliable : démontée quand elle est repliée, défile sans entraîner la page. */}
       <Collapse in={open} timeout="auto" unmountOnExit sx={{ flex: '0 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain' }}>
-        {/* Marges intérieures, avec la marge de sécurité du bas en mode compact. */}
-        <Box sx={{ px: 2, pt: 1.5, pb: compact ? `calc(${safe('bottom')} + 12px)` : 1.5 }}>
+        {/* Marges intérieures (sur téléphone, la navigation du dock porte la marge de sécurité du bas). */}
+        <Box sx={{ px: 2, pt: 1.5, pb: 1.5 }}>
           {/* Le contenu propre à l'astre. */}
           {children}
           {/* Cartes et couches de l'astre : plus de bouton dans la barre d'outils, la section est rendue ici, à la

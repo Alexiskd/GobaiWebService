@@ -4,8 +4,6 @@ import { Box, Paper } from '@mui/material';
 import { useHud } from '@/moteur/engine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/composante/hooks/useViewport';
-// Importe safe, qui donne une marge de sécurité de l'écran.
-import { safe } from '@/composante/theme/mediaQueries';
 
 /** Couleur d'une charge : vert sous 60 % de l'intervalle entre deux images, orange sous 85 %, rouge au-delà. */
 // loadColor : vert sous 60 %, orange sous 85 %, rouge au-delà.
@@ -43,7 +41,8 @@ function Load({ label, valueMs, pct }) {
 }
 
 /**
- * Moniteur CPU / GPU, sous le compteur de FPS (voir perfProbe.jsx pour ce qui est mesuré) :
+ * Moniteur CPU / GPU, dans le bandeau du titre sous la date et le compteur de FPS (voir perfProbe.jsx pour ce qui
+ * est mesuré) :
  *  - CPU : temps de calcul du moteur par image (fil principal) et sa part de l'intervalle entre deux images ;
  *  - GPU : temps de dessin par image et sa part, quand le navigateur donne le chronomètre du GPU (Chrome et Edge sur
  *    ordinateur) ; sinon la ligne le dit, sans chiffre inventé ;
@@ -51,7 +50,8 @@ function Load({ label, valueMs, pct }) {
  *    (Chrome), nom de la carte graphique.
  * Ce n'est pas la charge du processeur ni de la carte graphique de l'appareil, que le navigateur ne donne pas.
  */
-// Déclare et exporte le composant PerfMonitor : reçoit le magasin du HUD.
+// Déclare et exporte le composant PerfMonitor : reçoit le magasin du HUD. Il est posé dans le bandeau du titre
+// (HudTop, ordinateur), sous la date, sans position propre : il ne recouvre plus le bandeau.
 export function PerfMonitor({ hud }) {
   // Lit le mode compact.
   const { compact } = useViewport();
@@ -73,10 +73,8 @@ export function PerfMonitor({ hud }) {
       translate="no"
       // Début du style.
       sx={{
-        // Fixée, sans capter les clics, lignes empilées.
-        position: 'fixed', zIndex: 26, pointerEvents: 'none', display: 'grid', rowGap: '3px',
-        // Sous le compteur d'images par seconde, à 5 px du bord gauche.
-        top: `calc(var(--gps-top, 0px) + ${safe('top')} + ${compact ? 72 : 60}px)`, left: `calc(${safe('left')} + 5px)`,
+        // Dans le flux du bandeau du titre, sous la date, sans ombre propre, sans capter les clics, lignes empilées.
+        mt: 0.75, boxShadow: 'none', maxWidth: '100%', pointerEvents: 'none', display: 'grid', rowGap: '3px',
         // Largeur selon l'écran, petites marges, une seule ligne par entrée, chiffres de largeur fixe.
         width: compact ? 178 : 214, px: 0.75, py: 0.5, borderRadius: 1, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
         // Police à chasse fixe, taille selon l'écran.

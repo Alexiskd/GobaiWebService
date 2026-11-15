@@ -8,8 +8,10 @@ import { useHud } from '@/moteur/engine/hudStore';
 import { formatDistance, formatLat, formatLon, gpsDecimals, niceScale } from '@/moteur/engine/gps';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/composante/hooks/useViewport';
-// Importe la hauteur de l'en-tête replié du tiroir.
-import { SHEET_HEAD_H } from '@/composante/theme/layout';
+// Importe les limites des zones du téléphone.
+import { HUD_BOTTOM, HUD_TOP } from '@/composante/theme/layout';
+// Importe la lecture et le suivi des zones mesurées.
+import { getZones, subscribeZones } from '@/composante/hooks/useZones';
 // Importe safe, qui donne une marge de sécurité de l'écran.
 import { safe } from '@/composante/theme/mediaQueries';
 // Importe les icônes des quatre coins et du réticule.
@@ -38,6 +40,18 @@ const POSITION = {
   // Sud-est : en bas à droite, contenu inversé.
   se: { bottom: `calc(${BOTTOM} + 5px)`, right: `calc(${safe('right')} + 5px)`, flexDirection: 'row-reverse' },
 // Fin de l'objet.
+};
+// Positions des coins sur téléphone : 5 px sous la zone du titre, 5 px au-dessus du dock.
+const POSITION_COMPACT = {
+  // Nord-ouest.
+  nw: { top: `calc(${HUD_TOP} + 5px)`, left: `calc(${safe('left')} + 5px)` },
+  // Nord-est.
+  ne: { top: `calc(${HUD_TOP} + 5px)`, right: `calc(${safe('right')} + 5px)`, flexDirection: 'row-reverse' },
+  // Sud-ouest.
+  sw: { bottom: `calc(${HUD_BOTTOM} + 5px)`, left: `calc(${safe('left')} + 5px)` },
+  // Sud-est.
+  se: { bottom: `calc(${HUD_BOTTOM} + 5px)`, right: `calc(${safe('right')} + 5px)`, flexDirection: 'row-reverse' },
+// Fin des positions.
 };
 
 /** Pastille de coordonnées : police à chasse fixe, chiffres alignés, au-dessus de la scène et sous les panneaux. */
@@ -80,8 +94,8 @@ function Chip({ sx, children, ...rest }) {
 function Corner({ corner, digits, compact }) {
   // Style de la pastille (début de l'objet).
   const sx = {
-    // La position du coin.
-    ...POSITION[corner.id],
+    // La position du coin : sur téléphone, contre les zones du titre et du dock ; sinon contre les bords.
+    ...(compact ? POSITION_COMPACT : POSITION)[corner.id],
     // En mode compact : sur deux lignes, alignées du côté du coin, en plus petit.
     ...(compact && { flexDirection: 'column', alignItems: corner.id.endsWith('e') ? 'flex-end' : 'flex-start', gap: 0, fontSize: 10.5 }),
   // Fin de l'objet.
@@ -117,55 +131,32 @@ function Corner({ corner, digits, compact }) {
 // Fin de Corner.
 }
 
-/** Mesure la bande des astres du téléphone pour relever le bas du cadre (et informe le moteur des coins à calculer). */
+/**
+ * Marges du cadre (et coins que le moteur calcule) : sur téléphone, les zones mesurées du haut et du bas (zone du
+ * titre, dock), suivies à chaque changement ; sur ordinateur, aucune.
+ */
 // Déclare le crochet useBottomInset : reçoit le moteur et le mode compact.
 function useBottomInset(engine, compact) {
-  // Effet qui mesure les marges du cadre.
+  // Effet qui suit les marges du cadre.
   useEffect(() => {
     // Sans moteur, rien à faire.
     if (!engine) return undefined;
-    // Déclare measure, qui mesure et applique les marges.
-    const measure = () => {
-      // Marge basse, nulle par défaut.
-      let bottom = 0;
-      // Marge haute, nulle par défaut.
-      let top = 0;
-      // En mode compact.
-      if (compact) {
-        // Bande des astres et en-tête replié du tiroir Informations : le cadre s'arrête au-dessus.
-        // Cherche les bandes des astres…
-        const tops = [...document.querySelectorAll('[data-hud="nav-strip"]')]
-          // … relève le haut de chacune…
-          .map((el) => el.getBoundingClientRect().top)
-          // … et ne garde que celles de la moitié basse de l'écran.
-          .filter((t) => t > window.innerHeight / 2);
-        // S'il y en a : la marge basse va du bas de l'écran à la plus haute, plus 4 px.
-        if (tops.length) bottom = Math.max(0, window.innerHeight - Math.min(...tops) + 4);
-        // Si le tiroir d'informations est présent, ajoute la hauteur de son en-tête.
-        if (document.querySelector('[data-hud="sheet"]')) bottom += SHEET_HEAD_H;
-        // Bandeau titre : les coins du haut passent dessous (la marge de l'encoche est ajoutée par le style).
-        // Mesure le bandeau du titre, s'il existe.
-        const title = document.querySelector('[data-hud="title"]')?.getBoundingClientRect();
-        // S'il est dans la moitié haute : la marge haute vaut sa hauteur plus 6 px.
-        if (title && title.bottom < window.innerHeight / 2) top = Math.max(0, title.bottom - title.top + 6);
-      // Fin du mode compact.
-      }
-      // Écrit la marge basse dans la variable CSS --gps-bottom.
-      document.documentElement.style.setProperty('--gps-bottom', `${bottom}px`);
-      // Écrit la marge haute dans la variable CSS --gps-top.
-      document.documentElement.style.setProperty('--gps-top', `${top}px`);
+    // Déclare apply, qui applique les marges des zones.
+    const apply = (z) => {
+      // Téléphone : la zone du titre en haut, le dock en bas ; ordinateur : rien.
+      const top = compact ? z.top : 0, bottom = compact ? z.bottom : 0;
+      // Variables CSS des indicateurs de l'ordinateur (nulles : ils sont dans la zone du titre sur téléphone).
+      document.documentElement.style.setProperty('--gps-bottom', '0px');
+      // Même chose pour le haut.
+      document.documentElement.style.setProperty('--gps-top', '0px');
       // Transmet les marges au moteur, s'il gère cette commande.
-      engine.setGpsInsets?.({ bottom: bottom + 5, top: top ? top + 5 : 0 });
-    // Fin de measure.
+      engine.setGpsInsets?.({ bottom: bottom ? bottom + 5 : 0, top: top ? top + 5 : 0 });
+    // Fin de apply.
     };
-    // Première mesure immédiate.
-    measure();
-    // Seconde mesure après 300 ms.
-    const t = setTimeout(measure, 300); // après la mise en page des barres
-    // Nouvelle mesure à chaque redimensionnement.
-    window.addEventListener('resize', measure);
-    // Nettoyage : annule le délai et retire l'écouteur.
-    return () => { clearTimeout(t); window.removeEventListener('resize', measure); };
+    // Première application.
+    apply(getZones());
+    // Puis à chaque changement des zones ; nettoyage : désabonnement.
+    return subscribeZones(apply);
   // Fin de l'effet ; dépendances : le moteur et le mode compact.
   }, [engine, compact]);
 // Fin de useBottomInset.
@@ -225,7 +216,7 @@ export function GpsFrame({ hud, engine }) {
             // Début du style.
             sx={{
               // En bas à gauche, au-dessus de la marge basse.
-              bottom: `calc(${BOTTOM} + ${compact ? 44 : 74}px)`, left: `calc(${safe('left')} + 5px)`,
+              bottom: compact ? `calc(${HUD_BOTTOM} + 44px)` : `calc(${BOTTOM} + 74px)`, left: `calc(${safe('left')} + 5px)`,
               // Passe à la ligne au besoin, jamais plus large que l'écran, plus petite en mode compact.
               flexWrap: 'wrap', maxWidth: 'calc(100vw - 10px)', ...(compact && { fontSize: 10.5 }),
             // Fin du style.

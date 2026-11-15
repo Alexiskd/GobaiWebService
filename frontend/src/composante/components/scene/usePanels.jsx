@@ -2,7 +2,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
 /**
- * Panneaux ouverts : recherche, aide, informations et Node (un seul à la fois).
+ * Gestion centralisée des fenêtres : une seule ouverte à la fois, jamais deux fenêtres superposées (sur téléphone, où
+ * elles couvrent tout l'écran, une seconde fenêtre cacherait la première sans moyen d'y revenir).
+ * Fenêtres : 'layers' (informations), 'search', 'help', 'sources', 'donate', 'settings', 'language', 'gallery',
+ * 'plateau', 'googleEarth'. Les surfaces du HUD qui ne couvrent rien (Claude, l'arborescence des astres) restent
+ * à part : elles se rangent dans les zones de l'écran (voir theme/layout).
  * Raccourcis : Ctrl K ou / (recherche), ? (aide), S (Node), L (informations), Échap (fermer).
  * La barre d'outils n'a plus de bouton Informations : les cartes de l'astre sont rendues avec ses caractéristiques,
  * et la touche L reste le moyen de déplier le panneau et d'y descendre (ou d'ouvrir celui du Soleil, sans astre visé).
@@ -16,6 +20,10 @@ export function usePanels({ compact }) {
   const layersOpen = panel === 'layers'; // sans astre ciblé : Informations sur le Soleil
   // closePanel : ferme le panneau ouvert ; fonction stable.
   const closePanel = useCallback(() => setPanel(null), []);
+  // show : ouvre une fenêtre (à la place de celle qui était ouverte), ou la ferme si elle est ouverte ; stable.
+  const show = useCallback((id, on = true) => setPanel((p) => (on ? id : p === id ? null : p)), []);
+  // toggle : ouvre la fenêtre, ou la ferme si c'est elle qui est ouverte ; stable.
+  const toggle = useCallback((id) => setPanel((p) => (p === id ? null : id)), []);
 
 
   // Effet exécuté une seule fois : les raccourcis clavier.
@@ -52,7 +60,7 @@ export function usePanels({ compact }) {
   // Début de l'objet renvoyé.
   return {
     // Le panneau, sa fonction de mise à jour, la fermeture et l'état des informations.
-    panel, setPanel, closePanel, layersOpen,
+    panel, setPanel, closePanel, layersOpen, show, toggle,
   // Fin de l'objet renvoyé.
   };
 // Fin de usePanels.

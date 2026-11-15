@@ -222,14 +222,12 @@ export function CompactToolbar({ actions, hud }) {
         elevation={8}
         // Style (début) :
         sx={{
-          // fixe, au niveau de la barre d'outils ;
-          position: 'fixed', zIndex: (theme) => theme.zIndex.toolbar,
-          // collée en bas, sur toute la largeur ;
-          left: 0, right: 0, bottom: 0,
+          // dans le flux du dock du bas (MobileDock), dont elle est le dernier étage, sur toute la largeur ;
+          position: 'relative',
           // quatre colonnes égales ;
           display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-          // marges intérieures ;
-          gap: 0, px: 0.75, pt: 0.75,
+          // marges intérieures, avec celles de sécurité sur les côtés (paysage, encoche) ;
+          gap: 0, pt: 0.75, pl: `calc(6px + ${safe('left')})`, pr: `calc(6px + ${safe('right')})`,
           // marge du bas : 6 px plus la marge de sécurité de l'écran ;
           pb: 'calc(6px + ' + safe('bottom') + ')',
           // trait du haut et coins arrondis en haut ;
@@ -266,6 +264,8 @@ export function CompactToolbar({ actions, hud }) {
                 minWidth: 0, minHeight: 52, px: 0.25, py: 0.5,
                 // en colonne ;
                 display: 'flex', flexDirection: 'column', gap: 0.4,
+                // écran bas (paysage) : icône et libellé sur une ligne, 44 px de haut, pour laisser la place à la scène ;
+                '@media (max-height: 500px)': { minHeight: 44, flexDirection: 'row', gap: 0.75, py: 0.25 },
                 // coins arrondis ; couleur plus vive quand il est ouvert ;
                 borderRadius: 2.5, color: isActive ? '#B9D7FF' : 'rgba(226,235,250,.68)',
                 // fond léger quand il est ouvert.

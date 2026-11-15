@@ -8,8 +8,8 @@ import { useHudDraggable } from '@/composante/hooks/useHudDraggable';
 import { useViewport } from '@/composante/hooks/useViewport';
 // Importe la largeur du rail, la hauteur de la bande et edge, la distance à un bord.
 import { RAIL, STRIP_H, edge } from '@/composante/theme/layout';
-// Importe safe, qui donne une marge de sécurité de l'écran.
-import { safe } from '@/composante/theme/mediaQueries';
+// Importe MQ (requêtes média, dont l'écran tactile) et safe, qui donne une marge de sécurité de l'écran.
+import { MQ, safe } from '@/composante/theme/mediaQueries';
 
 /** Pastille de l'astre, à sa couleur : reflet en haut à gauche, ombre vers le bas. */
 // Déclare le composant Orb : reçoit la couleur et la taille (14 px par défaut).
@@ -183,11 +183,9 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
         data-hud="nav-strip"
         // Début du style.
         sx={{
-          // Fixée sur toute la largeur, juste sous le niveau des barres d'outils.
-          position: 'fixed', zIndex: (t) => t.zIndex.toolbar - 5, left: 0, right: 0,
-          // Posée au bord bas de l'écran ; la marge de sécurité (barre d'accueil du téléphone) est sous les pastilles.
-          // Collée en bas ; hauteur de la bande plus la marge de sécurité, laissée sous les pastilles.
-          bottom: 0, height: `calc(${STRIP_H}px + ${safe('bottom')})`, pb: safe('bottom'), boxSizing: 'border-box',
+          // Dans le flux du dock du bas (MobileDock), juste au-dessus de la navigation : jamais dessous, sur toute la
+          // largeur ; la navigation porte la marge de sécurité du bas, les côtés gardent celles de l'encoche (paysage).
+          position: 'relative', height: STRIP_H + 4, boxSizing: 'border-box', pl: safe('left'), pr: safe('right'),
           // Filet en haut ; défile horizontalement seulement.
           borderTop: 1, borderColor: 'divider', overflowX: 'auto', overflowY: 'hidden',
           // Barre de défilement cachée ; le défilement s'accroche aux pastilles.
@@ -260,7 +258,7 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
                   // Au clic : choix de la planète.
                   onClick={() => pickPlanet(planet)}
                   // Haute de 40 px, arrondie, point d'accroche du défilement, avec la surbrillance.
-                  sx={{ flex: 'none', height: 40, borderRadius: 5, scrollSnapAlign: 'center', '& .MuiChip-icon': { ml: 1.25 }, ...orbHover }}
+                  sx={{ flex: 'none', height: 44, borderRadius: 5.5, scrollSnapAlign: 'center', '& .MuiChip-icon': { ml: 1.25 }, ...orbHover }}
                 // Fin de la pastille de la planète.
                 />
                 {/* Branche : les satellites de la planète courante, chacun au bout d'un trait à nœud. */}
@@ -277,7 +275,7 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
                     // Nom pour les lecteurs d'écran.
                     aria-label={`Satellites de ${planet.name}`}
                     // Cadre arrondi de 40 px de haut, à bordure fine et fond léger.
-                    sx={{ flex: 'none', height: 40, ml: 0.5, pl: 1, pr: 0.75, borderRadius: 5, border: 1, borderColor: 'divider', bgcolor: 'action.hover' }}
+                    sx={{ flex: 'none', height: 44, ml: 0.5, pl: 1, pr: 0.75, borderRadius: 5.5, border: 1, borderColor: 'divider', bgcolor: 'action.hover' }}
                   // Fin de la balise ouvrante.
                   >
                     {/* Un élément par satellite (début). */}
@@ -311,7 +309,7 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
                             // Au clic : vise le satellite.
                             onClick={() => onSelect(moon.index)}
                             // Haute de 30 px, point d'accroche du défilement, avec la surbrillance.
-                            sx={{ flex: 'none', height: 30, mr: 0.5, scrollSnapAlign: 'center', '& .MuiChip-icon': { ml: 1 }, ...orbHover }}
+                            sx={{ flex: 'none', height: 44, mr: 0.5, scrollSnapAlign: 'center', '& .MuiChip-icon': { ml: 1 }, ...orbHover }}
                           // Fin de la pastille du satellite.
                           />
                         {/* Fin du fragment. */}
@@ -417,7 +415,7 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
                 // Début du style.
                 sx={{
                   // Toute la largeur, 38 px de haut au moins, contenu en ligne.
-                  width: '100%', minHeight: 38, display: 'flex', alignItems: 'center', gap: 1.5, px: '13px', py: '4px',
+                  width: '100%', minHeight: 38, [MQ.coarse]: { minHeight: 44 }, display: 'flex', alignItems: 'center', gap: 1.5, px: '13px', py: '4px',
                   // Bordure transparente, forme arrondie, texte aligné à gauche.
                   border: '1px solid transparent', borderRadius: '24px', color: 'text.primary', fontSize: 14, textAlign: 'left',
                   // Fond de survol.
@@ -482,7 +480,7 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
                         // Début du style.
                         sx={{
                           // Toute la largeur, 30 px de haut au moins, contenu aligné à gauche.
-                          position: 'relative', width: '100%', minHeight: 30, display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
+                          position: 'relative', width: '100%', minHeight: 30, [MQ.coarse]: { minHeight: 44 }, display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
                           // Marges, arrondi et texte un peu plus petit.
                           gap: 1.5, p: '3px 10px 3px 12px', borderRadius: '9px', color: 'text.primary', fontSize: 13, textAlign: 'left',
                           // Fond de survol.

@@ -10,8 +10,8 @@ import { collectInventory } from '@/moteur/lib/domInventory';
 import { useViewport } from '@/composante/hooks/useViewport';
 // Importe la hauteur de la bande des astres, celle du bandeau titre et edge.
 import { RAIL, STRIP_H, TITLE_H, edge } from '@/composante/theme/layout';
-// Importe safe, qui donne une marge de sécurité de l'écran.
-import { safe } from '@/composante/theme/mediaQueries';
+// Importe MQ (requêtes média, dont l'écran tactile) et safe, qui donne une marge de sécurité de l'écran.
+import { MQ, safe } from '@/composante/theme/mediaQueries';
 // Icônes de la coche, de la fermeture et de l'envoi.
 import { CheckIcon, CloseIcon, SendIcon } from '../../ui/icons';
 
@@ -170,57 +170,28 @@ const Row = ({ children, ...props }) => (
  * affichée sous la réponse. Une action hors de la liste autorisée est ignorée.
  */
 /**
- * Hauteur du clavier virtuel du téléphone, en pixels (0 s'il est fermé). Lue sur visualViewport : sur iOS, un élément
- * en position fixe reste collé au bas de la page, derrière le clavier ; cette hauteur permet de le remonter au-dessus.
+ * Barre de Claude sur téléphone : une seule pilule (logo, champ, bouton d'envoi), posée dans le flux du dock du bas
+ * (MobileDock), au-dessus de la bande des astres et de la navigation, écartée des bords et des zones de sécurité.
+ * C'est le dock qui remonte au-dessus du clavier quand il s'ouvre. Les réponses ne sont pas affichées (l'écran reste
+ * à la scène) ; pendant l'attente, le bouton d'envoi tourne.
  */
-function useKeyboardInset() {
-  // Hauteur actuelle du clavier.
-  const [inset, setInset] = useState(0);
-  // Abonnement aux changements de la zone visible.
-  useEffect(() => {
-    // Zone visible du navigateur ; absente sur les navigateurs anciens : rien à suivre.
-    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
-    if (!vv) return undefined;
-    // Recalcule : hauteur de la fenêtre moins la zone visible et son décalage (défilement dû au clavier).
-    const update = () => setInset(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
-    // Premier calcul, puis à chaque redimensionnement ou défilement de la zone visible.
-    update();
-    vv.addEventListener('resize', update);
-    vv.addEventListener('scroll', update);
-    // Nettoyage.
-    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
-  }, []);
-  // La hauteur.
-  return inset;
-}
-
-/**
- * Barre de Claude sur téléphone : une seule pilule flottante en bas de l'écran (logo, champ, bouton d'envoi), écartée
- * des bords et de la zone de sécurité, qui remonte au-dessus du clavier quand il s'ouvre. Les réponses ne sont pas
- * affichées (l'écran reste à la scène) ; pendant l'attente, le bouton d'envoi tourne.
- */
-function MobileBar({ text, setText, busy, send, shift }) {
-  // Hauteur du clavier ouvert.
-  const keyboard = useKeyboardInset();
+function MobileBar({ text, setText, busy, send }) {
   // Vrai quand le champ a le focus : la pilule s'éclaire.
   const [focused, setFocused] = useState(false);
   // Envoi possible : texte non vide et aucune réponse attendue.
   const canSend = !busy && Boolean(text.trim());
   // Rendu.
   return (
-    // Conteneur fixe : pleine largeur, marges latérales, au-dessus de l'arborescence ou du clavier.
+    // Conteneur dans le flux du dock : pleine largeur, marges latérales.
     <Box
       component="section"
       aria-label="Claude"
       data-claude-panel=""
       sx={{
-        position: 'fixed', left: 0, right: 0, zIndex: (t) => t.zIndex.toolbar + 5,
-        // Bas : clavier ouvert → juste au-dessus du clavier ; sinon au-dessus de l'arborescence et de la zone de sécurité.
-        bottom: keyboard > 0 ? `${keyboard + 8}px` : `calc(${shift}px + ${safe('bottom')} + 10px)`,
-        // Marges latérales, zones de sécurité comprises (encoche en paysage).
-        pl: `calc(${safe('left')} + 10px)`, pr: `calc(${safe('right')} + 10px)`,
-        // Suit le clavier en douceur.
-        transition: 'bottom 160ms ease-out',
+        // Dans le flux du dock (plus de position fixe propre) : le dock la place au-dessus de la barre de navigation.
+        position: 'relative',
+        // Marges latérales, zones de sécurité comprises (encoche en paysage) ; en écran large, la rangée du dock les porte.
+        pl: `calc(${safe('left')} + 10px)`, pr: `calc(${safe('right')} + 10px)`, '@media (min-width: 700px)': { pl: 0, pr: `calc(${safe('right')} + 8px)` },
         // Le conteneur ne capte pas les gestes : seule la pilule le fait, la scène reste manipulable autour.
         pointerEvents: 'none',
       }}
@@ -268,7 +239,8 @@ function MobileBar({ text, setText, busy, send, shift }) {
           disabled={!canSend}
           aria-label={busy ? 'Claude répond' : 'Envoyer'}
           sx={{
-            flex: 'none', width: 40, height: 40, borderRadius: '50%',
+            // Cible tactile de 44 × 44 px (au lieu de 40), ronde, de taille fixe.
+            flex: 'none', width: 44, height: 44, borderRadius: '50%',
             bgcolor: canSend ? C.accent : C.row, color: canSend ? '#1f1e1d' : C.muted,
             transition: 'background-color 120ms',
             '&:active': { transform: 'scale(0.94)' },
@@ -456,7 +428,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
     // Position « popper » sans ancrage : fixé en bas à gauche, au-dessus de la barre du bas.
     : (anchored ? {} : { position: 'fixed', left: edge('left', 8), bottom: `calc(${barH}px + ${safe('bottom')} + 16px)`, zIndex: (t) => t.zIndex.toolbar + 5 });
   // Téléphone, position « hud » : la barre flottante dédiée.
-  if (bare && hud) return <MobileBar text={text} setText={setText} busy={busy} send={send} shift={shift} />;
+  if (bare && hud) return <MobileBar text={text} setText={setText} busy={busy} send={send} />;
   // Le panneau du menu (début).
   const panel = (
     // La carte (début de la balise).
@@ -511,8 +483,8 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
             onClick={onNavigator}
             // Infobulle.
             title="Arborescence des astres"
-            // Couleurs du menu, qui s'éclaircissent au survol.
-            sx={{ flex: 'none', color: C.muted, borderColor: C.border, fontFamily: SANS, '&:hover': { bgcolor: C.row, color: C.text } }}
+            // Couleurs du menu, qui s'éclaircissent au survol ; écran tactile : 44 px de haut (cible tactile).
+            sx={{ flex: 'none', color: C.muted, borderColor: C.border, fontFamily: SANS, '&:hover': { bgcolor: C.row, color: C.text }, [MQ.coarse]: { height: 44, borderRadius: '22px' } }}
           // Fin de la pastille.
           />
         )}
@@ -523,8 +495,8 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           onClick={onClose}
           // Nom pour les lecteurs d'écran.
           aria-label="Fermer"
-          // Carré arrondi de 28 px, qui s'éclaire au survol.
-          sx={{ flex: 'none', width: 28, height: 28, borderRadius: '8px', color: C.muted, fontSize: 16, '&:hover, &.Mui-focusVisible': { bgcolor: C.row, color: C.text } }}
+          // Carré arrondi de 28 px (44 px sur écran tactile), qui s'éclaire au survol.
+          sx={{ flex: 'none', width: 28, height: 28, borderRadius: '8px', color: C.muted, fontSize: 16, '&:hover, &.Mui-focusVisible': { bgcolor: C.row, color: C.text }, [MQ.coarse]: { width: 44, height: 44 } }}
         // Fin de la balise ouvrante.
         >
           {/* La croix. */}
