@@ -42,6 +42,8 @@ import { XweatherCloudsService } from '../services/map-tiles/xweather-clouds.ser
 import { EarthWindService } from '../services/map-tiles/earth-wind.service';
 // Service de la couverture nuageuse du moment (Open-Meteo).
 import { EarthCloudCoverService } from '../services/map-tiles/earth-cloud-cover.service';
+// Service de la chlorophylle des océans (NOAA CoastWatch ERDDAP).
+import { EarthChlorophyllService } from '../services/map-tiles/earth-chlorophyll.service';
 // Module des éphémérides : ses services de positions sont utilisés par les tuiles.
 import { EphemerisModule } from './ephemeris.module';
 
@@ -87,6 +89,8 @@ import { EphemerisModule } from './ephemeris.module';
     { provide: EarthWindService, useFactory: () => new EarthWindService() },
     // Couverture nuageuse : fabrique sans argument.
     { provide: EarthCloudCoverService, useFactory: () => new EarthCloudCoverService() },
+    // Chlorophylle des océans : fabrique sans argument.
+    { provide: EarthChlorophyllService, useFactory: () => new EarthChlorophyllService() },
     // Couleurs de la Lune : fabrique qui lui passe la configuration (adresse de l'image et adresses de secours).
     { provide: MoonColorService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new MoonColorService(config) },
     // Cache des tuiles de la Lune : fabrique qui lui passe la configuration (dossier du cache, niveaux à précharger).

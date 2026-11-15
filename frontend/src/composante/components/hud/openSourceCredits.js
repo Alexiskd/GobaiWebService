@@ -155,6 +155,8 @@ export const OPEN_SOURCE_CREDITS = [
       { name: 'Yale Bright Star Catalog (JSON)', repo: 'brettonw/YaleBrightStarCatalog', updated: '2023-06-16', people: ['Bretton Wade'] },
       // Dépôt « iso-639-3 » (wooorm/iso-639-3), dernier envoi relevé le 1er novembre 2023.
       { name: 'iso-639-3', repo: 'wooorm/iso-639-3', updated: '2023-11-01', people: ['Titus Wormer (wooorm)'] },
+      // Dépôt « ocpy » (ocean-colour/ocpy), dernier envoi relevé le 31 octobre 2026 ; organisation : AI for Ocean Science. Aucun fichier importé : la couleur réelle de l'eau (oceanColourLut.js) est calculée avec ses données par scripts/couleur-ocean.py.
+      { name: 'ocpy', repo: 'ocean-colour/ocpy', updated: '2026-10-31', people: [], org: 'AI for Ocean Science' },
       // Dépôt « CLDR JSON » (unicode-org/cldr-json), dernier envoi relevé le 26 octobre 2026 ; organisation : Unicode Consortium.
       { name: 'CLDR JSON', repo: 'unicode-org/cldr-json', updated: '2026-10-26', people: [], org: 'Unicode Consortium' },
     // Fin de la liste des entrées du groupe.
