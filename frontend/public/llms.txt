@@ -60,6 +60,7 @@ Chaque page existe aussi en texte Markdown, avec les chiffres de l'astre (diamè
 
 - [Galerie](https://www.gobaispace.com/galerie) : images et vidéos NASA classées par astre
 - [Anthropic Node Open Source](https://www.gobaispace.com/node) : sources des données et projets libres utilisés
+- [Dons au développeur de l’application Gobai](https://www.gobaispace.com/faire-un-don) : soutenir le développeur par carte bancaire
 
 ## Informations
 

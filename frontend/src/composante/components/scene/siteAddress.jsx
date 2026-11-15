@@ -18,7 +18,7 @@ const KNOWN_PATHS = new Set();
 
 /** Fenêtres ayant leur adresse : identifiant du panneau → adresse. */
 // Le panneau des sources a l'adresse /node.
-const PANEL_PATHS = { sources: '/node' };
+const PANEL_PATHS = { sources: '/node', donate: '/faire-un-don' };
 
 /** Adresse de ce qui est affiché : la fenêtre ouverte d'abord, sinon l'astre ciblé, sinon l'accueil. */
 // Déclare et exporte sitePathFor : galerie ouverte, panneau ouvert et nom de l'astre.
@@ -44,6 +44,8 @@ const WINDOW_TITLES = {
   '/galerie': 'Galerie d’images du système solaire',
   // Titre de la fenêtre des sources.
   '/node': 'Anthropic Node Open Source : sources des données',
+  // Titre de la fenêtre de don.
+  '/faire-un-don': 'Dons au développeur de l’application Gobai',
 // Fin de l'objet.
 };
 /** Noms qui prennent un article dans le titre de leur page (comme côté serveur, body-pages.ts). */
