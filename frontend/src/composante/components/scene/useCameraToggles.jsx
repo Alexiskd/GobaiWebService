@@ -56,6 +56,11 @@ export function useCameraToggles(engine, initial = {}) {
   const [nightLights, setNightLightsShown] = useState(() => storedLights() !== '0');
   // setNightLights : allume ou coupe les lumières de la nuit ; fonction mémorisée.
   const setNightLights = useCallback((on) => { setNightLightsShown(Boolean(on)); engine?.setNightLights(Boolean(on)); }, [engine]);
+  // Vue de la pollution lumineuse depuis l'espace (toute la Terre de nuit) : coupée au départ.
+  // État : vue de nuit coupée.
+  const [lightView, setLightViewShown] = useState(false);
+  // setLightView : allume ou coupe la vue de nuit ; fonction mémorisée.
+  const setLightView = useCallback((on) => { setLightViewShown(Boolean(on)); engine?.setLightView(Boolean(on)); }, [engine]);
   // Familles d'astres affichées (planètes solides, gazeuses, naines, satellites naturels) : toutes au départ.
   // État : familles affichées, toutes au départ, corrigées par les réglages de départ.
   const [kinds, setKinds] = useState(() => ({ ...ALL_KINDS_SHOWN, ...initial.kinds }));
@@ -97,6 +102,6 @@ export function useCameraToggles(engine, initial = {}) {
   useEffect(() => { engine?.setHiddenBodies(hiddenBodies); }, [engine, hiddenBodies]);
 
   // Renvoie tous les états et leurs fonctions de mise à jour.
-  return { auto, setAuto, tilt, setTilt, orbits, setOrbits, markers, setMarkers, satellites, setSatellites, sky, setSky, atmospheres, setAtmospheres, relief, setRelief, nightLights, setNightLights, kinds, setKind, hiddenBodies, setBodyShown, setHiddenBodies, rotateSpeed, setRotateSpeed };
+  return { auto, setAuto, tilt, setTilt, orbits, setOrbits, markers, setMarkers, satellites, setSatellites, sky, setSky, atmospheres, setAtmospheres, relief, setRelief, nightLights, setNightLights, lightView, setLightView, kinds, setKind, hiddenBodies, setBodyShown, setHiddenBodies, rotateSpeed, setRotateSpeed };
 // Fin de useCameraToggles.
 }

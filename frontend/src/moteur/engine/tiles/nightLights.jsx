@@ -65,3 +65,50 @@ export class NightLightsSource {
   loadImage(coord, signal) { return this.loads.get(fillTemplate(this.template, coord), signal); }
 // Fin de la classe NightLightsSource.
 }
+
+/**
+ * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit. Pour que le globe entier soit allumé d'un
+ * coup, ses lumières sont chargées en une seule mosaïque Web Mercator (niveau 4 : 256 tuiles, 4 096 px de côté ;
+ * niveau 3 sur téléphone : 64 tuiles, 2 048 px), posée sous les tuiles plus fines qui arrivent ensuite.
+ */
+// Déclare et exporte le niveau de la mosaïque mondiale : 4 sur ordinateur, 3 sur téléphone.
+export const LIGHTS_MOSAIC_LEVEL = { desktop: 4, phone: 3 };
+// Tuiles de la mosaïque demandées en même temps.
+const MOSAIC_PARALLEL = 16;
+
+/** Toutes les tuiles d'un niveau, ligne par ligne du nord au sud. */
+// Déclare et exporte mosaicTiles : le niveau.
+export function mosaicTiles(level) {
+  // Nombre de tuiles par côté.
+  const n = 2 ** level;
+  // Chaque tuile de la grille.
+  return Array.from({ length: n * n }, (_, k) => ({ z: level, x: k % n, y: Math.floor(k / n) }));
+// Fin de mosaicTiles.
+}
+
+/**
+ * Mosaïque mondiale des lumières : toutes les tuiles du niveau `level`, collées sur un canevas (256 px par tuile).
+ * Une tuile manquante reste noire (pas de lumière). Renvoie le canevas et le nombre de tuiles arrivées.
+ */
+// Déclare et exporte assembleLightsMosaic, asynchrone : la source, le niveau et la fabrique de canevas (début).
+export async function assembleLightsMosaic(source, level, createCanvas = () => globalThis.document.createElement('canvas')) {
+  // Tuiles à charger.
+  const tiles = mosaicTiles(level);
+  // Canevas du monde entier.
+  const canvas = createCanvas();
+  // À la taille de la grille.
+  canvas.width = canvas.height = 256 * 2 ** level;
+  // Son contexte, fond noir.
+  const ctx = canvas.getContext('2d'); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Tuiles arrivées.
+  let got = 0;
+  // Par paquets (début).
+  for (let i = 0; i < tiles.length; i += MOSAIC_PARALLEL) {
+    // Chaque tuile du paquet : chargée et collée à sa place ; un échec est ignoré.
+    await Promise.all(tiles.slice(i, i + MOSAIC_PARALLEL).map((t) => source.loadImage(t).then((img) => { ctx.drawImage(img, t.x * 256, t.y * 256, 256, 256); got++; }).catch(() => {})));
+  // Fin des paquets.
+  }
+  // Le canevas et le compte.
+  return { canvas, got, total: tiles.length };
+// Fin de assembleLightsMosaic.
+}

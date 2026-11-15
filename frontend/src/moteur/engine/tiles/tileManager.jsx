@@ -9,7 +9,7 @@ import { NET_STATS } from './netLoads';
 // Importe la source des tuiles d'altitude et les fonctions de réglage du relief, depuis relief.
 import { ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
 // Importe les lumières de la nuit : la clé et la lecture de leur interrupteur, et leur source.
-import { NIGHT_LIGHTS_KEY, NightLightsSource, nightLightsChoice } from './nightLights';
+import { LIGHTS_MOSAIC_LEVEL, NIGHT_LIGHTS_KEY, NightLightsSource, assembleLightsMosaic, nightLightsChoice } from './nightLights';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
 import { xyzToLonLat } from './mercator';
 // Importe TileLayer, la couche de tuiles, depuis tileLayer.
@@ -118,6 +118,8 @@ export class TileManager {
       // Lumières humaines de la nuit : allumées si l'astre en a (la Terre) et si l'utilisateur ne les a pas coupées.
       // L'interrupteur des lumières de la nuit.
       lightsOn: { value: body.nightLights && nightLightsChoice(readLightsChoice()) ? 1 : 0 },
+      // Vue de la pollution lumineuse : mosaïque mondiale des lumières (en attente), sa présence, et le mode « toute la Terre de nuit ».
+      lgMap: { value: placeholderTexture() }, lgOn: { value: 0 }, lightView: { value: 0 },
     // Fin des variables uniformes.
     };
     // Relief de l'astre : vraies altitudes (« terrarium ») ou estimation d'après l'image (« image »), ou aucun.
@@ -220,6 +222,49 @@ export class TileManager {
    * Lumières humaines de la nuit (pollution lumineuse) : allumées ou coupées. Le choix est gardé dans le navigateur
    * (« gobai:lumieres-nuit ») ; allumées, les tuiles affichées demandent leurs lumières (rien n'est rechargé du fond).
    */
+  /**
+   * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit, ses lumières allumées partout. Le monde
+   * entier est chargé d'un coup en une mosaïque (niveau 4, 3 sur téléphone), puis affiné par les tuiles affichées.
+   */
+  // setLightView : allume ou coupe la vue de nuit ; renvoie l'état (début).
+  setLightView(on) {
+    // Astre sans lumières : coupée.
+    if (!this.lightsSource) return false;
+    // Mode du shader.
+    this.uniforms.lightView.value = on ? 1 : 0;
+    // Allumée : charge toute la Terre (une seule fois).
+    if (on) this.loadLightsMosaic();
+    // Renvoie l'état.
+    return Boolean(on);
+  // Fin de setLightView.
+  }
+
+  /** Charge la mosaïque mondiale des lumières, une seule fois (un échec permet de réessayer plus tard). */
+  // loadLightsMosaic : la mosaïque mondiale des lumières (début).
+  loadLightsMosaic() {
+    // Déjà chargée ou en cours : la même promesse.
+    if (this.lightsMosaic) return this.lightsMosaic;
+    // Niveau : 3 sur téléphone, 4 sinon.
+    const level = /Mobi|Android|iPhone|iPad/.test(globalThis.navigator?.userAgent || '') ? LIGHTS_MOSAIC_LEVEL.phone : LIGHTS_MOSAIC_LEVEL.desktop;
+    // Assemble les tuiles du monde entier (début).
+    this.lightsMosaic = assembleLightsMosaic(this.lightsSource, level).then(({ canvas, got }) => {
+      // Aucune tuile : échec, à réessayer.
+      if (!got) throw new Error('Lumières indisponibles');
+      // Texture du canevas.
+      const tex = new THREE.CanvasTexture(canvas);
+      // Avec mipmaps, lissée, sans répétition aux bords.
+      tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      // Posée pour toutes les tuiles de l'astre, et allumée.
+      this.uniforms.lgMap.value = tex; this.uniforms.lgOn.value = 1;
+      // Prévient l'interface.
+      this.onChange();
+    // En cas d'échec : oubliée, pour réessayer.
+    }).catch(() => { this.lightsMosaic = null; });
+    // Renvoie la promesse.
+    return this.lightsMosaic;
+  // Fin de loadLightsMosaic.
+  }
+
   // setNightLights : allume ou coupe les lumières de la nuit ; renvoie l'état (début).
   setNightLights(on) {
     // Astre sans lumières : coupées.

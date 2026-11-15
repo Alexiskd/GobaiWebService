@@ -134,6 +134,8 @@ export const tileFragmentShader = [
   'float reliefLight(vec2 s){return clamp(dot(normalize(vec3(-s.x,-s.y,1.)),vec3(-.5025,.5025,.7035))/.7035,.4,1.7);}',
   // Lumières humaines de la nuit (NASA Black Marble, voir nightLights.jsx) : la tuile, sa portion, sa présence et l'interrupteur.
   'uniform sampler2D ltMap;uniform vec4 ltRect;uniform float ltHas;uniform float lightsOn;',
+  // Vue de la pollution lumineuse depuis l'espace : mosaïque mondiale des lumières (lue avec globalRect), sa présence, et le mode « toute la Terre de nuit ».
+  'uniform sampler2D lgMap;uniform float lgOn;uniform float lightView;',
   // Variables reçues du shader de sommets.
   'varying vec2 vUv;varying vec3 vN;varying vec3 vV;',
   // Détail simulé au-delà de la résolution des images (géantes gazeuses, satellites) : voir `synthDetail` plus bas.
@@ -216,15 +218,21 @@ export const tileFragmentShader = [
   // Face nuit très sombre (ombre opaque) : environ le quart de l'ancienne luminosité, avec ou sans atmosphère.
   // Couleur de nuit : bleutée avec atmosphère, très sombre et modulée par la lumière cendrée sans.
   'vec3 night=mix(col*vec3(.024,.034,.06)+vec3(0.,.0015,.004),col*vec3(.012,.014,.017)*(.2+.8*earthshine),airless);',
+  // Vue de la pollution lumineuse : toute la Terre de nuit (jour annulé, ombre forcée, sol un peu moins noir).
+  'float lv=lightView;float dayV=day*(1.-lv);float sh=max(shade,lv);night*=1.+2.*lv;',
   // Couleur de base : sans ombre l'image brute, avec ombre le mélange nuit/jour.
-  'vec3 base=mix(col,mix(night,lit,day),shade);',
+  'vec3 base=mix(col,mix(night,lit,dayV),sh);',
   // Halo bleu au limbe, côté jour, seulement avec atmosphère.
-  'float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*day)*.65*shade*(1.-airless);',
+  'float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);',
   // Lumières de la nuit : seules les zones éclairées de l'image Black Marble (le sol sombre est écarté par un seuil de
   // luminosité), teinte chaude ; elles s'allument quand le Soleil passe sous l'horizon du lieu (d < 0,02) et brillent
   // pleinement à 10° dessous (d < −0,17), en suivant le terminateur. Rien de jour, rien sans ombre.
-  // Si les lumières sont là et allumées : lit leur image, garde ce qui brille, et l'ajoute du côté nuit.
-  'if(ltHas>.5&&lightsOn>.5){vec3 lt=texture2D(ltMap,ltRect.xy+vUv*ltRect.zw).rgb;base+=lt*vec3(1.,.86,.66)*smoothstep(.14,.5,dot(lt,lw))*1.5*(1.-smoothstep(-.17,.02,d))*shade;}',
+  // Image des lumières : celle de la tuile si elle est arrivée, sinon la mosaïque mondiale (vue de la pollution lumineuse).
+  // Vue de la pollution lumineuse : allumées partout, un peu plus vives.
+  // Si des lumières sont là et allumées (ou la vue de nuit) : lit leur image, garde ce qui brille, et l'ajoute du côté nuit.
+  'if((ltHas>.5||lgOn>.5)&&(lightsOn>.5||lv>.5)){vec3 lt=ltHas>.5?texture2D(ltMap,ltRect.xy+vUv*ltRect.zw).rgb:texture2D(lgMap,globalRect.xy+vUv*globalRect.zw).rgb;',
+  // Poids : la nuit selon le Soleil, ou toute la Terre en vue de nuit ; ajout de la lumière, teinte chaude. Fin du cas.
+  'float lwt=max(1.-smoothstep(-.17,.02,d),lv);base+=lt*vec3(1.,.86,.66)*smoothstep(.14,.5,dot(lt,lw))*(1.5+lv)*lwt*sh;}',
   // Couleur finale, avec l'opacité de la cellule. Fin de la fonction principale.
   'gl_FragColor=vec4(base,alpha);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
