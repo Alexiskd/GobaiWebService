@@ -1,13 +1,13 @@
 // Importe de React les crochets useCallback, useEffect, useRef et useState.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe les lectures du moteur atmosphérique du serveur.
-import { aerosolForecastUrl, aerosolObservedUrl, fetchAtmosphereAerosols, fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, fetchAtmosphereRadar, fetchAtmosphereStorms, lightningTileUrl, radarTileUrl } from '@/moteur/api/scene';
+import { aerosolForecastUrl, aerosolObservedUrl, fetchAtmosphereAerosols, fetchAtmosphereWinds, fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, fetchAtmosphereRadar, fetchAtmosphereStorms, lightningTileUrl, radarTileUrl } from '@/moteur/api/scene';
 // Importe l'assemblage d'une mosaïque de tuiles (le même que pour les nuages satellite).
 import { loadCloudMosaic } from '@/moteur/engine/earthCloudMosaic';
 // Importe le rafraîchissement qui ne tourne pas onglet caché.
 import { refreshWhileVisible } from './useMapFeeds';
 // Importe les réglages (lecture, bornes, mémoire) et les textes d'aide.
-import { aerosolHint, cycloneHint, fireHint, lightningHint, precipitationHint, rememberAtmosphere, sanitizeAtmosphere, stormHint, storedAtmosphere } from './atmosphereSettings';
+import { aerosolHint, cycloneHint, fireHint, lightningHint, precipitationHint, rememberAtmosphere, sanitizeAtmosphere, stormHint, storedAtmosphere, windHint } from './atmosphereSettings';
 // Importe le choix des images et des tuiles du radar.
 import { RADAR_DETAIL_ALT, RADAR_DETAIL_RELEASE_ALT, RADAR_GLOBAL_ZOOM, detailBlock, framesToShow, normalizeFrames } from '@/moteur/engine/atmosphere/radarMath';
 // Importe le chargement d'un bloc de tuiles radar décodées.
@@ -46,11 +46,13 @@ const RADAR_DETAIL_CACHE = 14;
 const STORMS_REFRESH_MS = 3 * 60_000;
 // Aérosols : relus toutes les 30 minutes (images observées refaites au plus toutes les heures côté serveur).
 const AEROSOLS_REFRESH_MS = 30 * 60_000;
+// Vents : relus toutes les 30 minutes (le serveur interroge le modèle au plus toutes les 8 heures).
+const WINDS_REFRESH_MS = 30 * 60_000;
 
 /**
  * Moteur atmosphérique, côté interface : réglages des calques (gardés dans le navigateur), lectures du serveur à
  * leur rythme (jamais par image), détail des incendies et du radar autour du point visé, aérosols observés ou
- * prévus, et textes d'aide.
+ * prévus, vents par niveau, et textes d'aide.
  */
 // Déclare et exporte le crochet useAtmosphere : reçoit le moteur.
 export function useAtmosphere({ engine }) {
@@ -70,6 +72,8 @@ export function useAtmosphere({ engine }) {
   const [stormInfo, setStormInfo] = useState(null);
   // État : dernière réponse des aérosols (null : pas encore ; 'erreur' : échec).
   const [aerosolInfo, setAerosolInfo] = useState(null);
+  // État : dernière réponse des vents (null : pas encore ; 'erreur' : échec).
+  const [windInfo, setWindInfo] = useState(null);
   // Tuiles de détail en mémoire : clé « colonne,ligne » → { points, at }.
   const tiles = useRef(new Map());
   // Radar : images mondiales en mémoire (identifiant → { time, canvas }), images voulues, blocs de détail en mémoire.
@@ -102,6 +106,8 @@ export function useAtmosphere({ engine }) {
   useEffect(() => { engine?.setAtmosphereLayer('storms', { visible: settings.storms.on, opacity: settings.storms.opacity, intensity: settings.storms.intensity }); }, [engine, settings.storms]);
   // Transmet les réglages des aérosols au moteur.
   useEffect(() => { engine?.setAtmosphereLayer('aerosols', { visible: settings.aerosols.on, opacity: settings.aerosols.opacity, intensity: settings.aerosols.intensity, product: settings.aerosols.product, animate: settings.aerosols.animate }); }, [engine, settings.aerosols]);
+  // Transmet les réglages des vents au moteur.
+  useEffect(() => { engine?.setAtmosphereLayer('winds', { visible: settings.winds.on, opacity: settings.winds.opacity, intensity: settings.winds.intensity, level: settings.winds.level, jets: settings.winds.jets }); }, [engine, settings.winds]);
   // Transmet les réglages des cyclones au moteur.
   useEffect(() => { engine?.setAtmosphereLayer('cyclones', { visible: settings.cyclones.on, opacity: settings.cyclones.opacity, intensity: settings.cyclones.intensity }); }, [engine, settings.cyclones]);
 
@@ -495,6 +501,29 @@ export function useAtmosphere({ engine }) {
   // Fin de l'effet.
   }, [engine, settings.aerosols.on, settings.aerosols.product]);
 
+  // Vents allumés : lecture, puis toutes les 30 minutes onglet visible (début de l'effet).
+  useEffect(() => {
+    // Sans moteur, ou calque éteint : rien.
+    if (!engine || !settings.winds.on) return undefined;
+    // Contrôleur d'abandon.
+    const controller = new AbortController();
+    // Heure de validité posée (on ne repose pas les mêmes vents : les particules repartiraient).
+    let posed = null;
+    // load : lit la réponse et la pose si elle a changé.
+    const load = () => fetchAtmosphereWinds(controller.signal)
+      // Réponse reçue : gardée pour le texte d'aide, posée si nouvelle.
+      .then((data) => { setWindInfo(data); const key = `${data?.validAt}|${data?.source?.fetchedAt}`; if (key !== posed) { posed = key; engine.setAtmosphereData('winds', data, Date.now()); } })
+      // Échec (hors abandon) : noté ; les vents déjà posés restent.
+      .catch((err) => { if (err?.name !== 'AbortError') setWindInfo((prev) => (prev && prev !== 'erreur' ? prev : 'erreur')); });
+    // Première lecture.
+    load();
+    // Lectures suivantes.
+    const stop = refreshWhileVisible(load, WINDS_REFRESH_MS);
+    // Nettoyage : abandon, arrêt, vents retirés.
+    return () => { controller.abort(); stop(); engine.setAtmosphereData('winds', null); };
+  // Fin de l'effet.
+  }, [engine, settings.winds.on]);
+
   // Renvoie les réglages, leur modification, les textes d'aide et les réponses (début).
   return {
     // Réglages des calques.
@@ -513,8 +542,10 @@ export function useAtmosphere({ engine }) {
     stormHint: stormHint(stormInfo),
     // Texte d'aide des aérosols, pour le produit choisi.
     aerosolHint: aerosolHint(aerosolInfo, settings.aerosols.product),
+    // Texte d'aide des vents, pour le niveau choisi.
+    windHint: windHint(windInfo, settings.winds.level),
     // Dernières réponses (pour la mention des sources).
-    fireInfo, cycloneInfo, lightningInfo, radarInfo, stormInfo, aerosolInfo,
+    fireInfo, cycloneInfo, lightningInfo, radarInfo, stormInfo, aerosolInfo, windInfo,
   // Fin du retour.
   };
 // Fin de useAtmosphere.

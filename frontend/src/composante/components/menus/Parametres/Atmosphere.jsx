@@ -14,6 +14,8 @@ import { SNOW_SCALE, radarLegend } from '@/moteur/engine/atmosphere/radarMath';
 import { AEROSOL_LABELS, AEROSOL_PRODUCTS, aerosolLegend } from '@/moteur/engine/atmosphere/aerosolMath';
 // Importe l'adresse de la légende de la prévision CAMS.
 import { aerosolLegendUrl } from '@/moteur/api/scene';
+// Importe les niveaux des vents, leurs libellés et l'échelle des vitesses.
+import { FLOW_LEVEL_IDS, FLOW_LEVEL_LABELS, SPEED_SCALE } from '@/moteur/engine/atmosphere/flowMath';
 
 /** Une réglette compacte, avec son libellé et sa valeur en pourcentage. */
 // Déclare Reglette : libellé, valeur, bornes, pas et rappel.
@@ -173,11 +175,39 @@ function LegendeAerosols({ product }) {
 // Fin de LegendeAerosols.
 }
 
+/** Légende des vents : échelle des vitesses (km/h), explication et source. */
+// Déclare LegendeVents.
+function LegendeVents() {
+  // Dégradé CSS de l'échelle.
+  const gradient = `linear-gradient(90deg, ${SPEED_SCALE.map(([, c], i) => `${c} ${Math.round((i / (SPEED_SCALE.length - 1)) * 100)}%`).join(', ')})`;
+  // Début du rendu.
+  return (
+    // Bloc en retrait.
+    <Box sx={{ pl: 3, pr: 1.5, pb: 0.75 }}>
+      {/* Barre des vitesses. */}
+      <Box aria-hidden sx={{ height: 8, borderRadius: 1, background: gradient }} />
+      {/* Bornes : calme et 216 km/h (60 m/s). */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        {/* Borne basse. */}
+        <Typography variant="caption" color="text.secondary">Calme</Typography>
+        {/* Borne haute. */}
+        <Typography variant="caption" color="text.secondary">216 km/h et plus</Typography>
+      {/* Fin des bornes. */}
+      </Box>
+      {/* Explication et source. */}
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>Vent des modèles météo au moment présent, sur une grille de 12° × 10° : les particules suivent ce vent, accéléré de 900 à 13 500 fois selon l’altitude de la vue, à une altitude exagérée ; ce ne sont pas des trajectoires mesurées. Flèches : axes estimés des courants-jets (250 hPa, 108 km/h et plus). Données : Open-Meteo (CC BY 4.0).</Typography>
+    {/* Fin du bloc. */}
+    </Box>
+  // Fin du rendu.
+  );
+// Fin de LegendeVents.
+}
+
 /**
  * Catégorie « Atmosphère » : l'atmosphère et les nuages des planètes solides, puis les phénomènes en direct de la
  * Terre, chacun allumé indépendamment avec son opacité et son intensité ; les incendies ont aussi leur fenêtre de
- * temps, le radar son animation et sa limite de portée, les aérosols leur produit (observé ou prévu). Les calques des
- * lots suivants sont annoncés « à venir » :
+ * temps, le radar son animation et sa limite de portée, les aérosols leur produit (observé ou prévu), les vents leur
+ * altitude. Les calques encore à venir sont annoncés comme tels :
  * aucun phénomène n'est représenté sans source.
  */
 // Déclare et exporte le composant Atmosphere (début de la liste des propriétés).
@@ -185,7 +215,7 @@ export function Atmosphere({
   // L'atmosphère et les nuages des planètes solides, leur rappel et leur texte d'aide.
   atmospheres, onAtmospheres, atmospheresHint,
   // Les réglages des calques, leur modification et les textes d'aide.
-  settings, onUpdate, fireHint, cycloneHint, lightningHint, precipitationHint, stormHint, aerosolHint,
+  settings, onUpdate, fireHint, cycloneHint, lightningHint, precipitationHint, stormHint, aerosolHint, windHint,
 // Fin de la liste des propriétés.
 }) {
   // Début du rendu.
@@ -301,6 +331,44 @@ export function Atmosphere({
               {/* Légende et sources. */}
               <LegendeAerosols product={settings.aerosols.product} />
             {/* Fin des réglages des aérosols. */}
+            </>
+          // Fin du cas.
+          )}
+          {/* Interrupteur des vents. */}
+          <Switch checked={settings.winds.on} onChange={(on) => onUpdate('winds', { on })} label="Vents et courants-jets" hint={windHint} />
+          {/* Si les vents sont allumés (début). */}
+          {settings.winds.on && (
+            // Fragment : réglages des vents.
+            <>
+              {/* Opacité et intensité. */}
+              <Reglages value={settings.winds} onChange={(patch) => onUpdate('winds', patch)} />
+              {/* Ligne du niveau. */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pl: 3, pr: 1.5, py: 0.5 }}>
+                {/* Le libellé. */}
+                <Typography variant="caption" color="text.secondary" sx={{ width: 64, flexShrink: 0 }}>Altitude</Typography>
+                {/* Boutons des niveaux (début de la balise). */}
+                <ToggleButtonGroup
+                  // Un seul choix, petite taille.
+                  exclusive size="small"
+                  // Niveau choisi.
+                  value={settings.winds.level}
+                  // Au choix (jamais vide) : transmet le niveau.
+                  onChange={(e, v) => { if (v) onUpdate('winds', { level: v }); }}
+                  // Nom pour les lecteurs d'écran.
+                  aria-label="Altitude des vents"
+                // Fin de la balise ouvrante.
+                >
+                  {/* Un bouton par niveau. */}
+                  {FLOW_LEVEL_IDS.map((l) => <ToggleButton key={l} value={l} sx={{ px: 1, py: 0.25, fontSize: 12 }}>{FLOW_LEVEL_LABELS[l]}</ToggleButton>)}
+                {/* Fin des boutons. */}
+                </ToggleButtonGroup>
+              {/* Fin de la ligne. */}
+              </Box>
+              {/* Axes des courants-jets. */}
+              <Option label="Axes des courants-jets (10 km)" checked={settings.winds.jets} onChange={(jets) => onUpdate('winds', { jets })} />
+              {/* Légende et source. */}
+              <LegendeVents />
+            {/* Fin des réglages des vents. */}
             </>
           // Fin du cas.
           )}

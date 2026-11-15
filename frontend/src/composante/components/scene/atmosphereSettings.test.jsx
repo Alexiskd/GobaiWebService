@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les fonctions testées.
-import { ATMOSPHERE_DEFAULTS, ATMOSPHERE_UPCOMING, aerosolHint, cycloneHint, fireHint, lightningHint, precipitationHint, sanitizeAtmosphere, stormHint } from './atmosphereSettings';
+import { ATMOSPHERE_DEFAULTS, ATMOSPHERE_UPCOMING, aerosolHint, cycloneHint, fireHint, lightningHint, precipitationHint, sanitizeAtmosphere, stormHint, windHint } from './atmosphereSettings';
 
 // Test : les réglages.
 test('atmosphère : réglages bornés, calques éteints par défaut, fenêtre parmi celles proposées', () => {
@@ -94,5 +94,20 @@ test('atmosphère : aérosols bornés, textes d’aide qui distinguent mesure, n
   assert.match(aerosolHint(info, 'dust'), /^Poussières prévues par le modèle CAMS, toutes les 6 h du .* : une prévision, pas une mesure/);
   // Prévision indisponible : la raison.
   assert.match(aerosolHint({ ...info, forecast: { available: false, reason: 'HTTP 403' } }, 'dust'), /^Prévision indisponible \(HTTP 403\)/);
+// Fin du test.
+});
+
+// Test : les vents.
+test('atmosphère : vents bornés, texte d’aide (niveau, vitesse maximale, courants-jets estimés, source)', () => {
+  // Niveau inconnu ramené à 250 hPa ; axes gardés par défaut.
+  assert.deepEqual(sanitizeAtmosphere({ winds: { on: true, level: '100hPa' } }).winds, { on: true, opacity: 0.85, intensity: 1, level: '250hPa', jets: true });
+  // Plus annoncés « à venir ».
+  assert.deepEqual(ATMOSPHERE_UPCOMING, ['Pollution gazeuse', 'Brouillard']);
+  // Réponse d'essai.
+  const info = { available: true, validAt: '2026-11-15T15:00:00.000Z', grid: { width: 2, height: 2, lonStart: -180, lonStep: 180, latStart: -40, latStep: 80 }, levels: [{ id: '250hPa', label: '250 hPa (≈ 10,4 km)', altKm: 10.4, available: true, u: [50, 0, 0, 0], v: [0, 0, 0, 0], maxMs: 61 }], jets: [{ geometry: { coordinates: [[0, 40], [12, 42]] }, intensity: { value: 220 } }] };
+  // Texte : niveau, vitesse maximale, courant-jet, source.
+  assert.match(windHint(info, '250hPa'), /^250 hPa \(≈ 10,4 km\), vent du modèle à .*, jusqu’à 220 km\/h sur une grille de 12° × 10° · 1 courant-jet \(jusqu’à 220 km\/h, axes estimés\) · Open-Meteo/);
+  // Niveau absent : le dire.
+  assert.match(windHint(info, '10m'), /^Niveau indisponible/);
 // Fin du test.
 });

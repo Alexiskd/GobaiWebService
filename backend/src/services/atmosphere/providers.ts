@@ -100,7 +100,7 @@ export const PROVIDERS: ProviderInfo[] = [
   // Aérosols : épaisseur optique MODIS et VIIRS (NASA Earthdata).
   { id: 'earthdata-aod', name: 'NASA Earthdata · MODIS/VIIRS AOD', engine: 'AerosolEngine', covers: 'Épaisseur optique des aérosols observée par satellite', url: 'https://www.earthdata.nasa.gov/', refreshMs: 3 * 60 * MIN, licence: NASA_LICENCE, attribution: 'NASA Earthdata', quota: 'Compte Earthdata', keyEnv: ['EARTHDATA_TOKEN'], priority: 3, implemented: false },
   // Vents : modèles météo par niveau de pression (Open-Meteo, déjà utilisé pour le flux des nuages).
-  { id: 'open-meteo-winds', name: 'Open-Meteo · vents par altitude', engine: 'AtmosphericFlowEngine', covers: 'Vents au sol et en altitude, courants-jets, cisaillement', url: 'https://open-meteo.com/en/docs', refreshMs: 3 * 60 * MIN, licence: 'CC BY 4.0, usage non commercial gratuit', attribution: 'Open-Meteo', quota: '10 000 appels par jour (gratuit)', keyEnv: [], priority: 1, implemented: false },
+  { id: 'open-meteo-winds', name: 'Open-Meteo · vents par niveau', engine: 'AtmosphericFlowEngine', covers: 'Vent du moment (modèles météo) au sol, à 850, 500 et 250 hPa sur une grille de 12° × 10° ; axes des courants-jets repérés à 250 hPa', url: 'https://api.open-meteo.com/v1/forecast', refreshMs: 8 * 60 * MIN, licence: 'CC BY 4.0, usage non commercial gratuit', attribution: 'Open-Meteo (modèles météo)', quota: '10 000 appels par jour, 5 000 par heure, 600 par minute (chaque point compte pour un appel : 510 par lecture, 3 lectures par jour, nouvel essai au plus une fois par heure)', keyEnv: [], priority: 1, implemented: true },
 // Fin de la liste.
 ];
 
