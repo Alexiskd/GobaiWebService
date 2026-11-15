@@ -164,9 +164,10 @@ const GAS_ENTRY_RADII = 0.97;
 const ORBIT_POINTS = 2048;
 // Seuil de taille des astres tuilés, budget d'astres mis à jour à la fois et apparition des satellites : voir
 // bodyLoading.jsx (moteur de chargement planétaire).
-// Résolution adaptative : si les images ralentissent, on rend moins de pixels (et on demande moins de tuiles).
+// Résolution adaptative : si les images ralentissent, on rend moins de pixels (le détail des tuiles, lui, suit la
+// densité plafond de l'appareil : voir tileManager.jsx).
 const DPR_STEP = 0.25;
-// Densité de pixels minimale : 0,75.
+// Densité de pixels minimale par défaut : 0,75 (le profil de l'appareil donne la sienne : 1,25 sur téléphone).
 const DPR_MIN = 0.75;            // plancher : en dessous l'image devient trop floue
 // Durée d'image au-dessus de laquelle la résolution baisse : 18,6 ms.
 const DPR_SLOW_MS = 18.6;        // moyenne au-dessus (≈ 45 images par seconde pour 50 visées) : on baisse la résolution
@@ -488,9 +489,10 @@ export class SolarEngine {
     this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
     const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true });
-    // Plafond : la densité de l'écran (≤ 1,75) ; la résolution adaptative (adaptResolution) descend jusqu'à 0,75 si besoin.
+    // Plafond : la densité de l'écran (≤ 1,75 sur ordinateur, ≤ 2 sur téléphone) ; la résolution adaptative
+    // (adaptResolution) descend si besoin jusqu'au plancher du profil (0,75 sur ordinateur, 1,25 sur téléphone).
     this.dprMax = Math.min(devicePixelRatio || 1, this.power.dprMax);
-    // Départ à la densité du profil (1,75).
+    // Départ à la densité du profil (son plafond).
     this.dpr = Math.min(this.dprMax, this.power.dprStart);
     // Garde le plafond d'origine.
     this.dprMaxFull = this.dprMax;
@@ -2678,14 +2680,16 @@ export class SolarEngine {
     this.dprCheckAt = now + DPR_CHECK_MS;
     // Durée moyenne d'une image.
     const avg = this.dprFrameMs;
+    // Plancher : celui du profil, sans dépasser le plafond (1 en économie d'énergie).
+    const floor = Math.min(this.dprMax, this.power.dprMin ?? DPR_MIN);
     // Trop lente, au-dessus du plancher (début).
-    if (avg > DPR_SLOW_MS && this.dpr > DPR_MIN) {
+    if (avg > DPR_SLOW_MS && this.dpr > floor) {
       // Ce cran est noté trop lourd.
       this.dprBlockedAbove = this.dpr;            // ce cran est trop lourd pour l'instant
       // Pendant 30 secondes.
       this.dprBlockUntil = now + 30000;
       // Descend d'un cran, sans passer sous le plancher.
-      this.setResolution(Math.max(DPR_MIN, this.dpr - DPR_STEP));
+      this.setResolution(Math.max(floor, this.dpr - DPR_STEP));
       // Plus de période rapide.
       this.dprFastSince = 0;
     // Rapide, sous le plafond (début).

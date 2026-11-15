@@ -34,9 +34,15 @@ test('appareil tenu en main : tactile sans pointeur fin', () => {
 });
 
 // Test : la comparaison des deux profils.
-test('profil téléphone : la même qualité que l’ordinateur', () => {
-  // Même densité maximale et de départ, même anticrénelage, même anisotropie.
-  for (const k of ['dprMax', 'dprStart', 'antialias', 'anisotropy']) assert.equal(HANDHELD_PROFILE[k], DESKTOP_PROFILE[k], k);
+test('profil téléphone : la même qualité que l’ordinateur, une densité adaptée à son écran', () => {
+  // Même anticrénelage, même anisotropie.
+  for (const k of ['antialias', 'anisotropy']) assert.equal(HANDHELD_PROFILE[k], DESKTOP_PROFILE[k], k);
+  // Densité plafonnée à 2 sur téléphone (écran à 3 pixels par point CSS), 1,75 sur ordinateur, dès le départ.
+  assert.equal(HANDHELD_PROFILE.dprMax, 2); assert.equal(DESKTOP_PROFILE.dprMax, 1.75);
+  // Départ au plafond, sur les deux.
+  assert.equal(HANDHELD_PROFILE.dprStart, HANDHELD_PROFILE.dprMax); assert.equal(DESKTOP_PROFILE.dprStart, DESKTOP_PROFILE.dprMax);
+  // Plancher de la résolution adaptative : 1,25 sur téléphone, 0,75 sur ordinateur.
+  assert.equal(HANDHELD_PROFILE.dprMin, 1.25); assert.equal(DESKTOP_PROFILE.dprMin, 0.75);
   // Aucun réglage allégé.
   assert.equal(HANDHELD_PROFILE.lite, undefined);
   // L'ordinateur vise la durée d'image commune.
@@ -215,8 +221,8 @@ test('rythme visé : 20 images par seconde au repos sur téléphone et en mode �
 
 // Test : téléphone dans le système d'une planète.
 test('système d’une planète sur téléphone : même qualité, rythme maximal même au repos', () => {
-  // Densité et anisotropie d'un ordinateur.
-  assert.equal(SYSTEM_PROFILE.dprMax, DESKTOP_PROFILE.dprMax); assert.equal(SYSTEM_PROFILE.anisotropy, DESKTOP_PROFILE.anisotropy);
+  // Densité d'un téléphone (plafond et plancher), anisotropie d'un ordinateur.
+  assert.equal(SYSTEM_PROFILE.dprMax, HANDHELD_PROFILE.dprMax); assert.equal(SYSTEM_PROFILE.dprMin, HANDHELD_PROFILE.dprMin); assert.equal(SYSTEM_PROFILE.anisotropy, DESKTOP_PROFILE.anisotropy);
   // Toujours un téléphone (stockages et LiDAR dimensionnés au départ).
   assert.equal(SYSTEM_PROFILE.handheld, true);
   // Sans limite, en mouvement comme au repos.
