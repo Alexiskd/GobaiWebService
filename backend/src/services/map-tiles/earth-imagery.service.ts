@@ -20,10 +20,8 @@ import {
   type LiveSource,
 // Fin de l'import.
 } from './earth-live';
-// Fonds marins (GEBCO, NOAA NCEI) : leur table par identifiant de couche, et leur fusion dans la couche unique.
-import { SEAFLOOR_BY_ID, seafloorFusion } from './earth-seafloor';
-// Mention de la chlorophylle des océans.
-import { CHL_ATTRIBUTION } from './earth-chlorophyll';
+// Fonds marins (GEBCO, NOAA NCEI) : leur liste, leur table par identifiant de couche, et la fusion dans la couche unique.
+import { SEAFLOOR_BY_ID, SEAFLOOR_LAYERS, seafloorFusion } from './earth-seafloor';
 
 // Même chargement que mars-fusion.service.ts (module CommonJS natif).
 // Charge la bibliothèque d'images sharp, sans typage (la ligne du dessous autorise ce « any » pour ESLint).
@@ -97,13 +95,6 @@ const LEGACY: Record<string, { source: EarthSourceId; maxZoom: number }> = {
 // Fin de LEGACY.
 };
 
-// Fonction seaText : la phrase de la description sur l'eau du large, vide si la fusion est coupée.
-const seaText = (fusion: ReturnType<typeof seafloorFusion>) => (!fusion ? ''
-  // Avec la chlorophylle : la couleur réelle, ombrée par le relief ; sinon le relief GEBCO.
-  : fusion.chlorophyll ? ' Au large, l’eau prend sa couleur réelle selon la chlorophylle du mois (NASA MODIS), ombrée par le relief des fonds.' : ' Au large, le relief des fonds marins (GEBCO 2026).');
-// Fonction seaAttributions : les mentions de l'eau du large (GEBCO, la NOAA en secours, et la chlorophylle si elle sert).
-const seaAttributions = (fusion: NonNullable<ReturnType<typeof seafloorFusion>>) => [SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution, SEAFLOOR_BY_ID.get('earth-ncei')!.source.attribution, ...(fusion.chlorophyll ? [CHL_ATTRIBUTION] : [])];
-
 // Fonction describeSources : les noms des sources, séparés par des virgules.
 const describeSources = (list: EarthSource[]) => list.map((s) => s.label).join(', ');
 
@@ -167,14 +158,14 @@ export class EarthImageryService implements TileProvider {
   // Fin du constructeur.
   }
 
-  // Méthode layers : les couches proposées (la couche unique et la Terre en direct ; les fonds marins sont fondus dans la couche unique).
+  // Méthode layers : les couches proposées (la couche unique, la Terre en direct, puis les fonds marins).
   layers(): TileLayerInfo[] {
     // Première couche :
     return [{
       // les valeurs communes, l'identifiant « earth-hd », son nom, sa nature et son zoom maximal ;
       ...base, id: 'earth-hd', label: 'Satellite HD (couche unique)', kind: 'imagery', maxZoom: EARTH_HD_MAX_ZOOM,
-      // sa description, avec la liste des sources, et l'eau du large quand elle y est fondue.
-      description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}.${seaText(seafloorFusion())} Zoom jusqu’au niveau 19.`,
+      // sa description, avec la liste des sources, et les fonds marins quand ils y sont fondus.
+      description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}.${seafloorFusion() ? ' Au large, le relief des fonds marins (GEBCO 2026).' : ''} Zoom jusqu’au niveau 19.`,
     // Seconde couche :
     }, {
       // les valeurs communes, l'identifiant de la couche en direct, son nom, sa nature et son zoom maximal ;
@@ -184,8 +175,8 @@ export class EarthImageryService implements TileProvider {
       experimental: true,
       // sa description, avec la liste des satellites.
       description: `Le monde vu il y a moins d’une heure, renouvelé toutes les 10 minutes : ${LIVE_SOURCES.map((s) => s.label).join(', ')}, posés sur le fond habituel (pôles et zones sans image). Zoom jusqu’au niveau ${LIVE_MAX_ZOOM}.`,
-    // Fin de la liste.
-    }];
+    // Puis les fonds marins : les valeurs communes, leur identifiant, leur nom, leur description et le zoom maximal de leur source.
+    }, ...SEAFLOOR_LAYERS.map((l): TileLayerInfo => ({ ...base, id: l.id, label: l.label, kind: 'imagery', maxZoom: l.source.maxZoom, description: l.description }))];
   // Fin de layers.
   }
 
@@ -220,14 +211,12 @@ export class EarthImageryService implements TileProvider {
       };
     // Fin du cas.
     }
-    // Fond marin, s'il y en a un sous cet identifiant (plus proposé dans le menu : il sert à la fusion et aux exports).
-    const sea = SEAFLOOR_BY_ID.get(id);
     // Si c'est un fond marin :
-    if (sea) {
+    if (SEAFLOOR_BY_ID.has(id)) {
       // renvoie
       return {
-        // sa description : les valeurs communes, son identifiant, son nom, sa nature, son zoom maximal et sa description ;
-        ...base, id, label: sea.label, kind: 'imagery', maxZoom: sea.source.maxZoom, description: sea.description,
+        // sa description ;
+        ...this.layers().find((l) => l.id === id)!,
         // le modèle d'adresse, qui passe par ce serveur : chaque tuile est une requête sur son emprise, faite ici ;
         urlTemplate: `/api/v1/tiles/earth/${id}/{z}/{x}/{y}`,
         // pas d'expiration ;
@@ -269,8 +258,8 @@ export class EarthImageryService implements TileProvider {
       ...(legacy ? {} : { colorMatch: !isOff(process.env.EARTH_COLOR_MATCH) }),
       // les fonds marins fondus par le navigateur (absents si EARTH_SEAFLOOR est coupé), pas pour une ancienne couche ;
       ...(legacy || !fusion ? {} : { seafloor: fusion }),
-      // la mention : celles des sources de la couche, puis celles de l'eau du large quand elle est fondue.
-      attribution: { text: [...this.sourcesOf(id).map((s) => s.attribution), ...(legacy || !fusion ? [] : seaAttributions(fusion))].join(' · ') },
+      // la mention : celles des sources de la couche, puis celle de GEBCO quand les fonds sont fondus.
+      attribution: { text: [...this.sourcesOf(id).map((s) => s.attribution), ...(legacy || !fusion ? [] : [SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution])].join(' · ') },
     // Fin de l'objet.
     };
   // Fin de resolveSync.

@@ -60,16 +60,10 @@ describe('fonds marins de la Terre', () => {
     const fusion = seafloorFusion({});
     // Les tuiles GEBCO passent par le relais de ce serveur.
     expect(fusion?.template).toBe('/api/v1/tiles/earth/earth-gebco/{z}/{x}/{y}');
-    // La NOAA en secours.
-    expect(fusion?.fallbackTemplate).toBe('/api/v1/tiles/earth/earth-ncei/{z}/{x}/{y}');
     // Jusqu'au niveau 10.
     expect(fusion?.maxZoom).toBe(SEAFLOOR_FUSION_MAX_ZOOM);
     // Les altitudes viennent des tuiles Terrarium.
     expect(fusion?.mask.template).toContain('terrarium/{z}/{x}/{y}.png');
-    // La chlorophylle, pour la couleur réelle de l'eau.
-    expect(fusion?.chlorophyll?.url).toBe('/api/v1/tiles/earth-chlorophyll.png');
-    // EARTH_OCEAN_COLOUR=0 retire seulement la chlorophylle.
-    expect(seafloorFusion({ EARTH_OCEAN_COLOUR: '0' })?.chlorophyll).toBeUndefined();
     // Coupée : null.
     expect(seafloorFusion({ EARTH_SEAFLOOR: '0' })).toBe(null);
   // Fin du test.

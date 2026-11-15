@@ -124,12 +124,11 @@ export interface ResolvedTileLayer extends TileLayerInfo {
   colorMatch?: boolean;
   /**
    * Couche unique de la Terre : fonds marins fondus dans l'imagerie par le navigateur (voir earth-seafloor.ts).
-   * `template` : tuiles des fonds (relais du serveur), jusqu'à `maxZoom`, `fallbackTemplate` en secours ; `mask` : tuiles d'altitude Terrarium
-   * qui disent où est la mer, jusqu'à leur `maxZoom` ; `chlorophyll` : image de la chlorophylle (gris logarithmique
-   * entre `min` et `max` mg/m³, emprise `bounds`) qui donne la couleur réelle de l'eau. Absent : pas de fusion.
+   * `template` : tuiles des fonds (relais du serveur), jusqu'à `maxZoom` ; `mask` : tuiles d'altitude Terrarium
+   * qui disent où est la mer, jusqu'à leur `maxZoom`. Absent : pas de fusion.
    */
   // seafloor : les tuiles des fonds marins et celles des altitudes qui disent où est la mer.
-  seafloor?: { template: string; fallbackTemplate?: string; maxZoom: number; mask: { template: string; maxZoom: number }; chlorophyll?: { url: string; bounds: [number, number, number, number]; min: number; max: number } };
+  seafloor?: { template: string; maxZoom: number; mask: { template: string; maxZoom: number } };
 // Fin de ResolvedTileLayer.
 }
 

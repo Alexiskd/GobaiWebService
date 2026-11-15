@@ -43,12 +43,8 @@ export function decodeTerrarium(rgba) {
  * `depth` niveaux plus haut (interpolation bilinéaire des altitudes, puis seaWeight). Renvoie null quand la tuile
  * n'a pas de mer : aucune image des fonds n'est alors demandée.
  */
-// Déclare et exporte seaMask : les parts seules (voir seaSample).
-export const seaMask = (elev, depth, x, y, size = 256) => seaSample(elev, depth, x, y, size)?.mask ?? null;
-
-/** Comme seaMask, avec aussi l'altitude interpolée de chaque pixel (m) : { mask, height }, ou null sans mer. */
-// Déclare et exporte seaSample : les altitudes de l'ancêtre, l'écart de niveaux, la colonne et la ligne de la tuile, et la taille (256 px).
-export function seaSample(elev, depth, x, y, size = 256) {
+// Déclare et exporte seaMask : les altitudes de l'ancêtre, l'écart de niveaux, la colonne et la ligne de la tuile, et la taille (256 px).
+export function seaMask(elev, depth, x, y, size = 256) {
   // Nombre de tuiles par côté de l'ancêtre.
   const n = 2 ** depth;
   // Côté de la portion de l'ancêtre couverte par la tuile, en pixels.
@@ -57,8 +53,6 @@ export function seaSample(elev, depth, x, y, size = 256) {
   const ox = (x % n) * side, oy = (y % n) * side;
   // Part de l'image des fonds, par pixel.
   const mask = new Float32Array(size * size);
-  // Altitude interpolée, par pixel.
-  const height = new Float32Array(size * size);
   // De la mer quelque part ? Non pour l'instant.
   let any = false;
   // Pour chaque ligne de la tuile (début).
@@ -75,8 +69,6 @@ export function seaSample(elev, depth, x, y, size = 256) {
       const u0 = Math.floor(u), u1 = Math.min(size - 1, u0 + 1), fu = u - u0;
       // Altitude interpolée entre les quatre pixels voisins.
       const h = (elev[v0 * size + u0] * (1 - fu) + elev[v0 * size + u1] * fu) * (1 - fv) + (elev[v1 * size + u0] * (1 - fu) + elev[v1 * size + u1] * fu) * fv;
-      // Altitude gardée.
-      height[j * size + i] = h;
       // Sa part d'image des fonds.
       const w = seaWeight(h);
       // Notée ; de la mer s'il y en a une part.
@@ -85,9 +77,9 @@ export function seaSample(elev, depth, x, y, size = 256) {
     }
   // Fin de la boucle des lignes.
   }
-  // Renvoie les parts et les altitudes, ou null sans mer.
-  return any ? { mask, height } : null;
-// Fin de seaSample.
+  // Renvoie les parts, ou null sans mer.
+  return any ? mask : null;
+// Fin de seaMask.
 }
 
 /** Mélange dans `out` (pixels RGBA de l'image satellite) l'image des fonds `sea`, pixel par pixel, selon `mask`. */

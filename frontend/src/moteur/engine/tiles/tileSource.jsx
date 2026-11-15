@@ -18,12 +18,8 @@ import { AdaptiveTimeout, HostGate, NET_STATS, SharedLoads, hostOf } from './net
 import { pixelsOffThread, rememberBlob } from './tilePixels';
 // Importe le cache borné, depuis lru.
 import { LruCache } from './lru';
-// Importe la fusion des fonds marins : décodage des altitudes, part des fonds et altitude par pixel, et mélange, depuis seafloorFusion.
-import { blendSea, decodeTerrarium, seaSample } from './seafloorFusion';
-// Importe la couleur réelle de l'eau : décodage et comblement de la chlorophylle, pixels de l'eau, depuis oceanColour.
-import { decodeChlorophyll, fillGaps, oceanPixels } from './oceanColour';
-// Importe la taille au sol d'un pixel de tuile, depuis relief.
-import { metersPerTexel } from './relief';
+// Importe la fusion des fonds marins : décodage des altitudes, part des fonds par pixel et mélange, depuis seafloorFusion.
+import { blendSea, decodeTerrarium, seaMask } from './seafloorFusion';
 
 // Délai minimal entre deux renouvellements du modèle d'adresse : 30 secondes.
 const MIN_REFRESH_GAP_MS = 30_000;
@@ -48,10 +44,6 @@ const COLOR_STORE = 'gobai:couleurs-v1';     // mesures de couleur par source, g
 const SEA_SWITCH = 'gobai:fonds-marins';     // « 0 » : l'imagerie de la Terre reste sans les fonds marins
 // Pause de la fusion après un échec (fonds ou altitudes injoignables) : une minute.
 const SEA_PAUSE_MS = 60_000;
-// Après un échec de la chlorophylle, pas de nouvel essai avant 10 minutes (les fonds GEBCO prennent le relais).
-const CHL_RETRY_MS = 10 * 60_000;
-// Rayon moyen de la Terre, en mètres (taille au sol des pixels pour l'ombrage des fonds).
-const EARTH_RADIUS_M = 6_371_000;
 // Taille des vignettes de comparaison des couleurs : 32 px.
 const COLOR_PX = 32;                         // les couleurs sont comparées sur des vignettes de 32 px (tons d'ensemble)
 // Part de vignette sans image au-delà de laquelle la tuile est vide : 99,5 %.
@@ -183,10 +175,6 @@ export class TileSource {
     this.seaImages = new LruCache(32);
     // Instant jusqu'auquel la fusion est en pause après un échec.
     this.seaPauseUntil = 0;
-    // Chlorophylle décodée et comblée (promesse partagée), ou null.
-    this.chlGrid = null;
-    // Instant avant lequel la chlorophylle n'est pas redemandée après un échec.
-    this.chlRetryAt = 0;
   // Fin du constructeur.
   }
 
@@ -389,11 +377,10 @@ export class TileSource {
 
   /**
    * Fonds marins (couche unique de la Terre, champ `seafloor` de sa description) : là où les altitudes Terrarium
-   * sont sous la mer, l'eau du large remplace peu à peu l'image satellite (voir seafloorFusion.jsx). Avec la
-   * chlorophylle (`seafloor.chlorophyll`), l'eau prend sa couleur réelle, ombrée par le relief des fonds (voir
-   * oceanColour.jsx) ; sans elle, c'est l'image GEBCO. Altitudes et images sont lues au niveau `maxZoom` au plus,
-   * puis découpées : une tuile grossière sert toutes celles qu'elle couvre. Une tuile sans mer ne demande que ses
-   * altitudes. En cas d'échec, l'image satellite est rendue telle quelle et la fusion se met en pause une minute.
+   * sont sous la mer, l'image des fonds remplace peu à peu l'image satellite (voir seafloorFusion.jsx). Les deux sont
+   * lues au niveau `maxZoom` au plus, puis découpées : une tuile grossière sert toutes celles qu'elle couvre. Une
+   * tuile sans mer ne demande que ses altitudes. En cas d'échec, l'image satellite est rendue telle quelle et la
+   * fusion se met en pause une minute.
    */
   // withSeafloor, asynchrone : l'image d'une tuile avec les fonds marins (début).
   async withSeafloor(img, { z, x, y }, signal) {
@@ -403,18 +390,14 @@ export class TileSource {
     if (!sf || !this.seaOn || Date.now() < this.seaPauseUntil) return img;
     // Essai (début).
     try {
-      // Part de l'eau du large et altitude par pixel, d'après les altitudes ; null sans mer.
-      const sample = await this.seaSampleAt(sf.mask, z, x, y);
+      // Part de l'image des fonds par pixel, d'après les altitudes ; null sans mer.
+      const mask = await this.seaMaskAt(sf.mask, z, x, y);
       // Sans mer : l'image telle quelle.
-      if (!sample) return img;
-      // Parts de l'eau du large.
-      const mask = sample.mask;
+      if (!mask) return img;
       // Demande annulée : erreur d'abandon.
       if (signal?.aborted) throw abortError();
-      // Chlorophylle, si la couche en donne une et qu'elle est lisible.
-      const chl = sf.chlorophyll ? await this.chlorophyll(sf.chlorophyll) : null;
-      // Pixels de l'eau : couleur réelle ombrée par le relief, sinon l'image GEBCO.
-      const sea = chl ? oceanPixels({ z, x, y, height: sample.height, mask, chl, metersAt: (lat) => metersPerTexel(z, lat, EARTH_RADIUS_M) }) : await this.seaPixelsAt(sf, z, x, y);
+      // Pixels de l'image des fonds.
+      const sea = await this.seaPixelsAt(sf, z, x, y);
       // Pixels de l'image satellite, avec sa correction de couleur.
       const out = sea && await this.basePixels(img);
       // Pixels illisibles : l'image telle quelle.
@@ -436,54 +419,9 @@ export class TileSource {
   // Fin de withSeafloor.
   }
 
-  /**
-   * Chlorophylle du mois : { grid, w, h, bounds } (logarithmes, trous comblés), lue une fois par couche ; null si
-   * l'image est indisponible (pas de nouvel essai avant 10 minutes).
-   */
-  // chlorophyll, asynchrone : la grille de chlorophylle (début).
-  async chlorophyll(c) {
-    // Échec récent : null.
-    if (Date.now() < this.chlRetryAt) return null;
-    // Pas encore demandée (début).
-    if (!this.chlGrid) {
-      // Charge l'image (sans annulation : elle sert à toutes les tuiles), puis la décode.
-      this.chlGrid = this.sharedImage(c.url).then((im) => {
-        // Dimensions de l'image.
-        const w = im.naturalWidth || im.width, h = im.naturalHeight || im.height;
-        // Canevas de la même taille.
-        const canvas = document.createElement('canvas');
-        // À la taille de l'image.
-        canvas.width = w; canvas.height = h;
-        // Son contexte, pour une lecture de pixels.
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        // Dessine l'image.
-        ctx.drawImage(im, 0, 0);
-        // Logarithmes de la chlorophylle, trous comblés.
-        const grid = fillGaps(decodeChlorophyll(ctx.getImageData(0, 0, w, h).data, c.min, c.max), w, h);
-        // Renvoie la grille, ses dimensions et son emprise.
-        return { grid, w, h, bounds: c.bounds };
-      // Fin du décodage.
-      });
-    // Fin de ce cas.
-    }
-    // Essai (début).
-    try {
-      // La grille.
-      return await this.chlGrid;
-    // En cas d'échec (début).
-    } catch {
-      // Oubliée, redemandée dans 10 minutes ; les fonds GEBCO prennent le relais.
-      this.chlGrid = null; this.chlRetryAt = Date.now() + CHL_RETRY_MS;
-      // Rien.
-      return null;
-    // Fin de l'essai.
-    }
-  // Fin de chlorophyll.
-  }
-
-  /** Part de l'eau du large et altitude de chaque pixel de la tuile, d'après les altitudes de son ancêtre ; null sans mer. */
-  // seaSampleAt, asynchrone : les parts de l'eau et les altitudes d'une tuile (début).
-  async seaSampleAt(mask, z, x, y) {
+  /** Part de l'image des fonds pour chaque pixel de la tuile, d'après les altitudes de son ancêtre ; null sans mer. */
+  // seaMaskAt, asynchrone : les parts des fonds d'une tuile (début).
+  async seaMaskAt(mask, z, x, y) {
     // Niveau des altitudes, écart avec la tuile, et clé de l'ancêtre.
     const mz = Math.min(z, mask.maxZoom), d = z - mz, key = `${mz}/${x >> d}/${y >> d}`;
     // Altitudes de l'ancêtre, déjà demandées ?
@@ -500,37 +438,22 @@ export class TileSource {
       p.catch(() => this.seaElev.delete(key));
     // Fin de ce cas.
     }
-    // Parts et altitudes de la tuile, dans la portion de l'ancêtre qu'elle couvre.
-    return seaSample(await p, d, x, y);
-  // Fin de seaSampleAt.
+    // Parts des fonds de la tuile, dans la portion de l'ancêtre qu'elle couvre.
+    return seaMask(await p, d, x, y);
+  // Fin de seaMaskAt.
   }
 
-  /**
-   * Pixels (256 px) de l'image des fonds de la tuile, découpés dans un ancêtre au-delà du niveau `maxZoom` : GEBCO,
-   * sinon la NOAA (`fallbackTemplate`).
-   */
+  /** Pixels (256 px) de l'image des fonds de la tuile, découpés dans un ancêtre au-delà du niveau `maxZoom`. */
   // seaPixelsAt, asynchrone : les pixels des fonds d'une tuile (début).
   async seaPixelsAt(sf, z, x, y) {
-    // Essai de GEBCO (début).
-    try {
-      // Ses pixels.
-      return await this.seaPixelsFrom(sf.template, sf.maxZoom, z, x, y);
-    // En cas d'échec : la NOAA, s'il y a un secours ; sinon l'erreur est relancée.
-    } catch (e) { if (!sf.fallbackTemplate) throw e; return this.seaPixelsFrom(sf.fallbackTemplate, sf.maxZoom, z, x, y); }
-  // Fin de seaPixelsAt.
-  }
-
-  /** Pixels (256 px) d'une image des fonds, d'après son modèle d'adresse, découpés dans un ancêtre au-delà de `maxZoom`. */
-  // seaPixelsFrom, asynchrone : les pixels d'une image des fonds (début).
-  async seaPixelsFrom(template, maxZoom, z, x, y) {
-    // Niveau des fonds, écart avec la tuile, et clé de l'ancêtre (modèle compris : GEBCO et la NOAA sont gardées à part).
-    const gz = Math.min(z, maxZoom), d = z - gz, key = `${template}|${gz}/${x >> d}/${y >> d}`;
+    // Niveau des fonds, écart avec la tuile, et clé de l'ancêtre.
+    const gz = Math.min(z, sf.maxZoom), d = z - gz, key = `${gz}/${x >> d}/${y >> d}`;
     // Image de l'ancêtre, déjà demandée ?
     let p = this.seaImages.get(key);
     // Sinon (début).
     if (!p) {
       // Charge l'image des fonds (sans annulation : elle sert aux tuiles voisines).
-      p = this.sharedImage(fillTemplate(template, { z: gz, x: x >> d, y: y >> d }));
+      p = this.sharedImage(fillTemplate(sf.template, { z: gz, x: x >> d, y: y >> d }));
       // Gardée pour les tuiles suivantes.
       this.seaImages.set(key, p);
       // En cas d'échec : oubliée, pour être redemandée plus tard.
@@ -541,7 +464,7 @@ export class TileSource {
     const im = await p;
     // Ses pixels, ou ceux de la portion couverte par la tuile.
     return this.pixelsAsync(im, 256, d ? cropRect(im.naturalWidth || im.width || 256, d, x, y) : null);
-  // Fin de seaPixelsFrom.
+  // Fin de seaPixelsAt.
   }
 
   /**

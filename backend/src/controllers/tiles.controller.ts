@@ -32,8 +32,8 @@ import {
 import { ApiErrorDto } from '../dto/api-error.dto';
 // Ouvre l'import de l'envoi de tuiles partagé :
 import {
-  // les règles de cache de chaque famille de tuiles (chlorophylle, nuages, Terre, Terre de repli, Mars, Lune, satellites), la fonction sendTile et les types de requête et de réponse.
-  CHLOROPHYLL_IMAGE, CLOUD_TILE, EARTH_FALLBACK_TILE, EARTH_TILE, MARS_TILE, MOON_TILE, SATELLITE_TILE, sendTile, type TileRequest, type TileResponse,
+  // les règles de cache de chaque famille de tuiles (nuages, Terre, Terre de repli, Mars, Lune, satellites), la fonction sendTile et les types de requête et de réponse.
+  CLOUD_TILE, EARTH_FALLBACK_TILE, EARTH_TILE, MARS_TILE, MOON_TILE, SATELLITE_TILE, sendTile, type TileRequest, type TileResponse,
 // Fin de l'import.
 } from '../common/tile-http';
 // Ouvre l'import des formes de données des tuiles :
@@ -64,8 +64,6 @@ import { XweatherCloudsService } from '../services/map-tiles/xweather-clouds.ser
 import { EarthWindService } from '../services/map-tiles/earth-wind.service';
 // Service de la couverture nuageuse (Open-Meteo).
 import { EarthCloudCoverService } from '../services/map-tiles/earth-cloud-cover.service';
-// Service de la chlorophylle des océans (NOAA CoastWatch ERDDAP).
-import { EarthChlorophyllService } from '../services/map-tiles/earth-chlorophyll.service';
 // Service de l'image mélangée de Mars et identifiant de sa couche.
 import { MarsBlendService, MARS_BLEND_LAYER_ID } from '../services/mars/mars-blend.service';
 // Ouvre l'import de la fusion de Mars :
@@ -139,8 +137,6 @@ export class TilesController {
     private readonly earthWind: EarthWindService,
     // La couverture nuageuse.
     private readonly earthCloudCover: EarthCloudCoverService,
-    // La chlorophylle des océans.
-    private readonly earthChlorophyll: EarthChlorophyllService,
   // Corps du constructeur vide.
   ) {}
 
@@ -613,35 +609,6 @@ export class TilesController {
     // Renvoie la grille de couverture nuageuse (gardée une heure en mémoire par le service).
     return this.earthCloudCover.get();
   // Fin de earthCloudCoverGrid.
-  }
-
-  // Route GET /api/v1/tiles/earth-chlorophyll.png.
-  @Get('earth-chlorophyll.png')
-  // Pas de limite de débit.
-  @SkipThrottle()
-  // Ouvre la description de la route :
-  @ApiOperation({
-    // son titre ;
-    summary: 'Chlorophylle des océans (MODIS Aqua, NOAA CoastWatch ERDDAP)',
-    // début de son texte (la grille) ;
-    description: 'Image PNG de 720 × 360 px, monde entier en plate carrée, nord en haut : gris = logarithme de la chlorophylle-a '
-      // suite (échelle, transparence) ;
-      + 'entre 0,01 et 30 mg/m³, transparent sans donnée. Composite mensuel MODIS Aqua (NASA), même mois un an plus tôt, sinon le dernier. '
-      // fin (usage, en-tête).
-      + 'Sert à colorer l’eau du large du satellite HD. En-tête X-Chlorophyll-Month : mois des données ; 502 si ERDDAP est injoignable.',
-  // Fin de la description.
-  })
-  // Réponse 200 documentée : une image PNG.
-  @ApiOkResponse({ description: 'Image PNG de la chlorophylle.' })
-  // Réponse 502 documentée : ERDDAP injoignable.
-  @ApiBadGatewayResponse({ type: ApiErrorDto })
-  // Méthode earthChlorophyllImage : la requête et la réponse.
-  async earthChlorophyllImage(@Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
-    // Attend l'image (gardée un jour en mémoire par le service).
-    const image = await this.earthChlorophyll.get();
-    // L'envoie, cache d'un jour, avec le mois des données.
-    sendTile(req, res, { body: image.png, contentType: 'image/png' }, CHLOROPHYLL_IMAGE, { 'X-Chlorophyll-Month': image.month });
-  // Fin de earthChlorophyllImage.
   }
 
   // Route GET /api/v1/tiles/earth-clouds/xweather/:z/:x/:y.

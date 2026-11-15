@@ -93,7 +93,6 @@ export const API_DOC_GROUPS = [
     routes: [
       ['GET', '/tiles/earth-wind', 'Vents réels du moment (Open-Meteo).'],
       ['GET', '/tiles/earth-clouds/cover', 'Couverture nuageuse du moment (Open-Meteo).'],
-      ['GET', '/tiles/earth-chlorophyll.png', 'Chlorophylle des océans (MODIS Aqua, NOAA CoastWatch).'],
       ['GET', '/volcanoes', 'Volcans en éruption dans le monde, avec leurs coordonnées (NASA EONET).'],
       ['GET', '/borders', 'Frontières des pays et littoraux.'],
       ['GET', '/world-atlas', 'Pays du monde en TopoJSON.'],

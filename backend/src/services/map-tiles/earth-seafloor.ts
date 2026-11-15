@@ -1,11 +1,11 @@
 /**
- * Fonds marins de la Terre : deux images du relief des océans et des terres, fondues dans la couche unique
- * « earth-hd » (elles ne sont plus proposées seules dans le menu). Ce sont les données que le globe Google Earth attribue à
+ * Fonds marins de la Terre : deux fonds de carte du relief des océans et des terres, proposés à côté de la couche
+ * unique « earth-hd » (menu Terre, fond de carte). Ce sont les données que le globe Google Earth attribue à
  * « SIO, NOAA, U.S. Navy, NGA, GEBCO » et « IBCAO » :
  *  - earth-gebco : grille mondiale GEBCO_2026 en relief ombré (service WMS de GEBCO), qui réunit la bathymétrie
  *    mondiale, SRTM15+ (SIO, NOAA, U.S. Navy, NGA) et les grilles régionales comme l'IBCAO (Arctique) ;
  *  - earth-ncei : mosaïque mondiale des modèles d'élévation de la NOAA (NCEI), terre et mer sans couture, en relief
- *    ombré coloré par l'altitude et la profondeur (service d'images ArcGIS, fonction « ColorHillshade ») : secours de GEBCO.
+ *    ombré coloré par l'altitude et la profondeur (service d'images ArcGIS, fonction « ColorHillshade »).
  * Deux services sans clé, sans tuiles toutes faites : chaque tuile est une image demandée sur son emprise Web
  * Mercator, et le serveur la relaie comme les orthophotos WMS de la couche unique (voir earth-imagery.service.ts).
  * Fonctions pures, testées dans earth-seafloor.spec.ts.
@@ -13,8 +13,6 @@
 
 // Ouvre l'import du module des sources de la Terre : l'emprise Web Mercator d'une tuile, l'adresse WMS d'une tuile, le test d'un interrupteur coupé et le type d'une source.
 import { isOff, mercatorBbox, wms, type EarthSource } from './earth-sources';
-// Image de la chlorophylle : son emprise et les bornes de son échelle.
-import { CHL_BOUNDS, CHL_MAX, CHL_MIN } from './earth-chlorophyll';
 
 // Adresse du service WMS de GEBCO : GEBCO_WMS_URL si elle est définie, sinon l'adresse officielle ; les « ? » et « & » de fin sont retirés.
 const GEBCO_BASE = (process.env.GEBCO_WMS_URL?.trim() || 'https://wms.gebco.net/mapserv').replace(/[?&]+$/, '');
@@ -87,26 +85,23 @@ export const SEAFLOOR_BY_ID = new Map(SEAFLOOR_LAYERS.map((l) => [l.id, l]));
  * (AWS Terrain Tiles, déjà lues par le relief) sont sous la mer, la tuile GEBCO remplace peu à peu l'imagerie
  * satellite — l'eau peu profonde des côtes garde l'image satellite, le large montre le relief des fonds, comme sur
  * Google Earth. Les deux sont prises au niveau 10 au plus : une tuile sert toutes les tuiles affichées qu'elle couvre.
- * `EARTH_SEAFLOOR=0` coupe la fusion. Avec la chlorophylle (`EARTH_OCEAN_COLOUR=0` la coupe), l'eau du large prend
- * sa couleur réelle, calculée avec ocpy (voir frontend/scripts/couleur-ocean.py), ombrée par le relief des fonds.
+ * `EARTH_SEAFLOOR=0` coupe la fusion.
  */
-// Altitudes Terrarium d'AWS, exportées (modèle 3D de la Terre) : TERRARIUM_URL si elle est définie, sinon l'adresse publique.
-export const TERRARIUM = process.env.TERRARIUM_URL?.trim() || 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+// Altitudes Terrarium d'AWS : TERRARIUM_URL si elle est définie, sinon l'adresse publique.
+const TERRARIUM = process.env.TERRARIUM_URL?.trim() || 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
 // Niveau maximal des tuiles des fonds et des altitudes lues pour la fusion : 10 (≈ 150 m par pixel à l'équateur).
 export const SEAFLOOR_FUSION_MAX_ZOOM = 10;
 
 // Fonction seafloorFusion : le réglage de la fusion pour le navigateur, ou null si elle est coupée ; par défaut, l'environnement du processus.
-export function seafloorFusion(env: Record<string, string | undefined> = process.env): { template: string; fallbackTemplate: string; maxZoom: number; mask: { template: string; maxZoom: number }; chlorophyll?: { url: string; bounds: [number, number, number, number]; min: number; max: number } } | null {
+export function seafloorFusion(env: Record<string, string | undefined> = process.env): { template: string; maxZoom: number; mask: { template: string; maxZoom: number } } | null {
   // EARTH_SEAFLOOR coupé : null.
   if (isOff(env.EARTH_SEAFLOOR)) return null;
   // Renvoie :
   return {
-    // les tuiles GEBCO, par le relais de ce serveur, jusqu'au niveau 10, et celles de la NOAA en secours ;
-    template: '/api/v1/tiles/earth/earth-gebco/{z}/{x}/{y}', fallbackTemplate: '/api/v1/tiles/earth/earth-ncei/{z}/{x}/{y}', maxZoom: SEAFLOOR_FUSION_MAX_ZOOM,
-    // les altitudes Terrarium, jusqu'au niveau 10 ;
+    // les tuiles GEBCO, par le relais de ce serveur, jusqu'au niveau 10 ;
+    template: '/api/v1/tiles/earth/earth-gebco/{z}/{x}/{y}', maxZoom: SEAFLOOR_FUSION_MAX_ZOOM,
+    // les altitudes Terrarium, jusqu'au niveau 10.
     mask: { template: TERRARIUM, maxZoom: SEAFLOOR_FUSION_MAX_ZOOM },
-    // l'image de la chlorophylle, sauf si EARTH_OCEAN_COLOUR est coupé.
-    ...(isOff(env.EARTH_OCEAN_COLOUR) ? {} : { chlorophyll: { url: '/api/v1/tiles/earth-chlorophyll.png', bounds: CHL_BOUNDS, min: CHL_MIN, max: CHL_MAX } }),
   // Fin de l'objet.
   };
 // Fin de seafloorFusion.
