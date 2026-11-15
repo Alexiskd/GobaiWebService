@@ -38,6 +38,8 @@ import { EARTH_NIGHT_LIGHTS } from './tiles/nightLights';
  *  flattening       aplatissement (1 − rayon polaire / rayon équatorial) : géantes gazeuses
  *  pole             pôle Nord réel [ascension droite, déclinaison] (degrés, ICRF J2000, UAI) : oriente le groupe de la
  *                   planète, donc ses anneaux et ses tuiles, dans le même plan que les orbites de ses satellites
+ *  lighting         'earth' : modèle d'éclairage physique de la Terre (surfaceLight.jsx) ; absent : modèle général
+ *  waterMask        adresse du masque mondial de l'eau (reflet du Soleil sur la mer, modèle de la Terre)
  */
 /** Altitude minimale au-dessus des nuages d'une géante gazeuse, en rayons (≈ 35 km pour Jupiter) ; plus bas, on entre dans l'astre. */
 // Déclare et exporte l'altitude minimale au-dessus des nuages d'une géante gazeuse : 0,0005 rayon.
@@ -65,6 +67,9 @@ export const TILED_BODIES = [
     radiusKm: 6371, minAltitudeRadii: MIN_DISTANCE_WITH_TILES - 1, siteAltitudeKm: 2.5,
     // Avec atmosphère, calque fondu par transparence.
     airless: false, overlayMode: 'blend',
+    // Éclairage physique de la Terre (lumière du Soleil atténuée par l'air, ciel, relief éclairé par le Soleil) et reflet
+    // du Soleil sur la mer, limité à l'eau par le masque mondial (Natural Earth, frontend/scripts/masque-eau.py).
+    lighting: 'earth', waterMask: '/data/earth-water-mask.png',
     // Sphère de fond presque noire pendant le chargement : les cellules hexagonales pas encore remplies ne montrent
     // plus le bleu clair d'interface de la Terre (#3d8bff), qui les dessinait une par une au premier affichage.
     backdrop: '#0b0f16',

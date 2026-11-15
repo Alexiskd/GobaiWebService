@@ -120,8 +120,14 @@ export class TileManager {
       lightsOn: { value: body.nightLights && nightLightsChoice(readLightsChoice()) ? 1 : 0 },
       // Vue de la pollution lumineuse : mosaïque mondiale des lumières (en attente), sa présence, et le mode « toute la Terre de nuit ».
       lgMap: { value: placeholderTexture() }, lgOn: { value: 0 }, lightView: { value: 0 },
+      // Modèle d'éclairage : 1 pour la Terre (lumière physique, voir surfaceLight.jsx), 0 pour le modèle général.
+      surfModel: { value: body.lighting === 'earth' ? 1 : 0 },
+      // Masque de l'eau (reflet du Soleil sur la mer) : en attente, absent.
+      wMap: { value: placeholderTexture() }, wOn: { value: 0 },
     // Fin des variables uniformes.
     };
+    // Avec un masque de l'eau (la Terre) : chargé une fois, partagé par toutes les tuiles.
+    if (body.waterMask) this.loadWaterMask(body.waterMask);
     // Relief de l'astre : vraies altitudes (« terrarium ») ou estimation d'après l'image (« image »), ou aucun.
     // Relief de l'astre : mis en forme et réglé (voir tuneRelief), le même sur tous les appareils.
     this.relief = tuneRelief(normalizeRelief(body.relief, body.radiusKm));
@@ -236,6 +242,27 @@ export class TileManager {
     // Renvoie l'état.
     return Boolean(on);
   // Fin de setLightView.
+  }
+
+  /**
+   * Masque mondial de l'eau (Web Mercator, blanc = mer, voir frontend/scripts/masque-eau.py) : le shader des tuiles
+   * le lit avec globalRect pour ne poser le reflet du Soleil que sur la mer. Sans masque (échec), pas de reflet.
+   */
+  // loadWaterMask : charge le masque de l'eau (début).
+  loadWaterMask(url) {
+    // Charge l'image (début).
+    loadImage(url).then((img) => {
+      // Texture de l'image.
+      const tex = new THREE.Texture(img);
+      // Avec mipmaps, lissée, sans répétition aux bords.
+      tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      // À envoyer au GPU.
+      tex.needsUpdate = true;
+      // Posée pour toutes les tuiles de l'astre, et allumée.
+      this.uniforms.wMap.value = tex; this.uniforms.wOn.value = 1;
+    // Échec : pas de reflet, rien d'autre ne change.
+    }).catch(() => {});
+  // Fin de loadWaterMask.
   }
 
   /** Charge la mosaïque mondiale des lumières, une seule fois (un échec permet de réessayer plus tard). */

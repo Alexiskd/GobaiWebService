@@ -176,3 +176,21 @@ export function scatterParams(id) {
   };
 // Fin de scatterParams.
 }
+
+/**
+ * Épaisseur optique verticale de l'atmosphère (du sol à l'espace, en visant le zénith), pour le rouge, le vert et le
+ * bleu : τ = β × H, somme de la diffusion de Rayleigh et de l'extinction de Mie (mêmes coefficients et hauteurs
+ * d'échelle que la coquille de diffusion). La lumière du Soleil qui traverse `m` fois cette épaisseur (masse d'air)
+ * est atténuée de exp(−τ·m) : c'est ce qui rougit et assombrit le sol et les nuages près du terminateur.
+ * Terre : ≈ (0,074 ; 0,136 ; 0,293). null si l'astre n'a pas d'atmosphère modélisée.
+ */
+// Déclare et exporte verticalOpticalDepth : l'identifiant de l'astre.
+export function verticalOpticalDepth(id) {
+  // Son atmosphère.
+  const a = ATMOSPHERES[id];
+  // Aucune : null.
+  if (!a) return null;
+  // Pour chaque couleur : Rayleigh (coefficient × hauteur d'échelle) plus Mie (coefficient × extinction × hauteur d'échelle), en mètres.
+  return a.rayleigh.map((b, i) => b * a.rayleighScaleKm * 1000 + a.mie[i] * a.mieExt[i] * a.mieScaleKm * 1000);
+// Fin de verticalOpticalDepth.
+}
