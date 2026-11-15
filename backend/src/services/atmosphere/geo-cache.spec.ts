@@ -1,5 +1,5 @@
 // Cache et tuiles testés.
-import { TtlCache, isTile, tileBounds, tileOf } from './geo-cache';
+import { RateGate, TtlCache, isTile, tileBounds, tileOf } from './geo-cache';
 // Registre des fournisseurs testé.
 import { PROVIDERS, listProviders, provider } from './providers';
 
@@ -114,8 +114,39 @@ describe('registre des fournisseurs atmosphériques', () => {
     expect([twc.keysPresent, twc.available]).toEqual([true, false]);
     // FIRMS : sans clé, branché, disponible.
     expect(list.find((p) => p.id === 'firms-viirs-n20')!.available).toBe(true);
+    // Radar Rain Viewer et avertissements du NWS : sans clé, branchés, disponibles (lot 4).
+    expect(['rainviewer', 'nws-alerts'].map((id) => list.find((p) => p.id === id)!.available)).toEqual([true, true]);
     // Aucune valeur de clé dans la réponse.
     expect(['secret-id', 'secret-twc'].some((k) => JSON.stringify(list).includes(k))).toBe(false);
+  // Fin du test.
+  });
+// Fin du groupe.
+});
+
+// Groupe de tests : la limite de débit.
+describe('limite de débit glissante', () => {
+  // Test : attente puis refus.
+  it('laisse passer le maximum, fait attendre la suite jusqu’à la sortie du plus ancien appel, refuse une attente trop longue', async () => {
+    // Horloge d'essai.
+    let t = 0;
+    // Deux appels par seconde ; l'attente avance l'horloge.
+    const gate = new RateGate(2, 1_000, () => t, async (ms) => { t += ms; });
+    // Deux appels immédiats.
+    await gate.take(); await gate.take();
+    // Deux dans la fenêtre.
+    expect(gate.used()).toBe(2);
+    // Le troisième attend la sortie du premier (1 s).
+    await gate.take(5_000);
+    // Horloge avancée d'une seconde.
+    expect(t).toBe(1_000);
+    // Les deux premiers sont sortis : un quatrième passe tout de suite, la fenêtre est de nouveau pleine.
+    await gate.take(); expect([t, gate.used()]).toEqual([1_000, 2]);
+    // Cinquième : il faudrait attendre 1 s ; refusé avec une attente maximale de 500 ms.
+    let refused = false;
+    // Appel avec une attente maximale trop courte.
+    await gate.take(500).catch(() => { refused = true; });
+    // Refusé.
+    expect(refused).toBe(true);
   // Fin du test.
   });
 // Fin du groupe.

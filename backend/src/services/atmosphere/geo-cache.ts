@@ -161,3 +161,59 @@ export function tileBounds(tx: number, ty: number, sizeDeg = TILE_DEG): [number,
   return [w, s, w + sizeDeg, s + sizeDeg];
 // Fin de tileBounds.
 }
+
+/**
+ * Limite de débit glissante : au plus `max` appels sur `windowMs` (par exemple 80 par minute, sous la limite de
+ * 100 par minute et par adresse IP d'un fournisseur). `take` attend qu'une place se libère, ou rejette si l'attente
+ * dépasserait `maxWaitMs` : l'appel est alors refusé plutôt que de faire dépasser la limite au serveur.
+ */
+// Classe RateGate.
+export class RateGate {
+  // Heures des appels de la fenêtre, de la plus ancienne à la plus récente.
+  private stamps: number[] = [];
+
+  // Constructeur : maximum, fenêtre, horloge et attente (remplaçables pour les tests).
+  constructor(private readonly max: number, private readonly windowMs = 60_000, private readonly now: () => number = Date.now, private readonly sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms))) {}
+
+  // Méthode privée prune : retire les appels sortis de la fenêtre.
+  private prune(t: number): void {
+    // Tant que le plus ancien est sorti : retiré.
+    while (this.stamps.length && t - this.stamps[0] >= this.windowMs) this.stamps.shift();
+  // Fin de prune.
+  }
+
+  /** Prend une place (attend au besoin) ; rejette si l'attente dépasserait `maxWaitMs`. */
+  // Méthode take : attente maximale.
+  async take(maxWaitMs = 15_000): Promise<void> {
+    // Début de l'attente.
+    const start = this.now();
+    // Boucle d'attente (début).
+    for (;;) {
+      // Instant courant.
+      const t = this.now();
+      // Fenêtre à jour.
+      this.prune(t);
+      // Place libre : prise.
+      if (this.stamps.length < this.max) { this.stamps.push(t); return; }
+      // Attente jusqu'à la sortie du plus ancien appel.
+      const wait = this.stamps[0] + this.windowMs - t;
+      // Trop longue : refus.
+      if (t - start + wait > maxWaitMs) throw new Error(`limite de ${this.max} requêtes par ${Math.round(this.windowMs / 1000)} s atteinte`);
+      // Attente, par pas d'une seconde au plus.
+      await this.sleep(Math.min(wait, 1_000));
+    // Fin de la boucle.
+    }
+  // Fin de take.
+  }
+
+  /** Nombre d'appels dans la fenêtre courante. */
+  // Méthode used.
+  used(): number {
+    // Fenêtre à jour.
+    this.prune(this.now());
+    // Nombre d'appels.
+    return this.stamps.length;
+  // Fin de used.
+  }
+// Fin de RateGate.
+}
