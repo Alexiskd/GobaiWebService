@@ -1,7 +1,9 @@
 // Importe de React les crochets useEffect, useRef et useState.
 import { useEffect, useRef, useState } from 'react';
-// Importe de MUI Box, Drawer (tiroir) et Paper (carte).
-import { Box, Drawer, Paper } from '@mui/material';
+// Importe de MUI Box, Drawer (tiroir), IconButton (bouton icône) et Paper (carte).
+import { Box, Drawer, IconButton, Paper } from '@mui/material';
+// Importe l'icône de fermeture (croix).
+import { CloseIcon } from './icons';
 // Importe MQ (requêtes média) et safe (marges de sécurité de l'écran).
 import { MQ, safe } from '@/composante/theme/mediaQueries';
 // Importe les calculs du geste : décalage, vitesse et décision de fermeture.
@@ -9,7 +11,8 @@ import { dragOffset, dragVelocity, shouldClose } from '@/moteur/lib/sheetGesture
 
 /**
  * Feuille du téléphone : panneau qui monte du bas de l'écran, à portée de pouce, et se referme en le tirant vers le
- * bas par sa poignée, en touchant le voile ou avec Échap. Le contenu défile à l'intérieur si l'écran est trop bas.
+ * bas par sa poignée, en touchant le voile, avec Échap ou par son bouton Fermer (44 px, toujours visible en haut à
+ * droite, aussi pour les lecteurs d'écran). Le contenu défile à l'intérieur si l'écran est trop bas.
  * Le tiroir MUI porte l'animation d'entrée, le voile et le piège du focus ; la feuille visible est posée dedans pour
  * pouvoir suivre le doigt sans gêner cette animation.
  */
@@ -104,8 +107,8 @@ export function FeuilleActions({ open, onClose, label, children }) {
         data-hud="actions"
         // Début du style.
         sx={{
-          // Colonne, toute la largeur, 560 px au plus, centrée.
-          display: 'flex', flexDirection: 'column', width: '100%', maxWidth: 560, mx: 'auto',
+          // Colonne, toute la largeur, 560 px au plus, centrée ; repère du bouton Fermer.
+          position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', maxWidth: 560, mx: 'auto',
           // Hauteur maximale : l'écran moins la marge de sécurité du haut et 56 px.
           maxHeight: `calc(100dvh - ${safe('top')} - 56px)`,
           // Coins arrondis en haut seulement.
@@ -143,6 +146,20 @@ export function FeuilleActions({ open, onClose, label, children }) {
           <Box aria-hidden="true" sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: 'text.secondary', opacity: 0.5 }} />
         {/* Fin de la bande de la poignée. */}
         </Box>
+        {/* Bouton Fermer : en haut à droite, hors de la poignée et du défilement, cible de 44 px (début). */}
+        <IconButton
+          // Nom pour les lecteurs d'écran.
+          aria-label="Fermer"
+          // Ferme la feuille.
+          onClick={onClose}
+          // Posé sur la feuille, à 4 px du haut et à 6 px du bord droit (marge de sécurité comprise), au-dessus du contenu.
+          sx={{ position: 'absolute', top: 4, right: `calc(${safe('right')} + 6px)`, zIndex: 1, width: 44, height: 44 }}
+        // Fin de la balise ouvrante.
+        >
+          {/* La croix. */}
+          <CloseIcon sx={{ fontSize: 20 }} />
+        {/* Fin du bouton Fermer. */}
+        </IconButton>
         {/* Zone de contenu : défile verticalement sans entraîner la page, avec la marge de sécurité du bas. */}
         <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', px: 1.5, pb: `calc(${safe('bottom')} + 12px)` }}>
           {/* Le contenu de la feuille. */}
