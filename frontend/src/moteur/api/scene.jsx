@@ -181,4 +181,19 @@ export const radarTileUrl = (id, z, x, y) => `${API_BASE}/atmosphere/radar/${enc
 /** Orages : { frame, cells: [événements estimés], warnings: [avertissements officiels], stats, method, sources, stale }. */
 // fetchAtmosphereStorms : les orages.
 export const fetchAtmosphereStorms = (signal) => get('/atmosphere/storms', { signal });
+/**
+ * Aérosols : { days, products: [{ id, available, reason, measured }], plumes: [événements], stats, forecast: { available,
+ * reason, times }, sources, stale }.
+ */
+// fetchAtmosphereAerosols : les aérosols.
+export const fetchAtmosphereAerosols = (signal) => get('/atmosphere/aerosols', { signal });
+/** Adresse de l'image observée d'un produit (« aod » ou « ai ») ; `version` change quand les données changent. */
+// aerosolObservedUrl : le produit et la version.
+export const aerosolObservedUrl = (product, version = '') => `${API_BASE}/atmosphere/aerosols/observed/${encodeURIComponent(product)}${version ? `?v=${encodeURIComponent(version)}` : ''}`;
+/** Adresse d'une image de la prévision CAMS des poussières à une heure de validité (ISO). */
+// aerosolForecastUrl : l'heure.
+export const aerosolForecastUrl = (time) => `${API_BASE}/atmosphere/aerosols/forecast/${encodeURIComponent(time)}`;
+/** Adresse de la légende de la prévision CAMS. */
+// aerosolLegendUrl : la légende.
+export const aerosolLegendUrl = () => `${API_BASE}/atmosphere/aerosols/forecast/legend`;
 
