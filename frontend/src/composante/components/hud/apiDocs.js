@@ -116,6 +116,8 @@ export const API_DOC_GROUPS = [
       ['GET', '/atmosphere/aerosols/observed/{product}', 'Aérosols : image observée décodée (aod ou ai ; rouge = jour, vert = veille).'],
       // Prévision CAMS.
       ['GET', '/atmosphere/aerosols/forecast/{time}', 'Aérosols : prévision CAMS des poussières à une heure de validité ; /legend pour la légende.'],
+      // Vents et courants-jets.
+      ['GET', '/atmosphere/winds', 'Vents du moment au sol, à 850, 500 et 250 hPa (Open-Meteo) et axes des courants-jets.'],
       // Événements au format commun.
       ['GET', '/atmosphere/events', 'Événements atmosphériques au format commun (filtres types, bbox, limit).'],
       // Registre et contrôle.

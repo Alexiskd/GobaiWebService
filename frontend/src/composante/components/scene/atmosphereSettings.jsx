@@ -6,6 +6,8 @@ import { cycloneSummary, normalizeCyclones } from '../../../moteur/engine/atmosp
 import { normalizeFrames } from '../../../moteur/engine/atmosphere/radarMath';
 // Importe la lecture des aérosols et le choix du produit.
 import { aerosolProduct, normalizeAerosols } from '../../../moteur/engine/atmosphere/aerosolMath';
+// Importe les niveaux des vents et la lecture de leur réponse.
+import { FLOW_LEVEL_IDS, normalizeWinds } from '../../../moteur/engine/atmosphere/flowMath';
 
 // Réglages des calques atmosphériques (sans React, donc testables seuls) : valeurs par défaut, lecture sûre de ce
 // qui a été gardé dans le navigateur, bornes, et textes d'aide de la fenêtre des paramètres.
@@ -15,7 +17,8 @@ import { aerosolProduct, normalizeAerosols } from '../../../moteur/engine/atmosp
 export const ATMOSPHERE_KEY = 'gobai:atmosphere';
 /**
  * Réglages par défaut : tous les calques éteints, opacité 0,9 (0,85 pour le radar et les aérosols), intensité 1,
- * fenêtre de 24 h pour les incendies ; radar animé, limite de portée des radars affichée ; aérosols : épaisseur optique.
+ * fenêtre de 24 h pour les incendies ; radar animé, limite de portée des radars affichée ; aérosols : épaisseur optique ;
+ * vents : niveau des courants-jets.
  */
 // Déclare et exporte les réglages par défaut (début).
 export const ATMOSPHERE_DEFAULTS = {
@@ -31,11 +34,13 @@ export const ATMOSPHERE_DEFAULTS = {
   storms: { on: false, opacity: 0.9, intensity: 1 },
   // Aérosols : épaisseur optique observée par défaut, prévision animée.
   aerosols: { on: false, opacity: 0.85, intensity: 1, product: 'aod', animate: true },
+  // Vents : niveau des courants-jets par défaut, axes affichés.
+  winds: { on: false, opacity: 0.85, intensity: 1, level: '250hPa', jets: true },
 // Fin des réglages par défaut.
 };
 /** Calques prévus aux lots suivants, affichés comme « à venir » (aucune donnée n'est représentée sans source). */
 // Déclare et exporte la liste des calques à venir.
-export const ATMOSPHERE_UPCOMING = ['Vents', 'Courants-jets', 'Pollution gazeuse', 'Brouillard'];
+export const ATMOSPHERE_UPCOMING = ['Pollution gazeuse', 'Brouillard'];
 
 // clamp : borne une valeur numérique ; illisible : la valeur par défaut.
 const clamp = (v, min, max, fallback) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Math.min(max, Math.max(min, Number(v))) : fallback);
@@ -44,9 +49,9 @@ const clamp = (v, min, max, fallback) => (Number.isFinite(Number(v)) && v !== nu
 // Déclare et exporte sanitizeAtmosphere : l'objet partiel.
 export function sanitizeAtmosphere(raw) {
   // Partie des incendies, des cyclones, de la foudre, du radar et des orages.
-  const f = raw?.fires ?? {}, c = raw?.cyclones ?? {}, l = raw?.lightning ?? {}, p = raw?.precipitation ?? {}, o = raw?.storms ?? {}, a = raw?.aerosols ?? {};
+  const f = raw?.fires ?? {}, c = raw?.cyclones ?? {}, l = raw?.lightning ?? {}, p = raw?.precipitation ?? {}, o = raw?.storms ?? {}, a = raw?.aerosols ?? {}, w = raw?.winds ?? {};
   // Valeurs par défaut.
-  const df = ATMOSPHERE_DEFAULTS.fires, dc = ATMOSPHERE_DEFAULTS.cyclones, dl = ATMOSPHERE_DEFAULTS.lightning, dp = ATMOSPHERE_DEFAULTS.precipitation, ds = ATMOSPHERE_DEFAULTS.storms, da = ATMOSPHERE_DEFAULTS.aerosols;
+  const df = ATMOSPHERE_DEFAULTS.fires, dc = ATMOSPHERE_DEFAULTS.cyclones, dl = ATMOSPHERE_DEFAULTS.lightning, dp = ATMOSPHERE_DEFAULTS.precipitation, ds = ATMOSPHERE_DEFAULTS.storms, da = ATMOSPHERE_DEFAULTS.aerosols, dw = ATMOSPHERE_DEFAULTS.winds;
   // Réglages complets (début).
   return {
     // Incendies : allumés, opacité, intensité, fenêtre (une des fenêtres proposées, sinon 24 h).
@@ -61,6 +66,8 @@ export function sanitizeAtmosphere(raw) {
     storms: { on: o.on === true, opacity: clamp(o.opacity, 0.1, 1, ds.opacity), intensity: clamp(o.intensity, 0.5, 2, ds.intensity) },
     // Aérosols : allumés, opacité, intensité, produit (parmi les proposés), animation de la prévision.
     aerosols: { on: a.on === true, opacity: clamp(a.opacity, 0.1, 1, da.opacity), intensity: clamp(a.intensity, 0.5, 2, da.intensity), product: aerosolProduct(a.product), animate: a.animate !== false },
+    // Vents : allumés, opacité, intensité, niveau (parmi les proposés), axes des courants-jets.
+    winds: { on: w.on === true, opacity: clamp(w.opacity, 0.1, 1, dw.opacity), intensity: clamp(w.intensity, 0.5, 2, dw.intensity), level: FLOW_LEVEL_IDS.includes(w.level) ? w.level : dw.level, jets: w.jets !== false },
   // Fin des réglages.
   };
 // Fin de sanitizeAtmosphere.
@@ -249,4 +256,30 @@ export function aerosolHint(info, product = 'aod') {
   // Texte complet.
   return `Mesuré aujourd’hui sur ${pct(p.today)} du globe, hier sur ${pct(p.yesterday)} (${gaps})${zones} · ${src}${info.stale ? ' · une source ne répond plus' : ''}`;
 // Fin de aerosolHint.
+}
+
+/** Texte d'aide des vents pour le niveau choisi (null : chargement ; 'erreur' : échec). */
+// Déclare et exporte windHint : la réponse, ou son état, et le niveau.
+export function windHint(info, level = '250hPa') {
+  // Source, en clair (mention demandée par la licence CC BY 4.0).
+  const src = 'Open-Meteo (modèles météo, CC BY 4.0)';
+  // Pas encore de réponse.
+  if (info === null || info === undefined) return `Vents du moment du sol aux courants-jets, d’après les modèles météo · ${src}`;
+  // Échec.
+  if (info === 'erreur') return `Source indisponible pour le moment · ${src}`;
+  // Indisponible : la raison.
+  if (!info.available) return `${info.reason || 'Aucun vent'} · ${src}`;
+  // Réponse mise en forme.
+  const n = normalizeWinds(info);
+  // Niveau choisi.
+  const l = n.levels[level];
+  // Absent de la réponse : le dire.
+  if (!l) return `Niveau indisponible dans la réponse du modèle · ${src}`;
+  // Heure de validité.
+  const at = n.validAt ? ` à ${new Date(n.validAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` : '';
+  // Courants-jets.
+  const jets = n.jets.length ? ` · ${n.jets.length} courant${n.jets.length > 1 ? 's' : ''}-jet${n.jets.length > 1 ? 's' : ''} (jusqu’à ${count(Math.max(...n.jets.map((j) => j.maxKmh)))} km/h, axes estimés)` : ' · aucun courant-jet au-dessus de 108 km/h';
+  // Texte complet.
+  return `${l.label}, vent du modèle${at}, jusqu’à ${count(Math.round(l.maxMs * 3.6))} km/h sur une grille de 12° × 10°${jets} · ${src}${info.stale ? ' · dernières données connues' : ''}`;
+// Fin de windHint.
 }
