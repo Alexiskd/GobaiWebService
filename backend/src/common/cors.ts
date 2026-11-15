@@ -7,7 +7,7 @@ import type { Request } from 'express';
 // Lecture et vérification des jetons.
 import { bearerToken, verifyJwt } from './jwt';
 // Émetteur, destinataire et clé des jetons d'accès.
-import { JWT_AUDIENCE, JWT_ISSUER, accessSecret } from './jwt.guard';
+import { API_GRATUITE, JWT_AUDIENCE, JWT_ISSUER, accessSecret } from './jwt.guard';
 // Normalisation des origines.
 import { normalizeOrigin } from './free-origins';
 
@@ -39,6 +39,8 @@ export function corsDelegate(allowed: string[]) {
   return (req: Request, callback: CorsCallback) => {
     // Origine déclarée par le navigateur.
     const origin = normalizeOrigin(req.headers.origin);
+    // API gratuite : tout site peut lire l'API depuis un navigateur.
+    if (API_GRATUITE) return callback(null, { origin: true });
     // Origine connue (sites Gobai, baibai, CORS_ORIGIN) : autorisée.
     if (origin && list.has(origin)) return callback(null, { origin: true });
     // Pré-vérification OPTIONS d'un autre site : acceptée sans donnée, pour que le navigateur puisse envoyer son jeton.
