@@ -22,6 +22,8 @@ export function Toolbar({
   sound = true, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onGallery, onSettings, onPlateau, onShare, onContribute,
   // Le globe Google (bouton présent seulement sur la Terre).
   onGoogleEarth,
+  // L'arborescence des astres (rappel et état), et le moniteur de performance (rappel et état).
+  onNavigator, navigatorOpen, onTogglePerformanceMonitor, performanceMonitorVisible,
 // Fin de la liste des propriétés.
 }) {
   // Lit le mode compact de l'écran.
@@ -42,7 +44,11 @@ export function Toolbar({
     // Les états affichés par les boutons.
     auto, tilt, sound,
     // Tous les autres rappels et libellés.
-    onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate: compact ? null : onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onContribute, onGoogleEarth,
+    // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre) ; le moniteur de
+    // performance n'a de bouton que sur ordinateur (sur téléphone, la feuille « Données » affiche les mesures).
+    onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onContribute, onGoogleEarth,
+    // L'arborescence des astres, et le moniteur de performance hors téléphone.
+    onNavigator, navigatorOpen, onTogglePerformanceMonitor: compact ? null : onTogglePerformanceMonitor, performanceMonitorVisible,
   // Fin de l'appel.
   });
   // Petit écran : la barre compacte ; sinon : la barre de l'ordinateur.

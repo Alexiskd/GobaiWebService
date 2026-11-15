@@ -17,6 +17,8 @@ import {
   // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
   GalleryIcon, SpeedIcon, FavoriteIcon, SettingsIcon,
+  // Arborescence des astres et plateau tournant.
+  AccountTreeIcon, ThreeSixtyIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons';
 // Logo du bouton « Claude » : une image du dossier public.
@@ -30,6 +32,8 @@ export function toolbarActions({
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
   onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute, onGoogleEarth,
+  // L'arborescence des astres : son rappel et son état.
+  onNavigator, navigatorOpen,
 // Fin de la liste des paramètres.
 }) {
   // Renvoie la liste des actions (début du tableau).
@@ -46,6 +50,11 @@ export function toolbarActions({
     { id: 'reset', group: 'explore', icon: PublicIcon, label: 'Vue globale', short: 'Global', primary: true, onClick: onReset, title: 'Retour à la vue d’ensemble (0 du pavé numérique)' },
     // Globe Google : remplace le globe Terre de l'app par le globe 3D photoréaliste de Google (seulement sur la Terre).
     onGoogleEarth && { id: 'googleEarth', group: 'explore', icon: ExploreIcon, label: 'Globe Google', short: 'Google', onClick: onGoogleEarth, title: 'Remplacer le globe Terre par le globe 3D de Google' },
+    // Astres : ouvre ou ferme l'arborescence des astres (bande du dock sur téléphone, rail sur ordinateur), qui
+    // n'avait de bouton que dans le panneau de Claude sur ordinateur, et aucun sur téléphone.
+    onNavigator && { id: 'navigator', group: 'explore', icon: AccountTreeIcon, label: 'Astres', iconOnly: true, pressed: navigatorOpen, onClick: onNavigator, title: 'Arborescence des astres : planètes et satellites' },
+    // Plateau tournant : n'était ouvert que par la touche T, sans bouton (inaccessible sur téléphone).
+    onPlateau && { id: 'plateau', group: 'explore', icon: ThreeSixtyIcon, label: 'Plateau tournant', short: 'Plateau', iconOnly: true, onClick: onPlateau, title: 'Plateau tournant : l’astre visé en tournant (T)' },
     // Ombre : bouton à bascule comme « Vue 3/4 ». Enfoncé = face des astres opposée au Soleil dans l'ombre et interface
     // bleu nuit ; relâché = astres entièrement éclairés et interface gris doux.
     // Ombre (si le rappel existe) : bascule du groupe « camera », infobulle selon l'état.

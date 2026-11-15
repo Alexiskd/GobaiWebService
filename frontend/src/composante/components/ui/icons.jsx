@@ -51,6 +51,10 @@ export { default as SpeedIcon } from '@mui/icons-material/Speed';
 export { default as FavoriteIcon } from '@mui/icons-material/Favorite';
 // Paramètres.
 export { default as SettingsIcon } from '@mui/icons-material/Settings';
+// Arborescence des astres : un arbre.
+export { default as AccountTreeIcon } from '@mui/icons-material/AccountTree';
+// Plateau tournant : une flèche en tour complet.
+export { default as ThreeSixtyIcon } from '@mui/icons-material/ThreeSixty';
 // Données et sources : l'espace « Données ».
 export { default as StorageIcon } from '@mui/icons-material/Storage';
 // Menu : l'espace « Menu » de la navigation du téléphone.
