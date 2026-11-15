@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les fonctions testées.
-import { MAX_CYCLONES, cycloneSummary, localFrame, normalizeCyclones, spinOf, styleOf, trackAlphas, trackPositions } from './cycloneMath';
+import { MAX_CYCLONES, RADII_STYLE, cycloneSummary, dashAlphas, destination, localFrame, normalizeCyclones, normalizeRadii, radiiOutline, spinOf, styleOf, trackAlphas, trackPositions, vortexRadiusKm } from './cycloneMath';
 
 // near : deux nombres égaux à une tolérance près.
 const near = (a, b, eps = 1e-6) => Math.abs(a - b) <= eps;
@@ -78,5 +78,47 @@ test('cyclones : texte court avec catégorie, vent en kt et km/h, pression', () 
   assert.equal(cycloneSummary({ name: 'Freddy', category: 'C2', windKt: 90, pressureMb: 960 }), 'Freddy · C2 90 kt (167 km/h) · 960 hPa');
   // Intensité inconnue.
   assert.equal(cycloneSummary({ name: '', category: 'NC', windKt: null, pressureMb: null }), 'Sans nom · intensité inconnue');
+// Fin du test.
+});
+
+// Test : la prévision et les rayons lus.
+test('cyclones : prévision officielle et rayons de vent lus, valeurs illisibles écartées', () => {
+  // Cyclone du NHC avec prévision et rayons.
+  const [c] = normalizeCyclones([{ id: 'e', name: 'Ernesto', lon: -65.2, lat: 29, details: { category: 'C1', windKt: 75, windRadiiKm: { 34: [389, 370, 259, 296], 50: [204, 185, 111, 148], 64: [74, 74, 37, 'x'] }, forecast: { issuedAt: '2026-08-16T12:00:00.000Z', points: [{ lon: -65.2, lat: 29, t: 0, windKt: 75, category: 'C1' }, { lon: -64.2, lat: 33.5, t: 86_400_000, windKt: 90, category: 'C2' }, { lon: 999, lat: 0 }] } } }]);
+  // Deux échéances lisibles, catégorie de la seconde.
+  assert.deepEqual([c.forecast.length, c.forecast[1][4]], [2, 'C2']);
+  // Seuils lisibles : 34 et 50 (64 a un rayon illisible).
+  assert.deepEqual(Object.keys(c.radii), ['34', '50']);
+  // Taille réelle : rayon moyen des vents de 34 nœuds.
+  assert.equal(Math.round(vortexRadiusKm(c)), Math.round((389 + 370 + 259 + 296) / 4));
+  // Sans rayons : le symbole de la catégorie.
+  assert.equal(vortexRadiusKm({ category: 'C3', radii: null }), 360);
+  // Texte court : prévision sur 1 jour et rayons.
+  assert.match(cycloneSummary(c), /prévision sur 1 j · rayons de vent$/);
+  // Rayons entièrement nuls : aucun seuil.
+  assert.equal(normalizeRadii({ 34: [0, 0, 0, 0] }), null);
+  // Couleurs des trois seuils.
+  assert.deepEqual(Object.keys(RADII_STYLE), ['34', '50', '64']);
+// Fin du test.
+});
+
+// Test : la géométrie des rayons.
+test('cyclones : contour des vents par quadrant, à la bonne distance du centre, fermé', () => {
+  // 111,2 km plein nord depuis l'équateur : 1° de latitude.
+  const [lon, lat] = destination(0, 0, 0, (Math.PI / 180) * 6371);
+  // Contrôle.
+  assert.ok(near(lon, 0, 1e-9) && near(lat, 1, 1e-9));
+  // Contour : rayons de 100, 200, 300 et 0 km.
+  const p = radiiOutline(0, 0, [100, 200, 300, 0], 1, 6);
+  // Quatre quarts de 16 points, plus la fermeture.
+  assert.equal(p.length / 3, 4 * 16 + 1);
+  // Distance au centre du point à 45° (quadrant NE) : 100 km.
+  const k = 8 * 3, ang = Math.acos(Math.min(1, p[k])) * 6371;
+  // Contrôle (le centre est sur l'axe x).
+  assert.ok(near(ang, 100, 0.5), String(ang));
+  // Fermé : dernier point = premier.
+  assert.deepEqual([...p.slice(-3)], [...p.slice(0, 3)]);
+  // Pointillés : deux points allumés, deux éteints.
+  assert.deepEqual([...dashAlphas(6, 2, 2, 1)], [1, 1, 0, 0, 1, 1]);
 // Fin du test.
 });

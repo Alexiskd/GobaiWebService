@@ -3,14 +3,16 @@ import * as THREE from 'three';
 // Importe le tracé en ruban (même style que les orbites : largeur constante à l'écran, sur tous les écrans).
 import { OrbitRibbon } from '../orbitRibbon';
 // Importe les calculs des cyclones.
-import { EARTH_KM, localFrame, normalizeCyclones, styleOf, trackAlphas, trackPositions } from './cycloneMath';
+import { EARTH_KM, RADII_STYLE, dashAlphas, localFrame, normalizeCyclones, radiiOutline, styleOf, trackAlphas, trackPositions, vortexRadiusKm } from './cycloneMath';
 
 // Calque des cyclones sur la Terre (CycloneEngine, rendu, lot 1). Pour chaque cyclone actif confirmé :
 //  - un tourbillon procédural posé à plat sur le globe (plan tangent), avec bouclier nuageux central, bandes
 //    spiralées qui tournent dans le sens physique (antihoraire au nord, horaire au sud) et œil dégagé à partir de
 //    la catégorie 1 ; c'est un SYMBOLE à l'échelle de sa catégorie, pas l'image satellite du cyclone ;
-//  - sa trajectoire OBSERVÉE (positions des agences toutes les 6 h), du plus pâle (ancien) au plus vif (actuel).
-// Les trajectoires prévues viendront avec les sources de prévision (lot suivant) ; rien n'est inventé ici.
+//  - sa trajectoire OBSERVÉE (positions des agences toutes les 6 h), du plus pâle (ancien) au plus vif (actuel) ;
+//  - quand le centre de prévision la publie (NHC) : sa trajectoire PRÉVUE en pointillés jusqu'à 5 jours, et les
+//    contours des vents de 34, 50 et 64 nœuds par quadrant (jaune, orange, rouge) ; le tourbillon prend alors la
+//    taille réelle des vents de 34 nœuds. Sans prévision publiée, rien n'est dessiné à la place.
 
 // Code GLSL du shader de sommets du tourbillon, une ligne par chaîne (début).
 const vertexShader = [
@@ -154,8 +156,8 @@ export class CycloneLayer {
     vortex.position.set(up[0], up[1], up[2]).multiplyScalar(1.003);
     // Orienté : x vers l'est, y vers le nord, normale vers le haut.
     vortex.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(new THREE.Vector3(...east), new THREE.Vector3(...north), new THREE.Vector3(...up)));
-    // Rayon du symbole, en rayons terrestres.
-    const radius = style.radiusKm / EARTH_KM;
+    // Rayon du tourbillon, en rayons terrestres : vents de 34 nœuds publiés, sinon le symbole de la catégorie.
+    const radius = vortexRadiusKm(c) / EARTH_KM;
     // Échelle de départ : le rayon du symbole.
     vortex.scale.setScalar(radius);
     // Dessiné après la carte et les nuages de la Terre.
@@ -180,6 +182,44 @@ export class CycloneLayer {
     };
     // Ajoute le tourbillon.
     group.add(vortex);
+    // Rubans de la prévision et des rayons de vent.
+    const extras = [];
+    // Prévision officielle d'au moins deux échéances : ruban en pointillés, de la position courante à la dernière.
+    if (c.forecast.length >= 2) {
+      // Positions le long du grand cercle, au même rayon que la trajectoire observée.
+      const pts = trackPositions(c.forecast, 1.002, 0.5);
+      // Ruban à la couleur de la catégorie actuelle.
+      const fr = new OrbitRibbon({ points: pts, color: style.color, name: `prevision-${c.name}` });
+      // Pointillés.
+      fr.alphas.set(dashAlphas(fr.count, 2, 2, 0.85));
+      // Dessiné après le tourbillon (qui n'écrit pas la profondeur) : visible par-dessus.
+      fr.mesh.renderOrder = 43;
+      // À renvoyer à la carte graphique.
+      fr.alphasChanged();
+      // Trait fin.
+      fr.material.uniforms.width.value = 1.4;
+      // Opacité courante.
+      fr.material.uniforms.opacity.value = this.opacity;
+      // Ajouté.
+      group.add(fr.mesh); extras.push(fr);
+    // Fin du cas.
+    }
+    // Pour chaque seuil de vent publié : contour par quadrant.
+    for (const kt of [34, 50, 64]) {
+      // Seuil absent : suivant.
+      if (!c.radii?.[kt]) continue;
+      // Contour fermé, 16 km au-dessus du sol.
+      const rr = new OrbitRibbon({ points: radiiOutline(c.lon, c.lat, c.radii[kt], 1.0025), color: RADII_STYLE[kt], name: `vents-${kt}kt-${c.name}` });
+      // Trait fin.
+      rr.material.uniforms.width.value = 1.2;
+      // Dessiné après le tourbillon : les contours des vents de 50 et 64 nœuds restent visibles par-dessus.
+      rr.mesh.renderOrder = 43;
+      // Opacité courante.
+      rr.material.uniforms.opacity.value = this.opacity;
+      // Ajouté.
+      group.add(rr.mesh); extras.push(rr);
+    // Fin des seuils.
+    }
     // Ruban de la trajectoire observée, s'il y a au moins deux positions.
     let ribbon = null;
     // Deux positions ou plus : ruban.
@@ -203,7 +243,7 @@ export class CycloneLayer {
     // Ajoute le groupe au calque.
     this.root.add(group);
     // Renvoie les objets.
-    return { group, vortex, material, ribbon };
+    return { group, vortex, material, ribbon, extras };
   // Fin de build.
   }
 
@@ -215,7 +255,7 @@ export class CycloneLayer {
     // Valeur bornée.
     this.opacity = Math.min(1, Math.max(0, Number(v) || 0));
     // Appliquée au tourbillon et au ruban de chaque cyclone.
-    for (const it of this.items) { it.material.uniforms.opacity.value = this.opacity; if (it.ribbon) it.ribbon.material.uniforms.opacity.value = this.opacity; }
+    for (const it of this.items) { it.material.uniforms.opacity.value = this.opacity; for (const r of [it.ribbon, ...it.extras]) if (r) r.material.uniforms.opacity.value = this.opacity; }
   // Fin de setOpacity.
   }
 
@@ -231,7 +271,7 @@ export class CycloneLayer {
   // Méthode privée clear : retire et libère les objets des cyclones.
   clear() {
     // Pour chaque cyclone : retrait du groupe, matériau et ruban libérés.
-    for (const it of this.items) { this.root.remove(it.group); it.material.dispose(); it.ribbon?.dispose(); }
+    for (const it of this.items) { this.root.remove(it.group); it.material.dispose(); it.ribbon?.dispose(); for (const r of it.extras) r.dispose(); }
     // Plus aucun objet.
     this.items = [];
   // Fin de clear.
