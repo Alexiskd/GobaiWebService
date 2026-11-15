@@ -9,7 +9,7 @@ import { NET_STATS } from './netLoads';
 // Importe la source des tuiles d'altitude et les fonctions de réglage du relief, depuis relief.
 import { ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
 // Importe les lumières de la nuit : la clé et la lecture de leur interrupteur, et leur source.
-import { LIGHTS_MOSAIC_LEVEL, NIGHT_LIGHTS_KEY, NightLightsSource, assembleLightsMosaic, nightLightsChoice } from './nightLights';
+import { NIGHT_LIGHTS_KEY, NightLightsSource, assembleLightsMosaic, mosaicLevelFor, nightLightsChoice } from './nightLights';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
 import { xyzToLonLat } from './mercator';
 // Importe TileLayer, la couche de tuiles, depuis tileLayer.
@@ -223,7 +223,7 @@ export class TileManager {
    */
   /**
    * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit, ses lumières allumées partout. Le monde
-   * entier est chargé d'un coup en une mosaïque (niveau 4), puis affiné par les tuiles affichées.
+   * entier est chargé d'un coup en une mosaïque de 4 096 px, puis affiné par les tuiles affichées.
    */
   // setLightView : allume ou coupe la vue de nuit ; renvoie l'état (début).
   setLightView(on) {
@@ -244,7 +244,7 @@ export class TileManager {
     // Déjà chargée ou en cours : la même promesse.
     if (this.lightsMosaic) return this.lightsMosaic;
     // Assemble les tuiles du monde entier (début).
-    this.lightsMosaic = assembleLightsMosaic(this.lightsSource, LIGHTS_MOSAIC_LEVEL).then(({ canvas, got }) => {
+    this.lightsMosaic = assembleLightsMosaic(this.lightsSource, mosaicLevelFor(this.lightsSource.tileSize)).then(({ canvas, got }) => {
       // Aucune tuile : échec, à réessayer.
       if (!got) throw new Error('Lumières indisponibles');
       // Texture du canevas.

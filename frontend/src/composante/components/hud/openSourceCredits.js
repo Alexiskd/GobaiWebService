@@ -230,6 +230,8 @@ export const SERVICE_ORGS = [
   { org: 'OpenStreetMap et komoot', what: ['Recherche de lieux (Photon)'] },
   // « OpenFreeMap et OpenMapTiles » et ce que cette organisation fournit.
   { org: 'OpenFreeMap et OpenMapTiles', what: ['Rues et routes du monde, avec leurs noms (données OpenStreetMap)'] },
+  // « Light Pollution Atlas (David Lorenz) » et ce que cette organisation fournit.
+  { org: 'Light Pollution Atlas (David Lorenz)', what: ['Pollution lumineuse 2025 de la Terre (lumières VIIRS de l’Earth Observation Group, Colorado School of Mines)'] },
   // « U.S. Naval Observatory (USNO) » et ce que cette organisation fournit.
   { org: 'U.S. Naval Observatory (USNO)', what: ['Éphémérides'] },
   // « NOAA » et ce que cette organisation fournit.

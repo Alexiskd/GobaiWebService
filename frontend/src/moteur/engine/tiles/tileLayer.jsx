@@ -1156,7 +1156,7 @@ export class TileLayer {
   }
 
   /**
-   * Charge les lumières de la nuit d'une tuile affichée (NASA Black Marble, niveau 8 au plus) : une tuile grossière sert
+   * Charge les lumières de la nuit d'une tuile affichée (atlas de la pollution lumineuse, niveau 6 au plus) : une tuile grossière sert
    * toutes les tuiles affichées qu'elle couvre (un seul téléchargement, partagé par la source). Le shader les allume
    * côté nuit, selon le Soleil.
    */

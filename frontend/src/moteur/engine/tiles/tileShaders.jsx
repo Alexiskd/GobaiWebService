@@ -132,25 +132,24 @@ export const tileFragmentShader = [
   'float oTex(vec2 q){vec4 t=texture2D(oMap,q);float h=t.r*65280.+t.g*255.+t.b*.99609375-32768.;return h<-11500.?0.:min(0.,h);}',
   // reliefLight : éclairement d'une pente par une lumière fixe, rapporté à celui d'un terrain plat et borné entre 0,4 et 1,7.
   'float reliefLight(vec2 s){return clamp(dot(normalize(vec3(-s.x,-s.y,1.)),vec3(-.5025,.5025,.7035))/.7035,.4,1.7);}',
-  // Lumières humaines de la nuit (NASA Black Marble, voir nightLights.jsx) : la tuile, sa portion, sa présence et l'interrupteur.
+  // Pollution lumineuse (atlas 2025 de David Lorenz en couleurs naturelles, voir nightLights.jsx) : la tuile, sa portion, sa présence et l'interrupteur.
   'uniform sampler2D ltMap;uniform vec4 ltRect;uniform float ltHas;uniform float lightsOn;',
   // Vue de la pollution lumineuse depuis l'espace : mosaïque mondiale des lumières (lue avec globalRect), sa présence, et le mode « toute la Terre de nuit ».
   'uniform sampler2D lgMap;uniform float lgOn;uniform float lightView;',
   // Lumières de la nuit plus prononcées, comme sur les photos prises depuis l'ISS (cœurs blancs, halos orangés autour
   // des villes) : technique du « bloom » de three.js (mrdoob/three.js, MIT : LuminosityHighPassShader puis
   // UnrealBloomPass), appliquée directement à la chaîne de mipmaps de l'image des lumières, sans passe de rendu en plus.
-  // cityLight : intensité d'une lumière humaine dans un pixel Black Marble. Filtre passe-haut doux sur l'excès de rouge
-  // sur le bleu : les lampes (sodium, LED) sont jaunes à blanches, le sol et la mer de l'image sont bleutés et écartés ;
-  // les petites villes restent visibles.
-  'float cityLight(vec3 c){float w=max(c.r-.8*c.b,0.);return smoothstep(.05,.3,w)*(.35+dot(c,vec3(.299,.587,.114)));}',
-  // cityLights : le cœur net (jaune, blanc quand il sature) plus le halo, somme de quatre niveaux de mipmaps de plus en
-  // plus flous (biais 1 à 4) pondérés comme UnrealBloomPass (facteurs 1 ; 0,8 ; 0,6 ; 0,4 rapprochés avec un rayon
-  // de 0,4) ; `k` : intensité. Un grand foyer garde un large halo, un village reste un point.
-  'vec3 cityLights(sampler2D m,vec2 q,float k){float c=cityLight(texture2D(m,q).rgb);',
+  // cityLight : halo d'un pixel de l'image en couleurs naturelles. Filtre passe-haut sur la luminosité (seuil 0,35) :
+  // seules les zones les plus lumineuses (5a et plus) rayonnent.
+  'float cityLight(vec3 c){return max(dot(c,vec3(.299,.587,.114))-.35,0.)*1.6;}',
+  // cityLights : la lumière de l'image (couleurs naturelles de l'atlas) ×1,5, plus le halo, somme de quatre niveaux de
+  // mipmaps de plus en plus flous (biais 1 à 4) pondérés comme UnrealBloomPass (facteurs 1 ; 0,8 ; 0,6 ; 0,4 rapprochés
+  // avec un rayon de 0,4) ; `k` : intensité. Une grande ville garde un large halo, la campagne reste sombre.
+  'vec3 cityLights(sampler2D m,vec2 q,float k){vec3 c=texture2D(m,q).rgb;',
   // Halo : les quatre niveaux flous, pondérés.
   'float h=.68*cityLight(texture2D(m,q,1.).rgb)+.64*cityLight(texture2D(m,q,2.).rgb)+.6*cityLight(texture2D(m,q,3.).rgb)+.56*cityLight(texture2D(m,q,4.).rgb);',
-  // Cœur jaune qui blanchit en saturant, halo orangé ; le tout multiplié par l'intensité. Fin de cityLights.
-  'return (mix(vec3(1.,.72,.38),vec3(1.,.95,.86),smoothstep(.45,1.,c))*c*2.4+vec3(1.,.64,.3)*h*.9)*k;}',
+  // Lumière ×1,5, halo orangé ×1,2 ; le tout multiplié par l'intensité. Fin de cityLights.
+  'return (c*1.5+vec3(1.,.7,.4)*h*1.2)*k;}',
   // Variables reçues du shader de sommets.
   'varying vec2 vUv;varying vec3 vN;varying vec3 vV;',
   // Détail simulé au-delà de la résolution des images (géantes gazeuses, satellites) : voir `synthDetail` plus bas.

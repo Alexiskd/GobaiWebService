@@ -1,6 +1,6 @@
 // Importe la distance minimale de la caméra quand des tuiles sont affichées, depuis tiles/tileManager.
 import { MIN_DISTANCE_WITH_TILES } from './tiles/tileManager';
-// Importe le réglage des lumières de la nuit de la Terre (NASA Black Marble).
+// Importe le réglage de la pollution lumineuse de la Terre (atlas 2025 de David Lorenz).
 import { EARTH_NIGHT_LIGHTS } from './tiles/nightLights';
 
 /**
@@ -78,7 +78,7 @@ export const TILED_BODIES = [
     // 16 tuiles en parallèle au lieu de 6.
     // Seize téléchargements simultanés.
     concurrency: 16,
-    // Lumières humaines la nuit (pollution lumineuse) : NASA Black Marble, allumées côté nuit selon le Soleil.
+    // Pollution lumineuse 2025 (atlas de David Lorenz, couleurs naturelles), allumée côté nuit selon le Soleil.
     nightLights: EARTH_NIGHT_LIGHTS,
     // Relief à vraies altitudes, format Terrarium, sans clé. D'abord Mapterhorn (tuiles de 512 px : deux fois plus
     // fines à niveau égal, quatre fois moins de requêtes ; Copernicus GLO-30 jusqu'au niveau 12, ≈ 19 m par pixel à
