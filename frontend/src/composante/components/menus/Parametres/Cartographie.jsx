@@ -19,7 +19,7 @@ const LIDAR_SHORT = { 'lidar-hd-mns': 'Surface', 'lidar-hd-mnt': 'Sol nu', 'lida
 
 /**
  * Cartographie de la Terre, à plat : ce qui se lit sur la carte (noms des villes et des pays, frontières et
- * littoraux, rues et routes d'OpenStreetMap, volcans en éruption en direct). Le relief a son propre groupe, CartographieRelief ci-dessous.
+ * littoraux, rues et routes d'OpenStreetMap, volcans en éruption en direct, lumières de la nuit). Le relief a son propre groupe, CartographieRelief ci-dessous.
  */
 // Déclare et exporte le composant Cartographie (début de la liste des propriétés).
 export function Cartographie({
@@ -29,6 +29,8 @@ export function Cartographie({
   streets = false, onStreets,
   // Les volcans en éruption, leur rappel et leur texte d'aide.
   volcanoes = false, onVolcanoes, volcanoesHint,
+  // Les lumières de la nuit (allumées par défaut) et leur rappel.
+  nightLights = true, onNightLights,
 // Fin de la liste des propriétés.
 }) {
   // Début du rendu.
@@ -51,6 +53,12 @@ export function Cartographie({
       {onVolcanoes && (
         // Interrupteur des volcans en éruption.
         <Switch checked={volcanoes} onChange={onVolcanoes} label="Volcans en éruption" hint={volcanoesHint} />
+      // Fin du cas.
+      )}
+      {/* Si le réglage des lumières de la nuit est fourni (début). */}
+      {onNightLights && (
+        // Interrupteur des lumières de la nuit.
+        <Switch checked={nightLights} onChange={onNightLights} label="Lumières de la nuit" hint="Pollution lumineuse vue de l’espace, allumée côté nuit au rythme du Soleil · NASA Black Marble" />
       // Fin du cas.
       )}
     {/* Fin du groupe. */}
