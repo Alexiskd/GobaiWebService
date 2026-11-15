@@ -88,6 +88,8 @@ import { createSunSurface } from './sunSurface';
 import { sitesFromRegions } from './sunSurfaceMath';
 // Importe VolcanoLayer, les volcans en éruption sur la Terre.
 import { VolcanoLayer } from './volcanoes';
+// Importe le repère atmosphérique de la Terre (incendies, cyclones ; moteur atmosphérique).
+import { AtmosphereLayers } from './atmosphere/atmosphereLayers';
 // Importe createShadedSphereMaterial, le matériau d'une sphère unie ombrée.
 import { createShadedSphereMaterial } from './sphereShade';
 // Importe createAtmosphere, l'atmosphère d'une planète.
@@ -377,6 +379,10 @@ export class SolarEngine {
     this.volcanoes = new VolcanoLayer();
     // L'ajoute au groupe de la Terre.
     this.earth.group.add(this.volcanoes.root);
+    // Phénomènes atmosphériques en direct (incendies, cyclones), posés plus tard : repère dans le groupe de la Terre.
+    this.atmosphereLayers = new AtmosphereLayers();
+    // L'ajoute au groupe de la Terre.
+    this.earth.group.add(this.atmosphereLayers.root);
     // Nuages LiDAR calés par GPS.
     this.lidar = new LidarGlobe(this); // nuages LiDAR calés par GPS, sur la Terre
     // Dalles LiDAR en points 3D.
@@ -2379,6 +2385,15 @@ export class SolarEngine {
   setVolcanoes(list) { this.volcanoes.set(list); }
   // setVolcanoesVisible : affiche ou masque les volcans en éruption.
   setVolcanoesVisible(on) { this.volcanoes.setVisible(on); }
+  /** Phénomènes atmosphériques : pose des données ('fires', 'fireDetail', 'cyclones') reçues du serveur. */
+  // setAtmosphereData : la nature, les données et l'instant de réception.
+  setAtmosphereData(kind, data, receivedAt) { this.atmosphereLayers.setData(kind, data, receivedAt); }
+  /** Phénomènes atmosphériques : règle un calque ({ visible, opacity, intensity, windowHours }). */
+  // setAtmosphereLayer : le nom du calque et ses réglages.
+  setAtmosphereLayer(name, settings) { this.atmosphereLayers.setLayer(name, settings); }
+  /** Phénomènes atmosphériques : où regarde la caméra ({ lon, lat, alt } en degrés et rayons terrestres), ou null. */
+  // atmosphereView : la vue notée à la dernière image.
+  atmosphereView() { return this.atmosphereLayers.view; }
 
   /**
    * Régions actives du Soleil : garde la réponse de /api/v1/sun/regions et la pose aussitôt. Les positions sont
@@ -2600,6 +2615,8 @@ export class SolarEngine {
     this.updateBorders();
     // Les volcans suivent la rotation de la Terre.
     this.volcanoes.sync(this.earth.mesh.rotation.y);
+    // Les calques atmosphériques aussi, et notent où regarde la caméra.
+    this.atmosphereLayers.update(this.earth.mesh.rotation.y, this.cam);
     // Met à jour les nuages LiDAR.
     this.lidar.update(this.cam);
     // Couche de tuiles de la Terre affichée, s'il y a une carte.
@@ -3760,6 +3777,8 @@ export class SolarEngine {
     this.countryLabels.dispose();
     // Libère les volcans.
     this.volcanoes.dispose();
+    // Libère les calques atmosphériques.
+    this.atmosphereLayers.dispose();
     // Libère la fiche de ville.
     this.cityCard.dispose();
     // Libère les noms des lieux de la Lune.
