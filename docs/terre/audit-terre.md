@@ -216,3 +216,88 @@ luminosité moyenne entre les trois reste sous 2 %.
   sans air : écart 0.
 - Non exécutés ici : téléphone et ordinateur réels, application complète avec les vraies tuiles (réseau fermé),
   Render (service supprimé).
+
+## Addendum, deuxième passe — continuité, raccords et validation élargie
+
+### Ce qui manquait après la première passe
+
+- **Raccords de tuiles** : chaque tuile de l'atlas était bloquée à son propre bord. Agrandie, une marche apparaissait
+  sur la ligne commune à deux tuiles.
+- **Filtrage anisotrope perdu** : la lecture à niveau imposé (première passe) est isotrope. Les vues rasantes, près
+  de l'horizon, étaient plus floues qu'avant.
+- **Flou près de la taille réelle** : le bicubique servait dès que l'image était à peine agrandie (il lisse
+  légèrement même à l'échelle 1).
+- **Écrêtage des zones brillantes** : avec le gain ×1,5, le rouge des zones 6a, 6b, 7a et 7b saturait à la même
+  valeur.
+- Validation limitée à Paris, sur ordinateur, en vues fixes.
+
+### Corrections
+
+| Point de l'addendum | Correction |
+|---|---|
+| Gestion des bordures de tuiles, continuité UV | Texture bordée de 2 px pris dans les 8 voisines (même niveau). Une voisine qui arrive plus tard recoud la bordure de celles déjà affichées, renvoyées à la carte graphique une par image. Sans voisine, le bord est étiré (comme avant). |
+| Antiméridien | Voisines bouclées en longitude (x = 63 ↔ x = 0 ; au niveau 0 la tuile se recoud sur elle-même). La mosaïque mondiale est répétée en longitude. |
+| Filtrage anisotrope, trilinéaire | Lectures par dérivées imposées (`textureGrad`) : sûres dans une condition, avec le filtrage anisotrope de la carte graphique. |
+| Aucun flou excessif, pas de pixels agrandis | Bilinéaire net jusqu'à 1,4 fois, puis passage progressif au bicubique entre 1,4 et 2,8 fois. |
+| Saturation des métropoles | Courbe d'affichage douce au-dessus de 0,8, composante par composante. Les valeurs plus faibles sont inchangées et l'ordre des intensités est conservé. Les zones 6a à 7b restent distinctes, de l'orangé au blanc. |
+| WebGL 1 | Repli : sans bordure (taille en puissance de 2), lecture par biais, bilinéaire. |
+
+Chaîne des valeurs, de la mesure à l'écran :
+1. Radiance VIIRS 2025.
+2. Brillance artificielle du ciel calculée par l'atlas (15 zones).
+3. Couleur naturelle de chaque zone (normalisation d'affichage, `naturalColour`).
+4. Lumière linéaire, moyennée par les mipmaps.
+5. Gain ×1,5 (×2,25 en vue de nuit) et halo d'objectif.
+6. Courbe d'affichage monotone.
+
+Les intensités restent dans le même ordre d'un bout à l'autre de la chaîne.
+
+![zones brillantes](pollution-zones-brillantes.jpg)
+
+### Validation
+
+**Raccord entre deux tuiles voisines**, agrandi 16 fois, avec les vraies fonctions du shader. L'image entière sert de
+référence :
+
+| | Écart à la référence près du bord | Saut sur la ligne commune |
+|---|---|---|
+| Sans bordure | 1,70 | 8,57 |
+| Bordée | 0,00 | 0,48 (comme la référence) |
+
+![raccord](pollution-raccord-tuiles.jpg)
+
+**Vues rasantes** (détail mesuré près de l'horizon) : +18 % à 300 km, +12 % à 100 km et +19 % vers l'est, contre
+la première passe.
+
+![vue rasante](pollution-vue-rasante.jpg)
+
+**Six régions, zoom continu de 15 300 km à 15 km (24 images chacune)** : Paris, Tokyo, Le Caire et le Nil, le Kansas
+rural, la Yakoutie (peu éclairée), et les Fidji au bord de l'antiméridien.
+- La lumière reste présente à toutes les altitudes. Les Fidji n'en ont pas en pleine mer, comme dans les données.
+- Pas de saut : sur un balayage fin de 12 000 à 1 500 km (40 images, à travers les changements de lecture), la
+  courbe de luminosité reste aussi régulière qu'avant.
+- La part saturée entre 750 et 170 km passe de 16,4 % à 8,3 % sur Paris.
+
+![régions](pollution-regions.jpg)
+
+**Écran de téléphone** (390 × 844 points, densité 2) : mêmes résultats que sur ordinateur. Rien ne disparaît.
+La saturation est divisée par deux à 68 km (29,6 % → 14,9 %).
+
+**Chemin réel de la couche de tuiles, dans Chrome** (13 contrôles réussis) :
+- bordure prise dans une voisine, puis recousue à l'arrivée d'une autre ;
+- antiméridien, et niveau 0 recousu sur lui-même ;
+- portion de tuile dans la texture bordée ;
+- texture partagée puis libérée ;
+- WebGL 1 sans bordure.
+
+**Autres contrôles**
+- Tests unitaires : 400 réussis, dont 5 nouveaux (voisines, bandes de bordure, portion, canevas bordé, courbe
+  d'affichage).
+- Non-régression au pixel près des astres sans lumières, du relief et de la sphère de fond.
+- Repli WebGL 1 vérifié : luminosité moyenne à 1 % près.
+
+**Limites**
+- Le banc utilise une image mondiale de 4 096 px, ≈ 16 fois plus grossière que le niveau 6 de l'atlas : au-dessous
+  de 50 km, ses images sont uniformes. La finesse réelle à ces altitudes reste à voir dans l'application.
+- Non exécutés ici : téléphone et ordinateur réels (performances comprises), application complète avec les vraies
+  tuiles (réseau fermé), Render (service supprimé).
