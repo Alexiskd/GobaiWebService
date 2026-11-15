@@ -4,7 +4,8 @@
 // Toutes les longueurs sont en rayons de l'astre, centre de l'astre à l'origine.
 //   o    position de la caméra            d    direction du rayon de vue (unitaire)
 //   sun  direction du Soleil (unitaire)
-// Résultat : lumière diffusée vers la caméra (à ajouter à l'image), déjà ramenée entre 0 et 1.
+// Résultat : lumière diffusée vers la caméra (à ajouter à l'image), déjà ramenée entre 0 et 1, et `tv`, la part
+// moyenne de la lumière du fond (sol, nuages, étoiles) qui traverse l'air jusqu'à la caméra (1 hors de l'atmosphère).
 
 // Déclare et exporte les variables uniformes GLSL de la diffusion (début).
 export const SCATTER_UNIFORMS_GLSL = [
@@ -26,8 +27,8 @@ export const SCATTER_GLSL = [
   // Calculé par la distance du rayon au centre : reste précis quand la caméra est à des centaines de rayons.
   // Fonction atmoSphere : distances d'entrée et de sortie d'un rayon dans une sphère de rayon r.
   'vec2 atmoSphere(vec3 o,vec3 d,float r){float b=dot(o,d);vec3 q=o-b*d;float h=r*r-dot(q,q);if(h<0.)return vec2(1.,-1.);h=sqrt(h);return vec2(-b-h,-b+h);}',
-  // Fonction atmoScatter : début.
-  'vec3 atmoScatter(vec3 o,vec3 d,vec3 sun){',
+  // Fonction atmoScatter : début ; le fond passe entièrement tant qu'aucun air n'est traversé.
+  'vec3 atmoScatter(vec3 o,vec3 d,vec3 sun,out float tv){tv=1.;',
   // Le rayon manque l'atmosphère, ou elle est derrière : aucune lumière.
   '  vec2 ta=atmoSphere(o,d,rTop);if(ta.x>ta.y||ta.y<=0.)return vec3(0.);',
   // Début et fin du trajet dans l'atmosphère ; gain de 1 par défaut.
@@ -59,6 +60,8 @@ export const SCATTER_GLSL = [
   '    vec3 att=exp(-(betaR*(oR+lR)+betaE*(oM+lM)));sR+=att*dR;sM+=att*dM;',
   // Fin de la boucle.
   '  }',
+  // Part moyenne du fond qui traverse l'air du trajet (moyenne des trois couleurs).
+  '  tv=dot(exp(-(betaR*oR+betaE*oM)),vec3(1./3.));',
   // Cosinus de l'angle avec le Soleil et fonction de phase de Rayleigh.
   '  float mu=dot(d,sun);float pR=.0596831*(1.+mu*mu);',
   // Fonction de phase de Mie.

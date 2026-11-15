@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les tables et les fonctions testées des atmosphères.
-import { ATMOSPHERES, ATMOSPHERE_THICKNESS, atmosphereThickness, cloudRadiusFactor, scatterParams, underCloudFloorRadii, simCloudFade } from './atmosphereData';
+import { ATMOSPHERES, ATMOSPHERE_THICKNESS, atmosphereThickness, cloudRadiusFactor, scatterParams, underCloudFloorRadii, simCloudFade, verticalOpticalDepth } from './atmosphereData';
 
 // Test : la liste des astres dont l'atmosphère est modélisée.
 test('atmosphères : Vénus, la Terre et Mars sont modélisées, pas Mercure ni la Lune', () => {
@@ -120,5 +120,20 @@ test('sous les nuages sans carte : plancher entre le sol et le sommet des nuages
   assert.equal(underCloudFloorRadii('mars'), null);
   // Un astre inconnu : null.
   assert.equal(underCloudFloorRadii('inconnu'), null);
+// Fin du test.
+});
+
+// Test : épaisseur optique verticale.
+test('épaisseur optique verticale de la Terre : Rayleigh + Mie, bien plus forte dans le bleu', () => {
+  // Valeurs : (0,074 ; 0,136 ; 0,293).
+  const [r, g, b] = verticalOpticalDepth('earth');
+  // À 0,001 près.
+  assert.ok(Math.abs(r - 0.07412) < 1e-3 && Math.abs(g - 0.13572) < 1e-3 && Math.abs(b - 0.29252) < 1e-3);
+  // Le bleu est le plus atténué, le rouge le moins.
+  assert.ok(b > g && g > r);
+  // Seule la Terre a la perspective aérienne complète.
+  assert.equal(ATMOSPHERES.earth.aerial, true); assert.equal(Boolean(ATMOSPHERES.mars.aerial || ATMOSPHERES.venus.aerial), false);
+  // Astre inconnu : null.
+  assert.equal(verticalOpticalDepth('inconnu'), null);
 // Fin du test.
 });

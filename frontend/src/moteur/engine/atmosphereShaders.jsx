@@ -6,6 +6,8 @@ import { EARTH_CLOUDS_GLSL, VENUS_CLOUDS_GLSL } from './atmosphereClouds';
 import { SCATTER_GLSL, SCATTER_UNIFORMS_GLSL } from './atmosphereScatter';
 // Importe la plus grande vitesse de vent codée, depuis weatherFlow.
 import { WIND_MAX_MS } from './weatherFlow';
+// Importe le modèle d'éclairage de la Terre (lumière du Soleil atténuée par l'air, lumière du ciel), depuis surfaceLight.
+import { EARTH_LIGHT_GLSL } from './surfaceLight';
 
 // Déclare et exporte le shader de sommets des nuages (début).
 export const cloudVertexShader = [
@@ -55,8 +57,8 @@ export const earthCloudFragmentShader = [
   '#include <logdepthbuf_pars_fragment>',
   // Constante WIND_MAX du shader : la vitesse maximale importée, écrite avec une décimale.
   `#define WIND_MAX ${WIND_MAX_MS.toFixed(1)}`,
-  // Variables uniformes : la direction du Soleil, l'ombre, le fondu près du sol et l'opacité.
-  'uniform vec3 sunV;uniform float shade;uniform float fade;uniform float opacity;',
+  // Variables uniformes : la direction du Soleil, l'ombre, le fondu près du sol, l'opacité et la vue de nuit.
+  'uniform vec3 sunV;uniform float shade;uniform float fade;uniform float opacity;uniform float lightView;',
   // Variables uniformes : la carte de couverture nuageuse et son mode.
   'uniform sampler2D coverMap;uniform float coverOn;',
   // Mouvement de la météo (weatherFlow.jsx) : carte du vent et état de l'animation (secondes de vent des deux
@@ -67,6 +69,8 @@ export const earthCloudFragmentShader = [
   'varying vec3 vN;varying vec3 vV;varying vec3 vP;',
   // Le code GLSL des nuages simulés de la Terre.
   EARTH_CLOUDS_GLSL,
+  // Le modèle d'éclairage de la Terre, le même que celui du sol (surfaceLight.jsx).
+  EARTH_LIGHT_GLSL,
   // Point d'où vient l'air arrivé en `p` après `s` secondes de vent : on remonte le vent local (vers l'est, vers le nord).
   // Fonction advect : le point p et le nombre de secondes de vent (début).
   'vec3 advect(vec3 p,float s){',
@@ -111,10 +115,16 @@ export const earthCloudFragmentShader = [
   'float cover=flowOn>.5?mix(coverAt(advect(p,flow.x)),coverAt(advect(p,flow.y)),flow.z):coverAt(p);',
   // Applique l'opacité et le fondu ; un fragment presque transparent n'est pas dessiné.
   'cover*=opacity*fade;if(cover<.004)discard;',
-  // Éclairement : de 3 % la nuit à 100 % le jour, progressif autour du terminateur.
-  'float lit=mix(.03,1.,smoothstep(-.1,.25,dot(normalize(vN),sunV)));',
-  // Couleur finale : blanc, assombri par l'éclairement selon le réglage de l'ombre ; opacité égale à la couverture. Fin de la fonction principale.
-  'gl_FragColor=vec4(vec3(mix(1.,lit,shade)),cover);}',
+  // Éclairement, avec le même modèle que le sol : hauteur du Soleil, relevée de 0,05 (≈ 3°) parce que le sommet des
+  // nuages voit le Soleil un peu après le sol au coucher.
+  'float dc=dot(normalize(vN),sunV)+.05;',
+  // Lumière du Soleil atténuée et rougie par l'air (un peu au-delà de Lambert : la lumière diffuse dans le nuage), lumière
+  // du ciel, et lueur de la nuit (3 %), en lumière linéaire.
+  'vec3 E=sunTransmit(dc)*(.85*max(dc,0.)+.15*smoothstep(-.05,.35,dc))*smoothstep(-.03,.01,dc)+skyLight(dc)+vec3(.00045);',
+  // Vue de la pollution lumineuse : toute la Terre de nuit, les nuages ne gardent que la lueur de la nuit.
+  'E=mix(E,vec3(.00045),lightView);',
+  // Couleur finale : blanc, éclairé (ramené à l'écran) selon le réglage de l'ombre ; opacité égale à la couverture. Fin de la fonction principale.
+  'gl_FragColor=vec4(mix(vec3(1.),pow(E,vec3(.4545)),shade),cover);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
 ].join('\n');
 
@@ -138,8 +148,9 @@ export const shellFragmentShader = [
   '#include <logdepthbuf_pars_fragment>',
   // Les variables uniformes de la diffusion.
   SCATTER_UNIFORMS_GLSL,
-  // Variables uniformes : la direction du Soleil et le rayon de l'astre.
-  'uniform vec3 sunV;uniform float planetR;',
+  // Variables uniformes : la direction du Soleil, le rayon de l'astre, la perspective aérienne (1 : le fond est
+  // atténué par l'air traversé, voir atmosphere.jsx) et la vue de nuit (pas de lumière du jour diffusée).
+  'uniform vec3 sunV;uniform float planetR;uniform float aerial;uniform float lightView;',
   // Variables reçues du shader de sommets.
   'varying vec3 vP;varying vec3 vC;',
   // Le code GLSL de la diffusion.
@@ -147,7 +158,10 @@ export const shellFragmentShader = [
   // Début de la fonction principale et inclusion de la profondeur logarithmique.
   'void main(){', '#include <logdepthbuf_fragment>',
   // Tout est ramené en rayons de l'astre, centre à l'origine ; la caméra est à l'origine du repère caméra.
-  // Couleur : la diffusion calculée depuis la position de la caméra en rayons de l'astre, dans la direction du point, avec la direction du Soleil ; opaque. Fin de la fonction principale.
-  'gl_FragColor=vec4(atmoScatter(-vC/planetR,normalize(vP),normalize(sunV)),1.);}',
+  // Couleur : la diffusion calculée depuis la position de la caméra en rayons de l'astre, dans la direction du point,
+  // avec la direction du Soleil ; opacité : la part du fond qui traverse l'air en perspective aérienne, sinon 1.
+  'float tv;vec3 c=atmoScatter(-vC/planetR,normalize(vP),normalize(sunV),tv)*(1.-lightView);',
+  // Fin de la fonction principale.
+  'gl_FragColor=vec4(c,aerial>.5?tv:1.);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
 ].join('\n');
