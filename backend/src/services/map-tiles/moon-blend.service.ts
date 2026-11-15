@@ -7,7 +7,7 @@
 //             de Kaguya, la luminosité naturelle prend sa place ; teinte naturelle à 75 % ;
 //   fichier : glTF binaire (.glb) avec la texture JPEG intégrée, une ligne par variante (relief ×1, ×5, ×10) dans BP.
 // Erreurs et cycle de vie NestJS.
-import { BadRequestException, Injectable, Logger, NotFoundException, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, type OnModuleDestroy } from '@nestjs/common';
 // Connexions à PostgreSQL.
 import { Pool } from 'pg';
 // Couleurs naturelles de la Lune (NASA SVS).
@@ -68,7 +68,7 @@ const SCHEMA = `
 
 // Service du blend de la Lune.
 @Injectable()
-export class MoonBlendService implements OnModuleInit, OnModuleDestroy {
+export class MoonBlendService implements OnModuleDestroy {
   private readonly logger = new Logger(MoonBlendService.name);
   private readonly pool: Pool | null = null;
   private schemaReady: Promise<void> | null = null;
@@ -77,7 +77,6 @@ export class MoonBlendService implements OnModuleInit, OnModuleDestroy {
   private readonly errors = new Map<number, string>();
   // Texture « Lune réelle » partagée par les variantes (fabriquée une fois).
   private texture: Promise<Buffer> | null = null;
-  private timer: NodeJS.Timeout | null = null;
 
   constructor(
     private readonly relief: MoonReliefService,
@@ -91,17 +90,7 @@ export class MoonBlendService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** Au démarrage : le blend réel (×1) est fabriqué et enregistré dans BP s'il n'y est pas encore, après 2 minutes. */
-  onModuleInit(): void {
-    if (!this.pool) return;
-    this.timer = setTimeout(() => {
-      void this.list().then((l) => { if (!l.variants.find((v) => v.exaggeration === 1)?.stored) this.start(1); }).catch(() => {});
-    }, 120_000);
-    this.timer.unref?.();
-  }
-
   async onModuleDestroy(): Promise<void> {
-    if (this.timer) clearTimeout(this.timer);
     await this.pool?.end();
   }
 
