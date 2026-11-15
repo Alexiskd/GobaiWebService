@@ -18,6 +18,8 @@ import { MERCATOR, projectionOf, tileBoundsIn } from './projection';
 import { MAX_HEIGHT_M, OCEAN_SHADE_BOOST, RELIEF_SKIRT, metersPerTexel, pointInTile, terrariumMeters, texelAt } from './relief';
 // Importe nativeTile et OVERZOOM_LEVELS, la tuile native d'une tuile sur-zoomée et le nombre de niveaux, depuis overzoom.
 import { nativeTile, OVERZOOM_LEVELS } from './overzoom';
+// Importe le repli des lumières de la nuit (ancêtre déjà chargé), depuis nightLights.
+import { lightsFallback, lightsPrefetchList } from './nightLights';
 // Importe les outils du préchargement prédictif, depuis prefetch.
 import { CameraPredictor, coneTest, PREFETCH_FOV, tilePriority, ZoomWatch } from './prefetch';
 // Importe HexDisplay, l'affichage en cellules hexagonales, depuis hexDisplay.
@@ -29,6 +31,15 @@ const RELIEF_PRIORITY = 1e9;                           // les tuiles d'altitude 
 const OCEAN_BOOST = { value: OCEAN_SHADE_BOOST };       // accentuation de l'ombrage des fonds marins, partagée
 // Réglage partagé à zéro, pour un astre sans relief.
 const RELIEF_OFF = { value: 0 };                       // astre sans relief : réglages partagés à zéro
+// Côté des images de lumières par défaut (en pixels), si l'astre n'en fournit pas.
+const LIGHTS_SIZE_DEFAULT = { value: new THREE.Vector2(256, 256) };
+/** Durée du fondu d'une tuile de lumières fine par-dessus son repli (ancêtre ou mosaïque mondiale), en millisecondes. */
+// Déclare et exporte la durée du fondu des lumières : 400 ms.
+export const LIGHTS_FADE_MS = 400;
+// lightsFadeMs : 0 si le système demande de réduire les animations (changement immédiat), sinon la durée du fondu.
+const lightsFadeMs = () => (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : LIGHTS_FADE_MS);
+// Clé d'une tuile de lumières native (z/x/y).
+const lightsKey = (c) => `${c.z}/${c.x}/${c.y}`;
 // Contexte de lecture d'une altitude : pas encore créé.
 let probe = null;
 /** Canevas d'un pixel pour lire une altitude (créé au premier besoin). */
@@ -195,6 +206,9 @@ export class TileLayer {
     this.overzoom = overzoom;      // niveaux affichés au-delà du niveau natif (image agrandie, détail simulé éventuel)
     // Textures partagées, par image.
     this.textures = new Map();     // image décodée → { tex, refs } : une seule texture GPU par image (tuiles sur-zoomées)
+    // Lumières de la nuit déjà sur la carte graphique, par tuile native (z/x/y → image) : repli immédiat d'une tuile
+    // fille en attendant la sienne. Une entrée vit tant que sa texture est utilisée.
+    this.lightsByCoord = new Map();
     // Garde le niveau maximal des tuiles gardées.
     this.pinnedMaxZoom = pinnedMaxZoom;
     // Liste des tuiles à précharger : pas encore calculée.
@@ -532,8 +546,9 @@ export class TileLayer {
       this.visibleZoom = zoom;
     // Fin du recalcul.
     }
-    // Pour chaque tuile affichée : demande son calque, son relief et son fond marin, puis la place.
-    for (const e of this.visibleEntries) { this.wantOverlay(e); this.wantRelief(e, RELIEF_PRIORITY); this.wantOcean(e, RELIEF_PRIORITY + 1); this.wantLights(e, RELIEF_PRIORITY + 2); this.place(e); }
+    // Pour chaque tuile affichée : demande son calque, son relief, son fond marin et ses lumières (dont elle avance le
+    // fondu), puis la place.
+    for (const e of this.visibleEntries) { this.wantOverlay(e); this.wantRelief(e, RELIEF_PRIORITY); this.wantOcean(e, RELIEF_PRIORITY + 1); this.wantLights(e, RELIEF_PRIORITY + 2); this.fadeLights(e, now); this.place(e); }
     // En hexagones : avance les fondus et place les cellules.
     if (this.hexOn && this.hex) { this.hex.animate(now); this.hex.place(); }
   // Fin de update.
@@ -599,11 +614,48 @@ export class TileLayer {
       else this.request(key, t);
     // Fin de la boucle.
     }
+    // Lumières de la nuit des zones voisines (hors tuiles déjà voulues), en dernier : prêtes quand la vue s'y déplace.
+    this.prefetchLights(wide.filter((t) => !this.wantedKeys.has(tileKey(t.z, t.x, t.y))), keys);
     // Garde les clés prédictives.
     this.prefetchKeys = keys;
     // Vrai.
     return true;
   // Fin de prefetch.
+  }
+
+  /**
+   * Précharge les lumières de la nuit de la vue prédite (cône élargi) : quelques tuiles natives voisines, au plus bas
+   * de la file, annulées comme les autres demandes prédictives quand la vue change ou qu'un zoom commence. L'image
+   * reçue reste partagée par la source (30 s, puis le cache du navigateur) : une tuile qui entre dans le champ la
+   * reçoit aussitôt.
+   */
+  // prefetchLights : précharge les lumières des zones voisines (début).
+  prefetchLights(wide, keys) {
+    // Source des lumières.
+    const src = this.lightsSource;
+    // Sans source, ou lumières éteintes : rien.
+    if (!src || !this.lightsActive()) return;
+    // Tuiles natives à précharger (pas encore sur la carte graphique).
+    for (const { coord, key, p } of lightsPrefetchList(wide, src.maxZoom, this.lightsByCoord)) {
+      // Clé de la demande.
+      const k = `lp:${key}`;
+      // Gardée parmi les demandes prédictives.
+      keys.add(k);
+      // Demande (ou priorité mise à jour) : après les lumières des tuiles affichées ; échec ou annulation sans suite.
+      this.loader.load(k, RELIEF_PRIORITY + 3 + p, (signal) => src.loadImage(coord, signal)).catch(() => {});
+    // Fin de la boucle.
+    }
+  // Fin de prefetchLights.
+  }
+
+  /** Lumières de la nuit actives : interrupteur allumé ou vue de nuit, et carte ombrée (ou vue de nuit). */
+  // lightsActive : vrai si les lumières de la nuit sont à charger (début).
+  lightsActive() {
+    // Vue de la pollution lumineuse (toute la Terre de nuit) ?
+    const view = this.uniforms.lightView?.value > 0;
+    // Interrupteur ou vue de nuit, et ombre ou vue de nuit.
+    return (this.uniforms.lightsOn?.value > 0 || view) && (this.uniforms.shade?.value > 0 || view);
+  // Fin de lightsActive.
   }
 
   /** Range une tuile décodée en RAM (L2). */
@@ -852,6 +904,10 @@ export class TileLayer {
         ltRect: { value: new THREE.Vector4(0, 0, 1, 1) },
         // Pas de lumières pour l'instant.
         ltHas: { value: 0 },
+        // Repli : image ancêtre déjà chargée, sa portion et sa présence ; fondu de la tuile fine par-dessus (0 à 1).
+        lpMap: { value: this.placeholder }, lpRect: { value: new THREE.Vector4(0, 0, 1, 1) }, lpHas: { value: 0 }, ltFade: { value: 0 },
+        // Côtés des images de lumières et de la mosaïque, lecture en lumière linéaire : partagés par l'astre.
+        ltSize: this.uniforms.ltSize || LIGHTS_SIZE_DEFAULT, lgSize: this.uniforms.lgSize || LIGHTS_SIZE_DEFAULT, ltLinear: this.uniforms.ltLinear || RELIEF_OFF,
         // Interrupteur des lumières.
         lightsOn: this.uniforms.lightsOn || RELIEF_OFF,
         // Mosaïque mondiale des lumières, partagée par l'astre (vue de la pollution lumineuse), et sa présence.
@@ -924,7 +980,7 @@ export class TileLayer {
     // Fin du matériau.
     });
     // Extensions : profondeur par fragment et dérivées.
-    material.extensions = { fragDepth: true, derivatives: true }; // dérivées : taille du pixel pour le détail simulé (WebGL 1)
+    material.extensions = { fragDepth: true, derivatives: true, shaderTextureLOD: true }; // dérivées : taille du pixel (détail simulé, niveau des lumières) ; lecture à niveau imposé des lumières (WebGL 1)
     // Deux faces.
     material.side = THREE.DoubleSide; // jupes visibles quel que soit leur sens
 
@@ -950,9 +1006,9 @@ export class TileLayer {
       // Fond des océans : texture de profondeurs et état de la demande.
       // L'état de son fond marin.
       oMap: null, oRequested: false, oFailed: false,
-      // Lumières de la nuit : texture et état de la demande.
+      // Lumières de la nuit : texture fine, texture de repli, début du fondu et état de la demande.
       // L'état de ses lumières.
-      ltMap: null, ltRequested: false, ltFailed: false,
+      ltMap: null, lpMap: null, ltFadeAt: 0, ltRequested: false, ltFailed: false,
     // Fin de la fiche.
     };
     // La place.
@@ -1019,6 +1075,8 @@ export class TileLayer {
     const shared = this.textures.get(t.image);
     // Encore utilisée ailleurs : rien de plus.
     if (shared && shared.tex === t && --shared.refs > 0) return;
+    // Image de lumières : plus disponible comme repli.
+    if (t.lightsKey && this.lightsByCoord.get(t.lightsKey) === t.image) this.lightsByCoord.delete(t.lightsKey);
     // Sinon : retirée du partage.
     if (shared && shared.tex === t) this.textures.delete(t.image);
     // Et détruite.
@@ -1166,14 +1224,19 @@ export class TileLayer {
   wantLights(e, priority = 0) {
     // Source des lumières.
     const src = this.lightsSource;
-    // Vue de la pollution lumineuse (toute la Terre de nuit) ?
-    const view = this.uniforms.lightView?.value > 0;
     // Sans source, déjà servie, demandée ou en échec, lumières coupées hors vue de nuit, ou carte sans ombre hors vue de nuit : rien.
-    if (!src || e.ltMap || e.ltRequested || e.ltFailed || !(this.uniforms.lightsOn?.value > 0 || view) || !(this.uniforms.shade?.value > 0 || view)) return;
+    if (!src || e.ltMap || e.ltRequested || e.ltFailed || !this.lightsActive()) return;
     // Demande notée.
     e.ltRequested = true;
     // Tuile native des lumières et portion affichée.
     const no = nativeTile({ z: e.z, x: e.x, y: e.y }, src.maxZoom);
+    // Variables uniformes de la tuile.
+    const u = e.mesh.material.uniforms;
+    // Repli immédiat : l'ancêtre le plus proche déjà sur la carte graphique (aucun trou, aucun saut, pendant le chargement) ;
+    // une demande annulée puis relancée garde le repli déjà posé.
+    const fb = e.lpMap ? null : lightsFallback(this.lightsByCoord, no.coord, { z: e.z, x: e.x, y: e.y });
+    // Trouvé : posé en repli, avec la portion de la tuile affichée dans cet ancêtre.
+    if (fb) { e.lpMap = this.lightsTexture(fb.img); u.lpMap.value = e.lpMap; u.lpRect.value.set(...fb.rect); u.lpHas.value = 1; }
     // Par la file de chargement,
     this.loader
       // sous la clé « lt: », charge l'image.
@@ -1182,19 +1245,66 @@ export class TileLayer {
       .then((img) => {
         // Couche libérée, source changée ou tuile partie : rien.
         if (this.disposed || src !== this.lightsSource || !this.ready(e.key)) return;
-        // Texture des lumières.
-        e.ltMap = this.texture(img);
-        // Variables uniformes de la tuile.
-        const u = e.mesh.material.uniforms;
+        // Texture des lumières, connue par sa tuile native.
+        e.ltMap = this.lightsTexture(img, no.coord);
         // Pose la texture et sa portion.
         u.ltMap.value = e.ltMap; u.ltRect.value.set(...no.rect);
         // Lumières disponibles.
         u.ltHas.value = 1;
+        // Fondu par-dessus le repli (ancêtre ou mosaïque), ou d'un coup si les animations sont réduites.
+        const ms = lightsFadeMs();
+        // Début du fondu, ou fondu terminé.
+        if (ms > 0) { e.ltFadeAt = performance.now(); u.ltFade.value = 0; } else this.endLightsFade(e);
       // Fin de l'arrivée.
       })
       // Échec : noté ; annulation : la demande pourra repartir.
       .catch((err) => { if (err.name !== 'AbortError') e.ltFailed = true; else e.ltRequested = false; });
   // Fin de wantLights.
+  }
+
+  /** Avance le fondu des lumières d'une tuile ; à la fin, la tuile fine reste seule et le repli est rendu. */
+  // fadeLights : avance le fondu des lumières (début).
+  fadeLights(e, now) {
+    // Pas de fondu en cours : rien.
+    if (!e.ltFadeAt) return;
+    // Avancement, de 0 à 1.
+    const t = Math.min(1, (now - e.ltFadeAt) / LIGHTS_FADE_MS);
+    // Courbe douce t² × (3 − 2t).
+    e.mesh.material.uniforms.ltFade.value = t * t * (3 - 2 * t);
+    // Terminé : fin du fondu.
+    if (t >= 1) this.endLightsFade(e);
+  // Fin de fadeLights.
+  }
+
+  // endLightsFade : la tuile fine seule, repli rendu (début).
+  endLightsFade(e) {
+    // Variables uniformes de la tuile.
+    const u = e.mesh.material.uniforms;
+    // Fondu terminé.
+    e.ltFadeAt = 0; u.ltFade.value = 1;
+    // Repli rendu et retiré.
+    if (e.lpMap) { this.releaseTexture(e.lpMap); e.lpMap = null; u.lpMap.value = this.placeholder; u.lpHas.value = 0; }
+  // Fin de endLightsFade.
+  }
+
+  /**
+   * Texture d'une image de lumières, partagée comme `texture`. Stockée en sRGB sur la carte graphique quand elle le
+   * permet (WebGL 2, `ltLinear`) : lue en lumière linéaire, ses mipmaps moyennent la lumière elle-même — agrégation
+   * cohérente de loin, sans éteindre les petites villes ni créer de foyers. `coord` : sa tuile native, pour le repli.
+   */
+  // lightsTexture : la texture partagée d'une image de lumières (début).
+  lightsTexture(img, coord = null) {
+    // Nouvelle texture pour cette image ?
+    const fresh = !this.textures.has(img);
+    // Texture partagée (mipmaps, lissage, bords).
+    const t = this.texture(img);
+    // Première création : stockage sRGB si demandé, et image connue par sa tuile native.
+    if (fresh) { if (this.uniforms.ltLinear?.value > 0) t.internalFormat = 'SRGB8_ALPHA8'; t.lightsKey = coord ? lightsKey(coord) : null; }
+    // Tuile native connue : notée pour les replis.
+    if (coord) { t.lightsKey = lightsKey(coord); this.lightsByCoord.set(t.lightsKey, img); }
+    // La renvoie.
+    return t;
+  // Fin de lightsTexture.
   }
 
   /** Texture d'une image d'altitude, partagée comme `texture` : sans lissage ni mipmaps (les couleurs codent un nombre). */
@@ -1404,8 +1514,10 @@ export class TileLayer {
     if (e.hMap) this.releaseHeightTexture(e.hMap);
     // Rend celle des profondeurs.
     if (e.oMap) this.releaseHeightTexture(e.oMap);
-    // Rend celle des lumières de la nuit.
+    // Rend celle des lumières de la nuit, et celle de leur repli.
     if (e.ltMap) this.releaseTexture(e.ltMap);
+    // Repli encore posé (fondu en cours) : rendu.
+    if (e.lpMap) this.releaseTexture(e.lpMap);
   // Fin de disposeEntry.
   }
 
