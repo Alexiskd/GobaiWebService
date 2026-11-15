@@ -7,7 +7,7 @@
 //             de Kaguya, la luminosité naturelle prend sa place ; teinte naturelle à 75 % ;
 //   fichier : glTF binaire (.glb) avec la texture JPEG intégrée, une ligne par variante (relief ×1, ×5, ×10) dans BP.
 // Erreurs et cycle de vie NestJS.
-import { BadRequestException, Injectable, Logger, NotFoundException, type OnModuleDestroy } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 // Connexions à PostgreSQL.
 import { Pool } from 'pg';
 // Couleurs naturelles de la Lune (NASA SVS).
@@ -68,7 +68,7 @@ const SCHEMA = `
 
 // Service du blend de la Lune.
 @Injectable()
-export class MoonBlendService implements OnModuleDestroy {
+export class MoonBlendService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MoonBlendService.name);
   private readonly pool: Pool | null = null;
   private schemaReady: Promise<void> | null = null;
@@ -88,6 +88,16 @@ export class MoonBlendService implements OnModuleDestroy {
       this.pool = new Pool({ connectionString: databaseUrl, max: 2, ssl: databaseUrl.includes('render.com') ? { rejectUnauthorized: false } : undefined });
       this.pool.on('error', (e: Error) => this.logger.warn(`PostgreSQL : ${e.message}`));
     }
+  }
+
+  /** Au démarrage : écrit dans les logs si BP est branchée et quels blends y sont enregistrés (rien n'est fabriqué). */
+  onModuleInit(): void {
+    if (!this.pool) { this.logger.warn('Blend lunaire : BP non branchée (DATABASE_URL absent).'); return; }
+    void this.list().then(({ variants }) => {
+      const stored = variants.filter((v) => v.stored);
+      this.logger.log(`Blend lunaire : BP branchée, ${stored.length} blend(s) en base`
+        + (stored.length ? ` (${stored.map((v) => `×${v.exaggeration} ${((v.size ?? 0) / 1e6).toFixed(1)} Mo`).join(', ')}).` : '.'));
+    });
   }
 
   async onModuleDestroy(): Promise<void> {
