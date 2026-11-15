@@ -28,8 +28,8 @@ export const MAX_EVENT_AGE_MS: Record<AtmosphericEventType, number> = {
   storm: 3 * 3_600_000,
   // Précipitations : 1 heure.
   precipitation: 3_600_000,
-  // Aérosols et fumées : 24 heures.
-  aerosol: 24 * 3_600_000, smoke: 24 * 3_600_000,
+  // Aérosols et fumées : 36 heures (produits quotidiens : un jour de passages, plus le délai de diffusion).
+  aerosol: 36 * 3_600_000, smoke: 36 * 3_600_000,
   // Vents : 6 heures ; courants-jets : 12 heures ; brouillard : 6 heures.
   wind: 6 * 3_600_000, 'jet-stream': 12 * 3_600_000, fog: 6 * 3_600_000,
 // Fin des âges maximaux.

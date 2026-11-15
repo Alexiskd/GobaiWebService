@@ -877,6 +877,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
           atmosphere.settings.precipitation.on ? 'Radar des précipitations : Rain Viewer (rainviewer.com)' : '',
           // Celle des orages, s'ils sont allumés.
           atmosphere.settings.storms.on ? 'Orages : cellules estimées d’après Rain Viewer, avertissements NOAA NWS' : '',
+          // Celle des aérosols, s'ils sont allumés (mention de Copernicus demandée pour la prévision).
+          atmosphere.settings.aerosols.on ? 'Aérosols : NASA GIBS (VIIRS Deep Blue, OMPS) ; poussières prévues : contains modified Copernicus Atmosphere Monitoring Service information' : '',
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
         // Ouverte si le panneau courant est celui des sources.
@@ -978,6 +980,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
           fireHint: atmosphere.fireHint, cycloneHint: atmosphere.cycloneHint, lightningHint: atmosphere.lightningHint,
           // Textes d'aide du radar et des orages.
           precipitationHint: atmosphere.precipitationHint, stormHint: atmosphere.stormHint,
+          // Texte d'aide des aérosols.
+          aerosolHint: atmosphere.aerosolHint,
         // Fin de l'objet.
         }}
         // Relief.

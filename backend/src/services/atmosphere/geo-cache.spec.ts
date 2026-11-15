@@ -116,6 +116,8 @@ describe('registre des fournisseurs atmosphériques', () => {
     expect(list.find((p) => p.id === 'firms-viirs-n20')!.available).toBe(true);
     // Radar Rain Viewer et avertissements du NWS : sans clé, branchés, disponibles (lot 4).
     expect(['rainviewer', 'nws-alerts'].map((id) => list.find((p) => p.id === id)!.available)).toEqual([true, true]);
+    // Aérosols observés (GIBS) et prévision CAMS publique : sans clé, branchés (lot 5) ; CAMS par l'ADS : clé requise.
+    expect(['gibs-viirs-aod', 'gibs-omps-ai', 'cams-wms', 'cams'].map((id) => list.find((p) => p.id === id)!.available)).toEqual([true, true, true, false]);
     // Aucune valeur de clé dans la réponse.
     expect(['secret-id', 'secret-twc'].some((k) => JSON.stringify(list).includes(k))).toBe(false);
   // Fin du test.

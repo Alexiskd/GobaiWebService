@@ -39,3 +39,27 @@ export async function loadRadarBlock(tileUrl, block, signal) {
   return canvas;
 // Fin de loadRadarBlock.
 }
+
+/** Charge une image (mesures ou image de prévision) et la recopie dans un canevas, sans conversion de couleur. */
+// Déclare et exporte loadImageCanvas : l'adresse et le signal d'abandon.
+export async function loadImageCanvas(url, signal) {
+  // Téléchargement.
+  const res = await fetch(url, { signal });
+  // Réponse en erreur : exception.
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  // Décodage sans conversion de couleur ni prémultiplication.
+  const img = await createImageBitmap(await res.blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+  // Canevas à la taille de l'image.
+  const canvas = document.createElement('canvas');
+  // Dimensions.
+  canvas.width = img.width; canvas.height = img.height;
+  // Contexte de dessin 2D, sans lissage.
+  const ctx = canvas.getContext('2d');
+  // Aucun lissage.
+  ctx.imageSmoothingEnabled = false;
+  // Image recopiée, puis libérée.
+  ctx.drawImage(img, 0, 0); img.close?.();
+  // Canevas.
+  return canvas;
+// Fin de loadImageCanvas.
+}

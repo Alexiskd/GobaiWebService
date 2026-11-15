@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les fonctions testées.
-import { ATMOSPHERE_DEFAULTS, ATMOSPHERE_UPCOMING, cycloneHint, fireHint, lightningHint, precipitationHint, sanitizeAtmosphere, stormHint } from './atmosphereSettings';
+import { ATMOSPHERE_DEFAULTS, ATMOSPHERE_UPCOMING, aerosolHint, cycloneHint, fireHint, lightningHint, precipitationHint, sanitizeAtmosphere, stormHint } from './atmosphereSettings';
 
 // Test : les réglages.
 test('atmosphère : réglages bornés, calques éteints par défaut, fenêtre parmi celles proposées', () => {
@@ -75,5 +75,24 @@ test('atmosphère : radar et orages bornés, textes d’aide sur la mesure, l’
   assert.match(stormHint({ stats: { cells: 12, strong: 3, persistent: 9, warnings: 2, tornado: 1 }, frame: null }), /^12 cellules convectives estimées, dont 3 fortes \(≥ 50 dBZ\) et 9 suivies sur plusieurs images · 2 avertissements officiels en vigueur, dont 1 de tornade/);
   // Aucun avertissement : dit explicitement.
   assert.match(stormHint({ stats: { cells: 1, strong: 0, persistent: 0, warnings: 0 } }), /^1 cellule convective estimée.*aucun avertissement officiel en vigueur/);
+// Fin du test.
+});
+
+// Test : les aérosols.
+test('atmosphère : aérosols bornés, textes d’aide qui distinguent mesure, nature estimée et prévision', () => {
+  // Produit inconnu ramené à l'épaisseur optique ; animation gardée par défaut.
+  assert.deepEqual(sanitizeAtmosphere({ aerosols: { on: true, product: 'smog', opacity: 0 } }).aerosols, { on: true, opacity: 0.1, intensity: 1, product: 'aod', animate: true });
+  // Plus annoncés « à venir ».
+  assert.equal(['Aérosols', 'Poussières', 'Fumées'].some((n) => ATMOSPHERE_UPCOMING.includes(n)), false);
+  // Réponse d'essai.
+  const info = { days: { today: '2026-11-15' }, products: [{ id: 'aod', available: true, measured: { today: 0.31, yesterday: 0.42 } }, { id: 'ai', available: true, measured: { today: 0.5, yesterday: 0.6 } }], plumes: [{ lon: 5, lat: 20, intensity: { value: 1.6 }, details: { aiMax: 2.1 } }], forecast: { available: true, times: ['2026-11-15T12:00:00Z', '2026-11-17T12:00:00Z'] } };
+  // Épaisseur optique : parts mesurées, limites, zones et nature estimée.
+  assert.match(aerosolHint(info, 'aod'), /^Mesuré aujourd’hui sur 31 % du globe, hier sur 42 % \(aucune mesure sous les nuages, la nuit ni sur la neige\) · 1 zone de forte charge \(AOD ≥ 1\), dont 1 absorbante \(poussières ou fumées, nature estimée\)/);
+  // Indice : voit au-dessus des nuages.
+  assert.match(aerosolHint(info, 'ai'), /l’indice voit aussi au-dessus des nuages\) · NASA GIBS · OMPS/);
+  // Prévision : pas une mesure.
+  assert.match(aerosolHint(info, 'dust'), /^Poussières prévues par le modèle CAMS, toutes les 6 h du .* : une prévision, pas une mesure/);
+  // Prévision indisponible : la raison.
+  assert.match(aerosolHint({ ...info, forecast: { available: false, reason: 'HTTP 403' } }, 'dust'), /^Prévision indisponible \(HTTP 403\)/);
 // Fin du test.
 });

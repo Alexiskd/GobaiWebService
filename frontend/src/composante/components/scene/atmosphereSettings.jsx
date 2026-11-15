@@ -4,6 +4,8 @@ import { FIRE_WINDOWS_H } from '../../../moteur/engine/atmosphere/fireMath';
 import { cycloneSummary, normalizeCyclones } from '../../../moteur/engine/atmosphere/cycloneMath';
 // Importe la lecture des images radar.
 import { normalizeFrames } from '../../../moteur/engine/atmosphere/radarMath';
+// Importe la lecture des aérosols et le choix du produit.
+import { aerosolProduct, normalizeAerosols } from '../../../moteur/engine/atmosphere/aerosolMath';
 
 // Réglages des calques atmosphériques (sans React, donc testables seuls) : valeurs par défaut, lecture sûre de ce
 // qui a été gardé dans le navigateur, bornes, et textes d'aide de la fenêtre des paramètres.
@@ -12,8 +14,8 @@ import { normalizeFrames } from '../../../moteur/engine/atmosphere/radarMath';
 // Déclare et exporte la clé : « gobai:atmosphere ».
 export const ATMOSPHERE_KEY = 'gobai:atmosphere';
 /**
- * Réglages par défaut : tous les calques éteints, opacité 0,9 (0,85 pour le radar), intensité 1, fenêtre de 24 h pour
- * les incendies ; radar animé, limite de portée des radars affichée.
+ * Réglages par défaut : tous les calques éteints, opacité 0,9 (0,85 pour le radar et les aérosols), intensité 1,
+ * fenêtre de 24 h pour les incendies ; radar animé, limite de portée des radars affichée ; aérosols : épaisseur optique.
  */
 // Déclare et exporte les réglages par défaut (début).
 export const ATMOSPHERE_DEFAULTS = {
@@ -27,11 +29,13 @@ export const ATMOSPHERE_DEFAULTS = {
   precipitation: { on: false, opacity: 0.85, intensity: 1, animate: true, coverage: true },
   // Orages.
   storms: { on: false, opacity: 0.9, intensity: 1 },
+  // Aérosols : épaisseur optique observée par défaut, prévision animée.
+  aerosols: { on: false, opacity: 0.85, intensity: 1, product: 'aod', animate: true },
 // Fin des réglages par défaut.
 };
 /** Calques prévus aux lots suivants, affichés comme « à venir » (aucune donnée n'est représentée sans source). */
 // Déclare et exporte la liste des calques à venir.
-export const ATMOSPHERE_UPCOMING = ['Vents', 'Courants-jets', 'Aérosols', 'Poussières', 'Pollution', 'Fumées', 'Brouillard'];
+export const ATMOSPHERE_UPCOMING = ['Vents', 'Courants-jets', 'Pollution gazeuse', 'Brouillard'];
 
 // clamp : borne une valeur numérique ; illisible : la valeur par défaut.
 const clamp = (v, min, max, fallback) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Math.min(max, Math.max(min, Number(v))) : fallback);
@@ -40,9 +44,9 @@ const clamp = (v, min, max, fallback) => (Number.isFinite(Number(v)) && v !== nu
 // Déclare et exporte sanitizeAtmosphere : l'objet partiel.
 export function sanitizeAtmosphere(raw) {
   // Partie des incendies, des cyclones, de la foudre, du radar et des orages.
-  const f = raw?.fires ?? {}, c = raw?.cyclones ?? {}, l = raw?.lightning ?? {}, p = raw?.precipitation ?? {}, o = raw?.storms ?? {};
+  const f = raw?.fires ?? {}, c = raw?.cyclones ?? {}, l = raw?.lightning ?? {}, p = raw?.precipitation ?? {}, o = raw?.storms ?? {}, a = raw?.aerosols ?? {};
   // Valeurs par défaut.
-  const df = ATMOSPHERE_DEFAULTS.fires, dc = ATMOSPHERE_DEFAULTS.cyclones, dl = ATMOSPHERE_DEFAULTS.lightning, dp = ATMOSPHERE_DEFAULTS.precipitation, ds = ATMOSPHERE_DEFAULTS.storms;
+  const df = ATMOSPHERE_DEFAULTS.fires, dc = ATMOSPHERE_DEFAULTS.cyclones, dl = ATMOSPHERE_DEFAULTS.lightning, dp = ATMOSPHERE_DEFAULTS.precipitation, ds = ATMOSPHERE_DEFAULTS.storms, da = ATMOSPHERE_DEFAULTS.aerosols;
   // Réglages complets (début).
   return {
     // Incendies : allumés, opacité, intensité, fenêtre (une des fenêtres proposées, sinon 24 h).
@@ -55,6 +59,8 @@ export function sanitizeAtmosphere(raw) {
     precipitation: { on: p.on === true, opacity: clamp(p.opacity, 0.1, 1, dp.opacity), intensity: clamp(p.intensity, 0.5, 2, dp.intensity), animate: p.animate !== false, coverage: p.coverage !== false },
     // Orages : allumés, opacité, intensité.
     storms: { on: o.on === true, opacity: clamp(o.opacity, 0.1, 1, ds.opacity), intensity: clamp(o.intensity, 0.5, 2, ds.intensity) },
+    // Aérosols : allumés, opacité, intensité, produit (parmi les proposés), animation de la prévision.
+    aerosols: { on: a.on === true, opacity: clamp(a.opacity, 0.1, 1, da.opacity), intensity: clamp(a.intensity, 0.5, 2, da.intensity), product: aerosolProduct(a.product), animate: a.animate !== false },
   // Fin des réglages.
   };
 // Fin de sanitizeAtmosphere.
@@ -202,4 +208,45 @@ export function stormHint(info) {
   // Texte complet.
   return `${count(s.cells)} cellule${pl(s.cells)} convective${pl(s.cells)} estimée${pl(s.cells)}${at}, dont ${count(s.strong)} forte${pl(s.strong)} (≥ 50 dBZ) et ${count(s.persistent)} suivie${pl(s.persistent)} sur plusieurs images${warn} · ${src}${info.stale ? ' · une source ne répond plus' : ''}`;
 // Fin de stormHint.
+}
+
+// pct : une part (0 à 1) en pourcentage arrondi.
+const pct = (v) => `${Math.round((Number(v) || 0) * 100)} %`;
+
+/** Texte d'aide des aérosols pour le produit choisi (null : chargement ; 'erreur' : échec). */
+// Déclare et exporte aerosolHint : la réponse, ou son état, et le produit.
+export function aerosolHint(info, product = 'aod') {
+  // Sources, en clair.
+  const src = product === 'dust' ? 'Copernicus Atmosphere Monitoring Service (prévision)' : product === 'ai' ? 'NASA GIBS · OMPS (NOAA-20, NOAA-21)' : 'NASA GIBS · VIIRS Deep Blue (NOAA-20, NOAA-21)';
+  // Pas encore de réponse.
+  if (info === null || info === undefined) return `Aérosols mesurés par satellite (jour et veille) et poussières prévues · NASA GIBS, Copernicus CAMS`;
+  // Échec.
+  if (info === 'erreur') return `Source indisponible pour le moment · ${src}`;
+  // Réponse mise en forme.
+  const n = normalizeAerosols(info);
+  // Prévision des poussières (début).
+  if (product === 'dust') {
+    // Indisponible : la raison.
+    if (!n.forecast.available) return `Prévision indisponible${n.forecast.reason ? ` (${n.forecast.reason})` : ''} · ${src}`;
+    // Première et dernière échéances.
+    const first = n.forecast.times[0], last = n.forecast.times[n.forecast.times.length - 1];
+    // fmt : jour et heure.
+    const fmt = (t) => new Date(t).toLocaleString('fr-FR', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    // Texte complet.
+    return `Poussières prévues par le modèle CAMS, toutes les 6 h${first && last ? ` du ${fmt(first.t)} au ${fmt(last.t)}` : ''} : une prévision, pas une mesure · ${src}`;
+  // Fin de la prévision.
+  }
+  // Produit observé.
+  const p = n.products[product];
+  // Indisponible : la raison.
+  if (!p?.available) return `${p?.reason || 'Aucune image'} · ${src}`;
+  // Zones de forte charge.
+  const plumes = n.plumes.length, absorbing = n.plumes.filter((x) => x.absorbing).length;
+  // Mention des zones (épaisseur optique seulement).
+  const zones = product === 'aod' ? ` · ${plumes} zone${plumes > 1 ? 's' : ''} de forte charge (AOD ≥ 1)${plumes ? `, dont ${absorbing} absorbante${absorbing > 1 ? 's' : ''} (poussières ou fumées, nature estimée)` : ''}` : '';
+  // Limites de la mesure : l'épaisseur optique ne voit pas sous les nuages ; l'indice voit au-dessus, mais jamais de nuit.
+  const gaps = product === 'ai' ? 'aucune mesure la nuit ; l’indice voit aussi au-dessus des nuages' : 'aucune mesure sous les nuages, la nuit ni sur la neige';
+  // Texte complet.
+  return `Mesuré aujourd’hui sur ${pct(p.today)} du globe, hier sur ${pct(p.yesterday)} (${gaps})${zones} · ${src}${info.stale ? ' · une source ne répond plus' : ''}`;
+// Fin de aerosolHint.
 }

@@ -26,10 +26,12 @@ import { RADAR_MAX_ZOOM, RADAR_STALE_MS, RADAR_TILE_SIZE, RadarFrame, RadarIndex
 import { CELL_CORE_DBZ, CELL_EDGE_DBZ, RadarCell, cellToEvent, detectCells, trackCells } from './storms';
 // Avertissements officiels d'orages violents et de tornades (NWS).
 import { NWS_STORM_EVENTS, nwsAlertsUrl, parseNwsAlerts } from './nws-alerts';
+// Aérosols : produits observés (GIBS), tables de couleurs, zones de forte charge, prévision CAMS.
+import { AEROSOL_GRID, AEROSOL_PRODUCTS, AerosolPlume, AerosolProduct, CAMS_DUST_LAYER, CAMS_RANGE_H, CAMS_STEP_H, Colormap, GIBS_CAPABILITIES, GIBS_COLORMAPS, aerosolToRgb, camsLegendUrl, camsMapUrl, camsTimes, colormapDecoder, decodeAerosolImage, detectPlumes, findColormapHref, gibsWmsUrl, mergeCodes, parseGibsColormap, plumeToEvent, utcDay } from './aerosols';
 // Registre des fournisseurs.
 import { ProviderPublic, listProviders, provider } from './providers';
 
-// Service du moteur atmosphérique (partie données) : incendies et cyclones (lots 1-2), foudre (lot 3), radar des précipitations et orages (lot 4).
+// Service du moteur atmosphérique (partie données) : incendies et cyclones (lots 1-2), foudre (lot 3), radar des précipitations et orages (lot 4), aérosols (lot 5).
 // Aucun appel aux fournisseurs par requête du navigateur : chaque fournisseur est lu au plus une fois par période de
 // rafraîchissement (registre), sa réponse est gardée et partagée ; en panne, sa dernière réponse est rendue, marquée
 // périmée. Les appels passent par le fetch global du serveur, qui respecte la liste des API déconnectées.
@@ -170,6 +172,38 @@ export interface StormsResponse {
 // Fin de StormsResponse.
 }
 
+/** Grille d'un produit observé pour un jour : codes réunis des satellites, pixels mesurés, couleurs inconnues, couches. */
+// Forme d'une grille quotidienne.
+interface AerosolDay {
+  // codes : les codes par pixel (0 : aucune mesure).
+  codes: Uint8Array;
+  // measured : la part des pixels mesurés ; unknown : le nombre de couleurs inconnues.
+  measured: number; unknown: number;
+  // layers : chaque couche lue, sa part de pixels mesurés et son échec éventuel.
+  layers: { layer: string; measured: number; error: string | null }[];
+// Fin de AerosolDay.
+}
+
+/** Réponse des aérosols : produits observés, zones de forte charge, prévision CAMS. */
+// Forme de la réponse.
+export interface AerosolsResponse {
+  // generatedAt : l'heure de fabrication ; days : le jour et la veille (UTC).
+  generatedAt: string; days: { today: string; yesterday: string };
+  // products : chaque produit observé (disponibilité, raison, table, couverture du jour et de la veille, couches).
+  products: { id: string; title: string; available: boolean; reason: string | null; units: string; min: number | null; max: number | null; measured: { today: number; yesterday: number }; layers: { layer: string; measured: number; error: string | null }[] }[];
+  // plumes : les zones de forte charge (format commun).
+  plumes: AtmosphericEvent[];
+  // stats : nombre de zones, dont absorbantes et très fortes.
+  stats: { plumes: number; absorbing: number; strong: number };
+  // forecast : la prévision CAMS des poussières (disponibilité, raison, couche, heures, pas).
+  forecast: { available: boolean; reason: string | null; layer: string; times: string[]; stepH: number; rangeH: number };
+  // encoding : le codage des images servies.
+  encoding: string;
+  // sources : l'état de chaque fournisseur ; stale : une source en panne.
+  sources: SourceState[]; stale: boolean;
+// Fin de AerosolsResponse.
+}
+
 // Données des incendies préparées : signature des lectures, points, statistiques, cellules et points par tuile.
 interface FireData {
   // signature : heures de lecture des fichiers (change quand un fichier est relu).
@@ -226,6 +260,22 @@ export class AtmosphereService {
   private readonly coverageTiles = new TtlCache<Uint8Array>(6 * 3_600_000, 64, 60_000);
   // Orages : cellules détectées par image (et part de couleurs inconnues), gardées le temps de vie d'une image.
   private readonly radarCells = new TtlCache<{ cells: RadarCell[]; unknownShare: number }>(FRAME_LIFE_MS, 16, 60_000);
+  // Aérosols : table de couleurs par produit et description des couches GIBS, gardées 24 heures.
+  private readonly aerosolColormaps = new TtlCache<Colormap>(24 * 3_600_000, 4, 10 * 60_000);
+  // Aérosols : description WMTS de GIBS (plusieurs mégaoctets), lue au plus une fois par jour et seulement au besoin.
+  private readonly gibsCaps = new TtlCache<string>(24 * 3_600_000, 1, 30 * 60_000);
+  // Aérosols : grille du jour en cours (relue toutes les heures : les orbites s'ajoutent) et de la veille (12 heures).
+  private readonly aerosolToday = new TtlCache<AerosolDay>(3_600_000, 4, 10 * 60_000);
+  // Grille de la veille.
+  private readonly aerosolPast = new TtlCache<AerosolDay>(12 * 3_600_000, 4, 10 * 60_000);
+  // Aérosols : image envoyée au navigateur, par produit et par lecture des grilles.
+  private readonly aerosolImages = new TtlCache<Buffer>(3_600_000, 4, 10 * 60_000);
+  // Aérosols : zones de forte charge, recalculées quand une grille change.
+  private plumeCache: { sig: string; plumes: AerosolPlume[]; day: string } | null = null;
+  // CAMS : images de la prévision par heure de validité (3 heures) et légende (24 heures).
+  private readonly camsFrames = new TtlCache<Buffer>(3 * 3_600_000, 24, 10 * 60_000);
+  // Légende CAMS.
+  private readonly camsLegendCache = new TtlCache<Buffer>(24 * 3_600_000, 1, 30 * 60_000);
 
   // Méthode privée xweatherKeys : identifiants Xweather valides, ou null (jamais renvoyés au navigateur).
   private xweatherKeys(): { id: string; secret: string } | null {
@@ -500,6 +550,223 @@ export class AtmosphereService {
   // Fin de storms.
   }
 
+  // Méthode privée fetchOk : un appel avec délai et identification ; erreur explicite si la réponse est en échec.
+  private async fetchOk(url: string, accept?: string): Promise<Response> {
+    // Appel.
+    const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'User-Agent': USER_AGENT, ...(accept ? { Accept: accept } : {}) } });
+    // Réponse en erreur : son code.
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // Réponse.
+    return res;
+  // Fin de fetchOk.
+  }
+
+  // Méthode privée colormapOf : table de couleurs d'un produit (nom connu, nom de la couche, sinon description GIBS).
+  private colormapOf(p: AerosolProduct): Promise<CacheResult<Colormap>> {
+    // Lecture par le cache (début de la fonction de lecture).
+    return this.aerosolColormaps.get(p.id, async () => {
+      // tryUrl : lit une table ; null si elle est absente ou sans valeurs.
+      const tryUrl = async (url: string): Promise<Colormap | null> => { try { return parseGibsColormap(await (await this.fetchOk(url)).text()); } catch { return null; } };
+      // Noms essayés directement : le nom connu, sinon celui de chaque couche.
+      for (const name of p.colormap ? [p.colormap] : p.layers.map((l) => `${l}.xml`)) { const cm = await tryUrl(`${GIBS_COLORMAPS}/${name}`); if (cm) return cm; }
+      // Description des couches (début de la lecture).
+      const caps = await this.gibsCaps.get('all', async () => (await this.fetchOk(GIBS_CAPABILITIES)).text());
+      // Adresse de la table de chaque couche, essayée.
+      for (const l of p.layers) { const href = caps.data ? findColormapHref(caps.data, l) : null; if (href) { const cm = await tryUrl(href); if (cm) return cm; } }
+      // Introuvable : échec explicite (aucune couleur n'est affichée sans sa signification).
+      throw new Error('table de couleurs introuvable');
+    // Fin de la lecture.
+    });
+  // Fin de colormapOf.
+  }
+
+  // Méthode privée dayGrid : grille d'un produit pour un jour (toutes ses couches, réunies).
+  private dayGrid(p: AerosolProduct, day: string, cm: Colormap, now: number): Promise<CacheResult<AerosolDay>> {
+    // Cache du jour en cours ou de la veille.
+    const cache = day === utcDay(now) ? this.aerosolToday : this.aerosolPast;
+    // Lecture par le cache (début de la fonction de lecture).
+    return cache.get(`${p.id}/${day}`, async () => {
+      // Décodeur des couleurs.
+      const decode = colormapDecoder(cm);
+      // Grilles lues, couches et couleurs inconnues.
+      const grids: Uint8Array[] = [], layers: AerosolDay['layers'] = [];
+      // Couleurs inconnues.
+      let unknown = 0;
+      // Couche par couche, l'une après l'autre (mémoire bornée) (début).
+      for (const layer of p.layers) {
+        // Essai (début).
+        try {
+          // Image du monde entier pour le jour.
+          const res = await this.fetchOk(gibsWmsUrl(layer, day));
+          // Pas une image (message d'erreur du service) : échec.
+          if (!(res.headers.get('content-type') || '').startsWith('image/')) throw new Error('réponse qui n’est pas une image');
+          // Image décodée.
+          const img = decodePng(new Uint8Array(await res.arrayBuffer()));
+          // Taille inattendue : échec.
+          if (img.width !== AEROSOL_GRID.width || img.height !== AEROSOL_GRID.height) throw new Error('image de taille inattendue');
+          // Valeurs.
+          const d = decodeAerosolImage(img, decode);
+          // Gardées.
+          grids.push(d.codes); unknown += d.unknown; layers.push({ layer, measured: Math.round((d.measured / d.codes.length) * 1000) / 1000, error: null });
+        // Échec d'une couche : noté, les autres continuent.
+        } catch (err) { layers.push({ layer, measured: 0, error: err instanceof Error ? err.message : String(err) }); }
+      // Fin des couches.
+      }
+      // Aucune couche lue : échec avec les raisons.
+      if (!grids.length) throw new Error(layers.map((l) => `${l.layer} : ${l.error}`).join(' ; '));
+      // Grilles réunies.
+      const codes = mergeCodes(grids);
+      // Part mesurée.
+      let n = 0; for (let i = 0; i < codes.length; i++) if (codes[i]) n++;
+      // Grille du jour.
+      return { codes, measured: Math.round((n / codes.length) * 1000) / 1000, unknown, layers };
+    // Fin de la lecture.
+    });
+  // Fin de dayGrid.
+  }
+
+  // Méthode privée productData : table, grille du jour et de la veille d'un produit.
+  private async productData(p: AerosolProduct, now: number): Promise<{ cm: CacheResult<Colormap>; today: CacheResult<AerosolDay> | null; past: CacheResult<AerosolDay> | null }> {
+    // Table de couleurs.
+    const cm = await this.colormapOf(p);
+    // Sans table : rien d'autre (aucune image n'est lue sans pouvoir l'interpréter).
+    if (!cm.data) return { cm, today: null, past: null };
+    // Jour et veille, en parallèle.
+    const [today, past] = await Promise.all([this.dayGrid(p, utcDay(now), cm.data, now), this.dayGrid(p, utcDay(now, -1), cm.data, now)]);
+    // Données.
+    return { cm, today, past };
+  // Fin de productData.
+  }
+
+  /** Image d'un produit observé (PNG RVB 2 048 × 1 024 : rouge = jour, vert = veille ; codes) ; null si indisponible. */
+  // Méthode aerosolImage : le produit.
+  async aerosolImage(id: string): Promise<Buffer | null> {
+    // Produit connu.
+    const p = AEROSOL_PRODUCTS.find((x) => x.id === id);
+    // Inconnu : null.
+    if (!p) return null;
+    // Instant de référence.
+    const now = Date.now();
+    // Données.
+    const d = await this.productData(p, now);
+    // Aucune grille : null.
+    if (!d.today?.data && !d.past?.data) return null;
+    // Signature : jour et heures de lecture.
+    const sig = `${p.id}/${utcDay(now)}/${d.today?.fetchedAt ?? 0}/${d.past?.fetchedAt ?? 0}`;
+    // Grille vide de secours.
+    const empty = new Uint8Array(AEROSOL_GRID.width * AEROSOL_GRID.height);
+    // Image par le cache.
+    const r = await this.aerosolImages.get(sig, async () => encodePngRgb(AEROSOL_GRID.width, AEROSOL_GRID.height, aerosolToRgb(d.today?.data?.codes ?? empty, d.past?.data?.codes ?? empty)));
+    // Image, ou null.
+    return r.data;
+  // Fin de aerosolImage.
+  }
+
+  /** Une image de la prévision CAMS des poussières à une heure de validité de la liste en cours ; null sinon. */
+  // Méthode camsFrame : l'heure de validité (ISO).
+  async camsFrame(time: string): Promise<Buffer | null> {
+    // Instant de référence.
+    const now = Date.now();
+    // Heures permises : la liste en cours et la précédente (changement de créneau pendant un chargement).
+    const allowed = new Set([...camsTimes(now), ...camsTimes(now - CAMS_STEP_H * 3_600_000)]);
+    // Heure inconnue : null (aucune requête pour une heure inventée).
+    if (!allowed.has(time)) return null;
+    // Lecture par le cache (début de la fonction de lecture).
+    const r = await this.camsFrames.get(time, async () => {
+      // Image du monde entier.
+      const res = await this.fetchOk(camsMapUrl(time));
+      // Corps.
+      const body = Buffer.from(await res.arrayBuffer());
+      // Pas une image PNG lisible (message d'erreur du service) : échec.
+      try { decodePng(body); } catch { throw new Error('réponse qui n’est pas une image PNG (heure ou couche indisponible)'); }
+      // Image.
+      return body;
+    // Fin de la lecture.
+    });
+    // Image, ou null.
+    return r.data;
+  // Fin de camsFrame.
+  }
+
+  /** Légende de la prévision CAMS (image), ou null. */
+  // Méthode camsLegend.
+  async camsLegend(): Promise<Buffer | null> {
+    // Lecture par le cache (début de la fonction de lecture).
+    const r = await this.camsLegendCache.get('dust', async () => {
+      // Requête standard, puis la variante propre à l'ECMWF.
+      for (const url of [camsLegendUrl(), camsLegendUrl().replace('GetLegendGraphic&layer=', 'GetLegend&layers=')]) {
+        // Essai : une image PNG lisible.
+        try { const body = Buffer.from(await (await this.fetchOk(url)).arrayBuffer()); decodePng(body); return body; } catch { /* variante suivante */ }
+      // Fin des variantes.
+      }
+      // Aucune : échec.
+      throw new Error('légende indisponible');
+    // Fin de la lecture.
+    });
+    // Image, ou null.
+    return r.data;
+  // Fin de camsLegend.
+  }
+
+  /**
+   * Aérosols : épaisseur optique (VIIRS) et indice absorbant (OMPS) observés le jour même et la veille, zones de forte
+   * charge (format commun) et prévision CAMS des poussières sur 48 h.
+   */
+  // Méthode aerosols.
+  async aerosols(): Promise<AerosolsResponse> {
+    // Instant de référence, jour et veille.
+    const now = Date.now(), today = utcDay(now), yesterday = utcDay(now, -1);
+    // Produits et première image de la prévision (disponibilité), en parallèle.
+    const [data, firstCams] = await Promise.all([Promise.all(AEROSOL_PRODUCTS.map((p) => this.productData(p, now))), this.camsFrame(camsTimes(now)[0]).then((img) => (img ? null : this.camsFrames.stats().lastFailure?.message ?? 'image indisponible'), (e: unknown) => (e instanceof Error ? e.message : String(e)))]);
+    // Produits, mis en forme.
+    const products = AEROSOL_PRODUCTS.map((p, i) => {
+      // Données du produit.
+      const d = data[i];
+      // Disponible : au moins une grille.
+      const available = Boolean(d.today?.data || d.past?.data);
+      // Raison d'une indisponibilité.
+      const reason = available ? null : d.cm.error ?? d.today?.error ?? d.past?.error ?? 'aucune image';
+      // Produit.
+      return { id: p.id, title: p.title, available, reason, units: d.cm.data?.units ?? '', min: d.cm.data?.min ?? null, max: d.cm.data?.max ?? null, measured: { today: d.today?.data?.measured ?? 0, yesterday: d.past?.data?.measured ?? 0 }, layers: d.today?.data?.layers ?? d.past?.data?.layers ?? [] };
+    // Fin des produits.
+    });
+    // Grilles de l'épaisseur optique et de l'indice (jour, veille).
+    const aod = data[0], ai = data[1];
+    // Signature des grilles.
+    const sig = `${today}/${aod.today?.fetchedAt ?? 0}/${aod.past?.fetchedAt ?? 0}/${ai.today?.fetchedAt ?? 0}/${ai.past?.fetchedAt ?? 0}`;
+    // Zones recalculées si une grille a changé (début).
+    if (this.plumeCache?.sig !== sig && (aod.today?.data || aod.past?.data)) {
+      // Grille vide de secours.
+      const empty = new Uint8Array(AEROSOL_GRID.width * AEROSOL_GRID.height);
+      // Indice : le jour, sinon la veille.
+      const aiCodes = ai.today?.data || ai.past?.data ? mergeCodes([ai.today?.data?.codes ?? empty, ai.past?.data?.codes ?? empty]) : null;
+      // Zones.
+      this.plumeCache = { sig, day: aod.today?.data ? today : yesterday, plumes: detectPlumes(aod.today?.data?.codes ?? empty, aod.past?.data?.codes ?? empty, aiCodes, AEROSOL_GRID.width, AEROSOL_GRID.height) };
+    // Fin du recalcul.
+    }
+    // État des fournisseurs (heure de lecture la plus récente du jour ou de la veille).
+    const st = (id: string, d: (typeof data)[number]): SourceState => ({ id, attribution: provider(id).attribution, fetchedAt: d.today?.fetchedAt || d.past?.fetchedAt ? new Date(Math.max(d.today?.fetchedAt ?? 0, d.past?.fetchedAt ?? 0)).toISOString() : null, stale: Boolean(d.today?.stale || d.past?.stale), error: d.cm.error ?? d.today?.error ?? null });
+    // Fournisseurs.
+    const sources = [st('gibs-viirs-aod', aod), st('gibs-omps-ai', ai), { id: 'cams-wms', attribution: provider('cams-wms').attribution, fetchedAt: firstCams === null ? new Date(now).toISOString() : null, stale: false, error: firstCams }];
+    // Zones au format commun, filtrées par le gestionnaire.
+    const snap = this.manager.update('aerosols', (this.plumeCache?.plumes ?? []).map((p) => plumeToEvent(p, p.fromYesterday > 0.5 ? yesterday : this.plumeCache!.day, sources[0].fetchedAt ?? new Date(now).toISOString())), { stale: sources.some((s) => s.stale), errors: sources.filter((s) => s.error).map((s) => `${s.id} : ${s.error}`) }, now);
+    // Réponse (début).
+    return {
+      // Heure de fabrication, jours.
+      generatedAt: new Date(now).toISOString(), days: { today, yesterday },
+      // Produits, zones et décomptes.
+      products, plumes: snap.events, stats: { plumes: snap.events.length, absorbing: snap.events.filter((e) => Number(e.details.aiMax) >= 1.5).length, strong: snap.events.filter((e) => Number(e.intensity.value) >= 1.5).length },
+      // Prévision.
+      forecast: { available: firstCams === null, reason: firstCams, layer: CAMS_DUST_LAYER, times: camsTimes(now), stepH: CAMS_STEP_H, rangeH: CAMS_RANGE_H },
+      // Codage des images servies.
+      encoding: 'PNG RVB 2 048 × 1 024 équirectangulaire (nord en haut, −180° à gauche) : rouge = mesure du jour, vert = mesure de la veille ; code = 1 + valeur × 50 (0 = aucune mesure)',
+      // Fournisseurs et péremption.
+      sources, stale: sources.some((s) => s.stale || (s.error !== null && s.fetchedAt === null)),
+    // Fin de la réponse.
+    };
+  // Fin de aerosols.
+  }
+
   // Méthode privée cacheOf : le cache d'un fournisseur, créé à la première demande.
   private cacheOf<T>(id: string): TtlCache<T> {
     // Cache existant.
@@ -661,8 +928,8 @@ export class AtmosphereService {
    */
   // Méthode events : familles, emprise et limite.
   async events(types: AtmosphericEventType[] | undefined, bbox: [number, number, number, number] | undefined, limit = 2_000): Promise<{ generatedAt: string; count: number; events: AtmosphericEvent[]; notes: string[] }> {
-    // Données à jour (les orages seulement s'ils sont demandés : leur détection lit 48 tuiles radar).
-    await Promise.all([this.fires(), this.cyclones(), ...(types?.includes('storm') ? [this.storms()] : [])]);
+    // Données à jour (orages et aérosols seulement s'ils sont demandés : leur lecture est lourde).
+    await Promise.all([this.fires(), this.cyclones(), ...(types?.includes('storm') ? [this.storms()] : []), ...(types?.includes('aerosol') ? [this.aerosols()] : [])]);
     // Événements du gestionnaire (incendies confirmés, cyclones).
     const events = this.manager.query({ types: types?.filter((t) => t !== 'hotspot'), bbox });
     // Remarques sur la réponse.

@@ -193,10 +193,68 @@ export class AtmosphereController {
   // Fin de storms.
   }
 
+  // Route GET /api/v1/atmosphere/aerosols.
+  @Get('aerosols')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Aérosols : produits observés, zones de forte charge, prévision CAMS', description: 'Épaisseur optique VIIRS Deep Blue et indice d’aérosols absorbants OMPS (NASA GIBS, jour et veille), reconvertis en valeurs par leur table de couleurs ; zones de forte charge au format commun ; heures de la prévision CAMS des poussières (48 h).' })
+  // Cache public de 10 minutes.
+  @Header('Cache-Control', 'public, max-age=600')
+  // Méthode aerosols.
+  aerosols() {
+    // Délègue au service.
+    return this.atmosphere.aerosols();
+  // Fin de aerosols.
+  }
+
+  // Route GET /api/v1/atmosphere/aerosols/observed/:product.
+  @Get('aerosols/observed/:product')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Image d’un produit d’aérosols observé', description: 'product = aod (épaisseur optique) ou ai (indice absorbant). PNG RVB 2 048 × 1 024 équirectangulaire : rouge = jour, vert = veille ; code = 1 + valeur × 50, 0 = aucune mesure.' })
+  // Méthode aerosolImage : le produit et la réponse brute.
+  async aerosolImage(@Param('product') product: string, @Res() res: Response) {
+    // Image lue par le service.
+    const body = await this.atmosphere.aerosolImage(product);
+    // Indisponible : 404.
+    if (!body) throw new NotFoundException('Produit d’aérosols inconnu ou indisponible (aod, ai)');
+    // Image, gardée 30 minutes.
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=1800' }).send(body);
+  // Fin de aerosolImage.
+  }
+
+  // Route GET /api/v1/atmosphere/aerosols/forecast/legend (déclarée avant la route des heures).
+  @Get('aerosols/forecast/legend')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Légende de la prévision CAMS des poussières', description: 'Image de la légende publiée par l’ECMWF.' })
+  // Méthode camsLegend : la réponse brute.
+  async camsLegend(@Res() res: Response) {
+    // Légende lue par le service.
+    const body = await this.atmosphere.camsLegend();
+    // Indisponible : 404.
+    if (!body) throw new NotFoundException('Légende CAMS indisponible');
+    // Image, gardée un jour.
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' }).send(body);
+  // Fin de camsLegend.
+  }
+
+  // Route GET /api/v1/atmosphere/aerosols/forecast/:time.
+  @Get('aerosols/forecast/:time')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Prévision CAMS des poussières à une heure de validité', description: 'time = une heure de la liste rendue par /atmosphere/aerosols (ISO, par exemple 2026-11-15T12:00:00Z). PNG équirectangulaire 1 024 × 512, transparent, tel que publié par l’ECMWF.' })
+  // Méthode camsFrame : l'heure et la réponse brute.
+  async camsFrame(@Param('time') time: string, @Res() res: Response) {
+    // Image lue par le service.
+    const body = await this.atmosphere.camsFrame(String(time));
+    // Indisponible : 404.
+    if (!body) throw new NotFoundException('Heure de prévision hors de la liste en cours, ou image CAMS indisponible');
+    // Image, gardée 3 heures.
+    res.set({ 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=10800' }).send(body);
+  // Fin de camsFrame.
+  }
+
   // Route GET /api/v1/atmosphere/events.
   @Get('events')
   // Ce que fait la route.
-  @ApiOperation({ summary: 'Événements atmosphériques au format commun', description: 'Filtres : types=wildfire,cyclone,hotspot,storm (storm lance la détection des cellules radar) · bbox=ouest,sud,est,nord · limit (2 000 au plus). Les points chauds demandent une emprise.' })
+  @ApiOperation({ summary: 'Événements atmosphériques au format commun', description: 'Filtres : types=wildfire,cyclone,hotspot,storm,aerosol (storm et aerosol lancent leur lecture) · bbox=ouest,sud,est,nord · limit (2 000 au plus). Les points chauds demandent une emprise.' })
   // Cache public de 5 minutes.
   @Header('Cache-Control', 'public, max-age=300')
   // Méthode events : familles, emprise et limite.

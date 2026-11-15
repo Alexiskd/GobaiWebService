@@ -110,6 +110,12 @@ export const API_DOC_GROUPS = [
       ['GET', '/atmosphere/radar/{id}/{z}/{x}/{y}', 'Radar : tuile décodée (PNG RVB : pluie, neige en dBZ codés, couverture radar), niveaux 0 à 7.'],
       // Orages.
       ['GET', '/atmosphere/storms', 'Orages : cellules convectives estimées d’après le radar et avertissements officiels du NWS.'],
+      // Aérosols.
+      ['GET', '/atmosphere/aerosols', 'Aérosols : épaisseur optique et indice absorbant observés (NASA GIBS), zones de forte charge, heures de la prévision CAMS.'],
+      // Image observée d'un produit.
+      ['GET', '/atmosphere/aerosols/observed/{product}', 'Aérosols : image observée décodée (aod ou ai ; rouge = jour, vert = veille).'],
+      // Prévision CAMS.
+      ['GET', '/atmosphere/aerosols/forecast/{time}', 'Aérosols : prévision CAMS des poussières à une heure de validité ; /legend pour la légende.'],
       // Événements au format commun.
       ['GET', '/atmosphere/events', 'Événements atmosphériques au format commun (filtres types, bbox, limit).'],
       // Registre et contrôle.
