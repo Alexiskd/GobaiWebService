@@ -5,10 +5,10 @@ une carte marine (NOAA vue de l'espace, GEBCO en zoom).
 
 Le travail se fait en cinq lots, une PR chacun :
 
-1. inventaire, puis suppression des anciennes couches et interrupteurs ;
-2. couche fusionnée et table de priorité des sources, servie par le serveur ;
-3. paliers de zoom et budget de tuiles ;
-4. carte marine NOAA / GEBCO ;
+1. inventaire, puis suppression des anciennes couches et interrupteurs (PR #56) ;
+2. couche fusionnée et table de priorité des sources, servie par le serveur (PR #57) ;
+3. paliers de zoom et budget de tuiles (PR #58) ;
+4. carte marine NOAA / GEBCO (PR #59) ;
 5. mesures finales sur iPhone et sur ordinateur.
 
 ## Inventaire (avant le lot 1)
@@ -189,6 +189,60 @@ Contrôle dans le vrai navigateur (banc, images d'essai : NOAA bleu foncé, GEBC
 
 Vue lointaine : 19 images NOAA (niveaux 0 à 2), aucune image GEBCO. Durée des fondus lue dans la table : 600 ms (0 avec
 « réduire les animations »).
+
+## Lot 5 : mesures finales (banc)
+
+Comparaison entre l'application d'avant le lot 1 (`f757a70`) et celle d'après le lot 4 (`21b8dc4`), sur le même banc
+que le lot 1 : Chrome sans écran, carte graphique logicielle (SwiftShader, environ 1 image par seconde), tuiles
+d'essai servies en local. Les deux versions fondent les fonds marins : GEBCO partout avant, carte marine NOAA / GEBCO
+après. Sur le banc, tout le globe est de la mer (altitude d'essai : −4 000 m), ce qui donne le pire cas : chaque tuile
+demande aussi son image des fonds et ses altitudes. Les temps ne valent que les uns par rapport aux autres.
+
+Ouverture (depuis le chargement de la page) :
+
+| Mesure | Ordinateur 1440 × 900, avant | après | Téléphone 393 × 852, avant | après |
+|---|---|---|---|---|
+| Première image de la Terre | 18,0 s | 12,5 s | 27,1 s | 9,8 s |
+| Globe entier affiché (mosaïque instantanée, 85 tuiles) | 202,4 s | 158,7 s | 310,0 s | 140,8 s |
+| Requêtes de tuiles de la Terre | 85 | 98 | 85 | 85 |
+| Requêtes de la carte marine (images des fonds et altitudes) | 170 | 170 | 170 | 170 |
+| Requêtes nuages et vent | 3 | 0 | 3 | 0 |
+| Requêtes au total | 297 | 306 | 305 | 302 |
+
+Vol vers Paris à 300 km d'altitude (45 s) :
+
+| Mesure | Ordinateur, avant | après | Téléphone, avant | après |
+|---|---|---|---|---|
+| Tuiles de la Terre chargées pendant le vol | 16 | 27 | 16 | 32 |
+| Tuiles demandées hors du champ (à plus de 40° de Paris) | 0 | 0 | 0 | 0 |
+| Niveau le plus fin atteint | 7 | 7 | 8 | 8 |
+| Requêtes de la carte marine | 8 | 8 | 8 | 10 |
+
+Poids du code de l'application, minifié, avec three.js, sans MUI (le banc remplace MUI) : 2 939 116 octets avant,
+2 945 556 après (+ 6 440 octets ; + 3 080 octets compressé : table, paliers, carte marine, moniteur).
+
+Lecture :
+- La première image arrive plus tôt (− 31 % sur ordinateur, − 64 % sur téléphone), et le globe entier aussi (− 22 % et
+  − 55 %).
+- Pendant le vol, 1,7 à 2 fois plus de tuiles arrivent dans le même temps.
+- Les 13 tuiles de plus à l'ouverture sur ordinateur viennent vraisemblablement de chargements directs trop lents sur
+  ce banc, redemandés au relais (comme au lot 2, non recompté ici) ; le téléphone n'en a aucune.
+- Aucune requête hors du champ, avant comme après.
+- Nuages et vent ne sont plus demandés à l'ouverture.
+- Le banc est saturé : les tuiles de la carte graphique n'y sont pas encore prêtes au bout de 45 s (0 avant comme
+  après), et le budget des paliers n'y est jamais atteint.
+
+### Sur iPhone (≥ 15) et sur ordinateur
+
+Ces mesures ne peuvent pas être faites dans cet environnement : pas d'appareil, pas de vraie carte graphique, réseau
+coupé. Après déploiement sur Render, ouvrir le moniteur de performance (il s'affiche aussi sur téléphone) et relever :
+
+- « Terre » : première tuile, globe prêt, requêtes, octets reçus, annulations ;
+- « Palier » : palier en cours, niveau le plus fin, budget de tuiles de l'appareil ;
+- images par seconde, en vue de l'espace, au palier Région et au palier Ville, avec et sans économie d'énergie.
+
+Les relever sur iPhone ≥ 15 (Safari) et sur ordinateur (Chrome), avant et après un vol de l'espace vers une côte, pour
+voir aussi le passage NOAA → GEBCO et les isobathes.
 
 ## Mesures avant et après le lot 1 (banc)
 
