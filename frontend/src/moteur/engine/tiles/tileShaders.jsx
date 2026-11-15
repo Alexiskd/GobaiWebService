@@ -159,43 +159,56 @@ export const tileFragmentShader = [
   'uniform sampler2D ltMap;uniform vec4 ltRect;uniform float ltHas;uniform sampler2D lpMap;uniform vec4 lpRect;uniform float lpHas;uniform float ltFade;uniform float lightsOn;',
   // Mosaïque mondiale, sa présence, la vue « toute la Terre de nuit », les côtés des images et la lecture linéaire.
   'uniform sampler2D lgMap;uniform float lgOn;uniform float lightView;uniform vec2 ltSize;uniform vec2 lgSize;uniform float ltLinear;',
-  // lightLod : niveau de détail d'une image à ce pixel (log₂ des pixels d'image par pixel d'écran ; négatif = agrandie).
-  // Calculé hors de toute condition (dérivées), puis passé aux lectures à niveau imposé, sûres dans une condition.
-  'float lightLod(vec2 t){return log2(max(max(length(dFdx(t)),length(dFdy(t))),1e-6));}',
+  // lightLod : niveau de détail isotrope d'une image à ce pixel, d'après les dérivées de la position (log₂ des pixels
+  // d'image par pixel d'écran ; négatif = agrandie). Les dérivées sont calculées hors de toute condition.
+  'float lightLod(vec2 dx,vec2 dy,vec2 sz){return log2(max(max(length(dx*sz),length(dy*sz)),1e-6));}',
   // lightBase : niveau de détail naturel de la lecture en cours (posé par lightCore et cityHalo), pour le repli ci-dessous.
   'float lightBase=0.;',
-  // Lecture à niveau imposé possible : WebGL 2 (texture2DLodEXT défini en textureLod) ou extension de WebGL 1.
-  '#if defined(texture2DLodEXT)||defined(GL_EXT_shader_texture_lod)',
+  // Lecture avec dérivées imposées possible : WebGL 2 (texture2DGradEXT défini en textureGrad) ou extension de WebGL 1.
+  '#if defined(texture2DGradEXT)||defined(GL_EXT_shader_texture_lod)',
   // Notée (agrandissement bicubique permis).
   '#define LIGHT_LOD 1',
-  // lightTap : lecture au niveau l.
-  'vec3 lightTap(sampler2D m,vec2 q,float l){return texture2DLodEXT(m,q,l).rgb;}',
+  // lightTap : lecture avec les dérivées données, sûre dans une condition, avec le filtrage anisotrope de la carte
+  // graphique (vues rasantes nettes) ; dérivées nulles : niveau 0.
+  'vec3 lightTap(sampler2D m,vec2 q,vec2 dx,vec2 dy,float l){return texture2DGradEXT(m,q,dx,dy).rgb;}',
   // Sans elle (rare) :
   '#else',
-  // lecture avec un biais égal à l'écart entre le niveau voulu et le niveau naturel, même résultat.
-  'vec3 lightTap(sampler2D m,vec2 q,float l){return texture2D(m,q,l-lightBase).rgb;}',
+  // lecture avec un biais égal à l'écart entre le niveau voulu et le niveau naturel, même résultat (sans anisotropie).
+  'vec3 lightTap(sampler2D m,vec2 q,vec2 dx,vec2 dy,float l){return texture2D(m,q,l-lightBase).rgb;}',
   // Fin du choix.
   '#endif',
   // lightEnc : lumière linéaire ramenée en couleurs d'affichage par la courbe sRGB exacte (partie linéaire près du noir
   // comprise) : aller-retour sans perte, sans éclaircir ni griser les zones les plus sombres de l'atlas.
   'vec3 lightEnc(vec3 c){c=max(c,0.);return mix(c*12.92,1.055*pow(c,vec3(1./2.4))-.055,step(.0031308,c));}',
-  // lightRead : lecture à un niveau donné, ramenée en couleurs d'affichage.
-  'vec3 lightRead(sampler2D m,vec2 q,float l){vec3 c=lightTap(m,q,l);return ltLinear>.5?lightEnc(c):c;}',
-  // lightCore : lumière de l'image. Réduite : moyenne trilinéaire (mipmaps). Agrandie : interpolation bicubique (B-spline,
-  // quatre lectures bilinéaires, Sigg et Hadwiger), lisse sans inventer de détail ni montrer de pixels agrandis.
-  'vec3 lightCore(sampler2D m,vec2 q,vec2 sz,float l){lightBase=l;if(l>0.)return lightRead(m,q,l);',
-  // Sans lecture à niveau imposé : agrandissement bilinéaire (les lectures décalées du bicubique fausseraient le niveau).
+  // lightRead : lecture (dérivées, niveau voulu), ramenée en couleurs d'affichage.
+  'vec3 lightRead(sampler2D m,vec2 q,vec2 dx,vec2 dy,float l){vec3 c=lightTap(m,q,dx,dy,l);return ltLinear>.5?lightEnc(c):c;}',
+  // lightCore : lumière de l'image. Réduite : moyenne des mipmaps, filtrée selon l'angle de vue (anisotrope). Proche de
+  // sa taille réelle : bilinéaire, net. Agrandie plus de 1,4 fois : passage progressif (jusqu'à 2,8 fois) à
+  // l'interpolation bicubique (B-spline, quatre lectures bilinéaires, Sigg et Hadwiger), lisse, sans dépassement ni
+  // détail inventé, sans pixels agrandis.
+  'vec3 lightCore(sampler2D m,vec2 q,vec2 sz,vec2 dx,vec2 dy){float l=lightLod(dx,dy,sz);lightBase=l;if(l>0.)return lightRead(m,q,dx,dy,l);',
+  // Lecture bilinéaire au niveau 0.
+  'vec3 c=lightRead(m,q,vec2(0.),vec2(0.),0.);',
+  // Sans lecture à dérivées imposées : bilinéaire seul (les lectures décalées du bicubique fausseraient le niveau).
   '#ifndef LIGHT_LOD',
   // Lecture simple.
-  'return lightRead(m,q,l);',
+  'return c;',
   // Fin du cas.
   '#endif',
+  // Part du bicubique : 0 jusqu'à l = −0,5, 1 dès l = −1,5 ; nulle : la lecture bilinéaire.
+  'float s=clamp(-l-.5,0.,1.);if(s<=0.)return c;',
   // Position dans la grille de pixels, partie fractionnaire, et poids cubiques.
   'vec2 t=q*sz-.5;vec2 f=fract(t),i=t-f;vec2 f2=f*f,f3=f2*f;vec2 w0=(1.-3.*f+3.*f2-f3)/6.,w1=(4.-6.*f2+3.*f3)/6.,w2=(1.+3.*f+3.*f2-3.*f3)/6.,w3=f3/6.;',
-  // Poids et positions des deux lectures par axe.
-  'vec2 g0=w0+w1,g1=w2+w3;vec2 p0=(i-.5+w1/g0)/sz,p1=(i+1.5+w3/g1)/sz;',
-  // Les quatre lectures bilinéaires, pondérées. Fin de lightCore.
-  'return g0.y*(g0.x*lightRead(m,p0,0.)+g1.x*lightRead(m,vec2(p1.x,p0.y),0.))+g1.y*(g0.x*lightRead(m,vec2(p0.x,p1.y),0.)+g1.x*lightRead(m,p1,0.));}',
+  // Poids et positions des deux lectures par axe ; dérivées nulles (niveau 0).
+  'vec2 g0=w0+w1,g1=w2+w3;vec2 p0=(i-.5+w1/g0)/sz,p1=(i+1.5+w3/g1)/sz;vec2 o=vec2(0.);',
+  // Les quatre lectures bilinéaires, pondérées.
+  'vec3 b=g0.y*(g0.x*lightRead(m,p0,o,o,0.)+g1.x*lightRead(m,vec2(p1.x,p0.y),o,o,0.))+g1.y*(g0.x*lightRead(m,vec2(p0.x,p1.y),o,o,0.)+g1.x*lightRead(m,p1,o,o,0.));',
+  // Mélange progressif du bilinéaire vers le bicubique. Fin de lightCore.
+  'return mix(c,b,s);}',
+  // lightKnee : courbe d'affichage douce au-dessus de 0,8, composante par composante (comme une pellicule : le rouge
+  // s'approche de 1 pendant que le vert et le bleu montent encore, les cœurs passent de l'orangé au blanc) : valeurs
+  // plus faibles inchangées, ordre des intensités conservé, zones 6a à 7b de l'atlas distinctes au lieu d'un aplat.
+  'vec3 lightKnee(vec3 c){return mix(c,.8+.2*(1.-exp((.8-c)/.2)),step(.8,c));}',
   // Halo des villes, comme sur les photos prises depuis l'ISS (cœurs blancs, halos orangés) : technique du « bloom » de
   // three.js (mrdoob/three.js, MIT : LuminosityHighPassShader puis UnrealBloomPass) appliquée à la chaîne de mipmaps.
   // cityLight : filtre passe-haut sur la luminosité (seuil 0,35) : seules les zones les plus lumineuses (5a et plus) rayonnent.
@@ -204,11 +217,14 @@ export const tileFragmentShader = [
   // ni à l'antiméridien), pondérés comme UnrealBloomPass (facteurs 1 ; 0,8 ; 0,6 ; 0,4 rapprochés avec un rayon de 0,4).
   // Chaque niveau ne compte que s'il floute vraiment à l'écran (niveau l + k > 0) : le halo est celui d'un objectif, fort
   // de loin, il s'efface en zoomant, au lieu d'éclaircir les villes vues de près.
-  'vec3 cityHalo(vec2 q,float l){float h=0.;lightBase=l;',
+  // haloRead : lecture de la mosaïque au niveau k, ronde (dérivées égales sur les deux axes : halo rond à l'écran).
+  'vec3 haloRead(vec2 q,float k){float e=exp2(k);return lightRead(lgMap,q,vec2(e/lgSize.x,0.),vec2(0.,e/lgSize.y),k);}',
+  // Niveau de détail de la mosaïque à ce pixel.
+  'vec3 cityHalo(vec2 q,vec2 dx,vec2 dy){float l=lightLod(dx,dy,lgSize),h=0.;lightBase=l;',
   // Les quatre niveaux, chacun pesé par le flou qu'il apporte.
-  'h+=.68*clamp(l+1.,0.,1.)*cityLight(lightRead(lgMap,q,max(l+1.,0.)));h+=.64*clamp(l+2.,0.,1.)*cityLight(lightRead(lgMap,q,max(l+2.,0.)));',
+  'h+=.68*clamp(l+1.,0.,1.)*cityLight(haloRead(q,max(l+1.,0.)));h+=.64*clamp(l+2.,0.,1.)*cityLight(haloRead(q,max(l+2.,0.)));',
   // Suite.
-  'h+=.6*clamp(l+3.,0.,1.)*cityLight(lightRead(lgMap,q,max(l+3.,0.)));h+=.56*clamp(l+4.,0.,1.)*cityLight(lightRead(lgMap,q,max(l+4.,0.)));',
+  'h+=.6*clamp(l+3.,0.,1.)*cityLight(haloRead(q,max(l+3.,0.)));h+=.56*clamp(l+4.,0.,1.)*cityLight(haloRead(q,max(l+4.,0.)));',
   // Halo orangé ×1,2. Fin de cityHalo.
   'return vec3(1.,.7,.4)*h*1.2;}',
   // Variables reçues du shader de sommets.
@@ -327,18 +343,21 @@ export const tileFragmentShader = [
   // Lumières de la nuit : elles s'allument quand le Soleil passe sous l'horizon du lieu (d < 0,02) et brillent pleinement
   // à 10° dessous (d < −0,17), en suivant le terminateur. Rien de jour, rien sans ombre. Vue de la pollution lumineuse :
   // allumées partout, moitié plus vives.
-  // Positions dans les trois images et leurs niveaux de détail, calculés ici, hors de toute condition.
-  'vec2 ltQ=ltRect.xy+vUv*ltRect.zw,lpQ=lpRect.xy+vUv*lpRect.zw,lgQ=globalRect.xy+vUv*globalRect.zw;float ltL=lightLod(ltQ*ltSize),lpL=lightLod(lpQ*ltSize),lgL=lightLod(lgQ*lgSize);',
+  // Positions dans les trois images et leurs dérivées, calculées ici, hors de toute condition.
+  'vec2 ltQ=ltRect.xy+vUv*ltRect.zw,lpQ=lpRect.xy+vUv*lpRect.zw,lgQ=globalRect.xy+vUv*globalRect.zw;',
+  // Dérivées à l'écran (niveau de détail et filtrage anisotrope).
+  'vec2 ltX=dFdx(ltQ),ltY=dFdy(ltQ),lpX=dFdx(lpQ),lpY=dFdy(lpQ),lgX=dFdx(lgQ),lgY=dFdy(lgQ);',
   // Si des lumières sont là et allumées (ou la vue de nuit) : poids de la nuit selon le Soleil, ou toute la Terre en vue de nuit.
   'if((ltHas>.5||lpHas>.5||lgOn>.5)&&(lightsOn>.5||lv>.5)){float lwt=max(1.-smoothstep(-.17,.02,d),lv);',
   // Côté jour (poids nul) : rien à lire, ce qui épargne les lectures de texture sur la moitié éclairée.
   'if(lwt>0.){vec3 core;',
   // Tuile fine arrivée et fondu terminé : elle seule.
-  'if(ltHas>.5&&ltFade>.999)core=lightCore(ltMap,ltQ,ltSize,ltL);',
+  'if(ltHas>.5&&ltFade>.999)core=lightCore(ltMap,ltQ,ltSize,ltX,ltY);',
   // Sinon : l'image de repli (l'ancêtre déjà chargé, sinon la mosaïque mondiale), et la tuile fine en fondu par-dessus.
-  'else{vec3 cc=lpHas>.5?lightCore(lpMap,lpQ,ltSize,lpL):(lgOn>.5?lightCore(lgMap,lgQ,lgSize,lgL):vec3(0.));core=ltHas>.5?mix(cc,lightCore(ltMap,ltQ,ltSize,ltL),ltFade):cc;}',
-  // Lumière ×1,5 plus le halo de la mosaïque, multipliés par l'intensité, ajoutés du côté nuit. Fin des deux cas.
-  'base+=(core*1.5+(lgOn>.5?cityHalo(lgQ,lgL):vec3(0.)))*(1.+.5*lv)*lwt*sh;}}',
+  'else{vec3 cc=lpHas>.5?lightCore(lpMap,lpQ,ltSize,lpX,lpY):(lgOn>.5?lightCore(lgMap,lgQ,lgSize,lgX,lgY):vec3(0.));core=ltHas>.5?mix(cc,lightCore(ltMap,ltQ,ltSize,ltX,ltY),ltFade):cc;}',
+  // Lumière ×1,5 plus le halo de la mosaïque, multipliés par l'intensité, passés par la courbe douce, ajoutés du côté
+  // nuit. Fin des deux cas.
+  'base+=lightKnee((core*1.5+(lgOn>.5?cityHalo(lgQ,lgX,lgY):vec3(0.)))*(1.+.5*lv))*lwt*sh;}}',
   // Couleur finale, avec l'opacité de la cellule. Fin de la fonction principale.
   'gl_FragColor=vec4(base,alpha);}',
 // Fin : les lignes sont jointes par des retours à la ligne.

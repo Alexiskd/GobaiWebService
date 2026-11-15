@@ -9,7 +9,7 @@ import { NET_STATS } from './netLoads';
 // Importe la source des tuiles d'altitude et les fonctions de réglage du relief, depuis relief.
 import { ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
 // Importe les lumières de la nuit : la clé et la lecture de leur interrupteur, et leur source.
-import { LIGHTS_MOSAIC_PX, NIGHT_LIGHTS_KEY, NightLightsSource, assembleLightsMosaic, mosaicLevelFor, nightLightsChoice } from './nightLights';
+import { LIGHTS_MOSAIC_PX, LIGHTS_PAD, NIGHT_LIGHTS_KEY, NightLightsSource, assembleLightsMosaic, mosaicLevelFor, nightLightsChoice } from './nightLights';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
 import { xyzToLonLat } from './mercator';
 // Importe TileLayer, la couche de tuiles, depuis tileLayer.
@@ -124,9 +124,9 @@ export class TileManager {
       surfModel: { value: body.lighting === 'earth' ? 1 : 0 },
       // Masque de l'eau (reflet du Soleil sur la mer) : en attente, absent.
       wMap: { value: placeholderTexture() }, wOn: { value: 0 },
-      // Lumières : côté des tuiles et de la mosaïque mondiale (en pixels), et lecture en lumière linéaire (images
-      // stockées en sRGB, WebGL 2 seulement : sinon lues telles quelles).
-      ltSize: { value: new THREE.Vector2(body.nightLights?.tileSize || 256, body.nightLights?.tileSize || 256) },
+      // Lumières : côté des textures de tuiles (bordure comprise) et de la mosaïque mondiale (en pixels), et lecture en
+      // lumière linéaire (images stockées en sRGB et tuiles bordées par leurs voisines, WebGL 2 seulement).
+      ltSize: { value: new THREE.Vector2().setScalar((body.nightLights?.tileSize || 256) + (engine.renderer?.capabilities?.isWebGL2 ? 2 * LIGHTS_PAD : 0)) },
       lgSize: { value: new THREE.Vector2(LIGHTS_MOSAIC_PX, LIGHTS_MOSAIC_PX) },
       ltLinear: { value: engine.renderer?.capabilities?.isWebGL2 ? 1 : 0 },
     // Fin des variables uniformes.

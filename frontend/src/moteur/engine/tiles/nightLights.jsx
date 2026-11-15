@@ -221,6 +221,14 @@ export function lightsFallback(loaded, native, shown) {
 // Fin de lightsFallback.
 }
 
+/**
+ * Courbe d'affichage des lumières, composante par composante : inchangée jusqu'à 0,8, puis approche douce de 1 (pente 1
+ * au raccord). Monotone : l'ordre des intensités est conservé ; les zones les plus brillantes (6a à 7b), qui saturaient
+ * toutes en même aplat, restent distinctes, de l'orangé au blanc. Même calcul que `lightKnee` du shader.
+ */
+// Déclare et exporte lightKnee : les trois composantes [r, g, b] de la lumière.
+export const lightKnee = (c) => c.map((v) => (v <= 0.8 ? v : 0.8 + 0.2 * (1 - Math.exp((0.8 - v) / 0.2))));
+
 /** Tuiles de lumières préchargées au plus à chaque nouvelle vue prédite (zones voisines du champ de la caméra). */
 // Déclare et exporte LIGHTS_PREFETCH_MAX : 8 tuiles natives (1 024 px chacune) au plus.
 export const LIGHTS_PREFETCH_MAX = 8;
@@ -251,6 +259,95 @@ export function lightsPrefetchList(tiles, maxZoom, loaded, max = LIGHTS_PREFETCH
   // Les plus utiles d'abord, `max` au plus.
   return [...byKey.values()].sort((a, b) => a.p - b.p).slice(0, max);
 // Fin de lightsPrefetchList.
+}
+
+/**
+ * Bordure des tuiles de lumières sur la carte graphique, en pixels : chaque tuile est entourée de 2 pixels pris dans
+ * ses huit voisines, si bien que le lissage (bilinéaire, bicubique, mipmaps proches) traverse les bords sans raccord.
+ */
+// Déclare et exporte LIGHTS_PAD : 2 pixels (le bicubique lit 1,5 pixel au-delà du bord).
+export const LIGHTS_PAD = 2;
+
+/** Les huit directions des voisines d'une tuile : [dx, dy], y vers le bas comme les numéros de tuiles. */
+// Déclare et exporte NEIGHBOUR_DIRS : les huit directions.
+export const NEIGHBOUR_DIRS = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+
+/** Voisine d'une tuile dans une direction : x bouclé à l'antiméridien, null au-delà des pôles. */
+// Déclare et exporte neighbourTile : la tuile et la direction.
+export function neighbourTile({ z, x, y }, [dx, dy]) {
+  // Tuiles par côté à ce niveau.
+  const n = 2 ** z;
+  // Rangée de la voisine.
+  const ny = y + dy;
+  // Au-delà d'un pôle : aucune.
+  if (ny < 0 || ny >= n) return null;
+  // Colonne bouclée (l'antiméridien n'a pas de bord), même niveau.
+  return { z, x: (((x + dx) % n) + n) % n, y: ny };
+// Fin de neighbourTile.
+}
+
+/**
+ * Bande de bordure d'une tuile de côté N (bordure p) dans la direction [dx, dy] : `src`, rectangle [x, y, l, h] à
+ * prendre dans la voisine (sans sa bordure) ; `dst`, sa place dans le canevas bordé ; `edge`, le bord de la tuile
+ * elle-même à étirer quand la voisine manque (même effet que le bord bloqué d'avant).
+ */
+// Déclare et exporte padStrip : le côté, la bordure et la direction.
+export function padStrip(N, p, [dx, dy]) {
+  // Un axe : avant (−1), dedans (0) ou après (+1).
+  const axis = (d) => (d < 0 ? { s: N - p, w: p, o: 0, e: 0, ew: 1 } : d > 0 ? { s: 0, w: p, o: p + N, e: N - 1, ew: 1 } : { s: 0, w: N, o: p, e: 0, ew: N });
+  // Les deux axes.
+  const ax = axis(dx), ay = axis(dy);
+  // Source, destination, bord à étirer.
+  return { src: [ax.s, ay.s, ax.w, ay.w], dst: [ax.o, ay.o, ax.w, ay.w], edge: [ax.e, ay.e, ax.ew, ay.ew] };
+// Fin de padStrip.
+}
+
+/** Portion [x, y, l, h] (v vers le haut) d'une tuile de côté N, ramenée dans sa texture bordée de p pixels. */
+// Déclare et exporte paddedRect : la portion, le côté et la bordure.
+export function paddedRect([x, y, w, h], N, p) {
+  // Côté de la texture bordée.
+  const s = N + 2 * p;
+  // Décalage de la bordure, puis mise à l'échelle.
+  return [(p + x * N) / s, (p + y * N) / s, (w * N) / s, (h * N) / s];
+// Fin de paddedRect.
+}
+
+/**
+ * Pose une bande de bordure dans le canevas bordé d'une tuile : prise dans la voisine (canevas bordé lui aussi) si
+ * elle est là, sinon le bord de la tuile étiré (sans lissage). `own` : l'image de la tuile, sans bordure.
+ */
+// Déclare et exporte fillPad : le contexte, l'image de la tuile, la voisine (ou null), la direction, le côté, la bordure.
+export function fillPad(ctx, own, nb, dir, N, p) {
+  // La bande.
+  const { src, dst, edge } = padStrip(N, p, dir);
+  // Voisine présente : sa bande, décalée de sa propre bordure.
+  if (nb) ctx.drawImage(nb, src[0] + p, src[1] + p, src[2], src[3], ...dst);
+  // Sinon : le bord de la tuile, étiré.
+  else if (own) ctx.drawImage(own, ...edge, ...dst);
+// Fin de fillPad.
+}
+
+/**
+ * Canevas bordé d'une tuile de lumières : l'image au centre, entourée de p pixels de ses voisines déjà chargées
+ * (`neighbour(dir)` : leur canevas bordé, ou null), sinon de son propre bord étiré.
+ */
+// Déclare et exporte padLightsImage : l'image, la bordure, les voisines et la création d'un canevas.
+export function padLightsImage(img, p, neighbour, createCanvas = () => globalThis.document.createElement('canvas')) {
+  // Côté de l'image.
+  const N = img.naturalWidth || img.width;
+  // Canevas bordé.
+  const c = createCanvas();
+  // Sa taille.
+  c.width = c.height = N + 2 * p;
+  // Son contexte, sans lissage (copie exacte des pixels, bords étirés sans mélange).
+  const ctx = c.getContext('2d'); ctx.imageSmoothingEnabled = false;
+  // L'image au centre.
+  ctx.drawImage(img, p, p);
+  // Les huit bandes.
+  for (const dir of NEIGHBOUR_DIRS) fillPad(ctx, img, neighbour(dir), dir, N, p);
+  // Renvoie le canevas.
+  return c;
+// Fin de padLightsImage.
 }
 
 /** Réglage de la pollution lumineuse de la Terre : atlas 2025 de David Lorenz, tuiles de 1 024 px, niveaux 0 à 6. */
