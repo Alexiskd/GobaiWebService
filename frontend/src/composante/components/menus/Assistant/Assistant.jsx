@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect, useRef et useState.
 import { useEffect, useRef, useState } from 'react';
 // Importe de MUI Box, ButtonBase, Chip, CircularProgress, Paper, Popper (bloc ancré à un élément), Stack, TextField et Typography.
-import { Box, ButtonBase, Chip, CircularProgress, Paper, Popper, Stack, TextField, Typography } from '@mui/material';
+import { Box, ButtonBase, Chip, CircularProgress, InputBase, Paper, Popper, Stack, TextField, Typography } from '@mui/material';
 // Importe l'envoi d'une question à l'assistant et la lecture de sa configuration.
 import { askAssistant, fetchAssistantConfig } from '@/moteur/api';
 // Importe le relevé des éléments actionnables de la page.
@@ -169,6 +169,118 @@ const Row = ({ children, ...props }) => (
  * régler l'affichage…) que `onAction` exécute avec les fonctions des boutons existants ; chaque action faite est
  * affichée sous la réponse. Une action hors de la liste autorisée est ignorée.
  */
+/**
+ * Hauteur du clavier virtuel du téléphone, en pixels (0 s'il est fermé). Lue sur visualViewport : sur iOS, un élément
+ * en position fixe reste collé au bas de la page, derrière le clavier ; cette hauteur permet de le remonter au-dessus.
+ */
+function useKeyboardInset() {
+  // Hauteur actuelle du clavier.
+  const [inset, setInset] = useState(0);
+  // Abonnement aux changements de la zone visible.
+  useEffect(() => {
+    // Zone visible du navigateur ; absente sur les navigateurs anciens : rien à suivre.
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!vv) return undefined;
+    // Recalcule : hauteur de la fenêtre moins la zone visible et son décalage (défilement dû au clavier).
+    const update = () => setInset(Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)));
+    // Premier calcul, puis à chaque redimensionnement ou défilement de la zone visible.
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    // Nettoyage.
+    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
+  }, []);
+  // La hauteur.
+  return inset;
+}
+
+/**
+ * Barre de Claude sur téléphone : une seule pilule flottante en bas de l'écran (logo, champ, bouton d'envoi), écartée
+ * des bords et de la zone de sécurité, qui remonte au-dessus du clavier quand il s'ouvre. Les réponses ne sont pas
+ * affichées (l'écran reste à la scène) ; pendant l'attente, le bouton d'envoi tourne.
+ */
+function MobileBar({ text, setText, busy, send, shift }) {
+  // Hauteur du clavier ouvert.
+  const keyboard = useKeyboardInset();
+  // Vrai quand le champ a le focus : la pilule s'éclaire.
+  const [focused, setFocused] = useState(false);
+  // Envoi possible : texte non vide et aucune réponse attendue.
+  const canSend = !busy && Boolean(text.trim());
+  // Rendu.
+  return (
+    // Conteneur fixe : pleine largeur, marges latérales, au-dessus de l'arborescence ou du clavier.
+    <Box
+      component="section"
+      aria-label="Claude"
+      data-claude-panel=""
+      sx={{
+        position: 'fixed', left: 0, right: 0, zIndex: (t) => t.zIndex.toolbar + 5,
+        // Bas : clavier ouvert → juste au-dessus du clavier ; sinon au-dessus de l'arborescence et de la zone de sécurité.
+        bottom: keyboard > 0 ? `${keyboard + 8}px` : `calc(${shift}px + ${safe('bottom')} + 10px)`,
+        // Marges latérales, zones de sécurité comprises (encoche en paysage).
+        pl: `calc(${safe('left')} + 10px)`, pr: `calc(${safe('right')} + 10px)`,
+        // Suit le clavier en douceur.
+        transition: 'bottom 160ms ease-out',
+        // Le conteneur ne capte pas les gestes : seule la pilule le fait, la scène reste manipulable autour.
+        pointerEvents: 'none',
+      }}
+    >
+      {/* La pilule : formulaire, envoi à la validation sans recharger la page. */}
+      <Box
+        component="form"
+        onSubmit={(e) => { e.preventDefault(); if (canSend) send(); }}
+        sx={{
+          pointerEvents: 'auto',
+          display: 'flex', alignItems: 'center', gap: 1,
+          width: '100%', maxWidth: 560, mx: 'auto', boxSizing: 'border-box',
+          minHeight: 52, pl: 1.5, pr: 0.75, py: 0.75,
+          borderRadius: '26px', fontFamily: SANS, color: C.text,
+          // Fond anthracite légèrement transparent et flouté : la scène reste devinée derrière.
+          bgcolor: 'rgba(31, 30, 29, 0.88)', backdropFilter: 'blur(14px) saturate(140%)', WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+          border: `1px solid ${focused ? C.muted : C.border}`,
+          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.45)',
+          transition: 'border-color 120ms',
+        }}
+      >
+        {/* Le logo, centré verticalement. */}
+        <Box component="img" src="/claude-logo.png" alt="" sx={{ width: 24, height: 24, flex: 'none' }} />
+        {/* Le champ : une à trois lignes, 16 px pour que Safari ne zoome pas au focus. */}
+        <InputBase
+          multiline maxRows={3} fullWidth
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          // Entrée envoie ; Maj + Entrée passe à la ligne.
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (canSend) send(); } }}
+          placeholder={busy ? 'Claude répond…' : 'Demander à Claude…'}
+          enterKeyHint="send"
+          inputProps={{ 'aria-label': 'Message pour Claude', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
+          sx={{
+            flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, py: 0.25,
+            '& textarea': { overflowWrap: 'anywhere', p: 0 },
+            '& textarea::placeholder': { color: C.muted, opacity: 1 },
+          }}
+        />
+        {/* Le bouton d'envoi, rond, orange ; roue d'attente pendant la réponse. */}
+        <ButtonBase
+          type="submit"
+          disabled={!canSend}
+          aria-label={busy ? 'Claude répond' : 'Envoyer'}
+          sx={{
+            flex: 'none', width: 40, height: 40, borderRadius: '50%',
+            bgcolor: canSend ? C.accent : C.row, color: canSend ? '#1f1e1d' : C.muted,
+            transition: 'background-color 120ms',
+            '&:active': { transform: 'scale(0.94)' },
+          }}
+        >
+          {busy ? <CircularProgress size={18} sx={{ color: C.accent }} /> : <SendIcon sx={{ fontSize: 20 }} />}
+        </ButtonBase>
+      </Box>
+    </Box>
+  );
+}
+
 // Déclare et exporte le composant Assistant : ouverture, ancrage, position, décalage, fermeture, navigation et actions.
 export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, placement = 'popper', shifted = false }) {
   // Lit le mode compact.
@@ -343,6 +455,8 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       : { position: 'fixed', left: `calc(${edge('left')} + ${shift}px)`, top: '50%', transform: 'translateY(-50%)', zIndex: (t) => t.zIndex.hud })
     // Position « popper » sans ancrage : fixé en bas à gauche, au-dessus de la barre du bas.
     : (anchored ? {} : { position: 'fixed', left: edge('left', 8), bottom: `calc(${barH}px + ${safe('bottom')} + 16px)`, zIndex: (t) => t.zIndex.toolbar + 5 });
+  // Téléphone, position « hud » : la barre flottante dédiée.
+  if (bare && hud) return <MobileBar text={text} setText={setText} busy={busy} send={send} shift={shift} />;
   // Le panneau du menu (début).
   const panel = (
     // La carte (début de la balise).
