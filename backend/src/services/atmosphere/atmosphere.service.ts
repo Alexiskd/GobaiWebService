@@ -26,12 +26,14 @@ import { RADAR_MAX_ZOOM, RADAR_STALE_MS, RADAR_TILE_SIZE, RadarFrame, RadarIndex
 import { CELL_CORE_DBZ, CELL_EDGE_DBZ, RadarCell, cellToEvent, detectCells, trackCells } from './storms';
 // Avertissements officiels d'orages violents et de tornades (NWS).
 import { NWS_STORM_EVENTS, nwsAlertsUrl, parseNwsAlerts } from './nws-alerts';
+// Vents et courants-jets : grille Open-Meteo, niveaux, axes des courants-jets.
+import { FLOW_GRID, FLOW_LEVELS, LevelWinds, detectJets, flowUrl, jetToEvent, parseFlow } from './flow';
 // Aérosols : produits observés (GIBS), tables de couleurs, zones de forte charge, prévision CAMS.
 import { AEROSOL_GRID, AEROSOL_PRODUCTS, AerosolPlume, AerosolProduct, CAMS_DUST_LAYER, CAMS_RANGE_H, CAMS_STEP_H, Colormap, GIBS_CAPABILITIES, GIBS_COLORMAPS, aerosolToRgb, camsLegendUrl, camsMapUrl, camsTimes, colormapDecoder, decodeAerosolImage, detectPlumes, findColormapHref, gibsWmsUrl, mergeCodes, parseGibsColormap, plumeToEvent, utcDay } from './aerosols';
 // Registre des fournisseurs.
 import { ProviderPublic, listProviders, provider } from './providers';
 
-// Service du moteur atmosphérique (partie données) : incendies et cyclones (lots 1-2), foudre (lot 3), radar des précipitations et orages (lot 4), aérosols (lot 5).
+// Service du moteur atmosphérique (partie données) : incendies et cyclones (lots 1-2), foudre (lot 3), radar des précipitations et orages (lot 4), aérosols (lot 5), vents et courants-jets (lot 6).
 // Aucun appel aux fournisseurs par requête du navigateur : chaque fournisseur est lu au plus une fois par période de
 // rafraîchissement (registre), sa réponse est gardée et partagée ; en panne, sa dernière réponse est rendue, marquée
 // périmée. Les appels passent par le fetch global du serveur, qui respecte la liste des API déconnectées.
@@ -182,6 +184,24 @@ interface AerosolDay {
   // layers : chaque couche lue, sa part de pixels mesurés et son échec éventuel.
   layers: { layer: string; measured: number; error: string | null }[];
 // Fin de AerosolDay.
+}
+
+/** Réponse des vents : grille, niveaux (composantes par point), courants-jets, état du fournisseur. */
+// Forme de la réponse.
+export interface WindsResponse {
+  // generatedAt : l'heure de fabrication ; validAt : l'heure de validité du modèle, ou null.
+  generatedAt: string; validAt: string | null;
+  // available : faux si aucun niveau n'est disponible (reason dit pourquoi).
+  available: boolean; reason: string | null;
+  // grid : la grille (colonnes, lignes, origine et pas en degrés ; lignes du sud au nord).
+  grid: typeof FLOW_GRID;
+  // levels : chaque niveau, ses composantes (m/s) et sa vitesse maximale, ou indisponible.
+  levels: { id: string; label: string; altKm: number; available: boolean; u: number[]; v: number[]; maxMs: number | null }[];
+  // jets : les axes des courants-jets (format commun).
+  jets: AtmosphericEvent[];
+  // source : l'état du fournisseur ; stale : donnée périmée.
+  source: SourceState; stale: boolean;
+// Fin de WindsResponse.
 }
 
 /** Réponse des aérosols : produits observés, zones de forte charge, prévision CAMS. */
@@ -708,6 +728,42 @@ export class AtmosphereService {
   // Fin de camsLegend.
   }
 
+  /** Vents du moment à quatre niveaux (Open-Meteo, lu au plus toutes les 8 heures) et axes des courants-jets. */
+  // Méthode winds.
+  async winds(): Promise<WindsResponse> {
+    // Lecture par le cache du fournisseur (début de la fonction de lecture) : une lecture coûte 510 appels Open-Meteo, donc nouvel essai au plus une fois par heure après une erreur.
+    const r = await this.cacheOf<{ levels: Record<string, LevelWinds | null>; validAt: string | null }>('open-meteo-winds', 3_600_000).get('all', async () => {
+      // Appel (une seule requête : 510 points).
+      const res = await this.fetchOk(flowUrl());
+      // Réponse lue.
+      const parsed = parseFlow(await res.json().catch(() => null));
+      // Format inattendu : échec explicite.
+      if (!parsed) throw new Error('format inattendu');
+      // Aucun niveau : échec explicite.
+      if (Object.values(parsed.levels).every((l) => l === null)) throw new Error('aucun niveau de vent dans la réponse');
+      // Vents.
+      return parsed;
+    // Fin de la lecture.
+    });
+    // Instant de référence.
+    const now = Date.now();
+    // État du fournisseur.
+    const source = this.state('open-meteo-winds', r);
+    // Heure de validité.
+    const vt = r.data?.validAt ? Date.parse(`${r.data.validAt}${/Z|[+-]\d\d:?\d\d$/.test(r.data.validAt) ? '' : 'Z'}`) : NaN;
+    // En ISO, ou null si elle est illisible.
+    const validAt = Number.isFinite(vt) ? new Date(vt).toISOString() : null;
+    // Niveaux, mis en forme.
+    const levels = FLOW_LEVELS.map((l) => { const w = r.data?.levels[l.id] ?? null; return { id: l.id, label: l.label, altKm: l.altKm, available: w !== null, u: w?.u ?? [], v: w?.v ?? [], maxMs: w?.maxMs ?? null }; });
+    // Niveau des courants-jets.
+    const upper = r.data?.levels['250hPa'] ?? null;
+    // Axes au format commun, filtrés par le gestionnaire.
+    const snap = this.manager.update('vents', upper && validAt ? detectJets(upper).map((j) => jetToEvent(j, validAt, source.fetchedAt ?? new Date(now).toISOString())) : [], { stale: r.stale, errors: r.error ? [`open-meteo-winds : ${r.error}`] : [] }, now);
+    // Réponse.
+    return { generatedAt: new Date(now).toISOString(), validAt, available: levels.some((l) => l.available), reason: levels.some((l) => l.available) ? null : r.error ?? 'aucun vent', grid: FLOW_GRID, levels, jets: snap.events, source, stale: r.stale };
+  // Fin de winds.
+  }
+
   /**
    * Aérosols : épaisseur optique (VIIRS) et indice absorbant (OMPS) observés le jour même et la veille, zones de forte
    * charge (format commun) et prévision CAMS des poussières sur 48 h.
@@ -767,12 +823,12 @@ export class AtmosphereService {
   // Fin de aerosols.
   }
 
-  // Méthode privée cacheOf : le cache d'un fournisseur, créé à la première demande.
-  private cacheOf<T>(id: string): TtlCache<T> {
+  // Méthode privée cacheOf : le cache d'un fournisseur, créé à la première demande (délai avant un nouvel essai après une erreur : 2 minutes par défaut).
+  private cacheOf<T>(id: string, retryMs?: number): TtlCache<T> {
     // Cache existant.
     let c = this.caches.get(id) as TtlCache<T> | undefined;
     // Absent : créé à la durée de rafraîchissement du fournisseur.
-    if (!c) { c = new TtlCache<T>(provider(id).refreshMs, 1); this.caches.set(id, c as TtlCache<unknown>); }
+    if (!c) { c = new TtlCache<T>(provider(id).refreshMs, 1, retryMs); this.caches.set(id, c as TtlCache<unknown>); }
     // Renvoie le cache.
     return c;
   // Fin de cacheOf.
@@ -928,8 +984,8 @@ export class AtmosphereService {
    */
   // Méthode events : familles, emprise et limite.
   async events(types: AtmosphericEventType[] | undefined, bbox: [number, number, number, number] | undefined, limit = 2_000): Promise<{ generatedAt: string; count: number; events: AtmosphericEvent[]; notes: string[] }> {
-    // Données à jour (orages et aérosols seulement s'ils sont demandés : leur lecture est lourde).
-    await Promise.all([this.fires(), this.cyclones(), ...(types?.includes('storm') ? [this.storms()] : []), ...(types?.includes('aerosol') ? [this.aerosols()] : [])]);
+    // Données à jour (orages, aérosols et courants-jets seulement s'ils sont demandés : leur lecture est lourde).
+    await Promise.all([this.fires(), this.cyclones(), ...(types?.includes('storm') ? [this.storms()] : []), ...(types?.includes('aerosol') ? [this.aerosols()] : []), ...(types?.includes('jet-stream') ? [this.winds()] : [])]);
     // Événements du gestionnaire (incendies confirmés, cyclones).
     const events = this.manager.query({ types: types?.filter((t) => t !== 'hotspot'), bbox });
     // Remarques sur la réponse.

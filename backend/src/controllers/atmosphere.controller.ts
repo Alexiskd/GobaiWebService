@@ -251,10 +251,23 @@ export class AtmosphereController {
   // Fin de camsFrame.
   }
 
+  // Route GET /api/v1/atmosphere/winds.
+  @Get('winds')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Vents par niveau et courants-jets', description: 'Source : Open-Meteo (modèles météo), lu au plus toutes les 8 heures. Vent du moment au sol, à 850, 500 et 250 hPa sur une grille de 12° × 10° (composantes vers l’est et vers le nord, m/s) ; axes des courants-jets repérés à 250 hPa, au format commun (estimés).' })
+  // Cache public de 30 minutes.
+  @Header('Cache-Control', 'public, max-age=1800')
+  // Méthode winds.
+  winds() {
+    // Délègue au service.
+    return this.atmosphere.winds();
+  // Fin de winds.
+  }
+
   // Route GET /api/v1/atmosphere/events.
   @Get('events')
   // Ce que fait la route.
-  @ApiOperation({ summary: 'Événements atmosphériques au format commun', description: 'Filtres : types=wildfire,cyclone,hotspot,storm,aerosol (storm et aerosol lancent leur lecture) · bbox=ouest,sud,est,nord · limit (2 000 au plus). Les points chauds demandent une emprise.' })
+  @ApiOperation({ summary: 'Événements atmosphériques au format commun', description: 'Filtres : types=wildfire,cyclone,hotspot,storm,aerosol,jet-stream (storm, aerosol et jet-stream lancent leur lecture) · bbox=ouest,sud,est,nord · limit (2 000 au plus). Les points chauds demandent une emprise.' })
   // Cache public de 5 minutes.
   @Header('Cache-Control', 'public, max-age=300')
   // Méthode events : familles, emprise et limite.
