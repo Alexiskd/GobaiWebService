@@ -636,8 +636,13 @@ export class TileManager {
     // Rythme d'images sous l'objectif : moins de tuiles envoyées au GPU par image, pour ne pas le faire chuter.
     // Part des envois de tuiles autorisée, selon le rythme d'images.
     b.layer.uploadShare = uploadShare(engine.dprFrameMs ?? 0);
+    // Hauteur de l'écran pour le détail des tuiles : en pixels à la densité plafond de l'appareil (engine.dprMax), pas à
+    // la densité en cours. Quand la résolution adaptative baisse pour garder le rythme (téléphone surtout), l'image
+    // est dessinée avec moins de pixels, mais les tuiles restent aussi détaillées : la Terre vue de l'espace garde
+    // le même niveau de détail sur téléphone que sur ordinateur.
+    const viewportH = engine.H * (engine.dprMax || engine.renderer.getPixelRatio());
     // Met à jour la couche avec la vue.
-    b.layer.update({ cam: cl, fwd, up, aspect: cam.aspect, fovY, viewportH: engine.H * engine.renderer.getPixelRatio(), inFrustum, planes });
+    b.layer.update({ cam: cl, fwd, up, aspect: cam.aspect, fovY, viewportH, inFrustum, planes });
     // Garde la vue pour l'état publié.
     this.view = { cam: cl, fovY, aspect: cam.aspect };
 

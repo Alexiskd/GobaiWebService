@@ -70,8 +70,6 @@ import { Langue } from './menus/Langue';
 import { Plateau } from './menus/Plateau/Plateau';
 // Importe la galerie.
 import { Galerie } from './menus/Galerie/Galerie';
-// Importe la fenêtre du globe Google (iframe qui remplace le globe Terre de l'app).
-import { GoogleEarthWindow } from './scene/GoogleEarthWindow';
 // Importe le panneau d'informations.
 import { Informations } from './menus/Informations/Informations';
 // Importe la fenêtre de recherche.
@@ -244,8 +242,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const languageOpen = panels.panel === 'language'; const setLanguageOpen = (on) => panels.show('language', on);
   // Galerie : ouverte ou non, et son ouverture.
   const galleryOpen = panels.panel === 'gallery'; const setGalleryOpen = (on) => panels.show('gallery', on);
-  // Globe Google (il remplace le globe Terre de l'app) : ouvert ou non, et son ouverture.
-  const googleEarthOpen = panels.panel === 'googleEarth'; const setGoogleEarthOpen = (on) => panels.show('googleEarth', on);
   // Paramètres : ouverts ou non, et leur ouverture.
   const settingsOpen = panels.panel === 'settings'; const setSettingsOpen = (on) => panels.show('settings', on);
   // Moniteur de performance masqué par défaut ; activable depuis les paramètres.
@@ -291,8 +287,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   useEffect(() => { if (engine || error) onSettled?.(); }, [engine, error, onSettled]);
   // Sous l'écran de chargement, le moteur tourne au ralenti (voir SolarEngine.setCovered).
   // Transmet au moteur l'indicateur « couverte ».
-  // Le globe Google ouvert couvre aussi la scène : le moteur tourne au ralenti pendant ce temps.
-  useEffect(() => { engine?.setCovered(covered || googleEarthOpen); }, [engine, covered, googleEarthOpen]);
+  useEffect(() => { engine?.setCovered(covered); }, [engine, covered]);
   // Mode économie d'énergie des Paramètres, appliqué dès la création du moteur.
   // Lit le mode économie d'énergie et s'y abonne.
   const powerSaving = useSyncExternalStore(subscribePowerSaving, getPowerSaving, getPowerSaving);
@@ -749,8 +744,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onSettings={() => setSettingsOpen(true)}
         // Plateau tournant : ouvre la fenêtre.
         onPlateau={() => setPlateauOpen(true)}
-        // Globe Google : seulement quand la Terre est l'astre visé.
-        onGoogleEarth={currentBodyId === 'earth' ? () => setGoogleEarthOpen(true) : undefined}
         // Partager la vue.
         onShare={shareCurrentView}
         // Nom de la langue en cours (dans sa propre langue, sinon son nom courant), vide si elle est inconnue.
@@ -1033,8 +1026,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
       {/* La galerie. */}
       <Galerie open={galleryOpen} onClose={() => setGalleryOpen(false)} />
-      {/* Le globe Google : remplace le globe Terre de l'app tant qu'il est ouvert. */}
-      <GoogleEarthWindow open={googleEarthOpen} onClose={() => setGoogleEarthOpen(false)} />
       {/* Le plateau tournant (début de la balise). */}
       <Plateau
         // Ouvert ou non.

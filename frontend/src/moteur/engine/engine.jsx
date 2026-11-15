@@ -50,6 +50,10 @@ import { hillRadius, insideSystem, outsideSystem, systemHostOf } from './systemV
 import { MoonOrbiters } from './moonOrbiters';
 // Importe MoonOrbit, le tracé de l'orbite de la Lune.
 import { MoonOrbit } from './moonOrbit';
+// Importe le ruban des orbites et la mise à jour de ses réglages partagés (taille du tampon de dessin, densité).
+import { OrbitRibbon, updateOrbitShared } from './orbitRibbon';
+// Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
+import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath';
 // Importe le matériau de la surface de la Lune et le chargement d'un modèle 3D.
 import { createMoonSurfaceMaterial, loadMoonModel } from './moonModel';
 // Importe ShadowCamLayer, les mosaïques polaires de ShadowCam.
@@ -164,9 +168,10 @@ const GAS_ENTRY_RADII = 0.97;
 const ORBIT_POINTS = 2048;
 // Seuil de taille des astres tuilés, budget d'astres mis à jour à la fois et apparition des satellites : voir
 // bodyLoading.jsx (moteur de chargement planétaire).
-// Résolution adaptative : si les images ralentissent, on rend moins de pixels (et on demande moins de tuiles).
+// Résolution adaptative : si les images ralentissent, on rend moins de pixels (le détail des tuiles, lui, suit la
+// densité plafond de l'appareil : voir tileManager.jsx).
 const DPR_STEP = 0.25;
-// Densité de pixels minimale : 0,75.
+// Densité de pixels minimale par défaut : 0,75 (le profil de l'appareil donne la sienne : 1,25 sur téléphone).
 const DPR_MIN = 0.75;            // plancher : en dessous l'image devient trop floue
 // Durée d'image au-dessus de laquelle la résolution baisse : 18,6 ms.
 const DPR_SLOW_MS = 18.6;        // moyenne au-dessus (≈ 45 images par seconde pour 50 visées) : on baisse la résolution
@@ -488,9 +493,10 @@ export class SolarEngine {
     this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
     const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true });
-    // Plafond : la densité de l'écran (≤ 1,75) ; la résolution adaptative (adaptResolution) descend jusqu'à 0,75 si besoin.
+    // Plafond : la densité de l'écran (≤ 1,75 sur ordinateur, ≤ 2 sur téléphone) ; la résolution adaptative
+    // (adaptResolution) descend si besoin jusqu'au plancher du profil (0,75 sur ordinateur, 1,25 sur téléphone).
     this.dprMax = Math.min(devicePixelRatio || 1, this.power.dprMax);
-    // Départ à la densité du profil (1,75).
+    // Départ à la densité du profil (son plafond).
     this.dpr = Math.min(this.dprMax, this.power.dprStart);
     // Garde le plafond d'origine.
     this.dprMaxFull = this.dprMax;
@@ -671,22 +677,29 @@ export class SolarEngine {
       }
 
       // Orbite : ellipse fermée de 2048 points (éléments à la date du jour), assez fine pour passer par la planète.
-      const orbitGeometry = new THREE.BufferGeometry();
-      // Positions de l'orbite, en 2 048 points.
-      orbitGeometry.setAttribute('position', new THREE.BufferAttribute(orbitPositions(def.elements, orbitT, ORBIT_POINTS), 3));
-      // Ligne fermée de l'orbite (début) :
-      const orbit = new THREE.LineLoop(
-        // sa géométrie ;
-        orbitGeometry,
-        // son matériau, bleu-gris, à moitié transparent.
-        new THREE.LineBasicMaterial({ color: 0x5a6fa8, transparent: true, opacity: 0.45 })
-      // Fin de la ligne.
-      );
+      const ellipse = orbitPositions(def.elements, orbitT, ORBIT_POINTS);
+      // Points du ruban : les 2 048 points, puis le premier répété pour fermer la boucle.
+      const orbitPoints = new Float32Array(ellipse.length + 3);
+      // Les 2 048 points.
+      orbitPoints.set(ellipse);
+      // Le premier, répété à la fin.
+      orbitPoints.set(ellipse.subarray(0, 3), ellipse.length);
+      // Ruban de l'orbite, de la couleur de la planète, en style traînée (voir orbitRibbon.jsx).
+      const orbitTrail = new OrbitRibbon({ points: orbitPoints, color: def.color || '#8b97b3', name: `orbit-${bodyId(def)}` });
+      // Son maillage.
+      const orbit = orbitTrail.mesh;
       // L'ajoute à la scène.
       this.scene.add(orbit);
 
-      // Renvoie la planète : ses données, ses objets, sa famille, son état et ses positions.
-      return { def, mesh, group, orbit, kind: planetKind(def), hidden: false, settingsHidden: false, w: new THREE.Vector3(), ecl: [0, 0, 0] };
+      // Renvoie la planète : ses données, ses objets, sa famille, son état, ses positions, et l'état de sa traînée
+      // (point de l'orbite où elle se trouve, sens du parcours, dernière position et instant du dernier calcul).
+      return {
+        // Données, objets, famille et état.
+        def, mesh, group, orbit, orbitTrail, kind: planetKind(def), hidden: false, settingsHidden: false, w: new THREE.Vector3(), ecl: [0, 0, 0],
+        // Traînée : aucun point calculé, sens croissant, aucune position notée.
+        trailHead: -1, trailDir: 1, trailPrev: null, trailAt: 0,
+      // Fin de la planète.
+      };
     // Fin de la boucle.
     });
 
@@ -1109,25 +1122,40 @@ export class SolarEngine {
     });
     // Fiches des villes.
     this.cityItems = this.data.cities.map((c, i) => surfaceItem(L.cities[i], c.name, c.lon, c.lat));
-    // Repères des astres : point de la couleur de l'astre posé à son emplacement, et son nom. Ils servent seulement
-    // à situer les astres trop petits pour être vus ; dès qu'un astre fait quelques pixels, son repère s'efface.
+    // Repères des astres : un anneau de la couleur de l'astre posé à son emplacement, et son nom dans une étiquette.
+    // Ils servent seulement à situer les astres trop petits pour être vus ; dès qu'un astre fait quelques pixels,
+    // son repère s'efface en fondu. Placement et chevauchements : voir labelLayout.jsx ; style : SceneStyles.jsx.
     const { sun, moon } = this.data.bodies;
     // Parent des repères : celui du conteneur, ou la page.
     const parent = this.container.parentNode || document.body;
-    // marker : l'élément d'un repère (début).
-    const marker = (existing, name, color) => {
+    // marker : l'élément d'un repère, sa famille (« planet » ou « satellite ») (début).
+    const marker = (existing, name, color, kind = 'planet') => {
       // Déjà fourni : c'est lui.
       if (existing) return existing;
       // Sinon : crée un div.
       const el = document.createElement('div');
+      // Sa classe, et celle de sa famille pour un satellite (repère plus discret).
+      el.className = kind === 'satellite' ? 'l body-marker is-satellite' : 'l body-marker';
+      // L'anneau de couleur.
+      const dot = document.createElement('span');
       // Sa classe.
-      el.className = 'l body-marker';
-      // Son texte : le nom.
-      el.textContent = name;
-      // Sa couleur.
+      dot.className = 'bm-dot';
+      // Le nom.
+      const label = document.createElement('span');
+      // Sa classe.
+      label.className = 'bm-name';
+      // Son texte.
+      label.textContent = name;
+      // Les deux, dans l'ordre : anneau puis nom.
+      el.append(dot, label);
+      // Garde le nom, pour mesurer sa largeur (voir labelLayout.jsx).
+      el._name = label;
+      // Couleur de l'astre.
       el.style.setProperty('--c', color);
-      // Caché au départ.
-      el.style.display = 'none';
+      // Sa lueur : la même couleur, translucide.
+      el.style.setProperty('--cg', rgbaOf(color, 0.55));
+      // Le repère est toujours dans la page ; caché par opacité, pour apparaître et disparaître en fondu.
+      el._shown = false;
       // L'ajoute au parent.
       parent.appendChild(el);
       // Le note parmi les repères créés.
@@ -1151,11 +1179,11 @@ export class SolarEngine {
       // fin de la planète ;
       })),
       // la Lune ;
-      { el: marker(null, moon.name, '#d8d2c4'), name: moon.name, pos: this.moonGroup.position, radius: moon.radius, kind: 'satellite', isHidden: () => this.moonHidden },
+      { el: marker(null, moon.name, '#d8d2c4', 'satellite'), name: moon.name, pos: this.moonGroup.position, radius: moon.radius, kind: 'satellite', isHidden: () => this.moonHidden },
       // chaque satellite (début) :
       ...this.satellites.list.map((sat) => ({
         // son repère, son nom, sa position, son rayon et sa famille ;
-        el: marker(null, sat.def.name, sat.def.color || '#d8d2c4'), name: sat.def.name, pos: sat.group.position, radius: sat.def.radius, kind: 'satellite',
+        el: marker(null, sat.def.name, sat.def.color || '#d8d2c4', 'satellite'), name: sat.def.name, pos: sat.group.position, radius: sat.def.radius, kind: 'satellite',
         // masqué ou non ;
         isHidden: () => Boolean(sat.hidden || sat.lodHidden),
       // fin du satellite.
@@ -2603,6 +2631,8 @@ export class SolarEngine {
     if (this.shadowcam.api) this.shadowcam.update(this.cam);
     // Met à jour les étiquettes.
     this.updateLabels();
+    // Met à jour le style des orbites : épaisseur à l'écran, orbite mise en avant, traînées.
+    this.updateOrbitStyle(now);
     // Met à jour les noms des villes.
     this.worldLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
     // Met à jour le point de l'utilisateur.
@@ -2678,14 +2708,16 @@ export class SolarEngine {
     this.dprCheckAt = now + DPR_CHECK_MS;
     // Durée moyenne d'une image.
     const avg = this.dprFrameMs;
+    // Plancher : celui du profil, sans dépasser le plafond (1 en économie d'énergie).
+    const floor = Math.min(this.dprMax, this.power.dprMin ?? DPR_MIN);
     // Trop lente, au-dessus du plancher (début).
-    if (avg > DPR_SLOW_MS && this.dpr > DPR_MIN) {
+    if (avg > DPR_SLOW_MS && this.dpr > floor) {
       // Ce cran est noté trop lourd.
       this.dprBlockedAbove = this.dpr;            // ce cran est trop lourd pour l'instant
       // Pendant 30 secondes.
       this.dprBlockUntil = now + 30000;
       // Descend d'un cran, sans passer sous le plancher.
-      this.setResolution(Math.max(DPR_MIN, this.dpr - DPR_STEP));
+      this.setResolution(Math.max(floor, this.dpr - DPR_STEP));
       // Plus de période rapide.
       this.dprFastSince = 0;
     // Rapide, sous le plafond (début).
@@ -3355,6 +3387,64 @@ export class SolarEngine {
     // Fin de la boucle.
     }
   // Fin de updateSunDirections.
+  }
+
+  /**
+   * Style des orbites, à chaque image : réglages partagés des rubans (taille du tampon de dessin, densité de pixels),
+   * mise en avant de l'orbite de l'astre visé (ou de sa planète), et traînée de chaque planète recalée sur sa position
+   * deux fois par seconde au plus (le point le plus proche sur 2 048 ; le sens du parcours d'après son déplacement).
+   */
+  // updateOrbitStyle : l'instant présent (début).
+  updateOrbitStyle(now) {
+    // Taille du tampon de dessin et densité de pixels, pour l'épaisseur des rubans à l'écran.
+    updateOrbitShared(this.renderer);
+    // La cible.
+    const f = this.focusTarget();
+    // Planète dont l'orbite est mise en avant : la planète visée, celle du satellite visé, la Terre pour la Lune.
+    const focusPlanet = f.body || f.satellite?.parent || (f.moon ? this.earth : null);
+    // Pour chaque planète (début).
+    for (const p of this.planets) {
+      // Son orbite mise en avant si c'est la planète de la cible.
+      p.orbitTrail.setFocused(p === focusPlanet);
+      // Orbite cachée, ou traînée recalée il y a moins d'une demi-seconde : rien de plus.
+      if (!p.orbit.visible || now - p.trailAt < 500) continue;
+      // Instant de ce recalage.
+      p.trailAt = now;
+      // Points de l'orbite (repère du Soleil, comme p.w).
+      const pts = p.orbitTrail.points;
+      // Point le plus proche de la planète, parmi les 2 048 (le dernier répète le premier).
+      const head = nearestPointIndex(pts, p.orbitTrail.count - 1, p.w.x, p.w.y, p.w.z);
+      // Position précédente notée (début) : le sens du parcours vient de son déplacement depuis.
+      if (p.trailPrev) {
+        // Déplacement depuis la dernière fois.
+        const mx = p.w.x - p.trailPrev.x, my = p.w.y - p.trailPrev.y, mz = p.w.z - p.trailPrev.z;
+        // Point suivant sur l'orbite (le dernier répète le premier : jamais hors du tableau).
+        const n1 = head + 1;
+        // Tangente de l'orbite au point de la planète, dans le sens des indices croissants.
+        const tx = pts[3 * n1] - pts[3 * head], ty = pts[3 * n1 + 1] - pts[3 * head + 1], tz = pts[3 * n1 + 2] - pts[3 * head + 2];
+        // Produit scalaire du déplacement et de la tangente.
+        const dot = mx * tx + my * ty + mz * tz;
+        // Déplacement net : son signe donne le sens (le temps peut aussi être remonté).
+        if (Math.abs(dot) > 1e-12) p.trailDir = dot > 0 ? 1 : -1;
+      // Fin de ce cas.
+      }
+      // Position notée pour le prochain recalage.
+      p.trailPrev = (p.trailPrev || new THREE.Vector3()).copy(p.w);
+      // Point et sens inchangés : opacités inchangées.
+      if (head === p.trailHead && p.trailDir === p.trailDirDrawn) continue;
+      // Garde le point et le sens dessinés.
+      p.trailHead = head; p.trailDirDrawn = p.trailDir;
+      // Opacités de la traînée : la plus claire juste derrière la planète.
+      loopTrailAlphas(p.orbitTrail.alphas, head, p.trailDir);
+      // Les renvoie à la carte graphique.
+      p.orbitTrail.alphasChanged();
+    // Fin de la boucle.
+    }
+    // Orbite de la Lune mise en avant quand la Lune est visée.
+    this.moonOrbitTrail.setFocused(Boolean(f.moon));
+    // Orbites des satellites : celle du satellite visé mise en avant.
+    this.satellites.setFocused(f.satellite || null);
+  // Fin de updateOrbitStyle.
   }
 
   // updateLabels : met à jour les repères des astres (début).

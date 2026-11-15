@@ -1,6 +1,9 @@
-// Rythme d'images et économie d'énergie. Téléphone, tablette et ordinateur ont la même qualité de rendu : densité de
-// pixels jusqu'à 1,75, anticrénelage, shaders complets (QUALITY), anisotropie de 8. Un appareil tenu en main n'a pas
-// de ventilateur : il ne se distingue que par son rythme, 20 images par seconde au repos (aucun geste récent).
+// Rythme d'images et économie d'énergie. Téléphone, tablette et ordinateur ont les mêmes shaders (QUALITY), le même
+// anticrénelage et la même anisotropie (8). La densité de pixels suit l'écran : jusqu'à 1,75 sur ordinateur, jusqu'à
+// 2 sur un appareil tenu en main, dont l'écran a souvent 3 pixels par point CSS (à 1,75, l'image y était étirée de
+// 70 %). La résolution adaptative y descend au plus bas à 1,25 (0,75 sur ordinateur) : la Terre vue de l'espace garde
+// le même détail que sur ordinateur. Un appareil tenu en main n'a pas de ventilateur : il ralentit aussi au repos,
+// 20 images par seconde (aucun geste récent).
 // Sur tous les appareils, tant que l'écran de chargement recouvre la scène, le moteur ne dessine que quelques
 // images par seconde (COVERED_FRAME_MS) : les shaders se compilent et les tuiles arrivent, sans chauffer pour rien.
 // Sur téléphone, zoomé dans le système d'une planète (voir systemView.jsx) : rythme maximal de l'écran, sans ralenti
@@ -21,10 +24,13 @@ export const TARGET_FPS = 50;
 // Déclare et exporte la durée d'une image à ce rythme : 20 ms.
 export const TARGET_FRAME_MS = 1000 / TARGET_FPS;
 
-// Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 1,75 dès le départ, anticrénelage, anisotropie de 8.
-export const DESKTOP_PROFILE = { handheld: false, dprMax: 1.75, dprStart: 1.75, frameMs: TARGET_FRAME_MS, antialias: true, anisotropy: 8 };
-// Déclare et exporte le profil d'un appareil tenu en main : la même qualité que l'ordinateur (ralenti au repos, voir targetFrameMs).
-export const HANDHELD_PROFILE = { ...DESKTOP_PROFILE, handheld: true };
+// Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 1,75 dès le départ, plancher de la
+// résolution adaptative à 0,75, anticrénelage, anisotropie de 8.
+export const DESKTOP_PROFILE = { handheld: false, dprMax: 1.75, dprStart: 1.75, dprMin: 0.75, frameMs: TARGET_FRAME_MS, antialias: true, anisotropy: 8 };
+// Déclare et exporte le profil d'un appareil tenu en main : densité plafonnée à 2 dès le départ, plancher à 1,25 (un
+// écran de téléphone est vu de près : en dessous, l'image devient floue), le reste comme l'ordinateur (ralenti au
+// repos, voir targetFrameMs).
+export const HANDHELD_PROFILE = { ...DESKTOP_PROFILE, handheld: true, dprMax: 2, dprStart: 2, dprMin: 1.25 };
 // Déclare et exporte le profil d'un téléphone dans le système d'une planète : sans plafond d'images ni ralenti au repos.
 export const SYSTEM_PROFILE = { ...HANDHELD_PROFILE, system: true, frameMs: 0 };
 
@@ -76,7 +82,7 @@ export function isHandheld(win = typeof window === 'undefined' ? null : window) 
 // Fin de isHandheld.
 }
 
-/** Profil de rendu de l'appareil : { handheld, dprMax, dprStart, frameMs (0 = sans limite), antialias, anisotropy }. */
+/** Profil de rendu de l'appareil : { handheld, dprMax, dprStart, dprMin, frameMs (0 = sans limite), antialias, anisotropy }. */
 // Déclare et exporte renderProfile : la fenêtre.
 export function renderProfile(win) {
   // Renvoie le profil tenu en main ou le profil d'ordinateur.

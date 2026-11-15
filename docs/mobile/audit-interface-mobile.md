@@ -155,7 +155,6 @@ Toutes les fonctions de l'ordinateur sont présentes sur téléphone. Le chemin 
 | Fonction | Ordinateur | Téléphone |
 | --- | --- | --- |
 | Rechercher, Claude, Vue globale | barre | onglet Explorer |
-| Globe Google (sur la Terre) | barre | onglet Explorer |
 | Astres (arborescence) | barre *(nouveau)* | onglet Explorer *(nouveau)* ; pastille « Astres » de Claude |
 | Plateau tournant | barre *(nouveau)* ; touche T | onglet Explorer *(nouveau)* |
 | Ombre, Rotation, Vue 3/4, Verrouillage de l'astre | barre | onglet Pilotage orbital |
@@ -170,6 +169,9 @@ Toutes les fonctions de l'ordinateur sont présentes sur téléphone. Le chemin 
 | Zoom | pavé de zoom | pincement ; deux modes de la navball (zoom en penchant le téléphone) |
 
 ## Validation
+
+> Mise à jour : le Globe Google (fenêtre Google Earth) a été retiré de l'app depuis ce rapport. Les tableaux
+> ci-dessous datent d'avant ce retrait et le comptent encore.
 
 **En bref**
 - Après : 220 commandes essayées sur les neuf écrans, 220 réussies.
@@ -327,8 +329,8 @@ barre entière avec le menu « Menu », bandeau arrêté avant le panneau, compt
   fait 768 px.
 - **Indicateurs LiDAR et tuiles, ordinateur** : toujours en position fixe en haut à droite. Non vérifiés, faute de
   tuiles et de relevés LiDAR sur le banc (réseau fermé).
-- **Barre repliée** : si son contenu rétrécit (Globe Google disparaît en quittant la Terre), elle reste repliée
-  jusqu'au prochain changement de taille de la fenêtre. Sans gravité : tout reste atteignable.
+- **Barre repliée** : si son contenu rétrécit, elle reste repliée jusqu'au prochain changement de taille de la
+  fenêtre. Sans gravité : tout reste atteignable.
 - **Non exécutés ici** :
   - vrais téléphones et tablettes (Safari iOS, Chrome Android, iPad), avec le vrai clavier virtuel ;
   - vrai MUI ;

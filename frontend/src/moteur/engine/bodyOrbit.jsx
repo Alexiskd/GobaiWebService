@@ -11,8 +11,9 @@ import * as THREE from 'three';
  * dont les éléments sont rapportés à l'équateur de leur planète ou à un plan de Laplace.
  *
  * Le tracé couvre une période orbitale complète centrée sur l'instant simulé : il passe donc exactement par
- * l'astre et suit la précession de l'orbite. La ligne est la plus claire au niveau de l'astre et s'estompe en
- * s'éloignant, dans les deux sens, et sa boucle est fermée (voir closeOrbitLoop dans bodyOrbitMath.jsx).
+ * l'astre et suit la précession de l'orbite. Il est dessiné en ruban (orbitRibbon.jsx), en style traînée : le plus
+ * clair juste derrière l'astre, il s'éteint en remontant la moitié passée, et la moitié à venir reste faible
+ * (windowTrailAlphas). Sa boucle est fermée (voir closeOrbitLoop dans bodyOrbitMath.jsx).
  *
  * Repères. Les positions du backend sont dans l'écliptique J2000 « mathématique » (x vers l'équinoxe de mars,
  * z vers le pôle nord de l'écliptique) ; la scène 3D utilise (x, z, −y), parce que Three.js dessine la verticale
@@ -29,11 +30,12 @@ import { ASTRES } from '../../../../backend/src/services/data/kepler-elements';
 import { periodDays, positionAt as keplerPositionAt } from '../../../../backend/src/services/ephemeris/kepler-orbits';
 // Importe le nombre d'unités de scène dans une unité astronomique.
 import { AU_UNITS } from './planetOrbits';
-// Importe les réglages par défaut du tracé, l'intervalle de recalcul, l'opacité, les instants et la fermeture de la boucle.
-import {
-  DEFAULT_SAMPLES, DEFAULT_ALPHA_NEAR, DEFAULT_ALPHA_FAR, DAY_MS,
-  refreshMsFor, orbitAlpha, orbitTimes, closeOrbitLoop,
-} from './bodyOrbitMath';
+// Importe les réglages par défaut du tracé, l'intervalle de recalcul, les instants et la fermeture de la boucle.
+import { DEFAULT_SAMPLES, DAY_MS, refreshMsFor, orbitTimes, closeOrbitLoop } from './bodyOrbitMath';
+// Importe le ruban des orbites.
+import { OrbitRibbon } from './orbitRibbon';
+// Importe les opacités d'un tracé centré sur l'astre, en style traînée.
+import { windowTrailAlphas } from './orbitRibbonMath';
 
 /** Rayon terrestre moyen (km) : l'unité de longueur de la scène. */
 // Déclare EARTH_RADIUS_KM : la taille d'une unité de scène, en kilomètres.
@@ -43,31 +45,8 @@ const EARTH_RADIUS_KM = 6371;
 // Déclare et exporte sceneScaleOf : reçoit l'unité des éléments d'orbite de l'astre.
 export const sceneScaleOf = (unit) => (unit === 'km' ? 1 / EARTH_RADIUS_KM : AU_UNITS);
 
-// Code GLSL du shader de sommets, écrit sur les lignes suivantes jusqu'à l'accent grave fermant : il reçoit l'attribut alpha de chaque point, le transmet au shader de fragments dans vAlpha, calcule la position à l'écran et inclut la profondeur logarithmique de three.js.
-const vertexShader = `
-#include <common>
-#include <logdepthbuf_pars_vertex>
-attribute float alpha;
-varying float vAlpha;
-void main() {
-  vAlpha = alpha;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  #include <logdepthbuf_vertex>
-}`;
-
-// Code GLSL du shader de fragments, écrit sur les lignes suivantes jusqu'à l'accent grave fermant : il reçoit la couleur, l'opacité générale et vAlpha, inclut la profondeur logarithmique et colore le point avec une opacité égale à vAlpha × opacity.
-const fragmentShader = `
-#include <logdepthbuf_pars_fragment>
-uniform vec3 color;
-uniform float opacity;
-varying float vAlpha;
-void main() {
-  #include <logdepthbuf_fragment>
-  gl_FragColor = vec4(color, vAlpha * opacity);
-}`;
-
 /**
- * Ligne de l'orbite d'un astre, dans le repère de la scène, centrée sur l'astre central (le Soleil pour une
+ * Ruban de l'orbite d'un astre, dans le repère de la scène, centré sur l'astre central (le Soleil pour une
  * planète, la planète pour un satellite).
  *
  * @param {object}   o
@@ -76,8 +55,6 @@ void main() {
  * @param {number}  [o.color]       couleur de la ligne
  * @param {number}  [o.samples]     nombre de segments du tracé
  * @param {number}  [o.refreshMs]   intervalle de recalcul, en millisecondes simulées
- * @param {number}  [o.alphaNear]   opacité au niveau de l'astre
- * @param {number}  [o.alphaFar]    opacité à l'opposé
  * @param {boolean} [o.closed]      ferme la boucle du tracé (vrai par défaut)
  * @param {string}  [o.name]        nom de l'objet three.js
  */
@@ -95,10 +72,6 @@ export class BodyOrbit {
     samples = DEFAULT_SAMPLES,
     // l'intervalle de recalcul, déduit de la période par défaut ;
     refreshMs,
-    // l'opacité au niveau de l'astre ;
-    alphaNear = DEFAULT_ALPHA_NEAR,
-    // l'opacité à l'opposé ;
-    alphaFar = DEFAULT_ALPHA_FAR,
     // la fermeture de la boucle ;
     closed = true,
     // le nom de l'objet dans la scène.
@@ -123,36 +96,14 @@ export class BodyOrbit {
     const n = samples;
     // Tableau des positions : trois nombres pour chacun des n + 1 points.
     this.positions = new Float32Array((n + 1) * 3);
-    // Tableau des opacités : une par point.
-    const alphas = new Float32Array(n + 1);
-    // Remplit les opacités : orbitAlpha reçoit la position du point le long du tracé, de −1 à +1.
-    for (let k = 0; k <= n; k++) alphas[k] = orbitAlpha((k / n) * 2 - 1, alphaNear, alphaFar);
-    // Géométrie de la ligne.
-    const geometry = new THREE.BufferGeometry();
-    // Son attribut de positions, trois nombres par point.
-    geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
-    // Son attribut d'opacités, un nombre par point.
-    geometry.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
-    // Matériau à shader (début).
-    this.material = new THREE.ShaderMaterial({
-      // Ses variables uniformes : la couleur et l'opacité générale, 1 au départ.
-      uniforms: { color: { value: new THREE.Color(color) }, opacity: { value: 1 } },
-      // Le shader de sommets.
-      vertexShader,
-      // Le shader de fragments.
-      fragmentShader,
-      // Matériau transparent.
-      transparent: true,
-      // Sans écriture dans le tampon de profondeur.
-      depthWrite: false,
-    // Fin du matériau.
-    });
-    // La ligne, faite de la géométrie et du matériau.
-    this.line = new THREE.Line(geometry, this.material);
-    // Son nom.
-    this.line.name = name;
-    // Jamais écartée du rendu par le test de visibilité de three.js.
-    this.line.frustumCulled = false; // la géométrie bouge : pas de sphère englobante à recalculer
+    // Ruban de l'orbite, sur ces positions (remplies au premier update).
+    this.ribbon = new OrbitRibbon({ points: this.positions, color, name });
+    // Opacités de la traînée : la plus claire juste derrière l'astre, au milieu du tracé.
+    windowTrailAlphas(this.ribbon.alphas);
+    // Les envoie à la carte graphique.
+    this.ribbon.alphasChanged();
+    // Le maillage du ruban, sous le nom habituel de la ligne.
+    this.line = this.ribbon.mesh;
   // Fin du constructeur.
   }
 
@@ -178,9 +129,13 @@ export class BodyOrbit {
     // Ferme la boucle du tracé : les deux bouts se rejoignent, sans déplacer l'astre au milieu.
     if (this.closed) closeOrbitLoop(p, this.samples);
     // Signale à three.js que les positions ont changé.
-    this.line.geometry.attributes.position.needsUpdate = true;
+    this.ribbon.positionsChanged();
   // Fin de update.
   }
+
+  /** Met en avant le tracé de l'astre visé (trait plus épais, pleine opacité). */
+  // setFocused : vrai pour l'astre visé.
+  setFocused(on) { this.ribbon.setFocused(on); }
 
   /** Force un recalcul à la prochaine image (ex. arrivée d'une table de positions plus précise). */
   // invalidate : remet le centre à NaN, ce qui force le prochain recalcul.
@@ -188,10 +143,8 @@ export class BodyOrbit {
 
   // dispose : libère les ressources (début).
   dispose() {
-    // Libère la géométrie.
-    this.line.geometry.dispose();
-    // Libère le matériau.
-    this.material.dispose();
+    // Libère le ruban (géométrie et matériau).
+    this.ribbon.dispose();
   // Fin de dispose.
   }
 // Fin de la classe BodyOrbit.
