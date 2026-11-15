@@ -1,3 +1,6 @@
+// Importe le test des paliers de zoom, depuis zoomTiers.
+import { validTiers } from './zoomTiers';
+
 // Table de priorité des sources de la Terre, lue sur le serveur (GET /api/v1/tiles/earth/plan, voir backend
 // earth-plan.ts). Le navigateur ne garde aucune règle de choix en dur : il lit cette table, la vérifie et la convertit
 // en plan de chargement direct (les sources dans l'ordre de priorité, avec leurs emprises, leurs niveaux et les
@@ -39,8 +42,9 @@ export function planToDirect(plan) {
 }
 
 /**
- * Description de la couche complétée par sa table : le plan direct (`direct`), l'accord des couleurs et la version de
- * la table. Sans table utilisable, la description est rendue sans plan direct (tout passe par le relais).
+ * Description de la couche complétée par sa table : le plan direct (`direct`), l'accord des couleurs, la version de
+ * la table, ses paliers de zoom (`tiers`) et le chargement limité au champ de la caméra (`fieldOnly`). Sans table
+ * utilisable, la description est rendue sans plan direct (tout passe par le relais) ni paliers.
  */
 // Déclare et exporte withPlan : la description de la couche et la table reçue (ou null).
 export function withPlan(info, plan) {
@@ -50,7 +54,9 @@ export function withPlan(info, plan) {
   const { direct: _old, ...rest } = info || {};
   // Sans plan : la description seule.
   if (!direct) return rest;
-  // Sinon : la description, le plan, l'accord des couleurs de la table et sa version.
-  return { ...rest, direct, colorMatch: plan.colorMatch !== false, planVersion: plan.version };
+  // Sinon : la description, le plan, l'accord des couleurs de la table et sa version,
+  return { ...rest, direct, colorMatch: plan.colorMatch !== false, planVersion: plan.version,
+    // ses paliers s'ils sont utilisables, et le chargement limité au champ de la caméra.
+    ...(validTiers(plan.tiers) ? { tiers: plan.tiers } : {}), fieldOnly: plan.fieldOnly === true };
 // Fin de withPlan.
 }
