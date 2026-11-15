@@ -1,5 +1,7 @@
-// Outils NestJS : contrôleur, routes GET, en-têtes, paramètres, requête et erreurs 400 et 404.
-import { BadRequestException, Controller, Get, Header, NotFoundException, Param, Query } from '@nestjs/common';
+// Outils NestJS : contrôleur, routes GET, en-têtes, paramètres, requête, réponse brute et erreurs 400 et 404.
+import { BadRequestException, Controller, Get, Header, NotFoundException, Param, Query, Res } from '@nestjs/common';
+// Type de la réponse d'Express, pour renvoyer une image.
+import type { Response } from 'express';
 // Décorateurs de documentation OpenAPI : étiquette du groupe et description des routes.
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 // Service du moteur atmosphérique.
@@ -116,6 +118,38 @@ export class AtmosphereController {
     // Délègue au service.
     return this.atmosphere.cyclones();
   // Fin de cyclones.
+  }
+
+  // Route GET /api/v1/atmosphere/lightning.
+  @Get('lightning')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Foudre autour d’un point', description: 'Source : Xweather Lightning (accès standard : 5 dernières minutes, 100 km, 1 000 impacts). Paramètres lon, lat. Impacts en colonnes (âge, nature, courant signé, confiance), fréquence, densité, zones actives.' })
+  // Cache public de 30 secondes.
+  @Header('Cache-Control', 'public, max-age=30')
+  // Méthode lightning : longitude et latitude.
+  lightning(@Query('lon') lon?: string, @Query('lat') lat?: string) {
+    // Nombres lus.
+    const lo = Number(lon), la = Number(lat);
+    // Absents ou hors du globe : erreur 400.
+    if (lon === undefined || lat === undefined || !Number.isFinite(lo) || !Number.isFinite(la) || Math.abs(lo) > 180 || Math.abs(la) > 90) throw new BadRequestException('lon et lat attendus, en degrés');
+    // Délègue au service.
+    return this.atmosphere.lightning(lo, la);
+  // Fin de lightning.
+  }
+
+  // Route GET /api/v1/atmosphere/lightning/tiles/:z/:x/:y.
+  @Get('lightning/tiles/:z/:x/:y')
+  // Ce que fait la route.
+  @ApiOperation({ summary: 'Tuile de la couche mondiale des impacts de foudre', description: 'Relais de Xweather Raster Maps (couche lightning-strikes), niveaux 0 à 3, gardée 2 minutes. 404 hors des niveaux ou sans accès.' })
+  // Méthode lightningTile : niveau, colonne, ligne et réponse brute.
+  async lightningTile(@Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Res() res: Response) {
+    // Tuile lue par le service.
+    const tile = await this.atmosphere.lightningTile(Number(z), Number(x), Number(y));
+    // Indisponible : 404.
+    if (!tile) throw new NotFoundException('Tuile de foudre indisponible (niveaux 0 à 3, identifiants et option foudre Xweather requis)');
+    // Image, gardée 2 minutes par les navigateurs.
+    res.set({ 'Content-Type': tile.type, 'Cache-Control': 'public, max-age=120' }).send(tile.body);
+  // Fin de lightningTile.
   }
 
   // Route GET /api/v1/atmosphere/events.

@@ -10,6 +10,8 @@ import { CycloneFix, parseGdacsCyclones, parseNhcStorms } from './cyclone-source
 import { attachForecasts, mergeCyclones, nhcForecastUrl } from './cyclones';
 // Prévision officielle au format ATCF.
 import { AtcfForecast, parseAtcf } from './atcf';
+// Foudre : lecture de l'API Xweather Lightning, statistiques, format commun, adresses des requêtes.
+import { LIGHTNING_RADIUS_KM, LIGHTNING_WINDOW_MIN, LightningStats, Strike, lightningCell, lightningStats, parseXweatherLightning, strikeConfidence, strikeToEvent, xweatherLightningTileUrl, xweatherLightningUrl } from './lightning';
 // Lecture de NASA EONET (incendies déclarés, trajectoires de tempêtes).
 import { StormTrack, parseEonetStorms, parseEonetWildfires } from './eonet';
 // Points chauds FIRMS : lecture, fusion, agrégation, détail par emprise, format commun.
@@ -88,6 +90,26 @@ export interface CyclonesResponse {
 // Fin de CyclonesResponse.
 }
 
+/** Réponse de la foudre autour d'un point. */
+// Forme de la réponse.
+export interface LightningResponse {
+  // generatedAt : l'heure de fabrication.
+  generatedAt: string;
+  // available : faux sans identifiants Xweather (reason dit pourquoi).
+  available: boolean;
+  // reason : la raison d'une indisponibilité, ou null.
+  reason: string | null;
+  // center : le centre de la requête (arrondi au demi-degré) ; radiusKm et windowMin : son disque et sa fenêtre.
+  center: { lon: number; lat: number } | null; radiusKm: number; windowMin: number;
+  // strikes : impacts, en colonnes (âge en secondes, nature 1 = nuage-sol, 2 = intra-nuage, 0 = inconnue ; courant signé ; confiance).
+  strikes: { count: number; lon: number[]; lat: number[]; ageS: number[]; kind: number[]; peak: number[]; conf: number[] };
+  // stats : fréquence, densité, natures, polarités, zones actives.
+  stats: LightningStats;
+  // source : l'état du fournisseur.
+  source: SourceState | null;
+// Fin de LightningResponse.
+}
+
 // Données des incendies préparées : signature des lectures, points, statistiques, cellules et points par tuile.
 interface FireData {
   // signature : heures de lecture des fichiers (change quand un fichier est relu).
@@ -132,6 +154,85 @@ export class AtmosphereService {
   private fire: FireData | null = null;
   // Prévisions officielles du NHC, une par cyclone actif, gardées au rythme du fournisseur (15 min).
   private readonly forecasts = new TtlCache<AtcfForecast>(provider('nhc-atcf').refreshMs, 32);
+  // Foudre : une lecture par cellule d'un demi-degré, gardée 1 minute, partagée par tous les visiteurs.
+  private readonly lightningCells = new TtlCache<Strike[]>(provider('xweather-lightning').refreshMs, 256);
+  // Foudre : tuiles de la couche mondiale (niveaux 0 à 3), gardées 2 minutes.
+  private readonly lightningTiles = new TtlCache<{ body: Buffer; type: string }>(2 * 60_000, 128);
+
+  // Méthode privée xweatherKeys : identifiants Xweather valides, ou null (jamais renvoyés au navigateur).
+  private xweatherKeys(): { id: string; secret: string } | null {
+    // Identifiants lus dans l'environnement.
+    const id = process.env.XWEATHER_CLIENT_ID?.trim() || '', secret = process.env.XWEATHER_CLIENT_SECRET?.trim() || '';
+    // Formes attendues (comme pour les nuages Xweather) : sinon null.
+    return /^[A-Za-z0-9]{8,64}$/.test(id) && /^[A-Za-z0-9]{16,128}$/.test(secret) ? { id, secret } : null;
+  // Fin de xweatherKeys.
+  }
+
+  /** Impacts de foudre des 5 dernières minutes dans 100 km autour d'un point (accès standard Xweather). */
+  // Méthode lightning : longitude et latitude visées.
+  async lightning(lon: number, lat: number): Promise<LightningResponse> {
+    // Instant de référence.
+    const now = Date.now();
+    // Colonnes vides.
+    const empty = { count: 0, lon: [], lat: [], ageS: [], kind: [], peak: [], conf: [] };
+    // Identifiants.
+    const keys = this.xweatherKeys();
+    // Sans identifiants : indisponible, sans appel.
+    if (!keys) return { generatedAt: new Date(now).toISOString(), available: false, reason: 'Identifiants Xweather absents sur le serveur (XWEATHER_CLIENT_ID, XWEATHER_CLIENT_SECRET)', center: null, radiusKm: LIGHTNING_RADIUS_KM, windowMin: LIGHTNING_WINDOW_MIN, strikes: empty, stats: lightningStats([]), source: null };
+    // Cellule partagée du point visé.
+    const cell = lightningCell(lon, lat);
+    // Lecture par le cache (début de la fonction de lecture).
+    const r = await this.lightningCells.get(cell.key, async () => {
+      // Appel de l'API, avec abandon au bout du délai (l'adresse contient les identifiants : jamais journalisée).
+      const res = await fetch(xweatherLightningUrl(keys.id, keys.secret, cell.lon, cell.lat), { signal: AbortSignal.timeout(TIMEOUT_MS), headers: { 'User-Agent': USER_AGENT } });
+      // Réponse lue (l'API rend aussi ses erreurs en JSON).
+      const parsed = parseXweatherLightning(await res.json().catch(() => null));
+      // Erreur de l'API (accès refusé, option foudre absente…) : son message.
+      if (parsed.error) throw new Error(`Xweather : ${parsed.error}`);
+      // Réponse HTTP en erreur sans message : son code.
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Impacts.
+      return parsed.strikes;
+    // Fin de la lecture.
+    });
+    // Impacts de moins de 10 minutes (une donnée en cache, périmée, ne montre pas de vieux impacts).
+    const strikes = (r.data ?? []).filter((s) => now - s.t <= 10 * 60_000);
+    // État du fournisseur.
+    const source = this.state('xweather-lightning', r);
+    // Événements au format commun, gardés par le gestionnaire (dernière cellule lue).
+    this.manager.update('foudre', strikes.map((s) => strikeToEvent(s, source.fetchedAt ?? new Date(now).toISOString())), { stale: r.stale, errors: r.error ? [`xweather-lightning : ${r.error}`] : [] }, now);
+    // Colonnes des impacts.
+    const cols = { count: strikes.length, lon: strikes.map((s) => s.lon), lat: strikes.map((s) => s.lat), ageS: strikes.map((s) => Math.max(0, Math.round((now - s.t) / 1000))), kind: strikes.map((s) => (s.type === 'cg' ? 1 : s.type === 'ic' ? 2 : 0)), peak: strikes.map((s) => s.peakAmp ?? 0), conf: strikes.map((s) => strikeConfidence(s)) };
+    // Réponse.
+    return { generatedAt: new Date(now).toISOString(), available: true, reason: r.data === null && r.error ? r.error : null, center: { lon: cell.lon, lat: cell.lat }, radiusKm: LIGHTNING_RADIUS_KM, windowMin: LIGHTNING_WINDOW_MIN, strikes: cols, stats: lightningStats(strikes), source };
+  // Fin de lightning.
+  }
+
+  /** Tuile de la couche mondiale des impacts de foudre (Xweather Raster Maps), niveaux 0 à 3 ; null si indisponible. */
+  // Méthode lightningTile : niveau, colonne et ligne.
+  async lightningTile(z: number, x: number, y: number): Promise<{ body: Buffer; type: string } | null> {
+    // Identifiants.
+    const keys = this.xweatherKeys();
+    // Sans identifiants, ou tuile hors des niveaux 0 à 3 : null.
+    if (!keys || ![z, x, y].every(Number.isInteger) || z < 0 || z > 3 || x < 0 || y < 0 || x >= 2 ** z || y >= 2 ** z) return null;
+    // Lecture par le cache (début de la fonction de lecture).
+    const r = await this.lightningTiles.get(`${z}/${x}/${y}`, async () => {
+      // Appel de la tuile (adresse avec identifiants : jamais journalisée).
+      const res = await fetch(xweatherLightningTileUrl(keys.id, keys.secret, z, x, y), { signal: AbortSignal.timeout(TIMEOUT_MS) });
+      // Réponse en erreur : son code.
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // Nature du contenu.
+      const type = res.headers.get('content-type') || 'image/png';
+      // Pas une image : échec.
+      if (!type.startsWith('image/')) throw new Error('réponse qui n’est pas une image');
+      // Image.
+      return { body: Buffer.from(await res.arrayBuffer()), type };
+    // Fin de la lecture.
+    });
+    // Image, ou null.
+    return r.data;
+  // Fin de lightningTile.
+  }
 
   // Méthode privée cacheOf : le cache d'un fournisseur, créé à la première demande.
   private cacheOf<T>(id: string): TtlCache<T> {
