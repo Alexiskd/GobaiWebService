@@ -1,5 +1,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
+// Importe le GLSL du modèle d'éclairage général, partagé avec les cartes, depuis surfaceLight.
+import { GENERIC_LIGHT_GLSL } from './surfaceLight';
 
 // Sphère de couleur unie avec le même éclairage jour/nuit que les cartes (tiles/tileShaders.jsx) : face tournée vers
 // le Soleil éclairée, face opposée dans l'ombre, et le même réglage « Ombre » (uniform `shade`, 0 = astre entièrement
@@ -28,6 +30,8 @@ const fragmentShader = [
   'uniform vec3 color;uniform vec3 sunV;uniform float shade;uniform float airless;',
   // Valeurs reçues du programme de sommets.
   'varying vec3 vN;varying vec3 vV;',
+  // Part de jour et couleur éclairée : les mêmes fonctions que les cartes (surfaceLight.jsx).
+  GENERIC_LIGHT_GLSL,
   // Début du programme ; écrit la profondeur logarithmique.
   'void main(){', '#include <logdepthbuf_fragment>',
   // Vue de l'intérieur (géante gazeuse traversée) : la normale est retournée.
@@ -37,9 +41,9 @@ const fragmentShader = [
   'float d=dot(N,sunV);float mu=max(dot(N,V),0.),m0=max(d,0.);',
   // Mêmes courbes que les cartes : terminateur doux avec atmosphère, net sans atmosphère.
   // Part de jour : transition douce avec atmosphère, nette sans atmosphère.
-  'float day=mix(smoothstep(-.12,.22,d),smoothstep(-.02,.04,d),airless);',
+  'float day=dayWeight(d,airless);',
   // Couleur éclairée : une formule avec atmosphère, une autre sans.
-  'vec3 lit=mix(color*(.38+.72*m0),color*min(1.4,.04+2.*m0/(m0+mu+.001)),airless);',
+  'vec3 lit=litColor(color,m0,mu,airless);',
   // Couleur de nuit : bleutée avec atmosphère, grise sans.
   'vec3 night=color*mix(vec3(.024,.034,.06),vec3(.012,.014,.017),airless);',
   // Couleur finale : la couleur unie si l'ombre est coupée, le mélange jour/nuit sinon.
