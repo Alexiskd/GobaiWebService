@@ -14,6 +14,25 @@ export const levelGap = (altitude) => Math.min(1e-6, Math.max(1e-10, altitude * 
 // Déclare et exporte tileRadius : 1 plus l'écart multiplié par (1 + niveau).
 export const tileRadius = (z, gap = 1e-6) => 1 + gap * (1 + z);
 
+/**
+ * Abaissement de la sphère de fond sous la carte, en rayons. La carte est faite de facettes planes dont les sommets
+ * sont posés sur la sphère : entre ses sommets, elle passe SOUS la sphère. Creux mesurés (backdrop.test.jsx) :
+ * 1,2e-4 rayon pour les cellules hexagonales du niveau 0 (750 m sur la Terre), 2,4e-3 rayon pour les tuiles carrées du
+ * niveau 0 ; bien plus que l'écart entre niveaux (1e-6 rayon au plus). Posée au rayon exact, la sphère de fond perçait
+ * la carte à chacun de ses sommets dès qu'elle était affichée (chargement, fondu) : une grille régulière de petits
+ * points de sa couleur, presque noire sur la Terre, sur toute la surface éclairée. Abaissée sous le creux le plus
+ * profond, elle reste cachée partout où la carte existe et ne se voit que là où la carte manque.
+ */
+// Déclare et exporte l'abaissement : 2e-4 rayon sous les cellules hexagonales, 3e-3 sous les tuiles carrées.
+export const BACKDROP_DROP = { hex: 2e-4, square: 3e-3 };
+/**
+ * Facteur du rayon de la sphère de fond sous une carte affichée : sous les facettes de la carte (`hex` : cellules
+ * hexagonales, sinon tuiles carrées) et, si le relief creuse le fond des océans, sous le fond le plus profond
+ * (`seaFloor`, en rayons).
+ */
+// Déclare et exporte backdropScale : le mode d'affichage et la profondeur du fond des océans.
+export const backdropScale = (hex, seaFloor = 0) => 1 - (hex ? BACKDROP_DROP.hex : BACKDROP_DROP.square) - Math.max(0, Number(seaFloor) || 0);
+
 // Nombre maximal de segments par côté d'une tuile : 64.
 const MAX_SEGMENTS = 64;
 // Taille visée d'un segment : 1 degré.

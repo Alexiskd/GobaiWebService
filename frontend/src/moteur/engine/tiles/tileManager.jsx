@@ -7,13 +7,15 @@ import { HOST_GATE, TileSource, loadImage } from './tileSource';
 // Importe les compteurs réseau des tuiles, depuis netLoads.
 import { NET_STATS } from './netLoads';
 // Importe la source des tuiles d'altitude et les fonctions de réglage du relief, depuis relief.
-import { ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
+import { MAX_DEPTH_M, ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
 // Importe les lumières de la nuit : la clé et la lecture de leur interrupteur, et leur source.
 import { LIGHTS_MOSAIC_PX, LIGHTS_PAD, NIGHT_LIGHTS_KEY, NightLightsSource, assembleLightsMosaic, mosaicLevelFor, nightLightsChoice } from './nightLights';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
 import { xyzToLonLat } from './mercator';
 // Importe TileLayer, la couche de tuiles, depuis tileLayer.
 import { TileLayer } from './tileLayer';
+// Importe backdropScale, le rayon de la sphère de fond sous la carte, depuis tileGeometry.
+import { backdropScale } from './tileGeometry';
 // Importe l'identifiant du calque des rues et sa source, depuis roadSource.
 import { ROADS_LAYER_ID, RoadSource } from './roadSource';
 // Importe viewportBounds, les limites géographiques de la vue, depuis viewport.
@@ -136,6 +138,8 @@ export class TileManager {
     // Relief de l'astre : vraies altitudes (« terrarium ») ou estimation d'après l'image (« image »), ou aucun.
     // Relief de l'astre : mis en forme et réglé (voir tuneRelief), le même sur tous les appareils.
     this.relief = tuneRelief(normalizeRelief(body.relief, body.radiusKm));
+    // Facteur du rayon de la sphère de fond : 1 tant qu'aucune carte n'est affichée (la sphère est alors l'astre).
+    this.backdropK = 1;
     // Accès du relief : le chargement d'une image (sans cache, en mémoire seulement) et la lecture d'une fiche JSON.
     const reliefIo = { loadImage: (url) => loadImage(url), fetchJson };
     // Source des tuiles d'altitude, pour un relief Terrarium.
@@ -546,6 +550,21 @@ export class TileManager {
   // setShade : active ou coupe l'éclairage jour/nuit.
   setShade(on) { this.uniforms.shade.value = on ? 1 : 0; }
 
+  /**
+   * Rayon de la sphère de fond, en facteur du rayon de l'astre. Seule sa géométrie est mise à l'échelle : ses enfants
+   * (nuages LiDAR de la Terre) et sa forme (aplatissement des géantes gazeuses, porté par l'objet) ne bougent pas.
+   */
+  // placeBackdrop : le facteur voulu (début).
+  placeBackdrop(k) {
+    // Inchangé : rien (le calcul n'est refait que lorsque le mode ou le relief change).
+    if (k === this.backdropK) return;
+    // Géométrie ramenée du facteur courant au facteur voulu (normales et volumes englobants suivent).
+    this.body.mesh.geometry.scale(k / this.backdropK, k / this.backdropK, k / this.backdropK);
+    // Garde le facteur.
+    this.backdropK = k;
+  // Fin de placeBackdrop.
+  }
+
   // clearBase : retire le fond (début).
   clearBase() {
     // Aucun : rien à faire.
@@ -558,6 +577,8 @@ export class TileManager {
     this.base = null;
     // La sphère de fond redevient visible.
     this.body.mesh.visible = true;
+    // Et reprend le rayon de l'astre : sans carte, c'est elle qui le dessine.
+    this.placeBackdrop(1);
   // Fin de clearBase.
   }
 
@@ -652,6 +673,10 @@ export class TileManager {
     const fading = b.layer.fading;
     // La sphère de fond est visible tant que la carte ne couvre pas tout, ou pendant un fondu.
     body.mesh.visible = !b.layer.fullCover || fading;
+    // Fond des océans creusé par le relief, en rayons : la plus grande profondeur, exagération comprise.
+    const seaFloor = this.uniforms.oceanOn.value > 0 && this.relief?.radiusM ? (MAX_DEPTH_M / this.relief.radiusM) * this.uniforms.reliefExag.value : 0;
+    // La sphère de fond est posée sous la carte : elle ne perce jamais ses facettes (voir BACKDROP_DROP).
+    this.placeBackdrop(backdropScale(b.layer.hexOn, seaFloor));
     // Téléphone au repos (20 images par seconde) : plein rythme le temps du fondu, sinon il avance par à-coups.
     // Pendant un fondu : le moteur est noté actif.
     if (fading) engine.activeAt = performance.now();
