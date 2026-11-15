@@ -57,10 +57,10 @@ export function useEarthDisplay({ engine, baseLayer, overlayLayer, lidarLayers =
   const [roads, setRoads] = useState(true);
   // État : ombrage, actif au départ.
   const [shade, setShade] = useState(true);
-  // État : frontières, affichées au départ.
-  const [borders, setBorders] = useState(true);
-  // État : littoraux, affichés au départ.
-  const [coasts, setCoasts] = useState(true);
+  // État : frontières, masquées au départ.
+  const [borders, setBorders] = useState(false);
+  // État : littoraux, masqués au départ.
+  const [coasts, setCoasts] = useState(false);
   // État : noms des pays, masqués au départ.
   const [countryNames, setCountryNames] = useState(false);
   // État : noms des villes, masqués au départ.

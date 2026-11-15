@@ -903,12 +903,12 @@ export class SolarEngine {
     this.bordersRoot.visible = false;
     // L'ajoute au groupe de la Terre.
     this.earth.group.add(this.bordersRoot);
-    // Frontières permises.
-    this.bordersOn = true;
+    // Frontières masquées par défaut.
+    this.bordersOn = false;
     // Frontières pas encore demandées.
     this.bordersWanted = false;
-    // Littoraux permis.
-    this.coastsOn = true;
+    // Littoraux masqués par défaut.
+    this.coastsOn = false;
     // Littoraux du globe remplacés par ceux des tuiles (calque des rues affiché).
     this.coastsFromTiles = false;
     // Lignes des frontières : aucune.
