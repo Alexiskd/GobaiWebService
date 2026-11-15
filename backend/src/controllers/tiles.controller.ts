@@ -786,7 +786,7 @@ export class TilesController {
   moonReliefStatus(@Res() res: TileResponse): void {
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.end(JSON.stringify(this.moonRelief.status()));
+    res.end(Buffer.from(JSON.stringify(this.moonRelief.status()), 'utf8'));
   }
 
   // Route GET /api/v1/tiles/moon-relief/model.glb : modèle 3D du relief de la Lune.
