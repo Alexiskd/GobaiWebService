@@ -327,6 +327,40 @@ export class EarthPlanSourceDto {
 // Fin de EarthPlanSourceDto.
 }
 
+// Forme des détails affichés à un palier de zoom.
+export class EarthTierDetailsDto {
+  // oceans : teinte des profondeurs ou relief des fonds.
+  @ApiProperty({ enum: ['teinte', 'relief'] }) oceans: string;
+  // coasts : littoraux tracés.
+  @ApiProperty() coasts: boolean;
+  // roads : rues et routes demandées.
+  @ApiProperty() roads: boolean;
+  // names : noms des villes et des pays.
+  @ApiProperty() names: boolean;
+  // marine : carte marine NOAA, fondu NOAA vers GEBCO, ou GEBCO seule.
+  @ApiProperty({ enum: ['noaa', 'fondu', 'gebco'] }) marine: string;
+// Fin de EarthTierDetailsDto.
+}
+
+// Forme d'un palier de zoom.
+export class EarthTierDto {
+  // id : l'identifiant du palier.
+  @ApiProperty({ example: 'ville' }) id: string;
+  // label : son nom affiché.
+  @ApiProperty({ example: 'Ville' }) label: string;
+  // maxKm : la distance jusqu'à laquelle il s'applique.
+  @ApiProperty({ nullable: true, example: 40, description: 'Altitude au-dessus du sol (km) jusqu’à laquelle le palier s’applique ; null pour le dernier.' }) maxKm: number | null;
+  // source : la source prioritaire.
+  @ApiProperty({ example: 'orthophotos nationales' }) source: string;
+  // maxZoom : le niveau de tuile le plus fin.
+  @ApiProperty({ example: 17 }) maxZoom: number;
+  // maxTiles : le nombre maximal de tuiles chargées.
+  @ApiProperty({ example: { desktop: 280, phone: 210 }, description: 'Nombre maximal de tuiles chargées en même temps, sur ordinateur et sur téléphone.' }) maxTiles: { desktop: number; phone: number };
+  // details : les détails affichés.
+  @ApiProperty({ type: EarthTierDetailsDto }) details: EarthTierDetailsDto;
+// Fin de EarthTierDto.
+}
+
 // Forme de la table de priorité des sources de la Terre (GET /tiles/earth/plan).
 export class EarthPlanDto {
   // version : la version de la table.
@@ -339,6 +373,10 @@ export class EarthPlanDto {
   @ApiProperty({ description: 'Accord des couleurs des sources sur la mosaïque mondiale.' }) colorMatch: boolean;
   // sources : les lignes, dans l'ordre de priorité.
   @ApiProperty({ type: [EarthPlanSourceDto] }) sources: EarthPlanSourceDto[];
+  // tiers : les paliers de zoom.
+  @ApiProperty({ type: [EarthTierDto] }) tiers: EarthTierDto[];
+  // fieldOnly : chargement limité au champ de la caméra.
+  @ApiProperty({ description: 'Seules les tuiles du champ de la caméra sont chargées ; les autres sont déchargées.' }) fieldOnly: boolean;
 // Fin de EarthPlanDto.
 }
 
