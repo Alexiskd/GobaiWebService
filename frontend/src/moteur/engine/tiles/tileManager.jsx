@@ -9,7 +9,7 @@ import { NET_STATS } from './netLoads';
 // Importe la source des tuiles d'altitude et les fonctions de réglage du relief, depuis relief.
 import { ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
 // Importe les lumières de la nuit : la clé et la lecture de leur interrupteur, et leur source.
-import { NIGHT_LIGHTS_KEY, NightLightsSource, assembleLightsMosaic, mosaicLevelFor, nightLightsChoice } from './nightLights';
+import { LIGHTS_MOSAIC_PX, NIGHT_LIGHTS_KEY, NightLightsSource, assembleLightsMosaic, mosaicLevelFor, nightLightsChoice } from './nightLights';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
 import { xyzToLonLat } from './mercator';
 // Importe TileLayer, la couche de tuiles, depuis tileLayer.
@@ -124,6 +124,11 @@ export class TileManager {
       surfModel: { value: body.lighting === 'earth' ? 1 : 0 },
       // Masque de l'eau (reflet du Soleil sur la mer) : en attente, absent.
       wMap: { value: placeholderTexture() }, wOn: { value: 0 },
+      // Lumières : côté des tuiles et de la mosaïque mondiale (en pixels), et lecture en lumière linéaire (images
+      // stockées en sRGB, WebGL 2 seulement : sinon lues telles quelles).
+      ltSize: { value: new THREE.Vector2(body.nightLights?.tileSize || 256, body.nightLights?.tileSize || 256) },
+      lgSize: { value: new THREE.Vector2(LIGHTS_MOSAIC_PX, LIGHTS_MOSAIC_PX) },
+      ltLinear: { value: engine.renderer?.capabilities?.isWebGL2 ? 1 : 0 },
     // Fin des variables uniformes.
     };
     // Avec un masque de l'eau (la Terre) : chargé une fois, partagé par toutes les tuiles.
@@ -144,6 +149,8 @@ export class TileManager {
       : null;
     // Source des lumières de la nuit, si l'astre en a (la Terre) : créée même coupées, pour pouvoir les rallumer.
     this.lightsSource = body.nightLights ? new NightLightsSource(body.nightLights) : null;
+    // Lumières allumées dès le départ : couverture mondiale permanente chargée tout de suite (jamais de trou).
+    if (this.lightsSource && this.uniforms.lightsOn.value > 0) this.loadLightsMosaic();
     // Relief coupé pour l'instant.
     this.reliefOn = false;
     // Dernière mesure de la hauteur du sol : instant et valeur.
@@ -229,7 +236,7 @@ export class TileManager {
    */
   /**
    * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit, ses lumières allumées partout. Le monde
-   * entier est chargé d'un coup en une mosaïque de 4 096 px, puis affiné par les tuiles affichées.
+   * entier est couvert par la mosaïque mondiale (chargée si elle ne l'est pas déjà), puis affiné par les tuiles affichées.
    */
   // setLightView : allume ou coupe la vue de nuit ; renvoie l'état (début).
   setLightView(on) {
@@ -265,7 +272,10 @@ export class TileManager {
   // Fin de loadWaterMask.
   }
 
-  /** Charge la mosaïque mondiale des lumières, une seule fois (un échec permet de réessayer plus tard). */
+  /**
+   * Charge la mosaïque mondiale des lumières (2 048 px), une seule fois (un échec permet de réessayer plus tard) :
+   * couverture permanente sous les tuiles fines, et source du halo des villes (une seule image, sans raccord).
+   */
   // loadLightsMosaic : la mosaïque mondiale des lumières (début).
   loadLightsMosaic() {
     // Déjà chargée ou en cours : la même promesse.
@@ -276,8 +286,10 @@ export class TileManager {
       if (!got) throw new Error('Lumières indisponibles');
       // Texture du canevas.
       const tex = new THREE.CanvasTexture(canvas);
-      // Avec mipmaps, lissée, sans répétition aux bords.
-      tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      // Avec mipmaps, lissée ; continue à l'antiméridien (répétée en longitude), bornée aux pôles.
+      tex.generateMipmaps = true; tex.minFilter = THREE.LinearMipmapLinearFilter; tex.magFilter = THREE.LinearFilter; tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.ClampToEdgeWrapping;
+      // Stockée en sRGB quand la carte graphique le permet : lue en lumière linéaire, comme les tuiles (voir ltLinear).
+      if (this.uniforms.ltLinear.value > 0) tex.internalFormat = 'SRGB8_ALPHA8';
       // Posée pour toutes les tuiles de l'astre, et allumée.
       this.uniforms.lgMap.value = tex; this.uniforms.lgOn.value = 1;
       // Prévient l'interface.
@@ -297,6 +309,8 @@ export class TileManager {
     try { globalThis.localStorage?.setItem(NIGHT_LIGHTS_KEY, on ? '1' : '0'); } catch { /* stockage refusé : valable pour la session */ }
     // Interrupteur du shader.
     this.uniforms.lightsOn.value = on ? 1 : 0;
+    // Allumées : la couverture mondiale permanente (chargée une seule fois).
+    if (on) this.loadLightsMosaic();
     // Renvoie l'état.
     return Boolean(on);
   // Fin de setNightLights.

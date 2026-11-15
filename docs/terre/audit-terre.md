@@ -148,3 +148,71 @@ Vue « Pollution lumineuse de toute la Terre », avant et après :
 - Masque des lacs (Natural Earth « lakes », absent du dépôt).
 - Le modèle 3D de la Lune garde sa propre copie des formules de Lommel-Seeliger (hors périmètre Terre).
 - Validation sur téléphone et ordinateur réels, et sur Render une fois le service recréé.
+
+## Addendum — Visibilité multi-échelle de la pollution lumineuse
+
+### Diagnostic de l'existant
+
+- **Saut au chargement** : une tuile affichée passait d'un coup de la mosaïque mondiale à sa tuile de l'atlas.
+- **Halo lié à la tuile** : le halo était pris dans la tuile de la vue (biais de 1 à 4 niveaux). De près, ces niveaux
+  restent la tuile agrandie, si bien que le halo s'ajoutait à la ville elle-même. Résultat : saturation en blanc
+  au-dessous de 300 km d'altitude (100 % de l'image à 50 km).
+- **Pixels agrandis** : au-delà du niveau 6 de l'atlas, les pixels apparaissaient en carrés (lissage bilinéaire seul).
+- **Moyenne en valeurs d'affichage** : les mipmaps moyennaient des couleurs sRGB et non de la lumière. Une petite ville
+  lointaine s'éteignait plus vite que sa lumière réelle.
+- **Mosaïque mondiale de 4 096 px** : ≈ 85 Mo sur la carte graphique, chargée seulement dans certains cas.
+
+### Architecture retenue
+
+| Échelle | Source | Lecture |
+|---|---|---|
+| Globe entier, vue lointaine | mosaïque mondiale permanente (2 048 px, ≈ 21 Mo), chargée dès que les lumières sont allumées | mipmaps en lumière linéaire |
+| Région, continent | tuile de l'atlas (1 024 px, niveaux 0 à 6) partagée par toutes les tuiles affichées qu'elle couvre | mipmaps, niveau de détail calculé au pixel |
+| Ville, rue (au-delà du niveau 6) | même tuile, agrandie | interpolation bicubique B-spline (sans dépassement, sans détail inventé) |
+| Pendant un chargement | ancêtre déjà sur la carte graphique, sinon mosaïque mondiale | même lecture, puis fondu de 400 ms vers la tuile fine (immédiat si les animations sont réduites) |
+| Halo d'objectif | mosaïque mondiale (une seule image : ni raccord entre tuiles, ni coupure à l'antiméridien) | quatre niveaux pesés par le flou réel à l'écran : plein de loin, effacé de près |
+
+- **Chargement selon la caméra** : seules les tuiles visibles demandent leurs lumières, au plus bas de la file (après
+  les images et le relief). Les demandes qui ne servent plus sont annulées quand la vue change.
+- **Préchargement des zones voisines** : avec le préchargement prédictif (vue dans 1,5 s, cône de 120°), au plus
+  8 tuiles natives voisines, après les lumières visibles. Ces demandes sont annulées dès qu'un zoom commence.
+- **Réutilisation** : une image reçue reste partagée 30 s par la source, puis par le cache du navigateur.
+- **Libération** : la texture d'une tuile est rendue quand plus aucune tuile affichée ne s'en sert, et le repli est
+  rendu à la fin du fondu.
+- **Cohérence radiométrique** : les images sont stockées en sRGB sur la carte graphique (WebGL 2). Les mipmaps
+  moyennent donc la lumière elle-même, et la courbe sRGB exacte la ramène à l'affichage. Les zones les plus sombres
+  de l'atlas ne sont ni éclaircies ni grisées, et aucun foyer n'est créé.
+- **Compatibilité** : sans lecture à niveau imposé (WebGL 1 sans extension), lecture par biais et agrandissement
+  bilinéaire, vérifiés au banc.
+
+### Validation
+
+Série de zoom sur Paris (banc, mêmes vues avant et après, Soleil derrière la Terre), centre de l'image :
+
+| Altitude | Luminosité moyenne avant → après | Part saturée en blanc avant → après |
+|---|---|---|
+| 15 300 km | 31,4 → 33,4 | 0,1 % → 0,1 % |
+| 6 400 km | 59,8 → 60,3 | 0,5 % → 0,3 % |
+| 2 550 km | 88,9 → 86,6 | 2,4 % → 0,6 % |
+| 960 km | 89,9 → 86,8 | 2,8 % → 0,6 % |
+| 320 km | 177,8 → 153,3 | 24,7 % → 3,9 % |
+| 130 km | 243,8 → 209,1 | 74,5 % → 21,8 % |
+| 50 km | 253,8 → 224,5 | 100 % → 23,8 % |
+| 19 km | 255 → 226,4 | 100 % → 4,7 % |
+
+De loin, la luminosité est la même : rien n'est éclairci en dézoomant. De près, la saturation disparaît et les
+villes restent lisibles.
+
+![série de zoom](pollution-multi-echelle.jpg)
+
+Continuité pendant un chargement : tuile fine, repli seul (ancêtre ou mosaïque) et fondu à mi-course. L'écart de
+luminosité moyenne entre les trois reste sous 2 %.
+
+![repli et fondu](pollution-repli-fondu.jpg)
+
+- Tests unitaires : 395 réussis, dont 5 nouveaux (halo selon l'échelle, poids bicubiques, repli sur l'ancêtre,
+  continuité dans le shader, préchargement des voisines). Les quatre échecs déjà présents sur `main` sont inchangés.
+- Non-régression au pixel près : tuiles sans lumières (Lune, Mars, autres astres), relief, sphère de fond avec et
+  sans air : écart 0.
+- Non exécutés ici : téléphone et ordinateur réels, application complète avec les vraies tuiles (réseau fermé),
+  Render (service supprimé).

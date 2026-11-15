@@ -16,6 +16,8 @@ import { SharedLoads } from './netLoads';
 import { loadImage } from './tileSource';
 // Importe le remplissage d'une adresse {z}/{x}/{y}, depuis mercator.
 import { fillTemplate } from './mercator';
+// Importe nativeTile, la tuile ancêtre d'un niveau donné et la portion couverte, depuis overzoom.
+import { nativeTile } from './overzoom';
 
 /** Clé de l'interrupteur dans le stockage du navigateur : « 0 » coupe les lumières de nuit. */
 // Déclare et exporte la clé de l'interrupteur.
@@ -174,6 +176,83 @@ export const BLOOM_RADIUS = 0.4;
 // Déclare et exporte bloomWeights : le rayon (BLOOM_RADIUS par défaut).
 export const bloomWeights = (radius = BLOOM_RADIUS) => BLOOM_FACTORS.map((f) => Math.round((f + (1.2 - f - f) * radius) * 100) / 100);
 
+/**
+ * Poids des quatre niveaux du halo à un niveau de détail donné de la mosaïque (log₂ de ses pixels par pixel d'écran) :
+ * ceux de bloomWeights, chacun multiplié par le flou qu'il apporte vraiment à l'écran (lod + k borné entre 0 et 1).
+ * Même calcul que `cityHalo` du shader : plein halo vu de loin, plus aucun une fois la mosaïque agrandie (lod ≤ −4),
+ * pour que les villes vues de près ne soient pas éclaircies par un halo d'objectif.
+ */
+// Déclare et exporte haloWeights : le niveau de détail de la mosaïque.
+export const haloWeights = (lod) => bloomWeights().map((w, i) => w * Math.min(1, Math.max(0, lod + i + 1)));
+
+/**
+ * Poids de l'interpolation bicubique B-spline (de la tuile agrandie) pour une position fractionnaire f entre deux
+ * pixels : [w0, w1, w2, w3], positifs, de somme 1 — lissage sans dépassement, sans détail inventé. Même calcul que
+ * `lightCore` du shader.
+ */
+// Déclare et exporte bsplineWeights : la position fractionnaire.
+export function bsplineWeights(f) {
+  // Carré et cube.
+  const f2 = f * f, f3 = f2 * f;
+  // Les quatre poids cubiques.
+  return [(1 - 3 * f + 3 * f2 - f3) / 6, (4 - 6 * f2 + 3 * f3) / 6, (1 + 3 * f + 3 * f2 - 3 * f3) / 6, f3 / 6];
+// Fin de bsplineWeights.
+}
+
+/**
+ * Repli d'une tuile affichée en attendant sa tuile de lumières : l'ancêtre le plus proche déjà sur la carte graphique.
+ * `loaded` : tuiles de lumières chargées (« z/x/y » → image) ; `native` : la tuile de l'atlas voulue ; `shown` : la tuile
+ * affichée. Renvoie { img, rect } (rect : portion de l'ancêtre couverte par la tuile affichée) ou null.
+ */
+// Déclare et exporte lightsFallback : les tuiles chargées, la tuile voulue et la tuile affichée.
+export function lightsFallback(loaded, native, shown) {
+  // Du niveau juste au-dessus jusqu'au niveau 0 (début).
+  for (let z = native.z - 1; z >= 0; z--) {
+    // L'ancêtre à ce niveau.
+    const a = nativeTile(native, z).coord;
+    // Son image, si elle est chargée.
+    const img = loaded.get(`${a.z}/${a.x}/${a.y}`);
+    // Trouvée : elle, avec la portion de la tuile affichée.
+    if (img) return { img, rect: nativeTile(shown, z).rect };
+  // Fin de la boucle.
+  }
+  // Aucun ancêtre chargé : null.
+  return null;
+// Fin de lightsFallback.
+}
+
+/** Tuiles de lumières préchargées au plus à chaque nouvelle vue prédite (zones voisines du champ de la caméra). */
+// Déclare et exporte LIGHTS_PREFETCH_MAX : 8 tuiles natives (1 024 px chacune) au plus.
+export const LIGHTS_PREFETCH_MAX = 8;
+
+/**
+ * Tuiles de l'atlas à précharger pour une vue élargie (celle du préchargement prédictif) : la tuile native de chaque
+ * tuile de la vue, une seule fois, la plus utile d'abord (priorité la plus petite), sans celles déjà chargées, `max`
+ * au plus. `tiles` : [{ z, x, y, p }] ; renvoie [{ coord, key, p }], `key` de la forme « z/x/y ».
+ */
+// Déclare et exporte lightsPrefetchList : les tuiles de la vue, le niveau le plus fin de l'atlas, les chargées, le plafond.
+export function lightsPrefetchList(tiles, maxZoom, loaded, max = LIGHTS_PREFETCH_MAX) {
+  // Tuiles natives retenues, par clé.
+  const byKey = new Map();
+  // Pour chaque tuile de la vue (début).
+  for (const t of tiles) {
+    // Sa tuile native dans l'atlas.
+    const c = nativeTile(t, maxZoom).coord;
+    // Sa clé.
+    const key = `${c.z}/${c.x}/${c.y}`;
+    // Déjà chargée : suivante.
+    if (loaded.has(key)) continue;
+    // Déjà retenue : la priorité la plus forte des deux.
+    const had = byKey.get(key);
+    // Garde la plus petite priorité.
+    if (!had || t.p < had.p) byKey.set(key, { coord: c, key, p: t.p ?? 0 });
+  // Fin de la boucle.
+  }
+  // Les plus utiles d'abord, `max` au plus.
+  return [...byKey.values()].sort((a, b) => a.p - b.p).slice(0, max);
+// Fin de lightsPrefetchList.
+}
+
 /** Réglage de la pollution lumineuse de la Terre : atlas 2025 de David Lorenz, tuiles de 1 024 px, niveaux 0 à 6. */
 // Déclare et exporte le réglage des lumières de la Terre.
 export const EARTH_NIGHT_LIGHTS = {
@@ -208,13 +287,15 @@ export class NightLightsSource {
 }
 
 /**
- * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit. Pour que le globe entier soit allumé d'un
- * coup, ses lumières sont chargées en une seule mosaïque Web Mercator de 4 096 px de côté (atlas : niveau 2, 16 tuiles
- * de 1 024 px, sur tous les appareils), posée sous les tuiles plus fines qui arrivent ensuite.
+ * Couverture mondiale permanente de la pollution lumineuse : une mosaïque Web Mercator de 2 048 px de côté (atlas :
+ * niveau 1, 4 tuiles de 1 024 px, ≈ 20 km par pixel à l'équateur, sur tous les appareils), chargée dès que les
+ * lumières sont allumées. Elle couvre la Terre entière vue de loin, sert de repli sous les tuiles fines pendant leur
+ * chargement (jamais de trou) et porte le halo des villes. 2 048 px suffisent vus de loin (la Terre fait au plus
+ * ≈ 1 000 px à l'écran) et tiennent ≈ 21 Mo de carte graphique, contre ≈ 85 Mo à 4 096 px.
  */
-// Déclare et exporte le côté de la mosaïque mondiale : 4 096 px.
-export const LIGHTS_MOSAIC_PX = 4096;
-// Déclare et exporte mosaicLevelFor : le niveau dont les tuiles font la mosaïque, selon leur côté (256 px → 4, 1 024 px → 2).
+// Déclare et exporte le côté de la mosaïque mondiale : 2 048 px.
+export const LIGHTS_MOSAIC_PX = 2048;
+// Déclare et exporte mosaicLevelFor : le niveau dont les tuiles font la mosaïque, selon leur côté (256 px → 3, 1 024 px → 1).
 export const mosaicLevelFor = (tileSize = 256) => Math.max(0, Math.round(Math.log2(LIGHTS_MOSAIC_PX / tileSize)));
 // Tuiles de la mosaïque demandées en même temps.
 const MOSAIC_PARALLEL = 16;

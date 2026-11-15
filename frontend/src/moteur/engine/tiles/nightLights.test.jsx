@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe ce qui est testé.
-import { EARTH_NIGHT_LIGHTS, LIGHTS_FULL, LIGHTS_ON_START, LP_ZONES, NATURAL_KEY, assembleLightsMosaic, bloomWeights, cityLight, mosaicLevelFor, mosaicTiles, naturalColour, nightLightsChoice, nightWeight, recolourPixels } from './nightLights.jsx';
+import { EARTH_NIGHT_LIGHTS, LIGHTS_FULL, LIGHTS_MOSAIC_PX, LIGHTS_ON_START, LP_ZONES, NATURAL_KEY, assembleLightsMosaic, bloomWeights, bsplineWeights, cityLight, haloWeights, LIGHTS_PREFETCH_MAX, lightsFallback, lightsPrefetchList, mosaicLevelFor, mosaicTiles, naturalColour, nightLightsChoice, nightWeight, recolourPixels } from './nightLights.jsx';
 // Importe le shader de fragments des tuiles.
 import { tileFragmentShader } from './tileShaders.jsx';
 
@@ -35,8 +35,8 @@ test('atlas de la pollution lumineuse 2025, tuiles de 1 024 px niveaux 0 à 6, i
 test('la mosaïque mondiale couvre toute la Terre, ligne par ligne', () => {
   // Niveau 1 : quatre tuiles, du nord-ouest au sud-est.
   assert.deepEqual(mosaicTiles(1), [{ z: 1, x: 0, y: 0 }, { z: 1, x: 1, y: 0 }, { z: 1, x: 0, y: 1 }, { z: 1, x: 1, y: 1 }]);
-  // Mosaïque de 4 096 px : niveau 4 en tuiles de 256 px (256 tuiles), niveau 2 en tuiles de 1 024 px (16 tuiles).
-  assert.equal(mosaicTiles(mosaicLevelFor(256)).length, 256); assert.equal(mosaicTiles(mosaicLevelFor(1024)).length, 16);
+  // Mosaïque permanente de 2 048 px : niveau 3 en tuiles de 256 px (64 tuiles), niveau 1 en tuiles de 1 024 px (4 tuiles).
+  assert.equal(LIGHTS_MOSAIC_PX, 2048); assert.equal(mosaicTiles(mosaicLevelFor(256)).length, 64); assert.equal(mosaicTiles(mosaicLevelFor(1024)).length, 4);
 // Fin du test.
 });
 
@@ -106,9 +106,88 @@ test('halo pondéré comme UnrealBloomPass, et les mêmes valeurs dans le shader
   assert.deepEqual(bloomWeights(), [0.68, 0.64, 0.6, 0.56]);
   // Rayon nul : les facteurs d'origine.
   assert.deepEqual(bloomWeights(0), [1, 0.8, 0.6, 0.4]);
-  // Le shader : mêmes poids, quatre niveaux de flou, même filtre.
-  assert.ok(tileFragmentShader.includes('.68*cityLight(texture2D(m,q,1.).rgb)+.64*cityLight(texture2D(m,q,2.).rgb)+.6*cityLight(texture2D(m,q,3.).rgb)+.56*cityLight(texture2D(m,q,4.).rgb)'));
+  // Le shader : mêmes poids, quatre niveaux de flou de la mosaïque mondiale, chacun pesé par le flou qu'il apporte.
+  for (const [k, w] of [[1, '.68'], [2, '.64'], [3, '.6'], [4, '.56']]) assert.ok(tileFragmentShader.includes(`${w}*clamp(l+${k}.,0.,1.)*cityLight(lightRead(lgMap,q,max(l+${k}.,0.)))`), `niveau ${k}`);
   // Même filtre passe-haut que cityLight.
   assert.ok(tileFragmentShader.includes('float cityLight(vec3 c){return max(dot(c,vec3(.299,.587,.114))-.35,0.)*1.6;}'));
+// Fin du test.
+});
+
+// Test : halo selon l'échelle.
+test('halo d’objectif : plein vu de loin, effacé en zoomant, sans jamais éclaircir les villes vues de près', () => {
+  // Mosaïque réduite (vue lointaine) : les quatre poids entiers.
+  assert.deepEqual(haloWeights(0.5), bloomWeights());
+  // Mosaïque très agrandie (vue rapprochée) : aucun halo.
+  assert.deepEqual(haloWeights(-4), [0, 0, 0, 0]);
+  // Entre les deux : le halo baisse à mesure qu'on s'approche, sans saut.
+  const total = (l) => haloWeights(l).reduce((a, b) => a + b, 0);
+  // Décroissant de −0,5 à −4 par pas d'un quart.
+  for (let l = -0.5; l > -4; l -= 0.25) assert.ok(total(l - 0.25) <= total(l) && total(l) - total(l - 0.25) <= 0.7);
+// Fin du test.
+});
+
+// Test : interpolation bicubique.
+test('agrandissement bicubique : poids positifs, de somme 1, symétriques', () => {
+  // Plusieurs positions entre deux pixels.
+  for (const f of [0, 0.25, 0.5, 0.9]) {
+    // Les poids.
+    const w = bsplineWeights(f);
+    // Positifs, de somme 1.
+    assert.ok(w.every((v) => v >= 0)); assert.ok(Math.abs(w.reduce((a, b) => a + b, 0) - 1) < 1e-12);
+  // Fin de la boucle.
+  }
+  // Symétrie : f et 1 − f donnent les mêmes poids, inversés.
+  assert.deepEqual(bsplineWeights(0.25).map((v) => v.toFixed(12)), bsplineWeights(0.75).reverse().map((v) => v.toFixed(12)));
+  // Le shader agrandit en bicubique et réduit par mipmaps.
+  assert.ok(tileFragmentShader.includes('vec3 lightCore(sampler2D m,vec2 q,vec2 sz,float l){lightBase=l;if(l>0.)return lightRead(m,q,l);'));
+  // Lecture à niveau imposé, avec un repli par biais sans l'extension de WebGL 1 (directives sur leurs propres lignes).
+  assert.ok(tileFragmentShader.includes('\n#if defined(texture2DLodEXT)||defined(GL_EXT_shader_texture_lod)\n'));
+  assert.ok(tileFragmentShader.includes('\n#else\nvec3 lightTap(sampler2D m,vec2 q,float l){return texture2D(m,q,l-lightBase).rgb;}\n#endif\n'));
+  // Sans elle, agrandissement bilinéaire (le bicubique fausserait le niveau de détail).
+  assert.ok(tileFragmentShader.includes('\n#ifndef LIGHT_LOD\nreturn lightRead(m,q,l);\n#endif\n'));
+// Fin du test.
+});
+
+// Test : repli.
+test('repli d’une tuile en attendant ses lumières : l’ancêtre chargé le plus proche, et sa portion', () => {
+  // Tuiles chargées : le niveau 3 et le niveau 1 au-dessus de la tuile (6, 33, 22).
+  const loaded = new Map([['3/4/2', 'img3'], ['1/1/0', 'img1']]);
+  // Tuile voulue (6, 33, 22), affichée au niveau 8 (132, 88) : l'ancêtre du niveau 3, le plus proche.
+  const fb = lightsFallback(loaded, { z: 6, x: 33, y: 22 }, { z: 8, x: 132, y: 88 });
+  // Image du niveau 3 ; portion de 1/32 de côté.
+  assert.equal(fb.img, 'img3'); assert.equal(fb.rect[2], 1 / 32);
+  // Portion : colonne 132 − 4 × 32 = 4, rangée 88 − 2 × 32 = 24 (v vers le haut).
+  assert.deepEqual(fb.rect, [4 / 32, 1 - 25 / 32, 1 / 32, 1 / 32]);
+  // Rien de chargé au-dessus : null (la mosaïque mondiale prend le relais).
+  assert.equal(lightsFallback(new Map(), { z: 6, x: 33, y: 22 }, { z: 6, x: 33, y: 22 }), null);
+// Fin du test.
+});
+
+// Test : continuité dans le shader.
+test('shader : repli puis fondu, mosaïque mondiale permanente, lectures sûres hors des conditions', () => {
+  // Niveaux de détail calculés avant toute condition.
+  assert.ok(tileFragmentShader.includes('float ltL=lightLod(ltQ*ltSize),lpL=lightLod(lpQ*ltSize),lgL=lightLod(lgQ*lgSize);'));
+  // Repli : l'ancêtre, sinon la mosaïque ; la tuile fine en fondu par-dessus.
+  assert.ok(tileFragmentShader.includes('vec3 cc=lpHas>.5?lightCore(lpMap,lpQ,ltSize,lpL):(lgOn>.5?lightCore(lgMap,lgQ,lgSize,lgL):vec3(0.));core=ltHas>.5?mix(cc,lightCore(ltMap,ltQ,ltSize,ltL),ltFade):cc;'));
+  // Lecture en lumière linéaire (images en sRGB) ramenée à l'affichage par la courbe sRGB exacte.
+  assert.ok(tileFragmentShader.includes('return ltLinear>.5?lightEnc(c):c;'));
+  assert.ok(tileFragmentShader.includes('mix(c*12.92,1.055*pow(c,vec3(1./2.4))-.055,step(.0031308,c))'));
+// Fin du test.
+});
+
+// Test : préchargement des zones voisines.
+test('préchargement des lumières voisines : une demande par tuile native, la plus utile d’abord, sans les chargées, plafonnée', () => {
+  // Quatre tuiles affichées au niveau 8 : deux dans la tuile native (6, 33, 22), une dans (6, 34, 22), une dans (6, 33, 23).
+  const tiles = [{ z: 8, x: 132, y: 88, p: 5 }, { z: 8, x: 133, y: 88, p: 2 }, { z: 8, x: 136, y: 88, p: 9 }, { z: 8, x: 132, y: 92, p: 1 }];
+  // Rien de chargé : trois tuiles natives, par priorité (la plus forte de leurs tuiles).
+  assert.deepEqual(lightsPrefetchList(tiles, 6, new Map()).map((l) => [l.key, l.p]), [['6/33/23', 1], ['6/33/22', 2], ['6/34/22', 9]]);
+  // La tuile (6, 33, 22) déjà chargée : écartée.
+  assert.deepEqual(lightsPrefetchList(tiles, 6, new Map([['6/33/22', {}]])).map((l) => l.key), ['6/33/23', '6/34/22']);
+  // Plafond.
+  assert.equal(lightsPrefetchList(tiles, 6, new Map(), 2).length, 2);
+  // Plafond par défaut : 8 tuiles natives.
+  assert.equal(LIGHTS_PREFETCH_MAX, 8);
+  // Tuiles moins fines que l'atlas : la tuile elle-même.
+  assert.deepEqual(lightsPrefetchList([{ z: 3, x: 4, y: 2, p: 0 }], 6, new Map())[0].coord, { z: 3, x: 4, y: 2 });
 // Fin du test.
 });
