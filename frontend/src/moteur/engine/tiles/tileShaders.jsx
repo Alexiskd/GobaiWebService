@@ -136,6 +136,21 @@ export const tileFragmentShader = [
   'uniform sampler2D ltMap;uniform vec4 ltRect;uniform float ltHas;uniform float lightsOn;',
   // Vue de la pollution lumineuse depuis l'espace : mosaïque mondiale des lumières (lue avec globalRect), sa présence, et le mode « toute la Terre de nuit ».
   'uniform sampler2D lgMap;uniform float lgOn;uniform float lightView;',
+  // Lumières de la nuit plus prononcées, comme sur les photos prises depuis l'ISS (cœurs blancs, halos orangés autour
+  // des villes) : technique du « bloom » de three.js (mrdoob/three.js, MIT : LuminosityHighPassShader puis
+  // UnrealBloomPass), appliquée directement à la chaîne de mipmaps de l'image des lumières, sans passe de rendu en plus.
+  // cityLight : intensité d'une lumière humaine dans un pixel Black Marble. Filtre passe-haut doux sur l'excès de rouge
+  // sur le bleu : les lampes (sodium, LED) sont jaunes à blanches, le sol et la mer de l'image sont bleutés et écartés ;
+  // les petites villes restent visibles.
+  'float cityLight(vec3 c){float w=max(c.r-.8*c.b,0.);return smoothstep(.05,.3,w)*(.35+dot(c,vec3(.299,.587,.114)));}',
+  // cityLights : le cœur net (jaune, blanc quand il sature) plus le halo, somme de quatre niveaux de mipmaps de plus en
+  // plus flous (biais 1 à 4) pondérés comme UnrealBloomPass (facteurs 1 ; 0,8 ; 0,6 ; 0,4 rapprochés avec un rayon
+  // de 0,4) ; `k` : intensité. Un grand foyer garde un large halo, un village reste un point.
+  'vec3 cityLights(sampler2D m,vec2 q,float k){float c=cityLight(texture2D(m,q).rgb);',
+  // Halo : les quatre niveaux flous, pondérés.
+  'float h=.68*cityLight(texture2D(m,q,1.).rgb)+.64*cityLight(texture2D(m,q,2.).rgb)+.6*cityLight(texture2D(m,q,3.).rgb)+.56*cityLight(texture2D(m,q,4.).rgb);',
+  // Cœur jaune qui blanchit en saturant, halo orangé ; le tout multiplié par l'intensité. Fin de cityLights.
+  'return (mix(vec3(1.,.72,.38),vec3(1.,.95,.86),smoothstep(.45,1.,c))*c*2.4+vec3(1.,.64,.3)*h*.9)*k;}',
   // Variables reçues du shader de sommets.
   'varying vec2 vUv;varying vec3 vN;varying vec3 vV;',
   // Détail simulé au-delà de la résolution des images (géantes gazeuses, satellites) : voir `synthDetail` plus bas.
@@ -224,15 +239,16 @@ export const tileFragmentShader = [
   'vec3 base=mix(col,mix(night,lit,dayV),sh);',
   // Halo bleu au limbe, côté jour, seulement avec atmosphère.
   'float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);',
-  // Lumières de la nuit : seules les zones éclairées de l'image Black Marble (le sol sombre est écarté par un seuil de
-  // luminosité), teinte chaude ; elles s'allument quand le Soleil passe sous l'horizon du lieu (d < 0,02) et brillent
-  // pleinement à 10° dessous (d < −0,17), en suivant le terminateur. Rien de jour, rien sans ombre.
+  // Lumières de la nuit (cityLights) : elles s'allument quand le Soleil passe sous l'horizon du lieu (d < 0,02) et
+  // brillent pleinement à 10° dessous (d < −0,17), en suivant le terminateur. Rien de jour, rien sans ombre.
   // Image des lumières : celle de la tuile si elle est arrivée, sinon la mosaïque mondiale (vue de la pollution lumineuse).
-  // Vue de la pollution lumineuse : allumées partout, un peu plus vives.
-  // Si des lumières sont là et allumées (ou la vue de nuit) : lit leur image, garde ce qui brille, et l'ajoute du côté nuit.
-  'if((ltHas>.5||lgOn>.5)&&(lightsOn>.5||lv>.5)){vec3 lt=ltHas>.5?texture2D(ltMap,ltRect.xy+vUv*ltRect.zw).rgb:texture2D(lgMap,globalRect.xy+vUv*globalRect.zw).rgb;',
-  // Poids : la nuit selon le Soleil, ou toute la Terre en vue de nuit ; ajout de la lumière, teinte chaude. Fin du cas.
-  'float lwt=max(1.-smoothstep(-.17,.02,d),lv);base+=lt*vec3(1.,.86,.66)*smoothstep(.14,.5,dot(lt,lw))*(1.5+lv)*lwt*sh;}',
+  // Vue de la pollution lumineuse : allumées partout, moitié plus vives.
+  // Si des lumières sont là et allumées (ou la vue de nuit) : poids de la nuit selon le Soleil, ou toute la Terre en vue de nuit.
+  'if((ltHas>.5||lgOn>.5)&&(lightsOn>.5||lv>.5)){float lwt=max(1.-smoothstep(-.17,.02,d),lv);',
+  // Cœurs et halos, lus dans la tuile ou dans la mosaïque mondiale.
+  'vec3 cl=ltHas>.5?cityLights(ltMap,ltRect.xy+vUv*ltRect.zw,1.+.5*lv):cityLights(lgMap,globalRect.xy+vUv*globalRect.zw,1.+.5*lv);',
+  // Ajoutés du côté nuit. Fin du cas.
+  'base+=cl*lwt*sh;}',
   // Couleur finale, avec l'opacité de la cellule. Fin de la fonction principale.
   'gl_FragColor=vec4(base,alpha);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
