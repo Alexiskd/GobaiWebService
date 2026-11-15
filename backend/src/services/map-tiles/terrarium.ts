@@ -50,7 +50,7 @@ function readIfd(buf: Buffer, le: boolean): Map<number, number[]> {
 /** Décompresse un bloc LZW au sens TIFF (codes de 9 à 12 bits, poids fort d'abord, changement anticipé). */
 export function lzwDecode(input: Buffer): Buffer {
   // Sortie, agrandie au besoin.
-  let out = Buffer.alloc(Math.max(1024, input.length * 4));
+  let out: Buffer = Buffer.alloc(Math.max(1024, input.length * 4));
   let len = 0;
   const push = (bytes: Buffer) => {
     if (len + bytes.length > out.length) { const bigger = Buffer.alloc(Math.max(out.length * 2, len + bytes.length)); out.copy(bigger, 0, 0, len); out = bigger; }
@@ -121,7 +121,7 @@ export function decodeFloat32Tiff(buf: Buffer): HeightGrid {
   // Lecture d'une ligne de `w` flottants d'un bloc vers la grille, colonne de départ `x0`, ligne `y`.
   const readRow = (block: Buffer, offset: number, w: number, x0: number, y: number) => {
     if (y >= height) return;
-    let row = Buffer.from(block.subarray(offset, offset + w * 4));
+    let row: Buffer = Buffer.from(block.subarray(offset, offset + w * 4));
     if (row.length < w * 4) return;
     let rowLe = le;
     if (predictor === 3) { row = undoFloatPredictor(row, w, 4); rowLe = false; }
