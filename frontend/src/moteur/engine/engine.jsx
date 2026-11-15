@@ -871,8 +871,8 @@ export class SolarEngine {
   }
 
   /**
-   * Lumières humaines de la Terre la nuit (pollution lumineuse vue de l'espace, NASA Black Marble) : allumées ou
-   * coupées. Elles suivent le Soleil d'elles-mêmes (côté nuit du terminateur). Le choix est gardé dans le navigateur.
+   * Pollution lumineuse de la Terre la nuit (atlas 2025 de David Lorenz, en couleurs naturelles) : allumée ou
+   * coupée. Elle suit le Soleil d'elle-même (côté nuit du terminateur). Le choix est gardé dans le navigateur.
    */
   // setNightLights : allume ou coupe les lumières de la nuit de chaque astre qui en a (début).
   setNightLights(on) {
@@ -882,8 +882,8 @@ export class SolarEngine {
   }
 
   /**
-   * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit, ses lumières (NASA Black Marble) allumées
-   * partout et chargées pour le monde entier. Coupée : la nuit suit à nouveau le Soleil.
+   * Vue de la pollution lumineuse depuis l'espace : toute la Terre de nuit, sa pollution lumineuse (atlas 2025) allumée
+   * partout et chargée pour le monde entier. Coupée : la nuit suit à nouveau le Soleil.
    */
   // setLightView : allume ou coupe la vue de nuit pour chaque astre qui a des lumières (début).
   setLightView(on) {

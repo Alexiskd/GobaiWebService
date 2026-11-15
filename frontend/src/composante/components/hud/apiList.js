@@ -18,7 +18,9 @@ export const API_GROUPS = [
       // Site « Google Earth », affiché tel quel dans un iframe depuis la Terre.
       { name: 'Google Earth (web)', host: 'earth.google.com', use: 'Globe Google : le site Google Earth, dans un iframe qui remplace le globe Terre' },
       // API « NASA GIBS », appelée à l'adresse gibs.earthdata.nasa.gov.
-      { name: 'NASA GIBS', host: 'gibs.earthdata.nasa.gov', use: 'Imagerie satellite de la Terre ; Terre à l’instant T : GOES-East, GOES-West et Himawari, une image toutes les 10 minutes ; lumières de la nuit (Black Marble, VIIRS), allumées côté nuit selon le Soleil' },
+      { name: 'NASA GIBS', host: 'gibs.earthdata.nasa.gov', use: 'Imagerie satellite de la Terre ; Terre à l’instant T : GOES-East, GOES-West et Himawari, une image toutes les 10 minutes' },
+      // Site « Light Pollution Atlas » (David Lorenz), appelé à l'adresse djlorenz.github.io.
+      { name: 'Light Pollution Atlas (David Lorenz)', host: 'djlorenz.github.io', use: 'Pollution lumineuse 2025 (luminosité artificielle du ciel, d’après les lumières VIIRS), recolorée en couleurs naturelles et allumée côté nuit selon le Soleil' },
       // API « EUMETView (EUMETSAT) », appelée à l'adresse view.eumetsat.int.
       { name: 'EUMETView (EUMETSAT)', host: 'view.eumetsat.int', use: 'Terre à l’instant T : Meteosat (Europe, Afrique), une image toutes les 10 minutes' },
       // API « NOAA NESDIS Satellite Maps », appelée à l'adresse satellitemaps.nesdis.noaa.gov.

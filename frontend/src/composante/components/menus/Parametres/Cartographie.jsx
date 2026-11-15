@@ -58,13 +58,13 @@ export function Cartographie({
       {/* Si le réglage des lumières de la nuit est fourni (début). */}
       {onNightLights && (
         // Interrupteur des lumières de la nuit.
-        <Switch checked={nightLights} onChange={onNightLights} label="Lumières de la nuit" hint="Pollution lumineuse vue de l’espace, allumée côté nuit au rythme du Soleil · NASA Black Marble" />
+        <Switch checked={nightLights} onChange={onNightLights} label="Lumières de la nuit" hint="Pollution lumineuse 2025 vue de l’espace, en couleurs naturelles, allumée côté nuit au rythme du Soleil · Light Pollution Atlas (D. Lorenz)" />
       // Fin du cas.
       )}
       {/* Si le réglage de la vue de nuit est fourni (début). */}
       {onLightView && (
         // Interrupteur de la vue de la pollution lumineuse.
-        <Switch checked={lightView} onChange={onLightView} label="Pollution lumineuse de toute la Terre" hint="Toute la Terre de nuit, vue de l’espace : les lumières du monde entier chargées d’un coup · NASA Black Marble" />
+        <Switch checked={lightView} onChange={onLightView} label="Pollution lumineuse de toute la Terre" hint="Toute la Terre de nuit, vue de l’espace : la pollution lumineuse 2025 du monde entier chargée d’un coup · Light Pollution Atlas (D. Lorenz)" />
       // Fin du cas.
       )}
     {/* Fin du groupe. */}
