@@ -12,16 +12,8 @@ import {
   type EarthSource, type EarthSourceId,
 // Fin de l'import.
 } from './earth-sources';
-// Ouvre l'import du module « Terre à l'instant T » :
-import {
-  // ses constantes, ses sources et ses fonctions ;
-  LIVE_LAYER_ID, LIVE_MAX_ZOOM, LIVE_SOURCES, isLiveTile, liveCandidates, liveExpiry, liveSlot, liveTemplate, liveTime,
-  // et le type d'une source en direct.
-  type LiveSource,
-// Fin de l'import.
-} from './earth-live';
-// Fonds marins (GEBCO, NOAA NCEI) : leur liste, leur table par identifiant de couche, et la fusion dans la couche unique.
-import { SEAFLOOR_BY_ID, SEAFLOOR_LAYERS, seafloorFusion } from './earth-seafloor';
+// Fonds marins (GEBCO, NOAA NCEI) : leur table par identifiant de relais, et la fusion dans la couche unique.
+import { SEAFLOOR_BY_ID, seafloorFusion } from './earth-seafloor';
 
 // Même chargement que mars-fusion.service.ts (module CommonJS natif).
 // Charge la bibliothèque d'images sharp, sans typage (la ligne du dessous autorise ce « any » pour ESLint).
@@ -44,12 +36,9 @@ const sharp = createRequire(__filename)('sharp') as any;
  * Une tuile servie par une autre source que la préférée (cascade, panne) n'est gardée que brièvement, en mémoire comme
  * dans le navigateur : la meilleure image revient dès que sa source répond de nouveau.
  *
- * « sentinel2 » et « ign-ortho » (une source seule) restent servies pour les anciens clients, sans être listées.
- *
- * Seconde couche, « earth-live » (voir earth-live.ts) : la Terre à l'instant T. Pour chaque tuile, l'image du ou des
- * satellites géostationnaires qui la voient (GOES-West, GOES-East, Meteosat, Himawari), prise il y a moins d'une heure
- * et renouvelée toutes les dix minutes, est posée par-dessus le fond « earth-hd » : les pôles, et tout endroit dont le
- * satellite ne répond pas, gardent ce fond. Niveaux 0 à 7 (≈ 1 km par pixel), agrandis au-delà par le navigateur.
+ * C'est la seule couche d'imagerie de la Terre listée. Le serveur relaie aussi, sans les lister, les tuiles des fonds
+ * marins (earth-seafloor.ts) : « earth-gebco », que le navigateur fond au large dans la couche unique, et « earth-ncei »,
+ * le relief de la NOAA réservé à la carte marine.
  */
 
 // Niveau de zoom maximal de la couche unique : 19.
@@ -68,13 +57,6 @@ const MEMORY_ANCESTORS = 600;
 const FALLBACK_TTL_MS = 10 * 60_000; // tuile d'une source de repli : gardée 10 min en mémoire
 // Taille maximale d'une tuile : 2 Mo.
 const MAX_BYTES = 2 * 1024 * 1024;
-// Nombre de tuiles en direct gardées en mémoire : 1 500.
-const LIVE_MEMORY_TILES = 1500;
-// Délai maximal d'un téléchargement en direct : 6 secondes.
-const LIVE_TIMEOUT_MS = 6_000;
-/** Part d'opacité moyenne (0 à 255) sous laquelle l'image d'un satellite est tenue pour vide (tuile hors de son disque). */
-// Seuil d'opacité d'une image vide : 8.
-const LIVE_EMPTY_ALPHA = 8;
 
 // Valeurs communes aux descriptions de couche :
 const base = {
@@ -83,16 +65,6 @@ const base = {
   // format JPEG, opaque, sans clé, vérifié.
   format: 'jpeg' as const, transparent: false, requiresKey: false, experimental: false,
 // Fin de base.
-};
-
-/** Anciennes couches à source unique : la source y sert tous les niveaux et toute emprise. */
-// Anciennes couches, avec leur source et leur zoom maximal :
-const LEGACY: Record<string, { source: EarthSourceId; maxZoom: number }> = {
-  // « sentinel2 » : Sentinel-2, jusqu'au niveau 14 ;
-  sentinel2: { source: 'sentinel2', maxZoom: 14 },
-  // « ign-ortho » : l'IGN, jusqu'au niveau 19.
-  'ign-ortho': { source: 'ign', maxZoom: 19 },
-// Fin de LEGACY.
 };
 
 // Fonction describeSources : les noms des sources, séparés par des virgules.
@@ -137,18 +109,13 @@ export class EarthImageryService implements TileProvider {
   private readonly variant = new Map<EarthSourceId, number>();
   // Sources actives.
   private readonly sources: EarthSource[];
-  /** Tuiles de la couche « earth-live », par créneau de dix minutes (les anciens créneaux sortent par ancienneté). */
-  // Mémoire des tuiles en direct.
-  private readonly liveMemory = new Map<string, EarthTile>();
   // Heure du dernier avertissement écrit au journal.
   private lastWarn = 0;
 
   // Constructeur ; ses paramètres :
   constructor(
-    // la fonction de téléchargement, fetch par défaut ;
+    // la fonction de téléchargement, fetch par défaut.
     private readonly fetchFn: typeof fetch = (...args) => fetch(...args),
-    // l'horloge, Date.now par défaut.
-    private readonly now: () => number = Date.now,
   // Corps du constructeur :
   ) {
     // retient les sources actives ;
@@ -158,108 +125,55 @@ export class EarthImageryService implements TileProvider {
   // Fin du constructeur.
   }
 
-  // Méthode layers : les couches proposées (la couche unique, la Terre en direct, puis les fonds marins).
+  // Méthode layers : la seule couche proposée, la couche unique.
   layers(): TileLayerInfo[] {
-    // Première couche :
+    // Une seule couche :
     return [{
       // les valeurs communes, l'identifiant « earth-hd », son nom, sa nature et son zoom maximal ;
-      ...base, id: 'earth-hd', label: 'Satellite HD (couche unique)', kind: 'imagery', maxZoom: EARTH_HD_MAX_ZOOM,
+      ...base, id: 'earth-hd', label: 'Terre', kind: 'imagery', maxZoom: EARTH_HD_MAX_ZOOM,
       // sa description, avec la liste des sources, et les fonds marins quand ils y sont fondus.
       description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}.${seafloorFusion() ? ' Au large, le relief des fonds marins (GEBCO 2026).' : ''} Zoom jusqu’au niveau 19.`,
-    // Seconde couche :
-    }, {
-      // les valeurs communes, l'identifiant de la couche en direct, son nom, sa nature et son zoom maximal ;
-      ...base, id: LIVE_LAYER_ID, label: 'Terre à l’instant T (satellites géostationnaires)', kind: 'imagery', maxZoom: LIVE_MAX_ZOOM,
-      // Adresses des satellites non essayées depuis le développement : voir earth-live.ts.
-      // marquée expérimentale ;
-      experimental: true,
-      // sa description, avec la liste des satellites.
-      description: `Le monde vu il y a moins d’une heure, renouvelé toutes les 10 minutes : ${LIVE_SOURCES.map((s) => s.label).join(', ')}, posés sur le fond habituel (pôles et zones sans image). Zoom jusqu’au niveau ${LIVE_MAX_ZOOM}.`,
-    // Puis les fonds marins : les valeurs communes, leur identifiant, leur nom, leur description et le zoom maximal de leur source.
-    }, ...SEAFLOOR_LAYERS.map((l): TileLayerInfo => ({ ...base, id: l.id, label: l.label, kind: 'imagery', maxZoom: l.source.maxZoom, description: l.description }))];
+    // Fin de la liste.
+    }];
   // Fin de layers.
   }
 
-  // Méthode has : vrai pour « earth-hd », la couche en direct, les fonds marins et les anciennes couches.
-  has(id: string): boolean { return id === 'earth-hd' || id === LIVE_LAYER_ID || SEAFLOOR_BY_ID.has(id) || id in LEGACY; }
+  // Méthode has : vrai pour la seule couche listée, « earth-hd ».
+  has(id: string): boolean { return id === 'earth-hd'; }
+
+  // Méthode serves : vrai pour les tuiles relayées, celles de « earth-hd » et des fonds marins.
+  serves(id: string): boolean { return this.has(id) || SEAFLOOR_BY_ID.has(id); }
 
   // Méthode resolve : la version asynchrone de resolveSync.
   async resolve(id: string): Promise<ResolvedTileLayer> { return this.resolveSync(id); }
 
-  // Méthode resolveSync : une couche prête à charger.
+  // Méthode resolveSync : la couche unique prête à charger.
   resolveSync(id: string): ResolvedTileLayer {
     // Couche inconnue : erreur 404.
     if (!this.has(id)) throw new NotFoundException(`Couche terrestre inconnue : « ${id} ».`);
-    // Si c'est la couche en direct :
-    if (id === LIVE_LAYER_ID) {
-      // L'instant fait partie de l'adresse des tuiles : le navigateur relit cette fiche à chaque nouveau créneau.
-      // créneau en cours ;
-      const slot = liveSlot(this.now());
-      // renvoie
-      return {
-        // la description de la seconde couche ;
-        ...this.layers()[1],
-        // le modèle d'adresse du créneau ;
-        urlTemplate: liveTemplate(slot),
-        // sa date d'expiration ;
-        expiresAt: liveExpiry(slot),
-        // pas d'accord de couleur ;
-        colorMatch: false,
-        // la mention : celles des satellites et l'instant de l'image.
-        attribution: { text: `${LIVE_SOURCES.map((s) => s.attribution).join(' · ')} · image du ${liveTime(slot)}` },
-      // Fin de l'objet.
-      };
-    // Fin du cas.
-    }
-    // Si c'est un fond marin :
-    if (SEAFLOOR_BY_ID.has(id)) {
-      // renvoie
-      return {
-        // sa description ;
-        ...this.layers().find((l) => l.id === id)!,
-        // le modèle d'adresse, qui passe par ce serveur : chaque tuile est une requête sur son emprise, faite ici ;
-        urlTemplate: `/api/v1/tiles/earth/${id}/{z}/{x}/{y}`,
-        // pas d'expiration ;
-        expiresAt: null,
-        // pas d'accord de couleur (le relief garde sa palette) ;
-        colorMatch: false,
-        // la mention de sa source.
-        attribution: { text: SEAFLOOR_BY_ID.get(id)!.source.attribution },
-      // Fin de l'objet.
-      };
-    // Fin du cas.
-    }
-    // Ancienne couche, s'il y en a une sous cet identifiant.
-    const legacy = LEGACY[id];
     // Réglage de la fusion des fonds marins, ou null si elle est coupée.
     const fusion = seafloorFusion();
-    // Description :
-    const info: TileLayerInfo = legacy
-      // celle de l'ancienne couche, avec le nom de sa source ;
-      ? { ...base, id, label: EARTH_SOURCE_BY_ID.get(legacy.source)!.label, kind: 'imagery', maxZoom: legacy.maxZoom, description: 'Source seule (ancienne couche).' }
-      // sinon celle de la couche unique.
-      : this.layers()[0];
     // Renvoie
     return {
-      // la description ;
-      ...info,
+      // la description de la couche unique ;
+      ...this.layers()[0],
       // Tout passe par le serveur : cache, choix de la source, découpage au-delà du niveau natif.
       // le modèle d'adresse, qui passe par ce serveur ;
       urlTemplate: `/api/v1/tiles/earth/${id}/{z}/{x}/{y}`,
       // pas d'expiration ;
       expiresAt: null,
-      // Couche unique : le navigateur charge lui-même les tuiles des sources qui le permettent (plus de détour par
-      // ce serveur) et ne demande au relais que le reste. Les anciennes couches restent entièrement relayées.
-      // le plan de chargement direct, sauf pour une ancienne couche ;
-      ...(legacy ? {} : { direct: directPlan(this.sources) ?? undefined }),
-      // Même colorimétrie pour toutes les couches : le navigateur accorde chaque source nationale sur la mosaïque
+      // Le navigateur charge lui-même les tuiles des sources qui le permettent (plus de détour par ce serveur) et ne
+      // demande au relais que le reste.
+      // le plan de chargement direct ;
+      direct: directPlan(this.sources) ?? undefined,
+      // Même colorimétrie pour toutes les sources : le navigateur accorde chaque source nationale sur la mosaïque
       // mondiale. `EARTH_COLOR_MATCH=0` coupe cet accord.
-      // l'accord de couleur (faux si EARTH_COLOR_MATCH est coupé), absent pour une ancienne couche ;
-      ...(legacy ? {} : { colorMatch: !isOff(process.env.EARTH_COLOR_MATCH) }),
-      // les fonds marins fondus par le navigateur (absents si EARTH_SEAFLOOR est coupé), pas pour une ancienne couche ;
-      ...(legacy || !fusion ? {} : { seafloor: fusion }),
-      // la mention : celles des sources de la couche, puis celle de GEBCO quand les fonds sont fondus.
-      attribution: { text: [...this.sourcesOf(id).map((s) => s.attribution), ...(legacy || !fusion ? [] : [SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution])].join(' · ') },
+      // l'accord de couleur (faux si EARTH_COLOR_MATCH est coupé) ;
+      colorMatch: !isOff(process.env.EARTH_COLOR_MATCH),
+      // les fonds marins fondus par le navigateur (absents si EARTH_SEAFLOOR est coupé) ;
+      ...(fusion ? { seafloor: fusion } : {}),
+      // la mention : celles des sources, puis celle de GEBCO quand les fonds sont fondus.
+      attribution: { text: [...this.sources.map((s) => s.attribution), ...(fusion ? [SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution] : [])].join(' · ') },
     // Fin de l'objet.
     };
   // Fin de resolveSync.
@@ -290,158 +204,26 @@ export class EarthImageryService implements TileProvider {
   // Fin de status.
   }
 
-  /** Sources d'une couche : toutes pour « earth-hd », une seule pour un fond marin ou une ancienne couche (tous niveaux, toute emprise). */
+  /** Sources d'une couche relayée : toutes pour « earth-hd », la sienne seule pour un fond marin. */
   // Méthode privée sourcesOf.
   private sourcesOf(id: string): EarthSource[] {
     // Fond marin : sa source seule.
     const seafloor = SEAFLOOR_BY_ID.get(id);
-    // S'il y en a un : la renvoie seule.
-    if (seafloor) return [seafloor.source];
-    // Ancienne couche, s'il y en a une.
-    const legacy = LEGACY[id];
-    // Sinon : toutes les sources.
-    if (!legacy) return this.sources;
-    // Source de l'ancienne couche.
-    const s = EARTH_SOURCE_BY_ID.get(legacy.source)!;
-    // La renvoie seule, dès le niveau 0, jusqu'au zoom de la couche, sans emprise.
-    return [{ ...s, minZoom: 0, maxZoom: legacy.maxZoom, bboxes: undefined }];
+    // Sa source s'il y en a un, sinon toutes les sources.
+    return seafloor ? [seafloor.source] : this.sources;
   // Fin de sourcesOf.
   }
 
   /** Tuile (z, x, y) de la couche `id`, depuis la mémoire ou les sources. */
   // Méthode tile.
   tile(id: string, z: number, x: number, y: number): Promise<EarthTile> {
-    // Couche inconnue : erreur 404.
-    if (!this.has(id)) throw new NotFoundException(`Couche terrestre inconnue : « ${id} ».`);
-    // Couche en direct : passe la main à liveTile.
-    if (id === LIVE_LAYER_ID) return this.liveTile(z, x, y);
+    // Couche ni listée ni relayée : erreur 404.
+    if (!this.serves(id)) throw new NotFoundException(`Couche terrestre inconnue : « ${id} ».`);
     // Tuile hors de la grille : erreur 404.
     if (!isTile(z, x, y)) throw new NotFoundException(`Tuile ${z}/${x}/${y} inexistante.`);
     // Renvoie la tuile de la mémoire, ou la fabrique.
     return this.cached(this.memory, MEMORY_TILES, `${id}/${z}/${x}/${y}`, () => this.build(id, z, x, y));
   // Fin de tile.
-  }
-
-  // ------------------------------------------------------------------ Terre à l'instant T (earth-live)
-
-  /**
-   * Tuile de la couche « earth-live » pour le créneau en cours : images des satellites qui voient la tuile, posées
-   * sur le fond « earth-hd ». Gardée en mémoire par créneau ; les demandes simultanées sont regroupées.
-   */
-  // Méthode privée liveTile.
-  private liveTile(z: number, x: number, y: number): Promise<EarthTile> {
-    // Tuile hors de la couche : erreur 404.
-    if (!isLiveTile(z, x, y)) throw new NotFoundException(`Tuile ${z}/${x}/${y} inexistante.`);
-    // Créneau en cours.
-    const slot = liveSlot(this.now());
-    // Clé de la tuile : créneau, niveau, colonne, ligne.
-    const key = `${slot}/${z}/${x}/${y}`;
-    // La cherche en mémoire.
-    const hit = this.liveMemory.get(key);
-    // Trouvée : la renvoie.
-    if (hit) return Promise.resolve(hit);
-    // Cherche une fabrication en cours.
-    let p = this.pending.get(`l/${key}`);
-    // Aucune :
-    if (!p) {
-      // lance la fabrication ; quand elle finit :
-      p = this.buildLive(z, x, y, liveTime(slot)).then((tile) => {
-        // Une tuile sans aucune image de satellite (fond seul) n'est pas gardée : elle sera retentée.
-        // si la tuile porte une image de satellite,
-        if (tile.preferred) {
-          // la garde en mémoire,
-          this.liveMemory.set(key, tile);
-          // et retire les plus anciennes au-delà de 1 500.
-          while (this.liveMemory.size > LIVE_MEMORY_TILES) this.liveMemory.delete(this.liveMemory.keys().next().value!);
-        // Fin du cas.
-        }
-        // Rend la tuile.
-        return tile;
-      // Dans tous les cas, retire la fabrication de la liste des fabrications en cours.
-      }).finally(() => this.pending.delete(`l/${key}`));
-      // L'inscrit dans cette liste.
-      this.pending.set(`l/${key}`, p);
-    // Fin du cas.
-    }
-    // Renvoie la promesse.
-    return p;
-  // Fin de liveTile.
-  }
-
-  // Méthode privée buildLive.
-  private async buildLive(z: number, x: number, y: number, time: string): Promise<EarthTile> {
-    // Satellites qui voient la tuile.
-    const sats = liveCandidates(z, x, y);
-    // Fond et satellites demandés en même temps ; un satellite absent ne bloque ni le fond ni les autres.
-    // Demande en même temps :
-    const [ground, ...shots] = await Promise.all([
-      // le fond, ou null s'il échoue ;
-      this.tile('earth-hd', z, x, y).catch(() => null),
-      // l'image de chaque satellite, ou null si elle échoue.
-      ...sats.map((s) => this.liveShot(s, z, x, y, time).catch(() => null)),
-    // Fin des demandes.
-    ]);
-    // Le satellite qui couvre le plus la tuile est posé en dernier : il reste au-dessus.
-    // Images obtenues, dans l'ordre inverse.
-    const layers = shots.filter((b): b is Buffer => Boolean(b)).reverse();
-    // Aucune image :
-    if (!layers.length) {
-      // sans fond non plus : erreur 502 ;
-      if (!ground) throw new BadGatewayException(`Image en direct indisponible pour ${z}/${x}/${y}.`);
-      // sinon renvoie le fond, marqué « non préféré ».
-      return { ...ground, preferred: false };
-    // Fin du cas.
-    }
-    // Toile de départ :
-    const canvas = ground
-      // le fond, ramené à 256 pixels ;
-      ? sharp(ground.body).resize(256, 256)
-      // ou, sans fond, un carré bleu nuit.
-      : sharp({ create: { width: 256, height: 256, channels: 3, background: { r: 6, g: 12, b: 28 } } });
-    // Y pose les images et encode en JPEG, qualité 85.
-    const body: Buffer = await canvas.composite(layers.map((input) => ({ input }))).jpeg({ quality: 85 }).toBuffer();
-    // Renvoie la tuile, marquée « préférée ».
-    return { body, contentType: 'image/jpeg', source: ground?.source ?? 'gibs', preferred: true };
-  // Fin de buildLive.
-  }
-
-  /** Image d'un satellite pour une tuile (PNG 256 px avec transparence), ou erreur si elle est absente ou vide. */
-  // Méthode privée liveShot.
-  private async liveShot(s: LiveSource, z: number, x: number, y: number, time: string): Promise<Buffer> {
-    // Dernière erreur.
-    let lastError: unknown = new Error('aucune adresse');
-    // Pour chaque adresse du satellite :
-    for (const url of s.urls(z, x, y, time)) {
-      // essaie
-      try {
-        // de télécharger l'image, avec un délai de 6 secondes ;
-        const img = await this.fetchImage(url, AbortSignal.timeout(LIVE_TIMEOUT_MS));
-        // de la ramener à 256 pixels, avec un canal alpha, en PNG ;
-        const png: Buffer = await sharp(img.body).resize(256, 256).ensureAlpha().png().toBuffer();
-        // de lire ses statistiques.
-        const { channels } = await sharp(png).stats();
-        // Hors du disque du satellite (ou image pas encore produite) : entièrement transparente ou noire.
-        // Si elle est presque transparente, ou noire et unie :
-        if (channels[3].mean < LIVE_EMPTY_ALPHA || channels.slice(0, 3).every((c: { mean: number; stdev: number }) => c.mean < 4 && c.stdev < 2)) {
-          // erreur « hors couverture ».
-          throw new NoCoverageError(s.label);
-        // Fin du cas.
-        }
-        // Renvoie l'image.
-        return png;
-      // En cas d'échec,
-      } catch (e) {
-        // garde l'erreur et passe à l'adresse suivante.
-        lastError = e;
-      // Fin du cas.
-      }
-    // Fin de la boucle.
-    }
-    // Si ce n'est pas un « hors couverture », l'écrit dans le journal.
-    if (!(lastError instanceof NoCoverageError)) this.warn(s.label, z, x, y, lastError);
-    // Relance la dernière erreur.
-    throw lastError;
-  // Fin de liveShot.
   }
 
   /** Mémoire LRU + regroupement des demandes simultanées de la même tuile. */

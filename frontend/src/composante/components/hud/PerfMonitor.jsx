@@ -4,6 +4,8 @@ import { Box, Paper } from '@mui/material';
 import { useHud } from '@/moteur/engine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/composante/hooks/useViewport';
+// Importe l'écriture des durées en secondes et des octets.
+import { bytes, seconds } from './perfFormat';
 
 /** Couleur d'une charge : vert sous 60 % de l'intervalle entre deux images, orange sous 85 %, rouge au-delà. */
 // loadColor : vert sous 60 %, orange sous 85 %, rouge au-delà.
@@ -15,6 +17,31 @@ export const shortCount = (n) => (n >= 1e6 ? `${(n / 1e6).toLocaleString('fr-FR'
   : n >= 1e4 ? `${Math.round(n / 1e3)} k` : n.toLocaleString('fr-FR'));
 // ms : nombre au format français, avec une décimale.
 const ms = (v) => v.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/**
+ * Lignes de la Terre, pour les mesures avant et après (ordinateur et iPhone) : première image posée et globe entier
+ * affiché, comptés depuis l'ouverture de la page ; requêtes de tuiles de la session, octets reçus, requêtes annulées.
+ */
+// Déclare et exporte EarthLoad : les compteurs des tuiles de la Terre (null tant qu'ils manquent).
+export function EarthLoad({ tiles }) {
+  // Sans compteurs : rien.
+  if (!tiles) return null;
+  // Réseau de la session, vide par défaut.
+  const net = tiles.net || {};
+  // Début du rendu.
+  return (
+    // Fragment : les deux lignes.
+    <>
+      {/* Temps d'affichage de la Terre depuis l'ouverture : première image, puis globe entier. */}
+      <span><b>Terre</b> 1re image {seconds(tiles.firstTileAtMs)} · globe {seconds(tiles.worldReadyMs)}</span>
+      {/* Requêtes de tuiles, octets reçus et annulations (tuiles sorties du champ). */}
+      <span className="muted">{shortCount(net.requests || 0)} requêtes · {bytes(net.bytes)} · {shortCount(net.aborted || 0)} annulées</span>
+    {/* Fin du fragment. */}
+    </>
+  // Fin du rendu.
+  );
+// Fin de EarthLoad.
+}
 
 /** Ligne « CPU 4,2 ms 25 % » avec sa barre de charge. */
 // Déclare le composant Load : libellé, durée en millisecondes et pourcentage.
@@ -47,7 +74,9 @@ function Load({ label, valueMs, pct }) {
  *  - GPU : temps de dessin par image et sa part, quand le navigateur donne le chronomètre du GPU (Chrome et Edge sur
  *    ordinateur) ; sinon la ligne le dit, sans chiffre inventé ;
  *  - travail demandé au GPU (appels de dessin, triangles), textures et maillages en mémoire, mémoire JavaScript
- *    (Chrome), nom de la carte graphique.
+ *    (Chrome), nom de la carte graphique ;
+ *  - Terre : première image et globe entier affichés (depuis l'ouverture), requêtes de tuiles, octets, annulations.
+ * Affiché aussi sur téléphone : c'est là que se relèvent les mesures de l'iPhone.
  * Ce n'est pas la charge du processeur ni de la carte graphique de l'appareil, que le navigateur ne donne pas.
  */
 // Déclare et exporte le composant PerfMonitor : reçoit le magasin du HUD. Il est posé dans le bandeau du titre
@@ -57,8 +86,10 @@ export function PerfMonitor({ hud }) {
   const { compact } = useViewport();
   // Lit les mesures de performance, null s'il n'y en a pas.
   const perf = useHud(hud, (s) => s.perf ?? null);
-  // Sans mesure, rien n'est affiché.
-  if (compact || !perf) return null;
+  // Lit les compteurs des tuiles de la Terre, null s'il n'y en a pas.
+  const tiles = useHud(hud, (s) => s.tiles?.perf ?? null);
+  // Sans mesure, rien n'est affiché (sur téléphone aussi : les mesures de l'iPhone se lisent ici).
+  if (!perf) return null;
   // Début du rendu.
   return (
     // Carte du moniteur (début de la balise).
@@ -105,6 +136,8 @@ export function PerfMonitor({ hud }) {
       </span>
       {/* Le nom de la carte graphique, s'il est connu. */}
       {perf.gpuName && <span className="muted">{perf.gpuName}</span>}
+      {/* Les compteurs de la Terre : temps d'affichage et requêtes de tuiles. */}
+      <EarthLoad tiles={tiles} />
     {/* Fin de la carte. */}
     </Paper>
   // Fin du rendu.

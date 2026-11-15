@@ -1,5 +1,9 @@
-// Importe de MUI Box, Button, ToggleButton et ToggleButtonGroup.
-import { Box, Button, ToggleButton, ToggleButtonGroup } from '@mui/material';
+// Importe de MUI Box, Button, ToggleButton, ToggleButtonGroup et Typography.
+import { Box, Button, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+// Importe le bouton de téléchargement d'une couche.
+import { DownloadButton } from '../../ui/Radio';
+// Importe layerSource, qui donne la source d'une couche.
+import { layerSource } from '../Informations/layerSource';
 // Importe Group, le groupe de réglages.
 import { Group } from '../../ui/Group';
 // Importe Switch, l'interrupteur.
@@ -18,13 +22,47 @@ const millions = (n) => `${(n / 1e6).toLocaleString('fr-FR', { maximumFractionDi
 const LIDAR_SHORT = { 'lidar-hd-mns': 'Surface', 'lidar-hd-mnt': 'Sol nu', 'lidar-hd-mnh': 'Hauteurs' };
 
 /**
- * Cartographie de la Terre, à plat : ce qui se lit sur la carte (noms des villes et des pays, frontières et
- * littoraux, rues et routes d'OpenStreetMap, volcans en éruption en direct, lumières de la nuit). Le relief a son propre groupe, CartographieRelief ci-dessous.
+ * Entrée unique « Terre » : la seule couche d'imagerie de la Terre, qui fusionne toutes ses sources, avec son nom, ses
+ * sources et son unique bouton de téléchargement. Il n'y a rien à choisir : pas d'interrupteur.
+ */
+// Déclare et exporte le composant EntreeTerre : la description de la couche unique (null tant qu'elle n'est pas chargée).
+export function EntreeTerre({ layer }) {
+  // Tant que la couche n'est pas là : rien.
+  if (!layer) return null;
+  // Début du rendu.
+  return (
+    // Ligne : textes à gauche, bouton de téléchargement à droite.
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', px: 1, py: 0.5 }}>
+      {/* Les textes. */}
+      <Box sx={{ py: 0.75, flex: 1, minWidth: 0 }}>
+        {/* Le nom, en demi-gras. */}
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>Terre</Typography>
+        {/* La description de la couche, en petit, couleur secondaire. */}
+        {layer.description && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{layer.description}</Typography>}
+        {/* Ses sources, en italique, précédées de « Sources : ». */}
+        {layerSource(layer) && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>Sources : {layerSource(layer)}</Typography>}
+      {/* Fin des textes. */}
+      </Box>
+      {/* Le seul bouton de téléchargement de la couche fusionnée. */}
+      <DownloadButton layerId={layer.id} body="Terre" label="couche fusionnée" />
+    {/* Fin de la ligne. */}
+    </Box>
+  // Fin du rendu.
+  );
+// Fin de EntreeTerre.
+}
+
+/**
+ * Cartographie de la Terre, à plat : sa couche unique (entrée « Terre »), puis ce qui se lit sur la carte (noms des
+ * villes et des pays, frontières et littoraux, rues et routes d'OpenStreetMap, volcans en éruption en direct, lumières
+ * de la nuit). Le relief a son propre groupe, CartographieRelief ci-dessous.
  */
 // Déclare et exporte le composant Cartographie (début de la liste des propriétés).
 export function Cartographie({
+  // La couche unique de la Terre.
+  earthLayer = null,
   // Les noms des villes, les noms des pays et les contours, avec leurs rappels et leurs textes d'aide.
-  cityNames, onCityNames, cityNamesHint, cityNamesDisabled, countryNames, onCountryNames, outlines, onOutlines, outlinesHint,
+  cityNames, onCityNames, cityNamesHint, countryNames, onCountryNames, outlines, onOutlines, outlinesHint,
   // Les rues (éteintes par défaut) et leur rappel.
   streets = false, onStreets,
   // Les volcans en éruption, leur rappel et leur texte d'aide.
@@ -37,8 +75,10 @@ export function Cartographie({
   return (
     // Groupe titré.
     <Group title="Cartographie">
-      {/* Interrupteur des noms des villes, désactivé s'ils sont déjà dans le fond. */}
-      <Switch checked={cityNames} disabled={cityNamesDisabled} onChange={onCityNames} label="Noms des villes" hint={cityNamesHint} />
+      {/* L'entrée unique de la Terre et son téléchargement. */}
+      <EntreeTerre layer={earthLayer} />
+      {/* Interrupteur des noms des villes. */}
+      <Switch checked={cityNames} onChange={onCityNames} label="Noms des villes" hint={cityNamesHint} />
       {/* Interrupteur des noms des pays. */}
       <Switch checked={countryNames} onChange={onCountryNames} label="Noms des pays" hint="Dans leur alphabet local, en zoomant" />
       {/* Interrupteur des frontières et des littoraux. */}

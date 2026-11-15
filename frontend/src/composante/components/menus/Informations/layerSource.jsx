@@ -3,20 +3,8 @@
 
 // Source de quelques fonds, par identifiant (début de l'objet).
 const BY_ID = {
-  // Le fond satellite de la NASA.
-  satellite: 'NASA GIBS (Blue Marble)',
-  // La Terre en haute définition.
-  'earth-hd': 'Orthophotos nationales (14 pays) + EOX (Copernicus Sentinel-2) + GEBCO (fonds marins)',
-  // La Terre en direct.
-  'earth-live': 'NOAA (GOES-East, GOES-West) + EUMETSAT (Meteosat) + JMA (Himawari), via NASA GIBS et EUMETView',
-  // Fonds marins : la grille GEBCO.
-  'earth-gebco': 'GEBCO (IHO-IOC) : SIO, NOAA, U.S. Navy, NGA, IBCAO',
-  // Fonds marins : la mosaïque de la NOAA.
-  'earth-ncei': 'NOAA NCEI',
-  // Sentinel-2.
-  sentinel2: 'EOX IT Services (Copernicus Sentinel-2)',
-  // Les orthophotos de l'IGN.
-  'ign-ortho': 'IGN (Géoplateforme)',
+  // La Terre, sa couche unique : toutes ses sources d'imagerie fusionnées.
+  'earth-hd': 'Orthophotos nationales (14 pays) + EOX (Copernicus Sentinel-2) + NASA GIBS + GEBCO (fonds marins)',
   // La Lune réelle.
   real: 'NASA SVS + JAXA (Kaguya)',
 // Fin de l'objet.
@@ -24,10 +12,8 @@ const BY_ID = {
 
 // Source par fournisseur (début de l'objet).
 const BY_PROVIDER = {
-  // NASA GIBS.
-  gibs: 'NASA GIBS',
-  // Les orthophotos nationales et EOX.
-  'earth-hd': 'Orthophotos nationales + EOX',
+  // La couche unique de la Terre : orthophotos nationales, EOX et NASA GIBS.
+  'earth-hd': 'Orthophotos nationales + EOX + NASA GIBS',
   // Moon Trek.
   'nasa-trek': 'NASA / JPL-Caltech (Moon Trek)',
   // Moon Trek (catalogue).

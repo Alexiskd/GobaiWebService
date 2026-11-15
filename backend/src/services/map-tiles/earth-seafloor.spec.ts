@@ -5,8 +5,8 @@ import { mercatorBbox } from './earth-sources';
 
 // Groupe de tests des fonds marins.
 describe('fonds marins de la Terre', () => {
-  // Test : deux couches, chacune avec sa source unique, mondiale.
-  it('propose GEBCO et la NOAA, chacune avec une source mondiale sans clé', () => {
+  // Test : deux relais, chacun avec sa source unique, mondiale.
+  it('relaie GEBCO et la NOAA, chacune avec une source mondiale sans clé', () => {
     // Les deux identifiants, dans l'ordre.
     expect(SEAFLOOR_LAYERS.map((l) => l.id)).toEqual(['earth-gebco', 'earth-ncei']);
     // Chaque source : monde entier, sans clé, dès le niveau 0, avec une mention.

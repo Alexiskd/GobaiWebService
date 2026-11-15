@@ -16,14 +16,14 @@ const WINDOWS = {
 const SETTINGS = {
   // Repères du système solaire : orbites, noms des planètes, noms des satellites,
   orbites: 'Lignes d’orbite', noms_planetes: 'Points et noms des planètes', noms_satellites: 'Points et noms des satellites',
-  // étoiles, lieux de la Lune et atmosphères.
-  etoiles: 'Étoiles et Voie lactée', lieux_lune: 'Lieux de la Lune', atmospheres: 'Atmosphère des planètes solides',
+  // étoiles, lieux de la Lune, atmosphère de Vénus et de Mars, nuages et atmosphère de la Terre.
+  etoiles: 'Étoiles et Voie lactée', lieux_lune: 'Lieux de la Lune', atmospheres: 'Atmosphère de Vénus et de Mars', atmosphere_terre: 'Nuages et atmosphère de la Terre',
   // Caméra : rotation automatique, vue 3/4 et ombre.
   rotation_automatique: 'Rotation automatique', vue_3_4: 'Vue 3/4', ombre: 'Ombre',
   // Cartographie de la Terre à plat : noms des villes, noms des pays, contours,
   noms_villes: 'Noms des villes', noms_pays: 'Noms des pays', frontieres_et_littoraux: 'Frontières et littoraux',
-  // rues, routes, volcans en éruption et coordonnées GPS.
-  rues: 'Rues et routes', routes: 'Routes', volcans: 'Volcans en éruption', coordonnees_gps: 'Coordonnées GPS',
+  // rues et routes, volcans en éruption et coordonnées GPS.
+  rues: 'Rues et routes', volcans: 'Volcans en éruption', coordonnees_gps: 'Coordonnées GPS',
   // Cartographie en relief : relief 3D, calque LiDAR HD et points LiDAR 3D.
   relief_3d: 'Relief 3D', lidar_hd: 'LiDAR HD (France)', points_lidar: 'Points LiDAR 3D',
   // Appareil : noir pur, économie d'énergie et moniteur de performance.

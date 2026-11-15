@@ -212,8 +212,6 @@ export const SERVICE_ORGS = [
   { org: 'OpenPlanetaryMap', what: ['Fond de carte lunaire communautaire (hébergé par CARTO)'] },
   // « EOX IT Services » et ce que cette organisation fournit.
   { org: 'EOX IT Services', what: ['Sentinel-2 cloudless, données Copernicus (ESA, Union européenne)'] },
-  // « EUMETSAT » et ce que cette organisation fournit.
-  { org: 'EUMETSAT', what: ['Meteosat : image de la Terre à l’instant T (Europe, Afrique), une toutes les 10 minutes'] },
   // « IGN » et ce que cette organisation fournit.
   { org: 'IGN', what: ['Orthophotos de la Géoplateforme', 'LiDAR HD : modèles de surface, de terrain et de hauteur (Licence Ouverte 2.0)', 'LiDAR HD : nuages de points 3D de toute la France (jeu IGNF_NUAGES-DE-POINTS-LIDAR-HD, COPC), lus en direct sur la Géoplateforme et colorisés avec ses orthophotos (Licence Ouverte 2.0)'] },
   // « Mapterhorn (© Mapterhorn, mapterhorn.com/attribution) » et ce que cette organisation fournit.
@@ -235,7 +233,7 @@ export const SERVICE_ORGS = [
   // « U.S. Naval Observatory (USNO) » et ce que cette organisation fournit.
   { org: 'U.S. Naval Observatory (USNO)', what: ['Éphémérides'] },
   // « NOAA » et ce que cette organisation fournit.
-  { org: 'NOAA', what: ['Space Weather Prediction Center (activité solaire et régions actives du Soleil)', 'NESDIS Satellite Maps (mosaïque GOES la plus récente, en secours)'] },
+  { org: 'NOAA', what: ['Space Weather Prediction Center (activité solaire et régions actives du Soleil)'] },
   // « Open-Meteo (CC BY 4.0) » et ce que cette organisation fournit.
   { org: 'Open-Meteo (CC BY 4.0)', what: ['Météo des villes', 'Vents en altitude (mouvement des nuages)', 'Couverture nuageuse du moment (position des nuages)'] },
   // « Xweather (Vaisala) » et ce que cette organisation fournit.

@@ -22,10 +22,10 @@ const MAPPED_BODIES = ['earth', 'moon', 'mars', 'mercury'];
  */
 // Déclare et exporte le composant BodyLayersMenu (début de la liste des propriétés).
 export function BodyLayersMenu({
-  // HUD, astre visé, calques de la Terre, états de la Lune et de la liste.
-  hud, bodyId: currentId = null, bodyName = null, layers = [], moonRealAvailable, moonColorOk, listStatus, listError,
-  // Fond de la Terre, ombrage et leurs rappels.
-  baseId, onBase, shade, onShade,
+  // HUD, astre visé, états de la Lune et de la liste.
+  hud, bodyId: currentId = null, bodyName = null, moonRealAvailable, moonColorOk, listStatus, listError,
+  // Ombrage et son rappel.
+  shade, onShade,
   // Calques, fond et rappel de la Lune.
   moonLayers = [], moonBaseId = null, onMoonBase,
   // Calques, fond et rappel de Mars.
@@ -53,12 +53,6 @@ export function BodyLayersMenu({
         <Terre
           // Le HUD.
           hud={hud}
-          // Ses calques.
-          layers={layers}
-          // Son fond choisi.
-          baseId={baseId}
-          // Le rappel de choix.
-          onBase={onBase}
           // Le statut de la liste.
           listStatus={listStatus}
           // L'erreur de la liste.

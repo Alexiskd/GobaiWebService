@@ -1,7 +1,7 @@
 // Déclare et exporte le nom affiché de chaque fournisseur de cartes (début de l'objet).
 export const PROVIDER_LABEL = {
-  // NASA GIBS.
-  gibs: 'NASA GIBS',
+  // La Terre : sa couche unique, qui fusionne toutes les sources d'imagerie.
+  'earth-hd': 'Terre · couche unique',
   // NASA Moon Trek.
   'nasa-trek': 'NASA Moon Trek',
   // NASA Mars Trek.

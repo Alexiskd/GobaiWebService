@@ -21,12 +21,12 @@ export const WINDOWS = ['galerie', 'parametres', 'recherche', 'aide', 'node', 'l
  */
 // Interrupteurs d'affichage que l'assistant peut actionner :
 export const DISPLAY_SETTINGS = [
-  // repères du système solaire,
-  'orbites', 'noms_planetes', 'noms_satellites', 'etoiles', 'lieux_lune', 'atmospheres',
+  // repères du système solaire, atmosphère de Vénus et de Mars, nuages et atmosphère de la Terre,
+  'orbites', 'noms_planetes', 'noms_satellites', 'etoiles', 'lieux_lune', 'atmospheres', 'atmosphere_terre',
   // caméra et rotation,
   'rotation_automatique', 'vue_3_4', 'ombre',
   // cartographie de la Terre à plat,
-  'noms_villes', 'noms_pays', 'frontieres_et_littoraux', 'rues', 'routes', 'volcans', 'coordonnees_gps',
+  'noms_villes', 'noms_pays', 'frontieres_et_littoraux', 'rues', 'volcans', 'coordonnees_gps',
   // cartographie en relief,
   'relief_3d', 'lidar_hd', 'points_lidar',
   // appareil.
