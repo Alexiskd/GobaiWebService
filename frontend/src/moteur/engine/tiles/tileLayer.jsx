@@ -22,6 +22,10 @@ import { nativeTile, OVERZOOM_LEVELS } from './overzoom';
 import { LIGHTS_PAD, NEIGHBOUR_DIRS, fillPad, lightsFallback, lightsPrefetchList, neighbourTile, padLightsImage, paddedRect } from './nightLights';
 // Importe les outils du préchargement prédictif, depuis prefetch.
 import { CameraPredictor, coneTest, PREFETCH_FOV, tilePriority, ZoomWatch } from './prefetch';
+// Importe les paliers de zoom : palier d'une distance, budget, tuiles gardées et tuiles à décharger.
+import { keptKeys, offFieldKeys, tierFor, tileBudget, withinBudget } from './zoomTiers';
+// Importe l'identifiant du calque des rues, demandé seulement aux paliers qui l'affichent.
+import { ROADS_LAYER_ID } from './roadSource';
 // Importe HexDisplay, l'affichage en cellules hexagonales, depuis hexDisplay.
 import { HexDisplay } from './hexDisplay';
 
@@ -158,10 +162,14 @@ export class TileLayer {
     root, source, uniforms, maxAnisotropy = 4, capacity = 260, concurrency = 6, maxZoomCap = 22, pinnedMaxZoom = PINNED_MAX_ZOOM,
     // le préchargement, la mémoire vive, le sur-zoom, le relief et ses deux sources, et la source des lumières de nuit,
     prefetch = false, ramCapacity = 0, overzoom = OVERZOOM_LEVELS, relief = null, reliefSource = null, oceanSource = null, nightLights = null,
-    // les envois par image, l'affichage en hexagones et la taille maximale d'une texture (0 : pas de limite).
+    // les envois par image, l'affichage en hexagones et la taille maximale d'une texture (0 : pas de limite),
     uploadsPerFrame = UPLOADS_PER_FRAME, hex = true,
+    // le rayon de l'astre en km (distance affichée des paliers) et l'appareil (tenu en main, économie d'énergie).
+    radiusKm = 0, device = () => ({ handheld: false, saving: false }),
   // Fin des réglages (début du constructeur).
   }) {
+    // Paliers de zoom (table du serveur) : rayon de l'astre, appareil, palier en cours et budget de tuiles.
+    this.radiusKm = radiusKm; this.device = device; this.tier = null; this.budget = Infinity;
     // Garde le nombre d'envois par image.
     this.uploadsPerFrame = uploadsPerFrame;
     // Mouvement : vue de l'image précédente, fin du mouvement en cours, état à la dernière sélection.
@@ -330,8 +338,12 @@ export class TileLayer {
     this.prevFrameView = copyView(view);
     // En mouvement ?
     const moving = now < this.movingUntil;
-    // Options de sélection : niveaux, projection, erreur tolérée à l'écran (doublée en mouvement), vue de biais allégée.
-    const opts = { minZoom: this.source.minZoom, maxZoom: this.maxZoom, projection: this.projection, tileSize: 256, maxSSE: ((2 * tileSize) / 256) * (moving ? MOTION_SSE : 1), foreshorten: true };
+    // Palier de zoom d'après la distance affichée (altitude de la caméra en km), si la source donne des paliers.
+    this.tier = this.radiusKm > 0 ? tierFor(this.source.info?.tiers, (Math.hypot(view.cam[0], view.cam[1], view.cam[2]) - 1) * this.radiusKm) : null;
+    // Budget de tuiles du palier, pour cet appareil et le mode économie d'énergie (sans palier : aucune limite).
+    this.budget = tileBudget(this.tier, this.device());
+    // Options de sélection : niveaux (plafonnés par le palier), projection, erreur tolérée à l'écran (doublée en mouvement), vue de biais allégée.
+    const opts = { minZoom: this.source.minZoom, maxZoom: this.tier ? Math.min(this.maxZoom, this.tier.maxZoom) : this.maxZoom, projection: this.projection, tileSize: 256, maxSSE: ((2 * tileSize) / 256) * (moving ? MOTION_SSE : 1), foreshorten: true };
 
     // Sélection (quadtree) seulement si la vue a réellement changé : caméra immobile → aucun parcours.
     // Nouvelle sélection si la vue a changé, ou si le mouvement commence ou s'arrête (netteté à refaire).
@@ -352,8 +364,11 @@ export class TileLayer {
       for (const t of wanted) if (t.z > finest) finest = t.z;
       // Priorité de chaque tuile : selon le centre de l'écran, ou la distance sans visée.
       for (const t of wanted) t.p = view.fwd ? tilePriority(t, view.cam, view.fwd, finest) : t.d;
-      // Garde les tuiles voulues.
-      this.wanted = wanted;
+      // Garde les tuiles voulues, dans le budget du palier (les plus prioritaires) ; les autres cellules affichent un
+      // niveau moins fin.
+      this.wanted = withinBudget(wanted, this.budget);
+      // Chargement limité au champ de la caméra (table du serveur) : les tuiles hors champ quittent la carte graphique.
+      if (this.source.info?.fieldOnly) this.unloadOffField();
       // Zoom rapide : note l'instant d'entrée de chaque niveau d'images, oublie ceux qui ne sont plus voulus.
       const levels = new Set(wanted.map((t) => t.z));
       // Niveaux nouveaux : notés maintenant.
@@ -437,8 +452,8 @@ export class TileLayer {
       // Les demandes prédictives déjà en file (hors champ) sont abandonnées par l'annulation ci-dessous.
       // Les demandes prédictives sont oubliées.
       if (this.prefetchKeys.size) { this.prefetchKeys = new Set(); this.lastPredView = null; prefetched = true; }
-    // Sinon, si le préchargement est actif et la visée connue : il est calculé.
-    } else if (this.prefetchOn && view.fwd) prefetched = this.prefetch(view, opts, now);
+    // Sinon, si le préchargement est actif, permis hors champ par la table, et la visée connue : il est calculé.
+    } else if (this.prefetchOn && !this.source.info?.fieldOnly && view.fwd) prefetched = this.prefetch(view, opts, now);
 
     // Annulation dynamique : les demandes en file qui ne servent plus (la vue a tourné) sont abandonnées.
     // Si la sélection ou le préchargement a changé et que la file n'est pas vide (début).
@@ -670,6 +685,19 @@ export class TileLayer {
     // Si la mémoire vive a de la place et que la couche n'est pas libérée.
     if (this.ram.capacity > 0 && !this.disposed) this.ram.set(key, { coord, base, ov, overlay, baseRect, ovRect });
   // Fin de toRam.
+  }
+
+  /**
+   * Décharge de la carte graphique les tuiles hors du champ de la caméra : ni voulues, ni ancêtres d'une tuile voulue
+   * (repli affiché pendant le chargement), ni épinglées (mosaïque instantanée). Leurs images passent en mémoire vive.
+   */
+  // unloadOffField : décharge les tuiles hors champ (début).
+  unloadOffField() {
+    // Clés à garder : les tuiles voulues et leurs ancêtres.
+    const keep = keptKeys(this.wanted);
+    // Pour chaque tuile à décharger : retirée du cache (son éviction la passe en mémoire vive et libère ses textures).
+    for (const key of offFieldKeys(this.cache.keys(), keep, this.pinKeys)) this.cache.delete(key);
+  // Fin de unloadOffField.
   }
 
   /** Éviction du GPU (L1) : textures détruites, image décodée gardée en RAM (L2) pour un retour instantané. */
@@ -1485,6 +1513,8 @@ export class TileLayer {
     const ov = this.overlay;
     // Calque pas prêt, ou déjà posé, demandé ou en échec : rien.
     if (!ov?.ready || e.ovMap || e.ovRequested || e.ovFailed) return;
+    // Rues et routes : demandées seulement aux paliers qui les affichent (table du serveur).
+    if (ov.layerId === ROADS_LAYER_ID && this.tier?.details?.roads === false) return;
     // Hors de l'emprise du calque (ex. LiDAR HD hors de France) : rien à demander pour cette tuile.
     // Hors de l'emprise du calque : noté en échec, terminé.
     if (!ov.covers(e)) { e.ovFailed = true; return; }

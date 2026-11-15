@@ -22,8 +22,8 @@ const ms = (v) => v.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumF
  * Lignes de la Terre, pour les mesures avant et après (ordinateur et iPhone) : première image posée et globe entier
  * affiché, comptés depuis l'ouverture de la page ; requêtes de tuiles de la session, octets reçus, requêtes annulées.
  */
-// Déclare et exporte EarthLoad : les compteurs des tuiles de la Terre (null tant qu'ils manquent).
-export function EarthLoad({ tiles }) {
+// Déclare et exporte EarthLoad : les compteurs des tuiles de la Terre (null tant qu'ils manquent) et le palier de zoom en cours.
+export function EarthLoad({ tiles, tier = null }) {
   // Sans compteurs : rien.
   if (!tiles) return null;
   // Réseau de la session, vide par défaut.
@@ -36,6 +36,8 @@ export function EarthLoad({ tiles }) {
       <span><b>Terre</b> 1re image {seconds(tiles.firstTileAtMs)} · globe {seconds(tiles.worldReadyMs)}</span>
       {/* Requêtes de tuiles, octets reçus et annulations (tuiles sorties du champ). */}
       <span className="muted">{shortCount(net.requests || 0)} requêtes · {bytes(net.bytes)} · {shortCount(net.aborted || 0)} annulées</span>
+      {/* Palier de zoom en cours : nom, niveau le plus fin et budget de tuiles de cet appareil. */}
+      {tier && <span className="muted">Palier {tier.label} · niveau ≤ {tier.maxZoom} · {shortCount(tier.budget)} tuiles</span>}
     {/* Fin du fragment. */}
     </>
   // Fin du rendu.
@@ -88,6 +90,8 @@ export function PerfMonitor({ hud }) {
   const perf = useHud(hud, (s) => s.perf ?? null);
   // Lit les compteurs des tuiles de la Terre, null s'il n'y en a pas.
   const tiles = useHud(hud, (s) => s.tiles?.perf ?? null);
+  // Lit le palier de zoom en cours de la Terre, null s'il n'y en a pas.
+  const tier = useHud(hud, (s) => s.tiles?.tier ?? null);
   // Sans mesure, rien n'est affiché (sur téléphone aussi : les mesures de l'iPhone se lisent ici).
   if (!perf) return null;
   // Début du rendu.
@@ -137,7 +141,7 @@ export function PerfMonitor({ hud }) {
       {/* Le nom de la carte graphique, s'il est connu. */}
       {perf.gpuName && <span className="muted">{perf.gpuName}</span>}
       {/* Les compteurs de la Terre : temps d'affichage et requêtes de tuiles. */}
-      <EarthLoad tiles={tiles} />
+      <EarthLoad tiles={tiles} tier={tier} />
     {/* Fin de la carte. */}
     </Paper>
   // Fin du rendu.

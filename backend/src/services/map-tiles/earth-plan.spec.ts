@@ -1,5 +1,5 @@
-// Importe ce qui est testé : la table, sa version, son adresse et son en-tête de cache.
-import { EARTH_PLAN_CACHE, EARTH_PLAN_PATH, EARTH_PLAN_VERSION, earthPlan } from './earth-plan';
+// Importe ce qui est testé : la table, ses paliers, sa version, son adresse et son en-tête de cache.
+import { EARTH_PLAN_CACHE, EARTH_PLAN_PATH, EARTH_PLAN_VERSION, EARTH_TIERS, earthPlan } from './earth-plan';
 // Importe les sources actives, pour comparer l'ordre.
 import { enabledSources } from './earth-sources';
 
@@ -54,6 +54,29 @@ describe('table de priorité des sources de la Terre', () => {
     for (const id of ['sentinel2', 'ign']) expect(plan.sources.find((s) => s.id === id)!.templates!.length).toBeGreaterThan(0);
     // Avec EARTH_DIRECT=0 : plus aucun modèle d'adresse, tout passe par le relais.
     expect(earthPlan(enabledSources(env), { EARTH_DIRECT: '0' }).sources.every((s) => s.templates === undefined)).toBe(true);
+  // Fin du test.
+  });
+
+  // Test : les paliers vont de la rue à l'espace, sans trou ni recul.
+  it('décrit les paliers de zoom, de la rue à l’espace', () => {
+    // La table.
+    const plan = earthPlan(enabledSources(env), env);
+    // Les paliers de la table sont ceux du serveur, et le chargement est limité au champ de la caméra.
+    expect([plan.tiers, plan.fieldOnly]).toEqual([EARTH_TIERS, true]);
+    // Du plus proche au plus lointain.
+    expect(EARTH_TIERS.map((t) => t.id)).toEqual(['rue', 'quartier', 'ville', 'region', 'pays', 'continent', 'planete', 'espace']);
+    // Distances croissantes, le dernier sans limite.
+    for (let i = 1; i < EARTH_TIERS.length - 1; i++) expect(EARTH_TIERS[i].maxKm!).toBeGreaterThan(EARTH_TIERS[i - 1].maxKm!);
+    // Le dernier palier n'a pas de limite.
+    expect(EARTH_TIERS[EARTH_TIERS.length - 1].maxKm).toBeNull();
+    // Le niveau le plus fin baisse (ou reste) en s'éloignant, de 19 à 3.
+    for (let i = 1; i < EARTH_TIERS.length; i++) expect(EARTH_TIERS[i].maxZoom).toBeLessThanOrEqual(EARTH_TIERS[i - 1].maxZoom);
+    // Extrémités : 19 à la rue, 3 dans l'espace (la mosaïque instantanée).
+    expect([EARTH_TIERS[0].maxZoom, EARTH_TIERS[EARTH_TIERS.length - 1].maxZoom]).toEqual([19, 3]);
+    // Sur téléphone, jamais plus de tuiles que sur ordinateur, et au moins 85 (la mosaïque instantanée).
+    for (const t of EARTH_TIERS) expect(t.maxTiles.phone <= t.maxTiles.desktop && t.maxTiles.phone >= 85).toBe(true);
+    // La carte marine passe de la teinte NOAA (loin) à GEBCO seule (près).
+    expect([EARTH_TIERS[EARTH_TIERS.length - 1].details.marine, EARTH_TIERS[0].details.marine]).toEqual(['noaa', 'gebco']);
   // Fin du test.
   });
 // Fin du groupe.
