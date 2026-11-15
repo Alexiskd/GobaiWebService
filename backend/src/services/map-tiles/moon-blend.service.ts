@@ -95,7 +95,7 @@ export class MoonBlendService implements OnModuleInit, OnModuleDestroy {
   onModuleInit(): void {
     if (!this.pool) return;
     this.timer = setTimeout(() => {
-      void this.list().then((l) => { if (!l.find((e) => e.exaggeration === 1)?.stored) this.start(1); }).catch(() => {});
+      void this.list().then((l) => { if (!l.variants.find((v) => v.exaggeration === 1)?.stored) this.start(1); }).catch(() => {});
     }, 120_000);
     this.timer.unref?.();
   }
