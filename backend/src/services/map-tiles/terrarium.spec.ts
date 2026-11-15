@@ -1,7 +1,8 @@
 // Tests de la lecture des TIFF flottants, de l'écriture Terrarium PNG et du découpage du relief lunaire.
 import { deflateSync, inflateSync } from 'node:zlib';
-import { cleanMoonHeights, moonReliefExportUrl, moonTileBounds, moonVerticalStep } from './moon-relief.service';
-import { crc32, decodeFloat32Tiff, encodeTerrariumPng, terrariumMeters } from './terrarium';
+import { cleanMoonHeights, moonReliefExportUrl, moonTileBounds, moonTileCount, moonVerticalStep } from './moon-relief.service';
+import { buildMoonMesh, meshToGlb, MOON_RADIUS_KM, sampleMosaic } from './moon-relief-model';
+import { crc32, decodeFloat32Tiff, decodeTerrariumPng, encodeTerrariumPng, terrariumMeters } from './terrarium';
 
 /** TIFF d'une bande en flottants 32 bits, une seule bande de lignes, petit-boutiste ; Deflate et prédicteur 3 au choix. */
 function makeTiff(values: number[], width: number, height: number, opts: { deflate?: boolean; predictor3?: boolean } = {}): Buffer {
@@ -106,5 +107,42 @@ describe('relief lunaire', () => {
     expect(Array.from(m.data).map((v) => (Number.isNaN(v) ? 'NaN' : v))).toEqual([1000, 'NaN', 2000]);
     const k = cleanMoonHeights({ width: 2, height: 1, data: Float32Array.from([-9100, 10786]) });
     expect(Array.from(k.data)).toEqual([-9100, 10786]);
+  });
+});
+
+describe('préchargement et modèle 3D du relief lunaire', () => {
+  it('compte les tuiles des niveaux 0 à z (2, 10, …, 2 730 au niveau 5)', () => {
+    expect(moonTileCount(0)).toBe(2);
+    expect(moonTileCount(1)).toBe(10);
+    expect(moonTileCount(5)).toBe(2730);
+  });
+  it('relit une tuile Terrarium enregistrée (aller-retour PNG)', () => {
+    const g = decodeTerrariumPng(encodeTerrariumPng({ width: 3, height: 1, data: Float32Array.from([-9100.5, 0, Number.NaN]) }, 0.25));
+    expect(Array.from(g.data).map((v) => (Number.isNaN(v) ? 'NaN' : v))).toEqual([-9100.5, 0, 'NaN']);
+  });
+  it('échantillonne la mosaïque et construit une sphère en relief tournée vers l’extérieur', () => {
+    const W = 64, H = 32, data = new Float32Array(W * H).fill(1000);
+    const mosaic = { width: W, height: H, data };
+    expect(sampleMosaic(mosaic, 10, 20)).toBeCloseTo(1000);
+    const mesh = buildMoonMesh(mosaic, 36, 18, 1);
+    expect(mesh.positions.length).toBe(37 * 19 * 3);
+    expect(mesh.indices.length).toBe(36 * 18 * 6);
+    // Sommet de l'équateur, longitude 0 : rayon + 1 km, sur +X.
+    const k = 9 * 37 + 18;
+    expect(mesh.positions[k * 3]).toBeCloseTo(MOON_RADIUS_KM + 1, 3);
+    // Toutes les normales pointent vers l'extérieur.
+    for (let v = 0; v < mesh.positions.length; v += 3) {
+      expect(mesh.normals[v] * mesh.positions[v] + mesh.normals[v + 1] * mesh.positions[v + 1] + mesh.normals[v + 2] * mesh.positions[v + 2]).toBeGreaterThan(0);
+    }
+  });
+  it('écrit un glTF binaire valide (en-tête, longueur, JSON, accesseurs)', () => {
+    const mesh = buildMoonMesh({ width: 8, height: 4, data: new Float32Array(32) }, 8, 4, 1);
+    const glb = meshToGlb(mesh);
+    expect(glb.toString('latin1', 0, 4)).toBe('glTF');
+    expect(glb.readUInt32LE(4)).toBe(2);
+    expect(glb.readUInt32LE(8)).toBe(glb.length);
+    const json = JSON.parse(glb.toString('utf8', 20, 20 + glb.readUInt32LE(12)));
+    expect(json.accessors[0].count).toBe(9 * 5);
+    expect(json.accessors[3].count).toBe(8 * 4 * 6);
   });
 });

@@ -216,3 +216,40 @@ export function encodeTerrariumPng(grid: HeightGrid, step = 1 / 256): Buffer {
 
 /** Altitude Terrarium d'un pixel (pour les tests et les vérifications). */
 export const terrariumMeters = (r: number, g: number, b: number): number => r * 256 + g + b / 256 - 32768;
+
+/**
+ * Relit un PNG RVB 8 bits écrit par encodeRgbPng (filtres « aucun » et « Sub » seulement) : pixels bruts,
+ * 3 octets par pixel. Sert à rassembler les tuiles gardées en base.
+ */
+export function decodeRgbPng(png: Buffer): { width: number; height: number; rgb: Buffer } {
+  if (png.readUInt32BE(0) !== 0x89504e47) throw new Error('PNG : signature invalide');
+  const width = png.readUInt32BE(16), height = png.readUInt32BE(20);
+  if (png[24] !== 8 || png[25] !== 2 || png[28] !== 0) throw new Error('PNG : RVB 8 bits non entrelacé attendu');
+  // Blocs IDAT mis bout à bout.
+  const idat: Buffer[] = [];
+  for (let o = 8; o + 8 <= png.length;) {
+    const len = png.readUInt32BE(o), type = png.toString('latin1', o + 4, o + 8);
+    if (type === 'IDAT') idat.push(png.subarray(o + 8, o + 8 + len));
+    if (type === 'IEND') break;
+    o += 12 + len;
+  }
+  const raw = inflateSync(Buffer.concat(idat));
+  const stride = width * 3, rgb = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y++) {
+    const f = raw[y * (stride + 1)], src = y * (stride + 1) + 1, dst = y * stride;
+    if (f !== 0 && f !== 1) throw new Error(`PNG : filtre ${f} non pris en charge`);
+    for (let i = 0; i < stride; i++) rgb[dst + i] = (raw[src + i] + (f === 1 && i >= 3 ? rgb[dst + i - 3] : 0)) & 0xff;
+  }
+  return { width, height, rgb };
+}
+
+/** Altitudes (m) d'une tuile Terrarium PNG écrite par encodeTerrariumPng ; pixel sans donnée → NaN. */
+export function decodeTerrariumPng(png: Buffer): HeightGrid {
+  const { width, height, rgb } = decodeRgbPng(png);
+  const data = new Float32Array(width * height);
+  for (let i = 0; i < data.length; i++) {
+    const m = terrariumMeters(rgb[i * 3], rgb[i * 3 + 1], rgb[i * 3 + 2]);
+    data[i] = m <= TERRARIUM_NODATA ? Number.NaN : m;
+  }
+  return { width, height, data };
+}
