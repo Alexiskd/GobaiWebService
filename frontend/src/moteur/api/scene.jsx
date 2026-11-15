@@ -170,4 +170,15 @@ export const fetchAtmosphereLightning = (lon, lat, signal) => get('/atmosphere/l
 /** Adresse d'une tuile de la couche mondiale de la foudre (niveaux 0 à 3), relayée par le serveur. */
 // lightningTileUrl : la tuile.
 export const lightningTileUrl = (z, x, y) => `${API_BASE}/atmosphere/lightning/tiles/${z}/${x}/${y}`;
+/**
+ * Images radar disponibles (Rain Viewer) : { available, reason, frames: [{ id, time }], ageMin, stale, tile, source }.
+ */
+// fetchAtmosphereRadar : l'index des images.
+export const fetchAtmosphereRadar = (signal) => get('/atmosphere/radar', { signal });
+/** Adresse d'une tuile radar décodée (PNG RVB : pluie, neige, couverture), relayée par le serveur. */
+// radarTileUrl : l'image et la tuile.
+export const radarTileUrl = (id, z, x, y) => `${API_BASE}/atmosphere/radar/${encodeURIComponent(id)}/${z}/${x}/${y}`;
+/** Orages : { frame, cells: [événements estimés], warnings: [avertissements officiels], stats, method, sources, stale }. */
+// fetchAtmosphereStorms : les orages.
+export const fetchAtmosphereStorms = (signal) => get('/atmosphere/storms', { signal });
 
