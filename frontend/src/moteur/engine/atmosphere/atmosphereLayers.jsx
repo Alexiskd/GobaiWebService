@@ -14,17 +14,19 @@ import { PrecipitationLayer } from './precipitationLayer';
 import { StormLayer } from './stormLayer';
 // Importe le calque des aérosols.
 import { AerosolLayer } from './aerosolLayer';
+// Importe le calque des vents.
+import { FlowLayer } from './flowLayer';
 // Importe la mise en forme des colonnes d'incendies et des incendies confirmés.
 import { FIRE_KIND, confirmedToPoints, normalizeFireColumns } from './fireMath';
 
 // Repère atmosphérique de la Terre : réunit les calques du moteur atmosphérique (incendies, cyclones, foudre, radar des
-// précipitations, orages, aérosols),
+// précipitations, orages, aérosols, vents),
 // tourne avec la Terre et dit au reste de l'application où regarde la caméra (longitude, latitude, altitude), pour
 // charger le détail par tuile au bon endroit. Chaque calque s'allume et se règle indépendamment des autres.
 
 /** Calques du repère atmosphérique, par nom. */
 // Déclare et exporte les noms des calques branchés.
-export const ATMOSPHERE_LAYERS = ['fires', 'cyclones', 'lightning', 'precipitation', 'storms', 'aerosols'];
+export const ATMOSPHERE_LAYERS = ['fires', 'cyclones', 'lightning', 'precipitation', 'storms', 'aerosols', 'winds'];
 
 // Déclare et exporte la classe AtmosphereLayers.
 export class AtmosphereLayers {
@@ -46,8 +48,10 @@ export class AtmosphereLayers {
     this.storms = new StormLayer();
     // Calque des aérosols.
     this.aerosols = new AerosolLayer();
-    // Les six dans le repère commun.
-    this.root.add(this.fires.root, this.cyclones.root, this.lightning.root, this.precipitation.root, this.storms.root, this.aerosols.root);
+    // Calque des vents.
+    this.winds = new FlowLayer();
+    // Les sept dans le repère commun.
+    this.root.add(this.fires.root, this.cyclones.root, this.lightning.root, this.precipitation.root, this.storms.root, this.aerosols.root, this.winds.root);
     // Caméra vue depuis la Terre : longitude, latitude (degrés) et altitude (rayons terrestres) ; null au départ.
     this.view = null;
     // Vecteur de travail.
@@ -61,7 +65,8 @@ export class AtmosphereLayers {
    * 'lightningMap' (canevas de la couche mondiale de la foudre), 'radarGlobal' (images mondiales du radar :
    * [{ time, canvas }]), 'radarDetail' (bloc de détail : { box, frames } ou null) ou 'storms' (réponse
    * /atmosphere/storms), 'aerosolObserved' (image observée : { product, canvas } ou null) ou 'aerosolForecast'
-   * (images de la prévision : [{ time, canvas }]). `receivedAt` : instant de réception (ms).
+   * (images de la prévision : [{ time, canvas }]) ou 'winds' (réponse /atmosphere/winds). `receivedAt` : instant de
+   * réception (ms).
    */
   // setData : la nature, les données et l'instant de réception (début).
   setData(kind, data, receivedAt = Date.now()) {
@@ -83,16 +88,18 @@ export class AtmosphereLayers {
     if (kind === 'aerosolObserved') { this.aerosols.setObserved(data ?? null); return; }
     // Aérosols : images de la prévision.
     if (kind === 'aerosolForecast') { this.aerosols.setForecast(Array.isArray(data) ? data : []); return; }
+    // Vents.
+    if (kind === 'winds') { this.winds.set(data ?? null); return; }
     // Cyclones.
     if (kind === 'cyclones') this.cyclones.set(data?.cyclones);
   // Fin de setData.
   }
 
-  /** Règle un calque : { visible, opacity, intensity, windowHours, animate, coverage, product } (champs facultatifs). */
+  /** Règle un calque : { visible, opacity, intensity, windowHours, animate, coverage, product, level, jets } (facultatifs). */
   // setLayer : le nom du calque et les réglages (début).
-  setLayer(name, { visible, opacity, intensity, windowHours, animate, coverage, product } = {}) {
+  setLayer(name, { visible, opacity, intensity, windowHours, animate, coverage, product, level, jets } = {}) {
     // Le calque visé.
-    const layer = { fires: this.fires, cyclones: this.cyclones, lightning: this.lightning, precipitation: this.precipitation, storms: this.storms, aerosols: this.aerosols }[name] ?? null;
+    const layer = { fires: this.fires, cyclones: this.cyclones, lightning: this.lightning, precipitation: this.precipitation, storms: this.storms, aerosols: this.aerosols, winds: this.winds }[name] ?? null;
     // Inconnu : rien.
     if (!layer) return;
     // Visibilité.
@@ -107,6 +114,10 @@ export class AtmosphereLayers {
     if (animate !== undefined && layer.setAnimate) layer.setAnimate(animate);
     // Produit montré (aérosols seulement).
     if (product !== undefined && layer.setMode) layer.setMode(product);
+    // Niveau d'altitude (vents seulement).
+    if (level !== undefined && layer.setLevel) layer.setLevel(level);
+    // Axes des courants-jets (vents seulement).
+    if (jets !== undefined && layer.setJets) layer.setJets(jets);
     // Limite de portée des radars (radar seulement).
     if (coverage !== undefined && layer.setCoverage) layer.setCoverage(coverage);
   // Fin de setLayer.
@@ -118,7 +129,7 @@ export class AtmosphereLayers {
     // Suit la rotation de la Terre.
     this.root.rotation.y = rotationY;
     // Aucun calque allumé : inutile de calculer la vue.
-    if (![this.fires, this.cyclones, this.lightning, this.precipitation, this.storms, this.aerosols].some((l) => l.root.visible)) return;
+    if (![this.fires, this.cyclones, this.lightning, this.precipitation, this.storms, this.aerosols, this.winds].some((l) => l.root.visible)) return;
     // Matrices du repère à jour (le parent l'a été à l'image précédente).
     this.root.updateWorldMatrix(true, false);
     // Caméra ramenée dans le repère de la Terre.
@@ -146,6 +157,8 @@ export class AtmosphereLayers {
     this.storms.dispose();
     // Aérosols.
     this.aerosols.dispose();
+    // Vents.
+    this.winds.dispose();
   // Fin de dispose.
   }
 // Fin de AtmosphereLayers.

@@ -196,4 +196,7 @@ export const aerosolForecastUrl = (time) => `${API_BASE}/atmosphere/aerosols/for
 /** Adresse de la légende de la prévision CAMS. */
 // aerosolLegendUrl : la légende.
 export const aerosolLegendUrl = () => `${API_BASE}/atmosphere/aerosols/forecast/legend`;
+/** Vents par niveau et courants-jets : { validAt, available, reason, grid, levels: [{ id, label, altKm, available, u, v, maxMs }], jets, source }. */
+// fetchAtmosphereWinds : les vents.
+export const fetchAtmosphereWinds = (signal) => get('/atmosphere/winds', { signal });
 
