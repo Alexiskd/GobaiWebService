@@ -16,6 +16,10 @@
  * tuiles chargées (ordinateur et téléphone) et les détails affichés. `fieldOnly` : seules les tuiles du champ de la
  * caméra sont chargées (aucun préchargement prédictif hors champ), les autres sont déchargées.
  *
+ * Elle décrit enfin la carte marine (`marine`, voir earth-seafloor.ts) : teinte NOAA (ETOPO 2022) vue de l'espace,
+ * fondu vers GEBCO aux zooms moyens, GEBCO seule avec isobathes et relief ombré aux zooms forts. Les seuils sont la
+ * colonne « marine » des paliers ; la durée du fondu est `marine.fadeMs`.
+ *
  * Fonctions pures, testées dans earth-plan.spec.ts : ni NestJS ni réseau.
  */
 
@@ -27,10 +31,12 @@ import {
   type Bbox, type EarthSource, type EarthSourceId,
 // Fin de l'import.
 } from './earth-sources';
+// Importe la carte marine de la couche unique et sa forme, depuis les fonds marins.
+import { earthMarine, type EarthMarine } from './earth-seafloor';
 
 /** Version de la table : elle change quand les règles changent (le navigateur la garde avec la description de la couche). */
-// Déclare et exporte la version de la table : 2 (paliers de zoom ajoutés).
-export const EARTH_PLAN_VERSION = 2;
+// Déclare et exporte la version de la table : 3 (carte marine ajoutée ; 2 : paliers de zoom).
+export const EARTH_PLAN_VERSION = 3;
 
 /** En-tête de cache de la table : un jour, puis une semaine d'affichage immédiat avec vérification en arrière-plan. */
 // Déclare et exporte l'en-tête de cache de la table.
@@ -144,12 +150,14 @@ export interface EarthPlan {
   tiers: EarthTier[];
   // fieldOnly : seules les tuiles du champ de la caméra sont chargées ; les autres sont déchargées.
   fieldOnly: boolean;
+  // marine : la carte marine (NOAA, GEBCO, isobathes, durée du fondu), ou null si les fonds marins sont coupés.
+  marine: EarthMarine | null;
 // Fin de EarthPlan.
 }
 
 /**
  * Table de priorité des sources actives. `EARTH_DIRECT=0` retire tous les modèles d'adresse (tout passe par le relais),
- * `EARTH_COLOR_MATCH=0` coupe l'accord des couleurs.
+ * `EARTH_COLOR_MATCH=0` coupe l'accord des couleurs, `EARTH_SEAFLOOR=0` la carte marine.
  */
 // Déclare et exporte earthPlan : les sources (les actives par défaut) et l'environnement.
 export function earthPlan(sources: EarthSource[] = enabledSources(), env: Record<string, string | undefined> = process.env): EarthPlan {
@@ -163,6 +171,8 @@ export function earthPlan(sources: EarthSource[] = enabledSources(), env: Record
     colorMatch: !isOff(env.EARTH_COLOR_MATCH),
     // les paliers de zoom, et le chargement limité au champ de la caméra ;
     tiers: EARTH_TIERS, fieldOnly: true,
+    // la carte marine (null si EARTH_SEAFLOOR est coupé) ;
+    marine: earthMarine(env),
     // une ligne par source, dans l'ordre de la liste (début) :
     sources: sources.map((s, i): EarthPlanSource => {
       // ce que le plan direct dit de cette source ;

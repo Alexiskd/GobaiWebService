@@ -1,14 +1,14 @@
 // Importe ce qui est testé : les fonds marins, leur table, la couche GEBCO, la fonction de rendu, l'adresse NOAA et la fusion.
-import { GEBCO_LAYER, NCEI_RENDERING, SEAFLOOR_BY_ID, SEAFLOOR_FUSION_MAX_ZOOM, SEAFLOOR_LAYERS, nceiTileUrl, seafloorFusion } from './earth-seafloor';
+import { GEBCO_FLAT_LAYER, GEBCO_LAYER, ISOBATHS, MARINE_FADE_MS, NCEI_RENDERING, SEAFLOOR_BY_ID, SEAFLOOR_FUSION_MAX_ZOOM, SEAFLOOR_LAYERS, earthMarine, nceiTileUrl, seafloorFusion } from './earth-seafloor';
 // Importe l'emprise Web Mercator d'une tuile.
 import { mercatorBbox } from './earth-sources';
 
 // Groupe de tests des fonds marins.
 describe('fonds marins de la Terre', () => {
-  // Test : deux relais, chacun avec sa source unique, mondiale.
-  it('relaie GEBCO et la NOAA, chacune avec une source mondiale sans clé', () => {
-    // Les deux identifiants, dans l'ordre.
-    expect(SEAFLOOR_LAYERS.map((l) => l.id)).toEqual(['earth-gebco', 'earth-ncei']);
+  // Test : trois relais, chacun avec sa source unique, mondiale.
+  it('relaie GEBCO (relief ombré et carte plate) et la NOAA, chacune avec une source mondiale sans clé', () => {
+    // Les trois identifiants, dans l'ordre.
+    expect(SEAFLOOR_LAYERS.map((l) => l.id)).toEqual(['earth-gebco', 'earth-gebco-flat', 'earth-ncei']);
     // Chaque source : monde entier, sans clé, dès le niveau 0, avec une mention.
     for (const { source } of SEAFLOOR_LAYERS) {
       // Pas d'emprise : monde entier.
@@ -39,6 +39,17 @@ describe('fonds marins de la Terre', () => {
   // Fin du test.
   });
 
+  // Test : la carte plate de GEBCO est demandée en PNG sur sa couche colorée.
+  it('demande la carte plate de GEBCO en PNG, sur la couche colorée selon l’altitude', () => {
+    // Adresse de la tuile 6/33/22.
+    const [url] = SEAFLOOR_BY_ID.get('earth-gebco-flat')!.source.urls(6, 33, 22, '');
+    // La couche plate.
+    expect(url).toContain(`LAYERS=${GEBCO_FLAT_LAYER}&`);
+    // En PNG.
+    expect(url.endsWith('&FORMAT=image/png')).toBe(true);
+  // Fin du test.
+  });
+
   // Test : la tuile NOAA est une image exportée avec la fonction de rendu en couleurs.
   it('exporte la tuile NOAA en Web Mercator avec le relief en couleurs', () => {
     // Adresse de la tuile 5/10/12 sur une base d'essai.
@@ -66,6 +77,27 @@ describe('fonds marins de la Terre', () => {
     expect(fusion?.mask.template).toContain('terrarium/{z}/{x}/{y}.png');
     // Coupée : null.
     expect(seafloorFusion({ EARTH_SEAFLOOR: '0' })).toBe(null);
+  // Fin du test.
+  });
+
+  // Test : la carte marine donne la NOAA, GEBCO, la carte plate, le masque, le fondu, les isobathes et les mentions.
+  it('décrit la carte marine NOAA / GEBCO, et EARTH_SEAFLOOR=0 la coupe', () => {
+    // Réglage par défaut.
+    const marine = earthMarine({});
+    // La NOAA, GEBCO et sa carte plate passent par les relais de ce serveur.
+    expect([marine?.noaa.template, marine?.gebco.template, marine?.flat.template]).toEqual(['/api/v1/tiles/earth/earth-ncei/{z}/{x}/{y}', '/api/v1/tiles/earth/earth-gebco/{z}/{x}/{y}', '/api/v1/tiles/earth/earth-gebco-flat/{z}/{x}/{y}']);
+    // Le masque de la mer reste celui des altitudes Terrarium.
+    expect(marine?.mask.template).toContain('terrarium/{z}/{x}/{y}.png');
+    // La durée du fondu et les isobathes viennent du serveur.
+    expect(marine?.fadeMs).toBe(MARINE_FADE_MS);
+    // Isobathes.
+    expect(marine?.isobaths).toEqual(ISOBATHS);
+    // Deux mentions : la NOAA (ETOPO 2022), puis GEBCO, qui rappelle « pas pour la navigation ».
+    expect(marine?.credits[0]).toContain('ETOPO 2022');
+    // GEBCO.
+    expect(marine?.credits[1]).toContain('pas pour la navigation');
+    // Coupée : null.
+    expect(earthMarine({ EARTH_SEAFLOOR: 'off' })).toBe(null);
   // Fin du test.
   });
 // Fin du groupe.

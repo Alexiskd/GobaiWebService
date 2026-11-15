@@ -1,5 +1,5 @@
 /**
- * Fonds marins de la Terre : deux relais de tuiles du relief des océans et des terres, qui ne sont plus des fonds de
+ * Fonds marins de la Terre : trois relais de tuiles du relief des océans et des terres, qui ne sont plus des fonds de
  * carte à part (la Terre n'a qu'une couche, « earth-hd »). Ce sont les données que le globe Google Earth attribue à
  * « SIO, NOAA, U.S. Navy, NGA, GEBCO » et « IBCAO » :
  *  - earth-gebco : grille mondiale GEBCO_2026 en relief ombré (service WMS de GEBCO), qui réunit la bathymétrie
@@ -7,7 +7,11 @@
  *    navigateur la fond au large dans la couche unique (voir seafloorFusion plus bas) ;
  *  - earth-ncei : mosaïque mondiale des modèles d'élévation de la NOAA (NCEI, ETOPO 2022), terre et mer sans couture,
  *    en relief ombré coloré par l'altitude et la profondeur (service d'images ArcGIS, fonction « ColorHillshade ») ;
- *    réservée à la teinte des océans vue de l'espace de la future carte marine.
+ *    teinte des océans vue de l'espace de la carte marine ;
+ *  - earth-gebco-flat : la même grille GEBCO_2026 en carte plate colorée selon l'altitude (couche WMS GEBCO_LATEST_2),
+ *    en PNG : ses limites de couleur donnent les isobathes de la carte marine, sans autre source.
+ * La carte marine (earthMarine plus bas) est décrite dans la table de la couche unique (earth-plan.ts) : NOAA vue de
+ * l'espace, fondu vers GEBCO aux zooms moyens, GEBCO seule avec isobathes et relief ombré aux zooms forts.
  * Deux services sans clé, sans tuiles toutes faites : chaque tuile est une image demandée sur son emprise Web
  * Mercator, et le serveur la relaie comme les orthophotos WMS de la couche unique (voir earth-imagery.service.ts).
  * Fonctions pures, testées dans earth-seafloor.spec.ts.
@@ -20,6 +24,10 @@ import { isOff, mercatorBbox, wms, type EarthSource } from './earth-sources';
 const GEBCO_BASE = (process.env.GEBCO_WMS_URL?.trim() || 'https://wms.gebco.net/mapserv').replace(/[?&]+$/, '');
 // Couche WMS de GEBCO : la dernière grille en relief ombré (GEBCO_2026 depuis août 2026).
 export const GEBCO_LAYER = 'GEBCO_LATEST';
+// Couche WMS de GEBCO en carte plate colorée selon l'altitude (même grille), source des isobathes.
+export const GEBCO_FLAT_LAYER = 'GEBCO_LATEST_2';
+// Mention de GEBCO, commune au relief ombré et à la carte plate.
+const GEBCO_CREDIT = 'Bathymétrie : GEBCO Compilation Group (2026) GEBCO_2026 Grid — IHO-IOC GEBCO (domaine public, pas pour la navigation)';
 // Adresse du service d'images de la NOAA : NCEI_DEM_URL si elle est définie, sinon l'adresse officielle ; la barre finale est retirée.
 const NCEI_BASE = (process.env.NCEI_DEM_URL?.trim() || 'https://gis.ngdc.noaa.gov/arcgis/rest/services/DEM_mosaics/DEM_global_mosaic/ImageServer').replace(/\/$/, '');
 // Fonction de rendu de la NOAA : relief ombré multidirectionnel, coloré par l'altitude et la profondeur.
@@ -49,12 +57,28 @@ export const SEAFLOOR_LAYERS: SeafloorLayer[] = [
       // identifiant, nom, monde entier, niveaux 0 à 10 (au-delà, la grille de ≈ 450 m n'a plus de détail) ;
       id: 'gebco', label: 'GEBCO 2026', minZoom: 0, maxZoom: 10,
       // sa mention ;
-      attribution: 'Bathymétrie : GEBCO Compilation Group (2026) GEBCO_2026 Grid — IHO-IOC GEBCO (domaine public)',
+      attribution: GEBCO_CREDIT,
       // une requête WMS 1.3.0 par tuile, sur la dernière grille.
       urls: (z, x, y) => [wms(GEBCO_BASE, GEBCO_LAYER, z, x, y)],
     // Fin de sa source.
     },
   // Fin de GEBCO.
+  },
+  // GEBCO en carte plate colorée (isobathes),
+  {
+    // identifiant du relais ;
+    id: 'earth-gebco-flat',
+    // sa source :
+    source: {
+      // identifiant, nom, monde entier, niveaux 0 à 10 ;
+      id: 'gebco-flat', label: 'GEBCO 2026 (carte plate)', minZoom: 0, maxZoom: 10,
+      // sa mention ;
+      attribution: GEBCO_CREDIT,
+      // une requête WMS 1.3.0 par tuile, en PNG : les couleurs restent nettes, sans les bavures du JPEG.
+      urls: (z, x, y) => [wms(GEBCO_BASE, GEBCO_FLAT_LAYER, z, x, y, '1.3.0', 'image/png')],
+    // Fin de sa source.
+    },
+  // Fin de la carte plate.
   },
   // NOAA NCEI,
   {
@@ -65,7 +89,7 @@ export const SEAFLOOR_LAYERS: SeafloorLayer[] = [
       // identifiant, nom, monde entier, niveaux 0 à 12 ;
       id: 'ncei', label: 'NOAA NCEI', minZoom: 0, maxZoom: 12,
       // sa mention ;
-      attribution: 'Relief : NOAA National Centers for Environmental Information (NCEI), mosaïque mondiale des MNT (domaine public)',
+      attribution: 'Relief : NOAA National Centers for Environmental Information (NCEI), ETOPO 2022 et mosaïque mondiale des MNT (CC0, domaine public)',
       // une image exportée par tuile.
       urls: (z, x, y) => [nceiTileUrl(z, x, y)],
     // Fin de sa source.
@@ -103,4 +127,67 @@ export function seafloorFusion(env: Record<string, string | undefined> = process
   // Fin de l'objet.
   };
 // Fin de seafloorFusion.
+}
+
+/** Une couche d'images de la carte marine : modèle d'adresse (relais de ce serveur) et niveau le plus fin demandé. */
+// Déclare et exporte la forme d'une couche de la carte marine.
+export interface EarthMarineLayer { template: string; maxZoom: number }
+
+/**
+ * Carte marine de la couche unique, décrite dans sa table (earth-plan.ts) et faite par le navigateur, sous le masque
+ * de la mer des altitudes Terrarium (l'eau peu profonde des côtes garde l'image satellite) :
+ *  - vue de l'espace (paliers « noaa » de la table) : la teinte des océans de la NOAA (ETOPO 2022) ;
+ *  - zooms moyens (paliers « fondu ») : la NOAA fondue peu à peu dans GEBCO, niveau par niveau ;
+ *  - zooms forts (paliers « gebco ») : GEBCO seule, en relief ombré, avec les isobathes tirées de sa carte plate.
+ * Les seuils sont les distances des paliers de la table ; `fadeMs` est la durée du fondu entre deux niveaux de la
+ * Terre (le passage NOAA → GEBCO se fait à ces changements de niveau). Rien n'est gardé sur le serveur.
+ */
+// Déclare et exporte la forme de la carte marine.
+export interface EarthMarine {
+  // noaa : la teinte des océans vue de l'espace (NOAA NCEI, ETOPO 2022).
+  noaa: EarthMarineLayer;
+  // gebco : le relief ombré des fonds (GEBCO_2026).
+  gebco: EarthMarineLayer;
+  // flat : la carte plate colorée de GEBCO, source des isobathes.
+  flat: EarthMarineLayer;
+  // mask : les altitudes Terrarium qui disent où est la mer.
+  mask: EarthMarineLayer;
+  // fadeMs : durée du fondu entre deux niveaux de la Terre, en millisecondes.
+  fadeMs: number;
+  // isobaths : nombre de bandes de couleur de la carte plate (une isobathe à chaque limite) et force du trait (0 à 1).
+  isobaths: { bands: number; strength: number };
+  // credits : les mentions des sources de la carte marine, affichées dans la fenêtre Node.
+  credits: string[];
+// Fin de EarthMarine.
+}
+
+// Durée du fondu entre deux niveaux de la Terre, dont le passage NOAA → GEBCO : 600 ms.
+export const MARINE_FADE_MS = 600;
+// Isobathes : 12 bandes de couleur dans la carte plate, trait foncé à 45 %.
+export const ISOBATHS = { bands: 12, strength: 0.45 };
+
+// Modèle d'adresse d'un relais de fond marin de ce serveur.
+const relay = (id: string) => `/api/v1/tiles/earth/${id}/{z}/{x}/{y}`;
+
+// Fonction earthMarine : la carte marine pour la table de la couche unique, ou null si EARTH_SEAFLOOR est coupé.
+export function earthMarine(env: Record<string, string | undefined> = process.env): EarthMarine | null {
+  // Fonds marins coupés : null.
+  if (isOff(env.EARTH_SEAFLOOR)) return null;
+  // Renvoie :
+  return {
+    // la NOAA, GEBCO en relief ombré et GEBCO en carte plate, par les relais de ce serveur, jusqu'au niveau 10 ;
+    noaa: { template: relay('earth-ncei'), maxZoom: SEAFLOOR_FUSION_MAX_ZOOM },
+    // GEBCO en relief ombré ;
+    gebco: { template: relay('earth-gebco'), maxZoom: SEAFLOOR_FUSION_MAX_ZOOM },
+    // GEBCO en carte plate ;
+    flat: { template: relay('earth-gebco-flat'), maxZoom: SEAFLOOR_FUSION_MAX_ZOOM },
+    // les altitudes Terrarium, jusqu'au niveau 10 ;
+    mask: { template: TERRARIUM, maxZoom: SEAFLOOR_FUSION_MAX_ZOOM },
+    // la durée du fondu et les isobathes ;
+    fadeMs: MARINE_FADE_MS, isobaths: { ...ISOBATHS },
+    // les mentions de la NOAA et de GEBCO.
+    credits: [SEAFLOOR_BY_ID.get('earth-ncei')!.source.attribution, GEBCO_CREDIT],
+  // Fin de l'objet.
+  };
+// Fin de earthMarine.
 }

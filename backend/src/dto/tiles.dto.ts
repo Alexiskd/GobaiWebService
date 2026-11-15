@@ -361,6 +361,43 @@ export class EarthTierDto {
 // Fin de EarthTierDto.
 }
 
+// Forme d'une couche d'images de la carte marine.
+export class EarthMarineLayerDto {
+  // template : le modèle d'adresse, par le relais du serveur.
+  @ApiProperty({ example: '/api/v1/tiles/earth/earth-gebco/{z}/{x}/{y}' }) template: string;
+  // maxZoom : le niveau le plus fin demandé (au-delà, l'image est découpée dans un ancêtre).
+  @ApiProperty({ example: 10 }) maxZoom: number;
+// Fin de EarthMarineLayerDto.
+}
+
+// Forme des isobathes de la carte marine.
+export class EarthIsobathsDto {
+  // bands : nombre de bandes de couleur de la carte plate (une isobathe à chaque limite).
+  @ApiProperty({ example: 12 }) bands: number;
+  // strength : force du trait, de 0 à 1.
+  @ApiProperty({ example: 0.45 }) strength: number;
+// Fin de EarthIsobathsDto.
+}
+
+// Forme de la carte marine de la Terre.
+export class EarthMarineDto {
+  // noaa : teinte des océans vue de l'espace (NOAA NCEI, ETOPO 2022).
+  @ApiProperty({ type: EarthMarineLayerDto }) noaa: EarthMarineLayerDto;
+  // gebco : relief ombré des fonds (GEBCO_2026).
+  @ApiProperty({ type: EarthMarineLayerDto }) gebco: EarthMarineLayerDto;
+  // flat : carte plate colorée de GEBCO, source des isobathes.
+  @ApiProperty({ type: EarthMarineLayerDto }) flat: EarthMarineLayerDto;
+  // mask : altitudes Terrarium qui disent où est la mer.
+  @ApiProperty({ type: EarthMarineLayerDto }) mask: EarthMarineLayerDto;
+  // fadeMs : durée du fondu entre deux niveaux de la Terre.
+  @ApiProperty({ example: 600, description: 'Durée du fondu entre deux niveaux de la Terre, dont le passage NOAA → GEBCO (ms).' }) fadeMs: number;
+  // isobaths : réglage des isobathes.
+  @ApiProperty({ type: EarthIsobathsDto }) isobaths: EarthIsobathsDto;
+  // credits : mentions des sources de la carte marine.
+  @ApiProperty({ type: [String] }) credits: string[];
+// Fin de EarthMarineDto.
+}
+
 // Forme de la table de priorité des sources de la Terre (GET /tiles/earth/plan).
 export class EarthPlanDto {
   // version : la version de la table.
@@ -377,6 +414,8 @@ export class EarthPlanDto {
   @ApiProperty({ type: [EarthTierDto] }) tiers: EarthTierDto[];
   // fieldOnly : chargement limité au champ de la caméra.
   @ApiProperty({ description: 'Seules les tuiles du champ de la caméra sont chargées ; les autres sont déchargées.' }) fieldOnly: boolean;
+  // marine : la carte marine, ou null si les fonds marins sont coupés.
+  @ApiProperty({ type: EarthMarineDto, nullable: true, description: 'Carte marine : NOAA vue de l’espace, fondu vers GEBCO, GEBCO seule avec isobathes ; seuils dans la colonne « marine » des paliers.' }) marine: EarthMarineDto | null;
 // Fin de EarthPlanDto.
 }
 
