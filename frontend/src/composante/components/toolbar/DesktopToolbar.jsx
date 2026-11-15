@@ -1,5 +1,6 @@
-// Importe de React les crochets useLayoutEffect (mesure avant affichage), useRef (référence) et useState (état).
-import { useLayoutEffect, useRef, useState } from 'react';
+// Importe de React les crochets useEffect (écoute), useLayoutEffect (mesure avant affichage), useRef (référence) et
+// useState (état).
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 // Importe de MUI Divider (filet), IconButton (bouton icône), Menu (menu déroulant), Paper (carte), Stack (pile),
 // Tooltip (infobulle) et useMediaQuery (largeur de l'écran).
 import { Divider, IconButton, Menu, Paper, Stack, Tooltip, useMediaQuery } from '@mui/material';
@@ -36,34 +37,29 @@ export function DesktopToolbar({ hud, actions }) {
   const needed = useRef(0);
   // Bouton d'ancrage du menu ouvert, ou null.
   const [menuEl, setMenuEl] = useState(null);
-  // Contrôle de la place, à chaque rendu (actions changées) et à chaque changement de taille (début).
+  // Repli, contrôlé après chaque rendu (actions changées, taille changée) : la barre entière déborde, on mémorise sa
+  // largeur et on replie. Le repli ne se défait jamais dans ce même contrôle : pas d'aller-retour sans fin.
   useLayoutEffect(() => {
     // La barre.
     const el = barRef.current;
-    // Pas encore rendue : rien.
-    if (!el) return undefined;
-    // Compare le contenu à la place disponible (début).
-    const check = () => {
-      // Place au plus : l'écran moins 28 px (la même limite que maxWidth).
-      const room = window.innerWidth - 28;
-      // Barre entière qui déborde : mémorise sa largeur et replie le groupe « help ».
-      if (!fold && el.scrollWidth > el.clientWidth + 1) { needed.current = el.scrollWidth; setFold(true); }
-      // Barre repliée et assez de place pour la barre entière : la déplie.
-      else if (fold && room >= needed.current) setFold(false);
-    // Fin de check.
-    };
-    // Contrôle immédiat.
-    check();
-    // Nouveau contrôle quand la barre change de taille…
-    const ro = new ResizeObserver(check);
-    // … la barre observée…
-    ro.observe(el);
-    // … et quand la fenêtre change de taille (rotation de l'écran).
-    window.addEventListener('resize', check);
-    // Nettoyage : fin de l'observation et de l'écoute.
-    return () => { ro.disconnect(); window.removeEventListener('resize', check); };
-  // Fin du contrôle de la place.
+    // Pas encore rendue, ou déjà repliée : rien.
+    if (!el || fold) return;
+    // Barre entière plus large que sa place : largeur mémorisée, groupe « help » replié.
+    if (el.scrollWidth > el.clientWidth + 1) { needed.current = el.scrollWidth; setFold(true); }
+  // Fin du contrôle du repli.
   });
+  // Dépli : seulement quand la fenêtre s'élargit assez pour la barre entière (rotation, fenêtre agrandie).
+  useEffect(() => {
+    // Compare la place à la largeur mémorisée.
+    const onResize = () => { if (window.innerWidth - 28 >= needed.current) setFold(false); };
+    // À chaque changement de taille de la fenêtre.
+    window.addEventListener('resize', onResize);
+    // Nettoyage : fin de l'écoute.
+    return () => window.removeEventListener('resize', onResize);
+  // Une seule écoute.
+  }, []);
+  // Passage des libellés aux icônes (ou l'inverse) : la barre change de largeur, elle est remesurée dépliée.
+  useEffect(() => { setFold(false); }, [narrow]);
   // Les groupes affichés dans la barre : tous, ou tous sauf « help » une fois replié.
   const shown = fold ? groups.filter((list) => list[0].group !== 'help') : groups;
   // Les actions du menu : le groupe « help » une fois replié, aucune sinon.
