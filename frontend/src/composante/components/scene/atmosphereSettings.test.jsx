@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les fonctions testées.
-import { ATMOSPHERE_DEFAULTS, cycloneHint, fireHint, lightningHint, sanitizeAtmosphere } from './atmosphereSettings';
+import { ATMOSPHERE_DEFAULTS, ATMOSPHERE_UPCOMING, cycloneHint, fireHint, lightningHint, precipitationHint, sanitizeAtmosphere, stormHint } from './atmosphereSettings';
 
 // Test : les réglages.
 test('atmosphère : réglages bornés, calques éteints par défaut, fenêtre parmi celles proposées', () => {
@@ -56,5 +56,24 @@ test('atmosphère : le texte de la foudre dit ce qui est mesuré, et pourquoi ri
   assert.match(lightningHint(null, true), /rapprochez-vous/);
   // Réglages de la foudre bornés.
   assert.deepEqual(sanitizeAtmosphere({ lightning: { on: true, opacity: 3 } }).lightning, { on: true, opacity: 1, intensity: 1 });
+// Fin du test.
+});
+
+// Test : le radar et les orages.
+test('atmosphère : radar et orages bornés, textes d’aide sur la mesure, l’estimation et la portée des radars', () => {
+  // Radar : allumé, opacité ramenée, animation refusée, couverture gardée par défaut.
+  assert.deepEqual(sanitizeAtmosphere({ precipitation: { on: true, opacity: 9, animate: false } }).precipitation, { on: true, opacity: 1, intensity: 1, animate: false, coverage: true });
+  // Orages : éteints par défaut.
+  assert.deepEqual(sanitizeAtmosphere(null).storms, { on: false, opacity: 0.9, intensity: 1 });
+  // Plus annoncés « à venir ».
+  assert.equal(['Orages', 'Précipitations', 'Radar'].some((n) => ATMOSPHERE_UPCOMING.includes(n)), false);
+  // Radar : âge de la dernière image et absence de mesure hors de portée.
+  assert.match(precipitationHint({ available: true, ageMin: 7, frames: [{ id: 'abcd', time: '2026-11-15T14:20:00Z' }] }), /il y a 7 min\).*hors de portée des radars.*aucune mesure · Rain Viewer/);
+  // Radar indisponible : la raison.
+  assert.match(precipitationHint({ available: false, reason: 'HTTP 503' }), /^HTTP 503 · Rain Viewer/);
+  // Orages : cellules estimées, fortes, suivies, avertissements dont tornade.
+  assert.match(stormHint({ stats: { cells: 12, strong: 3, persistent: 9, warnings: 2, tornado: 1 }, frame: null }), /^12 cellules convectives estimées, dont 3 fortes \(≥ 50 dBZ\) et 9 suivies sur plusieurs images · 2 avertissements officiels en vigueur, dont 1 de tornade/);
+  // Aucun avertissement : dit explicitement.
+  assert.match(stormHint({ stats: { cells: 1, strong: 0, persistent: 0, warnings: 0 } }), /^1 cellule convective estimée.*aucun avertissement officiel en vigueur/);
 // Fin du test.
 });

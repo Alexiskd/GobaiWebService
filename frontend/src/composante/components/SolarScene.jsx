@@ -873,6 +873,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
           atmosphere.settings.cyclones.on ? 'Cyclones : NOAA NHC (positions et prévision officielle), JTWC (via NASA EONET), GDACS' : '',
           // Celle de la foudre, si elle est allumée.
           atmosphere.settings.lightning.on ? 'Foudre : Xweather (réseau Vaisala)' : '',
+          // Celle du radar, s'il est allumé (mention obligatoire de Rain Viewer).
+          atmosphere.settings.precipitation.on ? 'Radar des précipitations : Rain Viewer (rainviewer.com)' : '',
+          // Celle des orages, s'ils sont allumés.
+          atmosphere.settings.storms.on ? 'Orages : cellules estimées d’après Rain Viewer, avertissements NOAA NWS' : '',
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
         // Ouverte si le panneau courant est celui des sources.
@@ -972,6 +976,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
           settings: atmosphere.settings, onUpdate: atmosphere.update,
           // Textes d'aide des incendies, des cyclones et de la foudre.
           fireHint: atmosphere.fireHint, cycloneHint: atmosphere.cycloneHint, lightningHint: atmosphere.lightningHint,
+          // Textes d'aide du radar et des orages.
+          precipitationHint: atmosphere.precipitationHint, stormHint: atmosphere.stormHint,
         // Fin de l'objet.
         }}
         // Relief.

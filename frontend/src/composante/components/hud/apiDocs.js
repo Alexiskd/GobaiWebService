@@ -104,6 +104,12 @@ export const API_DOC_GROUPS = [
       ['GET', '/atmosphere/lightning', 'Foudre : impacts des 5 dernières minutes dans 100 km autour d’un point (Xweather).'],
       // Tuiles de la couche mondiale de la foudre.
       ['GET', '/atmosphere/lightning/tiles/{z}/{x}/{y}', 'Foudre : couche mondiale des impacts récents (Xweather Raster Maps).'],
+      // Radar des précipitations : index et tuiles décodées.
+      ['GET', '/atmosphere/radar', 'Radar : images disponibles (Rain Viewer, 2 dernières heures, toutes les 10 minutes) et codage des tuiles.'],
+      // Tuiles radar décodées.
+      ['GET', '/atmosphere/radar/{id}/{z}/{x}/{y}', 'Radar : tuile décodée (PNG RVB : pluie, neige en dBZ codés, couverture radar), niveaux 0 à 7.'],
+      // Orages.
+      ['GET', '/atmosphere/storms', 'Orages : cellules convectives estimées d’après le radar et avertissements officiels du NWS.'],
       // Événements au format commun.
       ['GET', '/atmosphere/events', 'Événements atmosphériques au format commun (filtres types, bbox, limit).'],
       // Registre et contrôle.

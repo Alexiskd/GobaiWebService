@@ -1,5 +1,5 @@
-// Importe de MUI Box, Slider (réglette), ToggleButton, ToggleButtonGroup et Typography.
-import { Box, Slider, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+// Importe de MUI Box, Checkbox (case à cocher), FormControlLabel, Link, Slider (réglette), ToggleButton, ToggleButtonGroup et Typography.
+import { Box, Checkbox, FormControlLabel, Link, Slider, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 // Importe Group, le groupe de réglages.
 import { Group } from '../../ui/Group';
 // Importe Switch, l'interrupteur.
@@ -8,6 +8,8 @@ import { Switch } from '../../ui/Switch';
 import { FIRE_WINDOWS_H } from '@/moteur/engine/atmosphere/fireMath';
 // Importe la liste des calques à venir.
 import { ATMOSPHERE_UPCOMING } from '@/composante/components/scene/atmosphereSettings';
+// Importe les échelles de couleurs du radar et la légende de la pluie.
+import { SNOW_SCALE, radarLegend } from '@/moteur/engine/atmosphere/radarMath';
 
 /** Une réglette compacte, avec son libellé et sa valeur en pourcentage. */
 // Déclare Reglette : libellé, valeur, bornes, pas et rappel.
@@ -59,17 +61,80 @@ function Reglages({ value, onChange }) {
 // Fin de Reglages.
 }
 
+/** Une option secondaire d'un calque : case à cocher compacte, en retrait. */
+// Déclare Option : libellé, état et rappel.
+function Option({ label, checked, onChange }) {
+  // Début du rendu.
+  return (
+    // Ligne cliquable (début de la balise).
+    <FormControlLabel
+      // Case à cocher compacte.
+      control={<Checkbox size="small" checked={Boolean(checked)} onChange={(e) => onChange(e.target.checked)} sx={{ py: 0.25 }} />}
+      // Libellé en petit.
+      label={<Typography variant="caption" color="text.secondary">{label}</Typography>}
+      // En retrait, sans marge.
+      sx={{ m: 0, pl: 2.5, pr: 1.5, width: '100%' }}
+    // Fin de la balise.
+    />
+  // Fin du rendu.
+  );
+// Fin de Option.
+}
+
+/** Légende du radar : échelle de la pluie (dBZ et intensité estimée), échelle de la neige, mention de la source. */
+// Déclare LegendeRadar.
+function LegendeRadar() {
+  // Paliers de la pluie.
+  const rain = radarLegend();
+  // Dégradé CSS d'une échelle.
+  const gradient = (stops) => `linear-gradient(90deg, ${stops.map((c, i) => `${c} ${Math.round((i / (stops.length - 1)) * 100)}%`).join(', ')})`;
+  // Début du rendu.
+  return (
+    // Bloc en retrait.
+    <Box sx={{ pl: 3, pr: 1.5, pb: 0.75 }}>
+      {/* Barre de la pluie. */}
+      <Box aria-hidden sx={{ height: 8, borderRadius: 1, background: gradient(rain.map((r) => r.color)) }} />
+      {/* Bornes de la pluie : faible et forte, avec leur intensité estimée. */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+        {/* Borne basse. */}
+        <Typography variant="caption" color="text.secondary">{`Pluie : ${rain[0].label}`}</Typography>
+        {/* Borne haute. */}
+        <Typography variant="caption" color="text.secondary">{rain[rain.length - 1].label}</Typography>
+      {/* Fin des bornes. */}
+      </Box>
+      {/* Barre de la neige. */}
+      <Box aria-hidden sx={{ height: 6, mt: 0.5, borderRadius: 1, background: gradient(SNOW_SCALE.map(([, c]) => c)) }} />
+      {/* Libellé de la neige. */}
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>Neige : faible à forte</Typography>
+      {/* Explication et source (mention obligatoire, avec lien). */}
+      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+        {/* Texte. */}
+        {'Réflectivité mesurée par les radars au sol ; intensité estimée (Marshall-Palmer). Animation : images passées, pas une prévision. Ligne grise : limite de portée des radars. Données radar : '}
+        {/* Lien vers la source. */}
+        <Link href="https://www.rainviewer.com" target="_blank" rel="noopener noreferrer">Rain Viewer</Link>
+        {/* Point final. */}
+        {'.'}
+      {/* Fin de l'explication. */}
+      </Typography>
+    {/* Fin du bloc. */}
+    </Box>
+  // Fin du rendu.
+  );
+// Fin de LegendeRadar.
+}
+
 /**
  * Catégorie « Atmosphère » : l'atmosphère et les nuages des planètes solides, puis les phénomènes en direct de la
  * Terre, chacun allumé indépendamment avec son opacité et son intensité ; les incendies ont aussi leur fenêtre de
- * temps. Les calques des lots suivants sont annoncés « à venir » : aucun phénomène n'est représenté sans source.
+ * temps, le radar son animation et sa limite de portée. Les calques des lots suivants sont annoncés « à venir » :
+ * aucun phénomène n'est représenté sans source.
  */
 // Déclare et exporte le composant Atmosphere (début de la liste des propriétés).
 export function Atmosphere({
   // L'atmosphère et les nuages des planètes solides, leur rappel et leur texte d'aide.
   atmospheres, onAtmospheres, atmospheresHint,
   // Les réglages des calques, leur modification et les textes d'aide.
-  settings, onUpdate, fireHint, cycloneHint, lightningHint,
+  settings, onUpdate, fireHint, cycloneHint, lightningHint, precipitationHint, stormHint,
 // Fin de la liste des propriétés.
 }) {
   // Début du rendu.
@@ -128,6 +193,30 @@ export function Atmosphere({
           {settings.lightning.on && <Reglages value={settings.lightning} onChange={(patch) => onUpdate('lightning', patch)} />}
           {/* Si la foudre est allumée : légende, mesure et animation distinguées. */}
           {settings.lightning.on && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: 3, pr: 1.5, pb: 0.5 }}>Points : impacts mesurés (jaune : nuage-sol, anneau violet : intra-nuage). Lueurs et éclairs : animation rejouée ×10 dans l’ordre réel, pas la forme réelle de l’éclair.</Typography>}
+          {/* Interrupteur du radar des précipitations. */}
+          <Switch checked={settings.precipitation.on} onChange={(on) => onUpdate('precipitation', { on })} label="Précipitations (radar)" hint={precipitationHint} />
+          {/* Si le radar est allumé (début). */}
+          {settings.precipitation.on && (
+            // Fragment : réglages du radar.
+            <>
+              {/* Opacité et intensité. */}
+              <Reglages value={settings.precipitation} onChange={(patch) => onUpdate('precipitation', patch)} />
+              {/* Animation des dernières images. */}
+              <Option label="Animation des 50 dernières minutes" checked={settings.precipitation.animate} onChange={(animate) => onUpdate('precipitation', { animate })} />
+              {/* Limite de portée des radars. */}
+              <Option label="Limite de portée des radars" checked={settings.precipitation.coverage} onChange={(coverage) => onUpdate('precipitation', { coverage })} />
+              {/* Légende et source. */}
+              <LegendeRadar />
+            {/* Fin des réglages du radar. */}
+            </>
+          // Fin du cas.
+          )}
+          {/* Interrupteur des orages. */}
+          <Switch checked={settings.storms.on} onChange={(on) => onUpdate('storms', { on })} label="Orages" hint={stormHint} />
+          {/* Si les orages sont allumés : opacité et intensité. */}
+          {settings.storms.on && <Reglages value={settings.storms} onChange={(patch) => onUpdate('storms', patch)} />}
+          {/* Si les orages sont allumés : légende, estimation et avertissements officiels distingués. */}
+          {settings.storms.on && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: 3, pr: 1.5, pb: 0.5 }}>Anneaux : cellules convectives estimées d’après le radar, non confirmées (orange : 45 dBZ et plus, rouge : 50, magenta : 55 ; en tirets : vue sur une seule image) ; flèche : déplacement estimé sur 30 minutes. Contours : avertissements officiels du NWS aux États-Unis (rouge : tornade, jaune : orage violent ; doublé : phénomène observé).</Typography>}
           {/* Calques à venir, annoncés sans être représentés. */}
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', px: 1.5, py: 1 }}>{`À venir : ${ATMOSPHERE_UPCOMING.join(', ').toLowerCase()}.`}</Typography>
         {/* Fin des calques en direct. */}
