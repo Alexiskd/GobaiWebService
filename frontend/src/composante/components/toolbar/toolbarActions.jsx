@@ -13,7 +13,7 @@ import { HIDDEN } from './hiddenActions';
 // Importe les icônes employées par la barre.
 import {
   // Recherche, vue d'ensemble, ombre, rotation, vue 3/4 et verrouillage.
-  SearchIcon, PublicIcon, ExploreIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
+  SearchIcon, PublicIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
   // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
   GalleryIcon, SpeedIcon, FavoriteIcon, SettingsIcon,
@@ -31,7 +31,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute, onGoogleEarth,
+  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
   // L'arborescence des astres : son rappel et son état.
   onNavigator, navigatorOpen,
 // Fin de la liste des paramètres.
@@ -48,8 +48,6 @@ export function toolbarActions({
     // qui s'ouvre d'un appui sur son en-tête (et par la touche L).
     // Vue globale : retour à la vue d'ensemble.
     { id: 'reset', group: 'explore', icon: PublicIcon, label: 'Vue globale', short: 'Global', primary: true, onClick: onReset, title: 'Retour à la vue d’ensemble (0 du pavé numérique)' },
-    // Globe Google : remplace le globe Terre de l'app par le globe 3D photoréaliste de Google (seulement sur la Terre).
-    onGoogleEarth && { id: 'googleEarth', group: 'explore', icon: ExploreIcon, label: 'Globe Google', short: 'Google', onClick: onGoogleEarth, title: 'Remplacer le globe Terre par le globe 3D de Google' },
     // Astres : ouvre ou ferme l'arborescence des astres (bande du dock sur téléphone, rail sur ordinateur), qui
     // n'avait de bouton que dans le panneau de Claude sur ordinateur, et aucun sur téléphone.
     onNavigator && { id: 'navigator', group: 'explore', icon: AccountTreeIcon, label: 'Astres', iconOnly: true, pressed: navigatorOpen, onClick: onNavigator, title: 'Arborescence des astres : planètes et satellites' },

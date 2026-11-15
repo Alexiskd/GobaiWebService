@@ -20,8 +20,6 @@ export function Toolbar({
   onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onToggleAuto, onToggleTilt, onToggleLock, onReset, onHelp,
   // Le son (actif par défaut), la langue, les sources, la galerie, les paramètres, le plateau et le partage.
   sound = true, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onGallery, onSettings, onPlateau, onShare, onContribute,
-  // Le globe Google (bouton présent seulement sur la Terre).
-  onGoogleEarth,
   // L'arborescence des astres (rappel et état), et le moniteur de performance (rappel et état).
   onNavigator, navigatorOpen, onTogglePerformanceMonitor, performanceMonitorVisible,
 // Fin de la liste des propriétés.
@@ -46,7 +44,7 @@ export function Toolbar({
     // Tous les autres rappels et libellés.
     // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre) ; le moniteur de
     // performance n'a de bouton que sur ordinateur (sur téléphone, la feuille « Données » affiche les mesures).
-    onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onContribute, onGoogleEarth,
+    onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onContribute,
     // L'arborescence des astres, et le moniteur de performance hors téléphone.
     onNavigator, navigatorOpen, onTogglePerformanceMonitor: compact ? null : onTogglePerformanceMonitor, performanceMonitorVisible,
   // Fin de l'appel.

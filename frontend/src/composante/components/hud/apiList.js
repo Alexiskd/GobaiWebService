@@ -15,8 +15,6 @@ export const API_GROUPS = [
       { name: 'IGN Géoplateforme', host: 'data.geopf.fr', use: 'Orthophotos de la France, calques LiDAR HD (ombrages des modèles de surface, de terrain et de hauteur) et nuages de points LiDAR HD (WFS des dalles et fichiers COPC, lus par le serveur)' },
       // API « EOX Sentinel-2 cloudless », appelée à l'adresse tiles.maps.eox.at.
       { name: 'EOX Sentinel-2 cloudless', host: 'tiles.maps.eox.at', use: 'Imagerie satellite du monde' },
-      // Site « Google Earth », affiché tel quel dans un iframe depuis la Terre.
-      { name: 'Google Earth (web)', host: 'earth.google.com', use: 'Globe Google : le site Google Earth, dans un iframe qui remplace le globe Terre' },
       // API « NASA GIBS », appelée à l'adresse gibs.earthdata.nasa.gov.
       { name: 'NASA GIBS', host: 'gibs.earthdata.nasa.gov', use: 'Imagerie satellite de la Terre ; Terre à l’instant T : GOES-East, GOES-West et Himawari, une image toutes les 10 minutes' },
       // Site « Light Pollution Atlas » (David Lorenz), appelé à l'adresse djlorenz.github.io.
