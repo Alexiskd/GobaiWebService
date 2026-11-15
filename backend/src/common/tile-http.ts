@@ -39,6 +39,10 @@ export const MARS_TILE: TileCachePolicy = { maxAge: 3600, staleWhileRevalidate: 
 // Nuages : 900 secondes.
 export const CLOUD_TILE: TileCachePolicy = { maxAge: 900 };
 
+/** Image de la chlorophylle des océans : composite mensuel, refait au plus une fois par jour. */
+// Règle de cache de la chlorophylle : un jour.
+export const CHLOROPHYLL_IMAGE: TileCachePolicy = { maxAge: DAY_S };
+
 // Fonction tileCacheControl : écrit l'en-tête Cache-Control d'une règle.
 export function tileCacheControl(policy: TileCachePolicy): string {
   // Commence par « public » et « max-age » : la durée arrondie à l'entier inférieur, jamais négative.
