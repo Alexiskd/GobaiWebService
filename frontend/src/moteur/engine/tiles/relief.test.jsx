@@ -120,25 +120,18 @@ test('plancher de la caméra au-dessus du relief', () => {
 // Fin du test.
 });
 
-// Test : l'allègement du relief sur téléphone.
-test('relief allégé sur téléphone, inchangé sur ordinateur', () => {
+// Test : le réglage du relief, le même sur tous les appareils.
+test('relief : le même réglage sur tous les appareils, sans allègement', () => {
   // Réglage Terrarium de la Terre.
   const earth = normalizeRelief({ kind: 'terrarium', template: 'https://h/{z}/{x}/{y}.png' }, 6371);
-  // Ordinateur : même réglage, avec l'altitude partagée (une tuile d'altitude de 512 px pour quatre tuiles d'image).
-  // Sur ordinateur : le même réglage, avec coarse à 1.
-  assert.deepEqual(tuneRelief(earth, false), { ...earth, coarse: 1 });
+  // Le même réglage, avec l'altitude partagée (une tuile d'altitude de 512 px pour quatre tuiles d'image) : coarse à 1.
+  assert.deepEqual(tuneRelief(earth), { ...earth, coarse: 1 });
   // Réglage par l'image.
   const img = { kind: 'image', strength: 0.5 };
-  // Sur ordinateur : rendu tel quel.
-  assert.equal(tuneRelief(img, false), img);
-  // Réglage de la Terre sur téléphone.
-  const phone = tuneRelief(earth, true);
-  // 8 segments, niveaux 6 à 11, coarse à 1.
-  assert.deepEqual([phone.segments, phone.minZoom, phone.maxZoom, phone.coarse], [8, 6, 11, 1]);
-  // Réglage par l'image sur téléphone : force 0,4.
-  assert.equal(tuneRelief({ kind: 'image', strength: 0.5 }, true).strength, 0.4);
+  // Rendu tel quel, force comprise.
+  assert.equal(tuneRelief(img), img);
   // Réglage absent : null.
-  assert.equal(tuneRelief(null, true), null);
+  assert.equal(tuneRelief(null), null);
 // Fin du test.
 });
 
@@ -359,14 +352,12 @@ test('normalizeRelief lit la source des fonds marins et la borne', () => {
 // Fin du test.
 });
 
-// Test : l'allègement du fond des océans sur téléphone.
-test('tuneRelief allège aussi le fond des océans sur téléphone', () => {
+// Test : le fond des océans garde son niveau.
+test('tuneRelief garde le niveau du fond des océans', () => {
   // Réglage avec une source des fonds, niveau maximal 8.
   const r = normalizeRelief({ kind: 'terrarium', template: 'https://a/{z}/{x}/{y}.png', ocean: { template: 'https://o/{z}/{x}/{y}.png', maxZoom: 8 } }, 6371);
-  // Sur téléphone : niveau maximal 7.
-  assert.equal(tuneRelief(r, true).ocean.maxZoom, 7);
-  // Sur ordinateur : niveau maximal 8.
-  assert.equal(tuneRelief(r, false).ocean.maxZoom, 8);
+  // Niveau maximal 8.
+  assert.equal(tuneRelief(r).ocean.maxZoom, 8);
 // Fin du test.
 });
 

@@ -1,6 +1,6 @@
 // Vue d'un système planétaire sur téléphone : quand on zoome dans le système d'une planète (la planète, ses
-// satellites, la Lune pour la Terre), le téléphone passe au rendu d'un ordinateur et au rythme d'images maximal,
-// et, pour ne pas chauffer, les planètes et les satellites des autres systèmes ne sont plus dessinés.
+// satellites, la Lune pour la Terre), le téléphone passe au rythme d'images maximal, et, pour ne pas chauffer, les
+// planètes et les satellites des autres systèmes ne sont plus dessinés.
 //
 // Le système d'une planète est sa sphère de Hill : la région où sa gravité retient ses satellites face au Soleil,
 // de rayon a·∛(m / 3M). Environ 1,5 million de km pour la Terre, 53 millions pour Jupiter, 220 000 pour Mercure.

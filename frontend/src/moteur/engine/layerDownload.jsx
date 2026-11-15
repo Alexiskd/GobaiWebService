@@ -15,9 +15,9 @@ export function layerFileName(bodyLabel, layerLabel) {
 // Fin de layerFileName.
 }
 
-/** Zoom de la carte téléchargée : 4096 × 2048 px sur ordinateur, 2048 × 1024 px sur écran tactile (mémoire limitée). */
-// downloadZoom : niveau 3 sur écran tactile, 4 sinon.
-export const downloadZoom = (coarse) => (coarse ? 3 : 4);
+/** Zoom de la carte téléchargée : 4096 × 2048 px, sur tous les appareils. */
+// Déclare et exporte le niveau de la carte téléchargée : 4.
+export const DOWNLOAD_ZOOM = 4;
 
 /**
  * Télécharge la carte globale (équirectangulaire 2:1, PNG) d'une couche ou d'un fond de carte, quel que soit l'astre :
@@ -34,10 +34,8 @@ export async function downloadLayer({ layerId, fileName, signal, api }) {
     await source.start();
     // Source non prête : exception avec sa cause.
     if (!source.ready) throw new Error(source.error || 'Fond de carte indisponible');
-    // Écran tactile ?
-    const coarse = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
     // Assemble la carte au niveau de zoom voulu.
-    const canvas = await buildGlobeCanvas(source, { zoom: downloadZoom(coarse), signal });
+    const canvas = await buildGlobeCanvas(source, { zoom: DOWNLOAD_ZOOM, signal });
     // Convertit le canvas en image PNG.
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
     // Conversion impossible : exception.

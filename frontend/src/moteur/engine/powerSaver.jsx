@@ -1,19 +1,10 @@
-// Économie d'énergie sur téléphone et tablette : un appareil tenu en main n'a pas de ventilateur, et un rendu 3D
-// poussé au maximum (60 images par seconde, pleine densité d'écran, anticrénelage) le fait chauffer en quelques
-// minutes. Sur ces appareils, le moteur vise donc :
-//  - 20 images par seconde au repos (aucun geste récent) ;
-//  - une densité de pixels plafonnée à 1,5 au lieu de 2 : ≈ 44 % de pixels en moins à calculer ;
-//  - pas d'anticrénelage matériel (MSAA), coûteux sur les puces graphiques mobiles ;
-//  - des shaders allégés (`lite`) : diffusion de l'atmosphère, nuages et Voie lactée calculés avec moins
-//    d'échantillons par pixel (voir LITE_QUALITY) ;
-//  - un démarrage en douceur : la première image part à la densité 1, puis la résolution adaptative remonte
-//    cran par cran si l'appareil suit (`dprStart`).
+// Rythme d'images et économie d'énergie. Téléphone, tablette et ordinateur ont la même qualité de rendu : densité de
+// pixels jusqu'à 1,75, anticrénelage, shaders complets (QUALITY), anisotropie de 8. Un appareil tenu en main n'a pas
+// de ventilateur : il ne se distingue que par son rythme, 20 images par seconde au repos (aucun geste récent).
 // Sur tous les appareils, tant que l'écran de chargement recouvre la scène, le moteur ne dessine que quelques
 // images par seconde (COVERED_FRAME_MS) : les shaders se compilent et les tuiles arrivent, sans chauffer pour rien.
-// Un ordinateur garde le rendu complet.
-// Exception sur téléphone : zoomé dans le système d'une planète (voir systemView.jsx), le rendu redevient celui d'un
-// ordinateur (SYSTEM_PROFILE : densité 1,75, shaders complets, anisotropie de 8) au rythme maximal de l'écran, sans
-// ralenti au repos ; les autres planètes et leurs satellites ne sont alors plus dessinés, pour ne pas chauffer.
+// Sur téléphone, zoomé dans le système d'une planète (voir systemView.jsx) : rythme maximal de l'écran, sans ralenti
+// au repos (SYSTEM_PROFILE) ; les autres planètes et leurs satellites ne sont alors plus dessinés, pour ne pas chauffer.
 //
 // Rythme : sur tous les appareils, le moteur est plafonné à TARGET_FPS images par seconde (50), quel que soit le niveau
 // de zoom et la fréquence de l'écran (60, 120, 144 Hz…) : voir `paceFrame`. Pour TENIR ce rythme quand la scène est
@@ -30,13 +21,12 @@ export const TARGET_FPS = 50;
 // Déclare et exporte la durée d'une image à ce rythme : 20 ms.
 export const TARGET_FRAME_MS = 1000 / TARGET_FPS;
 
-// Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 1,75 dès le départ, anticrénelage, shaders complets, anisotropie de 8.
-export const DESKTOP_PROFILE = { handheld: false, dprMax: 1.75, dprStart: 1.75, frameMs: TARGET_FRAME_MS, antialias: true, lite: false, anisotropy: 8 };
-// Déclare et exporte le profil d'un appareil tenu en main : densité plafonnée à 1,5 et partant de 1, sans anticrénelage, shaders allégés, anisotropie de 2.
-export const HANDHELD_PROFILE = { handheld: true, dprMax: 1.5, dprStart: 1, frameMs: TARGET_FRAME_MS, antialias: false, lite: true, anisotropy: 2 };
-// Déclare et exporte le profil d'un téléphone dans le système d'une planète : la qualité d'un ordinateur (densité, shaders, anisotropie),
-// sans plafond d'images ni ralenti au repos. L'anticrénelage reste celui du départ (fixé à la création du contexte WebGL).
-export const SYSTEM_PROFILE = { ...HANDHELD_PROFILE, system: true, dprMax: DESKTOP_PROFILE.dprMax, dprStart: DESKTOP_PROFILE.dprStart, frameMs: 0, lite: false, anisotropy: DESKTOP_PROFILE.anisotropy };
+// Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 1,75 dès le départ, anticrénelage, anisotropie de 8.
+export const DESKTOP_PROFILE = { handheld: false, dprMax: 1.75, dprStart: 1.75, frameMs: TARGET_FRAME_MS, antialias: true, anisotropy: 8 };
+// Déclare et exporte le profil d'un appareil tenu en main : la même qualité que l'ordinateur (ralenti au repos, voir targetFrameMs).
+export const HANDHELD_PROFILE = { ...DESKTOP_PROFILE, handheld: true };
+// Déclare et exporte le profil d'un téléphone dans le système d'une planète : sans plafond d'images ni ralenti au repos.
+export const SYSTEM_PROFILE = { ...HANDHELD_PROFILE, system: true, frameMs: 0 };
 
 /** Au repos (aucun geste depuis IDLE_AFTER_MS) sur téléphone, et en mode économie d'énergie : 20 images par seconde. */
 // Déclare et exporte la durée d'une image au repos : 50 ms.
@@ -69,40 +59,9 @@ export function targetFrameMs(profile, { covered = false, saving = false, idle =
 // Déclare et exporte la durée d'une image sous l'écran de chargement : 125 ms.
 export const COVERED_FRAME_MS = 1000 / 8;
 
-/**
- * Échantillons par pixel des shaders coûteux. Complet : 16 pas de diffusion × 6 vers le Soleil, bruit à 5 octaves.
- * Allégé (téléphone) : 8 × 3 et 3 octaves, soit environ 4 fois moins de calcul pour l'atmosphère et 40 % de moins
- * pour les nuages et la Voie lactée, pour un rendu très proche à la taille d'un écran de téléphone.
- */
-// Déclare et exporte la qualité complète : 16 pas de diffusion, 6 vers le Soleil, 5 octaves.
-export const FULL_QUALITY = { scatterSteps: 16, lightSteps: 6, octaves: 5 };
-// Déclare et exporte la qualité allégée : 8 pas de diffusion, 3 vers le Soleil, 3 octaves.
-export const LITE_QUALITY = { scatterSteps: 8, lightSteps: 3, octaves: 3 };
-// Déclare et exporte shaderQuality : la qualité allégée ou complète selon l'argument.
-export const shaderQuality = (lite) => (lite ? LITE_QUALITY : FULL_QUALITY);
-/**
- * Change les constantes (`defines`) d'un matériau à shader : s'il y en a une de différente, il est recompilé à son
- * prochain dessin (une seule fois, au passage d'une qualité à l'autre). Renvoie vrai s'il a changé.
- */
-// Déclare et exporte setShaderDefines : le matériau (ou rien) et les nouvelles constantes.
-export function setShaderDefines(material, defines) {
-  // Sans matériau : rien.
-  if (!material) return false;
-  // Ses constantes actuelles.
-  const cur = material.defines || (material.defines = {});
-  // Vrai si l'une d'elles change.
-  const changed = Object.entries(defines).some(([k, v]) => String(cur[k]) !== String(v));
-  // Inchangées : rien.
-  if (!changed) return false;
-  // Les remplace.
-  Object.assign(cur, defines);
-  // Recompilation au prochain dessin.
-  material.needsUpdate = true;
-  // A changé.
-  return true;
-// Fin de setShaderDefines.
-}
-
+/** Échantillons par pixel des shaders coûteux, sur tous les appareils : 16 pas de diffusion × 6 vers le Soleil, bruit à 5 octaves. */
+// Déclare et exporte la qualité des shaders : 16 pas de diffusion, 6 vers le Soleil, 5 octaves.
+export const QUALITY = { scatterSteps: 16, lightSteps: 6, octaves: 5 };
 /** Somme des amplitudes d'un bruit à `octaves` octaves (0,5 + 0,25 + …) : sert à garder la même luminosité. */
 // Déclare et exporte fbmNorm : 1 − 0,5 puissance le nombre d'octaves.
 export const fbmNorm = (octaves) => 1 - 0.5 ** octaves;
@@ -117,7 +76,7 @@ export function isHandheld(win = typeof window === 'undefined' ? null : window) 
 // Fin de isHandheld.
 }
 
-/** Profil de rendu de l'appareil : { handheld, dprMax, frameMs (0 = sans limite), antialias }. */
+/** Profil de rendu de l'appareil : { handheld, dprMax, dprStart, frameMs (0 = sans limite), antialias, anisotropy }. */
 // Déclare et exporte renderProfile : la fenêtre.
 export function renderProfile(win) {
   // Renvoie le profil tenu en main ou le profil d'ordinateur.

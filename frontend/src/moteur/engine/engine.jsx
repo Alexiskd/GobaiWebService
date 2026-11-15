@@ -9,7 +9,7 @@ import { hiddenByAny } from './labelOcclusion';
 // Importe le moteur de chargement planétaire : budgets, taille apparente, niveau de détail, plan des tuiles, satellites, champ de vue.
 import {
   // Les deux budgets d'astres à tuiles, la taille apparente et le niveau de détail d'un astre ;
-  MAX_TILED_BODIES, MAX_TILED_BODIES_LITE, apparentPx, bodyLevel,
+  MAX_TILED_BODIES, apparentPx, bodyLevel,
   // l'échelle en pixels, le plan des tuiles, l'apparition des satellites, le test du champ et le cône de vue.
   pixelScale, planTiledBodies, satelliteShown, sphereInView, viewConeHalfAngle,
 // Fin de l'import.
@@ -368,8 +368,8 @@ export class SolarEngine {
     this.initTiles();
     // Crée les frontières.
     this.initBorders();
-    // Volcans en éruption (liste posée plus tard par setVolcanoes) : calque dans le groupe de la Terre, allégé sur téléphone.
-    this.volcanoes = new VolcanoLayer({ lite: this.power.lite });
+    // Volcans en éruption (liste posée plus tard par setVolcanoes) : calque dans le groupe de la Terre.
+    this.volcanoes = new VolcanoLayer();
     // L'ajoute au groupe de la Terre.
     this.earth.group.add(this.volcanoes.root);
     // Nuages LiDAR calés par GPS.
@@ -480,18 +480,17 @@ export class SolarEngine {
 
   // initRenderer : crée le moteur de rendu, la scène et la caméra (début).
   initRenderer() {
-    // Téléphone et tablette : rendu allégé pour ne pas faire chauffer l'appareil (voir powerSaver.jsx).
+    // Profil de rendu : la même qualité partout ; un téléphone ralentit seulement au repos (voir powerSaver.jsx).
     this.power = renderProfile();
-    // Profil de l'appareil, gardé : this.power devient celui d'un ordinateur dans le système d'une planète (applySystemView).
+    // Profil de l'appareil, gardé : this.power devient celui du rythme maximal dans le système d'une planète (applySystemView).
     this.basePower = this.power;
     // Planète du système affiché sur téléphone : aucune.
     this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
     const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true });
-    // Plafond : la densité de l'écran (≤ 1,75, ≤ 1,5 sur téléphone) ; la résolution adaptative (adaptResolution) descend
-    // jusqu'à 1 si besoin.
+    // Plafond : la densité de l'écran (≤ 1,75) ; la résolution adaptative (adaptResolution) descend jusqu'à 0,75 si besoin.
     this.dprMax = Math.min(devicePixelRatio || 1, this.power.dprMax);
-    // Téléphone : départ à la densité 1 ; la résolution adaptative remonte ensuite si l'appareil suit.
+    // Départ à la densité du profil (1,75).
     this.dpr = Math.min(this.dprMax, this.power.dprStart);
     // Garde le plafond d'origine.
     this.dprMaxFull = this.dprMax;
@@ -532,7 +531,7 @@ export class SolarEngine {
     // Caméra : champ de 45°, du plan proche 0,00001 au plan lointain 1e10.
     this.cam = new THREE.PerspectiveCamera(45, this.W / this.H, 0.00001, 1e10);
     // Ciel au-delà du Système solaire, dans sa propre scène (indépendant de l'origine flottante et du plan proche).
-    this.sky = new SkyLayer({ lite: this.power.lite });
+    this.sky = new SkyLayer();
     // Vecteur de travail du ciel : visée.
     this.skyFwd = new THREE.Vector3();
     // Vecteur de travail du ciel : direction du Soleil.
@@ -547,9 +546,8 @@ export class SolarEngine {
     // Le Soleil des données.
     const { sun } = this.data.bodies;
     // Sphère du Soleil (début) :
-    // surface animée (convection, granulation, régions actives) et éruptions de matière, voir sunSurface.jsx ;
-    // rendu allégé sur téléphone.
-    this.sunMesh = createSunSurface(sun.radius, { lite: this.power.lite });
+    // surface animée (convection, granulation, régions actives) et éruptions de matière, voir sunSurface.jsx.
+    this.sunMesh = createSunSurface(sun.radius);
     // Fin de la sphère.
     // L'ajoute à la scène.
     this.scene.add(this.sunMesh);
@@ -749,7 +747,7 @@ export class SolarEngine {
       // Fin du gestionnaire.
       });
       // Atmosphère des planètes solides (Vénus, Terre, Mars) : diffusion de la lumière du Soleil, voir atmosphere.jsx.
-      const atmosphere = createAtmosphere(cfg.id, host.radius, tiles.uniforms, host.syncMesh ? () => host.mesh.rotation.y : null, { lite: this.power.lite });
+      const atmosphere = createAtmosphere(cfg.id, host.radius, tiles.uniforms, host.syncMesh ? () => host.mesh.rotation.y : null);
       // S'il y a une atmosphère (début).
       if (atmosphere) {
         // L'ajoute au groupe.
@@ -1914,7 +1912,7 @@ export class SolarEngine {
   /**
    * Plan des tuiles de cette image : identifiants des astres dont les tuiles sont mises à jour. Un astre masqué,
    * hors du champ de la caméra ou trop petit à l'écran n'en fait pas partie ; l'astre ciblé en fait toujours partie.
-   * Le nombre d'astres servis à la fois est borné (deux sur téléphone, trois sur ordinateur, plus un à tour de rôle).
+   * Le nombre d'astres servis à la fois est borné (trois, plus un à tour de rôle).
    */
   // planTiles : calcule le plan des tuiles (début).
   planTiles(pxScale) {
@@ -1946,8 +1944,8 @@ export class SolarEngine {
     }
     // Numéro de l'image, pour le tour de rôle.
     this.loadTick = (this.loadTick || 0) + 1;
-    // Renvoie le plan, avec le budget du téléphone ou de l'ordinateur.
-    return planTiledBodies(candidates, this.power.lite ? MAX_TILED_BODIES_LITE : MAX_TILED_BODIES, this.loadTick);
+    // Renvoie le plan, avec le budget d'astres.
+    return planTiledBodies(candidates, MAX_TILED_BODIES, this.loadTick);
   // Fin de planTiles.
   }
 
@@ -2783,33 +2781,15 @@ export class SolarEngine {
   }
 
   /**
-   * Entre dans le système de `host` (ou en sort avec null) : qualité d'un ordinateur (densité de pixels 1,75, shaders
-   * complets recompilés une fois, anisotropie de 8, budget de tuiles), rythme d'images maximal sans ralenti au repos,
-   * et seuls cette planète, ses satellites et le Soleil restent dessinés. Si l'appareil ne suit pas, la résolution
-   * adaptative baisse quand même la densité.
+   * Entre dans le système de `host` (ou en sort avec null) : rythme d'images maximal sans ralenti au repos, et seuls
+   * cette planète, ses satellites et le Soleil restent dessinés.
    */
   // applySystemView : applique ou retire la vue d'un système planétaire (début).
   applySystemView(host) {
     // Garde la planète du système.
     this.systemHost = host;
-    // Profil : celui d'un ordinateur dans un système, sinon celui de l'appareil.
+    // Profil : rythme maximal dans un système, sinon celui de l'appareil.
     this.power = host ? SYSTEM_PROFILE : this.basePower;
-    // Plafond de densité du profil, borné par l'écran.
-    this.dprMaxFull = Math.min(devicePixelRatio || 1, this.power.dprMax);
-    // Plafond actif (1 en économie d'énergie).
-    this.dprMax = this.saving ? Math.min(1, this.dprMaxFull) : this.dprMaxFull;
-    // Plus aucun cran bloqué.
-    this.dprBlockedAbove = Infinity; this.dprBlockUntil = 0;
-    // Entrée : densité d'un ordinateur tout de suite ; sortie : redescend sous le plafond du téléphone.
-    this.setResolution(host ? this.dprMax : Math.min(this.dpr, this.dprMax));
-    // Shaders de l'atmosphère de chaque astre et de la Voie lactée : complets ou allégés.
-    for (const a of Object.values(this.atmospheres)) a?.userData.setLite?.(this.power.lite);
-    // Voie lactée.
-    this.sky.setLite(this.power.lite);
-    // Filtrage anisotrope des prochaines tuiles, borné par la carte graphique.
-    const aniso = Math.min(this.power.anisotropy, this.renderer.capabilities.getMaxAnisotropy());
-    // Pour chaque astre tuilé avec une carte : ses prochaines tuiles.
-    for (const tb of this.tiledBodies) if (tb.tiles.base) tb.tiles.base.layer.maxAnisotropy = aniso;
     // Astres hors du système : plus dessinés (ou de nouveau tous à la sortie).
     this.applyBodyVisibility();
     // Rythme d'images du nouveau profil.

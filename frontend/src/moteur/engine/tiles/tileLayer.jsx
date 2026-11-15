@@ -57,7 +57,7 @@ const PINNED_MAX_ZOOM = 2;      // par défaut : tuiles du monde entier jamais �
 // Priorité du préchargement de l'astre entier : 1e6.
 const PRELOAD_PRIORITY = 1e6;   // après toutes les tuiles visibles ; niveaux bas d'abord
 // Envois de textures par image, au plus : 8.
-const UPLOADS_PER_FRAME = 8;    // envois de textures au GPU par image, au plus (réglable par couche : moins sur téléphone)
+const UPLOADS_PER_FRAME = 8;    // envois de textures au GPU par image, au plus (réglable par couche)
 // Délai avant un nouvel essai après un échec : 6 secondes.
 const RETRY_AFTER_MS = 6000;
 // Priorité du préchargement prédictif : 1e3.
@@ -81,25 +81,6 @@ const VIEW_POS_TOL = 1e-3;      // × altitude de la caméra
 // Tolérance de direction : 5e-4 radian.
 const VIEW_DIR_TOL = 5e-4;      // rad (≈ 1 px d'écran)
 
-/** Copie réduite d'une image à `size` px de côté (canevas), pour l'envoi au GPU sur téléphone. */
-// downscaled : l'image et la taille (début).
-function downscaled(img, size) {
-  // Canevas de la taille voulue.
-  const canvas = document.createElement('canvas');
-  // Carré.
-  canvas.width = canvas.height = size;
-  // Contexte de dessin.
-  const ctx = canvas.getContext('2d');
-  // Sans contexte : l'image telle quelle.
-  if (!ctx) return img;
-  // Réduction soignée.
-  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-  // Dessine l'image réduite.
-  ctx.drawImage(img, 0, 0, size, size);
-  // Renvoie le canevas.
-  return canvas;
-// Fin de downscaled.
-}
 
 /** Vue « presque identique » : position relative à l'altitude, visée et haut de l'image, champ et taille d'écran. */
 // sameView : deux vues sont-elles presque identiques (début).
@@ -167,13 +148,11 @@ export class TileLayer {
     // le préchargement, la mémoire vive, le sur-zoom, le relief et ses deux sources, et la source des lumières de nuit,
     prefetch = false, ramCapacity = 0, overzoom = OVERZOOM_LEVELS, relief = null, reliefSource = null, oceanSource = null, nightLights = null,
     // les envois par image, l'affichage en hexagones et la taille maximale d'une texture (0 : pas de limite).
-    uploadsPerFrame = UPLOADS_PER_FRAME, hex = true, maxTexturePx = 0,
+    uploadsPerFrame = UPLOADS_PER_FRAME, hex = true,
   // Fin des réglages (début du constructeur).
   }) {
     // Garde le nombre d'envois par image.
     this.uploadsPerFrame = uploadsPerFrame;
-    // Taille maximale d'une texture (téléphone : 256 px ; une image de 512 px est réduite avant l'envoi au GPU).
-    this.maxTexturePx = maxTexturePx;
     // Mouvement : vue de l'image précédente, fin du mouvement en cours, état à la dernière sélection.
     this.prevFrameView = null; this.movingUntil = -Infinity; this.lastMoving = false;
     // Zoom rapide : instant où chaque niveau d'images est entré dans la vue.
@@ -1010,10 +989,8 @@ export class TileLayer {
     const shared = this.textures.get(img);
     // Dans ce cas : un utilisateur de plus, et elle est renvoyée.
     if (shared) { shared.refs++; return shared.tex; }
-    // Largeur de l'image.
-    const w = img.naturalWidth || img.width || 0;
-    // Nouvelle texture : l'image, réduite à la taille maximale si elle la dépasse (téléphone : 512 → 256 px).
-    const t = new THREE.Texture(this.maxTexturePx && w > this.maxTexturePx ? downscaled(img, this.maxTexturePx) : img);
+    // Nouvelle texture : l'image à sa pleine taille, sur tous les appareils.
+    const t = new THREE.Texture(img);
     // La partage.
     this.textures.set(img, { tex: t, refs: 1 });
     // Avec mipmaps.

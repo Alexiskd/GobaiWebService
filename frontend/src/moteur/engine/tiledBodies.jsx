@@ -68,14 +68,14 @@ export const TILED_BODIES = [
     // Sphère de fond presque noire pendant le chargement : les cellules hexagonales pas encore remplies ne montrent
     // plus le bleu clair d'interface de la Terre (#3d8bff), qui les dessinait une par une au premier affichage.
     backdrop: '#0b0f16',
-    // Fond instantané, sur le modèle de la Lune : toute la Terre aux niveaux 0 à 3 (85 tuiles) gardée en mémoire sur
-    // ordinateur (niveaux 0 à 2 sur téléphone). Rien n'est gardé sur le disque du navigateur.
+    // Fond instantané, sur le modèle de la Lune : toute la Terre aux niveaux 0 à 3 (85 tuiles) gardée en mémoire, sur
+    // tous les appareils. Rien n'est gardé sur le disque du navigateur.
     // Préchargement prédictif comme la Lune : les tuiles de la zone vers laquelle la caméra se dirige sont chargées
-    // d'avance, et celles qui sortent de l'écran restent en mémoire (300 images, 96 sur téléphone) pour revenir sans réseau.
+    // d'avance, et celles qui sortent de l'écran restent en mémoire (300 images) pour revenir sans réseau.
     // Niveaux 0 à 3 gardés en mémoire, préchargement actif, 300 images en mémoire vive.
     pinnedMaxZoom: 3, prefetch: true, ramCapacity: 300,
     // Couche unique : tuiles chargées chez leurs fournisseurs (plusieurs serveurs, HTTP/2), le reste relayé par l'API :
-    // 16 tuiles en parallèle (8 sur téléphone) au lieu de 6.
+    // 16 tuiles en parallèle au lieu de 6.
     // Seize téléchargements simultanés.
     concurrency: 16,
     // Lumières humaines la nuit (pollution lumineuse) : NASA Black Marble, allumées côté nuit selon le Soleil.
@@ -83,7 +83,7 @@ export const TILED_BODIES = [
     // Relief à vraies altitudes, format Terrarium, sans clé. D'abord Mapterhorn (tuiles de 512 px : deux fois plus
     // fines à niveau égal, quatre fois moins de requêtes ; Copernicus GLO-30 jusqu'au niveau 12, ≈ 19 m par pixel à
     // l'équateur), dont l'adresse est lue dans sa fiche TileJSON. Si elle ne répond pas : AWS Terrain Tiles (Mapzen,
-    // 256 px, ≈ 38 m par pixel). Niveaux 5 à 12, agrandis au-delà ; allégé sur téléphone (voir tuneRelief).
+    // 256 px, ≈ 38 m par pixel). Niveaux 5 à 12, agrandis au-delà.
     // Relief (début).
     relief: {
       // Format Terrarium, niveaux 5 à 12, sans exagération.
@@ -116,7 +116,7 @@ export const TILED_BODIES = [
     // Toute la Lune aux niveaux 0 à 3 (170 tuiles Kaguya) gardée en mémoire : aucune zone vide où que l'on regarde.
     // Niveaux 0 à 3 gardés en mémoire, préchargement actif, 400 images en mémoire vive.
     pinnedMaxZoom: 3, prefetch: true, ramCapacity: 400,
-    // Tuiles servies par l'API seule (HTTP/2, fichiers légers) : 12 en parallèle (6 sur téléphone) au lieu de 6.
+    // Tuiles servies par l'API seule (HTTP/2, fichiers légers) : 12 en parallèle au lieu de 6.
     // Douze téléchargements simultanés.
     concurrency: 12,
     // La sphère de fond prend l'éclairage des tuiles ; le modèle 3D remplace les tuiles au-delà de 2,2 rayons.

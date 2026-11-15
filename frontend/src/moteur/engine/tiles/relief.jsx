@@ -149,26 +149,14 @@ export function normalizeRelief(cfg, radiusKm) {
  * couvre : quatre fois moins de téléchargements et de mémoire graphique, pour la finesse d'une tuile de 256 px (un
  * point d'altitude pour deux pixels d'écran au plus, interpolé par le shader). C'est le principe des serveurs de
  * globes (Google Earth Enterprise) : le relief est rangé à un niveau plus grossier que l'imagerie et partagé entre
- * les nœuds voisins. Au-delà du niveau le plus fin de la source, rien ne change.
- *
- * Sur téléphone, en plus : maillage deux fois moins fin (9 × 9 sommets par tuile), relief à partir d'un niveau plus
- * loin et un niveau moins détaillé.
+ * les nœuds voisins. Au-delà du niveau le plus fin de la source, rien ne change. Même réglage sur tous les appareils.
  */
-// Déclare et exporte tuneRelief : le réglage et le mode petit appareil.
-export function tuneRelief(relief, small) {
+// Déclare et exporte tuneRelief : le réglage.
+export function tuneRelief(relief) {
   // Réglage absent : rendu tel quel.
   if (!relief) return relief;
-  // Sur ordinateur : un réglage Terrarium reçoit coarse à 1 ; les autres sont inchangés.
-  if (!small) return relief.kind === 'terrarium' ? { ...relief, coarse: 1 } : relief;
-  // Sur petit appareil, type « image » : force réduite de 20 %.
-  if (relief.kind !== 'terrarium') return { ...relief, strength: relief.strength * 0.8 };
-  // coarse : avec une source en tuiles de 512 px, on prend la tuile d'altitude du niveau au-dessus (même finesse
-  // qu'une tuile de 256 px, mais une seule image pour quatre tuiles affichées).
-  // Fond des océans : un niveau moins fin lui aussi (quatre fois moins de tuiles de profondeur).
-  // Fond des océans : un niveau maximal de moins.
-  const ocean = relief.ocean ? { ocean: { ...relief.ocean, maxZoom: Math.max(0, relief.ocean.maxZoom - 1) } } : {};
-  // Renvoie le réglage allégé : moitié moins de segments (4 au moins), un niveau maximal de moins, un niveau minimal de plus, et coarse à 1.
-  return { ...relief, ...ocean, segments: Math.max(4, Math.round(relief.segments / 2)), maxZoom: Math.max(relief.minZoom + 1, relief.maxZoom - 1), minZoom: relief.minZoom + 1, coarse: 1 };
+  // Un réglage Terrarium reçoit coarse à 1 ; les autres sont inchangés.
+  return relief.kind === 'terrarium' ? { ...relief, coarse: 1 } : relief;
 // Fin de tuneRelief.
 }
 

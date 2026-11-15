@@ -23,11 +23,9 @@ export const SPHERE_MIN_PX = 0.5;
 /** Rayon apparent (px) à partir duquel on voit une carte sur un astre : ses tuiles sont alors chargées. */
 // Seuil des tuiles : 3 pixels de rayon.
 export const TILE_MIN_PX = 3;
-/** Nombre d'astres dont les tuiles sont mises à jour en même temps (ordinateur, puis téléphone ou mode économie). */
+/** Nombre d'astres dont les tuiles sont mises à jour en même temps, sur tous les appareils. */
 // Budget : 3 astres à la fois.
 export const MAX_TILED_BODIES = 3;
-// Budget allégé : 2 astres à la fois.
-export const MAX_TILED_BODIES_LITE = 2;
 /** Rayon apparent (px) de l'orbite d'un satellite à partir duquel il se détache de sa planète : il apparaît. */
 // Seuil d'apparition d'un satellite : orbite de 14 pixels de rayon.
 export const SAT_SHOW_PX = 14;

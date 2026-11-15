@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les deux fonctions testées.
-import { downloadZoom, layerFileName } from './layerDownload.jsx';
+import { DOWNLOAD_ZOOM, layerFileName } from './layerDownload.jsx';
 
 // Test : le nom du fichier téléchargé.
 test('nom du fichier téléchargé : astre et couche, sans accent', () => {
@@ -17,10 +17,8 @@ test('nom du fichier téléchargé : astre et couche, sans accent', () => {
 });
 
 // Test : le niveau de zoom de la carte téléchargée.
-test('zoom de la carte téléchargée : plus léger sur écran tactile', () => {
-  // Niveau 4 hors écran tactile.
-  assert.equal(downloadZoom(false), 4);
-  // Niveau 3 sur écran tactile.
-  assert.equal(downloadZoom(true), 3);
+test('zoom de la carte téléchargée : 4096 × 2048 px sur tous les appareils', () => {
+  // Niveau 4.
+  assert.equal(DOWNLOAD_ZOOM, 4);
 // Fin du test.
 });
