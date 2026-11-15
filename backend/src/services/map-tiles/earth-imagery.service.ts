@@ -7,11 +7,13 @@ import type { ResolvedTileLayer, TileLayerInfo, TileProvider } from './providers
 // Ouvre l'import du module des sources de la Terre :
 import {
   // ses classes, sa table des sources et ses fonctions ;
-  CoverageMemo, EARTH_SOURCE_BY_ID, NoCoverageError, SourceHealth, TileAbsentError, candidates, directPlan, enabledSources, hedged, isAbsentStatus, isBlank, isOff,
+  CoverageMemo, NoCoverageError, SourceHealth, TileAbsentError, candidates, enabledSources, hedged, isAbsentStatus, isBlank, isOff,
   // et deux types : une source et son identifiant.
   type EarthSource, type EarthSourceId,
 // Fin de l'import.
 } from './earth-sources';
+// Table de priorité des sources, servie au navigateur : sa fabrication, son type et son adresse.
+import { EARTH_PLAN_PATH, earthPlan, type EarthPlan } from './earth-plan';
 // Fonds marins (GEBCO, NOAA NCEI) : leur table par identifiant de relais, et la fusion dans la couche unique.
 import { SEAFLOOR_BY_ID, seafloorFusion } from './earth-seafloor';
 
@@ -32,9 +34,10 @@ const sharp = createRequire(__filename)('sharp') as any;
  *  4. une source nationale qui renvoie une tuile vide (hors de son territoire) passe la main à la suivante, sans
  *     compter comme une panne ; elle n'est plus interrogée pour les tuiles plus fines du même endroit ;
  *  5. au-delà du niveau natif de toutes les sources, la tuile est découpée dans son ancêtre le plus proche puis
- *     agrandie (sharp, Lanczos). L'ancêtre est gardé en mémoire : ses 4^d descendants ne le retéléchargent pas.
- * Une tuile servie par une autre source que la préférée (cascade, panne) n'est gardée que brièvement, en mémoire comme
- * dans le navigateur : la meilleure image revient dès que sa source répond de nouveau.
+ *     agrandie (sharp, Lanczos).
+ * Aucune tuile n'est gardée sur ce serveur : seuls les téléchargements simultanés d'une même tuile (ou d'un même
+ * ancêtre) sont partagés le temps de leur trajet. La table de priorité des sources est servie au navigateur par
+ * earth-plan.ts ; le navigateur charge lui-même toutes les sources qui l'autorisent et ne demande ici que le reste.
  *
  * C'est la seule couche d'imagerie de la Terre listée. Le serveur relaie aussi, sans les lister, les tuiles des fonds
  * marins (earth-seafloor.ts) : « earth-gebco », que le navigateur fond au large dans la couche unique, et « earth-ncei »,
@@ -49,12 +52,6 @@ const MAX_CROP_LEVELS = 6; // 256 px / 2^6 = 4 px : en dessous, l'agrandissement
 const TIMEOUT_MS = 8_000;
 // Délai de la cascade rapprochée : EARTH_HEDGE_MS, ou 450 ms, jamais moins de 50 ms.
 const HEDGE_MS = Math.max(50, Number(process.env.EARTH_HEDGE_MS) || 450);
-// Nombre de tuiles gardées en mémoire : 3 000.
-const MEMORY_TILES = 3000;
-// Nombre de tuiles ancêtres gardées en mémoire : 600.
-const MEMORY_ANCESTORS = 600;
-// Durée de garde d'une tuile de repli : 10 minutes.
-const FALLBACK_TTL_MS = 10 * 60_000; // tuile d'une source de repli : gardée 10 min en mémoire
 // Taille maximale d'une tuile : 2 Mo.
 const MAX_BYTES = 2 * 1024 * 1024;
 
@@ -81,9 +78,6 @@ export const isTile = (z: number, x: number, y: number) =>
 // Forme d'une tuile rendue : ses octets, son type de contenu, sa source, et si c'est la source préférée.
 export interface EarthTile { body: Buffer; contentType: string; source: EarthSourceId; preferred: boolean }
 
-// Forme d'une tuile en mémoire : la tuile et sa date limite.
-type Cached = { tile: EarthTile; until: number };
-
 // Rend la classe injectable par NestJS.
 @Injectable()
 // Classe du service d'imagerie de la Terre ; c'est un fournisseur de tuiles.
@@ -94,11 +88,7 @@ export class EarthImageryService implements TileProvider {
   isAvailable(): boolean { return true; }
   // Journal préfixé par « Terre HD ».
   private readonly log = new Logger('Terre HD');
-  // Mémoire des tuiles.
-  private readonly memory = new Map<string, Cached>();
-  // Mémoire des tuiles ancêtres.
-  private readonly ancestors = new Map<string, Cached>();
-  // Téléchargements en cours, par clé.
+  // Téléchargements en cours, par clé (partagés le temps du trajet, jamais gardés ensuite).
   private readonly pending = new Map<string, Promise<EarthTile>>();
   // Santé des sources.
   private readonly health = new SourceHealth();
@@ -162,10 +152,10 @@ export class EarthImageryService implements TileProvider {
       urlTemplate: `/api/v1/tiles/earth/${id}/{z}/{x}/{y}`,
       // pas d'expiration ;
       expiresAt: null,
-      // Le navigateur charge lui-même les tuiles des sources qui le permettent (plus de détour par ce serveur) et ne
-      // demande au relais que le reste.
-      // le plan de chargement direct ;
-      direct: directPlan(this.sources) ?? undefined,
+      // Le navigateur lit la table de priorité des sources (GET /api/v1/tiles/earth/plan), charge lui-même les tuiles
+      // des sources qui le permettent et ne demande au relais que le reste.
+      // l'adresse de la table de priorité ;
+      plan: EARTH_PLAN_PATH,
       // Même colorimétrie pour toutes les sources : le navigateur accorde chaque source nationale sur la mosaïque
       // mondiale. `EARTH_COLOR_MATCH=0` coupe cet accord.
       // l'accord de couleur (faux si EARTH_COLOR_MATCH est coupé) ;
@@ -178,6 +168,10 @@ export class EarthImageryService implements TileProvider {
     };
   // Fin de resolveSync.
   }
+
+  /** Table de priorité des sources de la couche unique (voir earth-plan.ts). */
+  // Méthode plan : la table, pour les sources actives.
+  plan(): EarthPlan { return earthPlan(this.sources); }
 
   // Méthode attribution : le texte de la mention d'une couche.
   async attribution(id: string): Promise<string> { return this.resolveSync(id).attribution.text; }
@@ -214,54 +208,34 @@ export class EarthImageryService implements TileProvider {
   // Fin de sourcesOf.
   }
 
-  /** Tuile (z, x, y) de la couche `id`, depuis la mémoire ou les sources. */
+  /** Tuile (z, x, y) de la couche `id`, téléchargée chez ses sources (rien n'est gardé sur ce serveur). */
   // Méthode tile.
   tile(id: string, z: number, x: number, y: number): Promise<EarthTile> {
     // Couche ni listée ni relayée : erreur 404.
     if (!this.serves(id)) throw new NotFoundException(`Couche terrestre inconnue : « ${id} ».`);
     // Tuile hors de la grille : erreur 404.
     if (!isTile(z, x, y)) throw new NotFoundException(`Tuile ${z}/${x}/${y} inexistante.`);
-    // Renvoie la tuile de la mémoire, ou la fabrique.
-    return this.cached(this.memory, MEMORY_TILES, `${id}/${z}/${x}/${y}`, () => this.build(id, z, x, y));
+    // Fabrique la tuile, en partageant un téléchargement déjà en cours.
+    return this.shared(`t/${id}/${z}/${x}/${y}`, () => this.build(id, z, x, y));
   // Fin de tile.
   }
 
-  /** Mémoire LRU + regroupement des demandes simultanées de la même tuile. */
-  // Méthode privée cached.
-  private cached(store: Map<string, Cached>, capacity: number, key: string, make: () => Promise<EarthTile>): Promise<EarthTile> {
-    // Cherche la tuile en mémoire.
-    const hit = store.get(key);
-    // Trouvée :
-    if (hit) {
-      // la retire ;
-      store.delete(key);
-      // encore valable : la remet en fin de liste et la renvoie.
-      if (hit.until > Date.now()) { store.set(key, hit); return Promise.resolve(hit.tile); }
-    // Fin du cas.
-    }
-    // Clé de la fabrication en cours : « t » pour une tuile, « a » pour un ancêtre.
-    const pendingKey = `${store === this.memory ? 't' : 'a'}/${key}`;
+  /** Regroupement des demandes simultanées d'une même tuile : un seul téléchargement, oublié dès qu'il est fini. */
+  // Méthode privée shared : la clé et la fabrication.
+  private shared(key: string, make: () => Promise<EarthTile>): Promise<EarthTile> {
     // Cherche une fabrication en cours.
-    let p = this.pending.get(pendingKey);
+    let p = this.pending.get(key);
     // Aucune :
     if (!p) {
-      // lance la fabrication ; quand elle finit :
-      p = make().then((tile) => {
-        // garde la tuile, sans limite si elle vient de la source préférée, sinon 10 minutes ;
-        store.set(key, { tile, until: tile.preferred ? Infinity : Date.now() + FALLBACK_TTL_MS });
-        // retire les plus anciennes au-delà de la capacité ;
-        while (store.size > capacity) store.delete(store.keys().next().value!);
-        // rend la tuile.
-        return tile;
-      // Dans tous les cas, retire la fabrication de la liste.
-      }).finally(() => this.pending.delete(pendingKey));
-      // L'inscrit dans la liste.
-      this.pending.set(pendingKey, p);
+      // lance la fabrication et la retire de la liste quand elle finit, réussie ou non ;
+      p = make().finally(() => this.pending.delete(key));
+      // l'inscrit dans la liste.
+      this.pending.set(key, p);
     // Fin du cas.
     }
     // Renvoie la promesse.
     return p;
-  // Fin de cached.
+  // Fin de shared.
   }
 
   /** Tuile native si une source la sert à ce niveau, sinon découpée dans l'ancêtre natif le plus proche. */
@@ -281,9 +255,8 @@ export class EarthImageryService implements TileProvider {
       try {
         // au niveau de la tuile : la tuile native.
         if (d === 0) return await this.native(sources, z, x, y);
-        // Ancêtre partagé par tous ses descendants : téléchargé une fois, gardé en mémoire.
-        // Sinon l'ancêtre, de la mémoire ou téléchargé.
-        const parent = await this.cached(this.ancestors, MEMORY_ANCESTORS, `${id}/${az}/${ax}/${ay}`, () => this.native(sources, az, ax, ay));
+        // Sinon l'ancêtre, téléchargé une fois pour ses descendants demandés en même temps.
+        const parent = await this.shared(`a/${id}/${az}/${ax}/${ay}`, () => this.native(sources, az, ax, ay));
         // Renvoie la part de l'ancêtre agrandie, avec sa source.
         return { body: await cropUp(parent.body, d, x - (ax << d), y - (ay << d)), contentType: 'image/jpeg', source: parent.source, preferred: parent.preferred };
       // En cas d'échec,

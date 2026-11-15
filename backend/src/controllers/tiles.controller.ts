@@ -38,8 +38,8 @@ import {
 } from '../common/tile-http';
 // Ouvre l'import des formes de données des tuiles :
 import {
-  // sources, villes du LiDAR HD, préchargement de la Lune, paramètres d'une tuile de la Lune, requête de sources, localisation et sa requête, couche résolue, liste des couches, paramètres d'une tuile.
-  AttributionDto, LidarHdCitiesDto, MoonPrefetchStatusDto, MoonTileParamsDto, AttributionQueryDto, LocateDto, LocateQueryDto, ResolvedTileLayerDto, TileLayerListDto, TileParamsDto,
+  // sources, table de priorité de la Terre, villes du LiDAR HD, préchargement de la Lune, paramètres d'une tuile de la Lune, requête de sources, localisation et sa requête, couche résolue, liste des couches, paramètres d'une tuile.
+  AttributionDto, EarthPlanDto, LidarHdCitiesDto, MoonPrefetchStatusDto, MoonTileParamsDto, AttributionQueryDto, LocateDto, LocateQueryDto, ResolvedTileLayerDto, TileLayerListDto, TileParamsDto,
 // Fin de l'import.
 } from '../dto/tiles.dto';
 // Service principal des tuiles : couches, modèles d'adresse, sources.
@@ -58,6 +58,8 @@ import { SatelliteTilesService } from '../services/map-tiles/satellite-tiles.ser
 import { BodyAvailabilityService } from '../services/map-tiles/body-availability.service';
 // Service de l'imagerie de la Terre (couche unique, plusieurs sources).
 import { EarthImageryService } from '../services/map-tiles/earth-imagery.service';
+// En-tête de cache de la table de priorité des sources de la Terre.
+import { EARTH_PLAN_CACHE } from '../services/map-tiles/earth-plan';
 // Service des nuages réels (Xweather).
 import { XweatherCloudsService } from '../services/map-tiles/xweather-clouds.service';
 // Service des vents réels (Open-Meteo).
@@ -694,6 +696,31 @@ export class TilesController {
     // Renvoie l'état de chaque source d'imagerie de la Terre.
     return this.earth.status();
   // Fin de earthSources.
+  }
+
+  // Route GET /api/v1/tiles/earth/plan.
+  @Get('earth/plan')
+  // Ouvre la description de la route :
+  @ApiOperation({
+    // son titre ;
+    summary: 'Table de priorité des sources de la Terre',
+    // début de son texte ;
+    description: 'Seule description des règles de choix de la couche unique : sources dans l’ordre de priorité (orthophotos '
+      // suite ;
+      + 'nationales de la plus petite emprise à la plus grande, puis Sentinel-2, puis NASA GIBS), emprises, niveaux, modèles '
+      // fin du texte.
+      + 'd’adresse chargeables par le navigateur et relais du serveur. Le navigateur choisit la source de chaque cellule hexagonale.',
+  // Fin de la description.
+  })
+  // Réponse 200 documentée : la table.
+  @ApiOkResponse({ type: EarthPlanDto })
+  // Cache longue durée : la table ne change qu'avec une nouvelle version du serveur.
+  @Header('Cache-Control', EARTH_PLAN_CACHE)
+  // Méthode earthPlan.
+  earthPlan(): EarthPlanDto {
+    // Renvoie la table des sources actives.
+    return this.earth.plan();
+  // Fin de earthPlan.
   }
 
   // Route GET /api/v1/tiles/earth/:layerId/:z/:x/:y.

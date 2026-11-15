@@ -109,11 +109,12 @@ export interface ResolvedTileLayer extends TileLayerInfo {
   // attribution : la mention à afficher.
   attribution: { text: string };
   /**
-   * Couche unique de la Terre : sources dans l'ordre de priorité, avec les modèles d'adresse de celles que le
-   * navigateur peut charger lui-même (voir earth-sources.ts, directPlan). Absent : tout passe par `urlTemplate`.
+   * Couche unique de la Terre : adresse de sa table de priorité des sources (voir earth-plan.ts), que le navigateur lit
+   * pour choisir la source de chaque cellule et charger lui-même celles qui le permettent. Absente : tout passe par
+   * `urlTemplate`.
    */
-  // direct : les sources que le navigateur peut interroger lui-même, avec leurs niveaux, leurs emprises et leurs modèles d'adresse.
-  direct?: Array<{ id: string; minZoom: number; maxZoom: number; bboxes?: Array<[number, number, number, number]>; templates?: string[]; lowZoom?: number }>;
+  // plan : l'adresse de la table de priorité des sources.
+  plan?: string;
   /** Emprises [ouest, sud, est, nord] (degrés) hors desquelles un calque n'est pas demandé (LiDAR HD : la France). */
   // bounds : les emprises hors desquelles la couche n'est pas demandée.
   bounds?: Array<[number, number, number, number]>;

@@ -93,18 +93,10 @@ export class ResolvedTileLayerDto extends TileLayerDto {
   // attribution : la mention à afficher près de la carte.
   attribution: TileAttributionDto;
 
-  // Ouvre la documentation du champ direct :
-  @ApiProperty({
-    // facultatif, une liste d'objets ;
-    required: false, type: 'array', items: { type: 'object' },
-    // début de sa description ;
-    description: 'Couche unique de la Terre : sources d’imagerie dans l’ordre de priorité ({ id, minZoom, maxZoom, bboxes?, templates? }). '
-      // fin de sa description.
-      + 'Le navigateur charge lui-même les tuiles des sources qui ont des `templates` et ne demande que le reste à `urlTemplate`.',
-  // Fin de la documentation.
-  })
-  // direct : les sources d'imagerie que le navigateur peut interroger lui-même, par ordre de priorité, avec leurs niveaux, leurs emprises et leurs modèles d'adresse.
-  direct?: Array<{ id: string; minZoom: number; maxZoom: number; bboxes?: Array<[number, number, number, number]>; templates?: string[]; lowZoom?: number }>;
+  // Documente le champ suivant : adresse de la table de priorité, couche unique de la Terre seulement.
+  @ApiProperty({ required: false, example: '/api/v1/tiles/earth/plan', description: 'Couche unique de la Terre : adresse de la table de priorité des sources (GET /tiles/earth/plan). Le navigateur la lit, choisit la source de chaque cellule et charge lui-même les sources qui le permettent ; le reste passe par `urlTemplate`.' })
+  // plan : l'adresse de la table de priorité des sources.
+  plan?: string;
 
   // Ouvre la documentation du champ bounds :
   @ApiProperty({
@@ -310,6 +302,44 @@ export class MoonPrefetchStatusDto {
   // failed : le nombre de tuiles en échec.
   @ApiProperty({ example: 0 }) failed: number;
 // Fin de MoonPrefetchStatusDto.
+}
+
+// Forme d'une ligne de la table de priorité des sources de la Terre.
+export class EarthPlanSourceDto {
+  // id : l'identifiant de la source.
+  @ApiProperty({ example: 'ign' }) id: string;
+  // label : son nom.
+  @ApiProperty({ example: 'IGN (France)' }) label: string;
+  // attribution : sa mention.
+  @ApiProperty({ example: 'Orthophotos : IGN (Géoplateforme)' }) attribution: string;
+  // priority : son rang, 1 pour la plus prioritaire.
+  @ApiProperty({ example: 11, description: 'Rang dans la table : 1 = la plus prioritaire.' }) priority: number;
+  // minZoom : son niveau natif le moins fin.
+  @ApiProperty({ example: 12 }) minZoom: number;
+  // maxZoom : son niveau natif le plus fin.
+  @ApiProperty({ example: 19 }) maxZoom: number;
+  // bboxes : ses emprises, absentes pour une source mondiale.
+  @ApiProperty({ required: false, type: 'array', items: { type: 'array', items: { type: 'number' } }, description: 'Emprises [ouest, sud, est, nord] en degrés ; absentes = monde entier.' }) bboxes?: number[][];
+  // templates : ses modèles d'adresse pour le navigateur.
+  @ApiProperty({ required: false, type: [String], description: 'Modèles d’adresse {z}/{x}/{y} chargeables par le navigateur ; absents = relais du serveur.' }) templates?: string[];
+  // lowZoom : niveau bas de la vue de loin.
+  @ApiProperty({ required: false, example: 8, description: 'Niveau à partir duquel la source sert sa mosaïque réduite, vue de loin.' }) lowZoom?: number;
+// Fin de EarthPlanSourceDto.
+}
+
+// Forme de la table de priorité des sources de la Terre (GET /tiles/earth/plan).
+export class EarthPlanDto {
+  // version : la version de la table.
+  @ApiProperty({ example: 1 }) version: number;
+  // layerId : la couche décrite.
+  @ApiProperty({ example: 'earth-hd' }) layerId: string;
+  // relay : le modèle d'adresse du relais du serveur.
+  @ApiProperty({ example: '/api/v1/tiles/earth/earth-hd/{z}/{x}/{y}' }) relay: string;
+  // colorMatch : l'accord des couleurs des sources.
+  @ApiProperty({ description: 'Accord des couleurs des sources sur la mosaïque mondiale.' }) colorMatch: boolean;
+  // sources : les lignes, dans l'ordre de priorité.
+  @ApiProperty({ type: [EarthPlanSourceDto] }) sources: EarthPlanSourceDto[];
+// Fin de EarthPlanDto.
 }
 
 // Expression régulière des identifiants de couche valides, exportée pour être réutilisée ailleurs.
