@@ -44,6 +44,7 @@ Ce document décrit l'architecture du moteur atmosphérique, ce que contient le 
 | LightningEngine, lot 3 | Xweather Lightning (réseau Vaisala) : API pour les impacts, Raster Maps (`lightning-strikes`) pour la couche mondiale | Impacts des 5 dernières minutes dans 100 km autour du point visé : position, heure, nature (nuage-sol ou intra-nuage), courant de crête et polarité, capteurs, chi². Fréquence, densité par km², zones actives | Couche mondiale des impacts récents vue de loin. De près, un point à chaque impact mesuré, puis une lueur et un éclair ramifié **procéduraux**, rejoués ×10 dans l'ordre réel |
 | PrecipitationEngine, lot 4 | Rain Viewer, API publique Weather Maps (composite des radars au sol), sans clé | Réflectivité (dBZ) de la pluie et de la neige, retrouvée pixel par pixel à partir de la table officielle des couleurs « Universal Blue » (tuiles demandées sans lissage). Couverture radar. Images des 2 dernières heures, toutes les 10 minutes | Vue mondiale (1 024 px) et bloc de détail de 2,4 km par pixel autour du point visé. Couleurs calculées par le shader à partir de la mesure ; bords lissés sans inventer de pluie faible. Animation des 50 dernières minutes (images passées, jamais une prévision). Ligne de la limite de portée des radars ; zones sans radar légèrement assombries |
 | StormEngine, lot 4 | Cellules **estimées** d'après les mêmes images radar. NOAA NWS : avertissements officiels d'orages violents et de tornades (`api.weather.gov/alerts/active`), sans clé | Cellule : zone d'au moins 40 dBZ avec un noyau d'au moins 45 dBZ, sur la grille mondiale de 2 048 px (environ 20 km par pixel à l'équateur). Suivie sur 3 images (20 minutes) : persistance, trajectoire, déplacement estimé. Avertissement : zone, durée, grêle et rafales attendues, détection (radar ou observé), déplacement publié | Anneau à la taille de la cellule, coloré selon son maximum ; en tirets si elle n'est vue que sur une image ; flèche du déplacement estimé sur 30 minutes. Contour des avertissements (rouge : tornade ; jaune : orage violent ; doublé : observé) |
+| AerosolEngine, lot 5 | **Observé** : NASA GIBS, images quotidiennes de l'épaisseur optique VIIRS Deep Blue (NOAA-20, NOAA-21) et de l'indice d'aérosols absorbants OMPS (NOAA-20, NOAA-21), sans clé. **Prévu** : Copernicus CAMS, poussières, par le service WMS public de l'ECMWF (jeton « public »), sans clé | Valeurs retrouvées pixel par pixel grâce à la table de couleurs officielle de chaque couche (format GIBS Colormap 1.3), pour le jour et la veille, sur une grille de 2 048 × 1 024 (environ 20 km). Zones de forte charge : AOD d'au moins 0,6 avec un noyau d'au moins 1 ; leur nature (absorbante ou non) est estimée d'après l'indice OMPS. Prévision des poussières toutes les 6 h sur 48 h | Mesure colorée par le shader : l'air pur reste transparent ; aucune couleur là où rien n'est mesuré ; mesure de la veille pâlie. Prévision posée telle que publiée, animée avec un fondu, avec sa légende officielle |
 | AtmosphericEventManager | Toutes les sources ci-dessus | Format commun, déduplication, exclusions, contrôle | Sans objet |
 
 Le lot 1 ajoute aussi la catégorie **Atmosphère** dans Paramètres. On y trouve :
@@ -51,6 +52,7 @@ Le lot 1 ajoute aussi la catégorie **Atmosphère** dans Paramètres. On y trouv
 - les interrupteurs Incendies et Cyclones, chacun avec son opacité et son intensité ;
 - la fenêtre de temps des incendies ;
 - depuis le lot 4, les interrupteurs Précipitations (radar) et Orages : opacité, intensité, animation, limite de portée des radars, légendes et mention de Rain Viewer ;
+- depuis le lot 5, l'interrupteur Aérosols. Il propose trois produits : épaisseur optique et indice absorbant (observés), poussières (prévision CAMS animée). Chacun a sa légende et ses mentions ;
 - la liste des calques à venir.
 
 Routes du serveur, sous `/api/v1/atmosphere` :
@@ -61,6 +63,9 @@ Routes du serveur, sous `/api/v1/atmosphere` :
 - `radar` : images disponibles et codage des tuiles (lot 4) ;
 - `radar/{id}/{z}/{x}/{y}` : tuile décodée, PNG RVB dont le rouge porte la pluie, le vert la neige (code = dBZ + 11, 0 = aucun écho) et le bleu la couverture radar (lot 4) ;
 - `storms` : cellules estimées et avertissements officiels (lot 4) ;
+- `aerosols` : produits observés, zones de forte charge, heures de la prévision (lot 5) ;
+- `aerosols/observed/{aod|ai}` : image décodée, PNG RVB dont le rouge porte la mesure du jour et le vert celle de la veille (code = 1 + valeur × 50 ; 0 = aucune mesure) (lot 5) ;
+- `aerosols/forecast/{heure}` et `aerosols/forecast/legend` : prévision CAMS des poussières et sa légende (lot 5) ;
 - `events?types=&bbox=&limit=` : événements au format commun ;
 - `providers` ;
 - `health`.
@@ -80,12 +85,18 @@ Routes du serveur, sous `/api/v1/atmosphere` :
   - Une cellule convective est une **estimation** (`status: 'estimé'`, `confirmed: false`) : le radar ne voit pas la foudre, et une forte réflectivité peut venir de grêle fondante ou d'un écho parasite. Une cellule vue sur une seule image porte un drapeau et s'affiche en tirets.
   - Un avertissement du NWS est une **confirmation officielle** (`confirmed: true`) ; il est « observé » si le NWS indique un phénomène observé, « estimé » s'il est indiqué par le radar.
   - Hors de portée des radars (océans, une grande partie de l'Afrique et de l'Asie centrale), **rien n'est dessiné** : l'absence d'écho n'y veut pas dire l'absence de pluie, et ces zones sont assombries.
+- **Aérosols mesurés ou prévus (lot 5).**
+  - L'épaisseur optique et l'indice absorbant sont des mesures satellite (statut « observé »).
+  - La nature d'une zone de forte charge (poussières ou fumées, ou bien pollution, brume, sel marin) est **estimée** d'après l'indice OMPS. Elle est rangée dans un drapeau et dans `details.natureStatus`.
+  - La prévision CAMS est une sortie de modèle. Elle n'est jamais mélangée aux mesures à l'écran et sa légende le dit.
+  - Sous les nuages, la nuit et sur la neige, l'épaisseur optique n'est pas mesurée : rien n'y est dessiné.
 - **Symbole ou géométrie mesurée.** Quand le NHC publie les rayons de vent, le tourbillon prend le rayon moyen des vents de 34 nœuds. Sinon, sa taille est un symbole par catégorie, de 150 à 440 km de rayon. Le sens de rotation est physique.
 
 ### Ce que les sources du lot 1 ne permettent pas
 
 - **Prévisions hors des bassins du NHC.** Pacifique Ouest, océan Indien et hémisphère sud (JTWC, JMA, ECMWF) : aucune source keyless au format vérifiable n'est branchée. Ces cyclones restent affichés sans trajectoire prévue ni rayons de vent.
-- **Panaches de fumée.** Il faut les aérosols du CAMS.
+- **Fumées et pollution prévues.** Seules les poussières sont prévues : le service WMS public de CAMS les publie sous un nom de couche vérifié. Les fumées, les sulfates et les particules PM2,5 demanderaient l'accès par l'Atmosphere Data Store (clé `CAMS_ADS_KEY`), qui reste à brancher.
+- **Valeurs de la prévision.** Les images CAMS sont affichées telles que publiées : leurs couleurs ne sont pas reconverties en valeurs.
 - **Prévision immédiate des précipitations.** Rain Viewer l'a retirée de l'accès gratuit le 1er janvier 2026 ; seules les images passées sont animées.
 - **Orages hors de portée des radars**, et avertissements officiels hors des États-Unis (MeteoAlarm décrit ses zones par des codes de région, sans contour : non branché).
 - **Cyclones hors saison.** Un cyclone dont la dernière position date de plus de 36 h est écarté et listé avec sa raison. Le 15 novembre 2026, par exemple, Cempaka et Pena n'avaient plus de position récente.
@@ -99,7 +110,8 @@ Routes du serveur, sous `/api/v1/atmosphere` :
 | 3 | LightningEngine (repli) | NOAA GOES GLM, EUMETSAT MTG-LI, The Weather Company, AccuWeather | GLM : NetCDF public. LI : compte EUMETSAT. Les deux autres : clés `TWC_API_KEY` et `ACCUWEATHER_API_KEY` |
 | 4 (livré) | PrecipitationEngine et StormEngine | Rain Viewer (radar mondial, sans clé), NOAA NWS (avertissements, sans clé) | Accès gratuit de Rain Viewer : usage personnel ou éducatif, mention obligatoire, niveau 7 au plus, 100 requêtes par minute et par adresse IP, ni prévision ni satellite |
 | 4 | PrecipitationEngine (repli) | WeatherAPI Radar, EUMETNET OPERA, NOAA MRMS | `WEATHERAPI_KEY`, accord OPERA, lecture GRIB2 pour MRMS |
-| 5 | AerosolEngine | Copernicus CAMS, NASA Earthdata (AOD de MODIS et VIIRS) | `CAMS_ADS_KEY`, `EARTHDATA_TOKEN` |
+| 5 (livré) | AerosolEngine | NASA GIBS (VIIRS Deep Blue, OMPS), Copernicus CAMS par le WMS public de l'ECMWF | Aucune clé |
+| 5 | AerosolEngine (suite) | Copernicus CAMS par l'Atmosphere Data Store (valeurs : fumées, sulfates, PM2,5), NASA Earthdata | `CAMS_ADS_KEY`, `EARTHDATA_TOKEN` |
 | 6 | AtmosphericFlowEngine | Open-Meteo, vents par niveau de pression (déjà utilisé pour le flux des nuages) | Grille par altitude, rendu vectoriel 3D animé |
 
 Ces fournisseurs sont déjà inscrits dans le registre avec `implemented: false`. `/atmosphere/providers` indique lesquels ont leurs clés.
@@ -116,6 +128,8 @@ Ces fournisseurs sont déjà inscrits dans le registre avec `implemented: false`
 | Xweather Lightning | Commerciale (abonnement, option foudre) | Selon l'abonnement : 1 000 impacts et 100 km par requête en accès standard | 1 min par cellule d'un demi-degré, partagée ; couche mondiale toutes les 2 min (16 tuiles) |
 | Rain Viewer, Weather Maps API | Gratuite pour un usage personnel ou éducatif ; mention « Rain Viewer » obligatoire (fenêtre des sources et légende, avec lien) | 100 requêtes par minute et par adresse IP : le serveur s'en tient à 80 et garde chaque tuile le temps de vie de l'image (2 h) | Index toutes les 5 min. Une nouvelle image toutes les 10 min coûte 4 tuiles (vue mondiale) et 16 tuiles (détection des cellules) ; un bloc de détail, 4 tuiles par image |
 | NOAA NWS, avertissements | Domaine public | API publique sans clé (User-Agent demandé) | 2 min |
+| NASA GIBS, VIIRS Deep Blue et OMPS | Données NASA libres, mention demandée | Service public sans clé | Image du jour relue toutes les heures (les orbites s'ajoutent), veille toutes les 12 h ; 8 images de 2 048 × 1 024 au plus par heure ; tables de couleurs une fois par jour |
+| Copernicus CAMS, WMS public de l'ECMWF | CC BY 4.0 pour les couches ouvertes ; mention « Contains modified Copernicus Atmosphere Monitoring Service information » | Service public, jeton « public » | 9 images (48 h) gardées 3 h ; légende gardée 24 h |
 
 Les mentions s'affichent dans la fenêtre des sources quand un calque est allumé.
 
@@ -129,7 +143,8 @@ Les mentions s'affichent dans la fenêtre des sources quand un calque est allum�
   - le cache, les tuiles, la limite de débit et le registre ;
   - la lecture et l'écriture du format PNG (cinq filtres, palette et transparence), la table « Universal Blue » et le décodage des tuiles radar ;
   - la détection des cellules (seuils, taille minimale, antiméridien), leur suivi et leur format commun ;
-  - la lecture des avertissements du NWS (annulations, exercices, expirations, zones absentes, déplacement publié).
+  - la lecture des avertissements du NWS (annulations, exercices, expirations, zones absentes, déplacement publié) ;
+  - les aérosols : tables de couleurs GIBS (intervalles, entrées sans donnée), adresse de la table dans la description WMTS, décodage des images, réunion des satellites, zones de forte charge et nature estimée, heures et adresses de la prévision CAMS.
 
   Elles s'écrivent comme des specs jest. Pour les lancer : `npm test` dans `backend/`.
-- **Navigateur.** Les tests couvrent `fireMath`, `cycloneMath`, `lightningMath`, `radarMath` et `atmosphereSettings`, avec le lanceur `node --test`.
+- **Navigateur.** Les tests couvrent `fireMath`, `cycloneMath`, `lightningMath`, `radarMath`, `aerosolMath` et `atmosphereSettings`, avec le lanceur `node --test`.
