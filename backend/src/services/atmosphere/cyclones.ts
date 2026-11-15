@@ -4,6 +4,8 @@ import { AtmosphericEvent, Provenance, combineConfidence, haversineKm, makeEvent
 import { CycloneFix } from './cyclone-sources';
 // Importe les trajectoires observées (EONET).
 import { StormTrack, TrackPoint } from './eonet';
+// Importe la prévision officielle au format ATCF.
+import { AtcfForecast } from './atcf';
 
 // CycloneEngine, partie données (sans NestJS, donc testable seule) : réunit les lectures de plusieurs fournisseurs
 // (trajectoires EONET/JTWC, relevés NHC et GDACS) en un événement par cyclone, sans doublon, avec :
@@ -238,4 +240,65 @@ export function mergeCyclones(tracks: StormTrack[], fixes: CycloneFix[], fetched
   // Renvoie les cyclones et les exclusions.
   return out;
 // Fin de mergeCyclones.
+}
+
+/** Adresse du fichier ATCF de la prévision officielle du NHC pour un cyclone (« al052026 »). */
+// Fonction nhcForecastUrl : l'identifiant ATCF.
+export const nhcForecastUrl = (id: string) => `https://ftp.nhc.noaa.gov/atcf/fst/${id.toLowerCase()}.fst`;
+/** Âge maximal d'une prévision attachée : 18 heures (le NHC en publie une toutes les 6 heures). */
+// Âge maximal : 18 heures.
+export const FORECAST_MAX_AGE_MS = 18 * 3_600_000;
+
+/**
+ * Ajoute à chaque cyclone suivi par le NHC sa prévision officielle (statut « prévu ») et, à l'échéance 0, les rayons de
+ * vent de l'analyse (statut « estimé » : extension maximale des vents de 34, 50 et 64 nœuds par quadrant). Les
+ * prévisions trop anciennes ne sont pas attachées : une alerte le signale. Rien n'est ajouté sans prévision lue.
+ */
+// Fonction attachForecasts : cyclones, prévisions lues, heure de lecture et instant de référence.
+export function attachForecasts(cyclones: AtmosphericEvent[], forecasts: AtcfForecast[], fetchedAt: string, now: number): AtmosphericEvent[] {
+  // Pour chaque cyclone :
+  return cyclones.map((c) => {
+    // identifiants NHC de ses provenances ;
+    const ids = c.sources.filter((s) => s.provider === 'nhc' && s.sourceId).map((s) => (s.sourceId as string).toLowerCase());
+    // sa prévision : même identifiant, sinon même nom ;
+    const fc = forecasts.find((f) => ids.includes(f.id)) ?? (c.name ? forecasts.find((f) => f.name && normalizeStormName(f.name) === normalizeStormName(c.name as string)) : undefined);
+    // aucune : inchangé ;
+    if (!fc || !fc.points.length) return c;
+    // trop ancienne : signalée, pas attachée ;
+    if (now - fc.issuedAt > FORECAST_MAX_AGE_MS) return { ...c, flags: [...c.flags, `prévision NHC périmée (${Math.round((now - fc.issuedAt) / 3_600_000)} h)`] };
+    // échéance 0 : l'analyse ;
+    const analysis = fc.points.find((p) => p.tau === 0);
+    // heure de base, en ISO ;
+    const issued = new Date(fc.issuedAt).toISOString();
+    // cyclone complété (début).
+    return {
+      // Champs du cyclone.
+      ...c,
+      // Provenance de la prévision ajoutée.
+      sources: [...c.sources, { provider: 'nhc-atcf', sourceId: fc.id, url: nhcForecastUrl(fc.id), observedAt: issued, fetchedAt }],
+      // Fin de validité : la dernière échéance prévue.
+      validTo: new Date(fc.points[fc.points.length - 1].t).toISOString(),
+      // Détails (début).
+      details: {
+        // Détails du cyclone.
+        ...c.details,
+        // Rayons de vent de l'analyse (km, quadrants NE, SE, SO, NO), estimés par le centre de prévision.
+        windRadiiKm: analysis && Object.keys(analysis.radiiKm).length ? analysis.radiiKm : null,
+        // Statut et heure des rayons.
+        windRadiiStatus: analysis && Object.keys(analysis.radiiKm).length ? 'estimé' : null, windRadiiAt: analysis ? issued : null,
+        // Prévision officielle : statut, émetteur, heure de base et échéances (début).
+        forecast: {
+          // Statut et émetteur.
+          status: 'prévu', provider: 'nhc-atcf', issuedAt: issued,
+          // Échéances : heure, position, vent, catégorie, pression et rayons de vent.
+          points: fc.points.map((p) => ({ tau: p.tau, t: p.t, lon: p.lon, lat: p.lat, windKt: p.windKt, category: saffirSimpson(p.windKt).code, pressureMb: p.pressureMb, type: p.type, radiiKm: p.radiiKm })),
+        // Fin de la prévision.
+        },
+      // Fin des détails.
+      },
+    // Fin du cyclone.
+    };
+  // Fin du parcours.
+  });
+// Fin de attachForecasts.
 }
