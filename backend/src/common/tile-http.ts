@@ -11,21 +11,25 @@ import { createHash } from 'node:crypto';
  *    tuile qu'il a et la vérifie en arrière-plan (le plus souvent par un 304), au lieu d'attendre le réseau ;
  *  - `immutable` pour les mosaïques qui ne changent pas : aucune revérification pendant la durée de cache ;
  *  - `Content-Length` connu d'avance : pas d'envoi par morceaux.
- * Les réponses sont publiques (`public`) : un cache partagé placé devant le service (CDN) peut les garder.
+ * Les réponses sont publiques (`public`) : un cache partagé placé devant le service (CDN) peut les garder. Exception :
+ * l'imagerie de la Terre relayée (`no-store`), jamais gardée nulle part.
  */
 
 /** Durées de cache d'une tuile, en secondes. */
-// Forme d'une règle de cache : durée de validité, durée facultative d'affichage immédiat avec vérification, et marque facultative « immuable ».
-export interface TileCachePolicy { maxAge: number; staleWhileRevalidate?: number; immutable?: boolean }
+// Forme d'une règle de cache : durée de validité, durée facultative d'affichage immédiat avec vérification, marque facultative « immuable », et marque facultative « jamais gardée ».
+export interface TileCachePolicy { maxAge: number; staleWhileRevalidate?: number; immutable?: boolean; noStore?: boolean }
 
 // Nombre de secondes dans un jour.
 export const DAY_S = 86_400;
-/** Imagerie de la Terre (meilleure source) : une semaine, puis un mois d'affichage immédiat avec vérification. */
-// Terre : 7 jours, puis 30 jours d'affichage immédiat avec vérification.
-export const EARTH_TILE: TileCachePolicy = { maxAge: 7 * DAY_S, staleWhileRevalidate: 30 * DAY_S };
-/** Imagerie de la Terre servie par une source de repli : dix minutes, pour que la meilleure image revienne. */
-// Terre servie par une source de repli : 600 secondes.
-export const EARTH_FALLBACK_TILE: TileCachePolicy = { maxAge: 600 };
+/**
+ * Imagerie de la Terre relayée par ce serveur (meilleure source ou repli) : jamais gardée, ni sur ce serveur ni sur
+ * l'appareil. Le navigateur charge les tuiles chez leurs fournisseurs ; le relais ne sert que de passage.
+ */
+// Terre : jamais gardée.
+export const EARTH_TILE: TileCachePolicy = { maxAge: 0, noStore: true };
+/** Imagerie de la Terre servie par une source de repli : même règle, jamais gardée. */
+// Terre servie par une source de repli : jamais gardée.
+export const EARTH_FALLBACK_TILE: TileCachePolicy = { maxAge: 0, noStore: true };
 /** Mosaïques des satellites et des géantes gazeuses : figées. */
 // Satellites et géantes gazeuses : 7 jours, immuable.
 export const SATELLITE_TILE: TileCachePolicy = { maxAge: 7 * DAY_S, immutable: true };
@@ -41,6 +45,8 @@ export const CLOUD_TILE: TileCachePolicy = { maxAge: 900 };
 
 // Fonction tileCacheControl : écrit l'en-tête Cache-Control d'une règle.
 export function tileCacheControl(policy: TileCachePolicy): string {
+  // Règle « jamais gardée » : « no-store » seul.
+  if (policy.noStore) return 'no-store';
   // Commence par « public » et « max-age » : la durée arrondie à l'entier inférieur, jamais négative.
   const parts = ['public', `max-age=${Math.max(0, Math.floor(policy.maxAge))}`];
   // Règle immuable : ajoute « immutable ».

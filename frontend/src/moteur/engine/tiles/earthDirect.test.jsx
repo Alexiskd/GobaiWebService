@@ -8,6 +8,8 @@ import {
   ColorStats, DirectBreaker, EmptyMemo, LevelGate, MissingMemo, THUMB, applyGain, blankLike, blankNear, blankRatio, blankZone, candidatesAt, composeOver,
   // Les fonctions de mosaïque, de découpe, de choix des sources et de validation du plan.
   composeZoned, cropRect, farCandidatesAt, fillDirect, isBlankPixels, nextAttempt, tileTouches, validPlan,
+  // Le choix de la source par cellule hexagonale.
+  cellCandidates, cellCenterLonLat, selectionFrequency,
 // Fin de la liste : le module earthDirect.
 } from './earthDirect';
 
@@ -527,5 +529,25 @@ test('pose d’une couche : le fond ne reste que dans la zone sans image, un pix
 test('correction de couleur appliquée à des pixels, bornée', () => {
   // Un pixel corrigé et borné.
   assert.deepEqual([...applyGain(Uint8ClampedArray.from([100, 200, 50, 255]), [1.5, 1.5, 1], [0.1, 0, -0.5])], [176, 255, 0, 255]);
+// Fin du test.
+});
+
+// Test : la source est choisie pour la cellule hexagonale de la tuile.
+test('choix de la source par cellule hexagonale', () => {
+  // Fréquence du découpage de choix : 2 au plus bas, puis doublée à chaque niveau à partir du niveau 4.
+  assert.deepEqual([selectionFrequency(0), selectionFrequency(4), selectionFrequency(5), selectionFrequency(12)], [2, 2, 4, 512]);
+  // Centre de la cellule d'une tuile de Paris au niveau 13 : à moins de 0,1° de Paris.
+  const [clon, clat] = cellCenterLonLat(...tileAt(2.35, 48.85, 13));
+  // Écart en longitude et en latitude.
+  assert.ok(Math.abs(clon - 2.35) < 0.1 && Math.abs(clat - 48.85) < 0.1);
+  // Tuile à cheval sur les emprises de la Suisse et de la Bavière, dont la cellule est en Bavière (hors de la Suisse) :
+  // la Bavière passe devant la Suisse, Sentinel-2 reste après.
+  assert.deepEqual(ids(cellCandidates(SOURCES, 12, 2167, 1432)), ['de-by', 'ch', 'sentinel2']);
+  // La même tuile, dans l'ordre de la table seule : la Suisse d'abord.
+  assert.deepEqual(ids(candidatesAt(SOURCES, 12, 2167, 1432)), ['ch', 'de-by', 'sentinel2']);
+  // Au cœur de la France, rien à ranger : l'IGN seule au niveau 17.
+  assert.deepEqual(ids(cellCandidates(SOURCES, ...tileAt(2.35, 48.85, 17))), ['ign']);
+  // Le choix par cellule ne retire ni n'ajoute aucune source.
+  assert.deepEqual(ids(cellCandidates(SOURCES, 12, 2167, 1432)).sort(), ids(candidatesAt(SOURCES, 12, 2167, 1432)).sort());
 // Fin du test.
 });

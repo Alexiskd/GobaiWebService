@@ -30,10 +30,10 @@ function fakeRes() {
 describe('envoi des tuiles', () => {
   // Test de l'en-tête Cache-Control.
   it('Cache-Control : durée, affichage immédiat puis vérification, ou immuable', () => {
-    // Terre : une semaine (604 800 s), puis un mois (2 592 000 s) d'affichage immédiat avec vérification.
-    expect(tileCacheControl(EARTH_TILE)).toBe('public, max-age=604800, stale-while-revalidate=2592000');
-    // Terre, source de repli : dix minutes.
-    expect(tileCacheControl(EARTH_FALLBACK_TILE)).toBe('public, max-age=600');
+    // Terre relayée : jamais gardée, ni sur le serveur ni sur l'appareil.
+    expect(tileCacheControl(EARTH_TILE)).toBe('no-store');
+    // Terre, source de repli : même règle.
+    expect(tileCacheControl(EARTH_FALLBACK_TILE)).toBe('no-store');
     // Satellites : une semaine, immuable.
     expect(tileCacheControl(SATELLITE_TILE)).toBe('public, max-age=604800, immutable');
     // Lune : un an (31 536 000 s), immuable.

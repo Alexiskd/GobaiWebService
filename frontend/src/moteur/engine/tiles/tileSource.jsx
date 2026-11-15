@@ -12,6 +12,8 @@ import {
 } from './earthDirect';
 // Importe la lecture et l'enregistrement de la description d'une couche, depuis layerInfoCache.
 import { readLayerInfo, saveLayerInfo } from './layerInfoCache';
+// Importe la description complétée par la table de priorité des sources, depuis earthPlan.
+import { withPlan } from './earthPlan';
 // Importe le partage avec annulation réelle, le délai adaptatif, la limite par serveur et les compteurs, depuis netLoads.
 import { AdaptiveTimeout, HostGate, NET_STATS, SharedLoads, hostOf } from './netLoads';
 // Importe la lecture des pixels hors du fil principal et la mémoire des fichiers d'origine, depuis tilePixels.
@@ -303,6 +305,9 @@ export class TileSource {
     if (!force && Date.now() - this.lastRefresh < MIN_REFRESH_GAP_MS) return Promise.resolve();
     // Demande la description à l'API.
     this.refreshing = this.api.layer(this.layerId)
+      // Couche unique de la Terre : sa description donne l'adresse de la table de priorité des sources, lue ensuite ;
+      // la description en est complétée (plan direct). Table illisible : tout passe par le relais du serveur.
+      .then((info) => (info?.plan && this.api.earthPlan ? this.api.earthPlan().then((plan) => withPlan(info, plan), () => withPlan(info, null)) : info))
       // À la réponse (début).
       .then((info) => {
         // Source libérée entre-temps : rien.

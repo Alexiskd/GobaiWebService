@@ -7,6 +7,7 @@ import { get, resolveApiUrl } from './client';
  *   layer(id)               → couche + urlTemplate + expiresAt + attribution
  *   attribution(id, bounds) → { copyright, provider } pour la zone visible
  *   lidarCities()           → { altitudeM, items: [{ name, region, lon, lat }] } villes du LiDAR HD
+ *   earthPlan()             → table de priorité des sources de la Terre { version, relay, colorMatch, sources }
  */
 // API des tuiles :
 export const tilesApi = {
@@ -23,5 +24,7 @@ export const tilesApi = {
     get(`/tiles/layers/${encodeURIComponent(id)}/attribution`, { signal, query: { zoom, north, south, east, west } }),
   // lidarCities : les villes de France où le LiDAR HD est proposé, et l'altitude d'arrivée conseillée.
   lidarCities: (signal) => get('/tiles/lidar-hd/cities', { signal }),
+  // Table de priorité des sources de la Terre (gardée un jour par le navigateur, comme le serveur l'indique).
+  earthPlan: (signal) => get('/tiles/earth/plan', { signal }),
 // Fin de l'API.
 };

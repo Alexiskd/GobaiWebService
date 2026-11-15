@@ -81,6 +81,8 @@ export const API_DOC_GROUPS = [
       ['GET', '/tiles/layers/{layerId}/attribution', 'Sources de données de la zone visible, à afficher avec la carte.'],
       ['GET', '/tiles/locate', 'Quelle tuile contient ce point ?'],
       ['GET', '/tiles/earth/sources', 'Sources d’imagerie de la couche unique de la Terre.'],
+      // La table de priorité des sources de la Terre, gardée un jour par le navigateur.
+      ['GET', '/tiles/earth/plan', 'Table de priorité des sources de la Terre : le navigateur choisit la source de chaque cellule hexagonale.'],
       ['GET', '/tiles/earth/{layerId}/{z}/{x}/{y}', 'Tuile satellite HD de la Terre.'],
       ['GET', '/tiles/moon/{layerId}/{z}/{x}/{y}', 'Tuile de la Lune.'],
       ['GET', '/tiles/satellite/{body}/{z}/{x}/{y}', 'Tuile d’un satellite ou d’une géante gazeuse (paramètre layer : couche NASA Trek).'],
