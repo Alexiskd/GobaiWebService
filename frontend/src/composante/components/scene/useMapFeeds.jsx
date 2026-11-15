@@ -5,6 +5,21 @@ import { earthCloudTileUrl, fetchEarthCloudCover, fetchBorders, fetchCityLabels,
 // Importe loadCloudMosaic, qui assemble la mosaïque de nuages.
 import { loadCloudMosaic } from '@/moteur/engine/earthCloudMosaic';
 
+/**
+ * Mention des nuages de la Terre dans les sources, selon ce qui est affiché : image satellite, couverture calculée par
+ * les modèles météo, ou nuages simulés quand aucune donnée réelle n'est arrivée (ce ne sont pas les nuages du jour).
+ */
+// Déclare et exporte les mentions des trois sources de nuages (début).
+export const CLOUD_SOURCE_TEXT = {
+  // Image satellite.
+  satellite: 'Nuages : images satellite du moment (Xweather)',
+  // Couverture nuageuse des modèles météo.
+  model: 'Nuages : couverture nuageuse calculée par les modèles météo (Open-Meteo)',
+  // Nuages simulés.
+  simulated: 'Nuages : simulés, aucune donnée réelle reçue (ce ne sont pas les nuages du jour)',
+// Fin des mentions.
+};
+
 // Rafraîchissement des nuages : toutes les heures.
 const CLOUDS_REFRESH_MS = 60 * 60_000; // les nuages réels changent d'heure en heure
 // Rafraîchissement du vent : toutes les 3 heures.
@@ -36,6 +51,8 @@ function refreshWhileVisible(load, everyMs) {
 export function useMapFeeds({ engine, push }) {
   // État : informations sur les villes (attribution et nombre).
   const [cityInfo, setCityInfo] = useState(null);
+  // État : source des nuages affichés (« satellite », « model » ou « simulated »), simulés tant que rien n'est arrivé.
+  const [cloudSource, setCloudSource] = useState('simulated');
   // État : la liste des villes.
   const [worldCities, setWorldCities] = useState([]); // ≈ 7 300 villes Natural Earth, aussi pour la recherche
   // État : informations sur les frontières (attribution).
@@ -86,10 +103,10 @@ export function useMapFeeds({ engine, push }) {
     const ctrl = new AbortController();
     // load : assemble la mosaïque de nuages à partir des tuiles.
     const load = () => loadCloudMosaic(earthCloudTileUrl, ctrl.signal)
-      // Réussite : donne l'image au moteur.
-      .then((canvas) => engine.setEarthCloudMosaic(canvas))
-      // Échec : charge à la place la couverture nuageuse et la donne au moteur.
-      .catch(() => fetchEarthCloudCover(ctrl.signal).then((grid) => engine.setEarthCloudCover(grid)))
+      // Réussite : donne l'image au moteur ; acceptée, elle devient la source des nuages.
+      .then((canvas) => { if (engine.setEarthCloudMosaic(canvas)) setCloudSource('satellite'); })
+      // Échec : charge à la place la couverture nuageuse et la donne au moteur ; acceptée, elle devient la source.
+      .catch(() => fetchEarthCloudCover(ctrl.signal).then((grid) => { if (engine.setEarthCloudCover(grid)) setCloudSource('model'); }))
       // Si cela échoue aussi, rien.
       .catch(() => {}); // chargement automatique : échec silencieux
     // Premier chargement immédiat.
@@ -121,6 +138,6 @@ export function useMapFeeds({ engine, push }) {
   }, [engine]);
 
   // Renvoie les informations sur les villes et les frontières, et la liste des villes.
-  return { cityInfo, bordersInfo, worldCities };
+  return { cityInfo, bordersInfo, worldCities, cloudSource };
 // Fin de useMapFeeds.
 }

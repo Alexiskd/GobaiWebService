@@ -93,7 +93,9 @@ import { useDocumentViewport } from './scene/useDocumentViewport';
 // Importe le crochet de l'affichage de la Terre.
 import { useEarthDisplay } from './scene/useEarthDisplay';
 // Importe le crochet des données de carte (villes, frontières, nuages, vent).
-import { useMapFeeds } from './scene/useMapFeeds';
+import { CLOUD_SOURCE_TEXT, useMapFeeds } from './scene/useMapFeeds';
+// Importe le réglage de la pollution lumineuse de la Terre, pour sa mention dans les sources.
+import { EARTH_NIGHT_LIGHTS } from '@/moteur/engine/tiles/nightLights';
 // Importe le crochet des données lunaires.
 import { useMoonFeeds } from './scene/useMoonFeeds';
 // Importe le crochet des calques de la Lune.
@@ -439,7 +441,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Régions actives du Soleil : les éruptions en 3D partent des vraies régions.
   useSunFeeds(engine);
   // Villes, frontières et liste des villes du monde.
-  const { cityInfo, bordersInfo, worldCities } = useMapFeeds({ engine, push });
+  const { cityInfo, bordersInfo, worldCities, cloudSource } = useMapFeeds({ engine, push });
   // Commandes envoyées au moteur.
   const actions = useSceneActions({ engineRef, setAuto: camera.setAuto });
   // Ma position : suivie en direct (point bleu) et zoom d'arrivée, depuis l'icône ⌖ de la navball ou les paramètres.
@@ -853,6 +855,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
           earth.showCityNames && cityInfo ? cityInfo.attribution : '',
           // Celle du ciel, s'il est affiché.
           camera.sky ? SKY_ATTRIBUTION : '',
+          // Celle de la pollution lumineuse, si elle est allumée (lumières de la nuit ou vue de toute la Terre).
+          camera.nightLights || camera.lightView ? EARTH_NIGHT_LIGHTS.attribution : '',
+          // Celle des nuages de la Terre, si les atmosphères sont affichées : réels ou simulés.
+          camera.atmospheres ? CLOUD_SOURCE_TEXT[cloudSource] : '',
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
         // Ouverte si le panneau courant est celui des sources.
