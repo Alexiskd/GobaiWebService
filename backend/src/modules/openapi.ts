@@ -19,6 +19,8 @@ const TAGS: [string, string][] = [
   ['Mars', 'Catalogue des couches de Mars et passerelle de tuiles.'],
   ['Mercure', 'Catalogue des couches de Mercure et passerelle de tuiles.'],
   ['Volcans', 'Volcans en éruption dans le monde, en direct.'],
+  // Les phénomènes atmosphériques de la Terre.
+  ['Atmosphère', 'Phénomènes atmosphériques en direct au format commun : incendies (points chauds et incendies confirmés), cyclones ; registre des fournisseurs et contrôle des données.'],
   // La carte de la Terre.
   ['Tuiles', 'Modèle de tuiles simplifié : couches, URL, coordonnées, attribution.'],
   ['LiDAR 3D', 'Nuages LiDAR HD de l’IGN lus en direct (COPC) et servis en vrais points 3D, nœud par nœud.'],
