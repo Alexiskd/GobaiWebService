@@ -94,6 +94,18 @@ export const API_DOC_GROUPS = [
       ['GET', '/tiles/earth-wind', 'Vents réels du moment (Open-Meteo).'],
       ['GET', '/tiles/earth-clouds/cover', 'Couverture nuageuse du moment (Open-Meteo).'],
       ['GET', '/volcanoes', 'Volcans en éruption dans le monde, avec leurs coordonnées (NASA EONET).'],
+      // Moteur atmosphérique : incendies (agrégés, puis par tuile), cyclones, événements au format commun, fournisseurs, contrôle.
+      ['GET', '/atmosphere/fires', 'Incendies : points chauds satellite des 24 h (agrégés) et incendies confirmés (NASA FIRMS, NASA EONET).'],
+      // Détail d'une tuile.
+      ['GET', '/atmosphere/fires/tiles/{tx}/{ty}', 'Points chauds d’une tuile de 10°, un par un.'],
+      // Cyclones.
+      ['GET', '/atmosphere/cyclones', 'Cyclones actifs confirmés : position, vent, catégorie, trajectoire (NOAA NHC, JTWC, GDACS).'],
+      // Événements au format commun.
+      ['GET', '/atmosphere/events', 'Événements atmosphériques au format commun (filtres types, bbox, limit).'],
+      // Registre et contrôle.
+      ['GET', '/atmosphere/providers', 'Registre des fournisseurs : licence, quota, rafraîchissement, présence des clés.'],
+      // Contrôle des calques.
+      ['GET', '/atmosphere/health', 'Contrôle : événements écartés, contradictions entre sources, données périmées.'],
       ['GET', '/borders', 'Frontières des pays et littoraux.'],
       ['GET', '/world-atlas', 'Pays du monde en TopoJSON.'],
     ],

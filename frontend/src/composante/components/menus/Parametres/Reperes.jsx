@@ -3,12 +3,15 @@ import { Group } from '../../ui/Group';
 // Importe Switch, l'interrupteur.
 import { Switch } from '../../ui/Switch';
 
-/** Repères du modèle global : décochés, il ne reste que les astres, sans aucun élément d'indication. */
+/**
+ * Repères du modèle global : décochés, il ne reste que les astres, sans aucun élément d'indication. L'atmosphère des
+ * planètes solides a rejoint la catégorie « Atmosphère » (Atmosphere.jsx).
+ */
 // Déclare et exporte le composant Reperes : l'état et le rappel de chaque repère.
-export function Reperes({ orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky, moonPlaces, onMoonPlaces, atmospheres, onAtmospheres }) {
+export function Reperes({ orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky, moonPlaces, onMoonPlaces }) {
   // Début du rendu.
   return (
-    // Fragment : regroupe les trois groupes.
+    // Fragment : regroupe les deux groupes.
     <>
       {/* Groupe « Repères ». */}
       <Group title="Repères">
@@ -20,12 +23,6 @@ export function Reperes({ orbits, onOrbits, markers, onMarkers, satellites, onSa
         <Switch checked={satellites} onChange={onSatellites} label="Points et noms des satellites naturels" />
         {/* Interrupteur des lieux de la Lune. */}
         <Switch checked={moonPlaces} onChange={onMoonPlaces} label="Lieux de la Lune" hint="Alunissages (Apollo, Chang’e…), mers, cratères" />
-      {/* Fin du groupe. */}
-      </Group>
-      {/* Groupe « Atmosphères ». */}
-      <Group title="Atmosphères">
-        {/* Interrupteur de l'atmosphère des planètes solides. */}
-        <Switch checked={atmospheres} onChange={onAtmospheres} label="Atmosphère des planètes solides" hint="Vénus, Terre et Mars ; décoché : globes nus" />
       {/* Fin du groupe. */}
       </Group>
       {/* Groupe « Univers ». */}

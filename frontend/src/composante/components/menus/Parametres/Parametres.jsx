@@ -10,6 +10,8 @@ import { AstresAffiches } from './AstresAffiches';
 import { Reperes } from './Reperes';
 // Importe les deux sections de cartographie.
 import { Cartographie, CartographieRelief } from './Cartographie';
+// Importe Atmosphere : l'atmosphère des planètes solides et les phénomènes en direct de la Terre.
+import { Atmosphere } from './Atmosphere';
 // Importe la section de la vitesse de rotation.
 import { VitesseRotation } from './VitesseRotation';
 // Importe la section du pilotage au téléphone.
@@ -32,7 +34,8 @@ import { MaPosition } from './MaPosition';
  *  - Cartographie        à plat : noms des villes et des pays, frontières et littoraux, rues et routes
  *  - CartographieRelief  en relief : relief 3D de la Terre, LiDAR HD de l'IGN, points LiDAR 3D
  * Affichage du système solaire :
- *  - Reperes             repères (orbites, points et noms, lieux de la Lune), atmosphères et ciel lointain
+ *  - Atmosphere          atmosphère et nuages des planètes solides, phénomènes en direct (incendies, cyclones)
+ *  - Reperes             repères (orbites, points et noms, lieux de la Lune) et ciel lointain
  * Déplacement :
  *  - VitesseRotation     boutons de vitesse de la rotation automatique autour de l'astre
  *  - PilotageTelephone   sensibilité du pilotage par inclinaison (appareils tactiles à capteurs seulement)
@@ -49,6 +52,8 @@ export function Parametres({
   open, onClose, bodies, onBodyShown, focus, onSelect, kinds, onKind,
   // Les repères, les atmosphères, le relief et les calques de la Terre, avec leurs rappels.
   orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky, moonPlaces, onMoonPlaces, atmospheres, onAtmospheres, relief, onRelief, earthLayers,
+  // Les calques atmosphériques : réglages, modification et textes d'aide.
+  atmosphereLayers,
   // La vitesse de rotation, la rotation en cours, l'aller à un lieu et « Ma position ».
   rotateSpeed, onRotateSpeed, rotating, onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange,
 // Fin de la liste des propriétés.
@@ -73,6 +78,8 @@ export function Parametres({
         <Cartographie {...earthLayers} />
         {/* La cartographie en relief. */}
         <CartographieRelief {...earthLayers} relief={relief} onRelief={onRelief} onGoPlace={onGoPlace} onDone={onClose} />
+        {/* L'atmosphère : nuages des planètes solides et phénomènes en direct. */}
+        <Atmosphere atmospheres={atmospheres} onAtmospheres={onAtmospheres} {...atmosphereLayers} />
         {/* Affichage du système solaire */}
         {/* La section des repères (début de la balise). */}
         <Reperes
@@ -86,8 +93,6 @@ export function Parametres({
           sky={sky} onSky={onSky}
           // Les lieux de la Lune.
           moonPlaces={moonPlaces} onMoonPlaces={onMoonPlaces}
-          // Les atmosphères.
-          atmospheres={atmospheres} onAtmospheres={onAtmospheres}
         // Fin de la section des repères.
         />
         {/* Déplacement */}

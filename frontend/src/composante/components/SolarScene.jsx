@@ -88,6 +88,8 @@ import { useDocumentViewport } from './scene/useDocumentViewport';
 import { useEarthDisplay } from './scene/useEarthDisplay';
 // Importe le crochet des données de carte (villes, frontières, nuages, vent).
 import { CLOUD_SOURCE_TEXT, useMapFeeds } from './scene/useMapFeeds';
+// Importe le crochet du moteur atmosphérique : incendies et cyclones en direct.
+import { useAtmosphere } from './scene/useAtmosphere';
 // Importe le réglage de la pollution lumineuse de la Terre, pour sa mention dans les sources.
 import { EARTH_NIGHT_LIGHTS } from '@/moteur/engine/tiles/nightLights';
 // Importe le crochet des données lunaires.
@@ -437,6 +439,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   useSunFeeds(engine);
   // Villes, frontières et liste des villes du monde.
   const { cityInfo, bordersInfo, worldCities, cloudSource } = useMapFeeds({ engine, push });
+  // Phénomènes atmosphériques en direct : réglages des calques, lectures du serveur, textes d'aide.
+  const atmosphere = useAtmosphere({ engine });
   // Commandes envoyées au moteur.
   const actions = useSceneActions({ engineRef, setAuto: camera.setAuto });
   // Ma position : suivie en direct (point bleu) et zoom d'arrivée, depuis l'icône ⌖ de la navball ou les paramètres.
@@ -863,6 +867,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
           camera.nightLights || camera.lightView ? EARTH_NIGHT_LIGHTS.attribution : '',
           // Celle des nuages de la Terre, si les atmosphères sont affichées : réels ou simulés.
           camera.atmospheres ? CLOUD_SOURCE_TEXT[cloudSource] : '',
+          // Celle des incendies, s'ils sont allumés.
+          atmosphere.settings.fires.on ? 'Incendies : NASA FIRMS (LANCE · VIIRS, MODIS) et NASA EONET' : '',
+          // Celle des cyclones, s'ils sont allumés.
+          atmosphere.settings.cyclones.on ? 'Cyclones : NOAA NHC, JTWC (via NASA EONET), GDACS' : '',
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
         // Ouverte si le panneau courant est celui des sources.
@@ -954,6 +962,16 @@ export function SolarScene({ data, onSettled, covered = false }) {
         atmospheres={camera.atmospheres}
         // Réglage des atmosphères.
         onAtmospheres={camera.setAtmospheres}
+        // Calques atmosphériques en direct (début de l'objet).
+        atmosphereLayers={{
+          // Texte d'aide de l'atmosphère et des nuages : la source des nuages de la Terre.
+          atmospheresHint: `Vénus, Terre et Mars · ${CLOUD_SOURCE_TEXT[cloudSource]} ; décoché : globes nus`,
+          // Réglages des calques et leur modification.
+          settings: atmosphere.settings, onUpdate: atmosphere.update,
+          // Textes d'aide des incendies et des cyclones.
+          fireHint: atmosphere.fireHint, cycloneHint: atmosphere.cycloneHint,
+        // Fin de l'objet.
+        }}
         // Relief.
         relief={camera.relief}
         // Réglage du relief.
