@@ -15,8 +15,7 @@ Calcul fait une fois, hors de l'app, avec ocpy (https://github.com/ocean-colour/
     noires et leurs nuances illisibles (choix d'affichage, comme une image satellite en couleurs naturelles).
 
 Usage (depuis frontend/) : PYTHONPATH=<chemin du dépôt ocpy> python3 scripts/couleur-ocean.py
-(ou pip install ocpy-ocean). Écrit src/moteur/engine/tiles/oceanColourLut.js (navigateur) et
-backend/src/services/export/ocean-colour-lut.ts (modèle 3D de la Terre exporté).
+(ou pip install ocpy-ocean). Écrit src/moteur/engine/tiles/oceanColourLut.js.
 """
 
 # Importe les outils du système (modules, chemins).
@@ -156,11 +155,5 @@ lines = [
 with open(OUT, 'w', encoding='utf-8') as f:
     # Toutes les lignes, séparées par des retours à la ligne.
     f.write('\n'.join(lines))
-# Même table pour le serveur (modèle 3D exporté), typée pour TypeScript.
-OUT_TS = os.path.join(os.path.dirname(__file__), '..', '..', 'backend', 'src', 'services', 'export', 'ocean-colour-lut.ts')
-# Écrit le fichier du serveur : mêmes lignes, avec les types.
-with open(OUT_TS, 'w', encoding='utf-8') as f:
-    # Les types des deux constantes ajoutés.
-    f.write('\n'.join(lines).replace('export const OCEAN_LOG_CHL =', 'export const OCEAN_LOG_CHL: [number, number] =').replace('export const OCEAN_COLOURS =', 'export const OCEAN_COLOURS: Array<[number, number, number]> ='))
 # Affiche quelques couleurs, pour contrôle.
 print('0,01 :', colours[0], '· 0,1 :', colours[18], '· 1 :', colours[36], '· 10 :', colours[54], '· 31,6 :', colours[-1])

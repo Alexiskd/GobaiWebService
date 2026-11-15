@@ -1,8 +1,8 @@
 // Fonction d'appel GET et résolution d'adresse.
 import { get, resolveApiUrl } from './client';
 
-// seafloorUrls : le réglage des fonds marins avec ses adresses rendues absolues (tuiles des fonds, leur secours, chlorophylle).
-const seafloorUrls = (sf) => ({ ...sf, template: resolveApiUrl(sf.template), ...(sf.fallbackTemplate ? { fallbackTemplate: resolveApiUrl(sf.fallbackTemplate) } : {}), ...(sf.chlorophyll ? { chlorophyll: { ...sf.chlorophyll, url: resolveApiUrl(sf.chlorophyll.url) } } : {}) });
+// seafloorUrls : le réglage des fonds marins avec ses adresses rendues absolues (tuiles des fonds, chlorophylle).
+const seafloorUrls = (sf) => ({ ...sf, template: resolveApiUrl(sf.template), ...(sf.chlorophyll ? { chlorophyll: { ...sf.chlorophyll, url: resolveApiUrl(sf.chlorophyll.url) } } : {}) });
 
 /**
  * Tuiles : le serveur décrit les couches et donne un modèle d'URL {z}/{x}/{y} ; les images viennent du fournisseur.

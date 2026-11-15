@@ -505,32 +505,17 @@ export class TileSource {
   // Fin de seaSampleAt.
   }
 
-  /**
-   * Pixels (256 px) de l'image des fonds de la tuile, découpés dans un ancêtre au-delà du niveau `maxZoom` : GEBCO,
-   * sinon la NOAA (`fallbackTemplate`).
-   */
+  /** Pixels (256 px) de l'image des fonds de la tuile, découpés dans un ancêtre au-delà du niveau `maxZoom`. */
   // seaPixelsAt, asynchrone : les pixels des fonds d'une tuile (début).
   async seaPixelsAt(sf, z, x, y) {
-    // Essai de GEBCO (début).
-    try {
-      // Ses pixels.
-      return await this.seaPixelsFrom(sf.template, sf.maxZoom, z, x, y);
-    // En cas d'échec : la NOAA, s'il y a un secours ; sinon l'erreur est relancée.
-    } catch (e) { if (!sf.fallbackTemplate) throw e; return this.seaPixelsFrom(sf.fallbackTemplate, sf.maxZoom, z, x, y); }
-  // Fin de seaPixelsAt.
-  }
-
-  /** Pixels (256 px) d'une image des fonds, d'après son modèle d'adresse, découpés dans un ancêtre au-delà de `maxZoom`. */
-  // seaPixelsFrom, asynchrone : les pixels d'une image des fonds (début).
-  async seaPixelsFrom(template, maxZoom, z, x, y) {
-    // Niveau des fonds, écart avec la tuile, et clé de l'ancêtre (modèle compris : GEBCO et la NOAA sont gardées à part).
-    const gz = Math.min(z, maxZoom), d = z - gz, key = `${template}|${gz}/${x >> d}/${y >> d}`;
+    // Niveau des fonds, écart avec la tuile, et clé de l'ancêtre.
+    const gz = Math.min(z, sf.maxZoom), d = z - gz, key = `${gz}/${x >> d}/${y >> d}`;
     // Image de l'ancêtre, déjà demandée ?
     let p = this.seaImages.get(key);
     // Sinon (début).
     if (!p) {
       // Charge l'image des fonds (sans annulation : elle sert aux tuiles voisines).
-      p = this.sharedImage(fillTemplate(template, { z: gz, x: x >> d, y: y >> d }));
+      p = this.sharedImage(fillTemplate(sf.template, { z: gz, x: x >> d, y: y >> d }));
       // Gardée pour les tuiles suivantes.
       this.seaImages.set(key, p);
       // En cas d'échec : oubliée, pour être redemandée plus tard.
@@ -541,7 +526,7 @@ export class TileSource {
     const im = await p;
     // Ses pixels, ou ceux de la portion couverte par la tuile.
     return this.pixelsAsync(im, 256, d ? cropRect(im.naturalWidth || im.width || 256, d, x, y) : null);
-  // Fin de seaPixelsFrom.
+  // Fin de seaPixelsAt.
   }
 
   /**
