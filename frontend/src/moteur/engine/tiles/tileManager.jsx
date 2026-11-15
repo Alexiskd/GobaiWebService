@@ -8,6 +8,8 @@ import { HOST_GATE, TileSource, loadImage } from './tileSource';
 import { NET_STATS } from './netLoads';
 // Importe la source des tuiles d'altitude et les fonctions de réglage du relief, depuis relief.
 import { ReliefSource, groundFloorRadii, normalizeRelief, oceanChoice, reliefChoice, tuneRelief } from './relief';
+// Importe les lumières de la nuit : la clé et la lecture de leur interrupteur, et leur source.
+import { NIGHT_LIGHTS_KEY, NightLightsSource, nightLightsChoice } from './nightLights';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
 import { xyzToLonLat } from './mercator';
 // Importe TileLayer, la couche de tuiles, depuis tileLayer.
@@ -113,6 +115,9 @@ export class TileManager {
       // Fond des océans creusé et ombré (1) ou mer plate (0) : suit le relief (voir setRelief).
       // Le fond des océans : coupé.
       oceanOn: { value: 0 },
+      // Lumières humaines de la nuit : allumées si l'astre en a (la Terre) et si l'utilisateur ne les a pas coupées.
+      // L'interrupteur des lumières de la nuit.
+      lightsOn: { value: body.nightLights && nightLightsChoice(readLightsChoice()) ? 1 : 0 },
     // Fin des variables uniformes.
     };
     // Relief de l'astre : vraies altitudes (« terrarium ») ou estimation d'après l'image (« image »), ou aucun.
@@ -130,6 +135,8 @@ export class TileManager {
       ? new ReliefSource(this.relief.ocean, reliefIo)
       // sinon aucune.
       : null;
+    // Source des lumières de la nuit, si l'astre en a (la Terre) : créée même coupées, pour pouvoir les rallumer.
+    this.lightsSource = body.nightLights ? new NightLightsSource(body.nightLights) : null;
     // Relief coupé pour l'instant.
     this.reliefOn = false;
     // Dernière mesure de la hauteur du sol : instant et valeur.
@@ -207,6 +214,23 @@ export class TileManager {
     // Renvoie l'état.
     return this.reliefOn;
   // Fin de setRelief.
+  }
+
+  /**
+   * Lumières humaines de la nuit (pollution lumineuse) : allumées ou coupées. Le choix est gardé dans le navigateur
+   * (« gobai:lumieres-nuit ») ; allumées, les tuiles affichées demandent leurs lumières (rien n'est rechargé du fond).
+   */
+  // setNightLights : allume ou coupe les lumières de la nuit ; renvoie l'état (début).
+  setNightLights(on) {
+    // Astre sans lumières : coupées.
+    if (!this.lightsSource) return false;
+    // Garde le choix ; un refus est ignoré.
+    try { globalThis.localStorage?.setItem(NIGHT_LIGHTS_KEY, on ? '1' : '0'); } catch { /* stockage refusé : valable pour la session */ }
+    // Interrupteur du shader.
+    this.uniforms.lightsOn.value = on ? 1 : 0;
+    // Renvoie l'état.
+    return Boolean(on);
+  // Fin de setNightLights.
   }
 
   /**
@@ -353,6 +377,8 @@ export class TileManager {
       reliefSource: this.reliefSource,
       // Source des fonds marins.
       oceanSource: this.oceanSource,
+      // Source des lumières de la nuit.
+      nightLights: this.lightsSource,
       // Tuiles envoyées au GPU par image : 8 sur ordinateur, 4 sur téléphone (pas de saccade).
       // Envois par image : 4 sur téléphone, 8 sinon.
       uploadsPerFrame: small ? 4 : 8,
@@ -631,6 +657,14 @@ export class TileManager {
 // Fin de la classe TileManager.
 }
 
+
+/** Choix des lumières de la nuit gardé dans le navigateur (« gobai:lumieres-nuit » : « 0 » = coupées), ou null. */
+// readLightsChoice : le choix des lumières de la nuit (début).
+function readLightsChoice() {
+  // Le lit dans le stockage local ; null s'il est absent ou refusé.
+  try { return globalThis.localStorage?.getItem(NIGHT_LIGHTS_KEY) ?? null; } catch { return null; }
+// Fin de readLightsChoice.
+}
 
 /** Choix « fond des océans » gardé dans le navigateur (« gobai:relief-ocean » : « 0 » = mer plate), ou null. */
 // readOceanChoice : le choix du fond des océans gardé dans le navigateur (début).

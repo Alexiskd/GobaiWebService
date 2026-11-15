@@ -12,6 +12,8 @@ import { ALL_KINDS_SHOWN, BODY_KINDS } from '@/moteur/engine/bodyKinds';
 const prefersReducedMotion = () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
 // Relief en volume de la Terre (« gobai:relief-3d », voir TileManager) : « 0 » ou absent = coupé, nombre = exagération.
+// storedLights : valeur enregistrée des lumières de la nuit, null si elle manque ou si le stockage est inaccessible.
+const storedLights = () => { try { return globalThis.localStorage?.getItem('gobai:lumieres-nuit') ?? null; } catch { return null; } };
 // storedRelief : valeur enregistrée du relief, null si elle manque ou si le stockage est inaccessible.
 const storedRelief = () => { try { return globalThis.localStorage?.getItem('gobai:relief-3d') ?? null; } catch { return null; } };
 
@@ -49,6 +51,11 @@ export function useCameraToggles(engine, initial = {}) {
     engine?.setRelief(Boolean(on), kept > 0 ? kept : 1); // garde l'exagération déjà choisie
   // Fin de setRelief ; dépendance : le moteur.
   }, [engine]);
+  // Lumières humaines de la Terre la nuit (pollution lumineuse) : allumées par défaut ; le choix est gardé par le moteur.
+  // État : lumières allumées, sauf si la valeur enregistrée est « 0 ».
+  const [nightLights, setNightLightsShown] = useState(() => storedLights() !== '0');
+  // setNightLights : allume ou coupe les lumières de la nuit ; fonction mémorisée.
+  const setNightLights = useCallback((on) => { setNightLightsShown(Boolean(on)); engine?.setNightLights(Boolean(on)); }, [engine]);
   // Familles d'astres affichées (planètes solides, gazeuses, naines, satellites naturels) : toutes au départ.
   // État : familles affichées, toutes au départ, corrigées par les réglages de départ.
   const [kinds, setKinds] = useState(() => ({ ...ALL_KINDS_SHOWN, ...initial.kinds }));
@@ -90,6 +97,6 @@ export function useCameraToggles(engine, initial = {}) {
   useEffect(() => { engine?.setHiddenBodies(hiddenBodies); }, [engine, hiddenBodies]);
 
   // Renvoie tous les états et leurs fonctions de mise à jour.
-  return { auto, setAuto, tilt, setTilt, orbits, setOrbits, markers, setMarkers, satellites, setSatellites, sky, setSky, atmospheres, setAtmospheres, relief, setRelief, kinds, setKind, hiddenBodies, setBodyShown, setHiddenBodies, rotateSpeed, setRotateSpeed };
+  return { auto, setAuto, tilt, setTilt, orbits, setOrbits, markers, setMarkers, satellites, setSatellites, sky, setSky, atmospheres, setAtmospheres, relief, setRelief, nightLights, setNightLights, kinds, setKind, hiddenBodies, setBodyShown, setHiddenBodies, rotateSpeed, setRotateSpeed };
 // Fin de useCameraToggles.
 }

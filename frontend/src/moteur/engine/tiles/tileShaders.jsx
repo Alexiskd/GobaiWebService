@@ -132,6 +132,8 @@ export const tileFragmentShader = [
   'float oTex(vec2 q){vec4 t=texture2D(oMap,q);float h=t.r*65280.+t.g*255.+t.b*.99609375-32768.;return h<-11500.?0.:min(0.,h);}',
   // reliefLight : éclairement d'une pente par une lumière fixe, rapporté à celui d'un terrain plat et borné entre 0,4 et 1,7.
   'float reliefLight(vec2 s){return clamp(dot(normalize(vec3(-s.x,-s.y,1.)),vec3(-.5025,.5025,.7035))/.7035,.4,1.7);}',
+  // Lumières humaines de la nuit (NASA Black Marble, voir nightLights.jsx) : la tuile, sa portion, sa présence et l'interrupteur.
+  'uniform sampler2D ltMap;uniform vec4 ltRect;uniform float ltHas;uniform float lightsOn;',
   // Variables reçues du shader de sommets.
   'varying vec2 vUv;varying vec3 vN;varying vec3 vV;',
   // Détail simulé au-delà de la résolution des images (géantes gazeuses, satellites) : voir `synthDetail` plus bas.
@@ -218,6 +220,11 @@ export const tileFragmentShader = [
   'vec3 base=mix(col,mix(night,lit,day),shade);',
   // Halo bleu au limbe, côté jour, seulement avec atmosphère.
   'float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*day)*.65*shade*(1.-airless);',
+  // Lumières de la nuit : seules les zones éclairées de l'image Black Marble (le sol sombre est écarté par un seuil de
+  // luminosité), teinte chaude ; elles s'allument quand le Soleil passe sous l'horizon du lieu (d < 0,02) et brillent
+  // pleinement à 10° dessous (d < −0,17), en suivant le terminateur. Rien de jour, rien sans ombre.
+  // Si les lumières sont là et allumées : lit leur image, garde ce qui brille, et l'ajoute du côté nuit.
+  'if(ltHas>.5&&lightsOn>.5){vec3 lt=texture2D(ltMap,ltRect.xy+vUv*ltRect.zw).rgb;base+=lt*vec3(1.,.86,.66)*smoothstep(.14,.5,dot(lt,lw))*1.5*(1.-smoothstep(-.17,.02,d))*shade;}',
   // Couleur finale, avec l'opacité de la cellule. Fin de la fonction principale.
   'gl_FragColor=vec4(base,alpha);}',
 // Fin : les lignes sont jointes par des retours à la ligne.

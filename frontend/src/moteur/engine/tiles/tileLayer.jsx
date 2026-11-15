@@ -164,8 +164,8 @@ export class TileLayer {
   constructor({
     // le repère, la source, les variables partagées, le filtrage, la capacité, les chargements simultanés, le niveau plafond, les niveaux gardés,
     root, source, uniforms, maxAnisotropy = 4, capacity = 260, concurrency = 6, maxZoomCap = 22, pinnedMaxZoom = PINNED_MAX_ZOOM,
-    // le préchargement, la mémoire vive, le sur-zoom, le relief et ses deux sources,
-    prefetch = false, ramCapacity = 0, overzoom = OVERZOOM_LEVELS, relief = null, reliefSource = null, oceanSource = null,
+    // le préchargement, la mémoire vive, le sur-zoom, le relief et ses deux sources, et la source des lumières de nuit,
+    prefetch = false, ramCapacity = 0, overzoom = OVERZOOM_LEVELS, relief = null, reliefSource = null, oceanSource = null, nightLights = null,
     // les envois par image, l'affichage en hexagones et la taille maximale d'une texture (0 : pas de limite).
     uploadsPerFrame = UPLOADS_PER_FRAME, hex = true, maxTexturePx = 0,
   // Fin des réglages (début du constructeur).
@@ -200,6 +200,8 @@ export class TileLayer {
     this.oceanSource = relief?.ocean ? oceanSource : null;
     // Textures d'altitude partagées, par image.
     this.heightTextures = new Map(); // image d'altitude → { tex, refs }
+    // Lumières humaines de la nuit (NightLightsSource, voir nightLights.jsx), ou null.
+    this.lightsSource = nightLights;
     // Garde le repère.
     this.root = root;
     // Garde la source.
@@ -552,7 +554,7 @@ export class TileLayer {
     // Fin du recalcul.
     }
     // Pour chaque tuile affichée : demande son calque, son relief et son fond marin, puis la place.
-    for (const e of this.visibleEntries) { this.wantOverlay(e); this.wantRelief(e, RELIEF_PRIORITY); this.wantOcean(e, RELIEF_PRIORITY + 1); this.place(e); }
+    for (const e of this.visibleEntries) { this.wantOverlay(e); this.wantRelief(e, RELIEF_PRIORITY); this.wantOcean(e, RELIEF_PRIORITY + 1); this.wantLights(e, RELIEF_PRIORITY + 2); this.place(e); }
     // En hexagones : avance les fondus et place les cellules.
     if (this.hexOn && this.hex) { this.hex.animate(now); this.hex.place(); }
   // Fin de update.
@@ -864,6 +866,15 @@ export class TileLayer {
         oBoost: OCEAN_BOOST,
         // Interrupteur du fond des océans.
         oceanOn: this.uniforms.oceanOn || RELIEF_OFF,
+        // Lumières de la nuit : tuile posée plus tard (wantLights), interrupteur partagé par l'astre.
+        // Image des lumières : en attente.
+        ltMap: { value: this.placeholder },
+        // Sa portion.
+        ltRect: { value: new THREE.Vector4(0, 0, 1, 1) },
+        // Pas de lumières pour l'instant.
+        ltHas: { value: 0 },
+        // Interrupteur des lumières.
+        lightsOn: this.uniforms.lightsOn || RELIEF_OFF,
         // Exagération du relief.
         reliefExag: this.uniforms.reliefExag || RELIEF_OFF,
         // Force de l'ombrage du relief.
@@ -954,6 +965,9 @@ export class TileLayer {
       // Fond des océans : texture de profondeurs et état de la demande.
       // L'état de son fond marin.
       oMap: null, oRequested: false, oFailed: false,
+      // Lumières de la nuit : texture et état de la demande.
+      // L'état de ses lumières.
+      ltMap: null, ltRequested: false, ltFailed: false,
     // Fin de la fiche.
     };
     // La place.
@@ -1158,6 +1172,44 @@ export class TileLayer {
       // Échec : noté ; annulation : la demande pourra repartir.
       .catch((err) => { if (err.name !== 'AbortError') e.oFailed = true; else e.oRequested = false; });
   // Fin de wantOcean.
+  }
+
+  /**
+   * Charge les lumières de la nuit d'une tuile affichée (NASA Black Marble, niveau 8 au plus) : une tuile grossière sert
+   * toutes les tuiles affichées qu'elle couvre (un seul téléchargement, partagé par la source). Le shader les allume
+   * côté nuit, selon le Soleil.
+   */
+  // wantLights : charge les lumières d'une tuile affichée (début).
+  wantLights(e, priority = 0) {
+    // Source des lumières.
+    const src = this.lightsSource;
+    // Sans source, déjà servie, demandée ou en échec, lumières coupées, ou carte sans ombre (pas de nuit) : rien.
+    if (!src || e.ltMap || e.ltRequested || e.ltFailed || !(this.uniforms.lightsOn?.value > 0) || !(this.uniforms.shade?.value > 0)) return;
+    // Demande notée.
+    e.ltRequested = true;
+    // Tuile native des lumières et portion affichée.
+    const no = nativeTile({ z: e.z, x: e.x, y: e.y }, src.maxZoom);
+    // Par la file de chargement,
+    this.loader
+      // sous la clé « lt: », charge l'image.
+      .load(`lt:${e.key}`, priority, (signal) => src.loadImage(no.coord, signal))
+      // À l'arrivée (début).
+      .then((img) => {
+        // Couche libérée, source changée ou tuile partie : rien.
+        if (this.disposed || src !== this.lightsSource || !this.ready(e.key)) return;
+        // Texture des lumières.
+        e.ltMap = this.texture(img);
+        // Variables uniformes de la tuile.
+        const u = e.mesh.material.uniforms;
+        // Pose la texture et sa portion.
+        u.ltMap.value = e.ltMap; u.ltRect.value.set(...no.rect);
+        // Lumières disponibles.
+        u.ltHas.value = 1;
+      // Fin de l'arrivée.
+      })
+      // Échec : noté ; annulation : la demande pourra repartir.
+      .catch((err) => { if (err.name !== 'AbortError') e.ltFailed = true; else e.ltRequested = false; });
+  // Fin de wantLights.
   }
 
   /** Texture d'une image d'altitude, partagée comme `texture` : sans lissage ni mipmaps (les couleurs codent un nombre). */
@@ -1367,6 +1419,8 @@ export class TileLayer {
     if (e.hMap) this.releaseHeightTexture(e.hMap);
     // Rend celle des profondeurs.
     if (e.oMap) this.releaseHeightTexture(e.oMap);
+    // Rend celle des lumières de la nuit.
+    if (e.ltMap) this.releaseTexture(e.ltMap);
   // Fin de disposeEntry.
   }
 

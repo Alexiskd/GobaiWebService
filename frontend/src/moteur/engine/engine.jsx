@@ -733,8 +733,8 @@ export class SolarEngine {
           concurrency: cfg.concurrency, detail: cfg.detail, overzoom: cfg.overzoom, polarScale: cfg.flattening ? 1 - cfg.flattening : 1,
           // les niveaux gardés, le préchargement et la mémoire vive ;
           pinnedMaxZoom: cfg.pinnedMaxZoom, prefetch: cfg.prefetch, ramCapacity: cfg.ramCapacity,
-          // le relief et le rayon en kilomètres ;
-          relief: cfg.relief, radiusKm: cfg.radiusKm,
+          // le relief, le rayon en kilomètres et les lumières de la nuit (la Terre) ;
+          relief: cfg.relief, radiusKm: cfg.radiusKm, nightLights: cfg.nightLights,
           // Planètes : le repère des tuiles suit la rotation propre (le maillage), pas l'inclinaison portée par le groupe.
           // Lune : le groupe est déjà orienté (rotation synchrone, libration).
           syncRotation: host.syncMesh ? (root) => { root.rotation.y = host.mesh.rotation.y; } : undefined,
@@ -864,6 +864,17 @@ export class SolarEngine {
     // L'applique à chaque astre au relief Terrarium.
     for (const tb of this.tiledBodies) if (tb.tiles.relief?.kind === 'terrarium') tb.tiles.setRelief({ on, exaggeration });
   // Fin de setRelief.
+  }
+
+  /**
+   * Lumières humaines de la Terre la nuit (pollution lumineuse vue de l'espace, NASA Black Marble) : allumées ou
+   * coupées. Elles suivent le Soleil d'elles-mêmes (côté nuit du terminateur). Le choix est gardé dans le navigateur.
+   */
+  // setNightLights : allume ou coupe les lumières de la nuit de chaque astre qui en a (début).
+  setNightLights(on) {
+    // L'applique à chaque astre tuilé qui a des lumières.
+    for (const tb of this.tiledBodies) if (tb.tiles.lightsSource) tb.tiles.setNightLights(on);
+  // Fin de setNightLights.
   }
 
   /** Astre tuilé actuellement ciblé, ou null (Soleil, géantes gazeuses). */

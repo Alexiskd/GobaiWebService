@@ -916,6 +916,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
           volcanoes: earth.volcanoes,
           // Réglage des volcans en éruption.
           onVolcanoes: earth.setVolcanoes,
+          // Lumières de la nuit.
+          nightLights: camera.nightLights,
+          // Réglage des lumières de la nuit.
+          onNightLights: camera.setNightLights,
           // Texte d'aide des volcans : leur nombre dès que la liste est arrivée.
           volcanoesHint: earth.volcanoCount === null ? 'En direct · NASA EONET' : `${earth.volcanoCount} en cours dans le monde · NASA EONET`,
           // Calque LiDAR HD choisi.

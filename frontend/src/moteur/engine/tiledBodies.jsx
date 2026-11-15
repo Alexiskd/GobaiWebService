@@ -1,5 +1,7 @@
 // Importe la distance minimale de la caméra quand des tuiles sont affichées, depuis tiles/tileManager.
 import { MIN_DISTANCE_WITH_TILES } from './tiles/tileManager';
+// Importe le réglage des lumières de la nuit de la Terre (NASA Black Marble).
+import { EARTH_NIGHT_LIGHTS } from './tiles/nightLights';
 
 /**
  * Modèle commun des astres cartographiés en tuiles, construit sur le moteur lunaire.
@@ -76,6 +78,8 @@ export const TILED_BODIES = [
     // 16 tuiles en parallèle (8 sur téléphone) au lieu de 6.
     // Seize téléchargements simultanés.
     concurrency: 16,
+    // Lumières humaines la nuit (pollution lumineuse) : NASA Black Marble, allumées côté nuit selon le Soleil.
+    nightLights: EARTH_NIGHT_LIGHTS,
     // Relief à vraies altitudes, format Terrarium, sans clé. D'abord Mapterhorn (tuiles de 512 px : deux fois plus
     // fines à niveau égal, quatre fois moins de requêtes ; Copernicus GLO-30 jusqu'au niveau 12, ≈ 19 m par pixel à
     // l'équateur), dont l'adresse est lue dans sa fiche TileJSON. Si elle ne répond pas : AWS Terrain Tiles (Mapzen,
