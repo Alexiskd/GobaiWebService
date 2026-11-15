@@ -22,6 +22,8 @@ import { API_GROUPS, countApis } from './apiList';
 import { apiState, getAdminToken, getApiBlockState, refreshServerBlocked, setAdminToken, setApiBlocked, subscribe } from '@/moteur/lib/apiBlock';
 // Importe l'onglet du flux cognitif.
 import { FluxCognitif } from './FluxCognitif';
+// Onglet « Documentation API » : documentation de l'API gratuite.
+import { ApiDocs } from './ApiDocs';
 
 // Calculé à chaque lecture : des satellites peuvent être ajoutés après le test Horizons + Trek.
 // satelliteTiles : les astres tuilés qui sont des satellites ou des géantes gazeuses.
@@ -652,6 +654,8 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
         <Tab value="apis" label="API" id="node-tab-apis" aria-controls="node-panel-apis" />
         {/* Onglet « Arborescence ». */}
         <Tab value="tree" label="Arborescence" id="node-tab-tree" aria-controls="node-panel-tree" />
+        {/* Onglet « Documentation API ». */}
+        <Tab value="docs" label="Documentation API" id="node-tab-docs" aria-controls="node-panel-docs" />
         {/* Onglet « Flux cognitif ». */}
         <Tab value="flux" label="Flux cognitif" id="node-tab-flux" aria-controls="node-panel-flux" />
       {/* Fin de la barre d'onglets. */}
@@ -661,7 +665,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
         {/* Panneau de l'onglet, relié à son onglet pour les lecteurs d'écran. */}
         <Box role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`}>
           {/* Le contenu de l'onglet affiché ; « Sources et Entreprises » par défaut. */}
-          {tab === 'flux' ? <FluxCognitif /> : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />}
+          {tab === 'docs' ? <ApiDocs /> : tab === 'flux' ? <FluxCognitif /> : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />}
         {/* Fin du panneau. */}
         </Box>
         {/* Note de bas de fenêtre. */}

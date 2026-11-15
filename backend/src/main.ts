@@ -124,7 +124,7 @@ async function bootstrap() {
   const config = loadConfiguration();
 
   // Secret de signature des sessions et des clés d'API, résolu AVANT la création de l'application : les
-  // services le lisent dans process.env dès leur constructeur (contributions.service, jwt.guard), donc il doit
+  // services le lisent dans process.env dès leur constructeur (contributions.service), donc il doit
   // y être posé maintenant. Ce secret n'est jamais écrit dans le dépôt : il vient de la variable
   // d'environnement, sinon de la base, sinon il est tiré pour la durée du processus.
   // Le magasin de secrets, ou null sans base configurée.

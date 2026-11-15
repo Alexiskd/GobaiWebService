@@ -1,8 +1,9 @@
 // Contrôleur de vérification des clés d'export (validation cryptographique côté serveur).
-import { ExportAccessController } from '../controllers/export-access.controller';
 
 // Module de la galerie (photos et vidéos personnelles, stockées dans PostgreSQL).
 import { GalleryModule } from './gallery.module';
+// Module des dons par carte bancaire.
+import { DonationsModule } from './donations.module';
 // Décorateur Module de NestJS : il déclare ce qu'un module importe, expose et fournit.
 import { Module } from '@nestjs/common';
 // Jeton APP_GUARD : sert à enregistrer une garde appliquée à toutes les routes de l'application.
@@ -44,7 +45,6 @@ import { ApisModule } from './apis.module';
 // Module des contributions : comptes, placements LiDAR et votes.
 import { ContributionsModule } from './contributions.module';
 // Module de la boutique : catalogue payant, paiement Stripe et exports.
-import { StoreModule } from './store.module';
 // Module de l'assistant (API Claude, clé gardée côté serveur).
 import { AssistantModule } from './assistant.module';
 // Module des nuages de points LiDAR servis en fichiers (COPC/LAS).
@@ -92,6 +92,8 @@ import { EngineModule } from './engine.module';
     WorldAtlasModule,
     // Routes des frontières : /api/v1/borders.
     BordersModule,
+    // Routes des dons : /api/v1/donations.
+    DonationsModule,
     // Routes de recherche de lieux.
     PlacesModule,
     // Assistant de la fenêtre « Claude » (API Claude, clé côté serveur) : /api/v1/assistant
@@ -103,8 +105,6 @@ import { EngineModule } from './engine.module';
     // Collection personnelle de la galerie (photos et vidéos), stockée dans PostgreSQL : /api/v1/galerie
     // Routes de la galerie.
     GalleryModule,
-    // Boutique des exports payants.
-    StoreModule,
     // Contributions de placement LiDAR.
     ContributionsModule,
     // Blocage des API externes.
@@ -116,7 +116,7 @@ import { EngineModule } from './engine.module';
   // Fin de la liste des modules importés.
   ],
   // Seul contrôleur déclaré directement par le module racine : la supervision.
-  controllers: [HealthController, ExportAccessController],
+  controllers: [HealthController],
   // Enregistre ThrottlerGuard comme garde globale : la limite de débit s'applique à toutes les routes.
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 // Fin de la déclaration.
