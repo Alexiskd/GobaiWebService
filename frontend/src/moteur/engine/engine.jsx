@@ -50,6 +50,10 @@ import { hillRadius, insideSystem, outsideSystem, systemHostOf } from './systemV
 import { MoonOrbiters } from './moonOrbiters';
 // Importe MoonOrbit, le tracé de l'orbite de la Lune.
 import { MoonOrbit } from './moonOrbit';
+// Importe le ruban des orbites et la mise à jour de ses réglages partagés (taille du tampon de dessin, densité).
+import { OrbitRibbon, updateOrbitShared } from './orbitRibbon';
+// Importe les opacités de la traînée d'une orbite fermée et le point le plus proche d'une position.
+import { loopTrailAlphas, nearestPointIndex } from './orbitRibbonMath';
 // Importe le matériau de la surface de la Lune et le chargement d'un modèle 3D.
 import { createMoonSurfaceMaterial, loadMoonModel } from './moonModel';
 // Importe ShadowCamLayer, les mosaïques polaires de ShadowCam.
@@ -673,22 +677,29 @@ export class SolarEngine {
       }
 
       // Orbite : ellipse fermée de 2048 points (éléments à la date du jour), assez fine pour passer par la planète.
-      const orbitGeometry = new THREE.BufferGeometry();
-      // Positions de l'orbite, en 2 048 points.
-      orbitGeometry.setAttribute('position', new THREE.BufferAttribute(orbitPositions(def.elements, orbitT, ORBIT_POINTS), 3));
-      // Ligne fermée de l'orbite (début) :
-      const orbit = new THREE.LineLoop(
-        // sa géométrie ;
-        orbitGeometry,
-        // son matériau, bleu-gris, à moitié transparent.
-        new THREE.LineBasicMaterial({ color: 0x5a6fa8, transparent: true, opacity: 0.45 })
-      // Fin de la ligne.
-      );
+      const ellipse = orbitPositions(def.elements, orbitT, ORBIT_POINTS);
+      // Points du ruban : les 2 048 points, puis le premier répété pour fermer la boucle.
+      const orbitPoints = new Float32Array(ellipse.length + 3);
+      // Les 2 048 points.
+      orbitPoints.set(ellipse);
+      // Le premier, répété à la fin.
+      orbitPoints.set(ellipse.subarray(0, 3), ellipse.length);
+      // Ruban de l'orbite, de la couleur de la planète, en style traînée (voir orbitRibbon.jsx).
+      const orbitTrail = new OrbitRibbon({ points: orbitPoints, color: def.color || '#8b97b3', name: `orbit-${bodyId(def)}` });
+      // Son maillage.
+      const orbit = orbitTrail.mesh;
       // L'ajoute à la scène.
       this.scene.add(orbit);
 
-      // Renvoie la planète : ses données, ses objets, sa famille, son état et ses positions.
-      return { def, mesh, group, orbit, kind: planetKind(def), hidden: false, settingsHidden: false, w: new THREE.Vector3(), ecl: [0, 0, 0] };
+      // Renvoie la planète : ses données, ses objets, sa famille, son état, ses positions, et l'état de sa traînée
+      // (point de l'orbite où elle se trouve, sens du parcours, dernière position et instant du dernier calcul).
+      return {
+        // Données, objets, famille et état.
+        def, mesh, group, orbit, orbitTrail, kind: planetKind(def), hidden: false, settingsHidden: false, w: new THREE.Vector3(), ecl: [0, 0, 0],
+        // Traînée : aucun point calculé, sens croissant, aucune position notée.
+        trailHead: -1, trailDir: 1, trailPrev: null, trailAt: 0,
+      // Fin de la planète.
+      };
     // Fin de la boucle.
     });
 
@@ -2605,6 +2616,8 @@ export class SolarEngine {
     if (this.shadowcam.api) this.shadowcam.update(this.cam);
     // Met à jour les étiquettes.
     this.updateLabels();
+    // Met à jour le style des orbites : épaisseur à l'écran, orbite mise en avant, traînées.
+    this.updateOrbitStyle(now);
     // Met à jour les noms des villes.
     this.worldLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
     // Met à jour le point de l'utilisateur.
@@ -3359,6 +3372,64 @@ export class SolarEngine {
     // Fin de la boucle.
     }
   // Fin de updateSunDirections.
+  }
+
+  /**
+   * Style des orbites, à chaque image : réglages partagés des rubans (taille du tampon de dessin, densité de pixels),
+   * mise en avant de l'orbite de l'astre visé (ou de sa planète), et traînée de chaque planète recalée sur sa position
+   * deux fois par seconde au plus (le point le plus proche sur 2 048 ; le sens du parcours d'après son déplacement).
+   */
+  // updateOrbitStyle : l'instant présent (début).
+  updateOrbitStyle(now) {
+    // Taille du tampon de dessin et densité de pixels, pour l'épaisseur des rubans à l'écran.
+    updateOrbitShared(this.renderer);
+    // La cible.
+    const f = this.focusTarget();
+    // Planète dont l'orbite est mise en avant : la planète visée, celle du satellite visé, la Terre pour la Lune.
+    const focusPlanet = f.body || f.satellite?.parent || (f.moon ? this.earth : null);
+    // Pour chaque planète (début).
+    for (const p of this.planets) {
+      // Son orbite mise en avant si c'est la planète de la cible.
+      p.orbitTrail.setFocused(p === focusPlanet);
+      // Orbite cachée, ou traînée recalée il y a moins d'une demi-seconde : rien de plus.
+      if (!p.orbit.visible || now - p.trailAt < 500) continue;
+      // Instant de ce recalage.
+      p.trailAt = now;
+      // Points de l'orbite (repère du Soleil, comme p.w).
+      const pts = p.orbitTrail.points;
+      // Point le plus proche de la planète, parmi les 2 048 (le dernier répète le premier).
+      const head = nearestPointIndex(pts, p.orbitTrail.count - 1, p.w.x, p.w.y, p.w.z);
+      // Position précédente notée (début) : le sens du parcours vient de son déplacement depuis.
+      if (p.trailPrev) {
+        // Déplacement depuis la dernière fois.
+        const mx = p.w.x - p.trailPrev.x, my = p.w.y - p.trailPrev.y, mz = p.w.z - p.trailPrev.z;
+        // Point suivant sur l'orbite (le dernier répète le premier : jamais hors du tableau).
+        const n1 = head + 1;
+        // Tangente de l'orbite au point de la planète, dans le sens des indices croissants.
+        const tx = pts[3 * n1] - pts[3 * head], ty = pts[3 * n1 + 1] - pts[3 * head + 1], tz = pts[3 * n1 + 2] - pts[3 * head + 2];
+        // Produit scalaire du déplacement et de la tangente.
+        const dot = mx * tx + my * ty + mz * tz;
+        // Déplacement net : son signe donne le sens (le temps peut aussi être remonté).
+        if (Math.abs(dot) > 1e-12) p.trailDir = dot > 0 ? 1 : -1;
+      // Fin de ce cas.
+      }
+      // Position notée pour le prochain recalage.
+      p.trailPrev = (p.trailPrev || new THREE.Vector3()).copy(p.w);
+      // Point et sens inchangés : opacités inchangées.
+      if (head === p.trailHead && p.trailDir === p.trailDirDrawn) continue;
+      // Garde le point et le sens dessinés.
+      p.trailHead = head; p.trailDirDrawn = p.trailDir;
+      // Opacités de la traînée : la plus claire juste derrière la planète.
+      loopTrailAlphas(p.orbitTrail.alphas, head, p.trailDir);
+      // Les renvoie à la carte graphique.
+      p.orbitTrail.alphasChanged();
+    // Fin de la boucle.
+    }
+    // Orbite de la Lune mise en avant quand la Lune est visée.
+    this.moonOrbitTrail.setFocused(Boolean(f.moon));
+    // Orbites des satellites : celle du satellite visé mise en avant.
+    this.satellites.setFocused(f.satellite || null);
+  // Fin de updateOrbitStyle.
   }
 
   // updateLabels : met à jour les repères des astres (début).

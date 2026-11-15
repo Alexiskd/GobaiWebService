@@ -2,11 +2,13 @@
 import * as THREE from 'three';
 // Importe le repère de l'orbite, la distance, l'état d'un satellite et le repère synchrone, depuis satelliteMath.
 import { orbitBasis, relDistanceKm, satelliteState, synchronousBasis } from './satelliteMath';
+// Importe le ruban des orbites.
+import { OrbitRibbon } from './orbitRibbon';
+// Importe les opacités de la traînée d'une orbite fermée.
+import { loopTrailAlphas } from './orbitRibbonMath';
 
 // Nombre de segments du cercle d'orbite : 256.
 const ORBIT_SEGMENTS = 256;
-// Opacité du tracé d'une orbite : 0,55.
-const ORBIT_OPACITY = 0.55;
 // Une orbite n'est tracée que si la caméra est assez près de la planète pour qu'elle fasse plus que quelques pixels.
 // Une orbite n'est tracée que si la caméra est à moins de 60 fois son rayon de la planète.
 const ORBIT_VIEW_RATIO = 60;
@@ -15,22 +17,25 @@ const ORBIT_VIEW_RATIO = 60;
 // Un satellite hors du système ciblé est recalculé une image sur 30.
 const COLD_EVERY = 30;
 
-/** Cercle unité dans le plan xz (normale +y), partagé par toutes les orbites. */
-// unitCircle : la géométrie d'un cercle de rayon 1 (début).
-function unitCircle() {
-  // Liste des points.
-  const pts = [];
-  // Pour chaque segment (début).
-  for (let i = 0; i < ORBIT_SEGMENTS; i++) {
-    // Angle du point.
-    const a = (i / ORBIT_SEGMENTS) * Math.PI * 2;
+/**
+ * Points du cercle unité dans le plan xz (normale +y), partagés par toutes les orbites : 257 points, le dernier
+ * répétant le premier pour fermer la boucle du ruban.
+ */
+// unitCirclePoints : les positions d'un cercle de rayon 1 (début).
+function unitCirclePoints() {
+  // Trois nombres par point, un point de plus pour fermer la boucle.
+  const out = new Float32Array((ORBIT_SEGMENTS + 1) * 3);
+  // Pour chaque point, le dernier compris (début).
+  for (let i = 0; i <= ORBIT_SEGMENTS; i++) {
+    // Angle du point (le dernier revient à 0).
+    const a = ((i % ORBIT_SEGMENTS) / ORBIT_SEGMENTS) * Math.PI * 2;
     // Point du cercle, dans le plan xz.
-    pts.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a)));
+    out[3 * i] = Math.cos(a); out[3 * i + 1] = 0; out[3 * i + 2] = Math.sin(a);
   // Fin de la boucle.
   }
-  // Renvoie la géométrie faite de ces points.
-  return new THREE.BufferGeometry().setFromPoints(pts);
-// Fin de unitCircle.
+  // Renvoie les positions.
+  return out;
+// Fin de unitCirclePoints.
 }
 
 /**
@@ -49,8 +54,10 @@ export class SatelliteSystem {
     this.poles = poles; // pôle de chaque planète (repère de la scène), pour l'orbite de repli
     // Tables de positions, par identifiant de satellite.
     this.tables = new Map();
-    // Cercle partagé par toutes les orbites.
-    this.circle = unitCircle();
+    // Points du cercle, partagés par toutes les orbites.
+    this.circle = unitCirclePoints();
+    // Satellite dont l'orbite est mise en avant : aucun.
+    this.focused = null;
     // Matrice de travail.
     this.basisM = new THREE.Matrix4();
     // Trois vecteurs de travail pour les axes d'un repère.
@@ -81,20 +88,23 @@ export class SatelliteSystem {
       );
       // L'ajoute au groupe.
       group.add(mesh);
-      // Tracé de l'orbite : une ligne fermée sur le cercle partagé (début).
-      const orbit = new THREE.LineLoop(this.circle, new THREE.LineBasicMaterial({
-        // De la couleur du satellite, transparente, sans écriture de la profondeur.
-        color: def.color || '#8fa3d0', transparent: true, opacity: ORBIT_OPACITY, depthWrite: false,
-      // Fin du tracé.
-      }));
+      // Tracé de l'orbite : un ruban sur le cercle partagé, de la couleur du satellite (voir orbitRibbon.jsx).
+      const trail = new OrbitRibbon({ points: this.circle, color: def.color || '#8fa3d0', name: `orbit-${def.id}` });
+      // Traînée : le cercle est tourné pour que le satellite soit au point 0 et qu'il aille vers les angles
+      // décroissants (voir orbitBasis) ; les points qu'il vient de quitter sont donc aux angles croissants.
+      loopTrailAlphas(trail.alphas, 0, -1);
+      // Opacités envoyées à la carte graphique.
+      trail.alphasChanged();
+      // Le maillage du ruban.
+      const orbit = trail.mesh;
       // Caché au départ.
       orbit.visible = false;
       // L'ajoute à la scène.
       scene.add(orbit);
       // Ajoute le satellite à la liste (début).
       this.list.push({
-        // Sa définition, sa planète, son groupe, sa sphère et son orbite.
-        def, parent, group, mesh, orbit,
+        // Sa définition, sa planète, son groupe, sa sphère, son orbite et son ruban.
+        def, parent, group, mesh, orbit, trail,
         // Sa position dans le monde, sa position relative, sa vitesse, et ses deux indicateurs.
         w: new THREE.Vector3(), rel: new THREE.Vector3(), vel: new THREE.Vector3(), exact: false, ready: false,
       // Fin de l'ajout.
@@ -188,14 +198,29 @@ export class SatelliteSystem {
   // Fin de place.
   }
 
+  /**
+   * Met en avant l'orbite du satellite visé (trait plus épais, pleine opacité) ; null : aucune.
+   * @param {object|null} sat  le satellite visé, tel qu'il est dans this.list
+   */
+  // setFocused : le satellite visé (début).
+  setFocused(sat) {
+    // Inchangé : rien.
+    if (sat === this.focused) return;
+    // L'ancien perd sa mise en avant.
+    this.focused?.trail.setFocused(false);
+    // Le nouveau la reçoit.
+    sat?.trail.setFocused(true);
+    // Le garde.
+    this.focused = sat;
+  // Fin de setFocused.
+  }
+
   /** Distance planète → satellite (km). */
   // distanceKm : la distance d'un satellite à sa planète, en kilomètres.
   distanceKm(s) { return relDistanceKm(s.rel.toArray()); }
 
   // dispose : libère les ressources (début).
   dispose() {
-    // Libère le cercle partagé.
-    this.circle.dispose();
     // Pour chaque satellite (début).
     for (const s of this.list) {
       // Retire son groupe de la scène.
@@ -206,8 +231,8 @@ export class SatelliteSystem {
       s.mesh.geometry.dispose();
       // Libère le matériau de sa sphère.
       s.mesh.material.dispose();
-      // Libère le matériau de son orbite.
-      s.orbit.material.dispose();
+      // Libère le ruban de son orbite (géométrie et matériau).
+      s.trail.dispose();
     // Fin de la boucle.
     }
   // Fin de dispose.
