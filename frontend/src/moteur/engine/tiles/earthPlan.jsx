@@ -1,5 +1,7 @@
 // Importe le test des paliers de zoom, depuis zoomTiers.
 import { validTiers } from './zoomTiers';
+// Importe le test de la carte marine, depuis marineChart.
+import { validMarine } from './marineChart';
 
 // Table de priorité des sources de la Terre, lue sur le serveur (GET /api/v1/tiles/earth/plan, voir backend
 // earth-plan.ts). Le navigateur ne garde aucune règle de choix en dur : il lit cette table, la vérifie et la convertit
@@ -43,8 +45,9 @@ export function planToDirect(plan) {
 
 /**
  * Description de la couche complétée par sa table : le plan direct (`direct`), l'accord des couleurs, la version de
- * la table, ses paliers de zoom (`tiers`) et le chargement limité au champ de la caméra (`fieldOnly`). Sans table
- * utilisable, la description est rendue sans plan direct (tout passe par le relais) ni paliers.
+ * la table, ses paliers de zoom (`tiers`), le chargement limité au champ de la caméra (`fieldOnly`) et la carte marine
+ * (`marine`). Sans table utilisable, la description est rendue sans plan direct (tout passe par le relais), ni
+ * paliers, ni carte marine (les fonds GEBCO de la description, s'il y en a, restent comme avant).
  */
 // Déclare et exporte withPlan : la description de la couche et la table reçue (ou null).
 export function withPlan(info, plan) {
@@ -56,7 +59,9 @@ export function withPlan(info, plan) {
   if (!direct) return rest;
   // Sinon : la description, le plan, l'accord des couleurs de la table et sa version,
   return { ...rest, direct, colorMatch: plan.colorMatch !== false, planVersion: plan.version,
-    // ses paliers s'ils sont utilisables, et le chargement limité au champ de la caméra.
-    ...(validTiers(plan.tiers) ? { tiers: plan.tiers } : {}), fieldOnly: plan.fieldOnly === true };
+    // ses paliers s'ils sont utilisables, le chargement limité au champ de la caméra,
+    ...(validTiers(plan.tiers) ? { tiers: plan.tiers } : {}), fieldOnly: plan.fieldOnly === true,
+    // et sa carte marine si elle est utilisable.
+    ...(validMarine(plan.marine) ? { marine: plan.marine } : {}) };
 // Fin de withPlan.
 }
