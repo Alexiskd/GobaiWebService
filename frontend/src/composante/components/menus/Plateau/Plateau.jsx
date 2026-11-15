@@ -64,8 +64,9 @@ export function Plateau({ open, onClose, engine, bodyId, bodyName, baseKey }) {
     >
       {/* L'en-tête : surtitre, nom de l'astre (« Terre » à défaut) et fermeture. */}
       <PanelHeader kicker="Plateau tournant" title={bodyName || 'Terre'} onClose={onClose} />
-      {/* Zone du globe : toute la hauteur en mode compact, 70 % de l'écran sinon, 360 px au moins. */}
-      <Box sx={{ position: 'relative', height: compact ? '100%' : '70vh', minHeight: 360 }}>
+      {/* Zone du globe : sur téléphone, toute la hauteur restante sous l'en-tête (les commandes du bas restent dans
+          l'écran, même en paysage) ; sinon 70 % de l'écran, 360 px au moins. */}
+      <Box sx={compact ? { position: 'relative', flex: '1 1 auto', minHeight: 0 } : { position: 'relative', height: '70vh', minHeight: 360 }}>
         {/* Le globe tournant, monté seulement quand la fenêtre est ouverte. */}
         {open && <PlateauTournant globe={globe} />}
         {/* Tant que la carte n'est pas prête (début). */}

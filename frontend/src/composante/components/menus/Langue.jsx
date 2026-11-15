@@ -10,6 +10,8 @@ import {
 } from '@mui/material';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/composante/hooks/useViewport';
+// Importe MQ, les requêtes média (écran tactile : onglets de 44 px).
+import { MQ } from '@/composante/theme/mediaQueries';
 // Importe les langues d'un pays, les types de langue et la recherche de langues.
 import { countryLanguages, LANGUAGE_TYPES, searchLanguages } from '@/moteur/i18n/i18nMath';
 // Importe l'en-tête commun des fenêtres.
@@ -282,8 +284,8 @@ export function Langue({ open, onClose, language }) {
         {/* Fin de la rangée. */}
         </Stack>
 
-        {/* Les deux onglets, sur toute la largeur. */}
-        <Tabs value={tab} onChange={(e, v) => setTab(v)} variant="fullWidth" sx={{ minHeight: 36, '& .MuiTab-root': { minHeight: 36 } }}>
+        {/* Les deux onglets, sur toute la largeur ; 44 px de haut sur écran tactile. */}
+        <Tabs value={tab} onChange={(e, v) => setTab(v)} variant="fullWidth" sx={{ minHeight: 36, '& .MuiTab-root': { minHeight: 36 }, [MQ.coarse]: { minHeight: 44, '& .MuiTab-root': { minHeight: 44 } } }}>
           {/* Onglet « Par pays ». */}
           <Tab value="country" label="Par pays" />
           {/* Onglet « Toutes les langues », avec leur nombre quand il est connu. */}

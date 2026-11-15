@@ -1,4 +1,6 @@
 import { createTheme } from '@mui/material';
+// Marges de sécurité des écrans à encoche (fenêtres plein écran du téléphone).
+import { safe } from './mediaQueries';
 
 const BRAND = {
   blue: '#8BAEFF',
@@ -203,7 +205,8 @@ export function makeTheme(dayNight = 'night', { oled = false } = {}) {
       MuiFormLabel: { styleOverrides: { root: { '&.Mui-focused': { color: BRAND.blue } } } },
       MuiChip: {
         styleOverrides: {
-          root: { height: 28, borderRadius: 9, fontWeight: 650, backgroundColor: hover },
+          // Pastille de 28 px ; écran tactile : une pastille cliquable fait 44 px (cible tactile recommandée).
+          root: { height: 28, borderRadius: 9, fontWeight: 650, backgroundColor: hover, '@media (pointer: coarse)': { '&.MuiChip-clickable': { height: 44, borderRadius: 14 } } },
           label: { paddingInline: 10 },
           outlined: { borderColor: s.edge },
         },
@@ -228,17 +231,28 @@ export function makeTheme(dayNight = 'night', { oled = false } = {}) {
             borderRadius: 20,
             boxShadow: '0 24px 80px rgba(0,0,0,0.38)',
           },
+          // Fenêtre plein écran (téléphone) : sans arrondi ni bordure, et son contenu (en-tête, bouton Fermer, bas de
+          // page) écarté de l'encoche, de la Dynamic Island, des coins arrondis et de la barre d'accueil.
+          paperFullScreen: {
+            // Sans arrondi ni bordure, à bords perdus.
+            borderRadius: 0, border: 'none', boxSizing: 'border-box',
+            // Marges de sécurité des quatre côtés.
+            paddingTop: safe('top'), paddingBottom: safe('bottom'), paddingLeft: safe('left'), paddingRight: safe('right'),
+          // Fin de la fenêtre plein écran.
+          },
         },
       },
       MuiDrawer: { styleOverrides: { paper: { backgroundColor: s.solid, backgroundImage: 'none', borderColor: s.edge } } },
       MuiMenu: { styleOverrides: { paper: { borderRadius: 14, marginTop: 6, backgroundColor: s.solid } } },
       MuiMenuItem: {
         styleOverrides: {
-          root: { minHeight: 42, borderRadius: 9, marginInline: 5, '&.Mui-selected': { backgroundColor: hover }, '&:hover': { backgroundColor: hover } },
+          // Entrée de 42 px ; écran tactile : 44 px.
+          root: { minHeight: 42, borderRadius: 9, marginInline: 5, '&.Mui-selected': { backgroundColor: hover }, '&:hover': { backgroundColor: hover }, '@media (pointer: coarse)': { minHeight: 44 } },
         },
       },
       MuiTabs: { styleOverrides: { root: { minHeight: 42 }, indicator: { height: 3, borderRadius: 6, background: `linear-gradient(90deg, ${BRAND.blue}, ${BRAND.violet})` } } },
-      MuiTab: { styleOverrides: { root: { minHeight: 42, textTransform: 'none', fontWeight: 650, color: s.textSoft, '&.Mui-selected': { color: s.text } } } },
+      // Onglet de 42 px ; écran tactile : 44 px.
+      MuiTab: { styleOverrides: { root: { minHeight: 42, textTransform: 'none', fontWeight: 650, color: s.textSoft, '&.Mui-selected': { color: s.text }, '@media (pointer: coarse)': { minHeight: 44 } } } },
       MuiDivider: { styleOverrides: { root: { borderColor: s.divider } } },
       MuiTooltip: { defaultProps: { enterDelay: 350, arrow: true }, styleOverrides: { tooltip: { borderRadius: 9, backgroundColor: '#17233E', color: '#F4F7FF', border: '1px solid rgba(177,199,255,0.16)', fontSize: '0.72rem' } } },
       MuiListSubheader: { styleOverrides: { root: { backgroundColor: 'transparent', lineHeight: '34px', fontWeight: 700, color: s.textSoft } } },

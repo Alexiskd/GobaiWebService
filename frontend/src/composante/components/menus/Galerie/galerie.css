@@ -575,6 +575,8 @@
   padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line, rgba(255,255,255,.2));
   /* Fond : rgba(0,0,0,.45) ; couleur du texte : var(--muted, #b8c0cf) ; police (raccourci : graisse, taille, interligne, famille) : 11px var(--mono, monospace) ; curseur de la souris : pointer. */
   background: rgba(0,0,0,.45); color: var(--muted, #b8c0cf); font: 11px var(--mono, monospace); cursor: pointer;
+  /* Hauteur minimale : 24 px (taille de cible minimale de WCAG 2.5.8 ; 22 px auparavant). */
+  min-height: 24px;
 /* Fin de la règle. */
 }
 /* Pour « .gobai-gallery .planet-zip:hover » : couleur du texte : #fff ; couleur de la bordure : rgba(255,255,255,.5). */
@@ -703,3 +705,15 @@
 }
 /* Pour « .gobai-gallery .lb-stage video » : largeur maximale : 100% ; hauteur maximale : calc(100vh - 48px) ; mode d'affichage : block ; fond : #000. */
 .gobai-gallery .lb-stage video { max-width: 100%; max-height: calc(100vh - 48px); display: block; background: #000; }
+
+/* Écran tactile (téléphone, tablette) : chaque commande de la galerie offre une cible d'au moins 44 px de côté
+   (recommandation d'accessibilité), sans rien changer sur ordinateur. */
+@media (pointer: coarse) {
+  /* Pastilles des missions, onglets de vue, bouton « Charger plus » et liste de tri : 44 px de haut au moins. */
+  .gobai-gallery .chip, .gobai-gallery .view-tab, .gobai-gallery .more, .gobai-gallery .sort select { min-height: 44px; }
+  /* Croix de la visionneuse et bouton de téléchargement d'une vignette : carrés de 44 px au moins. */
+  .gobai-gallery .lb-close, .gobai-gallery a.tile-dl { min-width: 44px; min-height: 44px; }
+  /* Bouton « ⤓ zip » d'une planète, posé dans le coin de sa carte : 44 px de haut et de large au moins. */
+  .gobai-gallery .planet-zip { min-width: 44px; min-height: 44px; }
+/* Fin du bloc écran tactile. */
+}
