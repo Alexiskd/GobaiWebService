@@ -1,7 +1,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe la somme des amplitudes du bruit et la qualité des shaders, depuis powerSaver.
-import { fbmNorm, shaderQuality } from '../powerSaver';
+import { fbmNorm, setShaderDefines, shaderQuality } from '../powerSaver';
 // Importe la liste des galaxies, le décodage du catalogue, la base d'une galaxie et le repère galactique, depuis skyMath.
 import { DEEP_SKY, decodeStarCatalog, deepSkyBasis, galacticFrame } from './skyMath';
 
@@ -320,6 +320,16 @@ export class SkyLayer {
 
   // setVisible : garde l'état, converti en booléen.
   setVisible(on) { this.visible = Boolean(on); }
+
+  /** Qualité de la Voie lactée en cours de route : allégée (téléphone) ou complète (système d'une planète). */
+  // setLite : change le nombre d'octaves du bruit (recompilé une fois) (début).
+  setLite(lite) {
+    // Nombre d'octaves de cette qualité.
+    const octaves = shaderQuality(lite).octaves;
+    // Les octaves et le gain qui garde la luminosité de la version à 5 octaves.
+    setShaderDefines(this.milkyWay?.material, { SKY_OCTAVES: octaves, SKY_GAIN: (fbmNorm(5) / fbmNorm(octaves)).toFixed(5) });
+  // Fin de setLite.
+  }
 
   /** Intensité visée (0..1), atteinte en douceur : éblouissement solaire, ciel de jour. */
   // setTargetIntensity : garde l'intensité visée, bornée entre 0 et 1.

@@ -44,6 +44,8 @@ import { moonState, orbiterMetrics } from './moonLive';
 import { MOON_FEATURES, FEATURE_TYPES } from './moonFeatures';
 // Importe bodyId, l'identifiant d'un astre.
 import { bodyId } from './bodyPlaces';
+// Importe la vue d'un système planétaire sur téléphone : sphère de Hill, entrée et sortie, planète du système.
+import { hillRadius, insideSystem, outsideSystem, systemHostOf } from './systemView';
 // Importe MoonOrbiters, les sondes en orbite lunaire.
 import { MoonOrbiters } from './moonOrbiters';
 // Importe MoonOrbit, le tracé de l'orbite de la Lune.
@@ -99,7 +101,7 @@ import { arrowSign, crossPole, moveOnSphere } from './deviceCompassMath';
 // Importe dragRadPerPx et dragStep, la conversion d'un glissement en rotation.
 import { dragRadPerPx, dragStep } from './touchMath';
 // Importe les réglages de rythme d'images et d'économie d'énergie, depuis powerSaver.
-import { IDLE_AFTER_MS, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './powerSaver';
+import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './powerSaver';
 // Importe PerfProbe, la sonde de performance.
 import { PerfProbe } from './perfProbe';
 
@@ -294,8 +296,8 @@ export class SolarEngine {
     this.orbitsOn = true;            // lignes d'orbite des planètes et de la Lune
     // Familles d'astres masquées : aucune.
     this.hiddenKinds = new Set();    // familles d'astres masquées (Paramètres) : 'solid', 'gas', 'dwarf', 'satellite'
-    // Lune non masquée.
-    this.moonHidden = false;
+    // Lune non masquée (ni dans les Paramètres, ni hors du système affiché).
+    this.moonHidden = false; this.moonSettingsHidden = false;
     // Astres masqués un par un : aucun.
     this.hiddenTargets = new Set();  // astres masqués un par un (Paramètres) : indices de focusTargets
     // Repères des astres affichés.
@@ -480,6 +482,10 @@ export class SolarEngine {
   initRenderer() {
     // Téléphone et tablette : rendu allégé pour ne pas faire chauffer l'appareil (voir powerSaver.jsx).
     this.power = renderProfile();
+    // Profil de l'appareil, gardé : this.power devient celui d'un ordinateur dans le système d'une planète (applySystemView).
+    this.basePower = this.power;
+    // Planète du système affiché sur téléphone : aucune.
+    this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
     const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true });
     // Plafond : la densité de l'écran (≤ 1,75, ≤ 1,5 sur téléphone) ; la résolution adaptative (adaptResolution) descend
@@ -682,7 +688,7 @@ export class SolarEngine {
       this.scene.add(orbit);
 
       // Renvoie la planète : ses données, ses objets, sa famille, son état et ses positions.
-      return { def, mesh, group, orbit, kind: planetKind(def), hidden: false, w: new THREE.Vector3(), ecl: [0, 0, 0] };
+      return { def, mesh, group, orbit, kind: planetKind(def), hidden: false, settingsHidden: false, w: new THREE.Vector3(), ecl: [0, 0, 0] };
     // Fin de la boucle.
     });
 
@@ -1173,8 +1179,8 @@ export class SolarEngine {
     this.zoomFlight = null;
     // Borne l'indice.
     i = clamp(i, 0, this.focusTargets.length - 1);
-    // Astre d'une famille masquée (Paramètres) : on n'y va pas.
-    if (this.isTargetHidden(this.focusTargets[i])) return;
+    // Astre d'une famille masquée (Paramètres) : on n'y va pas (un astre hors du système affiché, lui, reste joignable).
+    if (this.isTargetHidden(this.focusTargets[i], { settingsOnly: true })) return;
     // Se téléporter sur un astre (même celui où l'on est déjà) ramène toujours au zoom par défaut de cet astre.
     // Les trajets vers un lieu (ville, site) fixent ensuite leur propre altitude.
     this.releaseLocks();
@@ -2200,17 +2206,20 @@ export class SolarEngine {
   // setOrbitsVisible : affiche ou masque les orbites.
   setOrbitsVisible(on) { this.orbitsOn = Boolean(on); }
 
-  /** Cible de téléportation masquée par sa famille (le Soleil ne l'est jamais). */
+  /**
+   * Cible de téléportation masquée par sa famille (le Soleil ne l'est jamais), ou hors du système affiché sur
+   * téléphone. `settingsOnly` : seulement le masquage des Paramètres.
+   */
   // isTargetHidden : la cible est-elle masquée (début).
-  isTargetHidden(t) {
+  isTargetHidden(t, { settingsOnly = false } = {}) {
     // Sans cible : faux.
     if (!t) return false;
     // Planète : son état.
-    if (t.body) return t.body.hidden;
+    if (t.body) return Boolean(settingsOnly ? t.body.settingsHidden : t.body.hidden);
     // Lune : son état.
-    if (t.moon) return this.moonHidden;
+    if (t.moon) return settingsOnly ? this.moonSettingsHidden : this.moonHidden;
     // Satellite : son état.
-    if (t.satellite) return Boolean(t.satellite.hidden);
+    if (t.satellite) return Boolean(settingsOnly ? t.satellite.settingsHidden : t.satellite.hidden);
     // Soleil : jamais.
     return false;
   // Fin de isTargetHidden.
@@ -2247,30 +2256,36 @@ export class SolarEngine {
   /** Applique les deux réglages : familles masquées et astres masqués un par un. */
   // applyBodyVisibility : applique les familles et les astres masqués (début).
   applyBodyVisibility() {
-    // Les deux réglages.
-    const h = this.hiddenKinds, own = this.hiddenTargets;
+    // Les deux réglages, et la planète du système affiché sur téléphone (les autres systèmes ne sont pas dessinés).
+    const h = this.hiddenKinds, own = this.hiddenTargets, host = this.systemHost;
     // Pour chaque planète (début).
     this.planets.forEach((p, j) => {
-      // Masquée par sa famille ou une par une.
-      p.hidden = isKindHidden(h, p.kind) || own.has(j + 1);
+      // Masquée par sa famille ou une par une (Paramètres).
+      p.settingsHidden = isKindHidden(h, p.kind) || own.has(j + 1);
+      // Masquée aussi hors du système affiché.
+      p.hidden = p.settingsHidden || outsideSystem(host, p);
       // Règle son groupe.
       p.group.visible = !p.hidden;
     // Fin de la boucle.
     });
-    // Lune masquée : par la famille des satellites ou celle de la Terre, avec la Terre, ou une par une.
-    this.moonHidden = isKindHidden(h, this.earth.kind, true) || this.earth.hidden || own.has(this.moonFocus);
+    // Lune masquée (Paramètres) : par la famille des satellites ou celle de la Terre, avec la Terre, ou une par une.
+    this.moonSettingsHidden = isKindHidden(h, this.earth.kind, true) || this.earth.settingsHidden || own.has(this.moonFocus);
+    // Masquée aussi hors du système de la Terre.
+    this.moonHidden = this.moonSettingsHidden || outsideSystem(host, this.earth);
     // Règle son groupe.
     this.moonGroup.visible = !this.moonHidden;
     // Pour chaque satellite (début).
     for (const s of this.satellites.list) {
-      // Masqué : par la famille des satellites ou celle de sa planète, avec sa planète, ou un par un.
-      s.hidden = isKindHidden(h, s.parent.kind, true) || s.parent.hidden || own.has(s.focus);
+      // Masqué (Paramètres) : par la famille des satellites ou celle de sa planète, avec sa planète, ou un par un.
+      s.settingsHidden = isKindHidden(h, s.parent.kind, true) || s.parent.settingsHidden || own.has(s.focus);
+      // Masqué aussi hors du système de sa planète.
+      s.hidden = s.settingsHidden || outsideSystem(host, s.parent);
       // Règle son groupe : ni masqué, ni trop près de sa planète à l'écran (voir updateSatelliteLod).
       s.group.visible = !s.hidden && !s.lodHidden;
     // Fin de la boucle.
     }
-    // Cible masquée : retour au Soleil.
-    if (this.isTargetHidden(this.focusTarget())) this.setFocus(0);
+    // Cible masquée dans les Paramètres : retour au Soleil.
+    if (this.isTargetHidden(this.focusTarget(), { settingsOnly: true })) this.setFocus(0);
     // HUD à mettre à jour.
     this.hudAt = 0;
   // Fin de applyBodyVisibility.
@@ -2549,6 +2564,8 @@ export class SolarEngine {
     this.updateBodies(T, d);
     // Place la caméra.
     this.updateCamera(dt);
+    // Téléphone : entrée ou sortie du système d'une planète (qualité, rythme, astres affichés).
+    this.updateSystemView();
     // Met à jour les directions du Soleil.
     this.updateSunDirections();
     // Met à jour les frontières.
@@ -2744,6 +2761,60 @@ export class SolarEngine {
     // Note l'activité.
     this.markActive();
   // Fin de setPowerSaving.
+  }
+
+  /**
+   * Téléphone : la caméra est-elle dans le système de la planète ciblée (sa sphère de Hill, voir systemView.jsx) ?
+   * Le Soleil n'a pas de système ; en mode économie d'énergie, rien ne change. À l'entrée ou à la sortie : applySystemView.
+   */
+  // updateSystemView : suit l'entrée et la sortie du système d'une planète (début).
+  updateSystemView() {
+    // Ordinateur : toujours le rendu complet, rien à faire.
+    if (!this.basePower.handheld) return;
+    // Planète du système de la cible (aucune pour le Soleil, ni en économie d'énergie).
+    const host = this.saving ? null : systemHostOf(this.focusTarget(), this.earth);
+    // Rayon de son système : sa sphère de Hill, d'après sa distance au Soleil et sa masse.
+    const radius = host ? hillRadius(host.group.position.distanceTo(this.sunMesh.position), bodyMassKg(bodyId(host.def), host.def.radius * EARTH_RADIUS_KM)) : 0;
+    // Caméra dedans (marge de sortie si elle y était déjà) : ce système ; sinon aucun.
+    const next = host && insideSystem(this.cam.position.distanceTo(host.group.position), radius, host === this.systemHost) ? host : null;
+    // Changement : l'applique.
+    if (next !== this.systemHost) this.applySystemView(next);
+  // Fin de updateSystemView.
+  }
+
+  /**
+   * Entre dans le système de `host` (ou en sort avec null) : qualité d'un ordinateur (densité de pixels 1,75, shaders
+   * complets recompilés une fois, anisotropie de 8, budget de tuiles), rythme d'images maximal sans ralenti au repos,
+   * et seuls cette planète, ses satellites et le Soleil restent dessinés. Si l'appareil ne suit pas, la résolution
+   * adaptative baisse quand même la densité.
+   */
+  // applySystemView : applique ou retire la vue d'un système planétaire (début).
+  applySystemView(host) {
+    // Garde la planète du système.
+    this.systemHost = host;
+    // Profil : celui d'un ordinateur dans un système, sinon celui de l'appareil.
+    this.power = host ? SYSTEM_PROFILE : this.basePower;
+    // Plafond de densité du profil, borné par l'écran.
+    this.dprMaxFull = Math.min(devicePixelRatio || 1, this.power.dprMax);
+    // Plafond actif (1 en économie d'énergie).
+    this.dprMax = this.saving ? Math.min(1, this.dprMaxFull) : this.dprMaxFull;
+    // Plus aucun cran bloqué.
+    this.dprBlockedAbove = Infinity; this.dprBlockUntil = 0;
+    // Entrée : densité d'un ordinateur tout de suite ; sortie : redescend sous le plafond du téléphone.
+    this.setResolution(host ? this.dprMax : Math.min(this.dpr, this.dprMax));
+    // Shaders de l'atmosphère de chaque astre et de la Voie lactée : complets ou allégés.
+    for (const a of Object.values(this.atmospheres)) a?.userData.setLite?.(this.power.lite);
+    // Voie lactée.
+    this.sky.setLite(this.power.lite);
+    // Filtrage anisotrope des prochaines tuiles, borné par la carte graphique.
+    const aniso = Math.min(this.power.anisotropy, this.renderer.capabilities.getMaxAnisotropy());
+    // Pour chaque astre tuilé avec une carte : ses prochaines tuiles.
+    for (const tb of this.tiledBodies) if (tb.tiles.base) tb.tiles.base.layer.maxAnisotropy = aniso;
+    // Astres hors du système : plus dessinés (ou de nouveau tous à la sortie).
+    this.applyBodyVisibility();
+    // Rythme d'images du nouveau profil.
+    this.refreshFrameMs(performance.now());
+  // Fin de applySystemView.
   }
 
   /** Un geste vient d'avoir lieu (toucher, molette, clavier, pilotage) : le moteur reprend son plein rythme. */

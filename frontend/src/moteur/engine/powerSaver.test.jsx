@@ -8,6 +8,8 @@ import {
   COVERED_FRAME_MS, DESKTOP_PROFILE, IDLE_FRAME_MS, targetFrameMs, FULL_QUALITY, HANDHELD_PROFILE, LITE_QUALITY, fbmNorm, isHandheld, normalizedFrameMs,
   // Le cadenceur, le profil de rendu, la qualité des shaders, le limiteur, le rythme visé et la part des envois.
   paceFrame, renderProfile, shaderQuality, skipFrame, TARGET_FPS, TARGET_FRAME_MS, uploadShare,
+  // Le profil du système d'une planète et le changement des constantes d'un shader.
+  SYSTEM_PROFILE, setShaderDefines,
 // Fin de la liste : le module powerSaver.
 } from './powerSaver';
 
@@ -220,5 +222,31 @@ test('rythme visé : 20 images par seconde au repos sur téléphone et en mode �
   assert.equal(targetFrameMs(DESKTOP_PROFILE, { saving: true }), IDLE_FRAME_MS);        // mode économie : partout
   // Mode économie et scène recouverte : la durée sous l'écran de chargement.
   assert.equal(targetFrameMs(DESKTOP_PROFILE, { saving: true, covered: true }), COVERED_FRAME_MS);
+// Fin du test.
+});
+
+// Test : téléphone dans le système d'une planète.
+test('système d’une planète sur téléphone : qualité d’ordinateur, rythme maximal même au repos', () => {
+  // Densité, shaders et anisotropie d'un ordinateur.
+  assert.equal(SYSTEM_PROFILE.dprMax, DESKTOP_PROFILE.dprMax); assert.equal(SYSTEM_PROFILE.lite, false); assert.equal(SYSTEM_PROFILE.anisotropy, DESKTOP_PROFILE.anisotropy);
+  // Toujours un téléphone (stockages et LiDAR dimensionnés au départ).
+  assert.equal(SYSTEM_PROFILE.handheld, true);
+  // Sans limite, en mouvement comme au repos.
+  assert.equal(targetFrameMs(SYSTEM_PROFILE), 0); assert.equal(targetFrameMs(SYSTEM_PROFILE, { idle: true }), 0);
+  // L'économie d'énergie et l'écran de chargement restent prioritaires.
+  assert.equal(targetFrameMs(SYSTEM_PROFILE, { saving: true }), IDLE_FRAME_MS); assert.equal(targetFrameMs(SYSTEM_PROFILE, { covered: true }), COVERED_FRAME_MS);
+// Fin du test.
+});
+
+// Test : constantes d'un shader.
+test('les constantes d’un shader ne le font recompiler que si elles changent', () => {
+  // Faux matériau allégé.
+  const m = { defines: { CLOUD_OCTAVES: 3, CLOUD_NORM: '0.87500' } };
+  // Mêmes valeurs (même en texte) : rien.
+  assert.equal(setShaderDefines(m, { CLOUD_OCTAVES: '3' }), false); assert.equal(m.needsUpdate, undefined);
+  // Qualité complète : changées, recompilation demandée.
+  assert.equal(setShaderDefines(m, { CLOUD_OCTAVES: 5, CLOUD_NORM: '0.96875' }), true); assert.equal(m.needsUpdate, true); assert.equal(m.defines.CLOUD_OCTAVES, 5);
+  // Sans matériau : rien.
+  assert.equal(setShaderDefines(null, { A: 1 }), false);
 // Fin du test.
 });

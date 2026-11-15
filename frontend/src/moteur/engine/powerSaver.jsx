@@ -11,6 +11,9 @@
 // Sur tous les appareils, tant que l'écran de chargement recouvre la scène, le moteur ne dessine que quelques
 // images par seconde (COVERED_FRAME_MS) : les shaders se compilent et les tuiles arrivent, sans chauffer pour rien.
 // Un ordinateur garde le rendu complet.
+// Exception sur téléphone : zoomé dans le système d'une planète (voir systemView.jsx), le rendu redevient celui d'un
+// ordinateur (SYSTEM_PROFILE : densité 1,75, shaders complets, anisotropie de 8) au rythme maximal de l'écran, sans
+// ralenti au repos ; les autres planètes et leurs satellites ne sont alors plus dessinés, pour ne pas chauffer.
 //
 // Rythme : sur tous les appareils, le moteur est plafonné à TARGET_FPS images par seconde (50), quel que soit le niveau
 // de zoom et la fréquence de l'écran (60, 120, 144 Hz…) : voir `paceFrame`. Pour TENIR ce rythme quand la scène est
@@ -31,6 +34,9 @@ export const TARGET_FRAME_MS = 1000 / TARGET_FPS;
 export const DESKTOP_PROFILE = { handheld: false, dprMax: 1.75, dprStart: 1.75, frameMs: TARGET_FRAME_MS, antialias: true, lite: false, anisotropy: 8 };
 // Déclare et exporte le profil d'un appareil tenu en main : densité plafonnée à 1,5 et partant de 1, sans anticrénelage, shaders allégés, anisotropie de 2.
 export const HANDHELD_PROFILE = { handheld: true, dprMax: 1.5, dprStart: 1, frameMs: TARGET_FRAME_MS, antialias: false, lite: true, anisotropy: 2 };
+// Déclare et exporte le profil d'un téléphone dans le système d'une planète : la qualité d'un ordinateur (densité, shaders, anisotropie),
+// sans plafond d'images ni ralenti au repos. L'anticrénelage reste celui du départ (fixé à la création du contexte WebGL).
+export const SYSTEM_PROFILE = { ...HANDHELD_PROFILE, system: true, dprMax: DESKTOP_PROFILE.dprMax, dprStart: DESKTOP_PROFILE.dprStart, frameMs: 0, lite: false, anisotropy: DESKTOP_PROFILE.anisotropy };
 
 /** Au repos (aucun geste depuis IDLE_AFTER_MS) sur téléphone, et en mode économie d'énergie : 20 images par seconde. */
 // Déclare et exporte la durée d'une image au repos : 50 ms.
@@ -43,6 +49,7 @@ export const IDLE_AFTER_MS = 2500;
  *  - scène recouverte par l'écran de chargement : 8 images par seconde ;
  *  - mode économie d'énergie (Paramètres) : 20 images par seconde, sur tous les appareils ;
  *  - téléphone au repos : 20 images par seconde ; dès qu'on touche l'écran ou que la caméra voyage : 50 ;
+ *  - téléphone dans le système d'une planète : sans limite, même au repos ;
  *  - sinon le rythme du profil.
  */
 // Déclare et exporte targetFrameMs : le profil et l'état (scène recouverte, économie d'énergie, repos).
@@ -51,8 +58,8 @@ export function targetFrameMs(profile, { covered = false, saving = false, idle =
   if (covered) return COVERED_FRAME_MS;
   // Économie d'énergie : la durée d'une image au repos.
   if (saving) return IDLE_FRAME_MS;
-  // Appareil tenu en main au repos : la plus longue des deux durées, celle du profil ou celle du repos.
-  if (profile.handheld && idle) return Math.max(profile.frameMs, IDLE_FRAME_MS);
+  // Appareil tenu en main au repos, hors du système d'une planète : la plus longue des deux durées, celle du profil ou celle du repos.
+  if (profile.handheld && idle && !profile.system) return Math.max(profile.frameMs, IDLE_FRAME_MS);
   // Sinon : la durée du profil.
   return profile.frameMs;
 // Fin de targetFrameMs.
@@ -73,6 +80,29 @@ export const FULL_QUALITY = { scatterSteps: 16, lightSteps: 6, octaves: 5 };
 export const LITE_QUALITY = { scatterSteps: 8, lightSteps: 3, octaves: 3 };
 // Déclare et exporte shaderQuality : la qualité allégée ou complète selon l'argument.
 export const shaderQuality = (lite) => (lite ? LITE_QUALITY : FULL_QUALITY);
+/**
+ * Change les constantes (`defines`) d'un matériau à shader : s'il y en a une de différente, il est recompilé à son
+ * prochain dessin (une seule fois, au passage d'une qualité à l'autre). Renvoie vrai s'il a changé.
+ */
+// Déclare et exporte setShaderDefines : le matériau (ou rien) et les nouvelles constantes.
+export function setShaderDefines(material, defines) {
+  // Sans matériau : rien.
+  if (!material) return false;
+  // Ses constantes actuelles.
+  const cur = material.defines || (material.defines = {});
+  // Vrai si l'une d'elles change.
+  const changed = Object.entries(defines).some(([k, v]) => String(cur[k]) !== String(v));
+  // Inchangées : rien.
+  if (!changed) return false;
+  // Les remplace.
+  Object.assign(cur, defines);
+  // Recompilation au prochain dessin.
+  material.needsUpdate = true;
+  // A changé.
+  return true;
+// Fin de setShaderDefines.
+}
+
 /** Somme des amplitudes d'un bruit à `octaves` octaves (0,5 + 0,25 + …) : sert à garder la même luminosité. */
 // Déclare et exporte fbmNorm : 1 − 0,5 puissance le nombre d'octaves.
 export const fbmNorm = (octaves) => 1 - 0.5 ** octaves;
