@@ -779,6 +779,33 @@ export class TilesController {
   // Fin de earthTile.
   }
 
+  // Route GET /api/v1/tiles/moon-relief/status : préchargement du relief de la Lune dans BP.
+  @Get('moon-relief/status')
+  @ApiOperation({ summary: 'Relief de la Lune : état du préchargement dans BP', description: 'Tuiles Terrarium déjà enregistrées dans la base PostgreSQL (niveaux 0 à MOON_RELIEF_PRELOAD_MAX_ZOOM, 5 par défaut) et disponibilité du modèle 3D.' })
+  @ApiOkResponse({ description: '{ database, preload: { maxZoom, total, stored, failed, running, startedAt, finishedAt }, model: { zoom, ready, url } }' })
+  moonReliefStatus(@Res() res: TileResponse): void {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(JSON.stringify(this.moonRelief.status()));
+  }
+
+  // Route GET /api/v1/tiles/moon-relief/model.glb : modèle 3D du relief de la Lune.
+  @Get('moon-relief/model.glb')
+  @SkipThrottle()
+  @ApiOperation({
+    summary: 'Modèle 3D du relief de la Lune (glTF binaire)',
+    description: 'Sphère de 1 737,4 km en relief LOLA (mosaïque du niveau 3 lue dans BP, ≈ 2,7 km), unités en km, Y vers le nord, '
+      + 'coordonnées de texture en plate carrée. Paramètres : cols = 360, 720 (défaut) ou 1440 ; exaggeration = 1 (défaut) à 20.',
+  })
+  @ApiOkResponse({ description: 'Fichier .glb (model/gltf-binary).' })
+  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  async moonReliefModel(@Query('cols') cols: string | undefined, @Query('exaggeration') ex: string | undefined, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
+    const c = Number(cols ?? 720), e = Number(ex ?? 1);
+    const body = await this.moonRelief.model(c, e);
+    res.setHeader('Content-Disposition', `attachment; filename="lune-relief-${[360, 720, 1440].includes(c) ? c : 720}-x${Math.min(20, Math.max(1, Math.round(e) || 1))}.glb"`);
+    sendTile(req, res, { body, contentType: 'model/gltf-binary' }, { maxAge: 86_400 });
+  }
+
   // Route GET /api/v1/tiles/moon-relief/:z/:x/:y : relief de la Lune en Terrarium.
   @Get('moon-relief/:z/:x/:y')
   // Pas de limite de débit : le moteur en demande beaucoup d'un coup.
