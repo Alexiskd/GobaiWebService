@@ -127,15 +127,13 @@ export class ResolvedTileLayerDto extends TileLayerDto {
     // facultatif, un objet ;
     required: false, type: 'object',
     // sa description.
-    description: 'Couche unique de la Terre : fonds marins fondus dans l’imagerie par le navigateur ({ template, maxZoom, mask: { template, maxZoom }, chlorophyll?: { url, bounds, min, max } }) : '
+    description: 'Couche unique de la Terre : fonds marins fondus dans l’imagerie par le navigateur ({ template, maxZoom, mask: { template, maxZoom } }) : '
       // suite : là où les altitudes de `mask` sont sous la mer, l'image de `template` remplace peu à peu l'imagerie.
-      + 'là où les altitudes Terrarium de `mask` sont sous la mer, l’image des fonds (`template`) remplace peu à peu l’imagerie ; '
-      // fin : avec la chlorophylle, l'eau prend sa couleur réelle, ombrée par le relief des fonds.
-      + 'avec `chlorophyll`, l’eau prend sa couleur réelle selon la chlorophylle, ombrée par le relief des fonds.',
+      + 'là où les altitudes Terrarium de `mask` sont sous la mer, l’image des fonds (`template`) remplace peu à peu l’imagerie.',
   // Fin de la documentation.
   })
   // seafloor : les tuiles des fonds marins et celles des altitudes qui disent où est la mer.
-  seafloor?: { template: string; maxZoom: number; mask: { template: string; maxZoom: number }; chlorophyll?: { url: string; bounds: [number, number, number, number]; min: number; max: number } };
+  seafloor?: { template: string; maxZoom: number; mask: { template: string; maxZoom: number } };
 // Fin de ResolvedTileLayerDto.
 }
 

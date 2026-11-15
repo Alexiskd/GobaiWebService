@@ -27,8 +27,6 @@ export const API_GROUPS = [
       { name: 'USGS National Map', host: 'basemap.nationalmap.gov', use: 'Imagerie des États-Unis' },
       // API « GEBCO WMS », appelée à l'adresse wms.gebco.net.
       { name: 'GEBCO WMS', host: 'wms.gebco.net', use: 'Fonds marins : fondus au large dans le satellite HD, et fond « Fonds marins · GEBCO 2026 » (tuiles lues par le serveur)' },
-      // API « NOAA CoastWatch ERDDAP », appelée à l'adresse coastwatch.pfeg.noaa.gov.
-      { name: 'NOAA CoastWatch ERDDAP', host: 'coastwatch.pfeg.noaa.gov', use: 'Chlorophylle des océans (composite mensuel MODIS Aqua de la NASA) : couleur réelle de l’eau du large dans le satellite HD (lue par le serveur)' },
       // API « NOAA NCEI DEM Global Mosaic », appelée à l'adresse gis.ngdc.noaa.gov.
       { name: 'NOAA NCEI DEM Global Mosaic', host: 'gis.ngdc.noaa.gov', use: 'Fond « Fonds marins · NOAA NCEI » : relief en couleurs des océans et des terres (tuiles lues par le serveur)' },
       // API « Mapterhorn », appelée à l'adresse tiles.mapterhorn.com.
