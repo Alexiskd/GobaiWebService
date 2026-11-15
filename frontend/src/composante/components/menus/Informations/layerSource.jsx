@@ -4,7 +4,7 @@
 // Source de quelques fonds, par identifiant (début de l'objet).
 const BY_ID = {
   // La Terre, sa couche unique : toutes ses sources d'imagerie fusionnées.
-  'earth-hd': 'Orthophotos nationales (14 pays) + EOX (Copernicus Sentinel-2) + NASA GIBS + GEBCO (fonds marins)',
+  'earth-hd': 'Orthophotos nationales (14 pays) + EOX (Copernicus Sentinel-2) + NASA GIBS + carte marine NOAA ETOPO 2022 et GEBCO 2026',
   // La Lune réelle.
   real: 'NASA SVS + JAXA (Kaguya)',
 // Fin de l'objet.

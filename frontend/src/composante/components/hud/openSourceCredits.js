@@ -232,8 +232,10 @@ export const SERVICE_ORGS = [
   { org: 'Light Pollution Atlas (David Lorenz)', what: ['Pollution lumineuse 2025 de la Terre (lumières VIIRS de l’Earth Observation Group, Colorado School of Mines)'] },
   // « U.S. Naval Observatory (USNO) » et ce que cette organisation fournit.
   { org: 'U.S. Naval Observatory (USNO)', what: ['Éphémérides'] },
-  // « NOAA » et ce que cette organisation fournit.
-  { org: 'NOAA', what: ['Space Weather Prediction Center (activité solaire et régions actives du Soleil)'] },
+  // « NOAA » et ce que cette organisation fournit (carte marine : teinte des océans vue de l'espace).
+  { org: 'NOAA', what: ['Space Weather Prediction Center (activité solaire et régions actives du Soleil)', 'NCEI, ETOPO 2022 : teinte des océans de la Terre vue de l’espace, carte marine (CC0, domaine public ; doi:10.25921/fd45-gt74)'] },
+  // « GEBCO » et ce que cette organisation fournit (carte marine : relief des fonds et isobathes en zoomant).
+  { org: 'GEBCO (IHO-IOC), GEBCO Compilation Group', what: ['Grille GEBCO_2026 : relief ombré des fonds marins et isobathes de la carte marine de la Terre (domaine public, pas pour la navigation ; doi:10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa)'] },
   // « Open-Meteo (CC BY 4.0) » et ce que cette organisation fournit.
   { org: 'Open-Meteo (CC BY 4.0)', what: ['Météo des villes', 'Vents en altitude (mouvement des nuages)', 'Couverture nuageuse du moment (position des nuages)'] },
   // « Xweather (Vaisala) » et ce que cette organisation fournit.

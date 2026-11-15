@@ -8,7 +8,7 @@ import { layerSource } from './layerSource.jsx';
 // Test : la source de chaque famille de fonds.
 test('source de chaque famille de fonds de carte', () => {
   // La couche unique de la Terre, connue par son identifiant : toutes ses sources.
-  assert.equal(layerSource({ id: 'earth-hd', provider: 'earth-hd' }), 'Orthophotos nationales (14 pays) + EOX (Copernicus Sentinel-2) + NASA GIBS + GEBCO (fonds marins)');
+  assert.equal(layerSource({ id: 'earth-hd', provider: 'earth-hd' }), 'Orthophotos nationales (14 pays) + EOX (Copernicus Sentinel-2) + NASA GIBS + carte marine NOAA ETOPO 2022 et GEBCO 2026');
   // L'identifiant passe avant le fournisseur : un autre calque du même fournisseur prend la source du fournisseur.
   assert.equal(layerSource({ id: 'autre', provider: 'earth-hd' }), 'Orthophotos nationales + EOX + NASA GIBS');
   // Les anciens fonds de la Terre n'ont plus de source propre.
