@@ -1,7 +1,9 @@
 // Lumières humaines de la Terre la nuit (pollution lumineuse vue de l'espace) : NASA Black Marble 2016 (VIIRS, Suomi
 // NPP), en tuiles Web Mercator de NASA GIBS jusqu'au niveau 8, sans clé, chargées par le navigateur. Le shader des
 // tuiles les allume du côté nuit, selon la hauteur du Soleil en chaque point (voir tileShaders.jsx) : elles s'allument
-// au crépuscule, brillent toute la nuit et s'éteignent à l'aube, en suivant le terminateur en temps réel.
+// au crépuscule, brillent toute la nuit et s'éteignent à l'aube, en suivant le terminateur en temps réel. Comme sur
+// les photos prises depuis l'ISS, les villes ont un cœur blanc et un halo orangé : technique du « bloom » de three.js
+// (LuminosityHighPassShader et UnrealBloomPass) appliquée à la chaîne de mipmaps de l'image (cityLight, bloomWeights).
 // « gobai:lumieres-nuit » = « 0 » dans le stockage du navigateur les coupe.
 
 // Importe le partage des téléchargements par adresse, depuis netLoads.
@@ -36,6 +38,31 @@ export function nightWeight(d) {
   return 1 - t * t * (3 - 2 * t);
 // Fin de nightWeight.
 }
+
+/**
+ * Intensité d'une lumière humaine dans un pixel Black Marble (r, g, b entre 0 et 1) : même formule que `cityLight` du
+ * shader. Filtre passe-haut doux sur l'excès de rouge sur le bleu (lampes jaunes à blanches ; sol et mer bleutés
+ * écartés), multiplié par la luminosité.
+ */
+// Déclare et exporte cityLight : les trois composantes du pixel.
+export function cityLight([r, g, b]) {
+  // Excès de rouge sur le bleu.
+  const w = Math.max(r - 0.8 * b, 0);
+  // Position dans le filtre passe-haut (de 0,05 à 0,3), bornée.
+  const t = Math.min(1, Math.max(0, (w - 0.05) / 0.25));
+  // Courbe en S, multipliée par 0,35 plus la luminosité.
+  return t * t * (3 - 2 * t) * (0.35 + 0.299 * r + 0.587 * g + 0.114 * b);
+// Fin de cityLight.
+}
+
+/** Facteurs des niveaux de flou de UnrealBloomPass (three.js), les quatre premiers, et le rayon du halo. */
+// Déclare et exporte les facteurs : 1 ; 0,8 ; 0,6 ; 0,4.
+export const BLOOM_FACTORS = [1, 0.8, 0.6, 0.4];
+// Déclare et exporte le rayon : 0,4.
+export const BLOOM_RADIUS = 0.4;
+/** Poids des niveaux du halo, comme `lerpBloomFactor` de UnrealBloomPass : mélange de f et de 1,2 − f selon le rayon. */
+// Déclare et exporte bloomWeights : le rayon (BLOOM_RADIUS par défaut).
+export const bloomWeights = (radius = BLOOM_RADIUS) => BLOOM_FACTORS.map((f) => Math.round((f + (1.2 - f - f) * radius) * 100) / 100);
 
 /** Réglage des lumières de la Terre : tuiles Black Marble de GIBS, niveaux 0 à 8, et leur mention. */
 // Déclare et exporte le réglage des lumières de la Terre.
