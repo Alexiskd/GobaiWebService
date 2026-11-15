@@ -35,8 +35,10 @@ export function useCameraToggles(engine, initial = {}) {
   const [satellites, setSatellites] = useState(false);
   // État : ciel lointain, affiché au départ.
   const [sky, setSky] = useState(true);
-  // État : atmosphères, affichées au départ.
-  const [atmospheres, setAtmospheres] = useState(true); // atmosphère des planètes solides (Vénus, Terre, Mars)
+  // État : atmosphère de Vénus et de Mars, affichée au départ.
+  const [atmospheres, setAtmospheres] = useState(true);
+  // État : nuages et atmosphère de la Terre, masqués au départ (calque séparé de sa couche unique, désactivé par défaut).
+  const [earthAtmosphere, setEarthAtmosphere] = useState(false);
   // Relief en volume de la Terre (vraies altitudes) : coupé par défaut — carte à plat, affichée plus vite. Le choix
   // est gardé dans le navigateur par le moteur.
   // État : relief affiché si la valeur enregistrée est un nombre positif.
@@ -94,14 +96,16 @@ export function useCameraToggles(engine, initial = {}) {
   useEffect(() => { engine?.setSatelliteMarkersVisible(satellites); }, [engine, satellites]);
   // Transmet l'affichage du ciel au moteur.
   useEffect(() => { engine?.setSkyVisible(sky); }, [engine, sky]);
-  // Transmet l'affichage des atmosphères au moteur.
-  useEffect(() => { engine?.setAtmospheresVisible(atmospheres); }, [engine, atmospheres]);
+  // Transmet au moteur l'affichage de l'atmosphère de Vénus et de Mars.
+  useEffect(() => { engine?.setAtmospheresVisible(atmospheres, ['venus', 'mars']); }, [engine, atmospheres]);
+  // Transmet au moteur l'affichage des nuages et de l'atmosphère de la Terre.
+  useEffect(() => { engine?.setAtmospheresVisible(earthAtmosphere, ['earth']); }, [engine, earthAtmosphere]);
   // Transmet au moteur l'affichage de chaque famille d'astres.
   useEffect(() => { if (engine) for (const k of BODY_KINDS) engine.setBodyKindVisible(k.id, kinds[k.id]); }, [engine, kinds]);
   // Transmet au moteur l'ensemble des astres enlevés.
   useEffect(() => { engine?.setHiddenBodies(hiddenBodies); }, [engine, hiddenBodies]);
 
   // Renvoie tous les états et leurs fonctions de mise à jour.
-  return { auto, setAuto, tilt, setTilt, orbits, setOrbits, markers, setMarkers, satellites, setSatellites, sky, setSky, atmospheres, setAtmospheres, relief, setRelief, nightLights, setNightLights, lightView, setLightView, kinds, setKind, hiddenBodies, setBodyShown, setHiddenBodies, rotateSpeed, setRotateSpeed };
+  return { auto, setAuto, tilt, setTilt, orbits, setOrbits, markers, setMarkers, satellites, setSatellites, sky, setSky, atmospheres, setAtmospheres, earthAtmosphere, setEarthAtmosphere, relief, setRelief, nightLights, setNightLights, lightView, setLightView, kinds, setKind, hiddenBodies, setBodyShown, setHiddenBodies, rotateSpeed, setRotateSpeed };
 // Fin de useCameraToggles.
 }

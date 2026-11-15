@@ -16,19 +16,15 @@ export const API_GROUPS = [
       // API « EOX Sentinel-2 cloudless », appelée à l'adresse tiles.maps.eox.at.
       { name: 'EOX Sentinel-2 cloudless', host: 'tiles.maps.eox.at', use: 'Imagerie satellite du monde' },
       // API « NASA GIBS », appelée à l'adresse gibs.earthdata.nasa.gov.
-      { name: 'NASA GIBS', host: 'gibs.earthdata.nasa.gov', use: 'Imagerie satellite de la Terre ; Terre à l’instant T : GOES-East, GOES-West et Himawari, une image toutes les 10 minutes' },
+      { name: 'NASA GIBS', host: 'gibs.earthdata.nasa.gov', use: 'Imagerie satellite de la Terre : Blue Marble, petits niveaux de la couche unique' },
       // Site « Light Pollution Atlas » (David Lorenz), appelé à l'adresse djlorenz.github.io.
       { name: 'Light Pollution Atlas (David Lorenz)', host: 'djlorenz.github.io', use: 'Pollution lumineuse 2025 (luminosité artificielle du ciel, d’après les lumières VIIRS), recolorée en couleurs naturelles et allumée côté nuit selon le Soleil' },
-      // API « EUMETView (EUMETSAT) », appelée à l'adresse view.eumetsat.int.
-      { name: 'EUMETView (EUMETSAT)', host: 'view.eumetsat.int', use: 'Terre à l’instant T : Meteosat (Europe, Afrique), une image toutes les 10 minutes' },
-      // API « NOAA NESDIS Satellite Maps », appelée à l'adresse satellitemaps.nesdis.noaa.gov.
-      { name: 'NOAA NESDIS Satellite Maps', host: 'satellitemaps.nesdis.noaa.gov', use: 'Terre à l’instant T : mosaïque GOES la plus récente, en secours' },
       // API « USGS National Map », appelée à l'adresse basemap.nationalmap.gov.
       { name: 'USGS National Map', host: 'basemap.nationalmap.gov', use: 'Imagerie des États-Unis' },
       // API « GEBCO WMS », appelée à l'adresse wms.gebco.net.
-      { name: 'GEBCO WMS', host: 'wms.gebco.net', use: 'Fonds marins : fondus au large dans le satellite HD, et fond « Fonds marins · GEBCO 2026 » (tuiles lues par le serveur)' },
+      { name: 'GEBCO WMS', host: 'wms.gebco.net', use: 'Fonds marins GEBCO 2026 : fondus au large dans la couche unique de la Terre (tuiles lues par le serveur)' },
       // API « NOAA NCEI DEM Global Mosaic », appelée à l'adresse gis.ngdc.noaa.gov.
-      { name: 'NOAA NCEI DEM Global Mosaic', host: 'gis.ngdc.noaa.gov', use: 'Fond « Fonds marins · NOAA NCEI » : relief en couleurs des océans et des terres (tuiles lues par le serveur)' },
+      { name: 'NOAA NCEI DEM Global Mosaic', host: 'gis.ngdc.noaa.gov', use: 'Relief en couleurs des océans (ETOPO 2022), réservé à la future carte marine (tuiles lues par le serveur)' },
       // API « Mapterhorn », appelée à l'adresse tiles.mapterhorn.com.
       { name: 'Mapterhorn', host: 'tiles.mapterhorn.com', use: 'Altitudes de la Terre (Copernicus GLO-30) : relief en volume et ombrage des pentes' },
       // API « AWS Terrain Tiles (Mapzen) », appelée à l'adresse s3.amazonaws.com.

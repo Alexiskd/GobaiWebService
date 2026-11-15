@@ -2352,11 +2352,14 @@ export class SolarEngine {
   // Fin de setEarthCloudMosaic.
   }
 
-  /** Affiche ou masque l'atmosphère dessinée des planètes solides (Vénus, Terre, Mars) ; masquée, il reste le globe nu. */
-  // setAtmospheresVisible : affiche ou masque les atmosphères (début).
-  setAtmospheresVisible(on) {
-    // Règle chacune.
-    for (const atmosphere of Object.values(this.atmospheres || {})) atmosphere.visible = Boolean(on);
+  /**
+   * Affiche ou masque l'atmosphère dessinée des planètes solides (Vénus, Terre, Mars) ; masquée, il reste le globe nu.
+   * `ids` : les astres concernés (tous si absent). La Terre a son propre interrupteur (nuages et atmosphère).
+   */
+  // setAtmospheresVisible : affiche ou masque les atmosphères demandées (début).
+  setAtmospheresVisible(on, ids = null) {
+    // Règle chacune de celles demandées.
+    for (const [id, atmosphere] of Object.entries(this.atmospheres || {})) if (!ids || ids.includes(id)) atmosphere.visible = Boolean(on);
   // Fin de setAtmospheresVisible.
   }
   /** Points et noms du Soleil et des planètes. */

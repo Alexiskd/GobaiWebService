@@ -31,10 +31,11 @@ import { MaPosition } from './MaPosition';
  * Fenêtre « Paramètres » (bouton ⚙ de la barre d'outils, à côté de la galerie). Une section par fichier, triées par thème :
  * Terre :
  *  - MaPosition          survol de sa position (GPS de l'appareil) et lieu « Maison » gardé comme point de départ
- *  - Cartographie        à plat : noms des villes et des pays, frontières et littoraux, rues et routes
+ *  - Cartographie        à plat : entrée unique « Terre » et son téléchargement, noms des villes et des pays,
+ *                        frontières et littoraux, rues et routes
  *  - CartographieRelief  en relief : relief 3D de la Terre, LiDAR HD de l'IGN, points LiDAR 3D
  * Affichage du système solaire :
- *  - Atmosphere          atmosphère et nuages des planètes solides, phénomènes en direct (incendies, cyclones)
+ *  - Atmosphere          nuages et atmosphère de la Terre, atmosphère de Vénus et de Mars, phénomènes en direct
  *  - Reperes             repères (orbites, points et noms, lieux de la Lune) et ciel lointain
  * Déplacement :
  *  - VitesseRotation     boutons de vitesse de la rotation automatique autour de l'astre

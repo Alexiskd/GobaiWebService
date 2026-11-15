@@ -387,8 +387,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   }, [navBodies, camera.kinds, camera.hiddenBodies]);
   // Les astres affichés seulement.
   const shownBodies = useMemo(() => bodyStates.filter((b) => b.shown), [bodyStates]);
-  // Affichage de la Terre : ombrage, frontières, noms, routes, LiDAR HD.
-  const earth = useEarthDisplay({ engine, baseLayer: bases.baseLayer, overlayLayer: bases.overlayLayer, lidarLayers: bases.lidarLayers, push });
+  // Affichage de la Terre : ombrage, frontières, noms, rues, LiDAR HD.
+  const earth = useEarthDisplay({ engine, lidarLayers: bases.lidarLayers, push });
   // Bouton Jour / Nuit : le thème de l'interface (App.jsx lit la même valeur) et l'ombre des astres vont ensemble.
   // Nuit : face opposée au Soleil dans l'ombre. Jour : astres éclairés sur toute leur surface.
   // Vrai si le réglage jour/nuit est sur « nuit ».
@@ -437,8 +437,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const { moonPhases } = useMoonFeeds(engine);
   // Régions actives du Soleil : les éruptions en 3D partent des vraies régions.
   useSunFeeds(engine);
-  // Villes, frontières et liste des villes du monde.
-  const { cityInfo, bordersInfo, worldCities, cloudSource } = useMapFeeds({ engine, push });
+  // Villes, frontières et liste des villes du monde ; nuages réels de la Terre seulement quand ils sont affichés.
+  const { cityInfo, bordersInfo, worldCities, cloudSource } = useMapFeeds({ engine, push, clouds: camera.earthAtmosphere });
   // Phénomènes atmosphériques en direct : réglages des calques, lectures du serveur, textes d'aide.
   const atmosphere = useAtmosphere({ engine });
   // Commandes envoyées au moteur.
@@ -519,8 +519,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
         etoiles: camera.setSky,
         // Les lieux de la Lune.
         lieux_lune: moon.setMoonFeatures,
-        // L'atmosphère des planètes solides.
+        // L'atmosphère de Vénus et de Mars.
         atmospheres: camera.setAtmospheres,
+        // Les nuages et l'atmosphère de la Terre.
+        atmosphere_terre: camera.setEarthAtmosphere,
         // La rotation automatique.
         rotation_automatique: camera.setAuto,
         // La vue 3/4.
@@ -535,8 +537,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         frontieres_et_littoraux: (on) => { earth.setBorders(on); earth.setCoasts(on); },
         // Les rues et routes d'OpenStreetMap.
         rues: earth.setStreets,
-        // Les routes du fond de carte.
-        routes: earth.setRoads,
         // Les volcans en éruption.
         volcans: earth.setVolcanoes,
         // Les coordonnées GPS des coins de l'écran.
@@ -620,8 +620,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         bodyId={currentBodyId}
         // Nom de l'astre visé.
         bodyName={currentBodyName}
-        // Calques de la Terre.
-        layers={layers.earthLayers}
         // Disponibilité de la « Lune réelle ».
         moonRealAvailable={layers.moonRealAvailable}
         // État des couleurs naturelles de la Lune.
@@ -648,16 +646,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
         bodyBases={bases.bases}
         // Choix du fond d'un astre quelconque.
         onBodyBase={bases.chooseBodyBase}
-        // Fournisseur des tuiles.
-        provider={tileLayers.provider}
         // Statut de la liste des couches.
         listStatus={tileLayers.status}
         // Erreur de la liste des couches.
         listError={tileLayers.error}
-        // Fond choisi pour la Terre.
-        baseId={bases.baseId}
-        // Choix du fond de la Terre.
-        onBase={bases.chooseBase}
         // Ombrage actif ou non.
         shade={earth.shade}
         // Réglage de l'ombrage.
@@ -865,8 +857,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
           camera.sky ? SKY_ATTRIBUTION : '',
           // Celle de la pollution lumineuse, si elle est allumée (lumières de la nuit ou vue de toute la Terre).
           camera.nightLights || camera.lightView ? EARTH_NIGHT_LIGHTS.attribution : '',
-          // Celle des nuages de la Terre, si les atmosphères sont affichées : réels ou simulés.
-          camera.atmospheres ? CLOUD_SOURCE_TEXT[cloudSource] : '',
+          // Celle des nuages de la Terre, s'ils sont affichés : réels ou simulés.
+          camera.earthAtmosphere ? CLOUD_SOURCE_TEXT[cloudSource] : '',
           // Celle des incendies, s'ils sont allumés.
           atmosphere.settings.fires.on ? 'Incendies : NASA FIRMS (LANCE · VIIRS, MODIS) et NASA EONET' : '',
           // Celle des cyclones, s'ils sont allumés.
@@ -968,14 +960,18 @@ export function SolarScene({ data, onSettled, covered = false }) {
         sky={camera.sky}
         // Réglage du ciel.
         onSky={camera.setSky}
-        // Atmosphères.
+        // Atmosphère de Vénus et de Mars.
         atmospheres={camera.atmospheres}
-        // Réglage des atmosphères.
+        // Réglage de l'atmosphère de Vénus et de Mars.
         onAtmospheres={camera.setAtmospheres}
         // Calques atmosphériques en direct (début de l'objet).
         atmosphereLayers={{
-          // Texte d'aide de l'atmosphère et des nuages : la source des nuages de la Terre.
-          atmospheresHint: `Vénus, Terre et Mars · ${CLOUD_SOURCE_TEXT[cloudSource]} ; décoché : globes nus`,
+          // Nuages et atmosphère de la Terre, et leur réglage.
+          earthAtmosphere: camera.earthAtmosphere, onEarthAtmosphere: camera.setEarthAtmosphere,
+          // Texte d'aide des nuages de la Terre : leur source, une fois chargés.
+          earthAtmosphereHint: camera.earthAtmosphere ? `${CLOUD_SOURCE_TEXT[cloudSource]} ; décoché : globe nu` : 'Nuages réels (Xweather, sinon Open-Meteo) et halo bleu ; décoché : globe nu',
+          // Texte d'aide de l'atmosphère de Vénus et de Mars.
+          atmospheresHint: 'Atmosphères et nuages simulés ; décoché : globes nus',
           // Réglages des calques et leur modification.
           settings: atmosphere.settings, onUpdate: atmosphere.update,
           // Textes d'aide des incendies, des cyclones et de la foudre.
@@ -998,14 +994,14 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onMoonPlaces={moon.setMoonFeatures}
         // Réglages des calques de la Terre (début de l'objet).
         earthLayers={{
-          // Noms des villes : toujours cochés s'ils sont inclus dans le fond.
-          cityNames: earth.namesIncluded ? true : earth.cityNames,
+          // La couche unique de la Terre (nom, description, source), pour son entrée et son téléchargement.
+          earthLayer: bases.baseLayer,
+          // Noms des villes.
+          cityNames: earth.cityNames,
           // Réglage des noms des villes.
           onCityNames: earth.setCityNames,
           // Texte d'aide des noms des villes.
-          cityNamesHint: cityNamesHintText(earth.namesIncluded, cityInfo),
-          // Case désactivée si les noms sont inclus dans le fond.
-          cityNamesDisabled: earth.namesIncluded,
+          cityNamesHint: cityNamesHintText(cityInfo),
           // Noms des pays.
           countryNames: earth.countryNames,
           // Réglage des noms des pays.

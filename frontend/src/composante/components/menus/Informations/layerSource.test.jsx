@@ -7,14 +7,12 @@ import { layerSource } from './layerSource.jsx';
 
 // Test : la source de chaque famille de fonds.
 test('source de chaque famille de fonds de carte', () => {
-  // Fond connu par son identifiant.
-  assert.equal(layerSource({ id: 'satellite', provider: 'gibs' }), 'NASA GIBS (Blue Marble)');
-  // L'identifiant passe avant le fournisseur.
-  assert.equal(layerSource({ id: 'ign-ortho', provider: 'earth-hd' }), 'IGN (Géoplateforme)');
-  // Fonds marins : leur source propre, pas celle de la couche unique.
-  assert.equal(layerSource({ id: 'earth-gebco', provider: 'earth-hd' }), 'GEBCO (IHO-IOC) : SIO, NOAA, U.S. Navy, NGA, IBCAO');
-  // La mosaïque de la NOAA.
-  assert.equal(layerSource({ id: 'earth-ncei', provider: 'earth-hd' }), 'NOAA NCEI');
+  // La couche unique de la Terre, connue par son identifiant : toutes ses sources.
+  assert.equal(layerSource({ id: 'earth-hd', provider: 'earth-hd' }), 'Orthophotos nationales (14 pays) + EOX (Copernicus Sentinel-2) + NASA GIBS + GEBCO (fonds marins)');
+  // L'identifiant passe avant le fournisseur : un autre calque du même fournisseur prend la source du fournisseur.
+  assert.equal(layerSource({ id: 'autre', provider: 'earth-hd' }), 'Orthophotos nationales + EOX + NASA GIBS');
+  // Les anciens fonds de la Terre n'ont plus de source propre.
+  for (const id of ['earth-live', 'earth-gebco', 'earth-ncei', 'sentinel2', 'ign-ortho', 'satellite']) assert.equal(layerSource({ id }), null);
   // Fond connu par son fournisseur.
   assert.equal(layerSource({ id: 'moon-kaguya', provider: 'nasa-trek' }), 'NASA / JPL-Caltech (Moon Trek)');
   // Fournisseur lu dans un identifiant « space-moon-… ».

@@ -47,8 +47,8 @@ export function refreshWhileVisible(load, everyMs) {
 // Fin de refreshWhileVisible.
 }
 
-// Déclare et exporte le crochet useMapFeeds : reçoit le moteur et la fonction de messages.
-export function useMapFeeds({ engine, push }) {
+// Déclare et exporte le crochet useMapFeeds : reçoit le moteur, la fonction de messages et l'affichage des nuages de la Terre.
+export function useMapFeeds({ engine, push, clouds = true }) {
   // État : informations sur les villes (attribution et nombre).
   const [cityInfo, setCityInfo] = useState(null);
   // État : source des nuages affichés (« satellite », « model » ou « simulated »), simulés tant que rien n'est arrivé.
@@ -94,11 +94,12 @@ export function useMapFeeds({ engine, push }) {
 
   // Nuages réels de la Terre, relayés par l'API. Première source : image satellite Xweather (avec identifiants).
   // Seconde source, si la première manque : couverture nuageuse du moment calculée par les modèles météo (Open-Meteo,
-  // sans clé), que le vent réel déplace ensuite. Sans aucune des deux, les nuages simulés restent.
+  // sans clé), que le vent réel déplace ensuite. Sans aucune des deux, les nuages simulés restent. Rien n'est demandé
+  // tant que les nuages de la Terre sont masqués (interrupteur désactivé par défaut) : aucune requête pour rien.
   // Effet des nuages réels.
   useEffect(() => {
-    // Sans moteur, rien à faire.
-    if (!engine) return undefined;
+    // Sans moteur, ou nuages de la Terre masqués : rien à faire.
+    if (!engine || !clouds) return undefined;
     // Crée un contrôleur d'annulation.
     const ctrl = new AbortController();
     // load : assemble la mosaïque de nuages à partir des tuiles.
@@ -115,15 +116,15 @@ export function useMapFeeds({ engine, push }) {
     const stop = refreshWhileVisible(load, CLOUDS_REFRESH_MS);
     // Nettoyage : arrête le rafraîchissement et annule les requêtes.
     return () => { stop(); ctrl.abort(); };
-  // Fin de l'effet ; dépendance : le moteur.
-  }, [engine]);
+  // Fin de l'effet ; dépendances : le moteur et l'affichage des nuages.
+  }, [engine, clouds]);
 
   // Vents réels du moment : ils entraînent les nuages (moteur de mouvement de la météo). Sans eux, le moteur garde
   // son modèle de circulation générale.
   // Effet du vent réel.
   useEffect(() => {
-    // Sans moteur, rien à faire.
-    if (!engine) return undefined;
+    // Sans moteur, ou nuages de la Terre masqués (le vent ne sert qu'à eux) : rien à faire.
+    if (!engine || !clouds) return undefined;
     // Crée un contrôleur d'annulation.
     const ctrl = new AbortController();
     // load : charge le vent et le donne au moteur ; un échec est ignoré.
@@ -134,8 +135,8 @@ export function useMapFeeds({ engine, push }) {
     const stop = refreshWhileVisible(load, WIND_REFRESH_MS);
     // Nettoyage : arrête le rafraîchissement et annule la requête.
     return () => { stop(); ctrl.abort(); };
-  // Fin de l'effet ; dépendance : le moteur.
-  }, [engine]);
+  // Fin de l'effet ; dépendances : le moteur et l'affichage des nuages.
+  }, [engine, clouds]);
 
   // Renvoie les informations sur les villes et les frontières, et la liste des villes.
   return { cityInfo, bordersInfo, worldCities, cloudSource };

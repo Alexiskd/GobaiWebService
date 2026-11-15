@@ -50,11 +50,9 @@ const VOLCANOES_REFRESH_MS = 30 * 60 * 1000;
 // Altitude d'arrivée de secours : 2 000 mètres.
 const CITY_ALTITUDE_FALLBACK_M = 2000;
 
-/** Affichage de la Terre (ombrage, frontières, littoraux, noms, routes, LiDAR HD) et son envoi au moteur. */
-// Déclare et exporte le crochet useEarthDisplay : moteur, fond de carte, calque superposé, calques LiDAR et fonction de messages.
-export function useEarthDisplay({ engine, baseLayer, overlayLayer, lidarLayers = [], push }) {
-  // État : routes, affichées au départ.
-  const [roads, setRoads] = useState(true);
+/** Affichage de la Terre (ombrage, frontières, littoraux, noms, rues, LiDAR HD) et son envoi au moteur. */
+// Déclare et exporte le crochet useEarthDisplay : moteur, calques LiDAR et fonction de messages.
+export function useEarthDisplay({ engine, lidarLayers = [], push }) {
   // État : ombrage, actif au départ.
   const [shade, setShade] = useState(true);
   // État : frontières, masquées au départ.
@@ -97,17 +95,8 @@ export function useEarthDisplay({ engine, baseLayer, overlayLayer, lidarLayers =
   // Le calque LiDAR HD choisi, parmi ceux qui sont proposés ; null s'il n'existe pas.
   const lidarLayer = lidarLayers.find((l) => l.id === lidarId) || null;
 
-  // Le fond « hybride » inclut déjà les routes et les noms : on ne les superpose pas.
-  // Routes déjà incluses : il y a un fond et ce n'est pas une simple imagerie.
-  const roadsIncluded = Boolean(baseLayer && baseLayer.kind !== 'imagery');
-  // Routes indisponibles : fond d'imagerie sans calque superposé.
-  const roadsUnavailable = baseLayer?.kind === 'imagery' && !overlayLayer;
-  // Texte d'aide des routes, selon le cas ; aucun si elles sont disponibles.
-  const roadsHint = roadsIncluded ? 'Déjà inclus dans ce fond' : roadsUnavailable ? 'Non proposé par ce fournisseur' : undefined;
-  // Noms déjà inclus : même condition que pour les routes.
-  const namesIncluded = Boolean(baseLayer && baseLayer.kind !== 'imagery');
-  // Noms des villes à afficher : demandés et pas déjà inclus dans le fond.
-  const showCityNames = cityNames && !namesIncluded;
+  // La couche unique de la Terre est une imagerie, sans noms ni routes : les noms des villes s'affichent dès qu'ils sont demandés.
+  const showCityNames = cityNames;
 
   // Transmet l'ombrage au moteur.
   useEffect(() => { engine?.setTileShade(shade); }, [engine, shade]);
@@ -213,13 +202,9 @@ export function useEarthDisplay({ engine, baseLayer, overlayLayer, lidarLayers =
   useEffect(() => {
     // Sans moteur, rien à faire.
     if (!engine) return;
-    // Le LiDAR HD, quand il est choisi, prend la place du calque des routes (un seul calque par tuile).
-    // Calque voulu : le LiDAR HD s'il est choisi…
-    const wanted = lidarLayer ? lidarLayer.id
-      // … sinon les rues si elles sont affichées…
-      : streets ? ROADS_LAYER_ID
-        // … sinon le calque des routes, s'il est demandé, proposé et que le fond est une imagerie ; sinon aucun.
-        : roads && baseLayer?.kind === 'imagery' && overlayLayer ? overlayLayer.id : null;
+    // Le LiDAR HD, quand il est choisi, prend la place des rues (un seul calque par tuile).
+    // Calque voulu : le LiDAR HD s'il est choisi, sinon les rues si elles sont affichées, sinon aucun.
+    const wanted = lidarLayer ? lidarLayer.id : streets ? ROADS_LAYER_ID : null;
     // Littoraux : ceux des tuiles remplacent ceux du globe quand le calque des rues est affiché.
     engine.setCoastsFromTiles(wanted === ROADS_LAYER_ID);
     // Demande ce calque au moteur ; en cas d'échec (début).
@@ -229,17 +214,15 @@ export function useEarthDisplay({ engine, baseLayer, overlayLayer, lidarLayers =
       if (wanted === ROADS_LAYER_ID) push?.(e?.message || 'Rues indisponibles pour le moment', 'error', 7000);
     // Fin du traitement de l'échec.
     });
-  // Fin de l'effet ; dépendances : le moteur, les réglages, les calques et push.
-  }, [engine, roads, streets, baseLayer, overlayLayer, lidarLayer, push]);
+  // Fin de l'effet ; dépendances : le moteur, les rues, le LiDAR HD et push.
+  }, [engine, streets, lidarLayer, push]);
 
   // Début de l'objet renvoyé.
   return {
-    // Les routes : état, fonction, inclusion, indisponibilité et texte d'aide.
-    roads, setRoads, roadsIncluded, roadsUnavailable, roadsHint,
     // L'ombrage, les frontières et les littoraux, avec leurs fonctions.
     shade, setShade, borders, setBorders, coasts, setCoasts,
-    // Les noms de pays et de villes, l'inclusion des noms, l'affichage effectif des villes et le GPS.
-    countryNames, setCountryNames, cityNames, setCityNames, namesIncluded, showCityNames, gps, setGps,
+    // Les noms de pays et de villes, l'affichage effectif des villes et le GPS.
+    countryNames, setCountryNames, cityNames, setCityNames, showCityNames, gps, setGps,
     // Le calque LiDAR HD effectif (null s'il n'existe pas), sa fonction et la liste des calques.
     lidarId: lidarLayer?.id ?? null, setLidar, lidarLayers,
     // Les villes de France où le LiDAR HD est proposé, et l'altitude d'arrivée au-dessus d'une ville.

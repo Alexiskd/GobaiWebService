@@ -204,15 +204,17 @@ function LegendeVents() {
 }
 
 /**
- * Catégorie « Atmosphère » : l'atmosphère et les nuages des planètes solides, puis les phénomènes en direct de la
- * Terre, chacun allumé indépendamment avec son opacité et son intensité ; les incendies ont aussi leur fenêtre de
+ * Catégorie « Atmosphère » : les nuages et l'atmosphère de la Terre (calque séparé de sa couche unique, désactivé par
+ * défaut), l'atmosphère de Vénus et de Mars, puis les phénomènes en direct de la Terre, chacun allumé indépendamment avec son opacité et son intensité ; les incendies ont aussi leur fenêtre de
  * temps, le radar son animation et sa limite de portée, les aérosols leur produit (observé ou prévu), les vents leur
  * altitude. Les calques encore à venir sont annoncés comme tels :
  * aucun phénomène n'est représenté sans source.
  */
 // Déclare et exporte le composant Atmosphere (début de la liste des propriétés).
 export function Atmosphere({
-  // L'atmosphère et les nuages des planètes solides, leur rappel et leur texte d'aide.
+  // Les nuages et l'atmosphère de la Terre, leur rappel et leur texte d'aide.
+  earthAtmosphere = false, onEarthAtmosphere, earthAtmosphereHint,
+  // L'atmosphère de Vénus et de Mars, son rappel et son texte d'aide.
   atmospheres, onAtmospheres, atmospheresHint,
   // Les réglages des calques, leur modification et les textes d'aide.
   settings, onUpdate, fireHint, cycloneHint, lightningHint, precipitationHint, stormHint, aerosolHint, windHint,
@@ -222,8 +224,10 @@ export function Atmosphere({
   return (
     // Groupe titré.
     <Group title="Atmosphère">
-      {/* Interrupteur de l'atmosphère et des nuages des planètes solides. */}
-      <Switch checked={atmospheres} onChange={onAtmospheres} label="Nuages et atmosphère des planètes solides" hint={atmospheresHint || 'Vénus, Terre et Mars ; décoché : globes nus'} />
+      {/* Si le réglage de la Terre est fourni : interrupteur de ses nuages et de son atmosphère. */}
+      {onEarthAtmosphere && <Switch checked={earthAtmosphere} onChange={onEarthAtmosphere} label="Nuages et atmosphère de la Terre" hint={earthAtmosphereHint || 'Nuages réels et halo bleu ; décoché : globe nu'} />}
+      {/* Interrupteur de l'atmosphère de Vénus et de Mars. */}
+      <Switch checked={atmospheres} onChange={onAtmospheres} label="Atmosphère de Vénus et de Mars" hint={atmospheresHint || 'Décoché : globes nus'} />
       {/* Si les réglages des calques sont fournis (début). */}
       {settings && onUpdate && (
         // Fragment : les calques en direct.

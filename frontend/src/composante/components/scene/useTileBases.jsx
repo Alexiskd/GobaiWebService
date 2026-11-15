@@ -6,13 +6,13 @@ import { TILED_BODIES, TILED_BODY_BY_ID } from '@/moteur/engine/tiledBodies';
 /**
  * Fond par défaut au premier chargement des calques (modèle commun, voir engine/tiledBodies.jsx) : pour chaque planète
  * et chaque satellite, le premier fond de carte de sa liste, quel que soit son fournisseur (NASA Trek, USGS…).
- * Deux astres gardent leur réglage propre : la Terre (satellite HD : IGN en France, Sentinel-2 ailleurs)
- * et la Lune (composite « Lune réelle », voir chooseMoonBase).
+ * Deux astres gardent leur réglage propre : la Terre (sa couche unique « earth-hd », qui fusionne toutes ses sources
+ * d'imagerie) et la Lune (composite « Lune réelle », voir chooseMoonBase).
  */
 // Fonds par défaut propres à certains astres (début de l'objet).
 const DEFAULT_BASE = {
-  // Terre : le calque « earth-hd », sinon un fond hybride, sinon une imagerie.
-  earth: (ls) => ls.find((l) => l.id === 'earth-hd') || ls.find((l) => l.kind === 'hybrid') || ls.find((l) => l.kind === 'imagery'),
+  // Terre : sa couche unique « earth-hd », sinon la première imagerie proposée.
+  earth: (ls) => ls.find((l) => l.id === 'earth-hd') || ls.find((l) => l.kind === 'imagery'),
 // Fin de l'objet.
 };
 
@@ -189,8 +189,6 @@ export function useTileBases({ engine, engineRef, status, layers, allLayers = []
   // Fin de chooseMoonBase ; dépendances : push, les deux calques lunaires et applyDefaultBase.
   }, [push, moonShadeLayer, moonDetailLayer, applyDefaultBase]);
 
-  // chooseBase : le fond de la Terre.
-  const chooseBase = useCallback((id) => chooseBodyBase('earth', id), [chooseBodyBase]);
   // chooseMarsBase : le fond de Mars.
   const chooseMarsBase = useCallback((id) => chooseBodyBase('mars', id), [chooseBodyBase]);
   // chooseMercuryBase : le fond de Mercure.
@@ -221,17 +219,14 @@ export function useTileBases({ engine, engineRef, status, layers, allLayers = []
   return {
     // Les fonds choisis et la fonction générique.
     bases, chooseBodyBase,
-    // Les fonds de la Terre, de la Lune et de Mars, null s'ils manquent.
-    baseId: bases.earth ?? null, moonBaseId: bases.moon ?? null, marsBaseId: bases.mars ?? null,
+    // Les fonds de la Lune et de Mars, null s'ils manquent.
+    moonBaseId: bases.moon ?? null, marsBaseId: bases.mars ?? null,
     // Les fonds de Mercure et de Vénus.
     mercuryBaseId: bases.mercury ?? null, venusBaseId: bases.venus ?? null,
     // Les fonctions de choix par astre.
-    chooseBase, chooseMoonBase, chooseMarsBase, chooseMercuryBase, chooseVenusBase,
-    // Le calque du fond de la Terre, null s'il n'existe pas.
+    chooseMoonBase, chooseMarsBase, chooseMercuryBase, chooseVenusBase,
+    // La couche unique de la Terre, telle que l'API la décrit (nom, description, source), null tant qu'elle n'est pas posée.
     baseLayer: earthLayers.find((l) => l.id === bases.earth) || null,
-    // Calque des routes et des noms ; les calques LiDAR HD (France) ont leur propre interrupteur.
-    // Le premier calque superposé de la Terre qui n'est pas un LiDAR HD, null s'il n'y en a pas.
-    overlayLayer: earthLayers.find((l) => l.kind === 'overlay' && !isLidarLayer(l)) || null,
     // Les calques LiDAR HD de la Terre.
     lidarLayers: earthLayers.filter(isLidarLayer),
   // Fin de l'objet renvoyé.

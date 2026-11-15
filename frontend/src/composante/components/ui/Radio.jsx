@@ -8,8 +8,8 @@ import { downloadLayer, layerFileName } from '@/moteur/engine/layerDownload';
 import { DownloadIcon } from './icons';
 
 /** Bouton « Télécharger » d'une couche : carte globale en PNG (voir moteur/engine/layerDownload.jsx). */
-// Déclare le composant DownloadButton : identifiant de la couche, astre et libellé.
-function DownloadButton({ layerId, body, label }) {
+// Déclare et exporte le composant DownloadButton (servi aussi à l'entrée « Terre » de Paramètres) : identifiant de la couche, astre et libellé.
+export function DownloadButton({ layerId, body, label }) {
   // État du téléchargement, au repos au départ.
   const [state, setState] = useState('idle'); // 'idle' | 'loading' | 'error'
   // Infobulle selon l'état : téléchargement en cours…
