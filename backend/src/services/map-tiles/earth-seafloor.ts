@@ -136,9 +136,9 @@ export interface EarthMarineLayer { template: string; maxZoom: number }
 /**
  * Carte marine de la couche unique, décrite dans sa table (earth-plan.ts) et faite par le navigateur, sous le masque
  * de la mer des altitudes Terrarium (l'eau peu profonde des côtes garde l'image satellite) :
- *  - vue de l'espace (paliers « gebco » de la table) : GEBCO seule ;
- *  - zooms moyens (paliers « fondu ») : GEBCO fondue peu à peu vers NOAA, niveau par niveau ;
- *  - zooms forts (paliers « noaa ») : NOAA seule.
+ *  - vue de l'espace (paliers « noaa » de la table) : NOAA seule ;
+ *  - zooms moyens (paliers « fondu ») : NOAA fondue peu à peu vers GEBCO, niveau par niveau ;
+ *  - zooms forts (paliers « gebco ») : GEBCO seule.
  * Les seuils sont les distances des paliers de la table ; `fadeMs` est la durée du fondu entre deux niveaux de la
  * Terre (le passage NOAA → GEBCO se fait à ces changements de niveau). Rien n'est gardé sur le serveur.
  */

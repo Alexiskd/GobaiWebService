@@ -454,8 +454,8 @@ export class TileSource {
   }
 
   /**
-   * Pixels de la carte marine d'une tuile (voir marineChart.jsx) : GEBCO seule vue de l'espace, GEBCO fondue dans
-   * NOAA aux zooms moyens, puis NOAA seule aux zooms forts, d'après la colonne
+   * Pixels de la carte marine d'une tuile (voir marineChart.jsx) : NOAA seule vue de l'espace, NOAA fondue dans
+   * GEBCO aux zooms moyens, puis GEBCO seule aux zooms forts, d'après la colonne
    * « marine » des paliers de la table. Seules les images utiles au niveau de la tuile sont demandées. null si une
    * image manque.
    */

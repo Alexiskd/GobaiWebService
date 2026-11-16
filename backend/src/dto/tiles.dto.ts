@@ -415,7 +415,7 @@ export class EarthPlanDto {
   // fieldOnly : chargement limité au champ de la caméra.
   @ApiProperty({ description: 'Seules les tuiles du champ de la caméra sont chargées ; les autres sont déchargées.' }) fieldOnly: boolean;
   // marine : la carte marine, ou null si les fonds marins sont coupés.
-  @ApiProperty({ type: EarthMarineDto, nullable: true, description: 'Carte marine : GEBCO vue de l’espace, fondu vers NOAA, NOAA seule aux zooms forts ; seuils dans la colonne « marine » des paliers.' }) marine: EarthMarineDto | null;
+  @ApiProperty({ type: EarthMarineDto, nullable: true, description: 'Carte marine : NOAA vue de l’espace, fondu vers GEBCO, GEBCO seule aux zooms forts ; seuils dans la colonne « marine » des paliers.' }) marine: EarthMarineDto | null;
 // Fin de EarthPlanDto.
 }
 
