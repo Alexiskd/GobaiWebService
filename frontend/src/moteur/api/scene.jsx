@@ -48,7 +48,7 @@ export const captureDonation = (orderId) => post(`/donations/orders/${encodeURIC
 /** Le donateur a quitté la page de paiement : elle est fermée côté Stripe. */
 // cancelDonation : abandonne un don.
 export const cancelDonation = (orderId) => post(`/donations/orders/${encodeURIComponent(orderId)}/cancel`);
-/** Assistant de la fenêtre « Claude » : { enabled, model } ; enabled = clé de l'API configurée sur le serveur. */
+/** Assistant de la fenêtre « ChatGPT » : { enabled, model } ; enabled = clé de l'API configurée sur le serveur. */
 // fetchAssistantConfig : la configuration de l'assistant.
 export const fetchAssistantConfig = (signal) => get('/assistant/config', { signal });
 /** Envoie la conversation [{ role: 'user' | 'assistant', content }] : { reply }. */

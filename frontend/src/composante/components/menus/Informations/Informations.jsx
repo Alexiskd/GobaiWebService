@@ -76,7 +76,7 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
   }, [compact, layersOpen]);
 
   // Ordinateur : fenêtre flottante à droite (déplaçable). Mobile : tiroir dans le flux du dock du bas (MobileDock),
-  // au-dessus de la barre de Claude, de la bande des astres et de la navigation : il ne recouvre jamais ces étages.
+  // au-dessus de la barre de ChatGPT, de la bande des astres et de la navigation : il ne recouvre jamais ces étages.
   // Placement du panneau : en mode compact (début).
   const placement = compact ? {
     // Dans le flux du dock, sur toute sa largeur.

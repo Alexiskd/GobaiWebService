@@ -10,8 +10,8 @@
  *    teinte des océans vue de l'espace de la carte marine ;
  *  - earth-gebco-flat : la même grille GEBCO_2026 en carte plate colorée selon l'altitude (couche WMS GEBCO_LATEST_2),
  *    en PNG : ses limites de couleur donnent les isobathes de la carte marine, sans autre source.
- * La carte marine (earthMarine plus bas) est décrite dans la table de la couche unique (earth-plan.ts) : NOAA vue de
- * l'espace, fondu vers GEBCO aux zooms moyens, GEBCO seule avec isobathes et relief ombré aux zooms forts.
+ * La carte marine (earthMarine plus bas) est décrite dans la table de la couche unique (earth-plan.ts) : GEBCO
+ * vue de l'espace, fondu vers NOAA aux zooms moyens, NOAA seule aux zooms forts.
  * Deux services sans clé, sans tuiles toutes faites : chaque tuile est une image demandée sur son emprise Web
  * Mercator, et le serveur la relaie comme les orthophotos WMS de la couche unique (voir earth-imagery.service.ts).
  * Fonctions pures, testées dans earth-seafloor.spec.ts.
@@ -136,9 +136,9 @@ export interface EarthMarineLayer { template: string; maxZoom: number }
 /**
  * Carte marine de la couche unique, décrite dans sa table (earth-plan.ts) et faite par le navigateur, sous le masque
  * de la mer des altitudes Terrarium (l'eau peu profonde des côtes garde l'image satellite) :
- *  - vue de l'espace (paliers « noaa » de la table) : la teinte des océans de la NOAA (ETOPO 2022) ;
- *  - zooms moyens (paliers « fondu ») : la NOAA fondue peu à peu dans GEBCO, niveau par niveau ;
- *  - zooms forts (paliers « gebco ») : GEBCO seule, en relief ombré, avec les isobathes tirées de sa carte plate.
+ *  - vue de l'espace (paliers « gebco » de la table) : GEBCO seule ;
+ *  - zooms moyens (paliers « fondu ») : GEBCO fondue peu à peu vers NOAA, niveau par niveau ;
+ *  - zooms forts (paliers « noaa ») : NOAA seule.
  * Les seuils sont les distances des paliers de la table ; `fadeMs` est la durée du fondu entre deux niveaux de la
  * Terre (le passage NOAA → GEBCO se fait à ces changements de niveau). Rien n'est gardé sur le serveur.
  */
@@ -161,7 +161,7 @@ export interface EarthMarine {
 // Fin de EarthMarine.
 }
 
-// Durée du fondu entre deux niveaux de la Terre, dont le passage NOAA → GEBCO : 600 ms.
+// Durée du fondu entre deux niveaux de la Terre, dont le passage GEBCO → NOAA : 600 ms.
 export const MARINE_FADE_MS = 600;
 // Isobathes : 12 bandes de couleur dans la carte plate, trait foncé à 45 %.
 export const ISOBATHS = { bands: 12, strength: 0.45 };

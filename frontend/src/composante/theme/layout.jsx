@@ -15,7 +15,7 @@ export const ZOOM_BOTTOM = 64;
 // Téléphone : l'écran est découpé en trois zones qui ne se recouvrent jamais.
 //  - En haut, la zone du titre (MobileTopBar) : bandeau titre, bouton de don, puis les indicateurs (chargement des
 //    tuiles, LiDAR), les uns sous les autres dans le flux. Sa limite basse est publiée dans --hud-top.
-//  - En bas, le dock (MobileDock) : de haut en bas, le tiroir Informations, la barre de Claude, la bande des astres
+//  - En bas, le dock (MobileDock) : de haut en bas, le tiroir Informations, la barre de ChatGPT, la bande des astres
 //    et la navigation (Explorer, Orbite, Données, Menu), empilés dans le flux. Sa hauteur est publiée dans
 //    --hud-bottom. En largeur suffisante (paysage), les deux premiers se partagent une rangée.
 //  - Entre les deux, la scène 3D, libre ; la navball et les coordonnées GPS s'y placent avec ces deux variables.

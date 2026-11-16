@@ -5,8 +5,7 @@
 /**
  * Icônes : des composants Material de MUI, nommés dans ui/icons. Elles héritent de la couleur et de la taille du
  * bouton, donc un bouton enfoncé, coupé ou survolé se dessine tout seul — ce que les emoji ne faisaient pas.
- * Logo du bouton « Claude » : image fournie par le propriétaire du site (public/claude-logo.png). Une icône peut
- * donc être un composant, un objet { img } ou un caractère ; les boutons la dessinent avec `iconNode`.
+ * Marque du bouton « ChatGPT » : caractère ✳ ; une icône peut être un composant, un objet { img } ou un caractère.
  */
 // Importe l'ensemble des boutons masqués, gardé dans son propre module (sans import, pour la fenêtre « Node »).
 import { HIDDEN } from './hiddenActions';
@@ -21,8 +20,8 @@ import {
   AccountTreeIcon, ThreeSixtyIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons';
-// Logo du bouton « Claude » : une image du dossier public.
-export const CLAUDE_LOGO = { img: '/claude-logo.png' };
+// Marque du bouton ChatGPT.
+export const CHATGPT_MARK = '✳';
 
 // Déclare et exporte toolbarActions (début de la liste des paramètres).
 export function toolbarActions({
@@ -42,14 +41,14 @@ export function toolbarActions({
     { id: 'search', group: 'explore', icon: SearchIcon, label: 'Rechercher', primary: true, onClick: onSearch, title: 'Rechercher une ville ou un astre (Ctrl K)', kbd: 'Ctrl K' },
     // « Ma position » n'est plus ici : elle est posée sous la navball, en icône (hud/NavballPilote).
     // Assistant : petit menu déroulant qui s'ouvre au-dessus du bouton (l'événement du clic donne son point d'ancrage).
-    // Claude : l'assistant, enfoncé quand son menu est ouvert.
-    { id: 'assistant', group: 'explore', icon: CLAUDE_LOGO, label: 'Claude', primary: true, pressed: assistantOpen, onClick: onAssistant, title: 'Claude : poser une question sur le système solaire' },
+    // ChatGPT : l'assistant, enfoncé quand son menu est ouvert.
+    { id: 'assistant', group: 'explore', icon: CHATGPT_MARK, label: 'ChatGPT', primary: true, pressed: assistantOpen, onClick: onAssistant, title: 'ChatGPT : poser une question sur le système solaire' },
     // Le bouton Informations n'existe plus : le menu des cartes est rendu dans le panneau des caractéristiques,
     // qui s'ouvre d'un appui sur son en-tête (et par la touche L).
     // Vue globale : retour à la vue d'ensemble.
     { id: 'reset', group: 'explore', icon: PublicIcon, label: 'Vue globale', short: 'Global', primary: true, onClick: onReset, title: 'Retour à la vue d’ensemble (0 du pavé numérique)' },
     // Astres : ouvre ou ferme l'arborescence des astres (bande du dock sur téléphone, rail sur ordinateur), qui
-    // n'avait de bouton que dans le panneau de Claude sur ordinateur, et aucun sur téléphone.
+    // n'avait de bouton que dans le panneau de ChatGPT sur ordinateur, et aucun sur téléphone.
     onNavigator && { id: 'navigator', group: 'explore', icon: AccountTreeIcon, label: 'Astres', iconOnly: true, pressed: navigatorOpen, onClick: onNavigator, title: 'Arborescence des astres : planètes et satellites' },
     // Plateau tournant : n'était ouvert que par la touche T, sans bouton (inaccessible sur téléphone).
     onPlateau && { id: 'plateau', group: 'explore', icon: ThreeSixtyIcon, label: 'Plateau tournant', short: 'Plateau', iconOnly: true, onClick: onPlateau, title: 'Plateau tournant : l’astre visé en tournant (T)' },

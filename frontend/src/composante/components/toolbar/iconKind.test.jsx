@@ -39,8 +39,8 @@ test('reconnaît un élément React déjà construit', () => {
 
 // Test : l'image du dossier public.
 test('reconnaît une image du dossier public', () => {
-  // Le logo de Claude, tel que la barre d'outils le déclare.
-  assert.equal(iconKind({ img: '/claude-logo.png' }), 'image');
+  // Le logo de ChatGPT, tel que la barre d'outils le déclare.
+  assert.equal(iconKind({ img: '/chatgpt-logo.png' }), 'image');
 // Fin du test.
 });
 

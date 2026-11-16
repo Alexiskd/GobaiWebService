@@ -52,6 +52,8 @@ import { MoonColorService } from '../services/map-tiles/moon-color.service';
 import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
 // Importe le relief de la Lune en tuiles Terrarium.
 import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
+// Relief géométrique de Mars issu des altitudes MOLA.
+import { MarsReliefService } from '../services/map-tiles/mars-relief.service';
 // Importe le blend de la Lune.
 import { MoonBlendService } from '../services/map-tiles/moon-blend.service';
 // Service du modèle 3D de la Lune.
@@ -127,6 +129,8 @@ export class TilesController {
     private readonly moonTiles: MoonTileCacheService,
     // Le relief de la Lune.
     private readonly moonRelief: MoonReliefService,
+    // Le relief de Mars.
+    private readonly marsRelief: MarsReliefService,
     // Le blend de la Lune.
     private readonly moonBlend: MoonBlendService,
     // Le modèle 3D de la Lune.
@@ -151,6 +155,18 @@ export class TilesController {
     private readonly earthCloudCover: EarthCloudCoverService,
   // Corps du constructeur vide.
   ) {}
+
+  // Route GET /api/v1/tiles/mars-relief/:z/:x/:y : altitudes MOLA en Terrarium.
+  @Get('mars-relief/:z/:x/:y')
+  @SkipThrottle()
+  @ApiOperation({ summary: 'Relief géométrique de Mars (Terrarium)', description: 'Altitudes MOLA globales de la NASA réencodées en PNG Terrarium pour le moteur de relief partagé.' })
+  @ApiOkResponse({ description: 'Tuile PNG Terrarium (altitudes MOLA en mètres).' })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  async marsReliefTile(@Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
+    const tile = await this.marsRelief.tile(parseTileCoordinate(z), parseTileCoordinate(x), parseTileCoordinate(y.replace(/\.png$/, '')));
+    sendTile(req, res, tile, MARS_TILE, { 'X-Cache': tile.cached ? 'HIT' : 'MISS' });
+  }
 
   // Route GET /api/v1/tiles/moon-color.jpg.
   @Get('moon-color.jpg')

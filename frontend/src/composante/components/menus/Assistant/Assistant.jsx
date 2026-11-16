@@ -46,7 +46,7 @@ const NOT_CONNECTED = 'L’assistant n’est pas encore branché : cette fenêtr
 /**
  * Couleurs et polices du menu, les mêmes de jour comme de nuit (le reste de l'interface suit le thème de l'application) :
  * fond anthracite chaud, texte blanc cassé, lignes survolées en gris plus clair, orange du logo pour l'action principale.
- * Les réponses de Claude sont en caractères à empattements, le reste en caractères bâtons.
+ * Les réponses de ChatGPT sont en caractères à empattements, le reste en caractères bâtons.
  */
 // Couleurs du menu (début de l'objet).
 const C = {
@@ -61,7 +61,7 @@ const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Ar
 // Police à empattements.
 const SERIF = 'Georgia, "Iowan Old Style", "Times New Roman", serif';
 
-/** Un message : celui de l'utilisateur dans une pastille grise à droite, la réponse de Claude à nu, en empattements. */
+/** Un message : celui de l'utilisateur dans une pastille grise à droite, la réponse de ChatGPT à nu, en empattements. */
 // Déclare le composant Bubble : l'auteur, l'erreur, les actions faites et le texte.
 const Bubble = ({ from, error, done, children }) => (
   // Le bloc du message (début de la balise).
@@ -70,12 +70,12 @@ const Bubble = ({ from, error, done, children }) => (
     sx={from === 'user'
       // … pastille grise alignée à droite, de 85 % de la largeur au plus…
       ? { alignSelf: 'flex-end', maxWidth: '85%', minWidth: 0, flex: 'none', px: 1.5, py: 0.9, borderRadius: '14px', bgcolor: C.row }
-      // … réponse de Claude : sur toute la largeur, avec un trait rouge à gauche en cas d'erreur ; jamais écrasée par ses voisines.
+      // … réponse de ChatGPT : sur toute la largeur, avec un trait rouge à gauche en cas d'erreur ; jamais écrasée par ses voisines.
       : { alignSelf: 'stretch', minWidth: 0, flex: 'none', px: 0.5, py: 0.25, ...(error ? { pl: 1.25, borderLeft: `2px solid ${C.error}` } : {}) }}
   // Fin de la balise ouvrante.
   >
     {/* L'auteur du message, pour les lecteurs d'écran seulement. */}
-    <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'Claude : '}</Typography>
+    <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'ChatGPT : '}</Typography>
     {/* S'il y a un texte (début). */}
     {children && (
       // Le texte : retours à la ligne gardés, mots trop longs coupés (césure française), rouge en cas d'erreur, police et taille selon l'auteur.
@@ -148,20 +148,20 @@ const Row = ({ children, ...props }) => (
 );
 
 /**
- * Menu « Claude » : panneau de conversation avec l'assistant, jamais modal. Il n'y a ni voile ni blocage : pendant
+ * Menu « ChatGPT » : panneau de conversation avec l'assistant, jamais modal. Il n'y a ni voile ni blocage : pendant
  * tout l'échange, l'utilisateur continue de tourner le globe, de zoomer et d'appuyer sur les boutons, et voit
  * l'assistant agir sur la scène en même temps.
  *
  * Deux positions, choisies par `placement` :
- *  - « popper » : petit menu déroulant ancré au bouton « Claude » de la barre d'outils (position d'origine) ;
+ *  - « popper » : petit menu déroulant ancré au bouton « ChatGPT » de la barre d'outils (position d'origine) ;
  *  - « hud »    : posé à la place de la navigation — rail de gauche sur ordinateur, bande du bas sur téléphone —
- *                 pour que le déplacement vers les astres se demande à Claude. La navigation reste accessible par
+ *                 pour que le déplacement vers les astres se demande à ChatGPT. La navigation reste accessible par
  *                 son bouton.
  *
  * Sur téléphone, le panneau se réduit à une barre de recherche avec le logo : les réponses ne sont pas affichées,
  * l'écran restant à la scène. Les actions demandées, elles, s'exécutent comme sur ordinateur.
  *
- * Conversation avec le plus petit modèle de Claude (Haiku), relayée par le serveur (POST /assistant/messages) qui
+ * Conversation avec le modèle Haiku fourni par Anthropic, relayée par le serveur (POST /assistant/messages) qui
  * garde la clé de l'API.
  * Tant que la clé n'est pas configurée sur le serveur (GET /assistant/config → enabled: false), la fenêtre reste en
  * démonstration : chaque message reçoit la même réponse fixe et rien n'est envoyé.
@@ -170,7 +170,7 @@ const Row = ({ children, ...props }) => (
  * affichée sous la réponse. Une action hors de la liste autorisée est ignorée.
  */
 /**
- * Barre de Claude sur téléphone : une seule pilule (logo, champ, bouton d'envoi), posée dans le flux du dock du bas
+ * Barre de ChatGPT sur téléphone : une seule pilule (logo, champ, bouton d'envoi), posée dans le flux du dock du bas
  * (MobileDock), au-dessus de la bande des astres et de la navigation, écartée des bords et des zones de sécurité.
  * C'est le dock qui remonte au-dessus du clavier quand il s'ouvre. Les réponses ne sont pas affichées (l'écran reste
  * à la scène) ; pendant l'attente, le bouton d'envoi tourne.
@@ -185,8 +185,8 @@ function MobileBar({ text, setText, busy, send }) {
     // Conteneur dans le flux du dock : pleine largeur, marges latérales.
     <Box
       component="section"
-      aria-label="Claude"
-      data-claude-panel=""
+      aria-label="ChatGPT"
+      data-chatgpt-panel=""
       sx={{
         // Dans le flux du dock (plus de position fixe propre) : le dock la place au-dessus de la barre de navigation.
         position: 'relative',
@@ -214,7 +214,7 @@ function MobileBar({ text, setText, busy, send }) {
         }}
       >
         {/* Le logo, centré verticalement. */}
-        <Box component="img" src="/claude-logo.png" alt="" sx={{ width: 24, height: 24, flex: 'none' }} />
+        <Typography aria-hidden="true" sx={{ width: 24, height: 24, flex: 'none', display: 'grid', placeItems: 'center', fontSize: 23, lineHeight: 1, color: C.text }}>✳</Typography>
         {/* Le champ : une à trois lignes, 16 px pour que Safari ne zoome pas au focus. */}
         <InputBase
           multiline maxRows={3} fullWidth
@@ -224,9 +224,9 @@ function MobileBar({ text, setText, busy, send }) {
           onBlur={() => setFocused(false)}
           // Entrée envoie ; Maj + Entrée passe à la ligne.
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (canSend) send(); } }}
-          placeholder={busy ? 'Claude répond…' : 'Demander à Claude…'}
+          placeholder={busy ? 'ChatGPT répond…' : 'Demander à ChatGPT…'}
           enterKeyHint="send"
-          inputProps={{ 'aria-label': 'Message pour Claude', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
+          inputProps={{ 'aria-label': 'Message pour ChatGPT', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
           sx={{
             flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, py: 0.25,
             '& textarea': { overflowWrap: 'anywhere', p: 0 },
@@ -237,7 +237,7 @@ function MobileBar({ text, setText, busy, send }) {
         <ButtonBase
           type="submit"
           disabled={!canSend}
-          aria-label={busy ? 'Claude répond' : 'Envoyer'}
+          aria-label={busy ? 'ChatGPT répond' : 'Envoyer'}
           sx={{
             // Cible tactile de 44 × 44 px (au lieu de 40), ronde, de taille fixe.
             flex: 'none', width: 44, height: 44, borderRadius: '50%',
@@ -352,7 +352,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
     // Si l'assistant n'est pas branché.
     if (!enabled) {
       // Ajoute la réponse fixe de démonstration.
-      setMessages((m) => [...m, { from: 'claude', text: NOT_CONNECTED }]);
+      setMessages((m) => [...m, { from: 'assistant', text: NOT_CONNECTED }]);
       // Rien n'est envoyé.
       return;
     // Fin du cas.
@@ -377,11 +377,11 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       // Texte affiché : la réponse, sinon « C'est fait. » s'il y a eu des actions, sinon un refus.
       const shown = reply || (done.length ? 'C’est fait.' : 'Je ne peux pas faire cette action dans l’interface.');
       // Ajoute la réponse à la conversation, avec les actions faites.
-      setMessages((m) => [...m, { from: 'claude', text: shown, done }]);
+      setMessages((m) => [...m, { from: 'assistant', text: shown, done }]);
     // En cas d'échec.
     } catch (e) {
       // Si le composant est toujours monté : ajoute un message d'erreur.
-      if (alive.current) setMessages((m) => [...m, { from: 'claude', error: true, text: e.message || 'L’assistant n’a pas pu répondre.' }]);
+      if (alive.current) setMessages((m) => [...m, { from: 'assistant', error: true, text: e.message || 'L’assistant n’a pas pu répondre.' }]);
     // Dans tous les cas.
     } finally {
       // Si le composant est toujours monté : plus de réponse attendue.
@@ -394,7 +394,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
   // Menu fermé : rien n'est affiché.
   if (!open) return null;
 
-  // Petit menu déroulant : ancré au bouton « Claude » de la barre d'outils, il se déroule au-dessus ; sur téléphone,
+  // Petit menu déroulant : ancré au bouton « ChatGPT » de la barre d'outils, il se déroule au-dessus ; sur téléphone,
   // ancré au bouton ⋯ du haut de l'écran, il se déroule dessous. Pas de voile ni de blocage : la scène reste visible
   // et utilisable. Sans bouton d'ancrage (bouton disparu de l'écran), il se pose en bas à gauche.
   // Hauteur de ce qui occupe le bas de l'écran.
@@ -438,9 +438,9 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       // Ombre marquée.
       elevation={8}
       // Nom pour les lecteurs d'écran.
-      aria-label="Claude"
+      aria-label="ChatGPT"
       // Marque le panneau : ses propres boutons sont exclus de l'inventaire, pour qu'il ne se clique pas lui-même.
-      data-claude-panel=""
+      data-chatgpt-panel=""
       // Début du style.
       sx={{
         // En colonne, sans débordement.
@@ -467,10 +467,10 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       // En-tête de hauteur fixe (jamais écrasé par la conversation) ; ses éléments passent à la ligne s'ils manquent de place.
       <Stack direction="row" alignItems="center" useFlexGap spacing={1} sx={{ flex: 'none', flexWrap: 'wrap', rowGap: 0.75, px: 1.5, py: 1.1, borderBottom: `1px solid ${C.border}` }}>
         {/* Le logo. */}
-        <Box component="img" src="/claude-logo.png" alt="" sx={{ width: 20, height: 20, flex: 'none' }} />
-        {/* Le titre « Claude », en empattements. */}
+        <Typography aria-hidden="true" sx={{ width: 20, height: 20, flex: 'none', display: 'grid', placeItems: 'center', fontSize: 20, lineHeight: 1, color: C.text }}>✳</Typography>
+        {/* Le titre « ChatGPT », en empattements. */}
         {/* Il prend la place restante et peut rétrécir ; trop étroit, il se termine par « … » au lieu de passer sous les boutons. */}
-        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Claude</Typography>
+        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>ChatGPT</Typography>
         {/* L'état « Démonstration » n'est plus dans l'en-tête, trop étroit dans le rail : l'encadré sous l'en-tête le dit déjà. */}
         {/* Le bouton de l'arborescence des astres, quand le parent en propose une. */}
         {onNavigator && (
@@ -551,8 +551,8 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
             <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 'none', alignSelf: 'flex-start', px: 1 }}>
               {/* Une petite roue orange. */}
               <CircularProgress size={14} sx={{ color: C.accent }} />
-              {/* Le texte « Claude répond… ». */}
-              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: C.muted }}>Claude répond…</Typography>
+              {/* Le texte « ChatGPT répond… ». */}
+              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: C.muted }}>ChatGPT répond…</Typography>
             {/* Fin de la ligne d'attente. */}
             </Stack>
           // Fin du cas.
@@ -578,7 +578,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           // Note de confidentialité (début de la balise).
           <Typography sx={{ flex: 'none', fontFamily: SANS, fontSize: 11.5, lineHeight: 1.45, color: C.muted }}>
             {/* Son texte. */}
-            Vos messages sont envoyés à l’API Claude d’Anthropic pour générer la réponse. N’y mettez pas d’informations personnelles.
+            Vos messages sont envoyés à l’API Anthropic pour générer la réponse. N’y mettez pas d’informations personnelles.
           {/* Fin de la note. */}
           </Typography>
         // Fin du cas.
@@ -593,7 +593,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
         {/* Boutons alignés en bas : le champ peut grandir sur plusieurs lignes sans les recouvrir. */}
         <Stack component="form" direction="row" spacing={1} alignItems="flex-end" onSubmit={(e) => { e.preventDefault(); send(); }}>
           {/* Mode réduit : le logo tient la place de l'en-tête, à gauche de la barre de recherche. */}
-          {bare && <Box component="img" src="/claude-logo.png" alt="Claude" sx={{ width: 22, height: 22, flex: 'none', ml: 0.25, mb: '9px' }} />}
+          {bare && <Typography aria-hidden="true" sx={{ width: 22, height: 22, flex: 'none', ml: 0.25, mb: '9px', fontSize: 22, lineHeight: 1, color: C.text }}>✳</Typography>}
           {/* Le champ de texte (début de la balise). */}
           <TextField
             // Petite taille.
@@ -609,9 +609,9 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
             // À chaque frappe : met le texte à jour.
             onChange={(e) => setText(e.target.value)}
             // Texte indicatif.
-            placeholder="Écrire à Claude…"
+            placeholder="Écrire à ChatGPT…"
             // Nom pour les lecteurs d'écran et longueur maximale.
-            slotProps={{ htmlInput: { 'aria-label': 'Message pour Claude', maxLength: MAX_CHARS } }}
+            slotProps={{ htmlInput: { 'aria-label': 'Message pour ChatGPT', maxLength: MAX_CHARS } }}
             // Début du style.
             sx={{
               // Le cadre du champ (début).
