@@ -16,7 +16,7 @@
  * tuiles chargées (ordinateur et téléphone) et les détails affichés. `fieldOnly` : seules les tuiles du champ de la
  * caméra sont chargées (aucun préchargement prédictif hors champ), les autres sont déchargées.
  *
- * Elle décrit enfin la carte marine (`marine`, voir earth-seafloor.ts) : GEBCO vue de l'espace, fondu vers NOAA aux zooms moyens, NOAA seule aux zooms forts. Les seuils sont la
+ * Elle décrit enfin la carte marine (`marine`, voir earth-seafloor.ts) : NOAA vue de l'espace, fondu vers GEBCO aux zooms moyens, GEBCO seule aux zooms forts. Les seuils sont la
  * colonne « marine » des paliers ; la durée du fondu est `marine.fadeMs`.
  *
  * Fonctions pures, testées dans earth-plan.spec.ts : ni NestJS ni réseau.
@@ -35,7 +35,7 @@ import { earthMarine, type EarthMarine } from './earth-seafloor';
 
 /** Version de la table : elle change quand les règles changent (le navigateur la garde avec la description de la couche). */
 // Déclare et exporte la version de la table : 3 (carte marine ajoutée ; 2 : paliers de zoom).
-export const EARTH_PLAN_VERSION = 3;
+export const EARTH_PLAN_VERSION = 4;
 
 /** En-tête de cache de la table : un jour, puis une semaine d'affichage immédiat avec vérification en arrière-plan. */
 // Déclare et exporte l'en-tête de cache de la table.
@@ -56,8 +56,8 @@ export interface EarthTierDetails {
   roads: boolean;
   // names : noms des villes et des pays.
   names: boolean;
-  // marine : carte marine « gebco » (GEBCO vue de l'espace), « fondu » (GEBCO vers NOAA) ou « noaa » (NOAA seule).
-  marine: 'noaa' | 'fondu' | 'gebco';
+  // marine : carte marine « noaa » (NOAA vue de l'espace), « fondu » (NOAA vers GEBCO) ou « gebco » (GEBCO seule).
+  marine: 'gebco' | 'fondu' | 'gebco';
 // Fin de EarthTierDetails.
 }
 
@@ -90,21 +90,21 @@ export interface EarthTier {
 // Déclare et exporte les paliers (début de la liste).
 export const EARTH_TIERS: EarthTier[] = [
   // Rue : jusqu'à 0,4 km ; orthophotos nationales jusqu'au niveau 19 ; tout le détail.
-  { id: 'rue', label: 'Rue', maxKm: 0.4, source: 'orthophotos nationales', maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'noaa' } },
+  { id: 'rue', label: 'Rue', maxKm: 0.4, source: 'orthophotos nationales', maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
   // Quartier : jusqu'à 3 km ; niveau 19.
-  { id: 'quartier', label: 'Quartier', maxKm: 3, source: 'orthophotos nationales', maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'noaa' } },
+  { id: 'quartier', label: 'Quartier', maxKm: 3, source: 'orthophotos nationales', maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
   // Ville : jusqu'à 40 km ; niveau 17.
-  { id: 'ville', label: 'Ville', maxKm: 40, source: 'orthophotos nationales', maxZoom: 17, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'noaa' } },
+  { id: 'ville', label: 'Ville', maxKm: 40, source: 'orthophotos nationales', maxZoom: 17, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
   // Région : jusqu'à 400 km ; niveau 14 ; orthophotos nationales vues de loin, sinon Sentinel-2.
   { id: 'region', label: 'Région', maxKm: 400, source: 'orthophotos nationales (vue de loin), sinon Sentinel-2', maxZoom: 14, maxTiles: { desktop: 260, phone: 200 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'fondu' } },
   // Pays : jusqu'à 2 500 km ; niveau 10 ; Sentinel-2.
   { id: 'pays', label: 'Pays', maxKm: 2500, source: 'Sentinel-2', maxZoom: 10, maxTiles: { desktop: 220, phone: 170 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'fondu' } },
   // Continent : jusqu'à 9 000 km ; niveau 8 ; Sentinel-2.
-  { id: 'continent', label: 'Continent', maxKm: 9000, source: 'Sentinel-2', maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'gebco' } },
+  { id: 'continent', label: 'Continent', maxKm: 9000, source: 'Sentinel-2', maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'noaa' } },
   // Planète : jusqu'à 120 000 km ; niveau 6 ; NASA GIBS et Sentinel-2.
-  { id: 'planete', label: 'Planète', maxKm: 120_000, source: 'NASA GIBS, Sentinel-2', maxZoom: 6, maxTiles: { desktop: 120, phone: 100 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'gebco' } },
+  { id: 'planete', label: 'Planète', maxKm: 120_000, source: 'NASA GIBS, Sentinel-2', maxZoom: 6, maxTiles: { desktop: 120, phone: 100 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
   // Espace : au-delà ; la mosaïque instantanée seule (niveaux 0 à 3).
-  { id: 'espace', label: 'Espace', maxKm: null, source: 'mosaïque instantanée', maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'gebco' } },
+  { id: 'espace', label: 'Espace', maxKm: null, source: 'mosaïque instantanée', maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
 // Fin des paliers.
 ];
 

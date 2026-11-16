@@ -9,21 +9,21 @@ import { colorBand, drawIsobaths, marineMix, mixSea, validMarine } from './marin
 // niveau max et étape de la carte marine.
 const TIERS = [
   // Espace : sans limite, niveau 3, NOAA.
-  { id: 'espace', maxKm: null, maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { marine: 'gebco' } },
+  { id: 'espace', maxKm: null, maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { marine: 'noaa' } },
   // Rue : 0,4 km, niveau 19, GEBCO.
-  { id: 'rue', maxKm: 0.4, maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'noaa' } },
+  { id: 'rue', maxKm: 0.4, maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'gebco' } },
   // Quartier : 3 km, niveau 19, GEBCO.
-  { id: 'quartier', maxKm: 3, maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'noaa' } },
+  { id: 'quartier', maxKm: 3, maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'gebco' } },
   // Ville : 40 km, niveau 17, GEBCO.
-  { id: 'ville', maxKm: 40, maxZoom: 17, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'noaa' } },
+  { id: 'ville', maxKm: 40, maxZoom: 17, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'gebco' } },
   // Région : 400 km, niveau 14, fondu.
   { id: 'region', maxKm: 400, maxZoom: 14, maxTiles: { desktop: 260, phone: 200 }, details: { marine: 'fondu' } },
   // Pays : 2 500 km, niveau 10, fondu.
   { id: 'pays', maxKm: 2500, maxZoom: 10, maxTiles: { desktop: 220, phone: 170 }, details: { marine: 'fondu' } },
   // Continent : 9 000 km, niveau 8, NOAA.
-  { id: 'continent', maxKm: 9000, maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { marine: 'gebco' } },
+  { id: 'continent', maxKm: 9000, maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { marine: 'noaa' } },
   // Planète : 120 000 km, niveau 6, NOAA.
-  { id: 'planete', maxKm: 120000, maxZoom: 6, maxTiles: { desktop: 120, phone: 100 }, details: { marine: 'gebco' } },
+  { id: 'planete', maxKm: 120000, maxZoom: 6, maxTiles: { desktop: 120, phone: 100 }, details: { marine: 'noaa' } },
 // Fin des paliers.
 ];
 
@@ -47,29 +47,28 @@ test('carte marine de la table vérifiée', () => {
 // Fin du test.
 });
 
-// Test : GEBCO vue de l'espace, fondu aux zooms moyens, NOAA seule aux zooms forts.
-test('choix GEBCO / NOAA inversé par niveau, d’après la colonne « marine » des paliers', () => {
-  // Niveaux 0 à 8 (espace, planète, continent) : GEBCO seule.
-  for (let z = 0; z <= 8; z++) assert.deepEqual(marineMix(TIERS, z), { gebco: 1, isobaths: true }, `niveau ${z}`);
-  // Niveaux 9 à 14 (pays, région) : fondu inversé, la part de GEBCO diminue strictement.
+// Test : NOAA vue de l'espace, fondu aux zooms moyens, GEBCO seule aux zooms forts.
+test('choix NOAA / GEBCO inversé par niveau, d’après la colonne « marine » des paliers', () => {
+  // Niveaux 0 à 8 (espace, planète, continent) : NOAA seule.
+  for (let z = 0; z <= 8; z++) assert.deepEqual(marineMix(TIERS, z), { gebco: 0, isobaths: false }, `niveau ${z}`);
+  // Niveaux 9 à 14 (pays, région) : fondu, la part de GEBCO augmente strictement.
   const fade = [9, 10, 11, 12, 13, 14].map((z) => marineMix(TIERS, z));
   assert.equal(fade.every((m) => !m.isobaths), true);
-  assert.deepEqual(fade.map((m) => Math.round(m.gebco * 7)), [6, 5, 4, 3, 2, 1]);
-  // Niveaux 15 à 20 (ville, quartier, rue) : NOAA seule.
-  for (let z = 15; z <= 20; z++) assert.deepEqual(marineMix(TIERS, z), { gebco: 0, isobaths: false }, `niveau ${z}`);
-  // Sans paliers : GEBCO seule, sans isobathes.
-  assert.deepEqual(marineMix(null, 5), { gebco: 1, isobaths: false });
+  assert.deepEqual(fade.map((m) => Math.round(m.gebco * 7)), [1, 2, 3, 4, 5, 6]);
+  // Niveaux 15 à 20 (ville, quartier, rue) : GEBCO seule.
+  for (let z = 15; z <= 20; z++) assert.deepEqual(marineMix(TIERS, z), { gebco: 1, isobaths: true }, `niveau ${z}`);
+  // Sans paliers : NOAA seule, sans isobathes.
+  assert.deepEqual(marineMix(null, 5), { gebco: 0, isobaths: false });
 });
 
 // Test : le fondu suit la table — un autre seuil change le niveau du passage.
-// Test : le fondu suit la table — un autre seuil change le niveau du passage.
-test('seuil du fondu inversé lu dans la table', () => {
-  // Même table, mais le palier pays passe en GEBCO : le fondu ne couvre plus que la région.
-  const tiers = TIERS.map((t) => (t.id === 'pays' ? { ...t, details: { marine: 'gebco' } } : t));
-  // Niveau 10 : GEBCO seule.
-  assert.equal(marineMix(tiers, 10).gebco, 1);
-  // Niveau 11 : premier niveau du fondu (4/5 : du niveau 10 au niveau 15).
-  assert.equal(marineMix(tiers, 11).gebco, 0.8);
+test('seuil du fondu lu dans la table', () => {
+  // Même table, mais le palier pays passe en NOAA : le fondu commence après le niveau 10.
+  const tiers = TIERS.map((t) => (t.id === 'pays' ? { ...t, details: { marine: 'noaa' } } : t));
+  // Niveau 10 : NOAA seule.
+  assert.equal(marineMix(tiers, 10).gebco, 0);
+  // Niveau 11 : premier niveau du fondu (1/5 : du niveau 10 au niveau 15).
+  assert.equal(marineMix(tiers, 11).gebco, 0.2);
 });
 
 // Test : le mélange des deux images.
