@@ -33,3 +33,4 @@ Les fonctionnalités qui dépendaient de routes `/api/v1` ne sont pas automatiqu
 
 Le dépôt GitHub original n’a pas été modifié. Cette livraison est une copie de travail ; aucun commit, push, pull request ni déploiement n’a été effectué. Voir `STATIC-MIGRATION.md` pour le détail des limites.
 # static-gobai
+# static-gobai
