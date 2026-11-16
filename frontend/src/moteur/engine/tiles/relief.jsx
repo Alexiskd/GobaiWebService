@@ -26,7 +26,7 @@ export const RELIEF_SEGMENTS = 16;
 export const RELIEF_SKIRT = 0.04;
 /** Plus haut sommet possible (m) : marge des volumes englobants. */
 // Déclare et exporte la plus grande altitude possible : 9000 m.
-export const MAX_HEIGHT_M = 9000;
+export const MAX_HEIGHT_M = 22000;
 
 /** Altitude (m) d'un pixel Terrarium (composantes 0 … 255). Le fond des mers est ramené à 0 : la mer reste plate. */
 // Déclare et exporte terrariumMeters : les trois composantes du pixel.

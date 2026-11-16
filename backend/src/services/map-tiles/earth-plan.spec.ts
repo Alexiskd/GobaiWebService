@@ -77,22 +77,22 @@ describe('table de priorité des sources de la Terre', () => {
     expect([EARTH_TIERS[0].maxZoom, EARTH_TIERS[EARTH_TIERS.length - 1].maxZoom]).toEqual([19, 3]);
     // Sur téléphone, jamais plus de tuiles que sur ordinateur, et au moins 85 (la mosaïque instantanée).
     for (const t of EARTH_TIERS) expect(t.maxTiles.phone <= t.maxTiles.desktop && t.maxTiles.phone >= 85).toBe(true);
-    // La carte marine passe de la teinte NOAA (loin) à GEBCO seule (près).
-    expect([EARTH_TIERS[EARTH_TIERS.length - 1].details.marine, EARTH_TIERS[0].details.marine]).toEqual(['noaa', 'gebco']);
+    // La carte marine passe de GEBCO (loin) à NOAA seule (près).
+    expect([EARTH_TIERS[EARTH_TIERS.length - 1].details.marine, EARTH_TIERS[0].details.marine]).toEqual(['gebco', 'noaa']);
   // Fin du test.
   });
 
   // Test : la carte marine est dans la table, ses seuils sont la colonne « marine » des paliers, et elle se coupe.
-  it('décrit la carte marine : NOAA loin, fondu, puis GEBCO seule, sans retour en arrière', () => {
+  it('décrit la carte marine : GEBCO loin, fondu, puis NOAA seule, sans retour en arrière', () => {
     // La table.
     const plan = earthPlan(enabledSources(env), env);
     // Version 3, avec la carte marine du serveur.
     expect([plan.version, plan.marine]).toEqual([3, earthMarine(env)]);
     // Ordre des étapes, du plus lointain au plus proche.
-    const order = ['noaa', 'fondu', 'gebco'];
+    const order = ['gebco', 'fondu', 'noaa'];
     // Étapes des paliers, du plus lointain au plus proche.
     const steps = [...EARTH_TIERS].reverse().map((t) => order.indexOf(t.details.marine));
-    // Jamais de retour en arrière (NOAA → fondu → GEBCO).
+    // Jamais de retour en arrière (GEBCO → fondu → NOAA).
     for (let i = 1; i < steps.length; i++) expect(steps[i]).toBeGreaterThanOrEqual(steps[i - 1]);
     // Les trois étapes sont présentes.
     expect(new Set(steps).size).toBe(3);

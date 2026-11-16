@@ -24,12 +24,12 @@ const ACTIONABLE = [
 ].join(',');
 
 /**
- * Sous-arbre exclu du relevé : le panneau de Claude lui-même. Ce n'est pas une restriction sur ce que le modèle
+ * Sous-arbre exclu du relevé : le panneau de ChatGPT lui-même. Ce n'est pas une restriction sur ce que le modèle
  * peut atteindre dans l'application, mais une protection contre la boucle — son propre bouton d'envoi et sa croix
  * de fermeture n'ont rien à faire dans l'inventaire.
  */
-// Sélecteur du panneau de Claude.
-export const SELF_PANEL = '[data-claude-panel]';
+// Sélecteur du panneau de ChatGPT.
+export const SELF_PANEL = '[data-chatgpt-panel]';
 
 /** Nombre maximal d'éléments relevés : au-delà, la consigne envoyée au modèle deviendrait trop longue. */
 // Nombre maximal d'éléments de l'inventaire.
@@ -144,7 +144,7 @@ export function collectInventory(doc = globalThis.document) {
     if (elements.length >= MAX_ELEMENTS) break;
     // Élément masqué : ignoré, il n'est pas cliquable.
     if (!isVisible(el)) continue;
-    // Élément du panneau de Claude : ignoré, pour qu'il ne se clique pas lui-même.
+    // Élément du panneau de ChatGPT : ignoré, pour qu'il ne se clique pas lui-même.
     if (el.closest?.(SELF_PANEL)) continue;
     // Son libellé.
     const label = labelOf(el);

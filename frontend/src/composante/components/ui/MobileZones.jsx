@@ -3,7 +3,7 @@
  * les uns après les autres. Rien ne s'y recouvre, quelle que soit la taille de l'écran, l'orientation ou le nombre
  * de barres ouvertes ; leur place mesurée est publiée pour la navball, le cadre GPS et les messages.
  *  - MobileTopBar : en haut, le bandeau titre et ses boutons, puis les indicateurs sous lui.
- *  - MobileDock : en bas, les surfaces (tiroir Informations, barre de Claude) puis la base (bande des astres et
+ *  - MobileDock : en bas, les surfaces (tiroir Informations, barre de ChatGPT) puis la base (bande des astres et
  *    navigation). En largeur suffisante (paysage, tablette étroite), les deux surfaces se partagent une rangée.
  * Les zones laissent passer les gestes vers la scène partout où elles n'ont rien à afficher (pointer-events).
  */
@@ -64,7 +64,7 @@ export function MobileTopBar({ children, actions, status }) {
 }
 
 /**
- * Zone du bas : `surfaces` (tiroir Informations, barre de Claude), puis `base` (bande des astres, navigation). Elle
+ * Zone du bas : `surfaces` (tiroir Informations, barre de ChatGPT), puis `base` (bande des astres, navigation). Elle
  * remonte au-dessus du clavier virtuel quand il s'ouvre, et ne dépasse jamais la zone du titre : le tiroir
  * Informations, seul élément de hauteur variable, se réduit et défile à l'intérieur.
  */

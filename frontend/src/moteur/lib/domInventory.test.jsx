@@ -112,12 +112,12 @@ test('inventaire : numérote les éléments, écarte les muets et garde la table
 // Fin du test.
 });
 
-// Test : l'exclusion du panneau de Claude.
-test('inventaire : les éléments du panneau de Claude sont écartés', () => {
+// Test : l'exclusion du panneau de ChatGPT.
+test('inventaire : les éléments du panneau de ChatGPT sont écartés', () => {
   // Un bouton de l'app, qui n'est dans aucun panneau.
   const dehors = { ...el('button', { 'aria-label': 'Galerie' }), closest: () => null };
-  // Un bouton du panneau de Claude : son closest trouve la marque.
-  const dedans = { ...el('button', { 'aria-label': 'Fermer' }), closest: (sel) => (sel === '[data-claude-panel]' ? {} : null) };
+  // Un bouton du panneau de ChatGPT : son closest trouve la marque.
+  const dedans = { ...el('button', { 'aria-label': 'Fermer' }), closest: (sel) => (sel === '[data-chatgpt-panel]' ? {} : null) };
   // Le relevé sur les deux.
   const { elements } = collectInventory(doc([dehors, dedans]));
   // Un seul élément retenu : celui de l'app.
