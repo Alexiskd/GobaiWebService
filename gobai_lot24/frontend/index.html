@@ -1,0 +1,384 @@
+<!doctype html>
+<!-- Page en français. -->
+<html lang="fr">
+  <!-- En-tête de la page (début). -->
+  <head>
+    <!-- Encodage UTF-8. -->
+    <meta charset="UTF-8" />
+    <!-- Affichage adapté aux écrans de téléphone, encoche comprise. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <!-- Référencement : mot-clé visé « système solaire 3D », placé en tête du titre, de la description et du h1.
+         Le nom de l'app n'est jamais traduit ; « Gobai Space » est le nom du domaine. -->
+    <title>Système solaire 3D en direct · ∞ Go白ناन्टех α΄一하나א (Gobai Space)</title>
+    <!-- Description de la page pour les moteurs de recherche. -->
+    <meta name="description" content="Système solaire 3D en direct et gratuit : explore le Soleil, les planètes et leurs lunes à l’échelle 1:1, avec la Terre en imagerie satellite et les cartes NASA." />
+    <!-- Consignes aux robots : indexer, suivre les liens, aperçus sans limite. -->
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <!-- Auteur. -->
+    <meta name="author" content="Alexis Bouvet-Mallet" />
+    <!-- Nom de l'application. -->
+    <meta name="application-name" content="Go白ناन्टех" />
+    <!-- Nom de l'application sur l'écran d'accueil d'un iPhone. -->
+    <meta name="apple-mobile-web-app-title" content="Go白ناन्टех" />
+    <!-- Adresse canonique de la page. -->
+    <link rel="canonical" href="https://www.gobaispace.com/" />
+    <!-- Résumé du site en texte pour les assistants IA (format llms.txt) -->
+    <link rel="alternate" type="text/markdown" href="https://www.gobaispace.com/llms.txt" title="Résumé du site pour les assistants IA" />
+
+    <!-- Partage : Open Graph (Facebook, LinkedIn, WhatsApp, Discord…) et X -->
+    <meta property="og:type" content="website" />
+    <!-- Nom du site. -->
+    <meta property="og:site_name" content="Go白ناन्टех · Gobai Space" />
+    <!-- Adresse partagée. -->
+    <meta property="og:url" content="https://www.gobaispace.com/" />
+    <!-- Titre partagé. -->
+    <meta property="og:title" content="Système solaire 3D en direct · Go白ناन्टех (Gobai Space)" />
+    <!-- Description partagée. -->
+    <meta property="og:description" content="Système solaire 3D en direct dans ton navigateur, à l’échelle 1:1 : Terre en imagerie satellite, planètes et lunes avec les cartes NASA. Gratuit et sans publicité." />
+    <!-- Langue : français de France. -->
+    <meta property="og:locale" content="fr_FR" />
+    <!-- Image partagée. -->
+    <meta property="og:image" content="https://www.gobaispace.com/og-image.jpg" />
+    <!-- Son type : JPEG. -->
+    <meta property="og:image:type" content="image/jpeg" />
+    <!-- Sa largeur : 1 200 px. -->
+    <meta property="og:image:width" content="1200" />
+    <!-- Sa hauteur : 630 px. -->
+    <meta property="og:image:height" content="630" />
+    <!-- Son texte de remplacement. -->
+    <meta property="og:image:alt" content="Système solaire 3D : la Terre, le Soleil et les planètes, logo de Go白ناन्टех" />
+    <!-- Carte X : grande image. -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- Titre pour X. -->
+    <meta name="twitter:title" content="Système solaire 3D en direct · Go白ناन्टех (Gobai Space)" />
+    <!-- Description pour X. -->
+    <meta name="twitter:description" content="Système solaire 3D en direct dans ton navigateur, à l’échelle 1:1 : Terre en imagerie satellite, planètes et lunes avec les cartes NASA. Gratuit et sans publicité." />
+    <!-- Image pour X. -->
+    <meta name="twitter:image" content="https://www.gobaispace.com/og-image.jpg" />
+    <!-- Son texte de remplacement. -->
+    <meta name="twitter:image:alt" content="Système solaire 3D : la Terre, le Soleil et les planètes, logo de Go白ناन्टех" />
+
+    <!-- Icône de 32 px. -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png?v=3" />
+    <!-- Icône de 192 px. -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=3" />
+    <!-- Icône pour l'écran d'accueil d'un iPhone. -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
+    <!-- Manifeste de l'application installable. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Couleur de la barre du navigateur. -->
+    <meta name="theme-color" content="#0d1a3a" />
+    <!-- Données de démarrage demandées dès la lecture de la page, sans attendre le chargement du code de l'app -->
+    <link rel="preload" as="fetch" href="/api/v1/bodies" crossorigin="anonymous" />
+    <!-- Précharge la liste des villes. -->
+    <link rel="preload" as="fetch" href="/api/v1/cities" crossorigin="anonymous" />
+    <!-- Précharge la disponibilité des cartes des astres. -->
+    <link rel="preload" as="fetch" href="/api/v1/tiles/bodies/availability" crossorigin="anonymous" />
+    <!-- Connexion ouverte d'avance vers Google Fonts. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- Connexion ouverte d'avance vers les fichiers des polices. -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Feuille de style de la police Google Sans. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap" />
+    <!-- Connexion ouverte d'avance vers le studio de visualisation de la NASA. -->
+    <link rel="preconnect" href="https://svs.gsfc.nasa.gov" crossorigin />
+
+    <!-- Données structurées (schema.org) : site, application et auteur -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://www.gobaispace.com/#website",
+            "url": "https://www.gobaispace.com/",
+            "name": "Go白ناन्टех",
+            "alternateName": ["Gobai Space", "Gobaispace", "Gobaidex", "Gobai", "Système solaire 3D"],
+            "description": "Système solaire 3D en direct, à l’échelle 1:1, dans le navigateur.",
+            "inLanguage": "fr",
+            "publisher": { "@id": "https://www.gobaispace.com/#author" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://www.gobaispace.com/#app",
+            "url": "https://www.gobaispace.com/",
+            "name": "Go白ناन्टех",
+            "alternateName": ["Gobai Space", "Système solaire 3D"],
+            "headline": "Système solaire 3D en direct",
+            "description": "Système solaire 3D en direct et gratuit : explore le Soleil, les planètes et leurs lunes à l’échelle 1:1, avec la Terre en imagerie satellite et les cartes NASA.",
+            "keywords": "système solaire 3D, système solaire en 3D, système solaire en direct, simulateur du système solaire, planètes en 3D, carte du système solaire, Terre 3D, Lune 3D, Mars 3D",
+            "applicationCategory": "EducationalApplication",
+            "applicationSubCategory": "Astronomie",
+            "operatingSystem": "Tout système avec un navigateur récent",
+            "browserRequirements": "Nécessite JavaScript et WebGL",
+            "inLanguage": "fr",
+            "isAccessibleForFree": true,
+            "image": "https://www.gobaispace.com/og-image.jpg",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+            "featureList": [
+              "Système solaire 3D en temps réel à l’échelle 1:1",
+              "Terre détaillée en imagerie satellite",
+              "Relief de la Terre et des fonds océaniques en 3D",
+              "Cartes NASA de la Lune, de Mars, de Mercure et de Vénus",
+              "Lunes de Jupiter et de Saturne",
+              "Anneaux de Saturne modélisés",
+              "Galerie d’images NASA",
+              "Interface traduite dans de nombreuses langues"
+            ],
+            "about": [
+              { "@type": "Thing", "name": "Système solaire", "sameAs": "https://fr.wikipedia.org/wiki/Syst%C3%A8me_solaire" },
+              { "@type": "Thing", "name": "Astronomie" },
+              { "@type": "Thing", "name": "Terre" }
+            ],
+            "author": { "@id": "https://www.gobaispace.com/#author" },
+            "isPartOf": { "@id": "https://www.gobaispace.com/#website" }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://www.gobaispace.com/#faq",
+            "inLanguage": "fr",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Qu’est-ce que Gobai Space ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Gobai Space (Go白ناन्टех) est une application web qui affiche le système solaire en 3D et en temps réel, à l’échelle 1:1, du système entier jusqu’au sol de la Terre."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Gobai Space est-il gratuit ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Oui. L’application est gratuite, sans publicité, sans compte et sans installation : il suffit d’un navigateur récent avec WebGL."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Les positions des planètes sont-elles réelles ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Oui. Les positions sont calculées pour la date et l’heure du moment à partir des éléments orbitaux képlériens publiés par le JPL."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "D’où viennent les images de la Terre et des planètes ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "La Terre utilise les orthophotos de l’IGN pour la France et l’imagerie Sentinel-2 pour le reste du monde. Les autres astres utilisent les cartes NASA Trek et USGS."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Peut-on voir le relief en 3D ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Oui. La Terre affiche le relief des continents et des fonds océaniques."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Gobai Space fonctionne-t-il sur téléphone ?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Oui. L’interface s’adapte au téléphone et la vue peut se piloter au gyroscope."
+                }
+              }
+            ]
+          },
+          {
+            "@type": "Person",
+            "@id": "https://www.gobaispace.com/#author",
+            "name": "Alexis Bouvet-Mallet",
+            "url": "https://www.gobaispace.com/"
+          }
+        ]
+      }
+    </script>
+
+    <!-- Contenu de départ (ci-dessous dans #seo, à côté de #root) : lu par les moteurs de recherche dans le HTML
+         servi, non affiché à l'écran, puis retiré par l'application dès qu'elle est montée. Il est volontairement
+         hors de #root : cet élément n'appartient qu'à React, qui est seul à écrire dedans. -->
+    <style>
+      /* Page sans marge, sur fond noir. */
+      html, body { margin: 0; background: #000; }
+      /* Texte de départ gardé dans la page pour les moteurs de recherche et les lecteurs d'écran, mais invisible à l'écran. */
+      .seo-shell { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+    /* Fin des styles. */
+    </style>
+  <!-- Fin de l'en-tête. -->
+  </head>
+  <!-- Corps de la page (début). -->
+  <body>
+    <!-- Racine de l'application : vide, React est seul à y écrire.
+         translate="no" : personne d'autre que React ne réécrit ce sous-arbre. Les traducteurs du navigateur
+         (Google Translate, Safari, extensions) remplacent les nœuds de texte d'une page, et quand ils le font
+         dans un arbre React, React ne retrouve plus les nœuds qu'il croit posséder : il lève alors
+         « NotFoundError: Failed to execute 'removeChild' on 'Node' » et l'interface tombe. Cet attribut leur dit
+         de passer leur chemin. Le traducteur du site l'honore aussi (voir moteur/i18n/translator, liste SKIP). -->
+    <div id="root" translate="no"></div>
+    <!-- Contenu de départ, lu par les moteurs de recherche (début). -->
+    <div id="seo">
+      <!-- La présentation, invisible à l'écran (début). -->
+      <main class="seo-shell">
+        <h1>Système solaire 3D en direct : Go白ناन्टех</h1>
+        <p>
+          <!-- Présentation : un système solaire 3D en temps réel, -->
+          <strong>Gobai Space</strong> est un système solaire 3D en temps réel, à l’échelle 1:1, à explorer directement
+          <!-- gratuit et sans publicité. -->
+          dans ton navigateur. Gratuit et sans publicité.
+        <!-- Fin du paragraphe. -->
+        </p>
+        <!-- Titre : explorer le système solaire. -->
+        <h2>Explorer le système solaire en 3D</h2>
+        <!-- Paragraphe (début). -->
+        <p>
+          <!-- Les astres sont à leur position réelle, -->
+          Le Soleil, les huit planètes, Pluton et leurs lunes sont placés à leur position réelle du moment, calculée
+          <!-- de la vue d'ensemble à la surface d'une planète, -->
+          par les lois de Kepler. Tu passes d’une vue d’ensemble du système solaire à la surface d’une planète en
+          <!-- sur ordinateur comme sur téléphone. -->
+          zoomant, sur ordinateur comme sur téléphone, sans rien installer.
+        <!-- Fin du paragraphe. -->
+        </p>
+        <!-- Liste des contenus (début). -->
+        <ul>
+          <!-- La Terre. -->
+          <li>Terre en 3D, détaillée en imagerie satellite, avec ses villes, ses pays et sa météo</li>
+          <!-- La Lune, Mars, Mercure et Vénus. -->
+          <li>Lune, Mars, Mercure et Vénus en 3D, habillées des cartes NASA</li>
+          <!-- Jupiter, Saturne et leurs lunes. -->
+          <li>Jupiter, Saturne, ses anneaux et leurs lunes en 3D : Io, Europe, Ganymède, Callisto, Titan…</li>
+          <!-- Les caractéristiques de chaque astre. -->
+          <li>Caractéristiques de chaque astre : diamètre, rotation, atmosphère, période orbitale, distance au Soleil en direct</li>
+          <!-- Le relief. -->
+          <li>Relief de la Terre et des fonds océaniques</li>
+          <!-- La galerie et les langues. -->
+          <li>Galerie d’images NASA et interface disponible dans de nombreuses langues</li>
+        <!-- Fin de la liste. -->
+        </ul>
+        <!-- Titre : les astres. -->
+        <h2>Les astres du système solaire en 3D</h2>
+        <!-- Une page par astre (backend/src/services/data/body-pages.ts, reprise dans public/sitemap.xml). -->
+        <nav class="seo-links" aria-label="Astres">
+          <!-- Lien : l'accueil. -->
+          <a href="https://www.gobaispace.com/">Système solaire 3D</a>
+          <!-- Lien : le Soleil. -->
+          <a href="https://www.gobaispace.com/soleil">Soleil en 3D</a>
+          <!-- Lien : Mercure. -->
+          <a href="https://www.gobaispace.com/mercure">Mercure en 3D</a>
+          <!-- Lien : Vénus. -->
+          <a href="https://www.gobaispace.com/venus">Vénus en 3D</a>
+          <!-- Lien : la Terre. -->
+          <a href="https://www.gobaispace.com/terre">Terre en 3D</a>
+          <!-- Lien : la Lune. -->
+          <a href="https://www.gobaispace.com/lune">Lune en 3D</a>
+          <!-- Lien : Mars. -->
+          <a href="https://www.gobaispace.com/mars">Mars en 3D</a>
+          <!-- Lien : Phobos. -->
+          <a href="https://www.gobaispace.com/phobos">Phobos en 3D</a>
+          <!-- Lien : Deimos. -->
+          <a href="https://www.gobaispace.com/deimos">Deimos en 3D</a>
+          <!-- Lien : Jupiter. -->
+          <a href="https://www.gobaispace.com/jupiter">Jupiter en 3D</a>
+          <!-- Lien : Saturne. -->
+          <a href="https://www.gobaispace.com/saturne">Saturne en 3D</a>
+          <!-- Lien : Uranus. -->
+          <a href="https://www.gobaispace.com/uranus">Uranus en 3D</a>
+          <!-- Lien : Neptune. -->
+          <a href="https://www.gobaispace.com/neptune">Neptune en 3D</a>
+          <!-- Lien : Pluton. -->
+          <a href="https://www.gobaispace.com/pluton">Pluton en 3D</a>
+          <!-- Lien : Io. -->
+          <a href="https://www.gobaispace.com/io">Io en 3D</a>
+          <!-- Lien : Europe. -->
+          <a href="https://www.gobaispace.com/europe">Europe en 3D</a>
+          <!-- Lien : Ganymède. -->
+          <a href="https://www.gobaispace.com/ganymede">Ganymède en 3D</a>
+          <!-- Lien : Callisto. -->
+          <a href="https://www.gobaispace.com/callisto">Callisto en 3D</a>
+          <!-- Lien : Mimas. -->
+          <a href="https://www.gobaispace.com/mimas">Mimas en 3D</a>
+          <!-- Lien : Encelade. -->
+          <a href="https://www.gobaispace.com/encelade">Encelade en 3D</a>
+          <!-- Lien : Téthys. -->
+          <a href="https://www.gobaispace.com/tethys">Téthys en 3D</a>
+          <!-- Lien : Dioné. -->
+          <a href="https://www.gobaispace.com/dione">Dioné en 3D</a>
+          <!-- Lien : Rhéa. -->
+          <a href="https://www.gobaispace.com/rhea">Rhéa en 3D</a>
+          <!-- Lien : Titan. -->
+          <a href="https://www.gobaispace.com/titan">Titan en 3D</a>
+          <!-- Lien : Japet. -->
+          <a href="https://www.gobaispace.com/japet">Japet en 3D</a>
+          <!-- Lien : Miranda. -->
+          <a href="https://www.gobaispace.com/miranda">Miranda en 3D</a>
+          <!-- Lien : Ariel. -->
+          <a href="https://www.gobaispace.com/ariel">Ariel en 3D</a>
+          <!-- Lien : Umbriel. -->
+          <a href="https://www.gobaispace.com/umbriel">Umbriel en 3D</a>
+          <!-- Lien : Titania. -->
+          <a href="https://www.gobaispace.com/titania">Titania en 3D</a>
+          <!-- Lien : Obéron. -->
+          <a href="https://www.gobaispace.com/oberon">Obéron en 3D</a>
+          <!-- Lien : Triton. -->
+          <a href="https://www.gobaispace.com/triton">Triton en 3D</a>
+          <!-- Lien : Charon. -->
+          <a href="https://www.gobaispace.com/charon">Charon en 3D</a>
+          <!-- Lien : la galerie. -->
+          <a href="https://www.gobaispace.com/galerie">Galerie</a>
+          <!-- Lien : la fenêtre des sources. -->
+          <a href="https://www.gobaispace.com/node">Anthropic Node Open Source</a>
+        <!-- Fin des liens. -->
+        </nav>
+        <!-- Titre : les questions fréquentes. -->
+        <h2>Questions fréquentes</h2>
+        <!-- Question 1. -->
+        <h3>Qu’est-ce que Gobai Space ?</h3>
+        <!-- Sa réponse. -->
+        <p>Gobai Space (Go白ناन्टех) est une application web qui affiche le système solaire en 3D et en temps réel, à l’échelle 1:1, du système entier jusqu’au sol de la Terre.</p>
+        <!-- Question 2. -->
+        <h3>Gobai Space est-il gratuit ?</h3>
+        <!-- Sa réponse. -->
+        <p>Oui. L’application est gratuite, sans publicité, sans compte et sans installation : il suffit d’un navigateur récent avec WebGL.</p>
+        <!-- Question 3. -->
+        <h3>Les positions des planètes sont-elles réelles ?</h3>
+        <!-- Sa réponse. -->
+        <p>Oui. Les positions sont calculées pour la date et l’heure du moment à partir des éléments orbitaux képlériens publiés par le JPL.</p>
+        <!-- Question 4. -->
+        <h3>D’où viennent les images de la Terre et des planètes ?</h3>
+        <!-- Sa réponse. -->
+        <p>La Terre utilise les orthophotos de l’IGN pour la France et l’imagerie Sentinel-2 pour le reste du monde. Les autres astres utilisent les cartes NASA Trek et USGS.</p>
+        <!-- Question 5. -->
+        <h3>Peut-on voir le relief en 3D ?</h3>
+        <!-- Sa réponse. -->
+        <p>Oui. La Terre affiche le relief des continents et des fonds océaniques.</p>
+        <!-- Question 6. -->
+        <h3>Gobai Space fonctionne-t-il sur téléphone ?</h3>
+        <!-- Sa réponse. -->
+        <p>Oui. L’interface s’adapte au téléphone et la vue peut se piloter au gyroscope.</p>
+        <!-- Message d'attente. -->
+        <p>Chargement de l’application…</p>
+      <!-- Fin de la présentation. -->
+      </main>
+    <!-- Fin du contenu de départ. -->
+    </div>
+    <!-- Sans JavaScript (début). -->
+    <noscript>
+      <!-- Paragraphe clair et centré (début). -->
+      <p style="color:#e8edf8;text-align:center;font-family:system-ui,sans-serif;padding:0 24px 24px">
+        <!-- Le message : JavaScript et WebGL sont nécessaires. -->
+        Go白ناन्टех a besoin de JavaScript et de WebGL pour afficher le système solaire 3D.
+      <!-- Fin du paragraphe. -->
+      </p>
+    <!-- Fin du cas sans JavaScript. -->
+    </noscript>
+    <!-- Code de l'application. -->
+    <script type="module" src="/src/main.jsx"></script>
+  <!-- Fin du corps. -->
+  </body>
+<!-- Fin de la page. -->
+</html>

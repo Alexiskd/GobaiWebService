@@ -1,0 +1,14 @@
+{
+  "description": "Tuiles LiDAR enregistrées dans le code source : emprise native (en-tête LAS) et calage GPS. La coordonnée GPS est posée au centre de l'emprise, au bas du nuage (Z minimal). Un calage écrit à l'exécution (POINTCLOUD_DIR/anchors/<nom>.json) a priorité.",
+  "tiles": [
+    {
+      "name": "1830_5150.laz",
+      "crs": "EPSG:3946 — RGF93 / CC46 (Lambert conique conforme, zone 46), altitudes NGF-IGN69",
+      "version": "1.2",
+      "pointFormat": 1,
+      "pointCount": "6822179",
+      "bounds": { "minX": 1830000, "minY": 5150063.2, "minZ": 199.33, "maxX": 1830999.99, "maxY": 5150999.99, "maxZ": 750.62 },
+      "anchor": { "lat": 45.5425753, "lon": 4.6711651, "alt": 199.33, "heading": 1.198 }
+    }
+  ]
+}

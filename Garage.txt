@@ -1,0 +1,30 @@
+Interface  → Fairing
+
+Pygame engine architecture(in react): managing loading and rendering for FPS optimization:
+Car   →  Systeme Engine
+ 	OR
+        (→  Astre Solide Engine
+               → Map Engine
+  	 →Point 
+ 	 →Carte
+ 	 →Axe
+	 →....
+               →Relief Engine
+	→Lidar
+	OR
+ 	→Surelevation Pixel
+               OR
+               →Atmosphere Engine
+ 	 →Nuage 
+	 →...
+        OR
+         →  Astre Gazeux Engine
+                    →Atmosphere Engine)
+	OR
+         →Star Engine	
+	→Texture Engine
+	→Eruption Engine
+	
+	
+
+	 

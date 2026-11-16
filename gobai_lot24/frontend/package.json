@@ -1,0 +1,31 @@
+{
+  "name": "systeme-solaire-web",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "node scripts/verifie-imports.mjs src && vite build",
+    "preview": "vite preview",
+    "test": "node scripts/verifie-imports.mjs src && tsx --test \"src/**/*.test.jsx\"",
+    "verifie:imports": "node scripts/verifie-imports.mjs src"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.5.0",
+    "@mui/material": "^9.5.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "0.128.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/three": "^0.128.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21"
+  }
+}
