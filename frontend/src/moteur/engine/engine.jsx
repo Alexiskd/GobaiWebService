@@ -84,8 +84,6 @@ import { isKindHidden, planetKind } from './bodyKinds';
 import { createSaturnRings } from './saturnRings';
 // Importe createSunSurface, la surface animée du Soleil et ses éruptions.
 import { createSunSurface } from './sunSurface';
-// Importe la couche Babylon.js de particules coronales, superposée au rendu Three.js.
-import { BabylonSunParticles } from './sunBabylonParticles';
 // Importe sitesFromRegions, qui place les régions actives réelles dans le repère propre du Soleil.
 import { sitesFromRegions } from './sunSurfaceMath';
 // Importe VolcanoLayer, les volcans en éruption sur la Terre.
@@ -367,8 +365,6 @@ export class SolarEngine {
     this.initRenderer();
     // Crée le Soleil.
     this.initSun();
-    // Ajoute les particules coronales Babylon.js sur une couche transparente synchronisée à la caméra.
-    this.sunBabylonParticles = new BabylonSunParticles(this.container, this.data.bodies.sun.radius);
     // Crée les planètes.
     this.initPlanets();
     // Crée la Lune.
@@ -2678,8 +2674,6 @@ export class SolarEngine {
     this.sky.render(this.renderer, this.cam, dt);
     // Dessine la scène par-dessus.
     this.renderer.render(this.scene, this.cam);
-    // Dessine les particules Babylon.js du Soleil sur une couche alpha, synchronisée avec la caméra principale.
-    this.sunBabylonParticles?.render(this.cam, this.sunMesh);
     // Fin de la mesure du rendu.
     probe.renderEnd();
     // Fin de la mesure de l'image.
@@ -3798,8 +3792,6 @@ export class SolarEngine {
     this.orbiters.dispose();
     // Libère ShadowCam.
     this.shadowcam.dispose();
-    // Libère la couche Babylon.js des particules solaires et son contexte WebGL.
-    this.sunBabylonParticles?.dispose();
     // Libère le ciel.
     this.sky.dispose();
     // Libère les satellites.

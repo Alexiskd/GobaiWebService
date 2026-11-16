@@ -122,7 +122,7 @@ export class EarthImageryService implements TileProvider {
       // les valeurs communes, l'identifiant « earth-hd », son nom, sa nature et son zoom maximal ;
       ...base, id: 'earth-hd', label: 'Terre', kind: 'imagery', maxZoom: EARTH_HD_MAX_ZOOM,
       // sa description, avec la liste des sources, et les fonds marins quand ils y sont fondus.
-      description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}.${seafloorFusion() ? ' Au large, la carte marine : GEBCO 2026 vue de l’espace, puis NOAA ETOPO 2022 en se rapprochant.' : ''} Zoom jusqu’au niveau 19.`,
+      description: `Une seule couche, la meilleure source pour chaque tuile : ${describeSources(this.sources)}.${seafloorFusion() ? ' Au large, la carte marine : teinte des océans de la NOAA (ETOPO 2022) vue de l’espace, relief des fonds et isobathes de GEBCO 2026 en zoomant.' : ''} Zoom jusqu’au niveau 19.`,
     // Fin de la liste.
     }];
   // Fin de layers.
