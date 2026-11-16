@@ -6,6 +6,9 @@ import { orbitBasis, relDistanceKm, satelliteState, synchronousBasis } from './s
 import { OrbitRibbon } from './orbitRibbon';
 // Importe les opacités de la traînée d'une orbite fermée.
 import { loopTrailAlphas } from './orbitRibbonMath';
+import { SharedResourcePool } from '../core/SharedResourcePool.js';
+import { InstancedPickRegistry } from '../core/InstancedPickRegistry.js';
+import { acquireUnitSphereGeometry } from '../core/SharedGeometry.js';
 
 // Nombre de segments du cercle d'orbite : 256.
 const ORBIT_SEGMENTS = 256;
@@ -66,6 +69,13 @@ export class SatelliteSystem {
     this.tick = 0;
     // Liste des satellites.
     this.list = [];
+    // Matériaux Lambert partagés uniquement lorsque leur couleur et leurs options sont identiques.
+    this.materialPool = new SharedResourcePool();
+    // Géométrie unitaire commune : les rayons propres à chaque satellite sont portés par Mesh.scale.
+    this.geometryPool = new SharedResourcePool();
+    this.sphereGeometry = acquireUnitSphereGeometry(this.geometryPool, THREE, 64, 48);
+    // Pont de sélection pour les futurs batches instanciés ; les meshes actuels restent pickables.
+    this.instancedPickRegistry = new InstancedPickRegistry();
     // Pour chaque définition (début).
     for (const def of defs) {
       // Sa planète, retrouvée par son identifiant.
@@ -79,13 +89,19 @@ export class SatelliteSystem {
       // L'ajoute à la scène.
       scene.add(group);
       // Sphère de fond du satellite (début).
+      const materialColor = String(def.color || '#9a9a9a').trim().toLowerCase();
+      const material = this.materialPool.acquire(`satellite-lambert:${materialColor}`, () =>
+        new THREE.MeshLambertMaterial({ color: materialColor })
+      );
       const mesh = new THREE.Mesh(
-        // Géométrie : une sphère du rayon du satellite.
-        new THREE.SphereGeometry(def.radius, 64, 48),
-        // Matériau de sa couleur, ou gris par défaut.
-        new THREE.MeshLambertMaterial({ color: def.color || '#9a9a9a' })
+        // Géométrie unitaire partagée entre satellites de même topologie.
+        this.sphereGeometry.geometry,
+        // Matériau Lambert partagé entre satellites de même couleur.
+        material
       // Fin de la sphère.
       );
+      // Le rayon réel est porté par l'échelle du mesh, sans modifier la géométrie commune.
+      mesh.scale.setScalar(def.radius);
       // L'ajoute au groupe.
       group.add(mesh);
       // Tracé de l'orbite : un ruban sur le cercle partagé, de la couleur du satellite (voir orbitRibbon.jsx).
@@ -114,6 +130,23 @@ export class SatelliteSystem {
     // Table des satellites par identifiant.
     this.byId = new Map(this.list.map((s) => [s.def.id, s]));
   // Fin du constructeur.
+  }
+
+  /** Enregistre un InstancedMeshBatch de satellites sans casser les meshes historiques. */
+  registerInstancedPickBatch(batch) {
+    for (const id of batch?.ids || []) {
+      if (!this.byId.has(id)) throw new Error(`Satellite inconnu dans le batch de picking : ${id}`);
+    }
+    return this.instancedPickRegistry.register(batch);
+  }
+
+  /** Objets instanciés à inclure dans le raycaster. */
+  getInstancedPickables() { return this.instancedPickRegistry.getObjects(); }
+
+  /** Résout une intersection Three.js vers l'objet satellite métier. */
+  resolvePickHit(intersection) {
+    const id = this.instancedPickRegistry.resolve(intersection);
+    return id ? (this.byId.get(id) || null) : null;
   }
 
   /** Tables JPL Horizons : [{ id, points }] (planète → satellite, km, écliptique J2000). */
@@ -227,14 +260,16 @@ export class SatelliteSystem {
       s.group.parent?.remove(s.group);
       // Retire son orbite de la scène.
       s.orbit.parent?.remove(s.orbit);
-      // Libère la géométrie de sa sphère.
-      s.mesh.geometry.dispose();
-      // Libère le matériau de sa sphère.
-      s.mesh.material.dispose();
+      // La géométrie unitaire est partagée par tous les satellites et libérée une seule fois après la boucle.
+      // Le matériau partagé n’est libéré qu’au dernier utilisateur.
+      this.materialPool.release(`satellite-lambert:${String(s.def.color || '#9a9a9a').trim().toLowerCase()}`);
       // Libère le ruban de son orbite (géométrie et matériau).
       s.trail.dispose();
     // Fin de la boucle.
     }
+    this.materialPool.dispose();
+    this.geometryPool.release(this.sphereGeometry.key);
+    this.instancedPickRegistry.dispose();
   // Fin de dispose.
   }
 // Fin de la classe SatelliteSystem.

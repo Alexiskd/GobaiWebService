@@ -25,9 +25,9 @@ import * as THREE from 'three';
  */
 
 // Importe les éléments d'orbite de chaque astre, côté backend.
-import { ASTRES } from '../../../../backend/src/services/data/kepler-elements';
+import { ASTRES } from '../data/astronomy/data/kepler-elements';
 // Importe la période orbitale et la position d'un astre à un instant, côté backend.
-import { periodDays, positionAt as keplerPositionAt } from '../../../../backend/src/services/ephemeris/kepler-orbits';
+import { periodDays, positionAt as keplerPositionAt } from '../data/astronomy/ephemeris/kepler-orbits';
 // Importe le nombre d'unités de scène dans une unité astronomique.
 import { AU_UNITS } from './planetOrbits';
 // Importe les réglages par défaut du tracé, l'intervalle de recalcul, les instants et la fermeture de la boucle.
