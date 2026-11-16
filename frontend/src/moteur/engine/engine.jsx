@@ -110,6 +110,43 @@ import { dragRadPerPx, dragStep } from './touchMath';
 import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './powerSaver';
 // Importe PerfProbe, la sonde de performance.
 import { PerfProbe } from './perfProbe';
+import { SystemRegistry } from '../core/SystemRegistry.js';
+import { PerivolumeManager } from '../core/PerivolumeManager.js';
+import { CoreActivityPolicy } from '../core/CoreActivityPolicy.js';
+import { TileMemoryPolicy } from '../core/TileMemoryPolicy.js';
+import { EngineActivityPolicy } from '../core/EngineActivityPolicy.js';
+import { SystemManager } from '../core/SystemManager.js';
+import { createGobaiPerivolumeAxioms } from '../core/PerivolumeAxiomPolicy.js';
+import { ResourceManager } from '../core/ResourceManager.js';
+import { InterstellarResourceLifecycleManager } from '../core/InterstellarResourceLifecycleManager.js';
+import { InterstellarLODManager } from '../core/InterstellarLODManager.js';
+import { GalacticSpatialIndex } from '../core/GalacticSpatialIndex.js';
+import { GalacticSectorStreamingManager } from '../core/GalacticSectorStreamingManager.js';
+import { GalacticSectorScheduler } from '../core/GalacticSectorScheduler.js';
+import { createAstronomicalCatalogService } from '../data/astronomy/providers/AstronomicalCatalogService.js';
+import { GaiaDR3SectorStreamer } from '../data/astronomy/providers/GaiaDR3SectorStreamer.js';
+import { GaiaStarfieldLayer } from './star/GaiaStarfieldLayer.js';
+import { createAstronomicalSystemExplorer } from '../data/astronomy/AstronomicalSystemExplorer.js';
+import { InterstellarSceneRenderer } from './star/InterstellarSceneRenderer.js';
+import {
+  createInterstellarEngineConfig,
+  globalCameraPosition,
+  resolveInterstellarSystemId,
+  resolveInterstellarPerivolumeRadius,
+  resolveInterstellarFocusDistance,
+} from './star/InterstellarEngineIntegration.js';
+import { RenderScheduler } from '../core/RenderScheduler.js';
+import { RenderBudgetPolicy } from '../core/RenderBudgetPolicy.js';
+import { RenderDiagnosticsPolicy } from '../core/RenderDiagnosticsPolicy.js';
+import { SharedResourcePool } from '../core/SharedResourcePool.js';
+import { acquireUnitSphereGeometry } from '../core/SharedGeometry.js';
+import { SatelliteGpuBudgetOrchestrator } from '../core/SatelliteGpuBudgetOrchestrator.js';
+import { SatelliteMultiLayerTextureAtlasManager } from '../core/SatelliteMultiLayerTextureAtlas.js';
+import { SatelliteTileAtlasPipeline } from '../core/SatelliteTileAtlasPipeline.js';
+import { SatelliteAtlasGpuBudgetBridge } from '../core/SatelliteAtlasGpuBudgetBridge.js';
+import { createSatelliteCanvasAtlasChannel } from '../core/SatelliteCanvasAtlasChannel.js';
+import { SatelliteSurfaceAtlasDiagnostics } from '../core/SatelliteSurfaceAtlasDiagnostics.js';
+import { SatelliteAtlasBrowserValidationAdapter } from '../core/SatelliteAtlasBrowserValidation.js';
 
 // TAU : un tour complet, 2π arrondi.
 const TAU = 6.2832;
@@ -361,6 +398,8 @@ export class SolarEngine {
     // Instant de la dernière mise à jour du HUD.
     this.hudAt = 0;
 
+    // Pool de géométries unitaires : partage uniquement les topologies strictement identiques.
+    this.sharedGeometryPool = new SharedResourcePool();
     // Crée le moteur de rendu.
     this.initRenderer();
     // Crée le Soleil.
@@ -429,6 +468,8 @@ export class SolarEngine {
     this.initMoonLive();
     // Crée la liste des cibles.
     this.initFocusTargets();
+    // Branche le Core central sur les positions réelles des cibles, sans changer le rendu existant.
+    this.initCoreOrchestration();
     // Crée les étiquettes.
     this.initLabels();
 
@@ -630,13 +671,18 @@ export class SolarEngine {
       // Géantes gazeuses : sphère visible aussi de l'intérieur, la caméra pouvant traverser l'astre.
       const gas = Boolean(TILED_BODY_BY_ID[bodyId(def)]?.gas);
       // Sphère de la planète (début) :
+      const sphereSegments = { width: def.earth ? 128 : 48, height: def.earth ? 96 : 32 };
+      const sharedSphere = acquireUnitSphereGeometry(
+        this.sharedGeometryPool, THREE, sphereSegments.width, sphereSegments.height
+      );
       const mesh = new THREE.Mesh(
-        // sa géométrie, plus fine pour la Terre ;
-        new THREE.SphereGeometry(def.radius, def.earth ? 128 : 48, def.earth ? 96 : 32),
-        // son matériau, de sa couleur, visible des deux côtés pour une géante gazeuse.
+        // Géométrie unitaire partagée entre les astres de même topologie ; le rayon est porté par l'échelle.
+        sharedSphere.geometry,
+        // Son matériau, de sa couleur, visible des deux côtés pour une géante gazeuse.
         new THREE.MeshLambertMaterial({ color: def.color || '#888888', side: gas ? THREE.DoubleSide : THREE.FrontSide })
       // Fin de la sphère.
       );
+      mesh.scale.setScalar(def.radius);
       // Groupe de la planète.
       const group = new THREE.Group();
       // Y ajoute la sphère.
@@ -701,7 +747,7 @@ export class SolarEngine {
       // (point de l'orbite où elle se trouve, sens du parcours, dernière position et instant du dernier calcul).
       return {
         // Données, objets, famille et état.
-        def, mesh, group, orbit, orbitTrail, kind: planetKind(def), hidden: false, settingsHidden: false, w: new THREE.Vector3(), ecl: [0, 0, 0],
+        def, mesh, group, orbit, orbitTrail, sphereGeometryKey: sharedSphere.key, kind: planetKind(def), hidden: false, settingsHidden: false, w: new THREE.Vector3(), ecl: [0, 0, 0],
         // Traînée : aucun point calculé, sens croissant, aucune position notée.
         trailHead: -1, trailDir: 1, trailPrev: null, trailAt: 0,
       // Fin de la planète.
@@ -778,7 +824,7 @@ export class SolarEngine {
       // Fin de ce cas.
       }
       // Géante gazeuse aplatie : la sphère de fond prend la même forme que les tuiles.
-      if (cfg.flattening) host.mesh.scale.y = 1 - cfg.flattening;
+      if (cfg.flattening) host.mesh.scale.y *= 1 - cfg.flattening;
       // Sphère de fond (visible tant que les tuiles ne couvrent pas tout) : même éclairage et mêmes couleurs que les
       // tuiles et le modèle 3D, au lieu d'une teinte unie.
       if (cfg.surfaceMaterial) {
@@ -1114,6 +1160,660 @@ export class SolarEngine {
     // Fin de la boucle.
     }
   // Fin de initFocusTargets.
+  }
+
+  // Initialise l’orchestration centrale : le Core observe les périvolumes, sans encore décharger les moteurs.
+  initCoreOrchestration() {
+    this.coreRegistry = new SystemRegistry();
+    this.corePerivolumes = new PerivolumeManager({ hysteresis: 0.08 });
+    this.coreGpuMemoryBudget = new SatelliteGpuBudgetOrchestrator({
+      globalBudgetBytes: 512 * 1024 * 1024,
+      defaultBodyBudgetBytes: 256 * 1024 * 1024,
+      onError: (error, context) => console.error(`[Gobai Core] budget GPU (${context})`, error),
+    });
+    // Atlas couleur expérimental activé sur Terre et Lune ; les autres couches
+    // (altitude, normales, nuit) conservent leurs chargeurs spécialisés.
+    this.surfaceAtlasRuntimes = new Map();
+    this.surfaceAtlasMode = 'atlas';
+    this.surfaceAtlasDiagnostics = new SatelliteSurfaceAtlasDiagnostics({ maxFrames: 120, maxTiles: 1000 });
+    this.initSurfaceAtlasPipelines();
+    this.coreResources = new ResourceManager();
+    this.coreActivityPolicy = new CoreActivityPolicy({ backgroundEvery: 4 });
+    this.coreTileMemoryPolicy = new TileMemoryPolicy();
+    this.coreEngineActivityPolicy = new EngineActivityPolicy();
+    this.coreRenderBudgetPolicy = new RenderBudgetPolicy({ maxTiledBodies: MAX_TILED_BODIES });
+    this.coreRenderBudget = this.coreRenderBudgetPolicy.snapshot();
+    this.coreRenderDiagnosticsPolicy = new RenderDiagnosticsPolicy();
+    this.coreRenderDiagnostics = this.coreRenderDiagnosticsPolicy.snapshot();
+    this.coreScheduler = new RenderScheduler({ maxTasksPerFrame: 3, onError: (error, id) => {
+      console.error(`[Gobai Core] tâche ${id} en échec`, error);
+    } });
+    this.coreTransitions = [];
+    this.coreTargets = this.focusTargets.map((target, index) => {
+      const id = target.tiled?.id || (index === 0 ? 'sun' : index === this.moonFocus ? 'moon' : `body-${index}`);
+      const center = target.get().toArray();
+      const radius = Math.max(Number(target.r) || 1, 1e-6);
+      const descriptor = {
+        id,
+        name: target.name,
+        radius,
+        focusIndex: index,
+        kind: target.satellite ? 'satellite' : target.moon ? 'moon' : index === 0 ? 'star' : 'planet',
+      };
+      this.coreRegistry.register(descriptor);
+      this.corePerivolumes.register({
+        id,
+        center,
+        radius: radius * 12,
+        backgroundRadius: radius * 40,
+        metadata: { focusIndex: index, kind: descriptor.kind, level: 'body' },
+      });
+      return { id, target, focusIndex: index };
+    });
+    // Volumes de systèmes internes : Terre-Lune et ensemble du Système solaire.
+    // Ils sont exprimés dans le même repère de scène que la caméra.
+    const coreTargetById = new Map(this.coreTargets.map((item) => [item.id, item]));
+    const earthTarget = coreTargetById.get('earth');
+    const moonTarget = coreTargetById.get('moon');
+    const sunTarget = coreTargetById.get('sun') || this.coreTargets[0];
+    this.coreSystemVolumes = [];
+    const registerSystemVolume = (id, target, radius, metadata) => {
+      if (!target || !Number.isFinite(radius) || radius <= 0) return;
+      this.coreRegistry.upsert({ id, name: id, kind: 'system', level: 'system' });
+      this.corePerivolumes.register({ id, center: target.get().toArray(), radius, backgroundRadius: radius * 3, metadata: { ...metadata, level: 'system' } });
+      this.coreSystemVolumes.push({ id, target });
+    };
+    if (earthTarget) {
+      const earthPosition = earthTarget.target.get();
+      const moonDistance = moonTarget ? earthPosition.distanceTo(moonTarget.target.get()) : 0;
+      const earthSystemRadius = Math.max(earthTarget.target.r * 40, moonDistance + (moonTarget?.target.r || 0) * 12, 1e-6);
+      registerSystemVolume('system:earth', earthTarget.target, earthSystemRadius, { members: ['earth', 'moon'] });
+    }
+    if (sunTarget) {
+      const sunPosition = sunTarget.target.get();
+      const solarExtent = Math.max(...this.coreTargets.map(({ target }) => sunPosition.distanceTo(target.get()) + (Number(target.r) || 0) * 12), sunTarget.target.r * 40, 1e-6);
+      registerSystemVolume('system:solar', sunTarget.target, solarExtent, { members: this.coreTargets.map(({ id }) => id) });
+    }
+    this.coreSystemManager = new SystemManager({
+      registry: this.coreRegistry,
+      perivolumeManager: this.corePerivolumes,
+      axioms: createGobaiPerivolumeAxioms({
+        earthSystem: 'system:earth', solarSystem: 'system:solar', proximaSystem: 'system:proxima-centauri',
+        earth: 'earth', moon: 'moon', mercury: 'mercury',
+      }),
+      onTransition: (event) => {
+        this.coreTransitions.push({ id: event.id, state: event.state, previous: event.previous });
+        if (this.coreTransitions.length > 100) this.coreTransitions.shift();
+      },
+    });
+    this.coreLastDecisions = [];
+    // Raccordement réel des systèmes distants à la scène principale et au catalogue public.
+    this.initInterstellarIntegration();
+  }
+
+  // Initialise les connecteurs astronomiques navigateur et le renderer distant partagé avec la scène principale.
+  initInterstellarIntegration() {
+    const config = createInterstellarEngineConfig({ auUnits: AU_UNITS });
+    this.interstellarConfig = config;
+    this.interstellarCatalog = createAstronomicalCatalogService({ maxRows: 500 });
+    this.gaiaSectorStreamer = new GaiaDR3SectorStreamer({ catalogService: this.interstellarCatalog, maxConcurrent: 2, maxStarsPerCone: 500 });
+    this.gaiaStarfieldLayer = new GaiaStarfieldLayer({ THREE, scene: this.scene, parsecToSceneUnits: config.parsecToSceneUnits });
+    this.gaiaLoadedStars = new Map();
+    this.gaiaStarOwners = new Map();
+    this.gaiaManualStarIds = new Set();
+    this.interstellarExplorer = createAstronomicalSystemExplorer({ catalogService: this.interstellarCatalog });
+    this.interstellarRenderer = new InterstellarSceneRenderer({
+      THREE,
+      scene: this.scene,
+      camera: this.cam,
+      parsecToSceneUnits: config.parsecToSceneUnits,
+      focusDistance: config.focusDistance,
+    });
+    this.interstellarSystems = new Map();
+    this.interstellarResourceLifecycle = new InterstellarResourceLifecycleManager({
+      onError: (error, id, state) => console.warn(`[Gobai interstellar lifecycle] ${id} → ${state}`, error),
+    });
+    this.interstellarLoadControllers = new Map();
+    this.interstellarLOD = new InterstellarLODManager({ maxPlanetSystems: 8, maxDetailedSystems: 2 });
+    this.galacticSpatialIndex = new GalacticSpatialIndex({ sectorSizePc: 10 });
+    this.galacticSectorStreaming = new GalacticSectorStreamingManager({ index: this.galacticSpatialIndex, enterRadiusPc: 50, exitRadiusPc: 65 });
+    this.galacticSectorScheduler = new GalacticSectorScheduler({
+      streamer: this.gaiaSectorStreamer,
+      maxConcurrent: 1, maxQueued: 8, maxPrefetchSectors: 5, maxPages: 1, pageSize: 500,
+      onSectorLoaded: ({ key, result }) => this.ingestGaiaStars(result?.stars || [], key),
+      onSectorEvicted: ({ key, starIds }) => this.evictGaiaSectorStars(key, starIds),
+      onSectorError: ({ key, error }) => console.warn(`[Gobai Gaia scheduler] ${key}`, error),
+    });
+    this.galacticStreamingFrame = 0;
+    this.galacticStreamingLastResult = null;
+    this.interstellarLODFrame = 0;
+  }
+
+  /** Recherche un système par nom dans Gaia/SIMBAD/NASA puis l'enregistre dans la scène globale. */
+  async loadInterstellarSystemByName(name, options = {}) {
+    if (!this.interstellarExplorer) throw new Error('Le moteur interstellaire n’est pas initialisé.');
+    const { signal, ...queryOptions } = options;
+    const requestKey = String(name || '').trim().toLowerCase();
+    this.interstellarLoadControllers?.get(requestKey)?.abort?.();
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    if (controller) this.interstellarLoadControllers?.set(requestKey, controller);
+    if (signal?.aborted) controller?.abort?.();
+    const forwardAbort = () => controller?.abort?.();
+    signal?.addEventListener?.('abort', forwardAbort, { once: true });
+    const combinedSignal = controller?.signal || signal;
+    const now = new Date();
+    const year = queryOptions.targetEpochJulianYear ?? now.getUTCFullYear() + (now.getUTCMonth() + 1) / 12;
+    const jd = queryOptions.targetJulianDate ?? this.simMs / 864e5 + 2440587.5;
+    let result;
+    try {
+      result = await this.interstellarExplorer.resolveByName(name, {
+        ...queryOptions, targetEpochJulianYear: year, targetJulianDate: jd,
+      }, { signal: combinedSignal });
+    } finally {
+      signal?.removeEventListener?.('abort', forwardAbort);
+      if (this.interstellarLoadControllers?.get(requestKey) === controller) this.interstellarLoadControllers.delete(requestKey);
+    }
+    const fold = (value) => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const requested = fold(name);
+    const system = result.systems.find((item) => fold(item.star?.name) === requested)
+      || result.systems.find((item) => (item.planets || []).some((planet) => fold(planet.host?.name) === requested))
+      || result.systems.find((item) => (item.star?.sourceRecords || []).some((record) => fold(record?.name) === requested))
+      || (result.systems.length === 1 ? result.systems[0] : null);
+    if (!system) return { ok: false, reason: 'system-not-resolved', candidates: result.systems.map((item) => ({ id: item.id, name: item.star?.name || item.id })) };
+    const canonicalId = requested.includes('proxima centauri') ? 'system:proxima-centauri' : queryOptions.id;
+    return this.registerInterstellarSystem(system, { ...queryOptions, id: canonicalId, requestedName: name });
+  }
+
+  /** Ajoute un système au repère global de Gobai et l'expose comme cible caméra. */
+  registerInterstellarSystem(starSystem, options = {}) {
+    if (!this.interstellarRenderer || !this.interstellarSystems) throw new Error('Le renderer interstellaire n’est pas initialisé.');
+    const coreId = resolveInterstellarSystemId(starSystem, options.id);
+    if (this.interstellarSystems.has(coreId)) this.removeInterstellarSystem(coreId);
+    const entry = this.interstellarRenderer.addSystem(starSystem, {
+      ...this.interstellarConfig,
+      ...options,
+      parsecToSceneUnits: options.parsecToSceneUnits ?? this.interstellarConfig.parsecToSceneUnits,
+    });
+    if (entry.model.positionStatus !== 'available') {
+      this.interstellarRenderer.removeSystem(starSystem.id);
+      return { ok: false, reason: 'position-unavailable', id: coreId, warnings: entry.model.warnings };
+    }
+    const position = entry.model.position;
+    const center = [position.x, position.y, position.z];
+    const radius = resolveInterstellarPerivolumeRadius(options, this.interstellarConfig.auToSceneUnits, starSystem);
+    this.registerExternalSystemPerivolume({
+      id: coreId,
+      center,
+      radius,
+      backgroundRadius: options.backgroundRadius ?? radius * 3,
+      name: entry.model.name,
+    });
+    const focusTarget = {
+      name: entry.model.name,
+      r: Number.isFinite(options.focusRadius) && options.focusRadius > 0 ? options.focusRadius : this.interstellarConfig.focusRadius,
+      get: () => new THREE.Vector3(position.x, position.y, position.z),
+      interstellarSystemId: coreId,
+    };
+    const focusIndex = this.focusTargets.push(focusTarget) - 1;
+    entry.coreId = coreId;
+    entry.focusIndex = focusIndex;
+    entry.focusDistance = resolveInterstellarFocusDistance(starSystem, this.interstellarConfig.auToSceneUnits, this.interstellarConfig.focusDistance);
+    entry.starSystem = starSystem;
+    this.interstellarSystems.set(coreId, entry);
+    if (entry.model.heliocentricParsecs) {
+      this.galacticSpatialIndex?.upsert(coreId, entry.model.heliocentricParsecs, {
+        name: entry.model.name, distancePc: entry.model.distancePc, sourceSystemId: starSystem.id,
+      });
+    }
+    this.interstellarLOD?.forget(coreId);
+    this.interstellarRenderer.setSystemLOD(starSystem.id, 'DETAILED');
+    this.interstellarResourceLifecycle?.register(coreId, {
+      release: () => this.interstellarRenderer?.setSystemLoaded(coreId, false),
+      restore: () => this.interstellarRenderer?.setSystemLoaded(coreId, true),
+    });
+    return {
+      ok: true,
+      id: coreId,
+      sourceSystemId: starSystem.id,
+      name: entry.model.name,
+      distancePc: entry.model.distancePc,
+      distanceLightYears: entry.model.distanceLightYears,
+      position: { ...position },
+      planetCount: starSystem.planets?.length || 0,
+      focusIndex,
+      perivolumeRadius: radius,
+    };
+  }
+
+  /** Associe une tâche réseau au cycle de vie d'un système : elle sera annulée en UNLOADED ou à la suppression. */
+  attachInterstellarRequestController(id, controller) {
+    return this.interstellarResourceLifecycle?.attachAbortController(id, controller) ?? false;
+  }
+
+  /** Place la caméra sur un système interstellaire déjà découvert. */
+  focusInterstellarSystem(id) {
+    const entry = this.interstellarSystems?.get(id);
+    if (!entry) return false;
+    this.setFocus(entry.focusIndex);
+    this.distGoal = Math.min(MAX_DISTANCE, entry.focusDistance);
+    this.markActive();
+    return true;
+  }
+
+  /** Retire proprement un système distant, son périvolume et sa cible caméra. */
+  removeInterstellarSystem(id) {
+    const entry = this.interstellarSystems?.get(id);
+    if (!entry) return false;
+    if (this.focus === entry.focusIndex) this.setFocus(this.earthFocus);
+    this.interstellarResourceLifecycle?.unregister(id);
+    this.interstellarLOD?.forget(id);
+    this.galacticSpatialIndex?.remove(id);
+    this.galacticSectorStreaming?.update(this.galacticSectorStreaming.lastCenter || { x: 0, y: 0, z: 0 }, { force: true });
+    this.interstellarRenderer?.removeSystem(entry.starSystem.id);
+    this.unregisterExternalSystemPerivolume(id);
+    this.focusTargets.splice(entry.focusIndex, 1);
+    this.interstellarSystems.delete(id);
+    for (const current of this.interstellarSystems.values()) {
+      if (current.focusIndex > entry.focusIndex) current.focusIndex -= 1;
+    }
+    if (this.focus > entry.focusIndex) {
+      this.focus -= 1;
+      this.onFocusChange(this.focus);
+    }
+    return true;
+  }
+
+  /** Recherche les systèmes connus dans un rayon exprimé en parsecs (repère héliocentrique ICRS). */
+  queryInterstellarSystemsNear(positionPc, radiusPc, options = {}) {
+    return this.galacticSpatialIndex?.queryRadius(positionPc, radiusPc, options) || [];
+  }
+
+  getGalacticSpatialStats() {
+    return { ...(this.galacticSpatialIndex?.getStats() || { objects: 0, sectors: 0, sectorSizePc: 10, indexed: true }),
+      streaming: this.galacticSectorStreaming?.getStats() || null };
+  }
+
+  /** Indexe un lot Gaia et l'injecte dans le starfield sans dupliquer les source_id. */
+  ingestGaiaStars(stars = [], sectorKey = null) {
+    if (this.stopped || !Array.isArray(stars)) return { newlyIndexed: 0, totalLoadedStars: this.gaiaLoadedStars?.size || 0 };
+    const fresh = [];
+    for (const star of stars) {
+      if (!star?.id) continue;
+      if (sectorKey) {
+        if (!this.gaiaStarOwners.has(star.id)) this.gaiaStarOwners.set(star.id, new Set());
+        this.gaiaStarOwners.get(star.id).add(sectorKey);
+      } else this.gaiaManualStarIds.add(star.id);
+      if (this.gaiaLoadedStars.has(star.id)) continue;
+      this.gaiaLoadedStars.set(star.id, star);
+      this.galacticSpatialIndex?.upsert(star.id, star.positionPc, { source: 'Gaia DR3', magnitude: star.magnitude });
+      fresh.push(star);
+    }
+    this.gaiaStarfieldLayer?.setStars(fresh);
+    const center = this.galacticSectorStreaming?.lastCenter || { x: 0, y: 0, z: 0 };
+    const residency = this.galacticSectorStreaming?.update(center, { force: true });
+    this.gaiaStarfieldLayer?.setResidentIds(residency?.visibleIds || []);
+    return { newlyIndexed: fresh.length, totalLoadedStars: this.gaiaLoadedStars.size, residentStars: residency?.visibleIds?.length || 0 };
+  }
+
+  /** Retire les étoiles qui ne sont plus référencées par aucune tuile résidente. */
+  evictGaiaSectorStars(sectorKey, starIds = []) {
+    const removed = [];
+    for (const id of starIds) {
+      const owners = this.gaiaStarOwners.get(id);
+      owners?.delete(sectorKey);
+      if (owners?.size === 0) this.gaiaStarOwners.delete(id);
+      if ((!owners || owners.size === 0) && !this.gaiaManualStarIds.has(id) && this.gaiaLoadedStars.delete(id)) {
+        this.galacticSpatialIndex?.remove(id);
+        removed.push(id);
+      }
+    }
+    if (removed.length) {
+      this.gaiaStarfieldLayer?.removeStars(removed);
+      const center = this.galacticSectorStreaming?.lastCenter || { x: 0, y: 0, z: 0 };
+      const residency = this.galacticSectorStreaming?.update(center, { force: true });
+      this.gaiaStarfieldLayer?.setResidentIds(residency?.visibleIds || []);
+    }
+    return removed.length;
+  }
+
+  /** Active ou désactive le streaming Gaia piloté par la caméra (désactivé par défaut). */
+  setGaiaAutoStreaming(enabled, { radiusDeg = 1, maxPages, maxPagesPerSector, maxConcurrent, maxPrefetchSectors } = {}) {
+    if (!this.galacticSectorScheduler || this.stopped) throw new Error('Planificateur Gaia indisponible.');
+    if (maxPages !== undefined) this.galacticSectorScheduler.maxPages = Math.max(1, Math.min(100, Math.floor(Number(maxPages) || 1)));
+    if (maxPagesPerSector !== undefined) this.galacticSectorScheduler.maxPagesPerSector = Math.max(this.galacticSectorScheduler.maxPages, Math.min(500, Math.floor(Number(maxPagesPerSector) || 1)));
+    if (maxConcurrent !== undefined) this.galacticSectorScheduler.maxConcurrent = Math.max(1, Math.floor(Number(maxConcurrent) || 1));
+    if (maxPrefetchSectors !== undefined) this.galacticSectorScheduler.maxPrefetchSectors = Math.max(1, Math.floor(Number(maxPrefetchSectors) || 1));
+    this.gaiaAutoStreamingRadiusDeg = Math.max(0.1, Math.min(5, Number(radiusDeg) || 1));
+    const active = this.galacticSectorScheduler.setEnabled(enabled);
+    if (active) {
+      const camera = globalCameraPosition(this.cam.position, this.target);
+      const scale = this.interstellarConfig?.parsecToSceneUnits || 1;
+      const x = camera.x / scale; const y = -camera.z / scale; const z = camera.y / scale;
+      const distance = Math.hypot(x, y, z);
+      if (distance > 1e-6) {
+        this.galacticSectorScheduler.updateView({
+          raDeg: (Math.atan2(y, x) / (Math.PI / 180) + 360) % 360,
+          decDeg: Math.asin(Math.max(-1, Math.min(1, z / distance))) / (Math.PI / 180),
+          radiusDeg: this.gaiaAutoStreamingRadiusDeg,
+        });
+      }
+    }
+    return this.galacticSectorScheduler.getStats();
+  }
+
+  /** Charge à la demande un cône Gaia DR3. Aucun téléchargement n'est lancé au démarrage. */
+  async loadGaiaDR3Cone({ raDeg, decDeg, radiusDeg = 1, limit = 500 } = {}, options = {}) {
+    if (!this.gaiaSectorStreamer || this.stopped) throw new Error('Streaming Gaia indisponible.');
+    const result = await this.gaiaSectorStreamer.loadCone({ raDeg, decDeg, radiusDeg, limit }, options);
+    if (this.stopped) return { ...result, ignored: true };
+    const ingestion = this.ingestGaiaStars(result.stars);
+    return { ...result, ...ingestion };
+  }
+
+  /** Charge un cône Gaia par pages keyset source_id, avec un plafond de pages explicite. */
+  async loadGaiaDR3ConePages({ raDeg, decDeg, radiusDeg = 1, limit = 500, maxPages = 10, sourceIdAfter = null } = {}, options = {}) {
+    if (!this.gaiaSectorStreamer || this.stopped) throw new Error('Streaming Gaia indisponible.');
+    const result = await this.gaiaSectorStreamer.loadConePages({ raDeg, decDeg, radiusDeg, limit, sourceIdAfter }, { ...options, maxPages });
+    if (this.stopped) return { ...result, ignored: true };
+    const ingestion = this.ingestGaiaStars(result.stars);
+    return { ...result, ...ingestion };
+  }
+
+  /** Oriente un cône Gaia autour de la direction caméra ; nécessite une caméra à plus de 0 parsec du Soleil. */
+  loadGaiaDR3AroundCamera({ radiusDeg = 1, limit = 500 } = {}, options = {}) {
+    const globalCamera = globalCameraPosition(this.cam.position, this.target);
+    const scale = this.interstellarConfig?.parsecToSceneUnits || 0;
+    // Les axes de scène Gobai sont (ICRS x, ICRS z, -ICRS y).
+    const x = globalCamera.x / scale; const y = -globalCamera.z / scale; const z = globalCamera.y / scale;
+    const distance = Math.hypot(x, y, z);
+    if (!Number.isFinite(distance) || distance < 1e-6) throw new Error('La caméra est trop proche du Soleil pour déterminer une direction Gaia.');
+    const raDeg = (Math.atan2(y, x) / (Math.PI / 180) + 360) % 360;
+    const decDeg = Math.asin(Math.max(-1, Math.min(1, z / distance))) / (Math.PI / 180);
+    return this.loadGaiaDR3Cone({ raDeg, decDeg, radiusDeg, limit }, options);
+  }
+
+  getGaiaStreamingStats() {
+    return { ...(this.gaiaSectorStreamer?.getStats() || {}), loadedStars: this.gaiaLoadedStars?.size || 0, scheduler: this.galacticSectorScheduler?.getStats() || null, render: this.gaiaStarfieldLayer?.getStats() || null };
+  }
+
+  /** Ajuste le LOD GPU Gaia sans recharger le catalogue. */
+  setGaiaRenderBudget(options = {}) {
+    if (!this.gaiaStarfieldLayer || this.stopped) throw new Error('Rendu Gaia indisponible.');
+    return this.gaiaStarfieldLayer.setRenderBudget(options);
+  }
+
+  cancelGaiaDR3Streaming() { this.gaiaSectorStreamer?.cancelAll('Chargement Gaia annulé par le moteur.'); }
+
+  /** Résidence des secteurs galactiques autour de la caméra, en coordonnées ICRS parsecs. */
+  updateGalacticSectorStreaming(globalCamera) {
+    if (!this.galacticSectorStreaming || !this.interstellarConfig?.parsecToSceneUnits) return null;
+    this.galacticStreamingFrame += 1;
+    if (this.galacticStreamingFrame % 12 !== 0) return this.galacticStreamingLastResult;
+    const scale = this.interstellarConfig.parsecToSceneUnits;
+    // Convertit les axes de scène Gobai (x,z,-y) vers le repère ICRS (x,y,z).
+    const centerPc = { x: globalCamera.x / scale, y: -globalCamera.z / scale, z: globalCamera.y / scale };
+    const result = this.galacticSectorStreaming.update(centerPc);
+    this.gaiaStarfieldLayer?.setResidentIds(result.visibleIds);
+    if (this.galacticSectorScheduler?.enabled) {
+      const distance = Math.hypot(centerPc.x, centerPc.y, centerPc.z);
+      if (distance > 1e-6) {
+        const raDeg = (Math.atan2(centerPc.y, centerPc.x) / (Math.PI / 180) + 360) % 360;
+        const decDeg = Math.asin(Math.max(-1, Math.min(1, centerPc.z / distance))) / (Math.PI / 180);
+        this.galacticSectorScheduler.updateView({ raDeg, decDeg, radiusDeg: this.gaiaAutoStreamingRadiusDeg || 1 });
+      }
+    }
+    for (const [id, entry] of this.interstellarSystems || []) {
+      const profile = this.coreSystemManager?.getLoadProfile(id);
+      entry.group.visible = Boolean(profile?.render && this.galacticSectorStreaming.isResident(id));
+      entry.group.userData.galacticSectorResident = this.galacticSectorStreaming.isResident(id);
+    }
+    this.galacticStreamingLastResult = result;
+    return result;
+  }
+
+  getInterstellarSystems() {
+    return [...(this.interstellarSystems?.entries?.() || [])].map(([id, entry]) => ({
+      id, name: entry.model.name, distancePc: entry.model.distancePc,
+      distanceLightYears: entry.model.distanceLightYears,
+      state: this.getCoreEffectiveState(id), focusIndex: entry.focusIndex,
+    }));
+  }
+
+  // Recentre les groupes stellaires globaux sur la même origine flottante que le Système solaire.
+  updateInterstellarSceneOrigins() {
+    const scale = this.interstellarConfig?.parsecToSceneUnits || 1;
+    this.gaiaStarfieldLayer?.updateOrigin({ x: this.target.x / scale, y: -this.target.z / scale, z: this.target.y / scale });
+    for (const entry of this.interstellarSystems?.values?.() || []) {
+      const p = entry.model.position;
+      entry.group.position.set(p.x - this.target.x, p.y - this.target.y, p.z - this.target.z);
+    }
+  }
+
+  // Calcule le LOD écran-space des systèmes distants et applique un budget de détails progressif.
+  updateInterstellarLOD() {
+    if (!this.interstellarLOD || !this.interstellarSystems?.size || !this.cam) return null;
+    this.interstellarLODFrame += 1;
+    if (this.interstellarLODFrame % 6 !== 0) return this.interstellarLODLastResult || null;
+    const viewportHeight = this.renderer?.domElement?.clientHeight || this.renderer?.domElement?.height || 0;
+    if (!viewportHeight) return null;
+    const focused = [...this.interstellarSystems.entries()].find(([, entry]) => entry.focusIndex === this.focus)?.[0] || null;
+    const result = this.interstellarLOD.evaluate([...this.interstellarSystems.values()], {
+      cameraPosition: this.cam.position, viewportHeight, fovDeg: this.cam.fov || 50, focusedId: focused,
+    });
+    for (const decision of result.decisions) {
+      const entry = this.interstellarSystems.get(decision.id);
+      if (!entry) continue;
+      this.interstellarRenderer?.setSystemLOD(entry.starSystem.id, decision.tier);
+      entry.group.userData.lodTier = decision.tier;
+      entry.group.userData.projectedDiameterPx = decision.projectedDiameterPx;
+    }
+    this.interstellarLODLastResult = result;
+    return result;
+  }
+
+  // Met à jour les positions orbitales uniquement pour le système ACTIF, au maximum une fois par seconde.
+  updateInterstellarEphemerides(now = performance.now()) {
+    if (now - (this.interstellarLastEphemerisAt || 0) < 1000) return;
+    this.interstellarLastEphemerisAt = now;
+    const julianDate = this.simMs / 864e5 + 2440587.5;
+    for (const [id, entry] of this.interstellarSystems || []) {
+      if (this.getCoreEffectiveState(id) !== 'ACTIVE') continue;
+      entry.group.userData.updateLocalScene?.(entry.starSystem, { targetJulianDate: julianDate });
+      this.interstellarRenderer?.setSystemLOD(entry.starSystem.id, entry.group.userData.lodTier || 'DETAILED');
+    }
+  }
+
+  // Crée un atlas couleur par astre pilote et le relie au budget GPU central.
+  initSurfaceAtlasPipelines() {
+    if (!this.coreGpuMemoryBudget || typeof document === 'undefined') return;
+    for (const bodyId of ['earth', 'moon']) {
+      const tiled = this.tiledById?.[bodyId];
+      if (!tiled?.tiles) continue;
+      let atlas = null; let bridge = null; let pipeline = null; let unregisterBridge = null;
+      try {
+        const channel = createSatelliteCanvasAtlasChannel(THREE, {
+          documentRef: document,
+          anisotropy: Math.min(4, this.renderer?.capabilities?.getMaxAnisotropy?.() || 1),
+        });
+        atlas = new SatelliteMultiLayerTextureAtlasManager({
+          pageSize: 2048, gutter: 4, maxPages: 4, channels: { color: channel },
+          onError: (error, id) => console.warn(`[Gobai Atlas ${bodyId}] ${id}`, error),
+        });
+        bridge = new SatelliteAtlasGpuBudgetBridge({
+          atlas, budgetManager: this.getSurfaceGpuBudgetManager(),
+          bytesPerPage: (info) => Math.ceil(info.pageSize * info.pageSize * 4 * info.channelCount * (4 / 3)),
+          resourceIdPrefix: `surface-atlas-${bodyId}`, priority: 0,
+          onError: (error, id) => console.warn(`[Gobai Atlas budget ${bodyId}] ${id}`, error),
+        });
+        unregisterBridge = this.registerSurfaceAtlasBudgetBridge(bridge);
+        pipeline = new SatelliteTileAtlasPipeline({
+          atlas, memoryBudgetBridge: bridge, bodyId, diagnostics: this.surfaceAtlasDiagnostics, maxItemsPerInstall: 1, mode: this.surfaceAtlasMode,
+          onError: (error, id) => console.warn(`[Gobai Atlas pipeline ${bodyId}] ${id}`, error),
+        });
+        tiled.tiles.setSurfaceAtlasPipeline(pipeline);
+        this.surfaceAtlasRuntimes.set(bodyId, { atlas, bridge, pipeline });
+      } catch (error) {
+        try { tiled.tiles.setSurfaceAtlasPipeline(null); } catch {}
+        try { pipeline?.dispose(); } catch {}
+        try { unregisterBridge?.(); } catch { bridge?.dispose(); }
+        try { atlas?.dispose(); } catch {}
+        // Une indisponibilité Canvas/WebGL ne bloque jamais le chargement historique.
+        console.warn(`[Gobai Atlas ${bodyId}] activation ignorée, repli classique conservé.`, error);
+      }
+    }
+  }
+
+  // Libère les pipelines et les atlas après les TileManager qui relâchent leurs tuiles.
+  disposeSurfaceAtlasPipelines() {
+    for (const runtime of this.surfaceAtlasRuntimes?.values?.() || []) {
+      runtime.pipeline.dispose();
+      runtime.atlas.dispose();
+    }
+    this.surfaceAtlasRuntimes?.clear();
+  }
+
+  // Actualise les centres mobiles après le calcul des éphémérides et le placement de la caméra.
+  updateCoreOrchestration() {
+    if (!this.coreSystemManager || !this.cam) return;
+    this.coreActivityPolicy?.beginFrame();
+    this.coreEngineActivityPolicy?.beginFrame();
+    for (const { id, target } of this.coreTargets) {
+      const position = target.get();
+      if (position) this.corePerivolumes.updateCenter(id, position.toArray());
+    }
+    for (const { id, target } of this.coreSystemVolumes || []) {
+      const position = target.get();
+      if (position) this.corePerivolumes.updateCenter(id, position.toArray());
+    }
+    const globalCamera = globalCameraPosition(this.cam.position, this.target);
+    this.coreLastDecisions = this.coreSystemManager.update([globalCamera.x, globalCamera.y, globalCamera.z]);
+    for (const [id, entry] of this.interstellarSystems || []) {
+      const profile = this.coreSystemManager.getLoadProfile(id);
+      this.interstellarResourceLifecycle?.update(id, profile.state);
+      entry.group.visible = Boolean(profile.render);
+      entry.group.userData.perivolumeState = profile.state;
+      entry.group.userData.simulationPaused = !profile.update;
+      entry.group.userData.perivolumePriority = profile.priority;
+    }
+    this.updateGalacticSectorStreaming(globalCamera);
+    this.updateInterstellarEphemerides();
+    this.updateInterstellarLOD();
+    this.coreGpuMemoryBudget?.updatePerivolumeDecisions(this.coreLastDecisions);
+    // L’ordonnanceur est raccordé, mais aucune tâche physique ou visuelle critique n’est déplacée dans ce lot.
+    this.coreScheduler.flush();
+  }
+
+  // État effectif après application des axiomes, et non le seul état géométrique brut.
+  getCoreEffectiveState(id) {
+    return this.coreSystemManager?.getLoadProfile(id)?.state ?? this.corePerivolumes?.getState(id) ?? 'ACTIVE';
+  }
+
+  // Enregistre un système externe déjà placé dans le repère global de la scène (ex. Proxima).
+  // Le moteur orbital local ne doit pas être utilisé comme position globale sans transformation ICRS dédiée.
+  registerExternalSystemPerivolume({ id, center, radius, backgroundRadius = radius * 3, name = id } = {}) {
+    if (!id || id === 'system:earth' || id === 'system:solar') throw new TypeError('Un identifiant de système externe distinct est requis.');
+    this.coreRegistry?.upsert({ id, name, kind: 'system', level: 'system', external: true });
+    const entry = this.corePerivolumes?.register({ id, center, radius, backgroundRadius, metadata: { level: 'system', external: true } });
+    this.coreExternalSystemIds ||= new Set();
+    this.coreExternalSystemIds.add(id);
+    return entry;
+  }
+
+  updateExternalSystemPerivolume(id, center) {
+    if (!this.coreExternalSystemIds?.has(id)) return false;
+    return this.corePerivolumes?.updateCenter(id, center) ?? false;
+  }
+
+  unregisterExternalSystemPerivolume(id) {
+    if (!this.coreExternalSystemIds?.delete(id)) return false;
+    this.coreRegistry?.remove(id);
+    this.coreSystemManager?.unregister(id);
+    return this.corePerivolumes?.unregister(id) ?? false;
+  }
+
+  // Vérifie si un moteur spécialisé doit travailler selon le périvolume effectif de son astre.
+  shouldUpdateCoreEngine(engine, bodyId) {
+    const state = this.getCoreEffectiveState(bodyId);
+    const focused = this.coreTargets?.some(({ id, focusIndex }) => id === bodyId && focusIndex === this.focus) ?? false;
+    return this.coreEngineActivityPolicy?.shouldUpdate(engine, { state, focused }) ?? true;
+  }
+
+  // Expose le gestionnaire central aux pipelines de surface explicitement activés.
+  getSurfaceGpuBudgetManager() {
+    return this.coreGpuMemoryBudget?.budgetManager ?? null;
+  }
+
+  // Enregistre un bridge d’atlas : le moteur en prend en charge le cycle de vie.
+  registerSurfaceAtlasBudgetBridge(bridge) {
+    if (!this.coreGpuMemoryBudget) throw new Error('Le budget GPU central n’est pas initialisé.');
+    return this.coreGpuMemoryBudget.registerBridge(bridge);
+  }
+
+  setSurfaceGpuGlobalBudget(bytes) {
+    if (!this.coreGpuMemoryBudget) throw new Error('Le budget GPU central n’est pas initialisé.');
+    return this.coreGpuMemoryBudget.setGlobalBudget(bytes);
+  }
+
+  setSurfaceGpuBodyBudget(bodyId, bytes) {
+    if (!this.coreGpuMemoryBudget) throw new Error('Le budget GPU central n’est pas initialisé.');
+    return this.coreGpuMemoryBudget.setBodyBudget(bodyId, bytes);
+  }
+
+  /** Bascule le rendu des surfaces raccordées sans reconstruire les TileLayer ni recharger les images. */
+  setSurfaceAtlasMode(mode, bodyId = null) {
+    if (!['atlas', 'classic'].includes(mode)) throw new TypeError('mode doit être atlas ou classic.');
+    const runtimes = this.surfaceAtlasRuntimes || new Map();
+    if (bodyId !== null && !runtimes.has(bodyId)) return { ok: false, reason: 'unknown-body', bodyId };
+    const selected = bodyId === null ? [...runtimes.entries()] : [[bodyId, runtimes.get(bodyId)]];
+    const results = {};
+    for (const [id, runtime] of selected) results[id] = runtime.pipeline.setMode(mode);
+    const modes = [...runtimes.values()].map((runtime) => runtime.pipeline.getMode());
+    this.surfaceAtlasMode = modes.length && modes.every((value) => value === modes[0]) ? modes[0] : 'mixed';
+    return { ok: true, mode: this.surfaceAtlasMode, bodies: results };
+  }
+
+  /** Crée un banc A/B navigateur avec capture du canvas WebGL et cadrage orbital gelé. */
+  createSurfaceAtlasVisualValidation({ scenarios, limits, boundaryProvider, waitUntilReady, frameCount = 3 } = {}) {
+    if (!this.surfaceAtlasRuntimes?.size) throw new Error('Aucun pipeline Atlas n’est disponible pour la validation.');
+    const adapter = new SatelliteAtlasBrowserValidationAdapter(this, { waitUntilReady, frameCount });
+    const runner = adapter.createRunner({ scenarios, limits, boundaryProvider });
+    this.surfaceAtlasBrowserValidation = { adapter, runner };
+    return {
+      runner,
+      run: () => runner.run(),
+      buildHtmlReport: (report) => adapter.buildHtmlReport(report),
+      getCaptures: () => new Map(adapter.captures),
+    };
+  }
+
+  /** Remet à zéro la fenêtre de mesures A/B sans effacer les diagnostics des tuiles. */
+  resetSurfaceAtlasBenchmark() {
+    return this.surfaceAtlasDiagnostics?.clearFrameSamples() ?? 0;
+  }
+
+  /** Compare les fenêtres échantillonnées en mode classique et en mode atlas. */
+  getSurfaceAtlasComparison() {
+    return this.surfaceAtlasDiagnostics?.compareModes('classic-reference', 'atlas-active') ?? null;
+  }
+
+  // Snapshot de diagnostic en lecture seule pour les futurs outils de supervision.
+  getCoreDiagnostics() {
+    return {
+      registeredBodies: this.coreRegistry?.size ?? 0,
+      states: this.coreLastDecisions.map(({ id, state, distance, changed }) => ({ id, state, distance, changed })),
+      transitions: [...(this.coreTransitions ?? [])],
+      queuedTasks: this.coreScheduler?.size ?? 0,
+      managedResources: this.coreResources?.size ?? 0,
+      specializedEngineCadence: { atmosphere: this.coreEngineActivityPolicy?.getCadence('atmosphere') ?? null, lidar: this.coreEngineActivityPolicy?.getCadence('lidar') ?? null, lidarPoints: this.coreEngineActivityPolicy?.getCadence('lidarPoints') ?? null, volcanoes: this.coreEngineActivityPolicy?.getCadence('volcanoes') ?? null },
+      renderBudget: this.coreRenderBudgetPolicy?.snapshot() ?? null,
+      renderPipeline: this.coreRenderDiagnosticsPolicy?.snapshot() ?? null,
+      gpuMemoryBudget: this.coreGpuMemoryBudget?.getDiagnostics() ?? null,
+      surfaceAtlasMode: this.surfaceAtlasMode ?? 'unavailable',
+      surfaceAtlas: Object.fromEntries([...(this.surfaceAtlasRuntimes || new Map())].map(([id, runtime]) => [id, { mode: runtime.pipeline.getMode(), ...runtime.atlas.getMemoryStats(), bridge: runtime.bridge.getStats() }])),
+      surfaceAtlasComparison: this.getSurfaceAtlasComparison?.() ?? null,
+      surfaceAtlasValidation: this.surfaceAtlasDiagnostics?.snapshot() ?? null,
+      tileMemory: (this.tiledBodies ?? []).map((tb) => ({ id: tb.id, gpu: tb.tiles.base?.layer?.cache?.size ?? 0, gpuCapacity: tb.tiles.base?.layer?.cache?.capacity ?? 0, ram: tb.tiles.base?.layer?.ram?.size ?? 0, ramCapacity: tb.tiles.base?.layer?.ram?.capacity ?? 0 })),
+    };
   }
 
   // initLabels : prépare les étiquettes et les repères (début).
@@ -1981,7 +2681,8 @@ export class SolarEngine {
     // Numéro de l'image, pour le tour de rôle.
     this.loadTick = (this.loadTick || 0) + 1;
     // Renvoie le plan, avec le budget d'astres.
-    return planTiledBodies(candidates, MAX_TILED_BODIES, this.loadTick);
+    const maxTiledBodies = this.coreRenderBudgetPolicy?.snapshot().maxTiledBodies ?? MAX_TILED_BODIES;
+    return planTiledBodies(candidates, maxTiledBodies, this.loadTick);
   // Fin de planTiles.
   }
 
@@ -2497,6 +3198,8 @@ export class SolarEngine {
       ...(this.moonHidden ? [] : [this.moon]),
       // les satellites dessinés (ni masqués, ni trop près de leur planète à l'écran).
       ...this.satellites.list.filter((sat) => !sat.hidden && !sat.lodHidden).map((sat) => sat.mesh),
+      // Batches instanciés enregistrés : instanceId est résolu vers l'identifiant du satellite.
+      ...this.satellites.getInstancedPickables(),
     // Fin des astres cliquables.
     ];
     // Objets touchés par le rayon.
@@ -2509,8 +3212,8 @@ export class SolarEngine {
       if (hit === this.sunMesh) { this.setFocus(0); return true; }
       // La Lune : sa cible.
       if (hit === this.moon) { this.setFocus(this.moonFocus); return true; }
-      // Satellite de ce maillage.
-      const sat = this.satellites.list.find((sv) => sv.mesh === hit);
+      // Satellite instancié (instanceId) ou maillage historique.
+      const sat = this.satellites.resolvePickHit(hits[0]) || this.satellites.list.find((sv) => sv.mesh === hit);
       // S'il y en a un : sa cible.
       if (sat) { this.setFocus(sat.focus); return true; }
       // Pour chaque planète (début).
@@ -2610,6 +3313,8 @@ export class SolarEngine {
     this.updateBodies(T, d);
     // Place la caméra.
     this.updateCamera(dt);
+    // Met à jour les périvolumes du Core après les positions orbitales et la caméra.
+    this.updateCoreOrchestration();
     // Téléphone : entrée ou sortie du système d'une planète (qualité, rythme, astres affichés).
     this.updateSystemView();
     // Met à jour les directions du Soleil.
@@ -2617,11 +3322,11 @@ export class SolarEngine {
     // Met à jour les frontières.
     this.updateBorders();
     // Les volcans suivent la rotation de la Terre.
-    this.volcanoes.sync(this.earth.mesh.rotation.y);
+    if (this.shouldUpdateCoreEngine('volcanoes', 'earth')) this.volcanoes.sync(this.earth.mesh.rotation.y);
     // Les calques atmosphériques aussi, et notent où regarde la caméra.
-    this.atmosphereLayers.update(this.earth.mesh.rotation.y, this.cam);
+    if (this.shouldUpdateCoreEngine('atmosphere', 'earth')) this.atmosphereLayers.update(this.earth.mesh.rotation.y, this.cam);
     // Met à jour les nuages LiDAR.
-    this.lidar.update(this.cam);
+    if (this.shouldUpdateCoreEngine('lidar', 'earth')) this.lidar.update(this.cam);
     // Couche de tuiles de la Terre affichée, s'il y a une carte.
     const groundLayer = this.tiles.active ? this.tiles.base?.layer : null;
     // Niveau du sol dessiné sous la caméra : celui de la cellule hexagonale la plus proche (les cellules sont posées au
@@ -2630,9 +3335,9 @@ export class SolarEngine {
     // Soulèvement du sol dessiné (m), sur une carte à plat.
     const groundLiftM = groundLayer ? (tileRadius(groundLevel, groundLayer.gap) - 1) * EARTH_RADIUS_M : 0;
     // Met à jour les points LiDAR : sur la carte à plat, leur sol est posé sur le sol dessiné.
-    this.lidarPoints.update({ cam: this.cam, H: this.H, dpr: this.dpr, sunDir: this.sunDir, shade: this.tiles.uniforms.shade.value, hidden: Boolean(this.earth.hidden), now, flat: !this.tiles.reliefOn, groundLiftM });
+    if (this.shouldUpdateCoreEngine('lidarPoints', 'earth')) this.lidarPoints.update({ cam: this.cam, H: this.H, dpr: this.dpr, sunDir: this.sunDir, shade: this.tiles.uniforms.shade.value, hidden: Boolean(this.earth.hidden), now, flat: !this.tiles.reliefOn, groundLiftM });
     // Met à jour les noms des pays.
-    this.countryLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
+    if (this.shouldUpdateCoreEngine('earthLabels', 'earth')) this.countryLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
     // Moteur de chargement planétaire : pixels par unité de scène à une unité de distance.
     const pxScale = pixelScale(this.H, this.cam.fov * D);
     // Satellites : dessinés seulement quand leur orbite se détache de leur planète à l'écran.
@@ -2641,9 +3346,23 @@ export class SolarEngine {
     const tiled = this.planTiles(pxScale);
     // Pour chaque astre tuilé (début).
     for (const tb of this.tiledBodies) {
-      // Retenu par le plan de cette image : met ses tuiles à jour.
-      if (tiled.has(tb.id)) tb.tiles.update();
-      // Choisit entre son modèle et ses tuiles.
+      // Le Core cadence les tuiles éloignées. Un astre ciblé reste toujours prioritaire.
+      const coreState = this.getCoreEffectiveState(tb.id);
+      const focused = tb.focus === this.focus;
+      const layer = tb.tiles.base?.layer;
+      if (layer && this.coreTileMemoryPolicy) {
+        const state = focused ? 'ACTIVE' : coreState;
+        const profile = this.coreTileMemoryPolicy.profile(state, {
+          gpuBase: layer.baseCapacity,
+          ramBase: layer.baseRamCapacity,
+          wantedCount: layer.wantedKeys?.size ?? 0,
+        });
+        tb.tiles.setCoreMemoryProfile(profile);
+      }
+      if (tiled.has(tb.id) && this.coreActivityPolicy.shouldUpdateTiles({ state: coreState, focused })) {
+        tb.tiles.update();
+      }
+      // Le basculement modèle/tuiles reste évalué chaque image pour préserver la continuité visuelle.
       this.updateBodyModel(tb);
     // Fin de la boucle.
     }
@@ -2654,11 +3373,11 @@ export class SolarEngine {
     // Met à jour le style des orbites : épaisseur à l'écran, orbite mise en avant, traînées.
     this.updateOrbitStyle(now);
     // Met à jour les noms des villes.
-    this.worldLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
+    if (this.shouldUpdateCoreEngine('earthLabels', 'earth')) this.worldLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
     // Met à jour le point de l'utilisateur.
-    this.userMarker.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh, hidden: Boolean(this.earth.hidden) });
+    if (this.shouldUpdateCoreEngine('earthLabels', 'earth')) this.userMarker.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh, hidden: Boolean(this.earth.hidden) });
     // Met à jour les noms des lieux de la Lune.
-    this.moonLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.moonTiles.root });
+    if (this.shouldUpdateCoreEngine('moonLabels', 'moon')) this.moonLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.moonTiles.root });
     // Met à jour les sondes.
     this.orbiters.update({ t: this.simMs, moonPos: this.moonGroup.position, moonRadius: this.data.bodies.moon.radius, cam: this.cam, W: this.W, H: this.H });
     // Met à jour le HUD.
@@ -2678,6 +3397,13 @@ export class SolarEngine {
     probe.renderEnd();
     // Fin de la mesure de l'image.
     const perf = probe.frameEnd(this.renderer.info);
+    // Le budget cartographique suit les mesures CPU/GPU précédentes, sans modifier le contrôleur DPR existant.
+    if (perf) {
+      const frameMode = this.surfaceAtlasMode === 'classic' ? 'classic-reference' : this.surfaceAtlasMode === 'atlas' ? 'atlas-active' : 'mixed-scene-atlas-experimental';
+      this.surfaceAtlasDiagnostics?.recordFrame({ perf, timestamp: now, mode: frameMode });
+      this.coreRenderBudget = this.coreRenderBudgetPolicy?.update(perf) ?? this.coreRenderBudget;
+      this.coreRenderDiagnostics = this.coreRenderDiagnosticsPolicy?.analyze({ ...perf, timestamp: now }) ?? this.coreRenderDiagnostics;
+    }
     // Transmet les mesures au HUD, s'il y en a.
     if (perf) this.hud.set({ perf });
     // Demande l'image suivante.
@@ -3070,6 +3796,8 @@ export class SolarEngine {
     const ease = 1 - Math.pow(1 - this.focusT, 3);
     // Point visé : entre le départ et la cible.
     this.target.copy(this.targetStart).lerp(this.focusTarget().get(), ease);
+    // Les systèmes distants suivent l'origine flottante sans perdre leur position astronomique globale.
+    this.updateInterstellarSceneOrigins();
     // Zoom lissé en échelle logarithmique, même vitesse à toute cadence (avant : 16 % par image, donc plus lent à 30 i/s).
     // Relief : la caméra reste au-dessus du sol réel (montagnes soulevées) de l'astre survolé.
     const lifted = this.focusedTiled();
@@ -3756,6 +4484,41 @@ export class SolarEngine {
   dispose() {
     // Moteur arrêté.
     this.stopped = true;
+    // Détruit les gestionnaires du Core (les ressources graphiques historiques restent libérées par leur propriétaire).
+    this.coreScheduler?.clear();
+    this.coreResources?.disposeAll();
+    for (const controller of this.interstellarLoadControllers?.values?.() || []) controller.abort?.();
+    this.interstellarLoadControllers?.clear();
+    this.interstellarResourceLifecycle?.dispose();
+    this.galacticSectorScheduler?.dispose();
+    this.galacticSectorScheduler = null;
+    this.gaiaSectorStreamer?.dispose();
+    this.gaiaStarfieldLayer?.dispose();
+    this.gaiaLoadedStars?.clear();
+    this.gaiaStarOwners?.clear();
+    this.gaiaManualStarIds?.clear();
+    this.interstellarRenderer?.dispose();
+    this.interstellarSystems?.clear();
+    this.interstellarLOD?.clear();
+    this.galacticSectorStreaming?.dispose();
+    this.galacticSectorStreaming = null;
+    this.galacticSpatialIndex?.clear();
+    this.galacticSpatialIndex = null;
+    this.interstellarExplorer = null;
+    this.interstellarCatalog = null;
+    this.gaiaSectorStreamer = null;
+    this.gaiaStarfieldLayer = null;
+    this.corePerivolumes?.clear();
+    this.coreActivityPolicy?.reset();
+    this.coreTileMemoryPolicy = null;
+    this.coreEngineActivityPolicy?.reset();
+    this.coreEngineActivityPolicy = null;
+    this.coreRenderBudgetPolicy?.reset();
+    this.coreRenderBudgetPolicy = null;
+    this.coreRenderDiagnosticsPolicy?.reset();
+    this.coreRenderDiagnosticsPolicy = null;
+    this.coreRegistry?.clear();
+    this.coreTargets = [];
     // Libère les nuages LiDAR.
     this.lidar?.dispose();
     // Libère les points LiDAR.
@@ -3770,8 +4533,14 @@ export class SolarEngine {
     document.removeEventListener('visibilitychange', this.onVisibility);
     // Débranche les entrées.
     this.removeInput();
-    // Libère les tuiles de chaque astre.
+    // Libère les tuiles avant le budget GPU : leurs pipelines peuvent encore relâcher des références atlas.
     for (const tb of this.tiledBodies) tb.tiles.dispose();
+    this.disposeSurfaceAtlasPipelines();
+    // Le budget détruit ensuite ses bridges et oublie leurs inscriptions sans détruire les atlas propriétaires.
+    this.coreGpuMemoryBudget?.dispose();
+    this.coreGpuMemoryBudget = null;
+    this.surfaceAtlasDiagnostics?.dispose();
+    this.surfaceAtlasDiagnostics = null;
     // Libère les noms des villes.
     this.worldLabels.dispose();
     // Libère le point de l'utilisateur.
@@ -3799,7 +4568,7 @@ export class SolarEngine {
     // Pour chaque objet de la scène (début).
     this.scene.traverse((o) => {
       // Libère sa géométrie.
-      if (o.geometry) o.geometry.dispose();
+      if (o.geometry && !o.geometry.userData?.__sharedResourcePool) o.geometry.dispose();
       // Ses matériaux, en liste.
       const mats = Array.isArray(o.material) ? o.material : o.material ? [o.material] : [];
       // Pour chacun (début).
@@ -3812,6 +4581,8 @@ export class SolarEngine {
       });
     // Fin du parcours.
     });
+    // Libère chaque géométrie partagée une seule fois, après le parcours des meshes.
+    this.sharedGeometryPool?.dispose();
     // Libère le moteur de rendu.
     this.renderer.dispose();
     // Son canevas.

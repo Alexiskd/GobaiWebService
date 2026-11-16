@@ -166,6 +166,8 @@ export class TileLayer {
     uploadsPerFrame = UPLOADS_PER_FRAME, hex = true,
     // le rayon de l'astre en km (distance affichée des paliers) et l'appareil (tenu en main, économie d'énergie).
     radiusKm = 0, device = () => ({ handheld: false, saving: false }),
+    // Atlas multi-couches expérimental, désactivé par défaut ; instance de SatelliteTileAtlasPipeline.
+    surfaceAtlasPipeline = null, bodyId = null,
   // Fin des réglages (début du constructeur).
   }) {
     // Paliers de zoom (table du serveur) : rayon de l'astre, appareil, palier en cours et budget de tuiles.
@@ -208,6 +210,9 @@ export class TileLayer {
     this.source = source;
     // Garde les variables partagées.
     this.uniforms = uniforms;
+    // Opt-in : le rendu historique reste le repli si l'atlas est absent ou échoue.
+    this.surfaceAtlasPipeline = surfaceAtlasPipeline;
+    this.bodyId = bodyId;
     // Garde le filtrage anisotrope.
     this.maxAnisotropy = maxAnisotropy;
     // Garde le niveau plafond.
@@ -242,6 +247,8 @@ export class TileLayer {
     this.loader = new TileLoader(concurrency);
     // Garde la capacité de base.
     this.baseCapacity = capacity;
+    this.baseRamCapacity = ramCapacity;
+    this.coreGpuCapacity = null;
     // Cache des tuiles sur la carte graphique ; une tuile évincée passe par evict.
     this.cache = new LruCache(capacity, (_k, entry) => this.evict(entry));
     // Cache des images décodées en mémoire vive.
@@ -321,6 +328,27 @@ export class TileLayer {
   // fading : vrai tant qu'un fondu des cellules est en cours.
   get fading() { return Boolean(this.hex?.fading); }
 
+  /** Applique un budget mémoire du Core sans toucher aux tuiles épinglées ni à la vue courante. */
+  setCoreMemoryProfile({ gpuCapacity, ramCapacity, preserveWanted = true } = {}) {
+    if (this.disposed) return false;
+    this.coreGpuCapacity = Math.max(1, Math.floor(Number(gpuCapacity) || 1));
+    this.cache.capacity = this.coreGpuCapacity;
+    this.ram.capacity = Math.max(0, Math.floor(Number(ramCapacity) || 0));
+    // L'éviction GPU suit le callback historique : textures libérées et transfert RAM si possible.
+    while (this.cache.size > this.cache.capacity) {
+      const candidate = this.cache.keys().find((key) => !preserveWanted || !this.wantedKeys.has(key));
+      if (candidate === undefined) break;
+      this.cache.delete(candidate);
+    }
+    // Réduit immédiatement le cache RAM dans son ordre LRU.
+    while (this.ram.size > this.ram.capacity) {
+      const oldest = this.ram.keys()[0];
+      if (oldest === undefined) break;
+      this.ram.delete(oldest);
+    }
+    return true;
+  }
+
   // update : à chaque image, avec la vue (début).
   update(view) {
     // Couche libérée ou source pas prête : rien.
@@ -394,7 +422,7 @@ export class TileLayer {
 
     // Le cache doit pouvoir contenir au moins tout ce qui est voulu, sinon les tuiles s'évincent en boucle.
     // Capacité du cache : au moins 1,3 fois le nombre de tuiles voulues.
-    this.cache.capacity = Math.max(this.baseCapacity, Math.ceil(wanted.length * 1.3));
+    this.cache.capacity = Math.max(this.coreGpuCapacity ?? this.baseCapacity, Math.ceil(wanted.length * 1.3));
     // Zoom en cours : seules les tuiles du champ de la caméra sont demandées, toutes. Le préchargement de fond
     // (monde entier aux niveaux bas, niveau suivant vers le disque) et le préchargement prédictif attendent la fin
     // du zoom, pour laisser tout le réseau aux tuiles regardées.
@@ -1025,6 +1053,12 @@ export class TileLayer {
     // Deux faces.
     material.side = THREE.DoubleSide; // jupes visibles quel que soit leur sens
 
+    // Atlas expérimental : ne remplace le fond classique que si l'entrée atlas est immédiatement prête.
+    // Les images d'altitude et de nuit conservent leur pipeline spécialisé existant.
+    if (this.surfaceAtlasPipeline) {
+      this.surfaceAtlasPipeline.attach({ id: `tile:${key}`, image: base, uniforms: material.uniforms, bodyId: this.bodyId });
+    }
+
     // Maillage.
     const mesh = new THREE.Mesh(geometry, material);
     // Matrice fixée à la main.
@@ -1617,6 +1651,8 @@ export class TileLayer {
   disposeEntry(e) {
     // Retire ses paires de l'affichage en hexagones.
     this.hex?.dropEntry(e);
+    // Libère la référence logique atlas ; le pipeline n'est pas propriétaire des textures GPU.
+    this.surfaceAtlasPipeline?.release(`tile:${e.key}`);
     // Retire son maillage du groupe.
     this.group.remove(e.mesh);
     // Libère sa géométrie.

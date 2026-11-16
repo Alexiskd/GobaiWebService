@@ -1,34 +1,46 @@
-# Gobai Space — frontend statique
+# Gobai Space — édition 100 % frontend / Render Static Site
 
-Cette édition est une copie indépendante de Gobai Space, préparée pour être publiée comme **site statique**. Elle conserve l’interface React, les composants MUI, le moteur 3D Three.js, les styles, les ressources publiques et les données scientifiques locales. Aucun serveur NestJS, PostgreSQL ou processus Node de production n’est nécessaire pour servir les fichiers compilés.
+Cette archive contient uniquement le frontend React/Vite et ses ressources. Le dossier `backend/`, les services NestJS et la migration PostgreSQL ont été retirés. Aucun serveur applicatif n'est nécessaire pour publier les fichiers compilés.
 
-## Lancer en local
+## Configuration Render
+
+Le fichier `render.yaml` décrit un service `web` avec `runtime: static`.
+
+| Paramètre Render | Valeur |
+|---|---|
+| Type | Static Site |
+| Root Directory | vide (racine du dépôt) |
+| Build Command | `npm ci --prefix frontend && npm run build --prefix frontend` |
+| Publish Directory | `frontend/dist` |
+| Auto-Deploy | désactivé (`autoDeploy: false`) |
+| Start Command | aucun |
+
+Dans Render, créer un **New + → Static Site**, connecter le dépôt et reprendre ces valeurs si le Blueprint n'est pas utilisé. Aucun `DATABASE_URL`, port ou variable secrète n'est requis pour servir le frontend statique.
+
+## Commandes locales
 
 ```bash
-cd frontend
-npm install
+npm ci --prefix frontend
 npm run dev
-```
-
-## Construire
-
-Depuis la racine :
-
-```bash
-npm install --prefix frontend
 npm run build
+npm run preview
+npm test
 ```
 
-Les fichiers prêts à publier sont générés dans `frontend/dist`. `render.yaml` configure Render en mode Static Site et `frontend/public/_redirects` active le fallback des routes SPA.
+Le build sort dans `frontend/dist`. Le fichier `frontend/public/_redirects` contient `/* /index.html 200` pour le fallback des routes React.
 
-## Fonctionnement autonome
+## Fonctionnalités autonomes
 
-Les calculs des orbites planétaires (VSOP87A et Kepler) et les tables statiques des planètes et satellites sont embarqués dans `frontend/src/moteur/data/astronomy`. La scène solaire peut donc charger ses corps principaux sans appeler l’API Gobai. Les villes ne sont pas préchargées dans cette édition.
+Les composants React, MUI, le moteur 3D Three.js, les données astronomiques locales, les calculs orbitaux, le moteur stellaire/exoplanétaire, les périvolumes et leurs politiques de chargement sont conservés dans le frontend.
 
-## Fonctions nécessitant encore un service
+Les connecteurs publics Gaia TAP, SIMBAD TAP et NASA Exoplanet Archive restent des appels navigateur directs. Leur fonctionnement dépend des politiques CORS, des quotas et de la disponibilité des fournisseurs.
 
-Les fonctionnalités qui dépendaient de routes `/api/v1` ne sont pas automatiquement disponibles dans une édition statique : comptes, contributions, galerie personnelle, paiements, assistant serveur, données atmosphériques relayées, certaines couches et tuiles, LiDAR côté serveur, recherche de lieux et données de villes. Elles nécessitent une migration séparée vers des données statiques ou des fournisseurs publics accessibles directement depuis le navigateur. Les fournisseurs tiers peuvent aussi imposer CORS, quotas ou clés d’accès. Ne jamais placer de secret serveur dans les variables `VITE_*`.
+## Limites sans backend
 
-## Dépôt source
+Supprimer le backend ne transforme pas les routes serveur en fonctionnalités statiques. Les fonctionnalités dépendant de `/api` ou `/api/v1` (authentification, contributions, galerie personnelle, PostgreSQL, paiements, assistant serveur, proxys, certaines couches, tuiles, données atmosphériques et LiDAR relayés) ne sont pas fournies par cette archive et peuvent être indisponibles sur le site statique. Les appels directs vers des fournisseurs publics restent distincts de ces routes.
 
-Le dépôt GitHub original n’a pas été modifié. Cette livraison est une copie de travail ; aucun commit, push, pull request ni déploiement n’a été effectué. Voir `STATIC-MIGRATION.md` pour le détail des limites.
+Ne jamais placer de clé privée, secret ou identifiant de base de données dans une variable `VITE_*` : ces valeurs sont incorporées au JavaScript livré au navigateur. Si une API tierce exige un secret ou un proxy, elle nécessite un service externe séparé.
+
+## Déploiement manuel
+
+`autoDeploy: false` est conservé : le déploiement doit être déclenché manuellement dans Render. Aucun commit, push, pull request ou déploiement n'a été effectué par cette livraison.
