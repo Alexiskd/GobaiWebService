@@ -1,0 +1,16 @@
+{
+  "name": "gobai-space-static",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Gobai Space — frontend React/Vite autonome, déployable comme site statique",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "install:frontend": "npm install --prefix frontend",
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "preview": "npm run preview --prefix frontend",
+    "test": "npm test --prefix frontend"
+  }
+}
