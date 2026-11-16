@@ -13,13 +13,14 @@ function angularDistanceDeg(a, b) {
  * Il reste désactivé par défaut : l'application doit l'activer explicitement.
  */
 export class GalacticSectorScheduler {
-  constructor({ streamer, onSectorLoaded, onSectorEvicted, onSectorError, maxConcurrent = 1, maxQueued = 8, maxPrefetchSectors = 5, maxPages = 1, maxPagesPerSector = 5, pageSize = 500, retryDelayMs = 15000 } = {}) {
+  constructor({ streamer, onSectorLoaded, onSectorEvicted, onSectorError, onViewChanged, maxConcurrent = 1, maxQueued = 8, maxPrefetchSectors = 5, maxPages = 1, maxPagesPerSector = 5, pageSize = 500, retryDelayMs = 15000, predictionHorizonMs = 1200, maxPredictionDeg = 2, minMotionDegPerSec = 0.15, maxPredictiveSectors = 1, now = () => Date.now() } = {}) {
     if (!streamer || typeof streamer.loadConePages !== 'function') throw new TypeError('Un GaiaDR3SectorStreamer est requis.');
     if (typeof onSectorLoaded !== 'function') throw new TypeError('onSectorLoaded est requis.');
     this.streamer = streamer;
     this.onSectorLoaded = onSectorLoaded;
     this.onSectorEvicted = onSectorEvicted;
     this.onSectorError = onSectorError;
+    this.onViewChanged = onViewChanged;
     this.maxConcurrent = Math.max(1, Math.floor(maxConcurrent));
     this.maxQueued = Math.max(1, Math.floor(maxQueued));
     this.maxPrefetchSectors = Math.max(1, Math.floor(maxPrefetchSectors));
@@ -29,6 +30,13 @@ export class GalacticSectorScheduler {
     this.maxLoadedCursors = new Map();
     this.pageSize = Math.max(1, Math.min(500, Math.floor(pageSize)));
     this.retryDelayMs = Math.max(0, Number(retryDelayMs) || 0);
+    this.predictionHorizonMs = Math.max(0, Number(predictionHorizonMs) || 0);
+    this.maxPredictionDeg = Math.max(0, Number(maxPredictionDeg) || 0);
+    this.minMotionDegPerSec = Math.max(0, Number(minMotionDegPerSec) || 0);
+    this.maxPredictiveSectors = Math.max(0, Math.min(2, Math.floor(Number(maxPredictiveSectors) || 0)));
+    this.now = now;
+    this.previousViewSample = null;
+    this.prediction = { active: false, speedDegPerSec: 0, offsetDeg: 0, predictedRaDeg: null, predictedDecDeg: null };
     this.enabled = false;
     this.queue = [];
     this.inflight = new Map();
@@ -55,8 +63,19 @@ export class GalacticSectorScheduler {
       throw new TypeError('Direction ou rayon de streaming Gaia invalide.');
     }
     this.lastView = view;
+    const now = this.now();
     const sectors = this.#buildSectors(view);
+    const predicted = this.#predictView(view, now);
+    if (predicted && this.maxPredictiveSectors > 0) {
+      const predictedSector = this.#buildSectors({ ...predicted, radiusDeg: view.radiusDeg })[0];
+      if (predictedSector && !sectors.some((sector) => sector.key === predictedSector.key)) {
+        predictedSector.predictive = true;
+        predictedSector.priority += 1000;
+        sectors.push(predictedSector);
+      }
+    }
     const desired = new Set(sectors.map((sector) => sector.key));
+    this.onViewChanged?.({ sectorKeys: [...desired], sectors, prediction: { ...this.prediction } });
     for (const key of new Set([...this.loaded, ...this.sectorStarIds.keys()])) {
       if (desired.has(key)) continue;
       const starIds = [...(this.sectorStarIds.get(key) || [])];
@@ -109,6 +128,40 @@ export class GalacticSectorScheduler {
     }).sort((a, b) => a.priority - b.priority);
   }
 
+
+  #predictView(view, timestamp) {
+    const previous = this.previousViewSample;
+    this.previousViewSample = { ...view, timestamp };
+    if (!previous || !this.predictionHorizonMs || this.maxPredictionDeg <= 0) {
+      this.prediction = { active: false, speedDegPerSec: 0, offsetDeg: 0, predictedRaDeg: null, predictedDecDeg: null };
+      return null;
+    }
+    const elapsedMs = timestamp - previous.timestamp;
+    if (!Number.isFinite(elapsedMs) || elapsedMs < 50 || elapsedMs > 10000) {
+      this.prediction = { active: false, speedDegPerSec: 0, offsetDeg: 0, predictedRaDeg: null, predictedDecDeg: null };
+      return null;
+    }
+    let deltaRa = ((view.raDeg - previous.raDeg + 540) % 360) - 180;
+    const meanDec = (view.decDeg + previous.decDeg) / 2;
+    deltaRa *= Math.max(0.01, Math.cos(meanDec * DEG));
+    const deltaDec = view.decDeg - previous.decDeg;
+    const elapsedSec = elapsedMs / 1000;
+    const speed = Math.hypot(deltaRa, deltaDec) / elapsedSec;
+    if (!Number.isFinite(speed) || speed < this.minMotionDegPerSec) {
+      this.prediction = { active: false, speedDegPerSec: Number.isFinite(speed) ? speed : 0, offsetDeg: 0, predictedRaDeg: null, predictedDecDeg: null };
+      return null;
+    }
+    const horizonSec = this.predictionHorizonMs / 1000;
+    const rawOffset = speed * horizonSec;
+    const scale = rawOffset > this.maxPredictionDeg ? this.maxPredictionDeg / rawOffset : 1;
+    const predictedDecDeg = Math.max(-90, Math.min(90, view.decDeg + deltaDec / elapsedSec * horizonSec * scale));
+    const cosDec = Math.max(0.01, Math.cos(view.decDeg * DEG));
+    const predictedRaDeg = normalizeRa(view.raDeg + (deltaRa / elapsedSec * horizonSec * scale) / cosDec);
+    const offsetDeg = Math.min(this.maxPredictionDeg, rawOffset);
+    this.prediction = { active: true, speedDegPerSec: speed, offsetDeg, predictedRaDeg, predictedDecDeg };
+    return { raDeg: predictedRaDeg, decDeg: predictedDecDeg };
+  }
+
   #pump() {
     while (!this.disposed && this.enabled && this.active < this.maxConcurrent && this.queue.length) {
       const task = this.queue.shift();
@@ -150,6 +203,18 @@ export class GalacticSectorScheduler {
     }
   }
 
+  evictSector(key, reason = 'memory-budget') {
+    if (!key) return false;
+    const starIds = [...(this.sectorStarIds.get(key) || [])];
+    const existed = this.loaded.has(key) || this.sectorStarIds.has(key) || this.maxLoadedCursors.has(key);
+    this.loaded.delete(key); this.sectorStarIds.delete(key); this.pageCountBySector.delete(key); this.maxLoadedCursors.delete(key);
+    this.queue = this.queue.filter((task) => task.key !== key);
+    const pending = this.inflight.get(key);
+    if (pending) pending.controller.abort(new DOMException(`Secteur évincé : ${reason}`, 'AbortError'));
+    if (existed) this.onSectorEvicted?.({ key, starIds, reason });
+    return existed;
+  }
+
   cancelPending(reason = 'Streaming Gaia interrompu.') {
     this.queue.length = 0;
     for (const task of this.inflight.values()) task.controller.abort(new DOMException(reason, 'AbortError'));
@@ -158,7 +223,7 @@ export class GalacticSectorScheduler {
   getStats() {
     return { enabled: this.enabled, queued: this.queue.length, active: this.active, inflight: this.inflight.size,
       loadedSectors: this.loaded.size, failedSectors: this.failures.size, maxConcurrent: this.maxConcurrent,
-      maxQueued: this.maxQueued, maxPages: this.maxPages, maxPagesPerSector: this.maxPagesPerSector, pageSize: this.pageSize, ...this.stats };
+      maxQueued: this.maxQueued, maxPages: this.maxPages, maxPagesPerSector: this.maxPagesPerSector, pageSize: this.pageSize, prediction: { ...this.prediction }, predictionHorizonMs: this.predictionHorizonMs, maxPredictionDeg: this.maxPredictionDeg, ...this.stats };
   }
 
   dispose() {
@@ -166,7 +231,7 @@ export class GalacticSectorScheduler {
     this.enabled = false;
     this.cancelPending('Planificateur détruit.');
     this.disposed = true;
-    this.loaded.clear(); this.sectorStarIds.clear(); this.failures.clear(); this.pageCountBySector.clear(); this.maxLoadedCursors.clear(); this.lastView = null;
+    this.loaded.clear(); this.sectorStarIds.clear(); this.failures.clear(); this.pageCountBySector.clear(); this.maxLoadedCursors.clear(); this.lastView = null; this.previousViewSample = null; this.prediction = { active: false, speedDegPerSec: 0, offsetDeg: 0, predictedRaDeg: null, predictedDecDeg: null };
   }
 }
 

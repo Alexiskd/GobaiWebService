@@ -109,3 +109,61 @@ test('évince les étoiles d’une tuile lorsque la caméra quitte son voisinage
   assert.equal(evicted[0].starIds.length, 1);
   scheduler.dispose();
 });
+
+test('expose les secteurs épinglés par la vue et permet une éviction mémoire explicite', async () => {
+  const evicted = [];
+  const views = [];
+  const scheduler = new GalacticSectorScheduler({
+    streamer: { async loadConePages(cone) { return { stars: [{ id: 'star:1' }], count: 1 }; } },
+    onSectorLoaded() {}, onSectorEvicted: (entry) => evicted.push(entry),
+    onViewChanged: (view) => views.push(view), maxPrefetchSectors: 1,
+  });
+  scheduler.setEnabled(true);
+  scheduler.updateView({ raDeg: 25, decDeg: 5, radiusDeg: 1 });
+  await flush();
+  assert.equal(views.length, 1);
+  assert.equal(views[0].sectorKeys.length, 1);
+  const key = views[0].sectorKeys[0];
+  assert.equal(scheduler.evictSector(key, 'test-budget'), true);
+  assert.equal(evicted.length, 1);
+  assert.deepEqual(evicted[0].starIds, ['star:1']);
+  assert.equal(scheduler.getStats().loadedSectors, 0);
+  scheduler.dispose();
+});
+
+
+test('prédit une tuile dans la direction du mouvement caméra', () => {
+  let now = 1000;
+  const views = [];
+  const scheduler = new GalacticSectorScheduler({
+    streamer: { loadConePages: async () => new Promise(() => {}) },
+    onSectorLoaded() {}, onViewChanged: (view) => views.push(view),
+    maxPrefetchSectors: 1, maxQueued: 2, predictionHorizonMs: 1000,
+    maxPredictionDeg: 1.5, minMotionDegPerSec: 0.1, now: () => now,
+  });
+  scheduler.setEnabled(true);
+  scheduler.updateView({ raDeg: 10, decDeg: 0, radiusDeg: 0.5 });
+  now += 1000;
+  scheduler.updateView({ raDeg: 11.2, decDeg: 0, radiusDeg: 0.5 });
+  const view = views.at(-1);
+  assert.equal(view.prediction.active, true);
+  assert.ok(view.prediction.predictedRaDeg > 11.2);
+  assert.ok(view.sectorKeys.length >= 2);
+  assert.ok(view.sectors.some((sector) => sector.predictive === true));
+  assert.ok(view.prediction.offsetDeg <= 1.5);
+  scheduler.dispose();
+});
+
+test('désactive la prédiction lorsque la caméra est immobile', () => {
+  let now = 0;
+  const scheduler = new GalacticSectorScheduler({
+    streamer: { loadConePages: async () => new Promise(() => {}) },
+    onSectorLoaded() {}, maxPrefetchSectors: 1, now: () => now,
+  });
+  scheduler.setEnabled(true);
+  scheduler.updateView({ raDeg: 40, decDeg: 10, radiusDeg: 1 });
+  now = 1000;
+  scheduler.updateView({ raDeg: 40, decDeg: 10, radiusDeg: 1 });
+  assert.equal(scheduler.getStats().prediction.active, false);
+  scheduler.dispose();
+});

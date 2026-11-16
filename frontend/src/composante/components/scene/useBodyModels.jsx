@@ -44,7 +44,7 @@ export function pickMoonBlend(status) {
 import { BODY_MODELS } from '@/moteur/engine/tiledBodies';
 
 /**
- * Modèles 3D officiels des astres irréguliers (Phobos, Deimos) : chargés la première fois que l'astre ou sa planète est
+ * Modèles 3D locaux des astres irréguliers (Phobos, Deimos) : chargés la première fois que l'astre ou sa planète est
  * ciblé, puis affichés à la place de la sphère. Un échec laisse la sphère et ses tuiles, sans message.
  */
 // Déclare et exporte le crochet useBodyModels : reçoit le moteur et l'identifiant de l'astre ciblé.

@@ -123,6 +123,7 @@ import { InterstellarLODManager } from '../core/InterstellarLODManager.js';
 import { GalacticSpatialIndex } from '../core/GalacticSpatialIndex.js';
 import { GalacticSectorStreamingManager } from '../core/GalacticSectorStreamingManager.js';
 import { GalacticSectorScheduler } from '../core/GalacticSectorScheduler.js';
+import { GalacticCatalogResidencyManager } from '../core/GalacticCatalogResidencyManager.js';
 import { createAstronomicalCatalogService } from '../data/astronomy/providers/AstronomicalCatalogService.js';
 import { GaiaDR3SectorStreamer } from '../data/astronomy/providers/GaiaDR3SectorStreamer.js';
 import { GaiaStarfieldLayer } from './star/GaiaStarfieldLayer.js';
@@ -1277,11 +1278,25 @@ export class SolarEngine {
     this.interstellarLOD = new InterstellarLODManager({ maxPlanetSystems: 8, maxDetailedSystems: 2 });
     this.galacticSpatialIndex = new GalacticSpatialIndex({ sectorSizePc: 10 });
     this.galacticSectorStreaming = new GalacticSectorStreamingManager({ index: this.galacticSpatialIndex, enterRadiusPc: 50, exitRadiusPc: 65 });
+    this.galacticCatalogResidency = new GalacticCatalogResidencyManager({
+      maxSectors: 24, maxStars: 250_000, maxEstimatedBytes: 96 * 1024 * 1024, bytesPerStar: 384,
+      onEvict: ({ key }) => this.galacticSectorScheduler?.evictSector(key, 'lru-memory-budget'),
+    });
     this.galacticSectorScheduler = new GalacticSectorScheduler({
       streamer: this.gaiaSectorStreamer,
       maxConcurrent: 1, maxQueued: 8, maxPrefetchSectors: 5, maxPages: 1, pageSize: 500,
-      onSectorLoaded: ({ key, result }) => this.ingestGaiaStars(result?.stars || [], key),
-      onSectorEvicted: ({ key, starIds }) => this.evictGaiaSectorStars(key, starIds),
+      predictionHorizonMs: 1200, maxPredictionDeg: 2, minMotionDegPerSec: 0.15, maxPredictiveSectors: 1,
+      onViewChanged: ({ sectorKeys }) => this.galacticCatalogResidency?.setPinned(sectorKeys),
+      onSectorLoaded: ({ key, result }) => {
+        this.ingestGaiaStars(result?.stars || [], key);
+        this.galacticCatalogResidency?.registerSector(key, (result?.stars || []).map((star) => star?.id).filter(Boolean), {
+          cursor: result?.nextSourceIdAfter || null, pageCount: result?.pagesLoaded || 1,
+        });
+      },
+      onSectorEvicted: ({ key, starIds }) => {
+        this.galacticCatalogResidency?.removeSector(key);
+        this.evictGaiaSectorStars(key, starIds);
+      },
       onSectorError: ({ key, error }) => console.warn(`[Gobai Gaia scheduler] ${key}`, error),
     });
     this.galacticStreamingFrame = 0;
@@ -1533,7 +1548,13 @@ export class SolarEngine {
   }
 
   getGaiaStreamingStats() {
-    return { ...(this.gaiaSectorStreamer?.getStats() || {}), loadedStars: this.gaiaLoadedStars?.size || 0, scheduler: this.galacticSectorScheduler?.getStats() || null, render: this.gaiaStarfieldLayer?.getStats() || null };
+    return { ...(this.gaiaSectorStreamer?.getStats() || {}), loadedStars: this.gaiaLoadedStars?.size || 0, scheduler: this.galacticSectorScheduler?.getStats() || null, residency: this.galacticCatalogResidency?.getStats() || null, render: this.gaiaStarfieldLayer?.getStats() || null };
+  }
+
+  /** Ajuste le budget RAM du catalogue Gaia ; les secteurs LRU non visibles sont évincés. */
+  setGaiaCatalogMemoryBudget(options = {}) {
+    if (!this.galacticCatalogResidency || this.stopped) throw new Error('Gestionnaire mémoire Gaia indisponible.');
+    return this.galacticCatalogResidency.setBudget(options);
   }
 
   /** Ajuste le LOD GPU Gaia sans recharger le catalogue. */
@@ -4492,6 +4513,8 @@ export class SolarEngine {
     this.interstellarResourceLifecycle?.dispose();
     this.galacticSectorScheduler?.dispose();
     this.galacticSectorScheduler = null;
+    this.galacticCatalogResidency?.dispose();
+    this.galacticCatalogResidency = null;
     this.gaiaSectorStreamer?.dispose();
     this.gaiaStarfieldLayer?.dispose();
     this.gaiaLoadedStars?.clear();

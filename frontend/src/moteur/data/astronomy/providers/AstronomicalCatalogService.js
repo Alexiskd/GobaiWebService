@@ -2,6 +2,8 @@ import { executeTapQuery } from './TapClient.js';
 import { AstronomicalCatalogCache } from './AstronomicalCatalogCache.js';
 import { escapeAdqlString, normalizeExoplanet, normalizeGaiaSource, normalizeSimbadObject, normalizeTapRows } from './AstronomicalDataNormalizer.js';
 
+const ASTRONOMY_PROXY_BASE = String(import.meta.env?.VITE_ASTRONOMY_PROXY_URL || '').trim().replace(/\/$/, '');
+
 export const ASTRONOMICAL_PROVIDERS = Object.freeze({
   gaia: { id: 'gaia', label: 'ESA Gaia DR3', endpoint: 'https://gea.esac.esa.int/tap-server/tap/sync', table: 'gaiadr3.gaia_source' },
   simbad: {
@@ -25,12 +27,15 @@ export class AstronomicalCatalogService {
     this.maxRows = Math.max(1, Math.min(500, Math.floor(maxRows)));
     this.endpoints = {
       gaia: endpoints.gaia || ASTRONOMICAL_PROVIDERS.gaia.endpoint,
-      simbad: endpoints.simbad || ASTRONOMICAL_PROVIDERS.simbad.endpoints,
-      exoplanet: endpoints.exoplanet || ASTRONOMICAL_PROVIDERS.exoplanet.endpoint,
+      // En production statique, SIMBAD et NASA passent obligatoirement par le proxy Gobai.
+      // Les endpoints directs ne sont autorisés que lorsqu'ils sont explicitement injectés (tests/outils).
+      simbad: endpoints.simbad || (ASTRONOMY_PROXY_BASE ? [`${ASTRONOMY_PROXY_BASE}/tap/simbad`] : []),
+      exoplanet: endpoints.exoplanet || (ASTRONOMY_PROXY_BASE ? `${ASTRONOMY_PROXY_BASE}/tap/exoplanet` : null),
     };
   }
 
   async _query(provider, endpoint, query, signal, cacheKey, tapOptions = {}) {
+    if (!endpoint) throw new Error(`Proxy astronomique non configuré pour ${provider} : définir VITE_ASTRONOMY_PROXY_URL avant le build statique.`);
     const cached = this.cache.get(cacheKey);
     if (cached) return { ...cached, cache: 'hit' };
     const result = await executeTapQuery({ provider, endpoint, query, signal, fetchImpl: this.fetchImpl, timeoutMs: this.timeoutMs, tapOptions });
@@ -40,7 +45,8 @@ export class AstronomicalCatalogService {
   }
 
   async _simbadQuery(query, signal, cacheKey) {
-    const endpoints = Array.isArray(this.endpoints.simbad) ? this.endpoints.simbad : [this.endpoints.simbad];
+    const endpoints = (Array.isArray(this.endpoints.simbad) ? this.endpoints.simbad : [this.endpoints.simbad]).filter(Boolean);
+    if (!endpoints.length) throw new Error('Proxy astronomique non configuré : définir VITE_ASTRONOMY_PROXY_URL sur le service Gobai Astronomy Proxy.');
     let lastError;
     for (const endpoint of endpoints.filter(Boolean)) {
       try { return await this._query('simbad', endpoint, query, signal, `${cacheKey}:${endpoint}`); }

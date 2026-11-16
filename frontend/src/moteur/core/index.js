@@ -76,3 +76,5 @@ export { InterstellarResourceLifecycleManager, createInterstellarResourceLifecyc
 export { InterstellarLODManager, createInterstellarLODManager } from './InterstellarLODManager.js';
 
 export { GalacticSectorScheduler, createGalacticSectorScheduler } from './GalacticSectorScheduler.js';
+
+export { GalacticCatalogResidencyManager, createGalacticCatalogResidencyManager } from './GalacticCatalogResidencyManager.js';

@@ -258,7 +258,7 @@ export const SPHERICAL_SATELLITE_IDS = new Set(TILED_BODIES.filter((b) => b.sate
 
 /**
  * Satellites de forme irrégulière : leur modèle 3D officiel (NASA) remplace la sphère à toute distance.
- *  modelPath              fichier GLB relayé par l'API (GET /tiles/models/{id}.glb)
+ *  modelPath              fichier GLB statique embarqué dans frontend/public/models/
  *  modelAlways            le modèle reste affiché de près comme de loin (pas de retour aux tuiles sur une sphère)
  *  modelMinDistanceRadii  distance minimale de la caméra au centre, en rayons moyens : au-dessus du plus grand axe
  *  modelMaxRms            calage par les coordonnées de texture accepté jusqu'à cet écart (rad) ; au-delà, le
@@ -271,7 +271,7 @@ export const BODY_MODELS = {
   // Phobos (début).
   phobos: {
     // Adresse de son modèle, toujours affiché, à 1,35 rayon au moins, calage accepté jusqu'à 0,5 radian.
-    modelPath: '/api/v1/tiles/models/phobos.glb', modelAlways: true, modelMinDistanceRadii: 1.35, modelMaxRms: 0.5,
+    modelPath: '/models/phobos.glb', modelAlways: true, modelMinDistanceRadii: 1.35, modelMaxRms: 0.5,
     // Chargé quand Phobos ou Mars est ciblé ; crédit du modèle.
     modelNear: ['phobos', 'mars'], modelCredit: 'NASA/JPL-Caltech',
   // Fin de Phobos.
@@ -279,7 +279,7 @@ export const BODY_MODELS = {
   // Deimos (début).
   deimos: {
     // Adresse de son modèle, toujours affiché, à 1,35 rayon au moins, calage accepté jusqu'à 0,5 radian.
-    modelPath: '/api/v1/tiles/models/deimos.glb', modelAlways: true, modelMinDistanceRadii: 1.35, modelMaxRms: 0.5,
+    modelPath: '/models/deimos.glb', modelAlways: true, modelMinDistanceRadii: 1.35, modelMaxRms: 0.5,
     // Chargé quand Deimos ou Mars est ciblé ; crédit du modèle.
     modelNear: ['deimos', 'mars'], modelCredit: 'NASA/JPL-Caltech',
   // Fin de Deimos.
