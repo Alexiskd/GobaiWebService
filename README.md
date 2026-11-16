@@ -236,8 +236,3 @@ The paid exports (`/store`, `/export`, the Boutique window and its JWT access to
 - **The €4 999 bundle no longer covers orbits.** It would have undercut the hourly rate by a factor of several hundred. `scopeAllows` makes the exception explicit: the universal scope opens every model and every tile, and nothing of `orbit:*`.
 
 Everything else is unchanged: browsing the site is free, and the orbit computation behind the paid route is the same local model the scene uses.
-
-
-### Particules solaires Babylon.js
-
-Le Soleil dispose d'une couche de particules coronales rendue par Babylon.js (`frontend/src/moteur/engine/sunBabylonParticles.jsx`). Elle utilise un canvas transparent distinct, synchronisé avec la caméra Three.js et libéré avec le moteur. Les éruptions historiques du shader Three.js restent actives. Dépendance : `@babylonjs/core` 9.x.

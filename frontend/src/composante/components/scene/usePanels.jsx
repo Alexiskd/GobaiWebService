@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
  * Gestion centralisée des fenêtres : une seule ouverte à la fois, jamais deux fenêtres superposées (sur téléphone, où
  * elles couvrent tout l'écran, une seconde fenêtre cacherait la première sans moyen d'y revenir).
  * Fenêtres : 'layers' (informations), 'search', 'help', 'sources', 'donate', 'settings', 'language', 'gallery',
- * 'plateau'. Les surfaces du HUD qui ne couvrent rien (ChatGPT, l'arborescence des astres) restent
+ * 'plateau'. Les surfaces du HUD qui ne couvrent rien (Claude, l'arborescence des astres) restent
  * à part : elles se rangent dans les zones de l'écran (voir theme/layout).
  * Raccourcis : Ctrl K ou / (recherche), ? (aide), S (Node), L (informations), Échap (fermer).
  * La barre d'outils n'a plus de bouton Informations : les cartes de l'astre sont rendues avec ses caractéristiques,
