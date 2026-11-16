@@ -1,0 +1,160 @@
+# Moteur atmosphérique de Gobai Space
+
+Ce document décrit l'architecture du moteur atmosphérique, ce que contient le lot 1 et ce que prévoient les lots suivants. Il donne aussi, pour chaque source, sa licence et son quota.
+
+## Principes
+
+- **Format commun.** Chaque lecture d'un fournisseur devient un `AtmosphericEvent` (`backend/src/services/atmosphere/atmospheric-event.ts`). Un événement porte :
+  - un identifiant unique et stable ;
+  - son type ;
+  - sa position et sa géométrie ;
+  - son altitude ;
+  - ses heures de détection et de validité ;
+  - son intensité ;
+  - sa confiance, de 0 à 1 ;
+  - ses provenances : fournisseur, identifiant, heure de mesure et heure de lecture ;
+  - sa résolution spatiale et temporelle ;
+  - son statut : `observé`, `estimé` ou `prévu`.
+- **Déduplication entre sources.** Deux lectures sont le même phénomène si elles ont la même clé (le nom d'un cyclone, par exemple) ou si elles sont proches à la fois dans l'espace et dans le temps. Elles sont alors réunies en un seul événement. Cet événement garde toutes les provenances et toutes les mesures (`details.readings`), si bien que les contradictions entre sources restent visibles.
+- **Rien sans source fiable.** `AtmosphericEventManager` écarte un événement et note la raison dans les cas suivants :
+  - il est périmé (l'âge maximal dépend de son type) ;
+  - sa confiance est inférieure à 0,5 ;
+  - il n'a aucune provenance ;
+  - sa position est hors du globe.
+
+  La route `/atmosphere/health` liste ces exclusions.
+- **Aucun appel par image.** Chaque fournisseur est lu au plus une fois par période de rafraîchissement, fixée dans le registre `providers.ts`. Le cache `TtlCache` fonctionne ainsi :
+  - les demandes simultanées partagent une seule lecture ;
+  - si un fournisseur est en panne, sa dernière donnée connue est rendue, marquée périmée ;
+  - après un échec, le fournisseur n'est pas rappelé pendant 2 minutes, pour respecter les quotas.
+
+  Côté navigateur, les calques se rafraîchissent toutes les 15 à 30 minutes, et seulement quand l'onglet est visible.
+- **Tuiles géographiques.** Le globe est découpé en tuiles de 10°.
+  - La vue d'ensemble reçoit les points chauds agrégés en cellules de 0,5°.
+  - En vue rapprochée, en dessous d'environ 3 000 km d'altitude, les points chauds arrivent un par un, tuile par tuile, autour du point visé : 16 tuiles au plus, 48 gardées en mémoire, 60 000 points au plus.
+- **Clés.** Les clés restent sur le serveur. `/atmosphere/providers` indique seulement si elles sont présentes, jamais leur valeur.
+
+## Lot 1 : ce qui est livré
+
+| Moteur | Sources branchées (sans clé) | Données | Rendu |
+|---|---|---|---|
+| WildfireEngine | NASA FIRMS : VIIRS sur NOAA-20, NOAA-21 et Suomi NPP ; MODIS sur Terra et Aqua. NASA EONET pour les incendies déclarés | Points chauds avec position, heure de passage, satellite, puissance radiative (FRP), confiance, jour ou nuit. Incendies confirmés par une agence | Cellules agrégées vues de loin, points un par un vus de près, **anneaux pour les incendies confirmés**. Couleur selon la FRP, pâlissement avec l'âge, fenêtre de 3, 6, 12 ou 24 h |
+| CycloneEngine | NOAA NHC (`CurrentStorms.json`). NASA EONET (trajectoires JTWC et NHC). GDACS | Centre, vent soutenu, pression, catégorie de Saffir-Simpson, trajectoire observée, déplacement estimé, contradictions entre sources | Tourbillon procédural posé sur le globe : bandes spiralées, œil à partir de la catégorie 1, rotation antihoraire au nord et horaire au sud. Trajectoire observée en ruban |
+| CycloneEngine, lot 2 | NOAA NHC, prévision officielle au format ATCF (`ftp.nhc.noaa.gov/atcf/fst/<id>.fst`) | Trajectoire prévue jusqu'à 5 jours (vent, pression, catégorie à chaque échéance), rayons des vents de 34, 50 et 64 nœuds par quadrant | Trajectoire prévue en pointillés, contours des vents en jaune, orange et rouge, tourbillon à la taille réelle des vents de 34 nœuds |
+| LightningEngine, lot 3 | Xweather Lightning (réseau Vaisala) : API pour les impacts, Raster Maps (`lightning-strikes`) pour la couche mondiale | Impacts des 5 dernières minutes dans 100 km autour du point visé : position, heure, nature (nuage-sol ou intra-nuage), courant de crête et polarité, capteurs, chi². Fréquence, densité par km², zones actives | Couche mondiale des impacts récents vue de loin. De près, un point à chaque impact mesuré, puis une lueur et un éclair ramifié **procéduraux**, rejoués ×10 dans l'ordre réel |
+| PrecipitationEngine, lot 4 | Rain Viewer, API publique Weather Maps (composite des radars au sol), sans clé | Réflectivité (dBZ) de la pluie et de la neige, retrouvée pixel par pixel à partir de la table officielle des couleurs « Universal Blue » (tuiles demandées sans lissage). Couverture radar. Images des 2 dernières heures, toutes les 10 minutes | Vue mondiale (1 024 px) et bloc de détail de 2,4 km par pixel autour du point visé. Couleurs calculées par le shader à partir de la mesure ; bords lissés sans inventer de pluie faible. Animation des 50 dernières minutes (images passées, jamais une prévision). Ligne de la limite de portée des radars ; zones sans radar légèrement assombries |
+| StormEngine, lot 4 | Cellules **estimées** d'après les mêmes images radar. NOAA NWS : avertissements officiels d'orages violents et de tornades (`api.weather.gov/alerts/active`), sans clé | Cellule : zone d'au moins 40 dBZ avec un noyau d'au moins 45 dBZ, sur la grille mondiale de 2 048 px (environ 20 km par pixel à l'équateur). Suivie sur 3 images (20 minutes) : persistance, trajectoire, déplacement estimé. Avertissement : zone, durée, grêle et rafales attendues, détection (radar ou observé), déplacement publié | Anneau à la taille de la cellule, coloré selon son maximum ; en tirets si elle n'est vue que sur une image ; flèche du déplacement estimé sur 30 minutes. Contour des avertissements (rouge : tornade ; jaune : orage violent ; doublé : observé) |
+| AerosolEngine, lot 5 | **Observé** : NASA GIBS, images quotidiennes de l'épaisseur optique VIIRS Deep Blue (NOAA-20, NOAA-21) et de l'indice d'aérosols absorbants OMPS (NOAA-20, NOAA-21), sans clé. **Prévu** : Copernicus CAMS, poussières, par le service WMS public de l'ECMWF (jeton « public »), sans clé | Valeurs retrouvées pixel par pixel grâce à la table de couleurs officielle de chaque couche (format GIBS Colormap 1.3), pour le jour et la veille, sur une grille de 2 048 × 1 024 (environ 20 km). Zones de forte charge : AOD d'au moins 0,6 avec un noyau d'au moins 1 ; leur nature (absorbante ou non) est estimée d'après l'indice OMPS. Prévision des poussières toutes les 6 h sur 48 h | Mesure colorée par le shader : l'air pur reste transparent ; aucune couleur là où rien n'est mesuré ; mesure de la veille pâlie. Prévision posée telle que publiée, animée avec un fondu, avec sa légende officielle |
+| AtmosphericFlowEngine, lot 6 | Open-Meteo, API Forecast (modèles météo, sélection automatique du meilleur modèle), sans clé | Vent du modèle à l'heure en cours (vitesse et direction) à 10 m et aux niveaux de pression 850, 500 et 250 hPa (environ 1,5, 5,6 et 10,4 km), sur une grille mondiale de 12° × 10° (510 points, de 80° S à 80° N), lue en **une seule requête** toutes les 8 h. Axes des courants-jets **estimés** à 250 hPa : un maximum d'au moins 30 m/s par méridien et par hémisphère, entre 20° et 75° de latitude, chaîné d'un méridien à l'autre (au moins 3 méridiens) | 4 000 particules transportées par le vent du niveau choisi, avec une traîne colorée selon la vitesse ; altitude exagérée 8 fois ; mouvement accéléré selon l'altitude de la vue, pour garder la même vitesse à l'écran. Axes des courants-jets en lignes fléchées à 10 km, colorés selon leur vitesse |
+| AtmosphericEventManager | Toutes les sources ci-dessus | Format commun, déduplication, exclusions, contrôle | Sans objet |
+
+Le lot 1 ajoute aussi la catégorie **Atmosphère** dans Paramètres. On y trouve :
+- l'interrupteur des nuages et de l'atmosphère des planètes solides, qui se trouvait jusque-là dans « Repères » ;
+- les interrupteurs Incendies et Cyclones, chacun avec son opacité et son intensité ;
+- la fenêtre de temps des incendies ;
+- depuis le lot 4, les interrupteurs Précipitations (radar) et Orages : opacité, intensité, animation, limite de portée des radars, légendes et mention de Rain Viewer ;
+- depuis le lot 5, l'interrupteur Aérosols. Il propose trois produits : épaisseur optique et indice absorbant (observés), poussières (prévision CAMS animée). Chacun a sa légende et ses mentions ;
+- depuis le lot 6, l'interrupteur Vents et courants-jets : altitude (Sol, 1,5 km, 5,6 km, 10 km), axes des courants-jets, opacité, intensité, légende des vitesses et mention d'Open-Meteo ;
+- la liste des calques à venir.
+
+Routes du serveur, sous `/api/v1/atmosphere` :
+- `fires` : points chauds agrégés et incendies confirmés ;
+- `fires/tiles/{tx}/{ty}` : détail d'une tuile ;
+- `cyclones` ;
+- `lightning?lon=&lat=` et `lightning/tiles/{z}/{x}/{y}` (lot 3) ;
+- `radar` : images disponibles et codage des tuiles (lot 4) ;
+- `radar/{id}/{z}/{x}/{y}` : tuile décodée, PNG RVB dont le rouge porte la pluie, le vert la neige (code = dBZ + 11, 0 = aucun écho) et le bleu la couverture radar (lot 4) ;
+- `storms` : cellules estimées et avertissements officiels (lot 4) ;
+- `aerosols` : produits observés, zones de forte charge, heures de la prévision (lot 5) ;
+- `aerosols/observed/{aod|ai}` : image décodée, PNG RVB dont le rouge porte la mesure du jour et le vert celle de la veille (code = 1 + valeur × 50 ; 0 = aucune mesure) (lot 5) ;
+- `aerosols/forecast/{heure}` et `aerosols/forecast/legend` : prévision CAMS des poussières et sa légende (lot 5) ;
+- `winds` : grille des vents (composantes u et v en m/s, d'ouest en est puis du sud au nord) pour chaque niveau, heure de validité du modèle et axes des courants-jets au format commun (lot 6) ;
+- `events?types=&bbox=&limit=` : événements au format commun (dont `jet-stream` depuis le lot 6) ;
+- `providers` ;
+- `health`.
+
+### Distinctions imposées
+
+- **Point chaud ou incendie confirmé.**
+  - Un point chaud FIRMS est un pixel anormalement chaud. Il est observé mais **non confirmé** (`confirmed: false`), et il est dessiné comme un point lumineux.
+  - Un incendie déclaré par une agence est marqué `confirmed: true` et dessiné comme un anneau.
+  - Un point chaud peu sûr (VIIRS « low », MODIS sous 50 %) n'est affiché que si un autre satellite le confirme.
+- **Observé, estimé ou prévu.**
+  - La trajectoire d'un cyclone est observée : ce sont les positions publiées par les agences.
+  - Son déplacement est estimé à partir des deux dernières positions.
+  - La trajectoire prévue (statut « prévu ») et les rayons de vent (statut « estimé ») viennent de la prévision officielle du NHC. Une prévision de plus de 18 h n'est pas affichée ; une alerte le signale.
+- **Mesure, estimation et avertissement (lot 4).**
+  - Le radar mesure la réflectivité. L'intensité en mm/h en est **estimée** par la relation de Marshall-Palmer ; la légende le dit.
+  - Une cellule convective est une **estimation** (`status: 'estimé'`, `confirmed: false`) : le radar ne voit pas la foudre, et une forte réflectivité peut venir de grêle fondante ou d'un écho parasite. Une cellule vue sur une seule image porte un drapeau et s'affiche en tirets.
+  - Un avertissement du NWS est une **confirmation officielle** (`confirmed: true`) ; il est « observé » si le NWS indique un phénomène observé, « estimé » s'il est indiqué par le radar.
+  - Hors de portée des radars (océans, une grande partie de l'Afrique et de l'Asie centrale), **rien n'est dessiné** : l'absence d'écho n'y veut pas dire l'absence de pluie, et ces zones sont assombries.
+- **Aérosols mesurés ou prévus (lot 5).**
+  - L'épaisseur optique et l'indice absorbant sont des mesures satellite (statut « observé »).
+  - La nature d'une zone de forte charge (poussières ou fumées, ou bien pollution, brume, sel marin) est **estimée** d'après l'indice OMPS. Elle est rangée dans un drapeau et dans `details.natureStatus`.
+  - La prévision CAMS est une sortie de modèle. Elle n'est jamais mélangée aux mesures à l'écran et sa légende le dit.
+  - Sous les nuages, la nuit et sur la neige, l'épaisseur optique n'est pas mesurée : rien n'y est dessiné.
+- **Vent du modèle et axe estimé (lot 6).**
+  - Le vent affiché est une **sortie de modèle** à l'heure en cours, pas une mesure ; la légende et l'indication le disent.
+  - L'axe d'un courant-jet est **estimé** (`status: 'estimé'`, `confirmed: false`, confiance 0,7) : il suit les maxima de vent de la grille, et un drapeau rappelle que sa position est approximative à 12° × 10° près.
+  - Un niveau que le modèle ne fournit pas est marqué indisponible et n'est pas dessiné ; aucun vent n'est interpolé hors de la grille lue.
+- **Symbole ou géométrie mesurée.** Quand le NHC publie les rayons de vent, le tourbillon prend le rayon moyen des vents de 34 nœuds. Sinon, sa taille est un symbole par catégorie, de 150 à 440 km de rayon. Le sens de rotation est physique.
+
+### Ce que les sources du lot 1 ne permettent pas
+
+- **Prévisions hors des bassins du NHC.** Pacifique Ouest, océan Indien et hémisphère sud (JTWC, JMA, ECMWF) : aucune source keyless au format vérifiable n'est branchée. Ces cyclones restent affichés sans trajectoire prévue ni rayons de vent.
+- **Fumées et pollution prévues.** Seules les poussières sont prévues : le service WMS public de CAMS les publie sous un nom de couche vérifié. Les fumées, les sulfates et les particules PM2,5 demanderaient l'accès par l'Atmosphere Data Store (clé `CAMS_ADS_KEY`), qui reste à brancher.
+- **Valeurs de la prévision.** Les images CAMS sont affichées telles que publiées : leurs couleurs ne sont pas reconverties en valeurs.
+- **Prévision immédiate des précipitations.** Rain Viewer l'a retirée de l'accès gratuit le 1er janvier 2026 ; seules les images passées sont animées.
+- **Orages hors de portée des radars**, et avertissements officiels hors des États-Unis (MeteoAlarm décrit ses zones par des codes de région, sans contour : non branché).
+- **Vents fins et prévus.** La grille de 12° × 10° ne montre que la circulation générale : les vents locaux (relief, brises, rafales d'orage) n'y apparaissent pas. Seule l'heure en cours est lue ; l'animation des vents prévus coûterait 510 appels Open-Meteo par échéance.
+- **Cyclones hors saison.** Un cyclone dont la dernière position date de plus de 36 h est écarté et listé avec sa raison. Le 15 novembre 2026, par exemple, Cempaka et Pena n'avaient plus de position récente.
+
+## Lots suivants
+
+| Lot | Moteur | Sources | Prérequis |
+|---|---|---|---|
+| 2 (livré) | CycloneEngine (suite) | Rayons de vent et trajectoire prévue : NHC, format ATCF | Bassins du NHC seulement ; les autres bassins attendent une source vérifiable (ECMWF en BUFR, JTWC) |
+| 3 (livré) | LightningEngine | Xweather Lightning, avec les clés `XWEATHER_CLIENT_ID` et `XWEATHER_CLIENT_SECRET` déjà sur Render | Accès standard : 5 min, 100 km, 1 000 impacts par requête. L'option Enterprise ouvrirait les emprises rectangulaires et 24 h d'historique. Sans l'option foudre, la réponse d'erreur de Xweather est affichée telle quelle |
+| 3 | LightningEngine (repli) | NOAA GOES GLM, EUMETSAT MTG-LI, The Weather Company, AccuWeather | GLM : NetCDF public. LI : compte EUMETSAT. Les deux autres : clés `TWC_API_KEY` et `ACCUWEATHER_API_KEY` |
+| 4 (livré) | PrecipitationEngine et StormEngine | Rain Viewer (radar mondial, sans clé), NOAA NWS (avertissements, sans clé) | Accès gratuit de Rain Viewer : usage personnel ou éducatif, mention obligatoire, niveau 7 au plus, 100 requêtes par minute et par adresse IP, ni prévision ni satellite |
+| 4 | PrecipitationEngine (repli) | WeatherAPI Radar, EUMETNET OPERA, NOAA MRMS | `WEATHERAPI_KEY`, accord OPERA, lecture GRIB2 pour MRMS |
+| 5 (livré) | AerosolEngine | NASA GIBS (VIIRS Deep Blue, OMPS), Copernicus CAMS par le WMS public de l'ECMWF | Aucune clé |
+| 5 | AerosolEngine (suite) | Copernicus CAMS par l'Atmosphere Data Store (valeurs : fumées, sulfates, PM2,5), NASA Earthdata | `CAMS_ADS_KEY`, `EARTHDATA_TOKEN` |
+| 6 (livré) | AtmosphericFlowEngine | Open-Meteo, vents par niveau de pression (déjà utilisé pour le flux des nuages), sans clé | Accès gratuit : usage non commercial, 10 000 appels par jour, chaque point de la grille comptant pour un appel |
+
+Ces fournisseurs sont déjà inscrits dans le registre avec `implemented: false`. `/atmosphere/providers` indique lesquels ont leurs clés.
+
+## Licences et quotas des sources branchées
+
+| Source | Licence | Quota | Rafraîchissement |
+|---|---|---|---|
+| NASA FIRMS, fichiers 24 h | Données NASA libres, mention demandée | Fichiers publics sans clé | 30 min |
+| NASA EONET | Données NASA libres, mention demandée | API publique sans clé | 30 min |
+| NOAA NHC | Domaine public | Fichier public | 15 min |
+| NOAA NHC, prévision ATCF | Domaine public | Fichier public par cyclone actif | 15 min |
+| GDACS | Utilisation libre avec mention | API publique sans clé | 30 min |
+| Xweather Lightning | Commerciale (abonnement, option foudre) | Selon l'abonnement : 1 000 impacts et 100 km par requête en accès standard | 1 min par cellule d'un demi-degré, partagée ; couche mondiale toutes les 2 min (16 tuiles) |
+| Rain Viewer, Weather Maps API | Gratuite pour un usage personnel ou éducatif ; mention « Rain Viewer » obligatoire (fenêtre des sources et légende, avec lien) | 100 requêtes par minute et par adresse IP : le serveur s'en tient à 80 et garde chaque tuile le temps de vie de l'image (2 h) | Index toutes les 5 min. Une nouvelle image toutes les 10 min coûte 4 tuiles (vue mondiale) et 16 tuiles (détection des cellules) ; un bloc de détail, 4 tuiles par image |
+| NOAA NWS, avertissements | Domaine public | API publique sans clé (User-Agent demandé) | 2 min |
+| NASA GIBS, VIIRS Deep Blue et OMPS | Données NASA libres, mention demandée | Service public sans clé | Image du jour relue toutes les heures (les orbites s'ajoutent), veille toutes les 12 h ; 8 images de 2 048 × 1 024 au plus par heure ; tables de couleurs une fois par jour |
+| Open-Meteo, API Forecast | Données CC BY 4.0 ; API gratuite pour un usage non commercial ; mention « Open-Meteo » | 10 000 appels par jour, 5 000 par heure et 600 par minute, partagés avec le flux des nuages (162 points toutes les 3 h, soit 1 296 par jour) et, seulement quand l'image satellite Xweather manque, la couverture nuageuse (288 points par heure, soit 6 912 par jour). La grille des vents coûte 510 appels par lecture, soit 1 530 par jour : même dans le pire cas, le total (9 738) reste sous la limite | 8 h (une requête). Après une erreur, la dernière grille reste servie et un nouvel essai n'a lieu qu'une heure plus tard |
+| Copernicus CAMS, WMS public de l'ECMWF | CC BY 4.0 pour les couches ouvertes ; mention « Contains modified Copernicus Atmosphere Monitoring Service information » | Service public, jeton « public » | 9 images (48 h) gardées 3 h ; légende gardée 24 h |
+
+Les mentions s'affichent dans la fenêtre des sources quand un calque est allumé.
+
+## Tests
+
+- **Serveur.** Les specs des modules purs se trouvent dans `backend/src/services/atmosphere/*.spec.ts`. Elles couvrent :
+  - la lecture FIRMS, la fusion entre satellites, les seuils, l'agrégation et le détail ;
+  - la lecture d'EONET, NHC et GDACS ;
+  - la fusion des cyclones, les contradictions et les exclusions ;
+  - la déduplication et le gestionnaire ;
+  - le cache, les tuiles, la limite de débit et le registre ;
+  - la lecture et l'écriture du format PNG (cinq filtres, palette et transparence), la table « Universal Blue » et le décodage des tuiles radar ;
+  - la détection des cellules (seuils, taille minimale, antiméridien), leur suivi et leur format commun ;
+  - la lecture des avertissements du NWS (annulations, exercices, expirations, zones absentes, déplacement publié) ;
+  - les aérosols : tables de couleurs GIBS (intervalles, entrées sans donnée), adresse de la table dans la description WMTS, décodage des images, réunion des satellites, zones de forte charge et nature estimée, heures et adresses de la prévision CAMS ;
+  - les vents : grille et adresse Open-Meteo (une seule requête, virgules non encodées), lecture des quatre niveaux et des niveaux absents, détection des courants-jets (seuil, bande de latitude, chaînage, antiméridien) et leur format commun.
+
+  Elles s'écrivent comme des specs jest. Pour les lancer : `npm test` dans `backend/`.
+- **Navigateur.** Les tests couvrent `fireMath`, `cycloneMath`, `lightningMath`, `radarMath`, `aerosolMath`, `flowMath` (grille, interpolation, transport, accélération, couleurs) et `atmosphereSettings`, avec le lanceur `node --test`.

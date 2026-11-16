@@ -1,0 +1,31 @@
+{
+  "name": "Go白ناन्टех",
+  "short_name": "Go白ناन्टех",
+  "description": "Système solaire 3D en direct, à l’échelle 1:1 : Terre en imagerie satellite, planètes et lunes avec les cartes NASA.",
+  "lang": "fr",
+  "dir": "ltr",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "categories": [
+    "education",
+    "science",
+    "navigation"
+  ],
+  "background_color": "#080b16",
+  "theme_color": "#080b16",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
