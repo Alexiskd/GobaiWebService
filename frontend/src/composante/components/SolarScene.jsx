@@ -654,6 +654,68 @@ export function SolarScene({ data, onSettled, covered = false }) {
         shade={earth.shade}
         // Réglage de l'ombrage.
         onShade={earth.setShade}
+        // Réglages liés à l'astre affiché.
+        rotateSpeed={camera.rotateSpeed}
+        onRotateSpeed={camera.setRotateSpeed}
+        rotating={camera.auto}
+        onGoPlace={actions.pickPlace}
+        onDone={panels.closePanel}
+        venusAtmosphere={camera.venusAtmosphere}
+        onVenusAtmosphere={camera.setVenusAtmosphere}
+        marsAtmosphere={camera.marsAtmosphere}
+        onMarsAtmosphere={camera.setMarsAtmosphere}
+        atmospheres={camera.atmospheres}
+        onAtmospheres={camera.setAtmospheres}
+        relief={camera.relief}
+        onRelief={camera.setRelief}
+        atmosphereLayers={{
+          earthAtmosphere: camera.earthAtmosphere,
+          onEarthAtmosphere: camera.setEarthAtmosphere,
+          earthAtmosphereHint: camera.earthAtmosphere
+            ? `${CLOUD_SOURCE_TEXT[cloudSource]} ; décoché : globe nu`
+            : 'Nuages réels (Xweather, sinon Open-Meteo) et halo bleu ; décoché : globe nu',
+          settings: atmosphere.settings,
+          onUpdate: atmosphere.update,
+          fireHint: atmosphere.fireHint,
+          cycloneHint: atmosphere.cycloneHint,
+          lightningHint: atmosphere.lightningHint,
+          precipitationHint: atmosphere.precipitationHint,
+          stormHint: atmosphere.stormHint,
+          aerosolHint: atmosphere.aerosolHint,
+          windHint: atmosphere.windHint,
+        }}
+        earthLayers={{
+          earthLayer: bases.baseLayer,
+          cityNames: earth.cityNames,
+          onCityNames: earth.setCityNames,
+          cityNamesHint: cityNamesHintText(cityInfo),
+          countryNames: earth.countryNames,
+          onCountryNames: earth.setCountryNames,
+          outlines: earth.borders || earth.coasts,
+          onOutlines: (on) => { earth.setBorders(on); earth.setCoasts(on); },
+          outlinesHint: bordersInfo ? 'Frontières des pays, bord de mer, océans et Caspienne · Natural Earth 1:50m' : 'Chargement…',
+          streets: earth.streets,
+          onStreets: earth.setStreets,
+          volcanoes: earth.volcanoes,
+          onVolcanoes: earth.setVolcanoes,
+          nightLights: camera.nightLights,
+          onNightLights: camera.setNightLights,
+          lightView: camera.lightView,
+          onLightView: camera.setLightView,
+          volcanoesHint: earth.volcanoCount === null ? 'En direct · NASA EONET' : `${earth.volcanoCount} en cours dans le monde · NASA EONET`,
+          lidarId: earth.lidarId,
+          lidarLayers: earth.lidarLayers,
+          onLidar: earth.setLidar,
+          lidarCities: earth.lidarCities,
+          lidarCityAltitudeM: earth.lidarCityAltitudeM,
+          lidarPoints: lidarPoints.on,
+          lidarPlaces: lidarPoints.places,
+          onLidarPoints: lidarPoints.setOn,
+          lidarColor: lidarPoints.color,
+          onLidarColor: lidarPoints.setColor,
+        }}
+        moonPlaces={moon.moonFeatures}
+        onMoonPlaces={moon.setMoonFeatures}
       // Fin du panneau d'informations.
       />
   // Fin de la constante.
@@ -938,12 +1000,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         kinds={camera.kinds}
         // Affichage d'une famille.
         onKind={camera.setKind}
-        // Vitesse de rotation.
-        rotateSpeed={camera.rotateSpeed}
-        // Réglage de la vitesse.
-        onRotateSpeed={camera.setRotateSpeed}
-        // Rotation en cours ou non.
-        rotating={camera.auto}
         // Lignes d'orbite.
         orbits={camera.orbits}
         // Réglage des orbites.
@@ -960,98 +1016,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         sky={camera.sky}
         // Réglage du ciel.
         onSky={camera.setSky}
-        // Atmosphère de Vénus et de Mars.
-        atmospheres={camera.atmospheres}
-        // Réglage de l'atmosphère de Vénus et de Mars.
-        onAtmospheres={camera.setAtmospheres}
-        // Calques atmosphériques en direct (début de l'objet).
-        atmosphereLayers={{
-          // Nuages et atmosphère de la Terre, et leur réglage.
-          earthAtmosphere: camera.earthAtmosphere, onEarthAtmosphere: camera.setEarthAtmosphere,
-          // Texte d'aide des nuages de la Terre : leur source, une fois chargés.
-          earthAtmosphereHint: camera.earthAtmosphere ? `${CLOUD_SOURCE_TEXT[cloudSource]} ; décoché : globe nu` : 'Nuages réels (Xweather, sinon Open-Meteo) et halo bleu ; décoché : globe nu',
-          // Texte d'aide de l'atmosphère de Vénus et de Mars.
-          atmospheresHint: 'Atmosphères et nuages simulés ; décoché : globes nus',
-          // Réglages des calques et leur modification.
-          settings: atmosphere.settings, onUpdate: atmosphere.update,
-          // Textes d'aide des incendies, des cyclones et de la foudre.
-          fireHint: atmosphere.fireHint, cycloneHint: atmosphere.cycloneHint, lightningHint: atmosphere.lightningHint,
-          // Textes d'aide du radar et des orages.
-          precipitationHint: atmosphere.precipitationHint, stormHint: atmosphere.stormHint,
-          // Texte d'aide des aérosols.
-          aerosolHint: atmosphere.aerosolHint,
-          // Texte d'aide des vents.
-          windHint: atmosphere.windHint,
-        // Fin de l'objet.
-        }}
-        // Relief.
-        relief={camera.relief}
-        // Réglage du relief.
-        onRelief={camera.setRelief}
-        // Lieux de la Lune.
-        moonPlaces={moon.moonFeatures}
-        // Réglage des lieux de la Lune.
-        onMoonPlaces={moon.setMoonFeatures}
-        // Réglages des calques de la Terre (début de l'objet).
-        earthLayers={{
-          // La couche unique de la Terre (nom, description, source), pour son entrée et son téléchargement.
-          earthLayer: bases.baseLayer,
-          // Noms des villes.
-          cityNames: earth.cityNames,
-          // Réglage des noms des villes.
-          onCityNames: earth.setCityNames,
-          // Texte d'aide des noms des villes.
-          cityNamesHint: cityNamesHintText(cityInfo),
-          // Noms des pays.
-          countryNames: earth.countryNames,
-          // Réglage des noms des pays.
-          onCountryNames: earth.setCountryNames,
-          // Contours : frontières ou littoraux affichés.
-          outlines: earth.borders || earth.coasts,
-          // Réglage des contours : frontières et littoraux ensemble.
-          onOutlines: (on) => { earth.setBorders(on); earth.setCoasts(on); },
-          // Texte d'aide des contours, « Chargement… » tant que les frontières manquent.
-          outlinesHint: bordersInfo ? 'Frontières des pays, bord de mer, océans et Caspienne · Natural Earth 1:50m' : 'Chargement…',
-          // Rues.
-          streets: earth.streets,
-          // Réglage des rues.
-          onStreets: earth.setStreets,
-          // Volcans en éruption.
-          volcanoes: earth.volcanoes,
-          // Réglage des volcans en éruption.
-          onVolcanoes: earth.setVolcanoes,
-          // Lumières de la nuit.
-          nightLights: camera.nightLights,
-          // Réglage des lumières de la nuit.
-          onNightLights: camera.setNightLights,
-          // Vue de la pollution lumineuse depuis l'espace.
-          lightView: camera.lightView,
-          // Réglage de cette vue.
-          onLightView: camera.setLightView,
-          // Texte d'aide des volcans : leur nombre dès que la liste est arrivée.
-          volcanoesHint: earth.volcanoCount === null ? 'En direct · NASA EONET' : `${earth.volcanoCount} en cours dans le monde · NASA EONET`,
-          // Calque LiDAR HD choisi.
-          lidarId: earth.lidarId,
-          // Calques LiDAR HD proposés.
-          lidarLayers: earth.lidarLayers,
-          // Choix du calque LiDAR HD.
-          onLidar: earth.setLidar,
-          // Villes de France où le LiDAR HD est proposé.
-          lidarCities: earth.lidarCities,
-          // Altitude d'arrivée au-dessus d'une ville.
-          lidarCityAltitudeM: earth.lidarCityAltitudeM,
-          // Points LiDAR affichés ou non.
-          lidarPoints: lidarPoints.on,
-          // Lieux des dalles LiDAR.
-          lidarPlaces: lidarPoints.places,
-          // Réglage des points LiDAR.
-          onLidarPoints: lidarPoints.setOn,
-          // Mode de couleur des points LiDAR.
-          lidarColor: lidarPoints.color,
-          // Réglage du mode de couleur.
-          onLidarColor: lidarPoints.setColor,
-        // Fin de l'objet.
-        }}
       // Fin de la fenêtre des paramètres.
       />
       {/* La galerie. */}

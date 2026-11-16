@@ -8,7 +8,7 @@ import { Switch } from '../../ui/Switch';
  * planètes solides a rejoint la catégorie « Atmosphère » (Atmosphere.jsx).
  */
 // Déclare et exporte le composant Reperes : l'état et le rappel de chaque repère.
-export function Reperes({ orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky, moonPlaces, onMoonPlaces }) {
+export function Reperes({ orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky }) {
   // Début du rendu.
   return (
     // Fragment : regroupe les deux groupes.
@@ -21,8 +21,6 @@ export function Reperes({ orbits, onOrbits, markers, onMarkers, satellites, onSa
         <Switch checked={markers} onChange={onMarkers} label="Points et noms des planètes" />
         {/* Interrupteur des repères des satellites. */}
         <Switch checked={satellites} onChange={onSatellites} label="Points et noms des satellites naturels" />
-        {/* Interrupteur des lieux de la Lune. */}
-        <Switch checked={moonPlaces} onChange={onMoonPlaces} label="Lieux de la Lune" hint="Alunissages (Apollo, Chang’e…), mers, cratères" />
       {/* Fin du groupe. */}
       </Group>
       {/* Groupe « Univers ». */}

@@ -4,9 +4,8 @@ import { Hint } from '../../ui/Hint';
 import { EarthStatus } from './EarthStatus';
 
 /**
- * Menu « Terre » : état du chargement de sa couche unique. La Terre n'a plus de fonds de carte à choisir : sa seule
- * couche fusionne toutes les sources d'imagerie, et son entrée (avec son bouton de téléchargement) est dans
- * Paramètres › Cartographie, avec les calques.
+ * Menu « Terre » : état du chargement de sa couche unique. Sa couche fusionne toutes les sources d'imagerie;
+ * son entrée, les calques et les réglages sont regroupés dans le panneau Informations.
  */
 // Déclare et exporte le composant Terre : HUD, statut et erreur de la liste des couches.
 export function Terre({ hud, listStatus, listError }) {
@@ -14,8 +13,8 @@ export function Terre({ hud, listStatus, listError }) {
   return (
     // Fragment : regroupe la note et la ligne d'état.
     <>
-      {/* Où se trouvent la couche et son téléchargement. */}
-      <Hint>Une seule couche fusionne toutes les sources d’imagerie. Son téléchargement et les calques sont dans Paramètres › Cartographie.</Hint>
+      {/* Rappel de la couche unique. */}
+      <Hint>Une seule couche fusionne toutes les sources d’imagerie. Son téléchargement et ses réglages sont ci-dessous.</Hint>
       {/* La ligne d'état de la Terre. */}
       <EarthStatus hud={hud} listStatus={listStatus} listError={listError} />
     {/* Fin du fragment. */}

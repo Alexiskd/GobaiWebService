@@ -212,6 +212,7 @@ function LegendeVents() {
  */
 // Déclare et exporte le composant Atmosphere (début de la liste des propriétés).
 export function Atmosphere({
+  showEarthAtmosphere = true, showBodyAtmospheres = true, showEarthLayers = true,
   // Les nuages et l'atmosphère de la Terre, leur rappel et leur texte d'aide.
   earthAtmosphere = false, onEarthAtmosphere, earthAtmosphereHint,
   // L'atmosphère de Vénus et de Mars, son rappel et son texte d'aide.
@@ -225,11 +226,11 @@ export function Atmosphere({
     // Groupe titré.
     <Group title="Atmosphère">
       {/* Si le réglage de la Terre est fourni : interrupteur de ses nuages et de son atmosphère. */}
-      {onEarthAtmosphere && <Switch checked={earthAtmosphere} onChange={onEarthAtmosphere} label="Nuages et atmosphère de la Terre" hint={earthAtmosphereHint || 'Nuages réels et halo bleu ; décoché : globe nu'} />}
+      {showEarthAtmosphere && onEarthAtmosphere && <Switch checked={earthAtmosphere} onChange={onEarthAtmosphere} label="Nuages et atmosphère de la Terre" hint={earthAtmosphereHint || 'Nuages réels et halo bleu ; décoché : globe nu'} />}
       {/* Interrupteur de l'atmosphère de Vénus et de Mars. */}
-      <Switch checked={atmospheres} onChange={onAtmospheres} label="Atmosphère de Vénus et de Mars" hint={atmospheresHint || 'Décoché : globes nus'} />
+      {showBodyAtmospheres && <Switch checked={atmospheres} onChange={onAtmospheres} label="Atmosphère de Vénus et de Mars" hint={atmospheresHint || 'Décoché : globes nus'} />}
       {/* Si les réglages des calques sont fournis (début). */}
-      {settings && onUpdate && (
+      {showEarthLayers && settings && onUpdate && (
         // Fragment : les calques en direct.
         <>
           {/* Interrupteur des incendies. */}
