@@ -35,8 +35,15 @@ export function useCameraToggles(engine, initial = {}) {
   const [satellites, setSatellites] = useState(false);
   // État : ciel lointain, affiché au départ.
   const [sky, setSky] = useState(true);
-  // État : atmosphère de Vénus et de Mars, affichée au départ.
-  const [atmospheres, setAtmospheres] = useState(true);
+  // État : atmosphères de Vénus et de Mars, réglables séparément depuis la fiche de chaque planète.
+  const [venusAtmosphere, setVenusAtmosphere] = useState(true);
+  const [marsAtmosphere, setMarsAtmosphere] = useState(true);
+  // Compatibilité avec les actions existantes qui règlent les deux atmosphères ensemble.
+  const atmospheres = venusAtmosphere && marsAtmosphere;
+  const setAtmospheres = useCallback((on) => {
+    setVenusAtmosphere(Boolean(on));
+    setMarsAtmosphere(Boolean(on));
+  }, []);
   // État : nuages et atmosphère de la Terre, masqués au départ (calque séparé de sa couche unique, désactivé par défaut).
   const [earthAtmosphere, setEarthAtmosphere] = useState(false);
   // Relief en volume de la Terre (vraies altitudes) : coupé par défaut — carte à plat, affichée plus vite. Le choix
@@ -96,8 +103,9 @@ export function useCameraToggles(engine, initial = {}) {
   useEffect(() => { engine?.setSatelliteMarkersVisible(satellites); }, [engine, satellites]);
   // Transmet l'affichage du ciel au moteur.
   useEffect(() => { engine?.setSkyVisible(sky); }, [engine, sky]);
-  // Transmet au moteur l'affichage de l'atmosphère de Vénus et de Mars.
-  useEffect(() => { engine?.setAtmospheresVisible(atmospheres, ['venus', 'mars']); }, [engine, atmospheres]);
+  // Transmet séparément au moteur les atmosphères de Vénus et de Mars.
+  useEffect(() => { engine?.setAtmospheresVisible(venusAtmosphere, ['venus']); }, [engine, venusAtmosphere]);
+  useEffect(() => { engine?.setAtmospheresVisible(marsAtmosphere, ['mars']); }, [engine, marsAtmosphere]);
   // Transmet au moteur l'affichage des nuages et de l'atmosphère de la Terre.
   useEffect(() => { engine?.setAtmospheresVisible(earthAtmosphere, ['earth']); }, [engine, earthAtmosphere]);
   // Transmet au moteur l'affichage de chaque famille d'astres.
@@ -106,6 +114,6 @@ export function useCameraToggles(engine, initial = {}) {
   useEffect(() => { engine?.setHiddenBodies(hiddenBodies); }, [engine, hiddenBodies]);
 
   // Renvoie tous les états et leurs fonctions de mise à jour.
-  return { auto, setAuto, tilt, setTilt, orbits, setOrbits, markers, setMarkers, satellites, setSatellites, sky, setSky, atmospheres, setAtmospheres, earthAtmosphere, setEarthAtmosphere, relief, setRelief, nightLights, setNightLights, lightView, setLightView, kinds, setKind, hiddenBodies, setBodyShown, setHiddenBodies, rotateSpeed, setRotateSpeed };
+  return { auto, setAuto, tilt, setTilt, orbits, setOrbits, markers, setMarkers, satellites, setSatellites, sky, setSky, atmospheres, setAtmospheres, venusAtmosphere, setVenusAtmosphere, marsAtmosphere, setMarsAtmosphere, earthAtmosphere, setEarthAtmosphere, relief, setRelief, nightLights, setNightLights, lightView, setLightView, kinds, setKind, hiddenBodies, setBodyShown, setHiddenBodies, rotateSpeed, setRotateSpeed };
 // Fin de useCameraToggles.
 }

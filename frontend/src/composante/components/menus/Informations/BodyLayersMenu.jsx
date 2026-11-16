@@ -10,6 +10,7 @@ import { Mercure } from './Mercure';
 import { Terre } from './Terre';
 // Importe le menu des satellites et des géantes.
 import { TrekBodyLayers } from './TrekBodyLayers';
+import { PlanetSettings } from './PlanetSettings';
 // Importe la table des astres tuilés par identifiant.
 import { TILED_BODY_BY_ID } from '@/moteur/engine/tiledBodies';
 
@@ -34,6 +35,10 @@ export function BodyLayersMenu({
   mercuryLayers = [], mercuryBaseId = null, onMercuryBase,
   // Fonds de tous les astres et rappel générique.
   bodyBases = {}, onBodyBase,
+  rotateSpeed, onRotateSpeed, rotating, onGoPlace, onDone,
+  atmosphereLayers, atmospheres, onAtmospheres, venusAtmosphere, onVenusAtmosphere,
+  marsAtmosphere, onMarsAtmosphere, relief, onRelief, earthLayers,
+  moonPlaces, onMoonPlaces,
 // Fin de la liste des propriétés.
 }) {
   // La configuration de l'astre visé, s'il est tuilé.
@@ -138,6 +143,29 @@ export function BodyLayersMenu({
         // Une note qui le dit.
         <Hint>Aucune information cartographique disponible pour {bodyName || 'cet astre'}.</Hint>
       // Fin du cas.
+      )}
+      {currentId !== null && (
+        <PlanetSettings
+          bodyId={currentId}
+          bodyName={bodyName || trekBody?.mapLabel?.replace(/^Carte de /, '')}
+          rotateSpeed={rotateSpeed}
+          onRotateSpeed={onRotateSpeed}
+          rotating={rotating}
+          onGoPlace={onGoPlace}
+          onDone={onDone}
+          atmosphereLayers={atmosphereLayers}
+          atmospheres={atmospheres}
+          onAtmospheres={onAtmospheres}
+          venusAtmosphere={venusAtmosphere}
+          onVenusAtmosphere={onVenusAtmosphere}
+          marsAtmosphere={marsAtmosphere}
+          onMarsAtmosphere={onMarsAtmosphere}
+          relief={relief}
+          onRelief={onRelief}
+          earthLayers={earthLayers}
+          moonPlaces={moonPlaces}
+          onMoonPlaces={onMoonPlaces}
+        />
       )}
     {/* Fin du fragment. */}
     </>

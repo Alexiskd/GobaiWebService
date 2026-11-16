@@ -8,12 +8,6 @@ import { PanelHeader } from '../../ui/PanelHeader';
 import { AstresAffiches } from './AstresAffiches';
 // Importe la section des repères.
 import { Reperes } from './Reperes';
-// Importe les deux sections de cartographie.
-import { Cartographie, CartographieRelief } from './Cartographie';
-// Importe Atmosphere : l'atmosphère des planètes solides et les phénomènes en direct de la Terre.
-import { Atmosphere } from './Atmosphere';
-// Importe la section de la vitesse de rotation.
-import { VitesseRotation } from './VitesseRotation';
 // Importe la section du pilotage au téléphone.
 import { PilotageTelephone } from './PilotageTelephone';
 // Importe la liste des astres.
@@ -29,34 +23,25 @@ import { MaPosition } from './MaPosition';
 
 /**
  * Fenêtre « Paramètres » (bouton ⚙ de la barre d'outils, à côté de la galerie). Une section par fichier, triées par thème :
- * Terre :
- *  - MaPosition          survol de sa position (GPS de l'appareil) et lieu « Maison » gardé comme point de départ
- *  - Cartographie        à plat : entrée unique « Terre » et son téléchargement, noms des villes et des pays,
- *                        frontières et littoraux, rues et routes
- *  - CartographieRelief  en relief : relief 3D de la Terre, LiDAR HD de l'IGN, points LiDAR 3D
- * Affichage du système solaire :
- *  - Atmosphere          nuages et atmosphère de la Terre, atmosphère de Vénus et de Mars, phénomènes en direct
- *  - Reperes             repères (orbites, points et noms, lieux de la Lune) et ciel lointain
- * Déplacement :
- *  - VitesseRotation     boutons de vitesse de la rotation automatique autour de l'astre
- *  - PilotageTelephone   sensibilité du pilotage par inclinaison (appareils tactiles à capteurs seulement)
+ * Réglages globaux de l'application :
+ *  - Reperes             repères globaux (orbites, points et noms) et ciel lointain
+ *  - PilotageTelephone   sensibilité du pilotage par inclinaison
+ *  - Apparence et économie d'énergie
+ * Astres :
+ *  - AstresAffiches      familles et visibilité des astres
+ *  - AllerAUnAstre       navigation dans le système solaire
  * Appareil :
  *  - Apparence           thème « noir pur » pour écrans OLED
  *  - EconomieEnergie     interrupteur du rendu allégé (moins d'images par seconde, densité de pixels 1)
- * Astres :
- *  - AstresAffiches      boutons qui masquent une famille d'astres (planètes solides, gazeuses, naines, satellites)
- *  - AllerAUnAstre       liste de tous les astres : une case pour enlever ou remettre chacun, un appui pour y aller
  */
 // Déclare et exporte le composant Parametres (début de la liste des propriétés).
 export function Parametres({
   // Ouverture, fermeture, astres, affichage d'un astre, astre visé, sélection et familles.
   open, onClose, bodies, onBodyShown, focus, onSelect, kinds, onKind,
-  // Les repères, les atmosphères, le relief et les calques de la Terre, avec leurs rappels.
-  orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky, moonPlaces, onMoonPlaces, atmospheres, onAtmospheres, relief, onRelief, earthLayers,
-  // Les calques atmosphériques : réglages, modification et textes d'aide.
-  atmosphereLayers,
-  // La vitesse de rotation, la rotation en cours, l'aller à un lieu et « Ma position ».
-  rotateSpeed, onRotateSpeed, rotating, onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange,
+  // Les repères globaux du système solaire.
+  orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky,
+  // La position de l'appareil et le moniteur de performance.
+  onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange,
 // Fin de la liste des propriétés.
 }) {
   // Lit le mode compact.
@@ -72,15 +57,8 @@ export function Parametres({
       <PanelHeader title="Paramètres" onClose={onClose} />
       {/* Contenu de la boîte de dialogue. */}
       <DialogContent sx={{ pt: 1.5, px: 2, pb: 2 }}>
-        {/* Terre */}
         {/* La section de la position. */}
         <MaPosition onGoPlace={onGoPlace} myPosition={myPosition} onDone={onClose} />
-        {/* La cartographie à plat. */}
-        <Cartographie {...earthLayers} />
-        {/* La cartographie en relief. */}
-        <CartographieRelief {...earthLayers} relief={relief} onRelief={onRelief} onGoPlace={onGoPlace} onDone={onClose} />
-        {/* L'atmosphère : nuages des planètes solides et phénomènes en direct. */}
-        <Atmosphere atmospheres={atmospheres} onAtmospheres={onAtmospheres} {...atmosphereLayers} />
         {/* Affichage du système solaire */}
         {/* La section des repères (début de la balise). */}
         <Reperes
@@ -92,13 +70,9 @@ export function Parametres({
           satellites={satellites} onSatellites={onSatellites}
           // Le ciel.
           sky={sky} onSky={onSky}
-          // Les lieux de la Lune.
-          moonPlaces={moonPlaces} onMoonPlaces={onMoonPlaces}
         // Fin de la section des repères.
         />
-        {/* Déplacement */}
-        {/* La vitesse de rotation. */}
-        <VitesseRotation speed={rotateSpeed} onSpeed={onRotateSpeed} rotating={rotating} />
+        {/* Déplacement global */}
         {/* Le pilotage au téléphone. */}
         <PilotageTelephone />
         {/* Appareil */}
