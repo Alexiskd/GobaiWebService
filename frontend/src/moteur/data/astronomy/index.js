@@ -29,3 +29,31 @@ export { mapStarSystemForPersistence, mapPositionSample, PostgresAstronomicalRep
 export { validateAstronomicalPipeline, assertAstronomicalPipelineValid } from './validation/AstronomicalValidationSuite.js';
 
 export { AstronomicalSystemExplorer, createAstronomicalSystemExplorer } from './AstronomicalSystemExplorer.js';
+
+export {
+  icrsToHeliocentricParsecs,
+  icrsParsecsToScene,
+  buildInterstellarSystemModel,
+  createInterstellarSystemGroup,
+  InterstellarSceneRenderer,
+  createInterstellarSceneRenderer,
+} from '../../engine/star/InterstellarSceneRenderer.js';
+
+export {
+  PARSEC_IN_AU,
+  createInterstellarEngineConfig,
+  globalCameraPosition,
+  resolveInterstellarSystemId,
+  resolveInterstellarPerivolumeRadius,
+  resolveInterstellarFocusDistance,
+} from '../../engine/star/InterstellarEngineIntegration.js';
+
+export { GalacticSpatialIndex, createGalacticSpatialIndex } from '../../core/GalacticSpatialIndex.js';
+
+export { GalacticSectorStreamingManager, createGalacticSectorStreamingManager } from '../../core/GalacticSectorStreamingManager.js';
+
+export { GaiaSectorCache, createGaiaSectorCache } from './providers/GaiaSectorCache.js';
+export { GaiaDR3SectorStreamer, createGaiaDR3SectorStreamer, gaiaRecordToHeliocentricParsecs } from './providers/GaiaDR3SectorStreamer.js';
+export { GaiaStarfieldLayer } from '../../engine/star/GaiaStarfieldLayer.js';
+
+export { GalacticSectorScheduler, createGalacticSectorScheduler } from '../../core/GalacticSectorScheduler.js';

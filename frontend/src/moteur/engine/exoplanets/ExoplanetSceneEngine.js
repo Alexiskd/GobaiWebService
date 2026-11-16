@@ -43,7 +43,9 @@ export function buildExoplanetSceneModel(starSystem, options = {}) {
       && finite(params.eccentricity) && Number(params.eccentricity) >= 0 && Number(params.eccentricity) < 1;
     let currentPosition = position;
     let calculationWarning = null;
-    if (!currentPosition && finite(targetJulianDate) && orbitValid && finite(params.periodDays)
+    // Recalculer depuis les éléments et leur époque de référence à chaque date demandée.
+    // La position précalculée reste le fallback si phase/époque ne sont pas disponibles.
+    if (finite(targetJulianDate) && orbitValid && finite(params.periodDays)
       && (finite(params.periastronEpochJulianDate) || (finite(params.meanAnomalyAtEpochDeg) && finite(params.epochJulianDate)))) {
       try {
         const computed = calculateExoplanetPosition(params, Number(targetJulianDate));
@@ -145,15 +147,16 @@ export function createExoplanetSystemGroup(THREE, sceneModel, options = {}) {
       : (options.defaultPlanetVisualRadius ?? 0.2);
     const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 12), new THREE.MeshBasicMaterial({ color: options.planetColor ?? 0x8fb7d8 }));
     mesh.name = planet.name;
-    mesh.userData = { gobaiKind: 'exoplanet', astronomicalId: planet.id, physicalRadiusEarth: finite(radiusEarth) ? radiusEarth : null };
+    mesh.userData = { gobaiKind: 'exoplanet', astronomicalId: planet.id, physicalRadiusEarth: finite(radiusEarth) ? radiusEarth : null, positionAvailable: Boolean(planet.position) };
     if (planet.position) mesh.position.set(planet.position.x, planet.position.y, planet.position.z);
     mesh.visible = Boolean(planet.position);
     root.add(mesh); planetObjects.set(planet.id, mesh);
   });
   root.userData.dispose = () => {
     root.traverse?.((object) => {
-      if (object.geometry && object.geometry !== star.geometry) object.geometry.dispose?.();
-      if (object.material && object.material !== star.material) object.material.dispose?.();
+      object.geometry?.dispose?.();
+      if (Array.isArray(object.material)) object.material.forEach((material) => material?.dispose?.());
+      else object.material?.dispose?.();
     });
   };
   root.userData.updateFromModel = (nextModel) => {
@@ -161,6 +164,7 @@ export function createExoplanetSystemGroup(THREE, sceneModel, options = {}) {
     nextModel.planets.forEach((planet) => {
       const mesh = planetObjects.get(planet.id);
       if (!mesh) return;
+      mesh.userData.positionAvailable = Boolean(planet.position);
       mesh.visible = Boolean(planet.position);
       if (planet.position) mesh.position.set(planet.position.x, planet.position.y, planet.position.z);
     });

@@ -71,3 +71,8 @@ export {
   serializeSatelliteAtlasVisualReport,
 } from './SatelliteAtlasVisualValidation.js';
 export { SatelliteAtlasBrowserValidationAdapter } from './SatelliteAtlasBrowserValidation.js';
+export { InterstellarPerivolumeCoordinator, createInterstellarPerivolumeCoordinator } from './InterstellarPerivolumeCoordinator.js';
+export { InterstellarResourceLifecycleManager, createInterstellarResourceLifecycleManager } from './InterstellarResourceLifecycleManager.js';
+export { InterstellarLODManager, createInterstellarLODManager } from './InterstellarLODManager.js';
+
+export { GalacticSectorScheduler, createGalacticSectorScheduler } from './GalacticSectorScheduler.js';

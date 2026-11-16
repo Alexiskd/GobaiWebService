@@ -81,3 +81,19 @@ test('construit un groupe Three.js avec étoile, planète, orbite et mise à jou
   assert.ok(planetMesh.position.value);
   group.userData.dispose();
 });
+
+test('recalcule la position orbitale à la nouvelle époque même si une position initiale existe', () => {
+  const data = system();
+  data.planets[0].orbit = {
+    periodDays: 10,
+    semiMajorAxisAu: 0.1,
+    eccentricity: 0,
+    meanAnomalyAtEpochDeg: 0,
+    epochJulianDate: 2451545,
+  };
+  const first = buildExoplanetSceneModel(data, { targetJulianDate: 2451545, auToSceneUnits: 1 });
+  const later = buildExoplanetSceneModel(data, { targetJulianDate: 2451547.5, auToSceneUnits: 1 });
+  assert.ok(Math.abs(first.planets[0].position.x - 0.1) < 1e-8);
+  assert.ok(Math.abs(later.planets[0].position.x) < 1e-8);
+  assert.ok(Math.abs(later.planets[0].position.z + 0.1) < 1e-8);
+});

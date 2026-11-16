@@ -27,6 +27,11 @@ export class SystemManager {
     return decisions;
   }
 
+  unregister(id) {
+    this.effectiveStates.delete(id);
+    return true;
+  }
+
   getLoadProfile(id) {
     const state = this.effectiveStates.get(id) ?? this.perivolumeManager.getState(id);
     if (state === LOAD_STATE.ACTIVE) return { state, render: true, update: true, priority: 100 };

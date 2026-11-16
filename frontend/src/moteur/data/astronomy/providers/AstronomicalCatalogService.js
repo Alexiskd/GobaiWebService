@@ -60,14 +60,18 @@ export class AstronomicalCatalogService {
     return { ...result, records: normalizeTapRows(result.rows, normalizeGaiaSource, result.retrievedAt) };
   }
 
-  async searchGaiaCone({ raDeg, decDeg, radiusDeg = 0.1, limit = 50 } = {}, { signal } = {}) {
+  async searchGaiaCone({ raDeg, decDeg, radiusDeg = 0.1, limit = 50, sourceIdAfter = null } = {}, { signal } = {}) {
     const ra = Number(raDeg); const dec = Number(decDeg); const radius = Number(radiusDeg);
     if (!Number.isFinite(ra) || ra < 0 || ra > 360 || !Number.isFinite(dec) || dec < -90 || dec > 90 || !Number.isFinite(radius) || radius <= 0 || radius > 5) {
       throw new TypeError('Coordonnées ou rayon invalides (rayon maximal : 5 degrés).');
     }
     const top = Math.max(1, Math.min(this.maxRows, Math.floor(limit)));
-    const query = `SELECT TOP ${top} ${GAIA_COLUMNS} FROM gaiadr3.gaia_source WHERE 1=CONTAINS(POINT('ICRS',ra,dec),CIRCLE('ICRS',${ra},${dec},${radius})) ORDER BY phot_g_mean_mag ASC`;
-    const result = await this._query('gaia', this.endpoints.gaia, query, signal, `gaia:cone:${ra}:${dec}:${radius}:${top}`);
+    const cursor = sourceIdAfter === null || sourceIdAfter === undefined ? null : String(sourceIdAfter);
+    if (cursor !== null && !/^\d+$/.test(cursor)) throw new TypeError('Curseur Gaia source_id invalide.');
+    const cursorFilter = cursor === null ? '' : ` AND source_id > ${cursor}`;
+    // Pagination par clé (source_id), stable entre les pages et sans OFFSET coûteux.
+    const query = `SELECT TOP ${top} ${GAIA_COLUMNS} FROM gaiadr3.gaia_source WHERE 1=CONTAINS(POINT('ICRS',ra,dec),CIRCLE('ICRS',${ra},${dec},${radius}))${cursorFilter} ORDER BY source_id ASC`;
+    const result = await this._query('gaia', this.endpoints.gaia, query, signal, `gaia:cone:${ra}:${dec}:${radius}:${top}:after:${cursor ?? 'start'}`);
     return { ...result, records: normalizeTapRows(result.rows, normalizeGaiaSource, result.retrievedAt) };
   }
 
