@@ -57,7 +57,7 @@ export interface EarthTierDetails {
   // names : noms des villes et des pays.
   names: boolean;
   // marine : carte marine « noaa » (NOAA vue de l'espace), « fondu » (NOAA vers GEBCO) ou « gebco » (GEBCO seule).
-  marine: 'gebco' | 'fondu' | 'gebco';
+  marine: 'gebco' | 'fondu';
 // Fin de EarthTierDetails.
 }
 
@@ -100,11 +100,11 @@ export const EARTH_TIERS: EarthTier[] = [
   // Pays : jusqu'à 2 500 km ; niveau 10 ; Sentinel-2.
   { id: 'pays', label: 'Pays', maxKm: 2500, source: 'Sentinel-2', maxZoom: 10, maxTiles: { desktop: 220, phone: 170 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'fondu' } },
   // Continent : jusqu'à 9 000 km ; niveau 8 ; Sentinel-2.
-  { id: 'continent', label: 'Continent', maxKm: 9000, source: 'Sentinel-2', maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'noaa' } },
+  { id: 'continent', label: 'Continent', maxKm: 9000, source: 'Sentinel-2', maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'gebco' } },
   // Planète : jusqu'à 120 000 km ; niveau 6 ; NASA GIBS et Sentinel-2.
-  { id: 'planete', label: 'Planète', maxKm: 120_000, source: 'NASA GIBS, Sentinel-2', maxZoom: 6, maxTiles: { desktop: 120, phone: 100 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
+  { id: 'planete', label: 'Planète', maxKm: 120_000, source: 'NASA GIBS, Sentinel-2', maxZoom: 6, maxTiles: { desktop: 120, phone: 100 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'gebco' } },
   // Espace : au-delà ; la mosaïque instantanée seule (niveaux 0 à 3).
-  { id: 'espace', label: 'Espace', maxKm: null, source: 'mosaïque instantanée', maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
+  { id: 'espace', label: 'Espace', maxKm: null, source: 'mosaïque instantanée', maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'gebco' } },
 // Fin des paliers.
 ];
 
