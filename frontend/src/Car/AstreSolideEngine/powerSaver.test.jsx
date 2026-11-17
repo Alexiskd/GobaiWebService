@@ -38,7 +38,7 @@ test('profil téléphone : la même qualité que l’ordinateur, une densité ad
   // Même anticrénelage, même anisotropie.
   for (const k of ['antialias', 'anisotropy']) assert.equal(HANDHELD_PROFILE[k], DESKTOP_PROFILE[k], k);
   // Densité plafonnée à 2 sur téléphone (écran à 3 pixels par point CSS), 1,75 sur ordinateur, dès le départ.
-  assert.equal(HANDHELD_PROFILE.dprMax, 2); assert.equal(DESKTOP_PROFILE.dprMax, 1.75);
+  assert.equal(HANDHELD_PROFILE.dprMax, 2); assert.equal(DESKTOP_PROFILE.dprMax, 2);
   // Départ au plafond, sur les deux.
   assert.equal(HANDHELD_PROFILE.dprStart, HANDHELD_PROFILE.dprMax); assert.equal(DESKTOP_PROFILE.dprStart, DESKTOP_PROFILE.dprMax);
   // Plancher de la résolution adaptative : 1,25 sur téléphone, 0,75 sur ordinateur.
@@ -46,7 +46,7 @@ test('profil téléphone : la même qualité que l’ordinateur, une densité ad
   // Aucun réglage allégé.
   assert.equal(HANDHELD_PROFILE.lite, undefined);
   // L'ordinateur vise la durée d'image commune.
-  assert.equal(DESKTOP_PROFILE.frameMs, TARGET_FRAME_MS);
+  assert.equal(DESKTOP_PROFILE.frameMs, 0); // ordinateur : aucune limite logicielle
   // Le téléphone aussi.
   assert.equal(HANDHELD_PROFILE.frameMs, TARGET_FRAME_MS);
   // Le rythme visé est de 50 images par seconde.

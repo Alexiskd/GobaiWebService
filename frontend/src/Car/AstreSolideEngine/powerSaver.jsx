@@ -9,7 +9,7 @@
 // Sur téléphone, zoomé dans le système d'une planète (voir systemView.jsx) : rythme maximal de l'écran, sans ralenti
 // au repos (SYSTEM_PROFILE) ; les autres planètes et leurs satellites ne sont alors plus dessinés, pour ne pas chauffer.
 //
-// Rythme : sur tous les appareils, le moteur est plafonné à TARGET_FPS images par seconde (50), quel que soit le niveau
+// Rythme : sur ordinateur, aucun plafond logiciel ; sur mobile, cadence adaptative à TARGET_FPS
 // de zoom et la fréquence de l'écran (60, 120, 144 Hz…) : voir `paceFrame`. Pour TENIR ce rythme quand la scène est
 // lourde, la résolution adaptative (Engine.adaptResolution) baisse la densité de pixels dès que la moyenne descend
 // sous ≈ 45 images par seconde, et les tuiles envoyées au GPU par image sont réduites (`uploadShare`).
@@ -26,11 +26,11 @@ export const TARGET_FRAME_MS = 1000 / TARGET_FPS;
 
 // Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 1,75 dès le départ, plancher de la
 // résolution adaptative à 0,75, anticrénelage, anisotropie de 8.
-export const DESKTOP_PROFILE = { handheld: false, dprMax: 1.75, dprStart: 1.75, dprMin: 0.75, frameMs: TARGET_FRAME_MS, antialias: true, anisotropy: 8 };
+export const DESKTOP_PROFILE = { handheld: false, dprMax: 2, dprStart: 2, dprMin: 0.75, frameMs: 0, antialias: true, anisotropy: 8 };
 // Déclare et exporte le profil d'un appareil tenu en main : densité plafonnée à 2 dès le départ, plancher à 1,25 (un
 // écran de téléphone est vu de près : en dessous, l'image devient floue), le reste comme l'ordinateur (ralenti au
 // repos, voir targetFrameMs).
-export const HANDHELD_PROFILE = { ...DESKTOP_PROFILE, handheld: true, dprMax: 2, dprStart: 2, dprMin: 1.25 };
+export const HANDHELD_PROFILE = { ...DESKTOP_PROFILE, handheld: true, dprMax: 2, dprStart: 2, dprMin: 1.25, frameMs: TARGET_FRAME_MS };
 // Déclare et exporte le profil d'un téléphone dans le système d'une planète : sans plafond d'images ni ralenti au repos.
 export const SYSTEM_PROFILE = { ...HANDHELD_PROFILE, system: true, frameMs: 0 };
 

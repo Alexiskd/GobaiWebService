@@ -544,8 +544,8 @@ export class SolarEngine {
     // Planète du système affiché sur téléphone : aucune.
     this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
-    const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true });
-    // Plafond : la densité de l'écran (≤ 1,75 sur ordinateur, ≤ 2 sur téléphone) ; la résolution adaptative
+    const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true, powerPreference: 'high-performance', stencil: false, preserveDrawingBuffer: false });
+    // Plafond : la densité de l'écran (≤ 2 sur ordinateur et téléphone) ; la résolution adaptative
     // (adaptResolution) descend si besoin jusqu'au plancher du profil (0,75 sur ordinateur, 1,25 sur téléphone).
     this.dprMax = Math.min(devicePixelRatio || 1, this.power.dprMax);
     // Départ à la densité du profil (son plafond).

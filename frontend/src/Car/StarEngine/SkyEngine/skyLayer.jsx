@@ -152,7 +152,7 @@ const STARS_VERT = /* glsl */`
     vColor = aColor;
     // Plus l'étoile est brillante (magnitude faible), plus le point est grand et opaque.
     vAlpha = clamp(pow(10.0, -0.4 * (aMag - 3.0)), 0.3, 1.0) * uIntensity;
-    gl_PointSize = clamp(7.0 - 0.8 * aMag, 2.5, 11.0) * uDpr;
+    gl_PointSize = clamp(7.4 - 0.82 * aMag, 2.7, 12.0) * uDpr;
     vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
     gl_Position = p.xyww;
   }
@@ -184,7 +184,7 @@ const STARS_FRAG = /* glsl */`
 export class SkyLayer {
   // Constructeur : l'adresse du catalogue, la fonction appelée au chargement et l'option d'allègement (début).
   constructor({ url = STAR_CATALOG_URL, onLoad } = {}) {
-    // Nombre d'octaves du bruit, le même sur tous les appareils.
+    // Nombre d'octaves du bruit : détail élevé du fond procédural, conservé sur tous les appareils.
     const octaves = QUALITY.octaves;
     // Scène séparée du ciel.
     this.scene = new THREE.Scene();
@@ -212,7 +212,7 @@ export class SkyLayer {
     // Sphère de la Voie lactée (début).
     this.milkyWay = new THREE.Mesh(
       // Géométrie : une sphère de rayon 1.
-      new THREE.SphereGeometry(1, 96, 48),
+      new THREE.SphereGeometry(1, 192, 96),
       // Matériau à shader (début).
       new THREE.ShaderMaterial({
         // Ses constantes : le nombre d'octaves et le gain qui garde la luminosité de la version à 5 octaves.
