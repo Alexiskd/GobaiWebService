@@ -47,7 +47,7 @@ def test_planet_distances_order():
 
 
 def test_moon_distance_bounds():
-    from main import moon_ecliptic_km
+    from gobai.simulation import moon_ecliptic_km
     a, e = MOON["aKm"], MOON["e"]
     for ms in (J2000_MS, J2000_MS + 365 * 86_400_000.0, J2000_MS - 4000 * 86_400_000.0):
         x, y, z = moon_ecliptic_km(ms)
@@ -56,7 +56,7 @@ def test_moon_distance_bounds():
 
 
 def test_moon_daily_motion():
-    from main import moon_ecliptic_km
+    from gobai.simulation import moon_ecliptic_km
     ms = J2000_MS
     lon1 = math.degrees(math.atan2(*moon_ecliptic_km(ms)[1::-1]))
     lon2 = math.degrees(math.atan2(*moon_ecliptic_km(ms + 86_400_000.0)[1::-1]))
@@ -65,7 +65,7 @@ def test_moon_daily_motion():
 
 
 def test_satellites_circular():
-    from main import satellite_ecliptic_km
+    from gobai.simulation import satellite_ecliptic_km
     for s in SATELLITES:
         x, y, z = satellite_ecliptic_km(s, J2000_MS)
         r = math.sqrt(x * x + y * y + z * z)

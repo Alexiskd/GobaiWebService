@@ -17,6 +17,7 @@ Commandes :
   échap                    quitter
 """
 
+import asyncio
 import math
 import random
 import sys
@@ -25,18 +26,17 @@ from datetime import datetime, timezone
 import pygame
 
 from gobai.data import MOON, PLANETS, SUN, SATELLITES
-from gobai.kepler import (AU_KM, D, EARTH_RADIUS_KM, centuries_tt,
-                          heliocentric_ecliptic,
-                          kepler_position_from_elements, orbit_positions,
-                          period_days)
+from gobai.kepler import (AU_KM, EARTH_RADIUS_KM, centuries_tt, period_days)
+from gobai.simulation import (compute_state, moon_ecliptic_km,
+                              orbit_polylines, satellite_ecliptic_km)
 
 EARTH_RADIUS_AU = EARTH_RADIUS_KM / AU_KM
 DAY_MS = 86_400_000.0
-J2000_MS = 946_728_000_000.0
 AU_LABEL = 149.6e6
 
 WIDTH, HEIGHT = 1280, 800
 FPS = 60
+EMSCRIPTEN = sys.platform == "emscripten"
 MIN_ZOOM = 3.0
 MAX_ZOOM = 400_000.0
 ZOOM_STEP = 1.25
@@ -51,51 +51,26 @@ COLOR_ORBIT = (70, 80, 110)
 COLOR_SAT_ORBIT = (90, 100, 130)
 
 
-def moon_ecliptic_km(ms):
-    T = centuries_tt(ms)
-    k = MOON
-    return kepler_position_from_elements(
-        a=k["aKm"], e=k["e"], inclination=k["i"] * D,
-        ascending_node=(k["om"] + k["omDot"] * T) * D,
-        argument_periapsis=(k["w"] + k["wDot"] * T) * D,
-        mean_anomaly=(k["M0"] + k["MDot"] * T) * D,
-    )
-
-
-def satellite_ecliptic_km(sat, ms):
-    dt_days = (ms - J2000_MS) / DAY_MS
-    M = 2 * math.pi * dt_days / sat["periodDays"]
-    return kepler_position_from_elements(a=sat["aKm"], mean_anomaly=M)
-
-
-def planet_ecliptic_au(planet, ms):
-    T = centuries_tt(ms)
-    x, y, _z = heliocentric_ecliptic(planet["elements"], T)
-    return x, y
-
-
 class Camera:
-    def __init__(self):
+    def __init__(self, width, height):
         self.x = 0.0
         self.y = 0.0
         self.zoom = 60.0
         self.follow = "sun"
+        self.w = width
+        self.h = height
+
+    def resize(self, width, height):
+        self.w = width
+        self.h = height
 
     def to_screen(self, x_au, y_au):
-        return (int(self.cx + (x_au - self.x) * self.zoom),
-                int(self.cy - (y_au - self.y) * self.zoom))
+        return (int(self.w / 2 + (x_au - self.x) * self.zoom),
+                int(self.h / 2 - (y_au - self.y) * self.zoom))
 
     def to_world(self, sx, sy):
-        return ((sx - self.cx) / self.zoom + self.x,
-                (self.cy - sy) / self.zoom + self.y)
-
-    @property
-    def cx(self):
-        return WIDTH / 2
-
-    @property
-    def cy(self):
-        return HEIGHT / 2
+        return ((sx - self.w / 2) / self.zoom + self.x,
+                (self.h / 2 - sy) / self.zoom + self.y)
 
 
 class Simulation:
@@ -116,13 +91,13 @@ class Simulation:
 class App:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        self.screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
         pygame.display.set_caption("Gobai Pygame — Système solaire")
         self.clock = pygame.time.Clock()
         self.font_small = self._font(14)
         self.font = self._font(16)
         self.font_big = self._font(22)
-        self.cam = Camera()
+        self.cam = Camera(WIDTH, HEIGHT)
         self.sim = Simulation()
         self.selected = "sun"
         self.stars = [(random.random() * WIDTH, random.random() * HEIGHT,
@@ -145,38 +120,17 @@ class App:
         return pygame.font.Font(None, size + 4)
 
     def state(self):
-        T = centuries_tt(self.sim.ms)
-        positions = {}
-        for p in PLANETS:
-            positions[p["id"]] = planet_ecliptic_au(p, self.sim.ms)
-        positions["sun"] = (0.0, 0.0)
-        earth = positions["earth"]
-        mx, my, _ = moon_ecliptic_km(self.sim.ms)
-        positions["moon"] = (earth[0] + mx / AU_KM, earth[1] + my / AU_KM)
-        sat_rel = {}
-        for s in SATELLITES:
-            parent = positions[s["parent"]]
-            sx, sy, _ = satellite_ecliptic_km(s, self.sim.ms)
-            sat_rel[s["id"]] = (sx, sy)
-            positions[s["id"]] = (parent[0] + sx / AU_KM, parent[1] + sy / AU_KM)
-        return positions, sat_rel
+        positions = compute_state(self.sim.ms)
+        return positions, None
 
-    def orbit_polylines(self):
-        T = centuries_tt(self.sim.ms)
-        lines = []
-        for p in PLANETS:
-            pts = orbit_positions(p["elements"], T, PLANET_SAMPLES)
-            lines.append((p["id"], [(x, y) for x, y, _z in pts]))
-        return lines
-
-    def draw(self, positions, sat_rel, orbit_lines):
+    def draw(self, positions, orbit_lines):
         self.screen.fill(COLOR_BG)
         cam = self.cam
         for sx, sy, r, b in self.stars:
-            dx = (sx - cam.cx) - (cam.x * cam.zoom * 0.02)
-            dy = (sy - cam.cy) + (cam.y * cam.zoom * 0.02)
-            dx %= WIDTH
-            dy %= HEIGHT
+            dx = (sx - cam.w / 2) - (cam.x * cam.zoom * 0.02)
+            dy = (sy - cam.h / 2) + (cam.y * cam.zoom * 0.02)
+            dx %= cam.w
+            dy %= cam.h
             pygame.draw.circle(self.screen, (b, b, b + 20 if b + 20 < 255 else 255), (int(dx), int(dy)), int(r))
 
         for pid, pts in orbit_lines:
@@ -220,7 +174,7 @@ class App:
         sx, sy = cam.to_screen(*pos_au)
         r_px = max(MIN_PX, radius_au * cam.zoom)
         margin = r_px + 40
-        if not (-margin < sx < WIDTH + margin and -margin < sy < HEIGHT + margin):
+        if not (-margin < sx < cam.w + margin and -margin < sy < cam.h + margin):
             return
         if satellite and r_px < 1.2:
             r_px = 1.2
@@ -275,9 +229,9 @@ class App:
             info = []
         panel_h = 26 + 20 * len(info)
         if info:
-            pygame.draw.rect(self.screen, COLOR_PANEL, (10, HEIGHT - panel_h - 10, 360, panel_h), border_radius=8)
-            self.screen.blit(self.font_big.render(info[0], True, COLOR_TEXT), (22, HEIGHT - panel_h + 2))
-            yy = HEIGHT - panel_h + 34
+            pygame.draw.rect(self.screen, COLOR_PANEL, (10, cam.h - panel_h - 10, 360, panel_h), border_radius=8)
+            self.screen.blit(self.font_big.render(info[0], True, COLOR_TEXT), (22, cam.h - panel_h + 2))
+            yy = cam.h - panel_h + 34
             for line in info[1:]:
                 self.screen.blit(self.font.render(line, True, COLOR_DIM), (22, yy))
                 yy += 20
@@ -290,7 +244,7 @@ class App:
         y = 12
         for line in help_lines:
             surf = self.font_small.render(line, True, COLOR_DIM)
-            self.screen.blit(surf, (WIDTH - surf.get_width() - 12, y))
+            self.screen.blit(surf, (cam.w - surf.get_width() - 12, y))
             y += 18
 
     def pick(self, mx, my):
@@ -302,17 +256,24 @@ class App:
                     best, best_d = bid, d
         return best
 
-    def run(self):
-        orbit_lines = self.orbit_polylines()
+    async def run(self):
+        orbit_lines = orbit_polylines(self.sim.ms, PLANET_SAMPLES)
         last_orbit_T = centuries_tt(self.sim.ms)
         running = True
         while running:
-            dt_s = self.clock.tick(FPS) / 1000.0
+            if EMSCRIPTEN:
+                await asyncio.sleep(0)
+                dt_s = self.clock.tick(0) / 1000.0
+            else:
+                dt_s = self.clock.tick(FPS) / 1000.0
+            dt_s = min(dt_s, 0.25)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
                 elif event.type == pygame.KEYDOWN:
                     self._on_key(event)
+                elif event.type == pygame.VIDEORESIZE:
+                    self.cam.resize(event.w, event.h)
                 elif event.type == pygame.MOUSEWHEEL:
                     factor = ZOOM_STEP ** event.y
                     self._zoom_at(pygame.mouse.get_pos(), factor)
@@ -340,20 +301,15 @@ class App:
             self.sim.advance(dt_s)
             T = centuries_tt(self.sim.ms)
             if abs(T - last_orbit_T) > 0.002:
-                orbit_lines = self.orbit_polylines()
+                orbit_lines = orbit_polylines(self.sim.ms, PLANET_SAMPLES)
                 last_orbit_T = T
+            positions, _ = self.state()
             if self.cam.follow:
-                positions, sat_rel = self.state()
                 self.cam.x, self.cam.y = positions[self.cam.follow]
-                self.bodies_screen.clear()
-                self.draw(positions, sat_rel, orbit_lines)
-            else:
-                positions, sat_rel = self.state()
-                self.bodies_screen.clear()
-                self.draw(positions, sat_rel, orbit_lines)
+            self.bodies_screen.clear()
+            self.draw(positions, orbit_lines)
             pygame.display.flip()
         pygame.quit()
-        sys.exit(0)
 
     def _zoom_at(self, pos, factor):
         wx, wy = self.cam.to_world(*pos)
@@ -380,11 +336,11 @@ class App:
             self.cam.follow = self.selected
         elif key in (pygame.K_o, pygame.K_l):
             factor = ZOOM_STEP if key == pygame.K_o else 1 / ZOOM_STEP
-            self._zoom_at((WIDTH // 2, HEIGHT // 2), factor)
+            self._zoom_at((int(self.cam.w // 2), int(self.cam.h // 2)), factor)
 
 
 def main():
-    App().run()
+    asyncio.run(App().run())
 
 
 if __name__ == "__main__":
