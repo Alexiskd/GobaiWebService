@@ -35,81 +35,30 @@ export function defaultVisibility() {
 }
 
 /**
- * Identifiants des astres qui ont réellement au moins un fond de carte, comme le montre leur fiche d'information.
- *  - `layers` : liste générale de l'API (GET /tiles/layers) ; une couche sans `body` appartient à la Terre.
- *  - `status` : état des satellites et des géantes (GET /tiles/satellites/status), [{ id, layers }] où `layers` est
- *    le nombre de fonds réellement trouvés. Il fait foi pour ces astres : la liste générale leur donne toujours une
- *    entrée « fond principal », même quand aucune carte n'a été trouvée, et les croyait donc tous cartographiés.
+ * Politique d'affichage initial : la présence ou l'absence d'une couche cartographique
+ * ne doit jamais décider si un astre existe dans la scène 3D.
+ * Les couches restent des ressources de surface ; elles ne filtrent pas le catalogue.
  */
-// Déclare et exporte bodiesWithLayers : la liste des couches et l'état, vides par défaut.
 export function bodiesWithLayers(layers = [], status = []) {
-  // Ensemble des astres des couches ; une couche sans astre compte pour la Terre.
-  const set = new Set(layers.map((l) => l.body || 'earth'));
-  // Pour chaque ligne de l'état (début).
+  // Conservé pour compatibilité : renvoie les astres ayant une couche.
+  const set = new Set((layers || []).map((l) => l.body || 'earth'));
   for (const row of status || []) {
-    // Ligne sans identifiant : ignorée.
     if (!row?.id) continue;
-    // Au moins un fond : l'astre est ajouté ; sinon il est retiré.
     if (row.layers > 0) set.add(row.id); else set.delete(row.id);
-  // Fin de la boucle.
   }
-  // Renvoie l'ensemble.
   return set;
-// Fin de bodiesWithLayers.
 }
 
-/**
- * LA fonction booléenne de l'affichage par défaut : un seul ET sur toutes les conditions, et seules les couches de
- * cartes comptent. Un astre est affiché par défaut si, et seulement si, toutes ces conditions sont vraies :
- *   1. il a au moins une couche de carte ;
- *   2. si c'est un satellite, sa planète a elle aussi au moins une couche (sinon il disparaîtrait avec elle).
- * Le Soleil, qui n'a ni couche ni case à cocher, est toujours affiché.
- * @param body        astre de la navigation : { index, id, satellite? }
- * @param withLayers  Set renvoyé par bodiesWithLayers
- * @param parentBody  sa planète, pour un satellite
- */
-// Déclare et exporte shownByDefault : l'astre, l'ensemble des astres avec couche et sa planète (aucune par défaut).
-export function shownByDefault(body, withLayers, parentBody = null) {
-  // L'indice 0, le Soleil : toujours affiché.
-  if (body.index === 0) return true;
-  // Renvoie vrai si l'astre a une couche…
-  return withLayers.has(body.id)
-    // … et si ce n'est pas un satellite, ou si sa planète est inconnue, ou si sa planète a une couche.
-    && (!body.satellite || !parentBody || withLayers.has(parentBody.id));
-// Fin de shownByDefault.
+/** Tous les astres du catalogue sont affichés au lancement, quelle que soit leur couche. */
+export function shownByDefault(body) {
+  // Le Soleil et tous les autres astres sont visibles initialement.
+  return Boolean(body);
 }
 
-/**
- * Astres décochés par défaut dans Paramètres, une fois la liste des couches connue : ceux pour qui shownByDefault
- * est faux. Exception : l'astre de l'adresse d'arrivée (« /jupiter », « /titan »…) et sa planète restent affichés,
- * pour que sa page s'ouvre bien sur lui.
- * @param bodies  astres de la navigation : { index, id, name, satellite?, parent? }
- * @param layers  couches de l'API : [{ id, body? }]
- * @param path    chemin de l'adresse (window.location.pathname)
- * @param status  état des satellites et des géantes : [{ id, layers }] (voir bodiesWithLayers)
- * @returns {number[]}  indices des astres à décocher
- */
-// Déclare et exporte defaultHiddenBodies : les astres, les couches, le chemin de l'adresse et l'état.
+/** Aucun astre n'est décoché automatiquement au chargement. */
 export function defaultHiddenBodies(bodies = [], layers = [], path = '', status = []) {
-  // Ensemble des astres qui ont une couche.
-  const withLayers = bodiesWithLayers(layers, status);
-  // Table des astres par indice.
-  const byIndex = new Map(bodies.map((b) => [b.index, b]));
-  // Chemin sans ses barres obliques de début et de fin.
-  let slug = String(path).replace(/^\/+|\/+$/g, '');
-  // Décode les caractères encodés de l'adresse ; en cas d'erreur, le chemin est vidé.
-  try { slug = decodeURIComponent(slug); } catch { slug = ''; }
-  // Astre de l'adresse d'arrivée : celui dont le nom, sans accents ni majuscules, est égal au chemin ; aucun pour un chemin vide.
-  const landing = slug ? bodies.find((b) => fold(b.name) === fold(slug)) : null;
-  // Indices à garder affichés : cet astre et sa planète, quand ils existent.
-  const keep = new Set([landing?.index, landing?.parent].filter((i) => i != null));
-  // Renvoie, à partir des astres (début),
-  return bodies
-    // ceux qui ne sont pas à garder et que shownByDefault n'affiche pas, la planète d'un satellite étant retrouvée par son indice,
-    .filter((b) => !keep.has(b.index) && !shownByDefault(b, withLayers, b.parent != null ? byIndex.get(b.parent) : null))
-    // réduits à leur indice.
-    .map((b) => b.index);
-// Fin de defaultHiddenBodies.
+  // Paramètres conservés pour compatibilité avec les anciens appels.
+  return [];
 }
 
 /** Famille d'une planète (définition de l'API) : 'dwarf' (Pluton), 'gas' (géantes) ou 'solid' (les autres). */
