@@ -41,7 +41,7 @@ const MAX_CHARS = 1000;
 
 /** Réponse fixe tant qu'aucune clé d'API Mistral n'est enregistrée dans le navigateur : rien n'est envoyé. */
 // Réponse affichée tant que l'assistant n'est pas branché.
-const NOT_CONNECTED = 'L’assistant n’est pas branché : aucune clé d’API Mistral n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part.';
+const NOT_CONNECTED = 'L’assistant n’est pas branché : aucune clé d’API Mistral n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part. Pour brancher l’assistant, enregistrez une clé dans Paramètres → Mistral.';
 
 /**
  * Couleurs et polices du menu, les mêmes de jour comme de nuit (le reste de l'interface suit le thème de l'application) :
@@ -511,7 +511,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           // Encadré d'avertissement (début de la balise).
           <Typography role="status" sx={{ flex: 'none', px: 1.25, py: 1, lineHeight: 1.45, borderRadius: '10px', bgcolor: C.field, border: `1px solid ${C.border}`, color: C.muted, fontFamily: SANS, fontSize: 13 }}>
             {/* Son texte. */}
-            Fenêtre de démonstration : l’assistant n’est pas encore branché, aucune réponse n’est générée.
+            Fenêtre de démonstration : aucune clé d’API Mistral n’est enregistrée, aucune réponse n’est générée. Enregistrez une clé dans Paramètres → Mistral.
           {/* Fin de l'encadré. */}
           </Typography>
         // Fin du cas.
