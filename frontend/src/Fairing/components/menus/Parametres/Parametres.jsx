@@ -11,6 +11,7 @@ import { AllerAUnAstre } from './AllerAUnAstre.jsx';
 import { CatalogueAstres } from '../Astres/CatalogueAstres.jsx';
 import { EconomieEnergie } from './EconomieEnergie.jsx';
 import { Apparence } from './Apparence.jsx';
+import { CleMistral } from './CleMistral.jsx';
 import { MaPosition } from './MaPosition.jsx';
 
 const tabs = [
@@ -74,6 +75,7 @@ export function Parametres({
               <PilotageTelephone />
               <Apparence />
               <EconomieEnergie />
+              <CleMistral />
               <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden', bgcolor: 'background.paper' }}>
                 <PerformanceSetting visible={performanceMonitorVisible} onChange={onPerformanceMonitorChange} />
               </Box>
