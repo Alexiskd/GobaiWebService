@@ -1,5 +1,0 @@
-[tool.pygbag]
-package = "gobai"
-title = "Gobai Pygame"
-author = "Alexiskd"
-url = "https://github.com/Alexiskd/static-gobai"
