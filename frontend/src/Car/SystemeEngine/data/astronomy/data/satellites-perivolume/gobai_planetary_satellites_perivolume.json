@@ -1,0 +1,6140 @@
+{
+  "datasetName": "Gobai Space - Planetary Systems and Natural Satellites",
+  "version": "1.0.0",
+  "generatedFrom": "catalogue_systeme_solaire_sphericite_observee(3).pdf",
+  "recordCount": 160,
+  "epochConvention": "2000-01-01.5 TDB",
+  "units": {
+    "distance": "m",
+    "time": "s",
+    "mass": "kg",
+    "GM": "m3/s2",
+    "angles": "deg"
+  },
+  "gravityConstant_m3_kg_s2": 6.6743e-11,
+  "hosts": {
+    "Terre": {
+      "gm_m3_s2": 398600436000000.0,
+      "gm_source": "JPL DE440"
+    },
+    "Mars": {
+      "gm_m3_s2": 42828373620000.0,
+      "gm_source": "JPL MAR099/MAR097"
+    },
+    "Jupiter": {
+      "gm_m3_s2": 1.266865319e+17,
+      "gm_source": "JPL JUP365"
+    },
+    "Saturne": {
+      "gm_m3_s2": 3.793120623e+16,
+      "gm_source": "JPL SAT441"
+    },
+    "Uranus": {
+      "gm_m3_s2": 5793951300000000.0,
+      "gm_source": "JPL URA"
+    },
+    "Neptune": {
+      "gm_m3_s2": 6835099970000000.0,
+      "gm_source": "JPL NEP"
+    },
+    "Pluton": {
+      "gm_m3_s2": 869300000000.0,
+      "gm_source": "JPL PLU060"
+    },
+    "Hauméa": {
+      "gm_m3_s2": null,
+      "gm_source": null
+    },
+    "Makémaké": {
+      "gm_m3_s2": null,
+      "gm_source": null
+    },
+    "Éris": {
+      "gm_m3_s2": null,
+      "gm_source": null
+    }
+  },
+  "orbitalModel": "Two-body Kepler approximation; use Horizons/SPICE for high-precision ephemerides and perturbed orbits.",
+  "records": [
+    {
+      "id": "terre-001",
+      "name": "Lune",
+      "host": "Terre",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 398600436000000.0,
+        "centralGMSource": "JPL DE440"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 384400000,
+        "eccentricity": 0.0554,
+        "inclination_deg": 5.16,
+        "ascendingNode_deg": 125.08,
+        "argumentOfPeriapsis_deg": 318.15,
+        "meanAnomaly_deg": 135.27,
+        "period_s_jpl": 2360620.8,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "DE405/LE405"
+      },
+      "calculated": {
+        "period_s_kepler": 2371843.621881708,
+        "periapsis_m": 363104240.0,
+        "apoapsis_m": 405695759.99999994,
+        "meanMotion_rad_s": 2.6490723288893746e-06
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "mars-001",
+      "name": "Phobos",
+      "host": "Mars",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 42828373620000.0,
+        "centralGMSource": "JPL MAR099/MAR097"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 9375000,
+        "eccentricity": 0.015,
+        "inclination_deg": 1.1,
+        "ascendingNode_deg": 169.2,
+        "argumentOfPeriapsis_deg": 216.3,
+        "meanAnomaly_deg": 189.7,
+        "period_s_jpl": 27535.68,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "MAR099"
+      },
+      "calculated": {
+        "period_s_kepler": 27559.47826805414,
+        "periapsis_m": 9234375.0,
+        "apoapsis_m": 9515625.0,
+        "meanMotion_rad_s": 0.00022798636628991654
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "mars-002",
+      "name": "Déimos",
+      "host": "Mars",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 42828373620000.0,
+        "centralGMSource": "JPL MAR099/MAR097"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23457000,
+        "eccentricity": 0.0,
+        "inclination_deg": 1.8,
+        "ascendingNode_deg": 54.3,
+        "argumentOfPeriapsis_deg": 0.0,
+        "meanAnomaly_deg": 205.0,
+        "period_s_jpl": 109080.0,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "MAR099"
+      },
+      "calculated": {
+        "period_s_kepler": 109074.3864679774,
+        "periapsis_m": 23457000.0,
+        "apoapsis_m": 23457000.0,
+        "meanMotion_rad_s": 5.760458995590349e-05
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-001",
+      "name": "Métis",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 128000000,
+        "eccentricity": 0.0,
+        "inclination_deg": 0.0,
+        "ascendingNode_deg": 0.0,
+        "argumentOfPeriapsis_deg": 0.0,
+        "meanAnomaly_deg": 166.0,
+        "period_s_jpl": 25468.905600000002,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "JUP365"
+      },
+      "calculated": {
+        "period_s_kepler": 25564.046519801574,
+        "periapsis_m": 128000000.0,
+        "apoapsis_m": 128000000.0,
+        "meanMotion_rad_s": 0.00024578211052435356
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-002",
+      "name": "Adrastée",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 129000000,
+        "eccentricity": 0.0,
+        "inclination_deg": 0.0,
+        "ascendingNode_deg": 0.0,
+        "argumentOfPeriapsis_deg": 0.0,
+        "meanAnomaly_deg": 214.5,
+        "period_s_jpl": 25769.664,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "JUP365"
+      },
+      "calculated": {
+        "period_s_kepler": 25864.209544901045,
+        "periapsis_m": 129000000.0,
+        "apoapsis_m": 129000000.0,
+        "meanMotion_rad_s": 0.0002429297248103325
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-003",
+      "name": "Amalthée",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 181400000,
+        "eccentricity": 0.003,
+        "inclination_deg": 0.4,
+        "ascendingNode_deg": 282.9,
+        "argumentOfPeriapsis_deg": 180.1,
+        "meanAnomaly_deg": 310.6,
+        "period_s_jpl": 43192.915199999996,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "JUP365"
+      },
+      "calculated": {
+        "period_s_kepler": 43129.117202953836,
+        "periapsis_m": 180855800.0,
+        "apoapsis_m": 181944199.99999997,
+        "meanMotion_rad_s": 0.000145683142031696
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-004",
+      "name": "Thébé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 221900000,
+        "eccentricity": 0.018,
+        "inclination_deg": 1.1,
+        "ascendingNode_deg": 340.4,
+        "argumentOfPeriapsis_deg": 26.6,
+        "meanAnomaly_deg": 182.1,
+        "period_s_jpl": 58415.471999999994,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "JUP365"
+      },
+      "calculated": {
+        "period_s_kepler": 58351.30832792097,
+        "periapsis_m": 217905800.0,
+        "apoapsis_m": 225894200.0,
+        "meanMotion_rad_s": 0.0001076785677515494
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-005",
+      "name": "Io",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 421800000,
+        "eccentricity": 0.004,
+        "inclination_deg": 0.0,
+        "ascendingNode_deg": 0.0,
+        "argumentOfPeriapsis_deg": 49.1,
+        "meanAnomaly_deg": 330.9,
+        "period_s_jpl": 152300.0448,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "JUP365"
+      },
+      "calculated": {
+        "period_s_kepler": 152923.59807934845,
+        "periapsis_m": 420112800.0,
+        "apoapsis_m": 423487200.0,
+        "meanMotion_rad_s": 4.1087087840552826e-05
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-006",
+      "name": "Europe",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 671100000,
+        "eccentricity": 0.009,
+        "inclination_deg": 0.5,
+        "ascendingNode_deg": 184.0,
+        "argumentOfPeriapsis_deg": 45.0,
+        "meanAnomaly_deg": 345.4,
+        "period_s_jpl": 304600.0032,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "JUP365"
+      },
+      "calculated": {
+        "period_s_kepler": 306899.02091884246,
+        "periapsis_m": 665060100.0,
+        "apoapsis_m": 677139899.9999999,
+        "meanMotion_rad_s": 2.0473135718608683e-05
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-007",
+      "name": "Ganymède",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 1070400000,
+        "eccentricity": 0.001,
+        "inclination_deg": 0.2,
+        "ascendingNode_deg": 58.5,
+        "argumentOfPeriapsis_deg": 198.3,
+        "meanAnomaly_deg": 324.8,
+        "period_s_jpl": 618242.8032,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "JUP365"
+      },
+      "calculated": {
+        "period_s_kepler": 618206.8249710154,
+        "periapsis_m": 1069329600.0,
+        "apoapsis_m": 1071470399.9999999,
+        "meanMotion_rad_s": 1.0163565094051126e-05
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-008",
+      "name": "Callisto",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 1882700000,
+        "eccentricity": 0.007,
+        "inclination_deg": 0.3,
+        "ascendingNode_deg": 309.1,
+        "argumentOfPeriapsis_deg": 43.8,
+        "meanAnomaly_deg": 87.4,
+        "period_s_jpl": 1442054.0159999998,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "Laplace",
+        "ephemeris": "JUP365"
+      },
+      "calculated": {
+        "period_s_kepler": 1442069.9551310046,
+        "periapsis_m": 1869521100.0,
+        "apoapsis_m": 1895878899.9999998,
+        "meanMotion_rad_s": 4.35705999200905e-06
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-009",
+      "name": "Thémisto",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 7397000000,
+        "eccentricity": 0.257,
+        "inclination_deg": 44.3,
+        "ascendingNode_deg": 202.7,
+        "argumentOfPeriapsis_deg": 236.3,
+        "meanAnomaly_deg": 289.1,
+        "period_s_jpl": 11229243.84,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 11230473.638550961,
+        "periapsis_m": 5495971000.0,
+        "apoapsis_m": 9298029000.0,
+        "meanMotion_rad_s": 5.594764307723613e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-010",
+      "name": "Léda",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 11145200000,
+        "eccentricity": 0.162,
+        "inclination_deg": 28.2,
+        "ascendingNode_deg": 216.9,
+        "argumentOfPeriapsis_deg": 271.3,
+        "meanAnomaly_deg": 232.6,
+        "period_s_jpl": 20764200.96,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 20770475.745712847,
+        "periapsis_m": 9339677600.0,
+        "apoapsis_m": 12950722400.0,
+        "meanMotion_rad_s": 3.025056038245284e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-011",
+      "name": "Himalia",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 11439000000,
+        "eccentricity": 0.16,
+        "inclination_deg": 28.4,
+        "ascendingNode_deg": 64.2,
+        "argumentOfPeriapsis_deg": 321.1,
+        "meanAnomaly_deg": 78.3,
+        "period_s_jpl": 21592137.599999998,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 21597164.424997073,
+        "periapsis_m": 9608760000.0,
+        "apoapsis_m": 13269240000.0,
+        "meanMotion_rad_s": 2.9092640050039524e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-012",
+      "name": "Élara",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 11710700000,
+        "eccentricity": 0.212,
+        "inclination_deg": 27.8,
+        "ascendingNode_deg": 112.8,
+        "argumentOfPeriapsis_deg": 129.9,
+        "meanAnomaly_deg": 346.9,
+        "period_s_jpl": 22367759.04,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 22371181.845489204,
+        "periapsis_m": 9228031600.0,
+        "apoapsis_m": 14193368400.0,
+        "meanMotion_rad_s": 2.808606782858229e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-013",
+      "name": "Lysithéa",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 11699100000,
+        "eccentricity": 0.117,
+        "inclination_deg": 27.7,
+        "ascendingNode_deg": 9.2,
+        "argumentOfPeriapsis_deg": 48.3,
+        "meanAnomaly_deg": 328.5,
+        "period_s_jpl": 22334702.4,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 22337950.51401836,
+        "periapsis_m": 10330305300.0,
+        "apoapsis_m": 13067894700.0,
+        "meanMotion_rad_s": 2.812785041866989e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-014",
+      "name": "Érinomé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-015",
+      "name": "Ananké",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 21029500000,
+        "eccentricity": 0.238,
+        "inclination_deg": 147.6,
+        "ascendingNode_deg": 13.7,
+        "argumentOfPeriapsis_deg": 78.8,
+        "meanAnomaly_deg": 271.7,
+        "period_s_jpl": 53836678.08,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 53834175.39833708,
+        "periapsis_m": 16024479000.0,
+        "apoapsis_m": 26034521000.0,
+        "meanMotion_rad_s": 1.1671369089780228e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-016",
+      "name": "Carmé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23139200000,
+        "eccentricity": 0.261,
+        "inclination_deg": 164.6,
+        "ascendingNode_deg": 115.5,
+        "argumentOfPeriapsis_deg": 6.5,
+        "meanAnomaly_deg": 259.5,
+        "period_s_jpl": 62145843.84,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 62135121.870252356,
+        "periapsis_m": 17099868800.0,
+        "apoapsis_m": 29178531200.000004,
+        "meanMotion_rad_s": 1.0112131622272888e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-017",
+      "name": "Pasiphaé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23463200000,
+        "eccentricity": 0.412,
+        "inclination_deg": 148.3,
+        "ascendingNode_deg": 315.7,
+        "argumentOfPeriapsis_deg": 172.8,
+        "meanAnomaly_deg": 279.3,
+        "period_s_jpl": 63454017.6,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 63444723.42820979,
+        "periapsis_m": 13796361600.000002,
+        "apoapsis_m": 33130038400.0,
+        "meanMotion_rad_s": 9.903400893991222e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-018",
+      "name": "Sinopé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23679300000,
+        "eccentricity": 0.262,
+        "inclination_deg": 157.3,
+        "ascendingNode_deg": 308.0,
+        "argumentOfPeriapsis_deg": 354.3,
+        "meanAnomaly_deg": 157.4,
+        "period_s_jpl": 64333016.64,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 64323243.31602524,
+        "periapsis_m": 17475323400.0,
+        "apoapsis_m": 29883276600.0,
+        "meanMotion_rad_s": 9.768141317610175e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-019",
+      "name": "Callirrhoé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23789400000,
+        "eccentricity": 0.29,
+        "inclination_deg": 144.9,
+        "ascendingNode_deg": 278.2,
+        "argumentOfPeriapsis_deg": 13.5,
+        "meanAnomaly_deg": 117.9,
+        "period_s_jpl": 64781942.400000006,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 64772383.38008307,
+        "periapsis_m": 16890474000.0,
+        "apoapsis_m": 30688326000.0,
+        "meanMotion_rad_s": 9.700407765312539e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-020",
+      "name": "Mégaclité",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23640100000,
+        "eccentricity": 0.421,
+        "inclination_deg": 149.9,
+        "ascendingNode_deg": 292.2,
+        "argumentOfPeriapsis_deg": 309.9,
+        "meanAnomaly_deg": 116.1,
+        "period_s_jpl": 64175457.599999994,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 64163583.1505136,
+        "periapsis_m": 13687617899.999998,
+        "apoapsis_m": 33592582100.0,
+        "meanMotion_rad_s": 9.792447676185136e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-021",
+      "name": "Taygèté",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23103400000,
+        "eccentricity": 0.257,
+        "inclination_deg": 164.7,
+        "ascendingNode_deg": 300.8,
+        "argumentOfPeriapsis_deg": 207.7,
+        "meanAnomaly_deg": 116.5,
+        "period_s_jpl": 61999922.879999995,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61990978.37661953,
+        "periapsis_m": 17165826200.0,
+        "apoapsis_m": 29040973800.000004,
+        "meanMotion_rad_s": 1.0135644688500913e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-022",
+      "name": "Chaldèné",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 22926300000,
+        "eccentricity": 0.261,
+        "inclination_deg": 164.7,
+        "ascendingNode_deg": 134.5,
+        "argumentOfPeriapsis_deg": 231.6,
+        "meanAnomaly_deg": 275.3,
+        "period_s_jpl": 61288919.99999999,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61279554.77084495,
+        "periapsis_m": 16942535700.0,
+        "apoapsis_m": 28910064300.000004,
+        "meanMotion_rad_s": 1.0253314226377091e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-023",
+      "name": "Harpalycé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 20887500000,
+        "eccentricity": 0.239,
+        "inclination_deg": 147.8,
+        "ascendingNode_deg": 35.6,
+        "argumentOfPeriapsis_deg": 104.3,
+        "meanAnomaly_deg": 255.4,
+        "period_s_jpl": 53290077.120000005,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 53289830.52263438,
+        "periapsis_m": 15895387500.0,
+        "apoapsis_m": 25879612499.999996,
+        "meanMotion_rad_s": 1.1790589772115825e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-024",
+      "name": "Kalyké",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23298000000,
+        "eccentricity": 0.261,
+        "inclination_deg": 164.7,
+        "ascendingNode_deg": 37.7,
+        "argumentOfPeriapsis_deg": 240.5,
+        "meanAnomaly_deg": 224.9,
+        "period_s_jpl": 62786940.48,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 62775850.61074853,
+        "periapsis_m": 17217222000.0,
+        "apoapsis_m": 29378778000.000004,
+        "meanMotion_rad_s": 1.0008921019867111e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-025",
+      "name": "Isonoé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 22976300000,
+        "eccentricity": 0.249,
+        "inclination_deg": 164.9,
+        "ascendingNode_deg": 134.1,
+        "argumentOfPeriapsis_deg": 131.0,
+        "meanAnomaly_deg": 116.3,
+        "period_s_jpl": 61487458.559999995,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61480131.03196169,
+        "periapsis_m": 17255201300.0,
+        "apoapsis_m": 28697398700.000004,
+        "meanMotion_rad_s": 1.0219863233396729e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-026",
+      "name": "Autonoé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23785200000,
+        "eccentricity": 0.326,
+        "inclination_deg": 150.7,
+        "ascendingNode_deg": 264.8,
+        "argumentOfPeriapsis_deg": 61.2,
+        "meanAnomaly_deg": 134.0,
+        "period_s_jpl": 64766278.08,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 64755230.8666178,
+        "periapsis_m": 16031224799.999998,
+        "apoapsis_m": 31539175200.0,
+        "meanMotion_rad_s": 9.702977231479e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-027",
+      "name": "Eurydomé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 22894500000,
+        "eccentricity": 0.287,
+        "inclination_deg": 148.9,
+        "ascendingNode_deg": 297.7,
+        "argumentOfPeriapsis_deg": 223.4,
+        "meanAnomaly_deg": 281.8,
+        "period_s_jpl": 61158836.16,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61152101.979645476,
+        "periapsis_m": 16323778500.000002,
+        "apoapsis_m": 29465221500.0,
+        "meanMotion_rad_s": 1.0274684113509211e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-028",
+      "name": "Hermippé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 21103600000,
+        "eccentricity": 0.22,
+        "inclination_deg": 150.2,
+        "ascendingNode_deg": 330.3,
+        "argumentOfPeriapsis_deg": 277.2,
+        "meanAnomaly_deg": 158.6,
+        "period_s_jpl": 54119223.36,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 54118962.794614986,
+        "periapsis_m": 16460808000.0,
+        "apoapsis_m": 25746392000.0,
+        "meanMotion_rad_s": 1.1609951452736977e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-029",
+      "name": "Spondé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23538700000,
+        "eccentricity": 0.323,
+        "inclination_deg": 149.4,
+        "ascendingNode_deg": 109.3,
+        "argumentOfPeriapsis_deg": 56.6,
+        "meanAnomaly_deg": 177.4,
+        "period_s_jpl": 63759242.88,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 63751198.755813524,
+        "periapsis_m": 15935699900.000002,
+        "apoapsis_m": 31141700100.0,
+        "meanMotion_rad_s": 9.855791624007099e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-030",
+      "name": "Calé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23047800000,
+        "eccentricity": 0.262,
+        "inclination_deg": 164.6,
+        "ascendingNode_deg": 56.7,
+        "argumentOfPeriapsis_deg": 69.2,
+        "meanAnomaly_deg": 175.9,
+        "period_s_jpl": 61777382.4,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61767334.4183852,
+        "periapsis_m": 17009276400.0,
+        "apoapsis_m": 29086323600.0,
+        "meanMotion_rad_s": 1.0172343304666522e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-031",
+      "name": "Pasithée",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 22840800000,
+        "eccentricity": 0.274,
+        "inclination_deg": 164.5,
+        "ascendingNode_deg": 318.0,
+        "argumentOfPeriapsis_deg": 207.9,
+        "meanAnomaly_deg": 237.8,
+        "period_s_jpl": 60947337.6,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 60937076.00108451,
+        "periapsis_m": 16582420800.0,
+        "apoapsis_m": 29099179200.0,
+        "meanMotion_rad_s": 1.0310939939205098e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-032",
+      "name": "Euanthé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 20822900000,
+        "eccentricity": 0.243,
+        "inclination_deg": 148.1,
+        "ascendingNode_deg": 265.2,
+        "argumentOfPeriapsis_deg": 312.4,
+        "meanAnomaly_deg": 353.5,
+        "period_s_jpl": 53043361.92,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 53042802.87776772,
+        "periapsis_m": 15762935300.0,
+        "apoapsis_m": 25882864699.999996,
+        "meanMotion_rad_s": 1.1845500173998365e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-033",
+      "name": "Orthosie",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 20897800000,
+        "eccentricity": 0.294,
+        "inclination_deg": 144.2,
+        "ascendingNode_deg": 212.4,
+        "argumentOfPeriapsis_deg": 244.7,
+        "meanAnomaly_deg": 161.1,
+        "period_s_jpl": 53329078.08,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 53329252.63502993,
+        "periapsis_m": 14753846800.0,
+        "apoapsis_m": 27041753200.0,
+        "meanMotion_rad_s": 1.1781873918578795e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-034",
+      "name": "Euporie",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 19261900000,
+        "eccentricity": 0.148,
+        "inclination_deg": 145.5,
+        "ascendingNode_deg": 63.4,
+        "argumentOfPeriapsis_deg": 109.5,
+        "meanAnomaly_deg": 56.4,
+        "period_s_jpl": 47189761.92,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 47191450.960633434,
+        "periapsis_m": 16411138800.0,
+        "apoapsis_m": 22112661200.0,
+        "meanMotion_rad_s": 1.3314244803409302e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-035",
+      "name": "Aitné",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23059400000,
+        "eccentricity": 0.273,
+        "inclination_deg": 164.5,
+        "ascendingNode_deg": 358.4,
+        "argumentOfPeriapsis_deg": 72.2,
+        "meanAnomaly_deg": 120.6,
+        "period_s_jpl": 61822621.44,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61813971.70431503,
+        "periapsis_m": 16764183800.0,
+        "apoapsis_m": 29354616200.000004,
+        "meanMotion_rad_s": 1.0164668494745789e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-036",
+      "name": "Arché",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23093200000,
+        "eccentricity": 0.263,
+        "inclination_deg": 164.5,
+        "ascendingNode_deg": 333.3,
+        "argumentOfPeriapsis_deg": 172.5,
+        "meanAnomaly_deg": 34.0,
+        "period_s_jpl": 61957923.839999996,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61949929.99081835,
+        "periapsis_m": 17019688400.0,
+        "apoapsis_m": 29166711599.999996,
+        "meanMotion_rad_s": 1.0142360625929396e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-037",
+      "name": "Eukéladé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23062400000,
+        "eccentricity": 0.274,
+        "inclination_deg": 164.7,
+        "ascendingNode_deg": 200.4,
+        "argumentOfPeriapsis_deg": 290.1,
+        "meanAnomaly_deg": 234.2,
+        "period_s_jpl": 61835339.519999996,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61826034.98088062,
+        "periapsis_m": 16743302400.0,
+        "apoapsis_m": 29381497600.0,
+        "meanMotion_rad_s": 1.0162685200696808e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-038",
+      "name": "Hélicé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 20911400000,
+        "eccentricity": 0.155,
+        "inclination_deg": 154.4,
+        "ascendingNode_deg": 94.6,
+        "argumentOfPeriapsis_deg": 305.1,
+        "meanAnomaly_deg": 45.8,
+        "period_s_jpl": 53383319.99999999,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 53381320.01699672,
+        "periapsis_m": 17670133000.0,
+        "apoapsis_m": 24152667000.0,
+        "meanMotion_rad_s": 1.1770382045964782e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-039",
+      "name": "Aoédé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23773100000,
+        "eccentricity": 0.437,
+        "inclination_deg": 155.7,
+        "ascendingNode_deg": 156.5,
+        "argumentOfPeriapsis_deg": 43.1,
+        "meanAnomaly_deg": 207.6,
+        "period_s_jpl": 64719717.12,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 64705823.75833035,
+        "periapsis_m": 13384255299.999998,
+        "apoapsis_m": 34161944700.0,
+        "meanMotion_rad_s": 9.710386086183898e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-040",
+      "name": "Hégémone",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23342600000,
+        "eccentricity": 0.357,
+        "inclination_deg": 152.5,
+        "ascendingNode_deg": 311.5,
+        "argumentOfPeriapsis_deg": 192.2,
+        "meanAnomaly_deg": 241.1,
+        "period_s_jpl": 62966099.52,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 62956197.149823345,
+        "periapsis_m": 15009291800.0,
+        "apoapsis_m": 31675908200.0,
+        "meanMotion_rad_s": 9.980249112294447e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-041",
+      "name": "Callichore",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23017100000,
+        "eccentricity": 0.253,
+        "inclination_deg": 164.7,
+        "ascendingNode_deg": 23.9,
+        "argumentOfPeriapsis_deg": 352.6,
+        "meanAnomaly_deg": 66.8,
+        "period_s_jpl": 61654443.84,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61643963.06194622,
+        "periapsis_m": 17193773700.0,
+        "apoapsis_m": 28840426300.000004,
+        "meanMotion_rad_s": 1.0192701758752261e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-042",
+      "name": "Cyllèné",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23650000000,
+        "eccentricity": 0.421,
+        "inclination_deg": 146.8,
+        "ascendingNode_deg": 253.6,
+        "argumentOfPeriapsis_deg": 174.6,
+        "meanAnomaly_deg": 153.3,
+        "period_s_jpl": 64213015.68,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 64203893.0036558,
+        "periapsis_m": 13693349999.999998,
+        "apoapsis_m": 33606650000.0,
+        "meanMotion_rad_s": 9.786299573488198e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-043",
+      "name": "Coré",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 24203300000,
+        "eccentricity": 0.338,
+        "inclination_deg": 141.7,
+        "ascendingNode_deg": 324.2,
+        "argumentOfPeriapsis_deg": 135.3,
+        "meanAnomaly_deg": 40.6,
+        "period_s_jpl": 66478138.56,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 66470128.84137075,
+        "periapsis_m": 16022584599.999998,
+        "apoapsis_m": 32384015400.0,
+        "meanMotion_rad_s": 9.452644995128933e-08
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-044",
+      "name": "Hersé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23146700000,
+        "eccentricity": 0.258,
+        "inclination_deg": 164.4,
+        "ascendingNode_deg": 299.5,
+        "argumentOfPeriapsis_deg": 344.1,
+        "meanAnomaly_deg": 123.1,
+        "period_s_jpl": 62175720.96,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 62165333.66497761,
+        "periapsis_m": 17174851400.0,
+        "apoapsis_m": 29118548600.0,
+        "meanMotion_rad_s": 1.0107217216979848e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-045",
+      "name": "Carpo",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 17039500000,
+        "eccentricity": 0.415,
+        "inclination_deg": 53.3,
+        "ascendingNode_deg": 52.1,
+        "argumentOfPeriapsis_deg": 90.5,
+        "meanAnomaly_deg": 336.6,
+        "period_s_jpl": 39260160.0,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 39264485.85494752,
+        "periapsis_m": 9968107500.0,
+        "apoapsis_m": 24110892500.0,
+        "meanMotion_rad_s": 1.6002209554942824e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-046",
+      "name": "Mnémé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 20815800000,
+        "eccentricity": 0.24,
+        "inclination_deg": 147.8,
+        "ascendingNode_deg": 0.9,
+        "argumentOfPeriapsis_deg": 50.1,
+        "meanAnomaly_deg": 236.1,
+        "period_s_jpl": 53015938.56,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 53015676.1233859,
+        "periapsis_m": 15820008000.0,
+        "apoapsis_m": 25811592000.0,
+        "meanMotion_rad_s": 1.1851561210983013e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-047",
+      "name": "Thelxinoé",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 20972300000,
+        "eccentricity": 0.229,
+        "inclination_deg": 150.7,
+        "ascendingNode_deg": 174.9,
+        "argumentOfPeriapsis_deg": 307.0,
+        "meanAnomaly_deg": 275.1,
+        "period_s_jpl": 53615157.12,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 53614682.30834879,
+        "periapsis_m": 16169643300.0,
+        "apoapsis_m": 25774956700.000004,
+        "meanMotion_rad_s": 1.1719150495089626e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-048",
+      "name": "Dia",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 12257900000,
+        "eccentricity": 0.232,
+        "inclination_deg": 29.1,
+        "ascendingNode_deg": 293.9,
+        "argumentOfPeriapsis_deg": 164.1,
+        "meanAnomaly_deg": 320.9,
+        "period_s_jpl": 23954158.080000002,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 23957348.793671448,
+        "periapsis_m": 9414067200.0,
+        "apoapsis_m": 15101732800.0,
+        "meanMotion_rad_s": 2.622654685746925e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-049",
+      "name": "Eiréné",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 23051300000,
+        "eccentricity": 0.263,
+        "inclination_deg": 164.7,
+        "ascendingNode_deg": 180.0,
+        "argumentOfPeriapsis_deg": 86.4,
+        "meanAnomaly_deg": 336.7,
+        "period_s_jpl": 61792502.400000006,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 61781404.77722559,
+        "periapsis_m": 16988808100.0,
+        "apoapsis_m": 29113791899.999996,
+        "meanMotion_rad_s": 1.0170026612110557e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-050",
+      "name": "Philophrosyne",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 22600200000,
+        "eccentricity": 0.221,
+        "inclination_deg": 146.1,
+        "ascendingNode_deg": 234.3,
+        "argumentOfPeriapsis_deg": 0.9,
+        "meanAnomaly_deg": 88.9,
+        "period_s_jpl": 59979242.88,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 59976769.29495014,
+        "periapsis_m": 17605555800.0,
+        "apoapsis_m": 27594844200.000004,
+        "meanMotion_rad_s": 1.0476031605304574e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-051",
+      "name": "Eupheme",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 20763400000,
+        "eccentricity": 0.234,
+        "inclination_deg": 147.9,
+        "ascendingNode_deg": 227.5,
+        "argumentOfPeriapsis_deg": 73.6,
+        "meanAnomaly_deg": 339.8,
+        "period_s_jpl": 52817702.400000006,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 52815616.13985646,
+        "periapsis_m": 15904764400.0,
+        "apoapsis_m": 25622035600.0,
+        "meanMotion_rad_s": 1.189645367487833e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "jupiter-052",
+      "name": "Valétudo",
+      "host": "Jupiter",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 1.266865319e+17,
+        "centralGMSource": "JPL JUP365"
+      },
+      "orbit": {
+        "semiMajorAxis_m": 18690100000,
+        "eccentricity": 0.217,
+        "inclination_deg": 34.5,
+        "ascendingNode_deg": 291.2,
+        "argumentOfPeriapsis_deg": 316.3,
+        "meanAnomaly_deg": 90.5,
+        "period_s_jpl": 45107219.519999996,
+        "epoch": "2000-01-01.5 TDB",
+        "referenceFrame": "ecliptic",
+        "ephemeris": "JUP347"
+      },
+      "calculated": {
+        "period_s_kepler": 45105768.04952192,
+        "periapsis_m": 14634348300.0,
+        "apoapsis_m": 22745851700.0,
+        "meanMotion_rad_s": 1.392989317969541e-07
+      },
+      "dataStatus": "jpl_mean_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-001",
+      "name": "Pan",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-002",
+      "name": "Daphnis",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-003",
+      "name": "Atlas",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-004",
+      "name": "Prométhée",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-005",
+      "name": "Pandore",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-006",
+      "name": "Épiméthée",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-007",
+      "name": "Janus",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-008",
+      "name": "Égéon",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-009",
+      "name": "Mimas",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-010",
+      "name": "Méthone",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-011",
+      "name": "Anthée",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-012",
+      "name": "Pallène",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-013",
+      "name": "Encelade",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-014",
+      "name": "Télesto",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-015",
+      "name": "Calypso",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-016",
+      "name": "Dioné",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-017",
+      "name": "Hélène",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-018",
+      "name": "Rhéa",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-019",
+      "name": "Titan",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-020",
+      "name": "Hypérion",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-021",
+      "name": "Japet",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-022",
+      "name": "Kiviuq",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-023",
+      "name": "Ijiraq",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-024",
+      "name": "Paaliaq",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-025",
+      "name": "Siarnaq",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-026",
+      "name": "Tarvos",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-027",
+      "name": "Mundilfari",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-028",
+      "name": "Suttungr",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-029",
+      "name": "Thrymr",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-030",
+      "name": "Ymir",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-031",
+      "name": "Phoebé",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-032",
+      "name": "Skathi",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-033",
+      "name": "Erriapo",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-034",
+      "name": "Albiorix",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-035",
+      "name": "Bebhionn",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-036",
+      "name": "Bergelmir",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-037",
+      "name": "Bestla",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-038",
+      "name": "Farbauti",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-039",
+      "name": "Fenrir",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-040",
+      "name": "Fornjot",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-041",
+      "name": "Hati",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-042",
+      "name": "Hyrrokkin",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-043",
+      "name": "Kari",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-044",
+      "name": "Loge",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-045",
+      "name": "Skoll",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-046",
+      "name": "Surtur",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-047",
+      "name": "Greip",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-048",
+      "name": "Jarnsaxa",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-049",
+      "name": "Narvi",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-050",
+      "name": "Aegir",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-051",
+      "name": "Beli",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-052",
+      "name": "Gerd",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-053",
+      "name": "Gridr",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-054",
+      "name": "Angrboda",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "saturne-055",
+      "name": "Skrymir",
+      "host": "Saturne",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 3.793120623e+16,
+        "centralGMSource": "JPL SAT441"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-001",
+      "name": "Cordélia",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-002",
+      "name": "Ophélie",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-003",
+      "name": "Bianca",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-004",
+      "name": "Cressida",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-005",
+      "name": "Desdémone",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-006",
+      "name": "Juliette",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-007",
+      "name": "Portia",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-008",
+      "name": "Rosalinde",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-009",
+      "name": "Cupidon",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-010",
+      "name": "Belinda",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-011",
+      "name": "Perdita",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-012",
+      "name": "Puck",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-013",
+      "name": "Mab",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-014",
+      "name": "Miranda",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-015",
+      "name": "Ariel",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-016",
+      "name": "Umbriel",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-017",
+      "name": "Titania",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-018",
+      "name": "Obéron",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-019",
+      "name": "Francisco",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-020",
+      "name": "Caliban",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-021",
+      "name": "Stephano",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-022",
+      "name": "Trinculo",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-023",
+      "name": "Sycorax",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-024",
+      "name": "Margaret",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-025",
+      "name": "Prospero",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-026",
+      "name": "Setebos",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "uranus-027",
+      "name": "Ferdinand",
+      "host": "Uranus",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 5793951300000000.0,
+        "centralGMSource": "JPL URA"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-001",
+      "name": "Naïade",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-002",
+      "name": "Thalassa",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-003",
+      "name": "Despina",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-004",
+      "name": "Galatée",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-005",
+      "name": "Larissa",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-006",
+      "name": "Hippocampe",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-007",
+      "name": "Protée",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-008",
+      "name": "Triton",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-009",
+      "name": "Néréide",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-010",
+      "name": "Halimède",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-011",
+      "name": "Sao",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-012",
+      "name": "Laomédie",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-013",
+      "name": "Psamathée",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "neptune-014",
+      "name": "Néso",
+      "host": "Neptune",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 6835099970000000.0,
+        "centralGMSource": "JPL NEP"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "pluton-001",
+      "name": "Charon",
+      "host": "Pluton",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "true",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 869300000000.0,
+        "centralGMSource": "JPL PLU060"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "pluton-002",
+      "name": "Nix",
+      "host": "Pluton",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 869300000000.0,
+        "centralGMSource": "JPL PLU060"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "pluton-003",
+      "name": "Hydre",
+      "host": "Pluton",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 869300000000.0,
+        "centralGMSource": "JPL PLU060"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "pluton-004",
+      "name": "Kerbéros",
+      "host": "Pluton",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 869300000000.0,
+        "centralGMSource": "JPL PLU060"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "pluton-005",
+      "name": "Styx",
+      "host": "Pluton",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": 869300000000.0,
+        "centralGMSource": "JPL PLU060"
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "haumea-001",
+      "name": "Hiʻiaka",
+      "host": "Hauméa",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": null,
+        "centralGMSource": null
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "haumea-002",
+      "name": "Namaka",
+      "host": "Hauméa",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": null,
+        "centralGMSource": null
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "makemake-001",
+      "name": "S/2015 (136472) 1 (MK 2)",
+      "host": "Makémaké",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": null,
+        "centralGMSource": null
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    },
+    {
+      "id": "eris-001",
+      "name": "Dysnomie",
+      "host": "Éris",
+      "naturalSatellite": true,
+      "heliocentricOrbit": false,
+      "observedSphericity": "neutre",
+      "perivolume": {
+        "center": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "radius_m": null,
+        "centralGM_m3_s2": null,
+        "centralGMSource": null
+      },
+      "orbit": {
+        "semiMajorAxis_m": null,
+        "eccentricity": null,
+        "inclination_deg": null,
+        "ascendingNode_deg": null,
+        "argumentOfPeriapsis_deg": null,
+        "meanAnomaly_deg": null,
+        "period_s_jpl": null,
+        "epoch": null,
+        "referenceFrame": null,
+        "ephemeris": null
+      },
+      "calculated": {
+        "period_s_kepler": null,
+        "periapsis_m": null,
+        "apoapsis_m": null,
+        "meanMotion_rad_s": null
+      },
+      "dataStatus": "missing_orbit_elements",
+      "source": "User PDF for name and observedSphericity; JPL SSD for orbit/GM when available"
+    }
+  ]
+}

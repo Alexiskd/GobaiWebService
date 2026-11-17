@@ -1,0 +1,161 @@
+﻿name,host,observedSphericity,dataStatus,semiMajorAxis_m,eccentricity,inclination_deg,ascendingNode_deg,argumentOfPeriapsis_deg,meanAnomaly_deg,period_s_jpl,period_s_kepler,periapsis_m,apoapsis_m,meanMotion_rad_s,centralGM_m3_s2,epoch,referenceFrame,ephemeris
+Lune,Terre,true,jpl_mean_elements,384400000,0.0554,5.16,125.08,318.15,135.27,2360620.8,2371843.621881708,363104240.0,405695759.99999994,2.6490723288893746e-06,398600436000000.0,2000-01-01.5 TDB,ecliptic,DE405/LE405
+Phobos,Mars,neutre,jpl_mean_elements,9375000,0.015,1.1,169.2,216.3,189.7,27535.68,27559.47826805414,9234375.0,9515625.0,0.00022798636628991654,42828373620000.0,2000-01-01.5 TDB,Laplace,MAR099
+Déimos,Mars,neutre,jpl_mean_elements,23457000,0.0,1.8,54.3,0.0,205.0,109080.0,109074.3864679774,23457000.0,23457000.0,5.760458995590349e-05,42828373620000.0,2000-01-01.5 TDB,Laplace,MAR099
+Métis,Jupiter,neutre,jpl_mean_elements,128000000,0.0,0.0,0.0,0.0,166.0,25468.905600000002,25564.046519801574,128000000.0,128000000.0,0.00024578211052435356,1.266865319e+17,2000-01-01.5 TDB,Laplace,JUP365
+Adrastée,Jupiter,neutre,jpl_mean_elements,129000000,0.0,0.0,0.0,0.0,214.5,25769.664,25864.209544901045,129000000.0,129000000.0,0.0002429297248103325,1.266865319e+17,2000-01-01.5 TDB,Laplace,JUP365
+Amalthée,Jupiter,neutre,jpl_mean_elements,181400000,0.003,0.4,282.9,180.1,310.6,43192.915199999996,43129.117202953836,180855800.0,181944199.99999997,0.000145683142031696,1.266865319e+17,2000-01-01.5 TDB,Laplace,JUP365
+Thébé,Jupiter,neutre,jpl_mean_elements,221900000,0.018,1.1,340.4,26.6,182.1,58415.471999999994,58351.30832792097,217905800.0,225894200.0,0.0001076785677515494,1.266865319e+17,2000-01-01.5 TDB,Laplace,JUP365
+Io,Jupiter,true,jpl_mean_elements,421800000,0.004,0.0,0.0,49.1,330.9,152300.0448,152923.59807934845,420112800.0,423487200.0,4.1087087840552826e-05,1.266865319e+17,2000-01-01.5 TDB,Laplace,JUP365
+Europe,Jupiter,true,jpl_mean_elements,671100000,0.009,0.5,184.0,45.0,345.4,304600.0032,306899.02091884246,665060100.0,677139899.9999999,2.0473135718608683e-05,1.266865319e+17,2000-01-01.5 TDB,Laplace,JUP365
+Ganymède,Jupiter,true,jpl_mean_elements,1070400000,0.001,0.2,58.5,198.3,324.8,618242.8032,618206.8249710154,1069329600.0,1071470399.9999999,1.0163565094051126e-05,1.266865319e+17,2000-01-01.5 TDB,Laplace,JUP365
+Callisto,Jupiter,true,jpl_mean_elements,1882700000,0.007,0.3,309.1,43.8,87.4,1442054.0159999998,1442069.9551310046,1869521100.0,1895878899.9999998,4.35705999200905e-06,1.266865319e+17,2000-01-01.5 TDB,Laplace,JUP365
+Thémisto,Jupiter,neutre,jpl_mean_elements,7397000000,0.257,44.3,202.7,236.3,289.1,11229243.84,11230473.638550961,5495971000.0,9298029000.0,5.594764307723613e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Léda,Jupiter,neutre,jpl_mean_elements,11145200000,0.162,28.2,216.9,271.3,232.6,20764200.96,20770475.745712847,9339677600.0,12950722400.0,3.025056038245284e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Himalia,Jupiter,neutre,jpl_mean_elements,11439000000,0.16,28.4,64.2,321.1,78.3,21592137.599999998,21597164.424997073,9608760000.0,13269240000.0,2.9092640050039524e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Élara,Jupiter,neutre,jpl_mean_elements,11710700000,0.212,27.8,112.8,129.9,346.9,22367759.04,22371181.845489204,9228031600.0,14193368400.0,2.808606782858229e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Lysithéa,Jupiter,neutre,jpl_mean_elements,11699100000,0.117,27.7,9.2,48.3,328.5,22334702.4,22337950.51401836,10330305300.0,13067894700.0,2.812785041866989e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Érinomé,Jupiter,neutre,missing_orbit_elements,,,,,,,,,,,,1.266865319e+17,,,
+Ananké,Jupiter,neutre,jpl_mean_elements,21029500000,0.238,147.6,13.7,78.8,271.7,53836678.08,53834175.39833708,16024479000.0,26034521000.0,1.1671369089780228e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Carmé,Jupiter,neutre,jpl_mean_elements,23139200000,0.261,164.6,115.5,6.5,259.5,62145843.84,62135121.870252356,17099868800.0,29178531200.000004,1.0112131622272888e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Pasiphaé,Jupiter,neutre,jpl_mean_elements,23463200000,0.412,148.3,315.7,172.8,279.3,63454017.6,63444723.42820979,13796361600.000002,33130038400.0,9.903400893991222e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Sinopé,Jupiter,neutre,jpl_mean_elements,23679300000,0.262,157.3,308.0,354.3,157.4,64333016.64,64323243.31602524,17475323400.0,29883276600.0,9.768141317610175e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Callirrhoé,Jupiter,neutre,jpl_mean_elements,23789400000,0.29,144.9,278.2,13.5,117.9,64781942.400000006,64772383.38008307,16890474000.0,30688326000.0,9.700407765312539e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Mégaclité,Jupiter,neutre,jpl_mean_elements,23640100000,0.421,149.9,292.2,309.9,116.1,64175457.599999994,64163583.1505136,13687617899.999998,33592582100.0,9.792447676185136e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Taygèté,Jupiter,neutre,jpl_mean_elements,23103400000,0.257,164.7,300.8,207.7,116.5,61999922.879999995,61990978.37661953,17165826200.0,29040973800.000004,1.0135644688500913e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Chaldèné,Jupiter,neutre,jpl_mean_elements,22926300000,0.261,164.7,134.5,231.6,275.3,61288919.99999999,61279554.77084495,16942535700.0,28910064300.000004,1.0253314226377091e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Harpalycé,Jupiter,neutre,jpl_mean_elements,20887500000,0.239,147.8,35.6,104.3,255.4,53290077.120000005,53289830.52263438,15895387500.0,25879612499.999996,1.1790589772115825e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Kalyké,Jupiter,neutre,jpl_mean_elements,23298000000,0.261,164.7,37.7,240.5,224.9,62786940.48,62775850.61074853,17217222000.0,29378778000.000004,1.0008921019867111e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Isonoé,Jupiter,neutre,jpl_mean_elements,22976300000,0.249,164.9,134.1,131.0,116.3,61487458.559999995,61480131.03196169,17255201300.0,28697398700.000004,1.0219863233396729e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Autonoé,Jupiter,neutre,jpl_mean_elements,23785200000,0.326,150.7,264.8,61.2,134.0,64766278.08,64755230.8666178,16031224799.999998,31539175200.0,9.702977231479e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Eurydomé,Jupiter,neutre,jpl_mean_elements,22894500000,0.287,148.9,297.7,223.4,281.8,61158836.16,61152101.979645476,16323778500.000002,29465221500.0,1.0274684113509211e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Hermippé,Jupiter,neutre,jpl_mean_elements,21103600000,0.22,150.2,330.3,277.2,158.6,54119223.36,54118962.794614986,16460808000.0,25746392000.0,1.1609951452736977e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Spondé,Jupiter,neutre,jpl_mean_elements,23538700000,0.323,149.4,109.3,56.6,177.4,63759242.88,63751198.755813524,15935699900.000002,31141700100.0,9.855791624007099e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Calé,Jupiter,neutre,jpl_mean_elements,23047800000,0.262,164.6,56.7,69.2,175.9,61777382.4,61767334.4183852,17009276400.0,29086323600.0,1.0172343304666522e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Pasithée,Jupiter,neutre,jpl_mean_elements,22840800000,0.274,164.5,318.0,207.9,237.8,60947337.6,60937076.00108451,16582420800.0,29099179200.0,1.0310939939205098e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Euanthé,Jupiter,neutre,jpl_mean_elements,20822900000,0.243,148.1,265.2,312.4,353.5,53043361.92,53042802.87776772,15762935300.0,25882864699.999996,1.1845500173998365e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Orthosie,Jupiter,neutre,jpl_mean_elements,20897800000,0.294,144.2,212.4,244.7,161.1,53329078.08,53329252.63502993,14753846800.0,27041753200.0,1.1781873918578795e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Euporie,Jupiter,neutre,jpl_mean_elements,19261900000,0.148,145.5,63.4,109.5,56.4,47189761.92,47191450.960633434,16411138800.0,22112661200.0,1.3314244803409302e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Aitné,Jupiter,neutre,jpl_mean_elements,23059400000,0.273,164.5,358.4,72.2,120.6,61822621.44,61813971.70431503,16764183800.0,29354616200.000004,1.0164668494745789e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Arché,Jupiter,neutre,jpl_mean_elements,23093200000,0.263,164.5,333.3,172.5,34.0,61957923.839999996,61949929.99081835,17019688400.0,29166711599.999996,1.0142360625929396e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Eukéladé,Jupiter,neutre,jpl_mean_elements,23062400000,0.274,164.7,200.4,290.1,234.2,61835339.519999996,61826034.98088062,16743302400.0,29381497600.0,1.0162685200696808e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Hélicé,Jupiter,neutre,jpl_mean_elements,20911400000,0.155,154.4,94.6,305.1,45.8,53383319.99999999,53381320.01699672,17670133000.0,24152667000.0,1.1770382045964782e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Aoédé,Jupiter,neutre,jpl_mean_elements,23773100000,0.437,155.7,156.5,43.1,207.6,64719717.12,64705823.75833035,13384255299.999998,34161944700.0,9.710386086183898e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Hégémone,Jupiter,neutre,jpl_mean_elements,23342600000,0.357,152.5,311.5,192.2,241.1,62966099.52,62956197.149823345,15009291800.0,31675908200.0,9.980249112294447e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Callichore,Jupiter,neutre,jpl_mean_elements,23017100000,0.253,164.7,23.9,352.6,66.8,61654443.84,61643963.06194622,17193773700.0,28840426300.000004,1.0192701758752261e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Cyllèné,Jupiter,neutre,jpl_mean_elements,23650000000,0.421,146.8,253.6,174.6,153.3,64213015.68,64203893.0036558,13693349999.999998,33606650000.0,9.786299573488198e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Coré,Jupiter,neutre,jpl_mean_elements,24203300000,0.338,141.7,324.2,135.3,40.6,66478138.56,66470128.84137075,16022584599.999998,32384015400.0,9.452644995128933e-08,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Hersé,Jupiter,neutre,jpl_mean_elements,23146700000,0.258,164.4,299.5,344.1,123.1,62175720.96,62165333.66497761,17174851400.0,29118548600.0,1.0107217216979848e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Carpo,Jupiter,neutre,jpl_mean_elements,17039500000,0.415,53.3,52.1,90.5,336.6,39260160.0,39264485.85494752,9968107500.0,24110892500.0,1.6002209554942824e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Mnémé,Jupiter,neutre,jpl_mean_elements,20815800000,0.24,147.8,0.9,50.1,236.1,53015938.56,53015676.1233859,15820008000.0,25811592000.0,1.1851561210983013e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Thelxinoé,Jupiter,neutre,jpl_mean_elements,20972300000,0.229,150.7,174.9,307.0,275.1,53615157.12,53614682.30834879,16169643300.0,25774956700.000004,1.1719150495089626e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Dia,Jupiter,neutre,jpl_mean_elements,12257900000,0.232,29.1,293.9,164.1,320.9,23954158.080000002,23957348.793671448,9414067200.0,15101732800.0,2.622654685746925e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Eiréné,Jupiter,neutre,jpl_mean_elements,23051300000,0.263,164.7,180.0,86.4,336.7,61792502.400000006,61781404.77722559,16988808100.0,29113791899.999996,1.0170026612110557e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Philophrosyne,Jupiter,neutre,jpl_mean_elements,22600200000,0.221,146.1,234.3,0.9,88.9,59979242.88,59976769.29495014,17605555800.0,27594844200.000004,1.0476031605304574e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Eupheme,Jupiter,neutre,jpl_mean_elements,20763400000,0.234,147.9,227.5,73.6,339.8,52817702.400000006,52815616.13985646,15904764400.0,25622035600.0,1.189645367487833e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Valétudo,Jupiter,neutre,jpl_mean_elements,18690100000,0.217,34.5,291.2,316.3,90.5,45107219.519999996,45105768.04952192,14634348300.0,22745851700.0,1.392989317969541e-07,1.266865319e+17,2000-01-01.5 TDB,ecliptic,JUP347
+Pan,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Daphnis,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Atlas,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Prométhée,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Pandore,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Épiméthée,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Janus,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Égéon,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Mimas,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Méthone,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Anthée,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Pallène,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Encelade,Saturne,true,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Télesto,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Calypso,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Dioné,Saturne,true,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Hélène,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Rhéa,Saturne,true,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Titan,Saturne,true,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Hypérion,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Japet,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Kiviuq,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Ijiraq,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Paaliaq,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Siarnaq,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Tarvos,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Mundilfari,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Suttungr,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Thrymr,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Ymir,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Phoebé,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Skathi,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Erriapo,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Albiorix,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Bebhionn,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Bergelmir,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Bestla,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Farbauti,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Fenrir,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Fornjot,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Hati,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Hyrrokkin,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Kari,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Loge,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Skoll,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Surtur,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Greip,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Jarnsaxa,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Narvi,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Aegir,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Beli,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Gerd,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Gridr,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Angrboda,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Skrymir,Saturne,neutre,missing_orbit_elements,,,,,,,,,,,,3.793120623e+16,,,
+Cordélia,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Ophélie,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Bianca,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Cressida,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Desdémone,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Juliette,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Portia,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Rosalinde,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Cupidon,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Belinda,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Perdita,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Puck,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Mab,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Miranda,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Ariel,Uranus,true,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Umbriel,Uranus,true,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Titania,Uranus,true,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Obéron,Uranus,true,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Francisco,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Caliban,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Stephano,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Trinculo,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Sycorax,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Margaret,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Prospero,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Setebos,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Ferdinand,Uranus,neutre,missing_orbit_elements,,,,,,,,,,,,5793951300000000.0,,,
+Naïade,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Thalassa,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Despina,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Galatée,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Larissa,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Hippocampe,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Protée,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Triton,Neptune,true,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Néréide,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Halimède,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Sao,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Laomédie,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Psamathée,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Néso,Neptune,neutre,missing_orbit_elements,,,,,,,,,,,,6835099970000000.0,,,
+Charon,Pluton,true,missing_orbit_elements,,,,,,,,,,,,869300000000.0,,,
+Nix,Pluton,neutre,missing_orbit_elements,,,,,,,,,,,,869300000000.0,,,
+Hydre,Pluton,neutre,missing_orbit_elements,,,,,,,,,,,,869300000000.0,,,
+Kerbéros,Pluton,neutre,missing_orbit_elements,,,,,,,,,,,,869300000000.0,,,
+Styx,Pluton,neutre,missing_orbit_elements,,,,,,,,,,,,869300000000.0,,,
+Hiʻiaka,Hauméa,neutre,missing_orbit_elements,,,,,,,,,,,,,,,
+Namaka,Hauméa,neutre,missing_orbit_elements,,,,,,,,,,,,,,,
+S/2015 (136472) 1 (MK 2),Makémaké,neutre,missing_orbit_elements,,,,,,,,,,,,,,,
+Dysnomie,Éris,neutre,missing_orbit_elements,,,,,,,,,,,,,,,
