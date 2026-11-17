@@ -37,8 +37,7 @@ import { WorldLabels } from './worldLabels.jsx';
 import { CityCard } from './cityCard.jsx';
 // Importe CountryLabels, les noms des pays.
 import { CountryLabels } from './countryLabels.jsx';
-// Importe eclipticOf et interpolateState, la conversion vers l'écliptique et l'interpolation d'une table de positions.
-import { eclipticOf, interpolateState } from './moonEphemeris.jsx';
+
 // Importe moonState et orbiterMetrics, l'état de la Lune et les mesures d'une sonde.
 import { moonState, orbiterMetrics } from './moonLive.jsx';
 // Importe MOON_FEATURES et FEATURE_TYPES, les lieux de la Lune et leurs types.
@@ -1017,7 +1016,7 @@ export class SolarEngine {
     this.moonGroup.add(this.moon);
 
     // Orbite géocentrique de la Lune : un mois sidéral centré sur l'instant simulé, mêmes calculs que la Lune
-    // affichée (JPL Horizons ou ELP), recalculé au fil du temps (voir moonOrbit.jsx). Repère écliptique de la scène ;
+    // affichée (modèle ELP offline), recalculé au fil du temps (voir moonOrbit.jsx). Repère écliptique de la scène ;
     // la ligne suit ensuite la Terre à chaque image.
     this.moonOrbitTrail = new MoonOrbit({ color: MOON_ORBIT_COLOR, positionAt: (ms, out) => this.moonRelAt(ms, out) });
     // La ligne de l'orbite.
@@ -1031,7 +1030,7 @@ export class SolarEngine {
     // Dernière position géocentrique : aucune.
     this.moonGeo = null;                  // dernière position géocentrique calculée
     // Table de positions du serveur : aucune.
-    this.moonTable = null;                // table Kepler du serveur (GET /ephemeris/moon), sinon théorie ELP
+
     // Source des positions : la théorie ELP.
     this.moonSource = 'ELP';
     // Quaternion de travail : inclinaison.
@@ -1068,21 +1067,7 @@ export class SolarEngine {
   // Fin de initSatellites.
   }
 
-  /** Tables JPL Horizons des satellites (GET /ephemeris/satellites). */
-  // setSatelliteEphemeris : transmet les tables de positions des satellites.
-  setSatelliteEphemeris(list) { this.satellites.setEphemeris(list); }
-
-  /** Vecteurs héliocentriques JPL Horizons (km, écliptique J2000) ; le calcul local reste le repli. */
-  setPlanetEphemeris(list) {
-    this.planetHorizonsTables = this.planetHorizonsTables || new Map();
-    for (const body of list || []) {
-      if (body?.id && Array.isArray(body.points) && body.points.length >= 2) {
-        this.planetHorizonsTables.set(body.id, body.points);
-      }
-    }
-  }
-
-  // Lune en direct : lieux (alunissages, mers, cratères), sondes en orbite (JPL Horizons), modèle 3D NASA.
+  // Lune : lieux (alunissages, mers, cratères), sondes en orbite et modèle 3D.
   initMoonLive() {
     // Parent des étiquettes : celui du conteneur, ou la page.
     const parent = this.container.parentNode || document.body;
@@ -3180,16 +3165,6 @@ export class SolarEngine {
   // setSatelliteMarkersVisible : affiche ou masque les repères des satellites.
   setSatelliteMarkersVisible(on) { this.satelliteMarkersOn = Boolean(on); }
 
-  /** Table JPL Horizons de la Lune : [{ t (ms UTC), x, y, z (km, écliptique J2000) }]. */
-  // setMoonEphemeris : reçoit la table de positions de la Lune (début).
-  setMoonEphemeris(points) {
-    // La garde si elle a au moins 4 points, sinon aucune.
-    this.moonTable = Array.isArray(points) && points.length >= 4 ? points : null;
-    // Le tracé de l'orbite est à recalculer.
-    this.moonOrbitTrail.invalidate(); // le tracé reprend les positions exactes
-  // Fin de setMoonEphemeris.
-  }
-
   // setCoastsVisible : affiche ou masque les littoraux.
   setCoastsVisible(on) { this.coastsOn = on; this.applyBorders(); }
   // setCoastsFromTiles : les littoraux du globe cèdent la place à ceux des tuiles quand le calque des rues est affiché.
@@ -3736,12 +3711,8 @@ export class SolarEngine {
   updateBodies(T, d) {
     // Pour chaque planète (début).
     this.planets.forEach((p) => {
-      // Sa position héliocentrique. Pour la Terre, la table d'éléments décrit le barycentre Terre–Lune :
-      // earthPosition y ajoute le décalage du centre de la Terre, jusqu'à 4 670 km, soit 0,73 rayon terrestre.
-      p.ecl = calculateOrbitPosition({
-        ...p.def,
-        horizonsPoints: this.planetHorizonsTables?.get(bodyId(p.def)),
-      }, this.simMs, T);
+      // Position héliocentrique calculée par le modèle offline VSOP87A / Kepler.
+      p.ecl = calculateOrbitPosition(p.def, this.simMs);
       // Sa position dans la scène.
       p.w.set(p.ecl[0] * AU_UNITS, p.ecl[1] * AU_UNITS, p.ecl[2] * AU_UNITS);
       // Sa rotation propre.
@@ -3793,15 +3764,11 @@ export class SolarEngine {
   // Lune en temps réel : position (théorie ELP abrégée) et orientation synchrone. La rotation est uniforme
   // (méridien 0 vers la position moyenne de la Terre) alors que l'orbite ne l'est pas : la face visible oscille
   // donc comme dans le ciel (libration en longitude), et l'équateur incliné de 1,54° donne la libration en latitude.
-  /** Vecteur Terre → Lune (scène, rayons terrestres) à l'instant `ms` : JPL Horizons si la table le couvre, sinon ELP. */
+  /** Vecteur Terre → Lune calculé offline par la théorie ELP. */
   // moonRelAt : le vecteur de la Terre à la Lune à un instant donné (début).
   moonRelAt(ms, out = new THREE.Vector3()) {
     // Position par la théorie, à cet instant.
     const g = moonGeocentric(centuriesTT(ms));
-    // Position exacte de la table, si elle couvre l'instant.
-    const exact = this.moonTable ? interpolateState(this.moonTable, ms) : null;
-    // Si elle existe : elle remplace la position.
-    if (exact) Object.assign(g, eclipticOf(exact));
     // La convertit vers la scène.
     return moonToScene(g, out);
   // Fin de moonRelAt.
@@ -3811,12 +3778,8 @@ export class SolarEngine {
   updateMoon(T) {
     // Position par la théorie.
     const g = moonGeocentric(T);
-    // Position exacte JPL Horizons quand la table couvre l'instant simulé ; l'orientation garde L' et Ω de la théorie.
-    const exact = this.moonTable ? interpolateState(this.moonTable, this.simMs) : null;
-    // Si elle existe : elle remplace la position.
-    if (exact) Object.assign(g, eclipticOf(exact));
-    // Note la source de la position.
-    this.moonSource = exact ? 'orbite de Kepler' : 'théorie ELP';
+    // La position est issue du modèle ELP embarqué.
+    this.moonSource = 'théorie ELP offline';
     // Garde la position géocentrique.
     this.moonGeo = g;
     // Vecteur de la Terre à la Lune.

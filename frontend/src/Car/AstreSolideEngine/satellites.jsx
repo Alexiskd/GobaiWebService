@@ -45,7 +45,7 @@ function unitCirclePoints() {
  * Satellites naturels sphériques (Jupiter à Pluton), sur le modèle de la Lune :
  *  - un groupe par satellite = repère de sa surface (longitude 0 vers la planète, Nord sur la normale de l'orbite) ;
  *    il porte la sphère de fond et les tuiles (voir tiledBodies.jsx) ;
- *  - position exacte interpolée dans la table JPL Horizons (GET /ephemeris/satellites), sinon orbite de repli ;
+ *  - position calculée localement à partir des paramètres orbitaux du catalogue ;
  *  - orbite tracée autour de la planète quand la caméra en est proche.
  * Le moteur place les groupes à chaque image (origine flottante), comme les planètes.
  */
@@ -149,7 +149,7 @@ export class SatelliteSystem {
     return id ? (this.byId.get(id) || null) : null;
   }
 
-  /** Tables JPL Horizons : [{ id, points }] (planète → satellite, km, écliptique J2000). */
+  /** Compatibilité : aucune table distante n’est nécessaire au modèle offline. */
   // setEphemeris : reçoit les tables de positions (début).
   setEphemeris(satellites) {
     // Pour chaque satellite reçu (début).
