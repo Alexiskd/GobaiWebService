@@ -1,6 +1,6 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
-import { interpolateHorizonsVector, AU_KM } from './jplHorizonsClient.jsx';
+import { OfflineOrbitEngine } from './OfflineOrbitEngine.js';
 // Importe LidarGlobe et pickEarthAt, les nuages LiDAR calés sur le globe et le point de la Terre sous un pixel.
 import { LidarGlobe, pickEarthAt } from './LidarEngine/lidarGlobe.jsx';
 // Importe LidarPoints, les dalles LiDAR en points 3D.
@@ -268,6 +268,8 @@ const MOON_PHASES = [
 export class SolarEngine {
   // Constructeur : le conteneur, les données, les étiquettes, le HUD, l'API des tuiles et les deux fonctions de changement (début).
   constructor({ container, data, labels, hud, tilesApi, onFocusChange, onTilesChange }) {
+    // Moteur orbital local : aucun accès réseau pour calculer les positions.
+    this.orbitEngine = new OfflineOrbitEngine();
     // Garde le conteneur.
     this.container = container;
     // Garde les données.
@@ -1072,15 +1074,8 @@ export class SolarEngine {
   // setSatelliteEphemeris : transmet les tables de positions des satellites.
   setSatelliteEphemeris(list) { this.satellites.setEphemeris(list); }
 
-  /** Vecteurs héliocentriques JPL Horizons (km, écliptique J2000) ; le calcul local reste le repli. */
-  setPlanetEphemeris(list) {
-    this.planetHorizonsTables = this.planetHorizonsTables || new Map();
-    for (const body of list || []) {
-      if (body?.id && Array.isArray(body.points) && body.points.length >= 2) {
-        this.planetHorizonsTables.set(body.id, body.points);
-      }
-    }
-  }
+  /** Éphémérides 100 % locales : méthode conservée pour compatibilité, les tables distantes sont ignorées. */
+  setPlanetEphemeris() { return false; }
 
   // Lune en direct : lieux (alunissages, mers, cratères), sondes en orbite (JPL Horizons), modèle 3D NASA.
   initMoonLive() {
@@ -2517,6 +2512,8 @@ export class SolarEngine {
   gpsState() {
     // Coordonnées masquées, ou cible autre que la Terre : null.
     if (!this.gpsOn || this.focus !== this.earthFocus) return null;
+    // Horloge du moteur orbital local.
+    this.orbitEngine.updateClock(this.simMs);
     // La Terre.
     const E = this.earth;
     // La caméra.
@@ -3738,13 +3735,7 @@ export class SolarEngine {
     this.planets.forEach((p) => {
       // Sa position héliocentrique. Pour la Terre, la table d'éléments décrit le barycentre Terre–Lune :
       // earthPosition y ajoute le décalage du centre de la Terre, jusqu'à 4 670 km, soit 0,73 rayon terrestre.
-      const jplPosition = interpolateHorizonsVector(
-        this.planetHorizonsTables?.get(bodyId(p.def)),
-        this.simMs,
-      );
-      p.ecl = jplPosition
-        ? [jplPosition.x / AU_KM, jplPosition.z / AU_KM, -jplPosition.y / AU_KM]
-        : (p.def.earth ? earthPosition(p.def.elements, T) : heliocentric(p.def.elements, T));
+      p.ecl = this.orbitEngine.planet(p.def, T);
       // Sa position dans la scène.
       p.w.set(p.ecl[0] * AU_UNITS, p.ecl[1] * AU_UNITS, p.ecl[2] * AU_UNITS);
       // Sa rotation propre.
@@ -3752,6 +3743,8 @@ export class SolarEngine {
     // Fin de la boucle.
     });
 
+    // Horloge du moteur orbital local.
+    this.orbitEngine.updateClock(this.simMs);
     // La Terre.
     const E = this.earth;
     // Place la Lune.
@@ -3903,6 +3896,8 @@ export class SolarEngine {
   updateCamera(dt = 0) {
     // La caméra, les planètes et le Soleil.
     const { cam, planets, sunMesh } = this;
+    // Horloge du moteur orbital local.
+    this.orbitEngine.updateClock(this.simMs);
     // La Terre.
     const E = this.earth;
 
@@ -4186,6 +4181,8 @@ export class SolarEngine {
     // Éblouissement par le Soleil.
     const glare = sunGlare(fwd.dot(toSun), halfDiag, sunRadius);
 
+    // Horloge du moteur orbital local.
+    this.orbitEngine.updateClock(this.simMs);
     // La Terre.
     const E = this.earth;
     // Son rayon.

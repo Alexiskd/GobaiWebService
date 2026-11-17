@@ -26,26 +26,7 @@ export const eclipticKmToScene = ({ x, y, z }) => [x / KM_PER_EARTH_RADIUS, z / 
  */
 // Déclare et exporte fallbackRelKm : la définition du satellite, l'instant en millisecondes et le pôle de la planète (aucun par défaut).
 export function fallbackRelKm(def, ms, pole = null) {
-  // Angle parcouru depuis J2000 : un tour par période.
-  const angle = (2 * Math.PI * (ms - J2000_MS)) / (def.periodDays * DAY_MS);
-  // Les deux coordonnées du point sur le cercle de rayon aKm.
-  const c = Math.cos(angle) * def.aKm, s = Math.sin(angle) * def.aKm;
-  // Sans pôle : cercle dans le plan de l'écliptique.
-  if (!pole) return { x: c, y: s, z: 0 };
-  // Base du plan équatorial dans la scène, puis retour à l'écliptique : scène (x, y, z) = écliptique (x, z, −y).
-  // Pôle rendu unitaire.
-  const n = norm(pole);
-  // Axe de référence : le deuxième axe de la scène, ou le premier quand le pôle en est trop proche.
-  const ref = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-  // Premier vecteur du plan équatorial : perpendiculaire à la référence et au pôle, unitaire.
-  const u = norm(cross(ref, n));
-  // Second vecteur du plan : perpendiculaire au pôle et au premier.
-  const w = cross(n, u);
-  // Point de l'orbite dans la scène : combinaison des deux vecteurs.
-  const p = [c * u[0] + s * w[0], c * u[1] + s * w[1], c * u[2] + s * w[2]];
-  // Le renvoie dans le repère écliptique : (x, y, z) de la scène devient (x, −z, y).
-  return { x: p[0], y: -p[2], z: p[1] };
-// Fin de fallbackRelKm.
+  return calculateSatelliteRelativeKm(def, ms, pole);
 }
 
 /**
