@@ -15,7 +15,7 @@ import { xyzToLonLat } from '../MapEngine/mercator.jsx';
 
 // Jeu d'essai : manifeste et racine de la dalle LiDAR HD de Paris (LHD_FXX_0652_6863), gardés pour les tests seulement
 // (l'application lit désormais les nuages de l'IGN en direct).
-const dir = new URL('./__fixtures__/lidar-paris/', import.meta.url);
+const dir = new URL('../fixtures/lidar-paris/', import.meta.url);
 // Son manifeste.
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', dir), 'utf8'));
 // L'arbre des nœuds construit à partir du manifeste.

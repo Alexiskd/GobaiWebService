@@ -15,7 +15,8 @@ test('LODManager réutilise les niveaux existants et planifie les tuiles avec un
   assert.equal(result.byId.get('earth'), LOD.TILES);
   assert.equal(result.byId.get('jupiter'), LOD.POINT);
   assert.equal(result.byId.get('venus'), LOD.CULLED);
-  assert.deepEqual([...result.tiled], ['earth']);
+  // Budget de 1 : l'astre visé d'abord, plus un dépassement servi à tour de rôle (mars, au premier tour).
+  assert.deepEqual([...result.tiled], ['earth', 'mars']);
 });
 
 test('LODManager applique l hystérésis des satellites', () => {

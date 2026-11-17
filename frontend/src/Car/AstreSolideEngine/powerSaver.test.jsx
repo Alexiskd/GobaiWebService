@@ -210,8 +210,8 @@ test('rythme visé : 20 images par seconde au repos sur téléphone et en mode �
   assert.equal(targetFrameMs(HANDHELD_PROFILE), TARGET_FRAME_MS);                       // téléphone, en mouvement : 50
   // Téléphone au repos : la durée de repos.
   assert.equal(targetFrameMs(HANDHELD_PROFILE, { idle: true }), IDLE_FRAME_MS);         // téléphone au repos : 20
-  // Ordinateur au repos : la durée commune.
-  assert.equal(targetFrameMs(DESKTOP_PROFILE, { idle: true }), TARGET_FRAME_MS);        // ordinateur : jamais ralenti seul, plafonné à 50
+  // Ordinateur au repos : jamais ralenti seul, aucune limite logicielle.
+  assert.equal(targetFrameMs(DESKTOP_PROFILE, { idle: true }), 0);
   // Ordinateur en mode économie : la durée de repos.
   assert.equal(targetFrameMs(DESKTOP_PROFILE, { saving: true }), IDLE_FRAME_MS);        // mode économie : partout
   // Mode économie et scène recouverte : la durée sous l'écran de chargement.
