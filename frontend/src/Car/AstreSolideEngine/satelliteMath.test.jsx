@@ -61,35 +61,27 @@ test('orbite de repli dans le plan équatorial de la planète', () => {
 // Fin du test.
 });
 
-// Test : le choix entre la table Horizons et le repli.
-test('état : table Horizons utilisée quand elle couvre l’instant, sinon repli', () => {
-  // Instant de départ de la table : le 9 novembre 2026 à 0 h UTC.
+// Test : l'état par propagation képlérienne, sans table Horizons.
+test('état : propagation képlérienne, la table Horizons n’est plus utilisée', () => {
+  // Instant de départ : le 9 novembre 2026 à 0 h UTC.
   const t0 = Date.UTC(2026, 10, 9);
-  // Vitesse angulaire d'Io, en radians par milliseconde.
-  const w = (2 * Math.PI) / (IO.periodDays * 864e5);
-  // Table d'essai de douze points (début).
-  const points = Array.from({ length: 12 }, (_, i) => {
-    // Instant du point : un toutes les vingt minutes.
-    const t = t0 + i * 20 * 60_000;
-    // Le point : sur un cercle du rayon d'Io, à 1000 km au-dessus du plan.
-    return { t, x: IO.aKm * Math.cos(w * t), y: IO.aKm * Math.sin(w * t), z: 1000 };
-  // Fin de la table.
-  });
-  // État demandé 67 minutes après le départ, entre deux points de la table.
-  const st = satelliteState(IO, points, t0 + 3 * 20 * 60_000 + 7 * 60_000);
-  // La table couvre cet instant : exact vaut vrai.
-  assert.equal(st.exact, true);
-  // La distance interpolée vaut celle des points de la table, à 5 km près.
-  near(relDistanceKm(st.rel), Math.hypot(IO.aKm, 1000), 5, 'distance interpolée');
+  // Table historique, désormais ignorée par le solveur képlérien.
+  const points = [];
+  // État demandé 67 minutes après le départ.
+  const st = satelliteState(IO, points, t0 + 67 * 60_000);
+  // Le solveur képlérien ne lit pas de table : exact vaut faux.
+  assert.equal(st.exact, false);
+  // La distance vaut le demi-grand axe, à 1e-3 km près.
+  near(relDistanceKm(st.rel), IO.aKm, 1e-3, 'distance');
   // Vitesse ≈ 2πa/P (≈ 17,3 km/s pour Io), en rayons terrestres par seconde.
   // La longueur de la vitesse, reconvertie en km/s, vaut 2πa/P, à 0,05 km/s près.
   near(len(st.vel) * 6371, (2 * Math.PI * IO.aKm) / (IO.periodDays * 86400), 0.05, 'vitesse');
-  // État demandé dix jours après le départ, hors de la table.
+  // État demandé dix jours après le départ : la propagation continue, même distance.
   const out = satelliteState(IO, points, t0 + 10 * 864e5);
-  // exact vaut faux.
+  // exact vaut toujours faux.
   assert.equal(out.exact, false);
-  // La distance est celle de l'orbite de repli, à 1e-3 km près.
-  near(relDistanceKm(out.rel), IO.aKm, 1e-3, 'repli');
+  // La distance reste celle de l'orbite, à 1e-3 km près.
+  near(relDistanceKm(out.rel), IO.aKm, 1e-3, 'long terme');
 // Fin du test.
 });
 
