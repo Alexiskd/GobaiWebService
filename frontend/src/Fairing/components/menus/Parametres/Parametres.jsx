@@ -19,17 +19,17 @@ const tabs = [
   { value: 'astres', label: 'Astres' },
 ];
 
-function PerformanceSetting({ visible, onChange }) {
+function PerformanceSetting({ visible, onChange, label = 'Moniteur de performance', hint = 'Mesure CPU, GPU et FPS' }) {
   return (
     <Box sx={{ px: 1.5, py: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={600}>Moniteur de performance</Typography>
-        <Typography variant="caption" color="text.secondary">Mesure CPU, GPU et FPS</Typography>
+        <Typography variant="body2" fontWeight={600}>{label}</Typography>
+        <Typography variant="caption" color="text.secondary">{hint}</Typography>
       </Box>
       <FormControlLabel
         sx={{ m: 0 }}
         label=""
-        control={<Switch size="small" checked={Boolean(visible)} onChange={(event) => onChange?.(event.target.checked)} inputProps={{ 'aria-label': 'Afficher le moniteur de performance' }} />}
+        control={<Switch size="small" checked={Boolean(visible)} onChange={(event) => onChange?.(event.target.checked)} inputProps={{ 'aria-label': label }} />}
       />
     </Box>
   );
@@ -38,7 +38,8 @@ function PerformanceSetting({ visible, onChange }) {
 export function Parametres({
   open, onClose, bodies, onBodyShown, focus, onSelect, kinds, onKind,
   orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky,
-  onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange, engineRef,
+  onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange,
+  keepTrackObjectsVisible = true, onKeepTrackObjectsVisibleChange, engineRef,
 }) {
   const { compact } = useViewport();
   const [tab, setTab] = useState('general');
@@ -82,6 +83,12 @@ export function Parametres({
           {tab === 'affichage' && (
             <Stack spacing={1.5}>
               <Reperes orbits={orbits} onOrbits={onOrbits} markers={markers} onMarkers={onMarkers} satellites={satellites} onSatellites={onSatellites} sky={sky} onSky={onSky} />
+              <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden', bgcolor: 'background.paper' }}>
+                <PerformanceSetting visible={keepTrackObjectsVisible} onChange={onKeepTrackObjectsVisibleChange} label="Objets trackés — KeepTrack" hint="Afficher les étiquettes et activer les pistes des objets ajoutés par Gobai" />
+                <Box sx={{ px: 1.5, pb: 1.25, mt: -1 }}>
+                  <Typography variant="caption" color="text.secondary">KeepTrack · étiquettes de tous les objets du catalogue et pistes des objets fournis par l’hôte</Typography>
+                </Box>
+              </Box>
               <AstresAffiches kinds={kinds} onKind={onKind} />
             </Stack>
           )}
