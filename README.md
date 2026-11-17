@@ -1,66 +1,46 @@
-# Gobai Space — application Rust déployable sur Render
+# Gobai Space — édition 100 % frontend / Render Static Site
 
-L'application est désormais servie par un **serveur web écrit en Rust** (Axum) : ce serveur publie le frontend React/Vite compilé et expose une API d'éphémérides képlériennes portée en Rust depuis `frontend/src/Car/SystemeEngine/data/astronomy/ephemeris/kepler-orbits.ts`.
-
-## Structure
-
-```text
-server/                 Application Rust (Axum)
-├── src/main.rs         Routes HTTP, service statique SPA, API JSON
-├── src/kepler.rs       Moteur képlérien (équation de Kepler, rotations, écliptique J2000)
-├── src/catalog.rs      Catalogue des 43 astres (9 planètes + 34 satellites)
-└── data/laplace-poles.json  Pôles de Laplace et pôles UAI (structure JSON)
-frontend/               Frontend React/Vite inchangé (Three.js, MUI, moteurs 3D)
-Dockerfile              Build multi-étapes : Node 22 (frontend) → Rust (serveur) → image minimale
-render.yaml             Blueprint Render (runtime docker)
-```
-
-## API
-
-| Route | Description |
-|---|---|
-| `GET /api/health` | Sonde de santé (health check Render). |
-| `GET /api/v1/astres` | Catalogue complet : éléments képlériens, pôles de Laplace, sources JPL. |
-| `GET /api/v1/poles` | Pôles de Laplace et pôles UAI en degrés ICRF J2000 (`server/data/laplace-poles.json`). |
-| `GET /api/v1/positions?ids=earth,io&t=<ms>` | Positions écliptiques J2000 (UA ou km) ; `t` par défaut : maintenant. |
-| `GET /api/v1/periodes` | Périodes orbitales en jours. |
-| `GET /api/v1/table?id=earth&fromMs=<ms>&toMs=<ms>&stepMinutes=<min>` | Table de positions au pas régulier. |
-| Toute autre route | Fallback SPA vers `index.html` (équivalent de `frontend/public/_redirects`). |
+Cette archive contient uniquement le frontend React/Vite et ses ressources. Le dossier `backend/`, les services NestJS et la migration PostgreSQL ont été retirés. Aucun serveur applicatif n'est nécessaire pour publier les fichiers compilés.
 
 ## Configuration Render
 
-Le fichier `render.yaml` décrit un service `web` avec `runtime: docker` :
+Le fichier `render.yaml` décrit un service `web` avec `runtime: static`.
 
 | Paramètre Render | Valeur |
 |---|---|
-| Type | Web Service (Docker) |
-| Dockerfile Path | `./Dockerfile` |
-| Docker Context | `.` |
-| Health Check Path | `/api/health` |
-| Port | `PORT` (vaut 10000 par défaut, lu par le serveur) |
+| Type | Static Site |
+| Root Directory | vide (racine du dépôt) |
+| Build Command | `npm ci --prefix frontend && npm run build --prefix frontend` |
+| Publish Directory | `frontend/dist` |
 | Auto-Deploy | désactivé (`autoDeploy: false`) |
+| Start Command | aucun |
 
-Dans Render, créer un **New + → Web Service**, connecter le dépôt et reprendre ces valeurs si le Blueprint n'est pas utilisé. Aucune variable secrète n'est requise.
+Dans Render, créer un **New + → Static Site**, connecter le dépôt et reprendre ces valeurs si le Blueprint n'est pas utilisé. Aucun `DATABASE_URL`, port ou variable secrète n'est requis pour servir le frontend statique.
 
 ## Commandes locales
 
 ```bash
-npm ci --prefix frontend && npm run build --prefix frontend   # build du frontend (frontend/dist)
-cargo test --manifest-path server/Cargo.toml                  # tests Rust (11 tests)
-cargo run --release --manifest-path server/Cargo.toml         # serveur sur http://localhost:8080
-docker build -t gobai-server . && docker run -p 10000:10000 gobai-server   # image de production
+npm ci --prefix frontend
+npm run dev
+npm run build
+npm run preview
+npm test
 ```
 
-Par défaut le serveur sert `../frontend/dist` (variable `GOBAI_STATIC_DIR` pour la surcharger).
+Le build sort dans `frontend/dist`. Le fichier `frontend/public/_redirects` contient `/* /index.html 200` pour le fallback des routes React.
 
-## Validation scientifique
+## Fonctionnalités autonomes
 
-Les tests Rust vérifient la convergence de l'équation de Kepler, la période sidérale terrestre (~365,26 j), la période d'Io (~1,77 j), la distance Terre–Soleil à J2000 (~0,9833 UA, proche du périhélie) et la cohérence des pôles de Laplace entre le catalogue Rust et `laplace-poles.json`.
+Les composants React, MUI, le moteur 3D Three.js, les données astronomiques locales, les calculs orbitaux, le moteur stellaire/exoplanétaire, les périvolumes et leurs politiques de chargement sont conservés dans le frontend.
 
-## Limites
+Les positions de Hauméa, Makémaké et Éris sont intégrées au catalogue local et calculées par le moteur orbital Kepler côté navigateur. Le proxy Node TAP a été retiré ; les recherches stellaires distantes ne sont donc pas garanties dans cette édition statique.
 
-Le frontend reste l'interface 3D complète ; les fonctionnalités qui dépendaient d'un backend (authentification, contributions, galerie personnelle, PostgreSQL, paiements, proxys) restent absentes de cette édition. Ne jamais placer de clé privée ou secret dans une variable `VITE_*` : ces valeurs sont incorporées au JavaScript livré au navigateur.
+## Limites sans backend
+
+Supprimer le backend ne transforme pas les routes serveur en fonctionnalités statiques. Les fonctionnalités dépendant de `/api` ou `/api/v1` (authentification, contributions, galerie personnelle, PostgreSQL, paiements, assistant serveur, proxys, certaines couches, tuiles, données atmosphériques et LiDAR relayés) ne sont pas fournies par cette archive et peuvent être indisponibles sur le site statique. Les appels directs vers des fournisseurs publics restent distincts de ces routes.
+
+Ne jamais placer de clé privée, secret ou identifiant de base de données dans une variable `VITE_*` : ces valeurs sont incorporées au JavaScript livré au navigateur. Si une API tierce exige un secret ou un proxy, elle nécessite un service externe séparé.
 
 ## Déploiement manuel
 
-`autoDeploy: false` est conservé : le déploiement doit être déclenché manuellement dans Render.
+`autoDeploy: false` est conservé : le déploiement doit être déclenché manuellement dans Render. Aucun commit, push, pull request ou déploiement n'a été effectué par cette livraison.
