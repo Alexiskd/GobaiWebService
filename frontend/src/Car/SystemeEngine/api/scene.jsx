@@ -50,12 +50,6 @@ export const captureDonation = (orderId) => post(`/donations/orders/${encodeURIC
 /** Le donateur a quitté la page de paiement : elle est fermée côté Stripe. */
 // cancelDonation : abandonne un don.
 export const cancelDonation = (orderId) => post(`/donations/orders/${encodeURIComponent(orderId)}/cancel`);
-/** Assistant de la fenêtre « Claude » : { enabled, model } ; enabled = clé de l'API configurée sur le serveur. */
-// fetchAssistantConfig : la configuration de l'assistant.
-export const fetchAssistantConfig = (signal) => get('/assistant/config', { signal });
-/** Envoie la conversation [{ role: 'user' | 'assistant', content }] : { reply }. */
-// askAssistant : envoie la conversation et l'inventaire des éléments actionnables de l'écran à l'assistant.
-export const askAssistant = (messages, elements, signal) => post('/assistant/messages', { messages, elements }, { signal });
 /** Frontières et littoraux : { source, attribution, count, lines, coastlines } (polylignes [lon, lat, …]). */
 // fetchBorders : les frontières et les littoraux.
 export const fetchBorders = (signal) => get('/borders', { signal });

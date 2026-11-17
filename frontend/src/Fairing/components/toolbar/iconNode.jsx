@@ -5,7 +5,7 @@ import { iconKind } from './iconKind.js';
  * Icône d'une action de la barre d'outils, dessinée selon sa nature (voir iconKind) :
  *  - un composant d'icône MUI (ui/icons) : instancié à la taille demandée, il hérite de la couleur du bouton ;
  *  - un élément React déjà construit : rendu tel quel ;
- *  - un objet { img } : une image du dossier public, à la même taille (le logo de Claude) ;
+ *  - un objet { img } : une image du dossier public, à la même taille ;
  *  - un caractère : rendu tel quel, pour les libellés qui ne sont pas des icônes (la lettre « N »).
  */
 // Déclare et exporte iconNode : reçoit l'icône et sa taille en pixels (18 par défaut).

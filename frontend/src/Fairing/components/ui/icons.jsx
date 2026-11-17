@@ -68,6 +68,7 @@ export { default as NorthEastIcon } from '@mui/icons-material/NorthEast';
 export { default as SouthWestIcon } from '@mui/icons-material/SouthWest';
 export { default as SouthEastIcon } from '@mui/icons-material/SouthEast';
 // Étape franchie, et fermeture.
+export { default as AutoAwesomeIcon } from '@mui/icons-material/AutoAwesome';
 export { default as CheckIcon } from '@mui/icons-material/Check';
 export { default as CloseIcon } from '@mui/icons-material/Close';
 // Lecture d'une vidéo de la galerie, et arrêt d'un téléchargement.

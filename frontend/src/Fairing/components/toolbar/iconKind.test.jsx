@@ -39,8 +39,8 @@ test('reconnaît un élément React déjà construit', () => {
 
 // Test : l'image du dossier public.
 test('reconnaît une image du dossier public', () => {
-  // Le logo de Claude, tel que la barre d'outils le déclare.
-  assert.equal(iconKind({ img: '/claude-logo.png' }), 'image');
+  // Une image du dossier public, telle que la déclarerait un bouton.
+  assert.equal(iconKind({ img: '/logo.png' }), 'image');
 // Fin du test.
 });
 
