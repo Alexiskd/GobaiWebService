@@ -45,6 +45,8 @@ MOON = {
 }
 
 SATELLITES = [
+    {"id": "phobos", "nom": "Phobos", "parent": "mars", "radiusKm": 11.1, "color": (150, 140, 130), "aKm": 9_375, "periodDays": 0.31891},
+    {"id": "deimos", "nom": "Deimos", "parent": "mars", "radiusKm": 6.2, "color": (160, 150, 140), "aKm": 23_457, "periodDays": 1.263},
     {"id": "io", "nom": "Io", "parent": "jupiter", "radiusKm": 1821.49, "color": (217, 196, 92), "aKm": 421_800, "periodDays": 1.769138},
     {"id": "europa", "nom": "Europe", "parent": "jupiter", "radiusKm": 1560.8, "color": (205, 188, 163), "aKm": 671_100, "periodDays": 3.551181},
     {"id": "ganymede", "nom": "Ganymède", "parent": "jupiter", "radiusKm": 2631.2, "color": (142, 132, 118), "aKm": 1_070_400, "periodDays": 7.154553},

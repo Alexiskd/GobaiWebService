@@ -108,7 +108,7 @@ export function Plus({ actions }) {
   // close : ferme la feuille.
   const close = () => setOpen(false);
 
-  // Une action qui ouvre un menu déroulant (Claude) s'ancre au bouton ⋯ : la tuile touchée disparaît avec la feuille.
+  // Une action qui ouvre un menu déroulant (Mistral) s'ancre au bouton ⋯ : la tuile touchée disparaît avec la feuille.
   // Copie des actions dont le clic transmet le bouton ⋯ comme point d'ancrage.
   const anchored = actions.map((a) => ({ ...a, onClick: () => a.onClick?.({ currentTarget: button.current }) }));
   // Blocs d'actions, dans l'ordre.

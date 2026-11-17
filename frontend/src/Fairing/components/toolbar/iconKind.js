@@ -12,7 +12,7 @@
  * Les quatre natures reconnues :
  *  - `composant` : une fonction, une classe, ou un objet React (`memo`, `forwardRef`, `lazy`) — à instancier ;
  *  - `element`   : un élément React déjà construit — à rendre tel quel ;
- *  - `image`     : un objet `{ img }`, une image du dossier public (le logo de Claude) ;
+ *  - `image`     : un objet `{ img }`, une image du dossier public ;
  *  - `texte`     : tout le reste, rendu tel quel (la lettre « N » de la navball, par exemple).
  */
 

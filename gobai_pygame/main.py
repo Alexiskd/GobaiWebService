@@ -26,11 +26,11 @@ from datetime import datetime, timezone
 import pygame
 
 from gobai.data import MOON, PLANETS, SUN, SATELLITES
+from gobai.engine import build_engine
 from gobai.gravity import body_mass_kg, dominant_body, format_distance_km
 from gobai.kepler import AU_KM, EARTH_RADIUS_KM, centuries_tt, period_days
 from gobai.scale import scale_level
-from gobai.simulation import (compute_state, moon_ecliptic_km,
-                              orbit_polylines, satellite_ecliptic_km)
+from gobai.simulation import orbit_polylines
 
 EARTH_RADIUS_AU = EARTH_RADIUS_KM / AU_KM
 DAY_MS = 86_400_000.0
@@ -111,6 +111,7 @@ class Simulation:
 class App:
     def __init__(self):
         pygame.init()
+        self.engine = build_engine()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
         pygame.display.set_caption("Gobai Pygame — Système solaire")
         self.clock = pygame.time.Clock()
@@ -140,10 +141,12 @@ class App:
         return pygame.font.Font(None, size + 4)
 
     def state(self):
-        positions = compute_state(self.sim.ms)
-        return positions, None
+        positions_km = self.engine.state(self.sim.ms)
+        positions = {bid: (x / AU_KM, y / AU_KM)
+                     for bid, (x, y, _z) in positions_km.items()}
+        return positions, positions_km
 
-    def draw(self, positions, orbit_lines):
+    def draw(self, positions, positions_km, orbit_lines):
         self.screen.fill(COLOR_BG)
         cam = self.cam
         for sx, sy, r, b in self.stars:
@@ -160,6 +163,10 @@ class App:
             color = COLOR_ORBIT if pid != self.selected else (150, 165, 210)
             pygame.draw.lines(self.screen, color, False, screen_pts, 1)
 
+        cam_km = (self.cam.x * AU_KM, self.cam.y * AU_KM, 0.0)
+        active = self.engine.active_perivolume(positions_km, cam_km, self.sim.ms)
+        self._draw_perivolumes(positions, active)
+
         sun_pos = positions["sun"]
         sun_screen = cam.to_screen(*sun_pos)
         glow = 26
@@ -170,15 +177,40 @@ class App:
         pygame.draw.circle(self.screen, SUN["color"], sun_screen, 9)
 
         for p in PLANETS:
-            self._draw_body(p, positions[p["id"]], p["radius"] * EARTH_RADIUS_AU, p["color"], ring=(p["id"] == "saturn"))
+            self._draw_body(p, positions[p["id"]], p["radius"] * EARTH_RADIUS_AU, p["color"], ring=(p["id"] == "saturn"), active=active)
 
         moon = {"id": "moon", "nom": MOON["nom"], "parent": "earth"}
-        self._draw_body(moon, positions["moon"], MOON["radiusKm"] / AU_KM, MOON["color"], satellite=True)
+        self._draw_body(moon, positions["moon"], MOON["radiusKm"] / AU_KM, MOON["color"], satellite=True, active=active)
 
         for s in SATELLITES:
-            self._draw_body(s, positions[s["id"]], s["radiusKm"] / AU_KM, s["color"], satellite=True)
+            self._draw_body(s, positions[s["id"]], s["radiusKm"] / AU_KM, s["color"], satellite=True, active=active)
 
-        self._draw_hud(positions)
+        self._draw_hud(positions, active)
+
+    def _draw_perivolumes(self, positions, active):
+        cam = self.cam
+        for body in self.engine.bodies_with_children():
+            r_km = self.engine.perivolume_radius_km(body.id, self.sim.ms)
+            if r_km is None:
+                continue
+            r_px = r_km / AU_KM * cam.zoom
+            if r_px < 12 or r_px > max(cam.w, cam.h) * 1.5:
+                continue
+            sx, sy = cam.to_screen(*positions[body.id])
+            marge = r_px + 20
+            if not (-marge < sx < cam.w + marge and -marge < sy < cam.h + marge):
+                continue
+            couleur = (150, 165, 210) if body.id == active else (55, 65, 95)
+            self._dashed_circle(sx, sy, r_px, couleur)
+
+    def _dashed_circle(self, sx, sy, r_px, color, dashes=36):
+        step = 2 * math.pi / dashes
+        for i in range(dashes):
+            a0 = i * step
+            a1 = a0 + step * 0.55
+            pygame.draw.line(self.screen, color,
+                             (sx + r_px * math.cos(a0), sy + r_px * math.sin(a0)),
+                             (sx + r_px * math.cos(a1), sy + r_px * math.sin(a1)), 1)
 
     def _orbit_visible(self, pid):
         cam = self.cam
@@ -189,8 +221,10 @@ class App:
                 return s["aKm"] / AU_KM * cam.zoom > 14
         return True
 
-    def _draw_body(self, body, pos_au, radius_au, color, satellite=False, ring=False):
+    def _draw_body(self, body, pos_au, radius_au, color, satellite=False, ring=False, active=None):
         cam = self.cam
+        if satellite and not self.engine.is_satellite_visible(body.get("parent"), active):
+            return
         sx, sy = cam.to_screen(*pos_au)
         r_px = max(MIN_PX, radius_au * cam.zoom)
         margin = r_px + 40
@@ -223,7 +257,7 @@ class App:
         altitude_km = max(0.0, best["distance"] * AU_KM - best["radius_km"])
         return best, altitude_km
 
-    def _draw_hud(self, positions):
+    def _draw_hud(self, positions, active=None):
         sim, cam, sel = self.sim, self.cam, self.selected
         lines = [
             f"Date : {sim.date_str()}",
@@ -235,6 +269,8 @@ class App:
             level = scale_level(alt, earth=dom["id"] == "earth", star=dom["id"] == "sun")
             lines.append(f"Vue : {level}")
             lines.append(f"Altitude : {format_distance_km(alt)} au-dessus de {NAMES[dom['id']]}")
+        if active:
+            lines.append(f"Sous-système actif : {NAMES.get(active, active)}")
         y = 12
         for line in lines:
             self.screen.blit(self.font.render(line, True, COLOR_TEXT), (12, y))
@@ -341,11 +377,11 @@ class App:
             if abs(T - last_orbit_T) > 0.002:
                 orbit_lines = orbit_polylines(self.sim.ms, PLANET_SAMPLES)
                 last_orbit_T = T
-            positions, _ = self.state()
+            positions, positions_km = self.state()
             if self.cam.follow:
                 self.cam.x, self.cam.y = positions[self.cam.follow]
             self.bodies_screen.clear()
-            self.draw(positions, orbit_lines)
+            self.draw(positions, positions_km, orbit_lines)
             pygame.display.flip()
         pygame.quit()
 
