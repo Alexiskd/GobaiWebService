@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect et useState.
 import { useEffect, useState } from 'react';
 // Importe tilesApi, le client de l'API des tuiles, transmis au moteur.
-import { tilesApi } from '@/Car/api';
+import { tilesApi } from '@/Car/SystemeEngine/api';
 
 /**
  * Crée le moteur 3D et le détruit au démontage.

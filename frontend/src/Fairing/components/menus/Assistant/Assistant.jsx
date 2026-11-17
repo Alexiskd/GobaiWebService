@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 // Importe de MUI Box, ButtonBase, Chip, CircularProgress, Paper, Popper (bloc ancré à un élément), Stack, TextField et Typography.
 import { Box, ButtonBase, Chip, CircularProgress, InputBase, Paper, Popper, Stack, TextField, Typography } from '@mui/material';
 // Importe l'envoi d'une question à l'assistant et la lecture de sa configuration.
-import { askAssistant, fetchAssistantConfig } from '@/Car/api';
+import { askAssistant, fetchAssistantConfig } from '@/Car/SystemeEngine/api';
 // Importe le relevé des éléments actionnables de la page.
 import { collectInventory } from '@/Car/shared/lib/domInventory';
 // Importe useViewport, qui donne la catégorie d'écran.

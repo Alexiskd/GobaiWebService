@@ -1,7 +1,7 @@
 // Crochets React.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // API des contributions.
-import { fetchContributions, publishContribution, removeContribution, voteContribution } from '@/Car/api/contributions';
+import { fetchContributions, publishContribution, removeContribution, voteContribution } from '@/Car/SystemeEngine/api/contributions';
 
 /**
  * Liste des placements publiés : lecture, publication, vote et retrait.

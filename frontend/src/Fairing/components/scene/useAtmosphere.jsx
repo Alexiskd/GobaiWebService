@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useRef et useState.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe les lectures du moteur atmosphérique du serveur.
-import { aerosolForecastUrl, aerosolObservedUrl, fetchAtmosphereAerosols, fetchAtmosphereWinds, fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, fetchAtmosphereRadar, fetchAtmosphereStorms, lightningTileUrl, radarTileUrl } from '@/Car/api/scene';
+import { aerosolForecastUrl, aerosolObservedUrl, fetchAtmosphereAerosols, fetchAtmosphereWinds, fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, fetchAtmosphereRadar, fetchAtmosphereStorms, lightningTileUrl, radarTileUrl } from '@/Car/SystemeEngine/api/scene';
 // Importe l'assemblage d'une mosaïque de tuiles (le même que pour les nuages satellite).
 import { loadCloudMosaic } from '@/Car/engine/earthCloudMosaic';
 // Importe le rafraîchissement qui ne tourne pas onglet caché.

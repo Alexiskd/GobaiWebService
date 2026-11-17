@@ -13,7 +13,7 @@ import { SNOW_SCALE, radarLegend } from '@/Car/engine/atmosphere/radarMath';
 // Importe les produits d'aérosols, leurs libellés et leurs légendes.
 import { AEROSOL_LABELS, AEROSOL_PRODUCTS, aerosolLegend } from '@/Car/engine/atmosphere/aerosolMath';
 // Importe l'adresse de la légende de la prévision CAMS.
-import { aerosolLegendUrl } from '@/Car/api/scene';
+import { aerosolLegendUrl } from '@/Car/SystemeEngine/api/scene';
 // Importe les niveaux des vents, leurs libellés et l'échelle des vitesses.
 import { FLOW_LEVEL_IDS, FLOW_LEVEL_LABELS, SPEED_SCALE } from '@/Car/engine/atmosphere/flowMath';
 

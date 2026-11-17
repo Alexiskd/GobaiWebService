@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 // Importe de MUI Box, Button, Dialog, IconButton, InputBase (champ nu), les éléments de liste et Stack.
 import { Box, Button, Dialog, IconButton, InputBase, List, ListItem, ListItemButton, ListItemText, Stack } from '@mui/material';
 // Importe searchPlaces, la recherche distante de lieux.
-import { searchPlaces } from '@/Car/api';
+import { searchPlaces } from '@/Car/SystemeEngine/api';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe coords, qui met en forme des coordonnées.

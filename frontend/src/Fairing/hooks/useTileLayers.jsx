@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect (effet après rendu) et useState (état).
 import { useEffect, useState } from 'react';
 // Importe tilesApi, le client de l'API des tuiles.
-import { tilesApi } from '@/Car/api';
+import { tilesApi } from '@/Car/SystemeEngine/api';
 
 /**
  * Couches de tuiles proposées par l'API (GET /tiles/layers).

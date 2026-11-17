@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect et useState.
 import { useCallback, useEffect, useState } from 'react';
 // Importe le chargement des dalles LiDAR et resolveApiUrl, qui complète une adresse de l'API.
-import { fetchLidarTiles, resolveApiUrl } from '@/Car/api';
+import { fetchLidarTiles, resolveApiUrl } from '@/Car/SystemeEngine/api';
 
 // Clé du stockage local : affichage du nuage de points.
 const KEY = 'gobai:lidar-3d'; // « 0 » : nuage de points masqué ; sinon affiché

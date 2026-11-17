@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect et useState.
 import { useEffect, useState } from 'react';
 // Importe resolveApiUrl, qui complète une adresse de l'API.
-import { resolveApiUrl } from '@/Car/api';
+import { resolveApiUrl } from '@/Car/SystemeEngine/api';
 
 /** Calques propres à la Lune : lieux (interrupteur des Paramètres) et couleurs naturelles. */
 // Déclare et exporte le crochet useMoonLayers : reçoit le moteur.

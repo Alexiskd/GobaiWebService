@@ -1,7 +1,7 @@
 // Importe useMemo de React.
 import { useMemo } from 'react';
 // Importe searchPlaces, la recherche distante de lieux.
-import { searchPlaces } from '@/Car/api';
+import { searchPlaces } from '@/Car/SystemeEngine/api';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Car/engine/hudStore';
 // Importe les lieux des astres et bodyId, l'identifiant d'un astre.

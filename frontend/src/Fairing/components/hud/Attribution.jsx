@@ -3,7 +3,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react';
 // Importe de MUI Box, la boîte de dialogue, Link, les onglets, les éléments de tableau et Typography.
 import { Box, Button, Dialog, DialogContent, Link, Switch as MuiSwitch, Tab, Table, TableBody, TableCell, TableRow, Tabs, TextField, Typography } from '@mui/material';
 // Importe tilesApi, le client de l'API des tuiles.
-import { tilesApi } from '@/Car/api';
+import { tilesApi } from '@/Car/SystemeEngine/api';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Car/engine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.

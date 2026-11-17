@@ -3,9 +3,9 @@ import { useCallback, useEffect, useState } from 'react';
 // Importe l'identifiant du calque des rues.
 import { ROADS_LAYER_ID } from '@/Car/engine/tiles/roadSource';
 // Importe le chargement des volcans en éruption.
-import { fetchVolcanoes } from '@/Car/api/scene';
+import { fetchVolcanoes } from '@/Car/SystemeEngine/api/scene';
 // Importe l'API des tuiles, pour la liste des villes du LiDAR HD.
-import { tilesApi } from '@/Car/api/tiles';
+import { tilesApi } from '@/Car/SystemeEngine/api/tiles';
 
 // Clé du stockage local : calque LiDAR HD choisi.
 const LIDAR_KEY = 'gobai:lidar-hd'; // calque LiDAR HD choisi (identifiant de couche), gardé dans le navigateur

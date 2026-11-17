@@ -9,7 +9,7 @@ import {
 // depuis @mui/material.
 } from '@mui/material';
 // Importe les quatre appels de l'API des dons : annulation, confirmation, création et configuration.
-import { cancelDonation, captureDonation, createDonationOrder, fetchDonationConfig } from '@/Car/api';
+import { cancelDonation, captureDonation, createDonationOrder, fetchDonationConfig } from '@/Car/SystemeEngine/api';
 // Importe useViewport, le hook qui donne le format de l'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe PanelHeader, l'en-tête commun des panneaux.

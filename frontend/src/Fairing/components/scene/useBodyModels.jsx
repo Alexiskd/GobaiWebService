@@ -1,9 +1,9 @@
 // Importe de React les crochets useEffect et useRef.
 import { useEffect, useRef } from 'react';
 // Importe resolveApiUrl, qui complète une adresse de l'API.
-import { resolveApiUrl } from '@/Car/api';
+import { resolveApiUrl } from '@/Car/SystemeEngine/api';
 // Importe la lecture JSON de l'API et sa base, pour le blend de la Lune enregistré dans BP.
-import { API_BASE, get } from '@/Car/api/client';
+import { API_BASE, get } from '@/Car/SystemeEngine/api/client';
 
 /** Astres dont le ciblage déclenche le chargement du blend de la Lune (elle-même et la Terre). */
 const MOON_BLEND_NEAR = ['moon', 'earth'];

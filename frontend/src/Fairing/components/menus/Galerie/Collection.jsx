@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect, useMemo et useState.
 import { useEffect, useMemo, useState } from 'react';
 // Importe resolveApiUrl, qui complète une adresse de l'API.
-import { resolveApiUrl } from '@/Car/api/client';
+import { resolveApiUrl } from '@/Car/SystemeEngine/api/client';
 // Icônes de lecture, de téléchargement et de fermeture.
 import { CloseIcon, DownloadIcon, PlayArrowIcon } from '../../ui/icons.jsx';
 

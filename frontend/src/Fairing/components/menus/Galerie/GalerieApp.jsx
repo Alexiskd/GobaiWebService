@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useMemo, useRef et useState.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 // Importe get, la requête GET du client de l'API.
-import { get } from '@/Car/api/client';
+import { get } from '@/Car/SystemeEngine/api/client';
 // Importe les catégories, les lunes, les planètes et les astres d'une catégorie, la recherche d'images, la pleine résolution et les téléchargements.
 import { CATEGORIES, MOONS, planetsOf, bodiesOf, searchImages, fullResolution, downloadImage, downloadGalleryZip, collectPlanetImages } from './galerieData.jsx';
 // Importe la vue « Ma collection ».

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 // Importe de MUI Box, Checkbox, Chip, CircularProgress, Stack et Typography.
 import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Stack, TextField, Typography } from '@mui/material';
 // Importe la lecture du listing d'affichage des astres.
-import { fetchBodyListing } from '@/Car/api';
+import { fetchBodyListing } from '@/Car/SystemeEngine/api';
 // Importe Group, le groupe de réglages.
 import { Group } from '../../ui/Group.jsx';
 // Importe fold, qui normalise un texte (minuscules, sans accents).

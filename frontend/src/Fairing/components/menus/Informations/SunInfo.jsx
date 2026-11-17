@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 // Importe de MUI Box, Chip, Stack, les éléments de tableau et Typography.
 import { Box, Chip, Stack, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
 // Importe le chargement de l'activité solaire et celui des régions actives.
-import { fetchSolarActivity, fetchSolarRegions } from '@/Car/api/scene';
+import { fetchSolarActivity, fetchSolarRegions } from '@/Car/SystemeEngine/api/scene';
 // Importe le libellé de l'indice Kp, les prochains apsides, les prochaines saisons et les grandeurs du Soleil en direct.
 import { kpLabel, nextApsides, nextSeasons, sunLive } from '@/Car/engine/sunMath';
 

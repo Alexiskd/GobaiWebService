@@ -109,7 +109,7 @@ import { resolveAssistantAction } from './scene/assistantActions.jsx';
 // Lieux nommés de la Lune (sites d'alunissage, mers, cratères, régions) : la liste que l'assistant peut survoler.
 import { MOON_FEATURES } from '@/Car/engine/moonFeatures';
 // Importe le chargement de l'état des cartes des satellites.
-import { fetchSatelliteStatus } from '@/Car/api/scene';
+import { fetchSatelliteStatus } from '@/Car/SystemeEngine/api/scene';
 // Importe la valeur « nuit », le lecteur, l'abonnement et la bascule jour/nuit.
 import { NIGHT, getDayNight, subscribeDayNight, toggleDayNight } from '@/Car/shared/lib/dayNight';
 // Importe l'enrobage qui anime le changement de thème.

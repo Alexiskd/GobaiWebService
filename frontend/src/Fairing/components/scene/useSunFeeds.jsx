@@ -1,7 +1,7 @@
 // Importe de React le crochet useEffect.
 import { useEffect } from 'react';
 // Importe le chargement des régions actives du Soleil.
-import { fetchSolarRegions } from '@/Car/api/scene';
+import { fetchSolarRegions } from '@/Car/SystemeEngine/api/scene';
 
 /** Délai entre deux lectures des régions actives, en millisecondes : 15 minutes, comme le cache du serveur. */
 // Déclare REGIONS_REFRESH_MS.

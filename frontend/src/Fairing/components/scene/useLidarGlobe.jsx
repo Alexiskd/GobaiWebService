@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect et useRef.
 import { useCallback, useEffect, useRef } from 'react';
 // Importe fetchPointClouds, qui charge le catalogue des nuages de points.
-import { fetchPointClouds } from '@/Car/api';
+import { fetchPointClouds } from '@/Car/SystemeEngine/api';
 
 // Nuages LiDAR calés par GPS, affichés sur le globe dès le démarrage. `update(item)` remplace un nuage
 // (après une nouvelle position validée) sans recharger tout le catalogue.

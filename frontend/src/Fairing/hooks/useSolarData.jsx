@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect et useState.
 import { useCallback, useEffect, useState } from 'react';
 // Importe fetchSceneData, qui charge les données de la scène depuis l'API.
-import { fetchSceneData } from '@/Car/api';
+import { fetchSceneData } from '@/Car/SystemeEngine/api';
 
 /** Charge les données de la scène depuis l'API. status : 'loading' | 'ready' | 'error'. */
 // Déclare et exporte le crochet useSolarData.
