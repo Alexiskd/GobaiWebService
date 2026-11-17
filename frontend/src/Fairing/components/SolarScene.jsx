@@ -304,8 +304,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const camera = useCameraToggles(engine, defaultVisibility());
   const { setBodyShown, setKind } = camera;
   // Aller à un astre enlevé (recherche) : on le remet d'abord, puis on s'y téléporte une fois le moteur à jour.
-  // Extrait les fonctions d'affichage d'un astre et d'une famille.
-  const { setBodyShown, setKind } = camera;
   // revealAndFocus : remet un astre enlevé, puis s'y rend ; début de la fonction mémorisée.
   const revealAndFocus = useCallback((index) => {
     // Cherche l'astre par son indice.
