@@ -5,7 +5,7 @@ import { Box, Paper, Typography } from '@mui/material';
 // Importe la valeur « nuit », le lecteur et l'abonnement du réglage jour/nuit.
 import { NIGHT, getDayNight, subscribeDayNight } from '@/Car/shared/lib/dayNight';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe le crochet de déplacement des panneaux.
 import { useHudDraggable } from '@/Fairing/hooks/useHudDraggable';
 // Importe useViewport, qui donne la catégorie d'écran.

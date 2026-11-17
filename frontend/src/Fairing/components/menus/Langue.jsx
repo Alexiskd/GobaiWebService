@@ -13,7 +13,7 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe MQ, les requêtes média (écran tactile : onglets de 44 px).
 import { MQ } from '@/Fairing/theme/mediaQueries';
 // Importe les langues d'un pays, les types de langue et la recherche de langues.
-import { countryLanguages, LANGUAGE_TYPES, searchLanguages } from '@/Car/i18n/i18nMath';
+import { countryLanguages, LANGUAGE_TYPES, searchLanguages } from '@/Car/shared/i18n/i18nMath';
 // Importe l'en-tête commun des fenêtres.
 import { PanelHeader } from '../ui/PanelHeader.jsx';
 

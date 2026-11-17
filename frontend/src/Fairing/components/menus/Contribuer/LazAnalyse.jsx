@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 // Éléments d'interface.
 import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
 // Lecture de l'en-tête du fichier LAS/LAZ, dans le navigateur.
-import { inspectLasFile } from '@/Car/contributions/lasHeader';
+import { inspectLasFile } from '@/Car/SystemeEngine/contributions/lasHeader';
 // Mises en forme.
 import { formatBytes, formatCount } from './format.jsx';
 

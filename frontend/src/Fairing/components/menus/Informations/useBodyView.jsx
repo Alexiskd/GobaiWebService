@@ -3,11 +3,11 @@ import { useMemo } from 'react';
 // Importe searchPlaces, la recherche distante de lieux.
 import { searchPlaces } from '@/Car/SystemeEngine/api';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe les lieux des astres et bodyId, l'identifiant d'un astre.
-import { BODY_PLACES, bodyId } from '@/Car/engine/bodyPlaces';
+import { BODY_PLACES, bodyId } from '@/Car/AstreSolideEngine/bodyPlaces';
 // Importe les types et la liste des lieux lunaires.
-import { FEATURE_TYPES, MOON_FEATURES } from '@/Car/engine/moonFeatures';
+import { FEATURE_TYPES, MOON_FEATURES } from '@/Car/AstreSolideEngine/moonFeatures';
 // Importe les caractéristiques de la Lune, d'une planète et d'un satellite.
 import { moonFacts, planetFacts, satelliteFacts } from './bodyFacts.jsx';
 

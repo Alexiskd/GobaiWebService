@@ -7,7 +7,7 @@ import { coords } from '@/Car/shared/lib/format';
 // Importe la largeur de vue d'une adresse et fold, qui normalise un texte pour la comparaison.
 import { ADDRESS_VIEW_M, fold } from '@/Car/shared/lib/search';
 // Importe altitudeForView, qui donne l'altitude correspondant à une largeur de vue.
-import { altitudeForView } from '@/Car/engine/gps';
+import { altitudeForView } from '@/Car/AstreSolideEngine/gps';
 
 /**
  * Recherche dans les lieux d’un corps (villes, lieux lunaires, repères planétaires).

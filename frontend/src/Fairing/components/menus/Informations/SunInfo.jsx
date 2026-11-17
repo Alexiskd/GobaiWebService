@@ -5,7 +5,7 @@ import { Box, Chip, Stack, Table, TableBody, TableCell, TableRow, Typography } f
 // Importe le chargement de l'activité solaire et celui des régions actives.
 import { fetchSolarActivity, fetchSolarRegions } from '@/Car/SystemeEngine/api/scene';
 // Importe le libellé de l'indice Kp, les prochains apsides, les prochaines saisons et les grandeurs du Soleil en direct.
-import { kpLabel, nextApsides, nextSeasons, sunLive } from '@/Car/engine/sunMath';
+import { kpLabel, nextApsides, nextSeasons, sunLive } from '@/Car/EruptionEngine/sunMath';
 
 // Carte d'identité (valeurs de référence UAI / NASA).
 // Carte d'identité du Soleil : libellé, puis valeur (début du tableau).

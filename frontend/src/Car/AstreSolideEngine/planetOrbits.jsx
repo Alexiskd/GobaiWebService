@@ -20,7 +20,7 @@
  * Les fonctions dont le nom finit par `Ecliptic` rendent la première ; les autres rendent celle de la scène.
  */
 
-import { vsop87aState, osculatingOrbitPositions } from '../data/astronomy/ephemeris/vsop87a';
+import { vsop87aState, osculatingOrbitPositions } from '../SystemeEngine/data/astronomy/ephemeris/vsop87a';
 
 /** Degrés → radians. */
 export const D = Math.PI / 180;

@@ -5,9 +5,9 @@ import { keyframes } from '@emotion/react';
 // Importe de MUI Box (conteneur), LinearProgress (barre de progression), Paper et Typography.
 import { Box, LinearProgress, Paper, Typography } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe la table des astres cartographiés, qui donne la clé du HUD de chaque astre.
-import { TILED_BODY_BY_ID } from '@/Car/engine/tiledBodies';
+import { TILED_BODY_BY_ID } from '@/Car/AstreSolideEngine/tiledBodies';
 // Importe l'état de repos, le calcul de l'avancement et les deux délais d'affichage.
 import { HIDE_DELAY_MS, IDLE, SHOW_DELAY_MS, tileLoadStep } from '@/Car/shared/lib/tileLoading';
 // Importe useViewport, qui donne la catégorie d'écran.

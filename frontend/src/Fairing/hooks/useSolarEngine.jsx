@@ -29,7 +29,7 @@ export function useSolarEngine({ containerRef, data, labels, hud, engineRef }) {
       try {
         // Chargé à la demande : three.js reste hors du bundle initial.
         // Importe dynamiquement le module du moteur et en extrait la classe SolarEngine.
-        const { SolarEngine } = await import('@/Car/engine/engine');
+        const { SolarEngine } = await import('@/Car/AstreSolideEngine/engine');
         // Si l'effet a été nettoyé pendant le chargement, on s'arrête là.
         if (cancelled) return;
         // Crée le moteur avec le conteneur, les données, les étiquettes, le HUD, l'API des tuiles et le rappel de changement d'astre visé.

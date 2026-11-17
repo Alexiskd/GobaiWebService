@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DWARF_PLANETS_DATA } from '../data/astronomy/data/dwarf-planets.data';
+import { DWARF_PLANETS_DATA } from '../SystemeEngine/data/astronomy/data/dwarf-planets.data';
 import { heliocentricEcliptic } from './planetOrbits.jsx';
 
 const JD_2026_11_17 = 2461361.5;

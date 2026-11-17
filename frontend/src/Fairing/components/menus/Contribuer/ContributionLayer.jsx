@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 // Bibliothèque 3D.
 import * as THREE from 'three';
 // Placement d'un point natif de relevé sur le globe, et point d'ancrage d'une emprise.
-import { lidarAnchorOrigin, lidarToGlobe } from '@/Car/engine/lidarAnchor';
+import { lidarAnchorOrigin, lidarToGlobe } from '@/Car/AstreSolideEngine/LidarEngine/lidarAnchor';
 // Teintes des états de placement.
 import { placementState } from './format.jsx';
 

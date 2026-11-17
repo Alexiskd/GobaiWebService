@@ -1,5 +1,5 @@
 // Importe la conversion longitude, latitude → point de la sphère unité.
-import { lonLatToUnit } from '../EruptionEngine/volcanoesMath.jsx';
+import { lonLatToUnit } from '../../EruptionEngine/volcanoesMath.jsx';
 // Importe le point d'arrivée d'un déplacement sur le globe.
 import { destination } from './cycloneMath.jsx';
 

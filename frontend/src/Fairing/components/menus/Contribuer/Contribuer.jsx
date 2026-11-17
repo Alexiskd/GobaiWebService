@@ -5,7 +5,7 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 // En-tête commun des fenêtres.
 import { PanelHeader } from '../../ui/PanelHeader.jsx';
 // Ce qu'attend l'API pour placer un relevé.
-import { headerPayload } from '@/Car/contributions/lasHeader';
+import { headerPayload } from '@/Car/SystemeEngine/contributions/lasHeader';
 // Compte du contributeur et liste des placements.
 import { useCompte } from '@/Fairing/hooks/useCompte';
 import { useContributions } from './useContributions.jsx';

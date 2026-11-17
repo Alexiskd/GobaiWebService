@@ -5,13 +5,13 @@ import { Box, IconButton, Typography } from '@mui/material';
 // Importe safe, la marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe bodyId, qui donne l'identifiant d'un astre.
-import { bodyId } from '@/Car/engine/bodyPlaces';
+import { bodyId } from '@/Car/AstreSolideEngine/bodyPlaces';
 // Importe les astres enlevés par défaut, la visibilité par défaut, le test de famille masquée et la famille d'une planète.
-import { defaultHiddenBodies, defaultVisibility, isKindHidden, planetKind } from '@/Car/engine/bodyKinds';
+import { defaultHiddenBodies, defaultVisibility, isKindHidden, planetKind } from '@/Car/AstreSolideEngine/bodyKinds';
 // Importe le calcul et l'affichage en console des booléens de chaque astre.
-import { bodyBooleans, logBodyBooleans } from '@/Car/engine/bodyBooleans';
+import { bodyBooleans, logBodyBooleans } from '@/Car/AstreSolideEngine/bodyBooleans';
 // Importe la création du magasin du HUD et le crochet qui le lit.
-import { createHudStore, useHud } from '@/Car/engine/hudStore';
+import { createHudStore, useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe le crochet du son des clics.
 import { useBubbleSound } from '@/Fairing/hooks/useBubbleSound';
 // Importe le crochet de la langue de l'interface.
@@ -49,7 +49,7 @@ import { Toasts } from './hud/Toasts.jsx';
 // Importe la fenêtre des sources.
 import { Attribution } from './hud/Attribution.jsx';
 // Importe l'attribution du ciel.
-import { SKY_ATTRIBUTION } from '@/Car/engine/sky/skyLayer';
+import { SKY_ATTRIBUTION } from '@/Car/StarEngine/SkyEngine/skyLayer';
 // Importe le pavé de zoom.
 import { ZoomPad } from './hud/ZoomPad.jsx';
 // Importe le message plein écran.
@@ -91,7 +91,7 @@ import { CLOUD_SOURCE_TEXT, useMapFeeds } from './scene/useMapFeeds.jsx';
 // Importe le crochet du moteur atmosphérique : incendies et cyclones en direct.
 import { useAtmosphere } from './scene/useAtmosphere.jsx';
 // Importe le réglage de la pollution lumineuse de la Terre, pour sa mention dans les sources.
-import { EARTH_NIGHT_LIGHTS } from '@/Car/engine/tiles/nightLights';
+import { EARTH_NIGHT_LIGHTS } from '@/Car/AstreSolideEngine/MapEngine/nightLights';
 // Importe le crochet des données lunaires.
 import { useMoonFeeds } from './scene/useMoonFeeds.jsx';
 // Importe le crochet des calques de la Lune.
@@ -107,7 +107,7 @@ import { useSiteAddress } from './scene/useSiteAddress.jsx';
 // Importe la traduction des actions de l'assistant.
 import { resolveAssistantAction } from './scene/assistantActions.jsx';
 // Lieux nommés de la Lune (sites d'alunissage, mers, cratères, régions) : la liste que l'assistant peut survoler.
-import { MOON_FEATURES } from '@/Car/engine/moonFeatures';
+import { MOON_FEATURES } from '@/Car/AstreSolideEngine/moonFeatures';
 // Importe le chargement de l'état des cartes des satellites.
 import { fetchSatelliteStatus } from '@/Car/SystemeEngine/api/scene';
 // Importe la valeur « nuit », le lecteur, l'abonnement et la bascule jour/nuit.

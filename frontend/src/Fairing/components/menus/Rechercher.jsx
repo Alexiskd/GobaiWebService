@@ -11,7 +11,7 @@ import { coords } from '@/Car/shared/lib/format';
 // Importe la largeur de vue d'une adresse, la normalisation de texte, le type d'un résultat et sa vignette.
 import { ADDRESS_VIEW_M, fold, placeResultType, resultIcon } from '@/Car/shared/lib/search';
 // Importe l'altitude pour une largeur de vue, la mise en forme et la lecture de coordonnées.
-import { altitudeForView, formatLatLon, parseLatLon } from '@/Car/engine/gps';
+import { altitudeForView, formatLatLon, parseLatLon } from '@/Car/AstreSolideEngine/gps';
 // Importe l'icône de fermeture.
 import { CloseIcon, HomeIcon, LocationCityIcon, MyLocationIcon, PlaceIcon, PublicIcon } from '../ui/icons.jsx';
 

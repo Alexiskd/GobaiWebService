@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect et useState.
 import { useCallback, useEffect, useState } from 'react';
 // Importe la table « toutes les familles affichées » et la liste des familles d'astres.
-import { ALL_KINDS_SHOWN, BODY_KINDS } from '@/Car/engine/bodyKinds';
+import { ALL_KINDS_SHOWN, BODY_KINDS } from '@/Car/AstreSolideEngine/bodyKinds';
 
 /** Rotation automatique, vue 3/4, repères du système solaire (orbites, points des planètes) et ciel lointain, envoyés au moteur. */
 /**

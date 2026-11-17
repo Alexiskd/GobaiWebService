@@ -1,5 +1,5 @@
 // Importe le point du globe d'une longitude et d'une latitude (même repère que les autres calques de la Terre).
-import { lonLatToUnit } from '../EruptionEngine/volcanoesMath.jsx';
+import { lonLatToUnit } from '../../EruptionEngine/volcanoesMath.jsx';
 
 // Calculs du calque des cyclones (sans three.js, donc testables seuls) : nettoyage de la liste reçue du serveur
 // (/atmosphere/cyclones), couleurs et tailles par catégorie, repère local (est, nord, haut) d'un point du globe,

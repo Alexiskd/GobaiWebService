@@ -1,5 +1,5 @@
 // Importe le point du globe d'une longitude et d'une latitude (même repère que les autres calques de la Terre).
-import { lonLatToUnit } from '../EruptionEngine/volcanoesMath.jsx';
+import { lonLatToUnit } from '../../EruptionEngine/volcanoesMath.jsx';
 
 // Calculs du calque de la foudre (sans three.js, donc testables seuls) : nettoyage des impacts reçus du serveur
 // (/atmosphere/lightning), relecture accélérée des 5 dernières minutes, tableaux envoyés au shader de lightningLayer.jsx.

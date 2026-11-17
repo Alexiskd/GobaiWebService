@@ -1,7 +1,7 @@
 // Importe de MUI Stack (pile) et Typography (texte).
 import { Stack, Typography } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 

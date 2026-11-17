@@ -41,7 +41,7 @@ export function pickMoonBlend(status) {
   return `${API_BASE}/tiles/moon-blend/${v.exaggeration}/model.glb`;
 }
 // Importe BODY_MODELS, la table des astres qui ont un modèle 3D.
-import { BODY_MODELS } from '@/Car/engine/tiledBodies';
+import { BODY_MODELS } from '@/Car/AstreSolideEngine/tiledBodies';
 
 /**
  * Modèles 3D locaux des astres irréguliers (Phobos, Deimos) : chargés la première fois que l'astre ou sa planète est

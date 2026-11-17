@@ -1,5 +1,5 @@
 // Importe buildGlobeCanvas, qui assemble la carte du globe.
-import { buildGlobeCanvas } from './TextureEngine/globeTexture.jsx';
+import { buildGlobeCanvas } from '../TextureEngine/globeTexture.jsx';
 // Importe TileSource, la source de tuiles.
 import { TileSource } from './MapEngine/tileSource.jsx';
 

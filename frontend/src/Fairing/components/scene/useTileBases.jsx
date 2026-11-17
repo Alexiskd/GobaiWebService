@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useRef et useState.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe la liste des astres tuilés et leur table par identifiant.
-import { TILED_BODIES, TILED_BODY_BY_ID } from '@/Car/engine/tiledBodies';
+import { TILED_BODIES, TILED_BODY_BY_ID } from '@/Car/AstreSolideEngine/tiledBodies';
 
 /**
  * Fond par défaut au premier chargement des calques (modèle commun, voir engine/tiledBodies.jsx) : pour chaque planète

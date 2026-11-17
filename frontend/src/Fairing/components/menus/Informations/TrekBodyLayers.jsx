@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 // Importe le chargement des couches d'un satellite.
 import { fetchSatelliteLayers } from '@/Car/SystemeEngine/api/scene';
 // Importe la table des astres tuilés par identifiant.
-import { TILED_BODY_BY_ID } from '@/Car/engine/tiledBodies';
+import { TILED_BODY_BY_ID } from '@/Car/AstreSolideEngine/tiledBodies';
 // Importe la liste des fonds de carte d'une planète.
 import { PlanetBases } from './PlanetBases.jsx';
 // Importe la ligne d'état des tuiles.

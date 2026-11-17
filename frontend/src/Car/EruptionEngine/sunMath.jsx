@@ -1,5 +1,5 @@
 // Importe D (radians par degré), centuriesTT (siècles de Temps terrestre) et earthPosition (centre de la Terre).
-import { D, centuriesTT, earthPosition } from '../planetOrbits.jsx';
+import { D, centuriesTT, earthPosition } from '../AstreSolideEngine/planetOrbits.jsx';
 
 // Le Soleil vu de la Terre, à partir de la position VSOP87A de la Terre (même état que la scène).
 

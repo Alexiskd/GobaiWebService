@@ -9,7 +9,7 @@ import { useHudDraggable } from '@/Fairing/hooks/useHudDraggable';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe la largeur du panneau, la hauteur de la bande et edge.
 import { PANEL_W, edge } from '@/Fairing/theme/layout';
 // Importe les icônes de repli et de dépliage.

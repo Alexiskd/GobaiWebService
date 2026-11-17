@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 // Importe de MUI Box, ButtonBase (bouton nu), Divider, Paper, Slider (réglette) et Tooltip.
 import { Box, ButtonBase, Divider, Paper, Slider, Tooltip } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe le crochet du pilotage en penchant le téléphone.
 import { useDeviceCompass } from '@/Fairing/hooks/useDeviceCompass';
 // Importe useViewport, qui donne la catégorie d'écran.

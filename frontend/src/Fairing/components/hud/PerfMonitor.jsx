@@ -1,7 +1,7 @@
 // Importe de MUI Box et Paper.
 import { Box, Paper } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe l'écriture des durées en secondes et des octets.

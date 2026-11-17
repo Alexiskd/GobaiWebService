@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ASTRES, MOON_KEPLER } from '../SystemeEngine/data/astronomy/data/kepler-elements.ts';
-import { ALL_SATELLITES } from '../data/astronomy/data/bodies.data';
+import { ALL_SATELLITES } from '../SystemeEngine/data/astronomy/data/bodies.data';
 import { toEcliptic } from '../SystemeEngine/data/astronomy/ephemeris/kepler-orbits.ts';
 
 test('les 34 satellites de la vue physique ont une seule entrée orbitale canonique', () => {

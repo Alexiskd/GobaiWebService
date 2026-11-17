@@ -9,7 +9,7 @@ import {
 // Fin de la liste ; module d'origine.
 } from '@/Car/shared/lib/fluxCognitif';
 // Importe scientific, qui écrit un nombre en notation scientifique.
-import { scientific } from '@/Car/engine/planetData';
+import { scientific } from '@/Car/AstreSolideEngine/planetData';
 
 // Onglet « Flux cognitif » de la fenêtre Node : la relation F(t) = P(t) × p (moteur/lib/fluxCognitif.ts), calculée
 // avec le compteur de population mondiale en direct, et sa courbe de 2024 à 2046.

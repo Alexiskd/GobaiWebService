@@ -1,13 +1,13 @@
 // Importe de React les crochets useCallback, useEffect, useMemo et useState.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 // Importe loadLanguageData, qui charge le référentiel des langues.
-import { loadLanguageData } from '@/Car/i18n/languages';
+import { loadLanguageData } from '@/Car/shared/i18n/languages';
 // Importe plusieurs fonctions et constantes du module i18nMath (début de la liste).
 import {
   // Langue du navigateur, langues d'un pays, chaîne de repli, adresse de police, écriture de droite à gauche, langue source, polices Noto.
   browserLanguage, countryLanguages, fallbackChain, fontUrl, isRtl, isSourceLanguage, NOTO_FONTS,
 // Fin de la liste ; module d'origine.
-} from '@/Car/i18n/i18nMath';
+} from '@/Car/shared/i18n/i18nMath';
 
 // Clé du stockage local où est gardé le choix de langue.
 const STORAGE_KEY = 'gobai.lang';

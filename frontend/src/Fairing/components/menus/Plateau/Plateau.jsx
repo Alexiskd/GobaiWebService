@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 // Importe de MUI Box, CircularProgress, Dialog, Stack et Typography.
 import { Box, CircularProgress, Dialog, Stack, Typography } from '@mui/material';
 // Importe buildGlobeCanvas, qui assemble la carte du globe.
-import { buildGlobeCanvas } from '@/Car/engine/globeTexture';
+import { buildGlobeCanvas } from '@/Car/TextureEngine/globeTexture';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe l'en-tête commun des fenêtres.

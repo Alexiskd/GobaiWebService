@@ -7,7 +7,7 @@ import { LiveBadge } from './LiveBadge.jsx';
 // Importe les calculs de la progression : vitesses maximales de la vidéo, avance de la barre, vitesse de fin, vitesse de lecture.
 import { VIDEO_MAX_RATE, VIDEO_MAX_RATE_HANDHELD, advanceProgress, finishRate, videoRate } from '@/Car/shared/lib/loadingProgress';
 // Importe isHandheld, qui dit si l'appareil est un appareil tenu en main.
-import { isHandheld } from '@/Car/engine/powerSaver';
+import { isHandheld } from '@/Car/AstreSolideEngine/powerSaver';
 // Importe la coche des étapes franchies.
 import { CheckIcon } from './icons.jsx';
 

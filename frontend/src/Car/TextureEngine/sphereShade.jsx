@@ -1,7 +1,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe le GLSL du modèle d'éclairage général, partagé avec les cartes, depuis surfaceLight.
-import { GENERIC_LIGHT_GLSL } from '../surfaceLight.jsx';
+import { GENERIC_LIGHT_GLSL } from '../AstreSolideEngine/surfaceLight.jsx';
 
 // Sphère de couleur unie avec le même éclairage jour/nuit que les cartes (tiles/tileShaders.jsx) : face tournée vers
 // le Soleil éclairée, face opposée dans l'ombre, et le même réglage « Ombre » (uniform `shade`, 0 = astre entièrement

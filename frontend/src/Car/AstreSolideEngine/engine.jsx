@@ -83,15 +83,15 @@ import { isKindHidden, planetKind } from './bodyKinds.jsx';
 // Importe createSaturnRings, les anneaux de Saturne.
 import { createSaturnRings } from '../AstreGazeuxEngine/saturnRings.jsx';
 // Importe createSunSurface, la surface animée du Soleil et ses éruptions.
-import { createSunSurface } from './EruptionEngine/sunSurface.jsx';
+import { createSunSurface } from '../EruptionEngine/sunSurface.jsx';
 // Importe sitesFromRegions, qui place les régions actives réelles dans le repère propre du Soleil.
-import { sitesFromRegions } from './EruptionEngine/sunSurfaceMath.jsx';
+import { sitesFromRegions } from '../EruptionEngine/sunSurfaceMath.jsx';
 // Importe VolcanoLayer, les volcans en éruption sur la Terre.
-import { VolcanoLayer } from './EruptionEngine/volcanoes.jsx';
+import { VolcanoLayer } from '../EruptionEngine/volcanoes.jsx';
 // Importe le repère atmosphérique de la Terre (incendies, cyclones ; moteur atmosphérique).
 import { AtmosphereLayers } from './AtmosphereEngine/atmosphereLayers.jsx';
 // Importe createShadedSphereMaterial, le matériau d'une sphère unie ombrée.
-import { createShadedSphereMaterial } from './TextureEngine/sphereShade.jsx';
+import { createShadedSphereMaterial } from '../TextureEngine/sphereShade.jsx';
 // Importe createAtmosphere, l'atmosphère d'une planète.
 import { createAtmosphere } from './AtmosphereEngine/atmosphere.jsx';
 // Importe underCloudFloorRadii, la hauteur du plancher sous les nuages.
@@ -99,9 +99,9 @@ import { underCloudFloorRadii } from './AtmosphereEngine/atmosphereData.jsx';
 // Importe la masse d'un astre, l'astre dominant et la mise en forme d'une distance.
 import { bodyMassKg, dominantBody, formatDistanceKm } from './gravityMath.jsx';
 // Importe createGasInterior, l'intérieur d'une géante gazeuse.
-import { createGasInterior } from '../AstreGazeuxEngine/gasInterior.jsx';
+import { createGasInterior } from '../AstreGazeuxEngine/AtmosphereEngine/gasInterior.jsx';
 // Importe cloudZoomFactor et interiorReadout, le zoom près des nuages et la lecture de l'intérieur.
-import { cloudZoomFactor, interiorReadout } from '../AstreGazeuxEngine/gasInteriorMath.jsx';
+import { cloudZoomFactor, interiorReadout } from '../AstreGazeuxEngine/AtmosphereEngine/gasInteriorMath.jsx';
 // Importe les calculs de la boussole, depuis deviceCompassMath.
 import { arrowSign, crossPole, moveOnSphere } from './deviceCompassMath.jsx';
 // Importe dragRadPerPx et dragStep, la conversion d'un glissement en rotation.

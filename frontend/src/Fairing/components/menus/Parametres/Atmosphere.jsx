@@ -5,17 +5,17 @@ import { Group } from '../../ui/Group.jsx';
 // Importe Switch, l'interrupteur.
 import { Switch } from '../../ui/Switch.jsx';
 // Importe les fenêtres de temps proposées pour les incendies.
-import { FIRE_WINDOWS_H } from '@/Car/engine/atmosphere/fireMath';
+import { FIRE_WINDOWS_H } from '@/Car/AstreSolideEngine/AtmosphereEngine/fireMath';
 // Importe la liste des calques à venir.
 import { ATMOSPHERE_UPCOMING } from '@/Fairing/components/scene/atmosphereSettings';
 // Importe les échelles de couleurs du radar et la légende de la pluie.
-import { SNOW_SCALE, radarLegend } from '@/Car/engine/atmosphere/radarMath';
+import { SNOW_SCALE, radarLegend } from '@/Car/AstreSolideEngine/AtmosphereEngine/radarMath';
 // Importe les produits d'aérosols, leurs libellés et leurs légendes.
-import { AEROSOL_LABELS, AEROSOL_PRODUCTS, aerosolLegend } from '@/Car/engine/atmosphere/aerosolMath';
+import { AEROSOL_LABELS, AEROSOL_PRODUCTS, aerosolLegend } from '@/Car/AstreSolideEngine/AtmosphereEngine/aerosolMath';
 // Importe l'adresse de la légende de la prévision CAMS.
 import { aerosolLegendUrl } from '@/Car/SystemeEngine/api/scene';
 // Importe les niveaux des vents, leurs libellés et l'échelle des vitesses.
-import { FLOW_LEVEL_IDS, FLOW_LEVEL_LABELS, SPEED_SCALE } from '@/Car/engine/atmosphere/flowMath';
+import { FLOW_LEVEL_IDS, FLOW_LEVEL_LABELS, SPEED_SCALE } from '@/Car/AstreSolideEngine/AtmosphereEngine/flowMath';
 
 /** Une réglette compacte, avec son libellé et sa valeur en pourcentage. */
 // Déclare Reglette : libellé, valeur, bornes, pas et rappel.

@@ -1,5 +1,5 @@
 // Importe la latitude limite de la projection de Mercator.
-import { MAX_LATITUDE } from '../MapEngine/mercator.jsx';
+import { MAX_LATITUDE } from '../AstreSolideEngine/MapEngine/mercator.jsx';
 
 /**
  * Carte globale équirectangulaire (2:1) d'un fond de tuiles, pour habiller une sphère.
@@ -7,7 +7,7 @@ import { MAX_LATITUDE } from '../MapEngine/mercator.jsx';
  * ligne est étirée jusqu'au pôle. Plate carrée (NASA Trek) : mosaïque directe.
  * Les tuiles manquantes restent noires : la carte s'affiche même si une partie échoue.
  *
- * @param {import('../MapEngine/tileSource.jsx').TileSource} source  source prête (status 'ready')
+ * @param {import('../AstreSolideEngine/MapEngine/tileSource.jsx').TileSource} source  source prête (status 'ready')
  * @param {{ zoom?: number, signal?: AbortSignal }} opts    zoom visé (borné par la couche), 2 par défaut
  * @returns {Promise<HTMLCanvasElement>}
  */

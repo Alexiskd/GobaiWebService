@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 // Importe de MUI LinearProgress (barre de progression), Paper et Typography.
 import { LinearProgress, Paper, Typography } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe safe, qui donne une marge de sécurité de l'écran.

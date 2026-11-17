@@ -5,11 +5,11 @@ import { Box, Button, Dialog, DialogContent, Link, Switch as MuiSwitch, Tab, Tab
 // Importe tilesApi, le client de l'API des tuiles.
 import { tilesApi } from '@/Car/SystemeEngine/api';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe la liste des astres tuilés.
-import { TILED_BODIES } from '@/Car/engine/tiledBodies';
+import { TILED_BODIES } from '@/Car/AstreSolideEngine/tiledBodies';
 // Importe l'en-tête commun des fenêtres.
 import { PanelHeader } from '../ui/PanelHeader.jsx';
 // Importe l'arborescence du site et son compteur de pages.

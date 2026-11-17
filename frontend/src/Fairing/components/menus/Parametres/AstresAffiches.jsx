@@ -1,7 +1,7 @@
 // Importe de MUI Box, ToggleButton (bouton à bascule) et Typography.
 import { Box, ToggleButton, Typography } from '@mui/material';
 // Importe la liste des familles d'astres.
-import { BODY_KINDS } from '@/Car/engine/bodyKinds';
+import { BODY_KINDS } from '@/Car/AstreSolideEngine/bodyKinds';
 // Importe Hint, la note d'aide.
 import { Hint } from '../../ui/Hint.jsx';
 

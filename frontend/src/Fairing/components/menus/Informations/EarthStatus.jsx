@@ -1,5 +1,5 @@
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe la ligne d'état.
 import { StatusLine } from '../../ui/StatusLine.jsx';
 // Importe les noms des fournisseurs.

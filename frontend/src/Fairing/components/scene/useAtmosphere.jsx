@@ -3,19 +3,19 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe les lectures du moteur atmosphérique du serveur.
 import { aerosolForecastUrl, aerosolObservedUrl, fetchAtmosphereAerosols, fetchAtmosphereWinds, fetchAtmosphereCyclones, fetchAtmosphereFireTile, fetchAtmosphereFires, fetchAtmosphereLightning, fetchAtmosphereRadar, fetchAtmosphereStorms, lightningTileUrl, radarTileUrl } from '@/Car/SystemeEngine/api/scene';
 // Importe l'assemblage d'une mosaïque de tuiles (le même que pour les nuages satellite).
-import { loadCloudMosaic } from '@/Car/engine/earthCloudMosaic';
+import { loadCloudMosaic } from '@/Car/TextureEngine/earthCloudMosaic';
 // Importe le rafraîchissement qui ne tourne pas onglet caché.
 import { refreshWhileVisible } from './useMapFeeds.jsx';
 // Importe les réglages (lecture, bornes, mémoire) et les textes d'aide.
 import { aerosolHint, cycloneHint, fireHint, lightningHint, precipitationHint, rememberAtmosphere, sanitizeAtmosphere, stormHint, storedAtmosphere, windHint } from './atmosphereSettings.jsx';
 // Importe le choix des images et des tuiles du radar.
-import { RADAR_DETAIL_ALT, RADAR_DETAIL_RELEASE_ALT, RADAR_GLOBAL_ZOOM, detailBlock, framesToShow, normalizeFrames } from '@/Car/engine/atmosphere/radarMath';
+import { RADAR_DETAIL_ALT, RADAR_DETAIL_RELEASE_ALT, RADAR_GLOBAL_ZOOM, detailBlock, framesToShow, normalizeFrames } from '@/Car/AstreSolideEngine/AtmosphereEngine/radarMath';
 // Importe le chargement d'un bloc de tuiles radar décodées.
-import { loadImageCanvas, loadRadarBlock } from '@/Car/engine/atmosphere/radarTiles';
+import { loadImageCanvas, loadRadarBlock } from '@/Car/AstreSolideEngine/AtmosphereEngine/radarTiles';
 // Importe la lecture de la réponse des aérosols.
-import { normalizeAerosols } from '@/Car/engine/atmosphere/aerosolMath';
+import { normalizeAerosols } from '@/Car/AstreSolideEngine/AtmosphereEngine/aerosolMath';
 // Importe le choix et la mise en forme des tuiles de détail des incendies.
-import { FIRE_DETAIL_ALT, FIRE_KIND, mergeDetailTiles, normalizeFireColumns, tilesAround, viewRadiusDeg } from '@/Car/engine/atmosphere/fireMath';
+import { FIRE_DETAIL_ALT, FIRE_KIND, mergeDetailTiles, normalizeFireColumns, tilesAround, viewRadiusDeg } from '@/Car/AstreSolideEngine/AtmosphereEngine/fireMath';
 
 // Rafraîchissement des incendies : toutes les 30 minutes (rythme des fichiers FIRMS côté serveur).
 const FIRES_REFRESH_MS = 30 * 60_000;

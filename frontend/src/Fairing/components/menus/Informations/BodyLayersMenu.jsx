@@ -12,7 +12,7 @@ import { Terre } from './Terre.jsx';
 import { TrekBodyLayers } from './TrekBodyLayers.jsx';
 import { PlanetSettings } from './PlanetSettings.jsx';
 // Importe la table des astres tuilés par identifiant.
-import { TILED_BODY_BY_ID } from '@/Car/engine/tiledBodies';
+import { TILED_BODY_BY_ID } from '@/Car/AstreSolideEngine/tiledBodies';
 
 // Astres qui ont leur propre menu de cartes.
 const MAPPED_BODIES = ['earth', 'moon', 'mars', 'mercury'];

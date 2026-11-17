@@ -7,7 +7,7 @@ import { DesktopToolbar } from './DesktopToolbar.jsx';
 // Importe toolbarActions, qui construit la liste des actions.
 import { toolbarActions } from './toolbarActions.jsx';
 // Importe useHud, qui lit une valeur du magasin du HUD.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 
 // Actions de l'interface : barre d’outils du bas sur grand écran, navigation en quatre espaces sur petit écran.
 // « Ma position » est passée sous la navball et le bouton Informations dans le panneau des caractéristiques : la barre

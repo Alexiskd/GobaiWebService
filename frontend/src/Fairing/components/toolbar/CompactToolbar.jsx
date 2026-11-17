@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 // Importe les composants MUI de la boîte, du bouton nu, du panneau et du texte.
 import { Box, ButtonBase, Paper, Typography } from '@mui/material';
 // Importe useHud, la lecture de l'état du moteur.
-import { useHud } from '@/Car/engine/hudStore';
+import { useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe iconNode, le dessin d'une icône.
 import { iconNode } from './iconNode.jsx';
 // Importe les icônes des quatre espaces.

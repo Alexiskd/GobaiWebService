@@ -3,7 +3,7 @@ import { useState } from 'react';
 // Importe de MUI Box, CircularProgress (roue de chargement), FormControlLabel, IconButton, Radio (renommé MuiRadio), Tooltip et Typography.
 import { Box, CircularProgress, FormControlLabel, IconButton, Radio as MuiRadio, Tooltip, Typography } from '@mui/material';
 // Importe le téléchargement d'une couche et le calcul du nom du fichier.
-import { downloadLayer, layerFileName } from '@/Car/engine/layerDownload';
+import { downloadLayer, layerFileName } from '@/Car/AstreSolideEngine/layerDownload';
 // Importe l'icône de téléchargement.
 import { DownloadIcon } from './icons.jsx';
 

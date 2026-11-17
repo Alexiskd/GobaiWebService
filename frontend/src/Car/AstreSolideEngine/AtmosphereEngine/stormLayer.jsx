@@ -1,7 +1,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe la conversion longitude, latitude → point de la sphère unité.
-import { lonLatToUnit } from '../EruptionEngine/volcanoesMath.jsx';
+import { lonLatToUnit } from '../../EruptionEngine/volcanoesMath.jsx';
 // Importe la mise en forme des orages et les tracés sur le globe.
 import { arrowSegments, normalizeStorms, ringSegments } from './radarMath.jsx';
 

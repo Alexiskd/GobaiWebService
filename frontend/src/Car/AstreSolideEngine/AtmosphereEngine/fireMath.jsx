@@ -1,5 +1,5 @@
 // Importe le point du globe d'une longitude et d'une latitude (même repère que les autres calques de la Terre).
-import { lonLatToUnit } from '../EruptionEngine/volcanoesMath.jsx';
+import { lonLatToUnit } from '../../EruptionEngine/volcanoesMath.jsx';
 
 // Calculs du calque des incendies (sans three.js, donc testables seuls) : nettoyage des colonnes reçues du serveur
 // (/atmosphere/fires et /atmosphere/fires/tiles), tableaux envoyés au shader de fireLayer.jsx, choix des tuiles de

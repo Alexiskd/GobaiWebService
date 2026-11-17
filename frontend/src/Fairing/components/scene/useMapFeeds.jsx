@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 // Importe l'adresse des tuiles de nuages et les chargements de la couverture nuageuse, des frontières, des villes et du vent.
 import { earthCloudTileUrl, fetchEarthCloudCover, fetchBorders, fetchCityLabels, fetchEarthWind } from '@/Car/SystemeEngine/api';
 // Importe loadCloudMosaic, qui assemble la mosaïque de nuages.
-import { loadCloudMosaic } from '@/Car/engine/earthCloudMosaic';
+import { loadCloudMosaic } from '@/Car/TextureEngine/earthCloudMosaic';
 
 /**
  * Mention des nuages de la Terre dans les sources, selon ce qui est affiché : image satellite, couverture calculée par
