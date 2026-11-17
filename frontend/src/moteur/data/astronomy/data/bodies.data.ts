@@ -546,8 +546,9 @@ export const SATELLITES: SatelliteData[] = [
 ];
 
 /**
- * Candidats supplémentaires : connus de JPL Horizons, affichés seulement s'ils ont AUSSI une carte NASA Trek
- * (test `ready = horizons && trek`, voir BodyAvailabilityService). Valeurs approchées (orbite de repli seulement).
+ * Satellites naturels confirmés supplémentaires. « Candidats » signifie ici candidats à l'intégration visuelle :
+ * l'absence d'une carte NASA Trek ou d'une texture ne remet jamais en cause leur existence astronomique.
+ * Les orbites sont des valeurs de repli arrondies ; utiliser Horizons pour une éphéméride précise.
  */
 // Satellites candidats, affichés seulement s'ils ont une carte.
 export const SATELLITE_CANDIDATES: SatelliteData[] = [

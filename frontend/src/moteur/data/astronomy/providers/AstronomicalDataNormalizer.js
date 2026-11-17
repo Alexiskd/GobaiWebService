@@ -50,6 +50,8 @@ export function normalizeExoplanet(row, retrievedAt = null) {
   if (!planetName) return null;
   const hostname = row.hostname ?? row.pl_hostname ?? null;
   const gaiaId = row.gaia_dr3_id === null || row.gaia_dr3_id === undefined ? null : String(row.gaia_dr3_id);
+  const radiusEarthDirect = numberOrNull(row.pl_rade);
+  const radiusJupiter = numberOrNull(row.pl_radj);
   const identifiers = [{ catalog: 'NASA Exoplanet Archive', value: String(planetName) }];
   if (hostname) identifiers.push({ catalog: 'NASA Exoplanet Archive host', value: String(hostname) });
   if (gaiaId) identifiers.push({ catalog: 'Gaia DR3', value: gaiaId });
@@ -59,7 +61,7 @@ export function normalizeExoplanet(row, retrievedAt = null) {
     source: 'NASA Exoplanet Archive',
     sourceTable: 'pscomppars',
     name: String(planetName),
-    host: hostname ? { name: String(hostname), gaiaDr3Id: gaiaId } : null,
+    host: hostname ? { name: String(hostname), gaiaDr3Id: gaiaId, radiusSolar: numberOrNull(row.st_rad) } : null,
     identifiers,
     coordinates: { frame: 'ICRS', epoch: null, raDeg: numberOrNull(row.ra), decDeg: numberOrNull(row.dec) },
     orbit: {
@@ -67,6 +69,7 @@ export function normalizeExoplanet(row, retrievedAt = null) {
       semiMajorAxisAu: numberOrNull(row.pl_orbsmax),
       eccentricity: numberOrNull(row.pl_orbeccen),
       inclinationDeg: numberOrNull(row.pl_orbincl),
+      longitudeAscendingNodeDeg: numberOrNull(row.pl_orblnode),
       argumentOfPeriastronDeg: numberOrNull(row.pl_orblper),
       argumentOfPeriastronConvention: numberOrNull(row.pl_orblper) === null ? null : 'NASA as-reported; planet/star reflex convention must be checked',
       // Conservé brut ; le référentiel temporel (notamment JD/BJD) doit être validé avant calcul.
@@ -74,7 +77,8 @@ export function normalizeExoplanet(row, retrievedAt = null) {
       timeOfPeriastronSourceField: row.pl_orbtper === null || row.pl_orbtper === undefined ? null : 'pl_orbtper',
     },
     physical: {
-      radiusEarth: numberOrNull(row.pl_rade),
+      radiusEarth: radiusEarthDirect ?? (radiusJupiter !== null ? radiusJupiter * 11.2089 : null),
+      radiusSourceField: radiusEarthDirect !== null ? 'pl_rade' : (radiusJupiter !== null ? 'pl_radj-converted-to-earth-radii' : null),
       massEarthBestEstimate: numberOrNull(row.pl_bmasse),
       massJupiterBestEstimate: numberOrNull(row.pl_bmassj),
       equilibriumTemperatureK: numberOrNull(row.pl_eqt),

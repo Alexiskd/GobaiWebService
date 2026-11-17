@@ -8,8 +8,8 @@
  *      - `ecliptic` : rien à faire ;
  *      - `<planète>-equatorial` : équateur de la planète (pôle UAI, ascension droite α et déclinaison δ), puis
  *        équateur céleste ICRF → écliptique (obliquité ε) ;
- *      - `<planète>-laplace` : plan de Laplace, assimilé à l'équateur pour les satellites proches et à
- *        l'écliptique pour les satellites lointains (au-delà de LAPLACE_FAR_KM), où il suit l'orbite de la planète.
+ *      - `<planète>-laplace` : pôle ICRF mesuré par JPL si `referencePoleIcrf` est présent ; sinon approximation
+ *        par l'équateur pour les satellites proches et l'écliptique au-delà de LAPLACE_FAR_KM.
  * Sorties : km (satellites, relatifs à leur planète) ou UA (planètes, héliocentriques), écliptique J2000.
  *
  * Précision : orbite non perturbée et M0 à J2000 ; l'écart grandit avec le temps (précession, résonances).
@@ -168,9 +168,9 @@ export function orbitalPosition(k: KeplerElements, M: number): Vec {
 
 /** Équateur de la planète → équateur ICRF (axe x = nœud ascendant de l'équateur de la planète, convention UAI). */
 // Fonction planetEquatorToIcrf : passe du repère de l'équateur d'une planète au repère céleste.
-function planetEquatorToIcrf([x, y, z]: Vec, parent: string): Vec {
-  // Direction du pôle de la planète.
-  const pole = POLES[parent];
+function planetEquatorToIcrf([x, y, z]: Vec, parent: string, poleOverride: [number, number] | null = null): Vec {
+  // Direction du pôle de la planète ou du plan de Laplace mesuré par JPL.
+  const pole = poleOverride || POLES[parent];
   // Planète inconnue : erreur.
   if (!pole) throw new Error(`Pôle inconnu pour ${parent}`);
   // Ascension droite et déclinaison du pôle, en radians.
@@ -206,8 +206,12 @@ export function toEcliptic(p: Vec, astre: Astre): Vec {
   if (frame === 'ecliptic') return p;
   // Le plan est-il un plan de Laplace ?
   const laplace = frame.endsWith('-laplace');
-  // Plan de Laplace d'un satellite lointain : assimilé à l'écliptique, rien à faire.
-  if (laplace && astre.kepler.a > LAPLACE_FAR_KM) return p; // satellite lointain : plan proche de l'orbite de la planète
+  // Le pôle ICRF du plan de Laplace fourni par JPL prime sur l'approximation géométrique.
+  if (laplace && astre.kepler.referencePoleIcrf) {
+    return icrfToEcliptic(planetEquatorToIcrf(p, astre.parent, astre.kepler.referencePoleIcrf));
+  }
+  // Repli historique : les satellites très lointains sont approximés dans l'écliptique.
+  if (laplace && astre.kepler.a > LAPLACE_FAR_KM) return p;
   // Sinon : équateur de la planète → repère céleste → écliptique.
   return icrfToEcliptic(planetEquatorToIcrf(p, astre.parent));
 // Fin de toEcliptic.

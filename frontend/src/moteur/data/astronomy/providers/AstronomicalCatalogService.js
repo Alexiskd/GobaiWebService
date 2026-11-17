@@ -17,7 +17,7 @@ export const ASTRONOMICAL_PROVIDERS = Object.freeze({
 });
 
 const GAIA_COLUMNS = 'source_id,ra,dec,parallax,pmra,pmdec,radial_velocity,phot_g_mean_mag,bp_rp,ref_epoch';
-const EXOPLANET_COLUMNS = 'pl_name,hostname,gaia_dr3_id,discoverymethod,disc_year,pl_orbper,pl_orbsmax,pl_orbeccen,pl_orbincl,pl_orblper,pl_orbtper,pl_rade,pl_bmasse,pl_bmassj,pl_eqt,sy_dist,sy_snum,sy_pnum,ra,dec';
+const EXOPLANET_COLUMNS = 'pl_name,hostname,gaia_dr3_id,discoverymethod,disc_year,pl_orbper,pl_orbsmax,pl_orbeccen,pl_orbincl,pl_orblper,pl_orbtper,st_rad,pl_rade,pl_radj,pl_bmasse,pl_bmassj,pl_eqt,sy_dist,sy_snum,sy_pnum,ra,dec';
 
 export class AstronomicalCatalogService {
   constructor({ fetchImpl = globalThis.fetch, cache = new AstronomicalCatalogCache(), timeoutMs = 30000, endpoints = {}, maxRows = 100 } = {}) {

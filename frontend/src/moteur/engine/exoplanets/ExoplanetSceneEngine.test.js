@@ -5,7 +5,7 @@ import { buildExoplanetSceneModel, orbitalReferenceToScene, sampleOrbit } from '
 const system = (overrides = {}) => ({
   id: 'gaia:123', kind: 'star-system', identityStatus: 'verified-gaia-identity',
   star: { id: 'gaia:123', name: 'Example Star' }, targetJulianDate: 2451545,
-  planets: [{ id: 'planet:b', name: 'Example b', orbit: { periodDays: 10, semiMajorAxisAu: 0.1, eccentricity: 0.2, inclinationDeg: 30, longitudeAscendingNodeDeg: 40, argumentOfPeriastronDeg: 50 }, orbitalState: { status: 'calculated', position: { position: { x: 0.1, y: 0.2, z: 0.3 } }, warnings: [] }, physical: { radiusEarth: 2 } }],
+  planets: [{ id: 'planet:b', name: 'Example b', orbit: { periodDays: 10, semiMajorAxisAu: 0.1, eccentricity: 0.2, inclinationDeg: 30, longitudeAscendingNodeDeg: 40, argumentOfPeriastronDeg: 50, argumentOfPeriastronConvention: 'planet-orbit' }, orbitalState: { status: 'calculated', position: { position: { x: 0.1, y: 0.2, z: 0.3 } }, warnings: [] }, physical: { radiusEarth: 2 } }],
   ...overrides,
 });
 
@@ -25,7 +25,7 @@ test('calcule une position lorsque la phase orbitale est fournie mais aucun éta
   const data = system();
   data.planets[0].orbitalState = { status: 'not-requested' };
   data.planets[0].orbit = { periodDays: 10, semiMajorAxisAu: 0.1, eccentricity: 0, meanAnomalyAtEpochDeg: 0, epochJulianDate: 2451545 };
-  const model = buildExoplanetSceneModel(data, { auToSceneUnits: 1 });
+  const model = buildExoplanetSceneModel(data, { auToSceneUnits: 1, scaleMode: 'readable' });
   assert.equal(model.planets[0].positionStatus, 'available');
   assert.ok(Number.isFinite(model.planets[0].position.x));
 });
@@ -75,7 +75,7 @@ test('construit un groupe Three.js avec étoile, planète, orbite et mise à jou
   assert.equal(group.children.length, 3);
   const planetMesh = group.children.find((item) => item.userData.gobaiKind === 'exoplanet');
   assert.equal(planetMesh.visible, true);
-  const next = buildExoplanetSceneModel(system({ planets: [{ ...system().planets[0], orbitalState: { status: 'not-requested' }, orbit: { periodDays: 10, semiMajorAxisAu: 0.1, eccentricity: 0, meanAnomalyAtEpochDeg: 90, epochJulianDate: 2451545 } }] }));
+  const next = buildExoplanetSceneModel(system({ planets: [{ ...system().planets[0], orbitalState: { status: 'not-requested' }, orbit: { periodDays: 10, semiMajorAxisAu: 0.1, eccentricity: 0, meanAnomalyAtEpochDeg: 90, epochJulianDate: 2451545 } }] }), { scaleMode: 'readable' });
   group.userData.updateFromModel(next);
   assert.equal(planetMesh.visible, true);
   assert.ok(planetMesh.position.value);
@@ -91,9 +91,57 @@ test('recalcule la position orbitale à la nouvelle époque même si une positio
     meanAnomalyAtEpochDeg: 0,
     epochJulianDate: 2451545,
   };
-  const first = buildExoplanetSceneModel(data, { targetJulianDate: 2451545, auToSceneUnits: 1 });
-  const later = buildExoplanetSceneModel(data, { targetJulianDate: 2451547.5, auToSceneUnits: 1 });
+  const first = buildExoplanetSceneModel(data, { targetJulianDate: 2451545, auToSceneUnits: 1, scaleMode: 'readable' });
+  const later = buildExoplanetSceneModel(data, { targetJulianDate: 2451547.5, auToSceneUnits: 1, scaleMode: 'readable' });
   assert.ok(Math.abs(first.planets[0].position.x - 0.1) < 1e-8);
   assert.ok(Math.abs(later.planets[0].position.x) < 1e-8);
   assert.ok(Math.abs(later.planets[0].position.z + 0.1) < 1e-8);
+});
+
+test('le mode physique utilise une échelle cohérente entre UA et rayons terrestres', () => {
+  const model = buildExoplanetSceneModel(system(), { scaleMode: 'physical', earthRadiusVisualScale: 1, starRadiusSolar: 1 });
+  assert.equal(model.scaleMode, 'physical');
+  assert.ok(Math.abs(model.units.auToSceneUnits - model.units.auInEarthRadii) < 1e-9);
+  assert.equal(model.star.radiusSolar, 1);
+  assert.equal(model.planets[0].orbit !== null, true);
+});
+
+test('le mode physique ne dessine pas une orbite dont l’orientation est inventée', () => {
+  const data = system();
+  data.planets[0].orbit = { semiMajorAxisAu: 0.1, eccentricity: 0.2 };
+  const model = buildExoplanetSceneModel(data, { scaleMode: 'physical' });
+  assert.equal(model.planets[0].orbit, null);
+  assert.equal(model.planets[0].positionStatus, 'unavailable');
+  assert.equal(model.planets[0].representation.orbitStatus, 'orientation-incomplete');
+  assert.ok(model.planets[0].warnings.length > 0);
+});
+
+test('le rayon stellaire inconnu est signalé au lieu d’être inventé', () => {
+  const model = buildExoplanetSceneModel(system(), { scaleMode: 'physical' });
+  assert.equal(model.star.radiusSolar, null);
+  assert.equal(model.representationWarnings.length, 1);
+});
+
+
+test('le mode par défaut est physique et signale toute échelle personnalisée non cohérente', () => {
+  const physical = buildExoplanetSceneModel(system());
+  assert.equal(physical.scaleMode, 'physical');
+  assert.match(physical.scaleFidelity, /^physical-distance/);
+  const custom = buildExoplanetSceneModel(system(), { auToSceneUnits: 10 });
+  assert.equal(custom.scaleFidelity, 'custom-scale-not-physically-consistent');
+});
+
+test('le mode lisible étiquette explicitement les plans orbitaux schématiques', () => {
+  const data = system();
+  data.planets[0].orbit = { semiMajorAxisAu: 0.1, eccentricity: 0.2 };
+  const model = buildExoplanetSceneModel(data, { scaleMode: 'readable' });
+  assert.ok(model.planets[0].warnings.some((warning) => warning.includes('schématique')));
+});
+
+test('utilise le rayon stellaire mesuré fourni par le catalogue hôte', () => {
+  const data = system();
+  data.star.radiusSolar = 0.7;
+  const model = buildExoplanetSceneModel(data);
+  assert.equal(model.star.radiusSolar, 0.7);
+  assert.equal(model.representationWarnings.length, 0);
 });

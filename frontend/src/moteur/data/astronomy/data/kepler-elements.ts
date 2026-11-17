@@ -1,10 +1,14 @@
 /**
- * Éléments képlériens de chaque astre (fournis par Alexis) : sert au calcul local des orbites, sans JPL Horizons.
+ * Éléments képlériens moyens : jeu de paramètres de visualisation orbitale, époque et repère propres à chaque famille.
+ * Pour les satellites, les éléments JPL SSD sont à l'époque J2000.0 (2000-01-01.5 TDB) et les pôles Laplace
+ * sont conservés lorsqu'ils sont publiés. Ils décrivent l'orbite moyenne, pas une éphéméride instantanée.
+ * Source de référence : JPL SSD Planetary Satellite Mean Elements (epoches précisées dans la table JPL).
+ * Les éléments moyens décrivent la forme et l'orientation générale ; JPL avertit qu'ils ne remplacent pas une éphéméride Horizons.
  *  a        demi-grand axe (`unit` : au pour les planètes, km pour les satellites)
  *  e        excentricité ; i, om (Ω), w (ω), M0 : degrés ; M0 = anomalie moyenne à l'époque J2000
  *  frame    plan de référence : écliptique J2000, équateur de la planète mère, ou plan de Laplace
- *  horizons, trek, ready : résultat du test de disponibilité au moment de l'export (informatif ; le serveur refait
- *           le test Trek en direct, voir BodyAvailabilityService).
+ *  horizons, trek, ready : indicateurs historiques de disponibilité de ressources, PAS une preuve d'existence.
+ *           L'absence d'une tuile ou d'une carte ne signifie pas que le satellite n'existe pas.
  */
 // Forme des éléments d'une orbite.
 export interface KeplerElements {
@@ -24,6 +28,12 @@ export interface KeplerElements {
   unit: 'au' | 'km';
   // frame : le plan de référence.
   frame: string;
+  /** Pôle ICRF du plan de Laplace [RA, Dec] en degrés, issu de JPL SSD quand disponible. */
+  referencePoleIcrf?: [number, number];
+  /** Identifiant de la table/éphéméride source pour audit de provenance. */
+  sourceReference?: string;
+  /** Époque des éléments moyens en TDB, si connue. */
+  epochTdb?: string;
   /** Dérives séculaires optionnelles (degrés par siècle julien) : Ω, ω et anomalie moyenne (sinon 3e loi de Kepler). */
   // omDot : dérive du nœud par siècle.
   omDot?: number;
@@ -76,27 +86,27 @@ export const ASTRES: Astre[] = [
   // Pluton, planète : demi-grand axe 39,571 UA, excentricité 0,24944850, inclinaison 17,23565302°, nœud 110,03993995°, périastre 115,17866598°, anomalie moyenne 14,14365454°, dans l'écliptique ; test à l'export : Horizons oui, Trek non.
   { id: 'pluto', nom: 'Pluton', type: 'planet', parent: '', horizons: true, trek: false, ready: false, kepler: { a: 39.571, e: 0.24944850, i: 17.23565302, om: 110.03993995, w: 115.17866598, M0: 14.14365454, unit: 'au', frame: 'ecliptic' } },
   // Io, satellite de Jupiter : demi-grand axe 421800 km, excentricité 0,004, inclinaison 0,0°, nœud 0,0°, périastre 49,1°, anomalie moyenne 330,9°, dans l'équateur de Jupiter ; test à l'export : Horizons oui, Trek oui.
-  { id: 'io', nom: 'Io', type: 'satellite', parent: 'jupiter', horizons: true, trek: true, ready: true, kepler: { a: 421800, e: 0.004, i: 0.0, om: 0.0, w: 49.1, M0: 330.9, unit: 'km', frame: 'jupiter-equatorial' } },
+  { id: 'io', nom: 'Io', type: 'satellite', parent: 'jupiter', horizons: true, trek: true, ready: true, kepler: { a: 421800, e: 0.004, i: 0.0, om: 0.0, w: 49.1, M0: 330.9, unit: 'km', frame: 'jupiter-laplace', referencePoleIcrf: [268.1, 64.5] } },
   // Europe, satellite de Jupiter : demi-grand axe 671100 km, excentricité 0,009, inclinaison 0,5°, nœud 184,0°, périastre 45,0°, anomalie moyenne 345,4°, dans l'équateur de Jupiter ; test à l'export : Horizons oui, Trek oui.
-  { id: 'europa', nom: 'Europe', type: 'satellite', parent: 'jupiter', horizons: true, trek: true, ready: true, kepler: { a: 671100, e: 0.009, i: 0.5, om: 184.0, w: 45.0, M0: 345.4, unit: 'km', frame: 'jupiter-equatorial' } },
+  { id: 'europa', nom: 'Europe', type: 'satellite', parent: 'jupiter', horizons: true, trek: true, ready: true, kepler: { a: 671100, e: 0.009, i: 0.5, om: 184.0, w: 45.0, M0: 345.4, unit: 'km', frame: 'jupiter-laplace', referencePoleIcrf: [268.1, 64.5] } },
   // Ganymède, satellite de Jupiter : demi-grand axe 1070400 km, excentricité 0,001, inclinaison 0,2°, nœud 58,5°, périastre 198,3°, anomalie moyenne 324,8°, dans l'équateur de Jupiter ; test à l'export : Horizons oui, Trek oui.
-  { id: 'ganymede', nom: 'Ganymède', type: 'satellite', parent: 'jupiter', horizons: true, trek: true, ready: true, kepler: { a: 1070400, e: 0.001, i: 0.2, om: 58.5, w: 198.3, M0: 324.8, unit: 'km', frame: 'jupiter-equatorial' } },
+  { id: 'ganymede', nom: 'Ganymède', type: 'satellite', parent: 'jupiter', horizons: true, trek: true, ready: true, kepler: { a: 1070400, e: 0.001, i: 0.2, om: 58.5, w: 198.3, M0: 324.8, unit: 'km', frame: 'jupiter-laplace', referencePoleIcrf: [268.1, 64.5] } },
   // Callisto, satellite de Jupiter : demi-grand axe 1882700 km, excentricité 0,007, inclinaison 0,3°, nœud 309,1°, périastre 43,8°, anomalie moyenne 87,4°, dans l'équateur de Jupiter ; test à l'export : Horizons oui, Trek oui.
-  { id: 'callisto', nom: 'Callisto', type: 'satellite', parent: 'jupiter', horizons: true, trek: true, ready: true, kepler: { a: 1882700, e: 0.007, i: 0.3, om: 309.1, w: 43.8, M0: 87.4, unit: 'km', frame: 'jupiter-equatorial' } },
+  { id: 'callisto', nom: 'Callisto', type: 'satellite', parent: 'jupiter', horizons: true, trek: true, ready: true, kepler: { a: 1882700, e: 0.007, i: 0.3, om: 309.1, w: 43.8, M0: 87.4, unit: 'km', frame: 'jupiter-laplace', referencePoleIcrf: [268.1, 64.5] } },
   // Mimas, satellite de Saturne : demi-grand axe 186000 km, excentricité 0,020, inclinaison 1,6°, nœud 66,2°, périastre 160,4°, anomalie moyenne 275,3°, dans l'équateur de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'mimas', nom: 'Mimas', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 186000, e: 0.020, i: 1.6, om: 66.2, w: 160.4, M0: 275.3, unit: 'km', frame: 'saturn-equatorial' } },
+  { id: 'mimas', nom: 'Mimas', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 186000, e: 0.020, i: 1.6, om: 66.2, w: 160.4, M0: 275.3, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [40.6, 83.5] } },
   // Encelade, satellite de Saturne : demi-grand axe 238400 km, excentricité 0,005, inclinaison 0,0°, nœud 0,0°, périastre 119,5°, anomalie moyenne 57,0°, dans l'équateur de Saturne ; test à l'export : Horizons oui, Trek oui.
-  { id: 'enceladus', nom: 'Encelade', type: 'satellite', parent: 'saturn', horizons: true, trek: true, ready: true, kepler: { a: 238400, e: 0.005, i: 0.0, om: 0.0, w: 119.5, M0: 57.0, unit: 'km', frame: 'saturn-equatorial' } },
+  { id: 'enceladus', nom: 'Encelade', type: 'satellite', parent: 'saturn', horizons: true, trek: true, ready: true, kepler: { a: 238400, e: 0.005, i: 0.0, om: 0.0, w: 119.5, M0: 57.0, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [40.6, 83.5] } },
   // Téthys, satellite de Saturne : demi-grand axe 295000 km, excentricité 0,001, inclinaison 1,1°, nœud 273,0°, périastre 335,3°, anomalie moyenne 0,0°, dans l'équateur de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'tethys', nom: 'Téthys', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 295000, e: 0.001, i: 1.1, om: 273.0, w: 335.3, M0: 0.0, unit: 'km', frame: 'saturn-equatorial' } },
+  { id: 'tethys', nom: 'Téthys', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 295000, e: 0.001, i: 1.1, om: 273.0, w: 335.3, M0: 0.0, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [40.6, 83.5] } },
   // Dioné, satellite de Saturne : demi-grand axe 377700 km, excentricité 0,002, inclinaison 0,0°, nœud 0,0°, périastre 116,0°, anomalie moyenne 212,0°, dans l'équateur de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'dione', nom: 'Dioné', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 377700, e: 0.002, i: 0.0, om: 0.0, w: 116.0, M0: 212.0, unit: 'km', frame: 'saturn-equatorial' } },
+  { id: 'dione', nom: 'Dioné', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 377700, e: 0.002, i: 0.0, om: 0.0, w: 116.0, M0: 212.0, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [40.6, 83.5] } },
   // Rhéa, satellite de Saturne : demi-grand axe 527200 km, excentricité 0,001, inclinaison 0,3°, nœud 133,7°, périastre 44,3°, anomalie moyenne 31,5°, dans l'équateur de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'rhea', nom: 'Rhéa', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 527200, e: 0.001, i: 0.3, om: 133.7, w: 44.3, M0: 31.5, unit: 'km', frame: 'saturn-equatorial' } },
+  { id: 'rhea', nom: 'Rhéa', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 527200, e: 0.001, i: 0.3, om: 133.7, w: 44.3, M0: 31.5, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [40.6, 83.5] } },
   // Titan, satellite de Saturne : demi-grand axe 1221900 km, excentricité 0,029, inclinaison 0,3°, nœud 78,6°, périastre 78,3°, anomalie moyenne 11,7°, dans l'équateur de Saturne ; test à l'export : Horizons oui, Trek oui.
-  { id: 'titan', nom: 'Titan', type: 'satellite', parent: 'saturn', horizons: true, trek: true, ready: true, kepler: { a: 1221900, e: 0.029, i: 0.3, om: 78.6, w: 78.3, M0: 11.7, unit: 'km', frame: 'saturn-equatorial' } },
+  { id: 'titan', nom: 'Titan', type: 'satellite', parent: 'saturn', horizons: true, trek: true, ready: true, kepler: { a: 1221900, e: 0.029, i: 0.3, om: 78.6, w: 78.3, M0: 11.7, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [36.4, 84.0] } },
   // Japet, satellite de Saturne : demi-grand axe 3561700 km, excentricité 0,028, inclinaison 7,6°, nœud 86,5°, périastre 254,5°, anomalie moyenne 74,8°, dans l'équateur de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'iapetus', nom: 'Japet', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 3561700, e: 0.028, i: 7.6, om: 86.5, w: 254.5, M0: 74.8, unit: 'km', frame: 'saturn-equatorial' } },
+  { id: 'iapetus', nom: 'Japet', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 3561700, e: 0.028, i: 7.6, om: 86.5, w: 254.5, M0: 74.8, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [288.7, 78.9] } },
   // Miranda, satellite de Uranus : demi-grand axe 129872 km, excentricité 0,00150980, inclinaison 175,572234°, nœud 259,171287°, périastre 344,673011°, anomalie moyenne 62,061891°, dans l'équateur de Uranus ; test à l'export : Horizons oui, Trek non.
   { id: 'miranda', nom: 'Miranda', type: 'satellite', parent: 'uranus', horizons: true, trek: false, ready: false, kepler: { a: 129872, e: 0.00150980, i: 175.572234, om: 259.171287, w: 344.673011, M0: 62.061891, unit: 'km', frame: 'uranus-equatorial' } },
   // Ariel, satellite de Uranus : demi-grand axe 190941 km, excentricité 0,00152081, inclinaison 179,997279°, nœud 150,621428°, périastre 21,036938°, anomalie moyenne 152,794368°, dans l'équateur de Uranus ; test à l'export : Horizons oui, Trek non.
@@ -107,42 +117,42 @@ export const ASTRES: Astre[] = [
   { id: 'titania', nom: 'Titania', type: 'satellite', parent: 'uranus', horizons: true, trek: false, ready: false, kepler: { a: 436293, e: 0.00247900, i: 179.899284, om: 11.436396, w: 38.615690, M0: 74.416776, unit: 'km', frame: 'uranus-equatorial' } },
   // Obéron, satellite de Uranus : demi-grand axe 583550 km, excentricité 0,00055232, inclinaison 179,811951°, nœud 319,956156°, périastre 39,006728°, anomalie moyenne 93,496291°, dans l'équateur de Uranus ; test à l'export : Horizons oui, Trek non.
   { id: 'oberon', nom: 'Obéron', type: 'satellite', parent: 'uranus', horizons: true, trek: false, ready: false, kepler: { a: 583550, e: 0.00055232, i: 179.811951, om: 319.956156, w: 39.006728, M0: 93.496291, unit: 'km', frame: 'uranus-equatorial' } },
-  // Triton, satellite de Neptune : demi-grand axe 354766 km, excentricité 0,00014611, inclinaison 156,827887°, nœud 177,866923°, périastre 75,135076°, anomalie moyenne 343,460671°, dans l'équateur de Neptune ; test à l'export : Horizons oui, Trek non.
-  { id: 'triton', nom: 'Triton', type: 'satellite', parent: 'neptune', horizons: true, trek: false, ready: false, kepler: { a: 354766, e: 0.00014611, i: 156.827887, om: 177.866923, w: 75.135076, M0: 343.460671, unit: 'km', frame: 'neptune-equatorial' } },
-  // Charon, satellite de Pluton : demi-grand axe 19596 km, excentricité 0,00016107, inclinaison 0,084138°, nœud 9,442463°, périastre 146,013275°, anomalie moyenne 148,665134°, dans l'équateur de Pluton ; test à l'export : Horizons oui, Trek non.
-  { id: 'charon', nom: 'Charon', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 19596, e: 0.00016107, i: 0.084138, om: 9.442463, w: 146.013275, M0: 148.665134, unit: 'km', frame: 'pluto-equatorial' } },
+  // Triton : éléments moyens JPL NEP098, époque J2000.0, plan équatorial de Neptune.
+  { id: 'triton', nom: 'Triton', type: 'satellite', parent: 'neptune', horizons: true, trek: false, ready: false, kepler: { a: 354800, e: 0.000, i: 157.3, om: 177.7, w: 0.0, M0: 63.0, unit: 'km', frame: 'neptune-equatorial', sourceReference: 'JPL NEP098', epochTdb: '2000-01-01.5' } },
+  // Charon : éléments moyens JPL PLU060, époque J2000.0, plan équatorial de Pluton.
+  { id: 'charon', nom: 'Charon', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 19600, e: 0.000, i: 0.0, om: 0.0, w: 0.0, M0: 304.1, unit: 'km', frame: 'pluto-equatorial', sourceReference: 'JPL PLU060', epochTdb: '2000-01-01.5' } },
   // Phobos, satellite de Mars : demi-grand axe 9375 km, excentricité 0,015, inclinaison 1,1°, nœud 169,2°, périastre 216,3°, anomalie moyenne 189,7°, dans l'équateur de Mars ; test à l'export : Horizons oui, Trek oui.
-  { id: 'phobos', nom: 'Phobos', type: 'satellite', parent: 'mars', horizons: true, trek: true, ready: true, kepler: { a: 9375, e: 0.015, i: 1.1, om: 169.2, w: 216.3, M0: 189.7, unit: 'km', frame: 'mars-equatorial' } },
+  { id: 'phobos', nom: 'Phobos', type: 'satellite', parent: 'mars', horizons: true, trek: true, ready: true, kepler: { a: 9375, e: 0.015, i: 1.1, om: 169.2, w: 216.3, M0: 189.7, unit: 'km', frame: 'mars-laplace', referencePoleIcrf: [317.7, 52.9] } },
   // Deimos, satellite de Mars : demi-grand axe 23457 km, excentricité 0,000, inclinaison 1,8°, nœud 54,3°, périastre 0,0°, anomalie moyenne 205,0°, dans l'équateur de Mars ; test à l'export : Horizons oui, Trek non.
-  { id: 'deimos', nom: 'Deimos', type: 'satellite', parent: 'mars', horizons: true, trek: false, ready: false, kepler: { a: 23457, e: 0.000, i: 1.8, om: 54.3, w: 0.0, M0: 205.0, unit: 'km', frame: 'mars-equatorial' } },
+  { id: 'deimos', nom: 'Deimos', type: 'satellite', parent: 'mars', horizons: true, trek: false, ready: false, kepler: { a: 23457, e: 0.000, i: 1.8, om: 54.3, w: 0.0, M0: 205.0, unit: 'km', frame: 'mars-laplace', referencePoleIcrf: [316.6, 53.5] } },
   // Amalthée, satellite de Jupiter : demi-grand axe 181400 km, excentricité 0,003, inclinaison 0,4°, nœud 282,9°, périastre 180,1°, anomalie moyenne 310,6°, dans l'équateur de Jupiter ; test à l'export : Horizons oui, Trek non.
-  { id: 'amalthea', nom: 'Amalthée', type: 'satellite', parent: 'jupiter', horizons: true, trek: false, ready: false, kepler: { a: 181400, e: 0.003, i: 0.4, om: 282.9, w: 180.1, M0: 310.6, unit: 'km', frame: 'jupiter-equatorial' } },
+  { id: 'amalthea', nom: 'Amalthée', type: 'satellite', parent: 'jupiter', horizons: true, trek: false, ready: false, kepler: { a: 181400, e: 0.003, i: 0.4, om: 282.9, w: 180.1, M0: 310.6, unit: 'km', frame: 'jupiter-laplace', referencePoleIcrf: [268.1, 64.5] } },
   // Himalia, satellite de Jupiter : demi-grand axe 11439000 km, excentricité 0,160, inclinaison 28,4°, nœud 64,2°, périastre 321,1°, anomalie moyenne 78,3°, dans le plan de Laplace de Jupiter ; test à l'export : Horizons oui, Trek non.
-  { id: 'himalia', nom: 'Himalia', type: 'satellite', parent: 'jupiter', horizons: true, trek: false, ready: false, kepler: { a: 11439000, e: 0.160, i: 28.4, om: 64.2, w: 321.1, M0: 78.3, unit: 'km', frame: 'jupiter-laplace' } },
+  { id: 'himalia', nom: 'Himalia', type: 'satellite', parent: 'jupiter', horizons: true, trek: false, ready: false, kepler: { a: 11439000, e: 0.160, i: 28.4, om: 64.2, w: 321.1, M0: 78.3, unit: 'km', frame: 'ecliptic' } },
   // Thébé, satellite de Jupiter : demi-grand axe 221900 km, excentricité 0,018, inclinaison 1,1°, nœud 340,4°, périastre 26,6°, anomalie moyenne 182,1°, dans l'équateur de Jupiter ; test à l'export : Horizons oui, Trek non.
-  { id: 'thebe', nom: 'Thébé', type: 'satellite', parent: 'jupiter', horizons: true, trek: false, ready: false, kepler: { a: 221900, e: 0.018, i: 1.1, om: 340.4, w: 26.6, M0: 182.1, unit: 'km', frame: 'jupiter-equatorial' } },
+  { id: 'thebe', nom: 'Thébé', type: 'satellite', parent: 'jupiter', horizons: true, trek: false, ready: false, kepler: { a: 221900, e: 0.018, i: 1.1, om: 340.4, w: 26.6, M0: 182.1, unit: 'km', frame: 'jupiter-laplace', referencePoleIcrf: [268.1, 64.5] } },
   // Hypérion, satellite de Saturne : demi-grand axe 1481500 km, excentricité 0,105, inclinaison 0,6°, nœud 87,1°, périastre 214,0°, anomalie moyenne 122,9°, dans l'équateur de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'hyperion', nom: 'Hypérion', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 1481500, e: 0.105, i: 0.6, om: 87.1, w: 214.0, M0: 122.9, unit: 'km', frame: 'saturn-equatorial' } },
+  { id: 'hyperion', nom: 'Hypérion', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 1481500, e: 0.105, i: 0.6, om: 87.1, w: 214.0, M0: 122.9, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [40.2, 83.6] } },
   // Phœbé, satellite de Saturne : demi-grand axe 12929400 km, excentricité 0,164, inclinaison 175,2°, nœud 192,7°, périastre 240,3°, anomalie moyenne 308,0°, dans le plan de Laplace de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'phoebe', nom: 'Phœbé', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 12929400, e: 0.164, i: 175.2, om: 192.7, w: 240.3, M0: 308.0, unit: 'km', frame: 'saturn-laplace' } },
+  { id: 'phoebe', nom: 'Phœbé', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 12929400, e: 0.164, i: 175.2, om: 192.7, w: 240.3, M0: 308.0, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [276.0, 67.5] } },
   // Janus, satellite de Saturne : demi-grand axe 151500 km, excentricité 0,007, inclinaison 0,2°, nœud 159,9°, périastre 11,1°, anomalie moyenne 111,7°, dans le plan de Laplace de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'janus', nom: 'Janus', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 151500, e: 0.007, i: 0.2, om: 159.9, w: 11.1, M0: 111.7, unit: 'km', frame: 'saturn-laplace' } },
+  { id: 'janus', nom: 'Janus', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 151500, e: 0.007, i: 0.2, om: 159.9, w: 11.1, M0: 111.7, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [40.6, 83.5] } },
   // Épiméthée, satellite de Saturne : demi-grand axe 151400 km, excentricité 0,020, inclinaison 0,3°, nœud 189,8°, périastre 96,3°, anomalie moyenne 197,2°, dans le plan de Laplace de Saturne ; test à l'export : Horizons oui, Trek non.
-  { id: 'epimetheus', nom: 'Épiméthée', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 151400, e: 0.020, i: 0.3, om: 189.8, w: 96.3, M0: 197.2, unit: 'km', frame: 'saturn-laplace' } },
-  // Puck, satellite de Uranus : demi-grand axe 49835 km, excentricité 0,00132230, inclinaison 179,849276°, nœud 105,293087°, périastre 119,886970°, anomalie moyenne 347,902957°, dans l'équateur de Uranus ; test à l'export : Horizons oui, Trek non.
-  { id: 'puck', nom: 'Puck', type: 'satellite', parent: 'uranus', horizons: true, trek: false, ready: false, kepler: { a: 49835, e: 0.00132230, i: 179.849276, om: 105.293087, w: 119.886970, M0: 347.902957, unit: 'km', frame: 'uranus-equatorial' } },
-  // Protée, satellite de Neptune : demi-grand axe 62005 km, excentricité 0,00100812, inclinaison 0,514387°, nœud 2,006895°, périastre 75,412521°, anomalie moyenne 6,563796°, dans l'équateur de Neptune ; test à l'export : Horizons oui, Trek non.
-  { id: 'proteus', nom: 'Protée', type: 'satellite', parent: 'neptune', horizons: true, trek: false, ready: false, kepler: { a: 62005, e: 0.00100812, i: 0.514387, om: 2.006895, w: 75.412521, M0: 6.563796, unit: 'km', frame: 'neptune-equatorial' } },
-  // Néréide, satellite de Neptune : demi-grand axe 5511155 km, excentricité 0,75065094, inclinaison 28,412104°, nœud 215,206619°, périastre 17,938407°, anomalie moyenne 215,625552°, dans l'équateur de Neptune ; test à l'export : Horizons oui, Trek non.
-  { id: 'nereid', nom: 'Néréide', type: 'satellite', parent: 'neptune', horizons: true, trek: false, ready: false, kepler: { a: 5511155, e: 0.75065094, i: 28.412104, om: 215.206619, w: 17.938407, M0: 215.625552, unit: 'km', frame: 'neptune-equatorial' } },
-  // Nix, satellite de Pluton : demi-grand axe 39326 km, excentricité 0,20417744, inclinaison 0,096367°, nœud 23,725609°, périastre 263,923781°, anomalie moyenne 154,755465°, dans l'équateur de Pluton ; test à l'export : Horizons oui, Trek non.
-  { id: 'nix', nom: 'Nix', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 39326, e: 0.20417744, i: 0.096367, om: 23.725609, w: 263.923781, M0: 154.755465, unit: 'km', frame: 'pluto-equatorial' } },
-  // Hydra, satellite de Pluton : demi-grand axe 98706 km, excentricité 0,36686881, inclinaison 0,237579°, nœud 105,691488°, périastre 160,431626°, anomalie moyenne 345,975587°, dans l'équateur de Pluton ; test à l'export : Horizons oui, Trek non.
-  { id: 'hydra', nom: 'Hydra', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 98706, e: 0.36686881, i: 0.237579, om: 105.691488, w: 160.431626, M0: 345.975587, unit: 'km', frame: 'pluto-equatorial' } },
-  // Kerberos, satellite de Pluton : demi-grand axe 133084 km, excentricité 0,55549274, inclinaison 0,434960°, nœud 329,406082°, périastre 312,243799°, anomalie moyenne 356,988893°, dans l'équateur de Pluton ; test à l'export : Horizons oui, Trek non.
-  { id: 'kerberos', nom: 'Kerberos', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 133084, e: 0.55549274, i: 0.434960, om: 329.406082, w: 312.243799, M0: 356.988893, unit: 'km', frame: 'pluto-equatorial' } },
-  // Styx, satellite de Pluton : demi-grand axe 42207 km, excentricité 0,10083580, inclinaison 0,050040°, nœud 333,699644°, périastre 305,468202°, anomalie moyenne 285,846456°, dans l'équateur de Pluton ; test à l'export : Horizons oui, Trek non.
-  { id: 'styx', nom: 'Styx', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 42207, e: 0.10083580, i: 0.050040, om: 333.699644, w: 305.468202, M0: 285.846456, unit: 'km', frame: 'pluto-equatorial' } },
+  { id: 'epimetheus', nom: 'Épiméthée', type: 'satellite', parent: 'saturn', horizons: true, trek: false, ready: false, kepler: { a: 151400, e: 0.020, i: 0.3, om: 189.8, w: 96.3, M0: 197.2, unit: 'km', frame: 'saturn-laplace', referencePoleIcrf: [40.6, 83.5] } },
+  // Puck : éléments moyens JPL URA182, époque J2000.0, plan équatorial d'Uranus.
+  { id: 'puck', nom: 'Puck', type: 'satellite', parent: 'uranus', horizons: true, trek: false, ready: false, kepler: { a: 86004, e: 0.000, i: 0.3, om: 216.1, w: 0.0, M0: 50.1, unit: 'km', frame: 'uranus-equatorial', sourceReference: 'JPL URA182', epochTdb: '2000-01-01.5' } },
+  // Protée : éléments moyens JPL NEP098, époque J2000.0, plan équatorial de Neptune.
+  { id: 'proteus', nom: 'Protée', type: 'satellite', parent: 'neptune', horizons: true, trek: false, ready: false, kepler: { a: 117700, e: 0.001, i: 0.6, om: 355.5, w: 357.2, M0: 297.4, unit: 'km', frame: 'neptune-equatorial', sourceReference: 'JPL NEP098', epochTdb: '2000-01-01.5' } },
+  // Néréide : éléments moyens JPL NEP105, époque 2020-01-01.0 TDB, repère écliptique.
+  { id: 'nereid', nom: 'Néréide', type: 'satellite', parent: 'neptune', horizons: true, trek: false, ready: false, kepler: { a: 5513900, e: 0.751, i: 5.1, om: 319.5, w: 296.8, M0: 318.5, unit: 'km', frame: 'ecliptic', sourceReference: 'JPL NEP105', epochTdb: '2020-01-01.0' } },
+  // Nix : éléments moyens JPL PLU060, époque J2000.0, plan équatorial de Pluton.
+  { id: 'nix', nom: 'Nix', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 49300, e: 0.015, i: 0.0, om: 0.0, w: 31.4, M0: 338.2, unit: 'km', frame: 'pluto-equatorial', sourceReference: 'JPL PLU060', epochTdb: '2000-01-01.5' } },
+  // Hydra : éléments moyens JPL PLU060, époque J2000.0, plan équatorial de Pluton.
+  { id: 'hydra', nom: 'Hydra', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 65200, e: 0.009, i: 0.3, om: 114.3, w: 139.3, M0: 335.0, unit: 'km', frame: 'pluto-equatorial', sourceReference: 'JPL PLU060', epochTdb: '2000-01-01.5' } },
+  // Kerberos : éléments moyens JPL PLU060, époque J2000.0, plan équatorial de Pluton.
+  { id: 'kerberos', nom: 'Kerberos', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 58300, e: 0.010, i: 0.4, om: 314.3, w: 32.1, M0: 276.1, unit: 'km', frame: 'pluto-equatorial', sourceReference: 'JPL PLU060', epochTdb: '2000-01-01.5' } },
+  // Styx : éléments moyens JPL PLU060, époque J2000.0, plan équatorial de Pluton.
+  { id: 'styx', nom: 'Styx', type: 'satellite', parent: 'pluto', horizons: true, trek: false, ready: false, kepler: { a: 43200, e: 0.025, i: 0.0, om: 0.0, w: 322.5, M0: 358.1, unit: 'km', frame: 'pluto-equatorial', sourceReference: 'JPL PLU060', epochTdb: '2000-01-01.5' } },
 // Fin de la table.
 ];
 /**

@@ -38,3 +38,21 @@ test('normalise les paramètres orbitaux NASA en conservant unités et provenanc
 test('échappe les apostrophes dans les littéraux ADQL', () => {
   assert.equal(escapeAdqlString("Barnard's Star"), "Barnard''s Star");
 });
+
+
+test('conserve le nœud ascendant uniquement lorsqu’une source le fournit explicitement', async () => {
+  const { normalizeExoplanet } = await import('./AstronomicalDataNormalizer.js');
+  const record = normalizeExoplanet({ pl_name: 'Node test b', hostname: 'Node test', pl_orblnode: 123.4, st_rad: 0.14 });
+  assert.equal(record.orbit.longitudeAscendingNodeDeg, 123.4);
+  assert.equal(record.host.radiusSolar, 0.14);
+  const missing = normalizeExoplanet({ pl_name: 'Node test c', hostname: 'Node test' });
+  assert.equal(missing.orbit.longitudeAscendingNodeDeg, null);
+  assert.equal(missing.host.radiusSolar, null);
+});
+
+test('convertit un rayon NASA exprimé en rayons joviens vers des rayons terrestres', async () => {
+  const { normalizeExoplanet } = await import('./AstronomicalDataNormalizer.js');
+  const record = normalizeExoplanet({ pl_name: 'Radius test b', hostname: 'Radius test', pl_radj: 1 });
+  assert.ok(Math.abs(record.physical.radiusEarth - 11.2089) < 1e-10);
+  assert.equal(record.physical.radiusSourceField, 'pl_radj-converted-to-earth-radii');
+});

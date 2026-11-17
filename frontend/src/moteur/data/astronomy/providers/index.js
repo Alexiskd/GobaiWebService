@@ -17,3 +17,4 @@ export { angularSeparationArcsec, resolveAstronomicalCrossReferences } from './A
 
 export { GaiaSectorCache, createGaiaSectorCache } from './GaiaSectorCache.js';
 export { GaiaDR3SectorStreamer, createGaiaDR3SectorStreamer, gaiaRecordToHeliocentricParsecs } from './GaiaDR3SectorStreamer.js';
+export { auditAstronomicalCatalog, classifyAstronomicalExistence } from './AstronomicalCatalogIntegrity.js';

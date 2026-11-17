@@ -28,6 +28,18 @@ export function validateAstronomicalPipeline(records, options = {}) {
     return summarize(checks);
   }
 
+  const integrity = built.catalogIntegrity || { statistics: {}, duplicateCandidates: [], identityConflicts: [], duplicateGroups: [] };
+  const integrityWarnings = (integrity.duplicateCandidates?.length || 0) + (integrity.identityConflicts?.length || 0);
+  checks.push(check('catalog.identity-deduplication', integrity.identityConflicts?.length ? 'warning' : (integrityWarnings || integrity.duplicateGroups?.length ? 'warning' : 'passed'), {
+    inputRecords: integrity.statistics?.inputRecords ?? records.length,
+    canonicalRecords: integrity.statistics?.canonicalRecords ?? records.length,
+    exactDuplicateRecordsRemoved: integrity.statistics?.exactDuplicateRecordsRemoved ?? 0,
+    exactDuplicateGroups: integrity.statistics?.duplicateGroups ?? 0,
+    coordinateDuplicateCandidates: integrity.statistics?.coordinateCandidates ?? 0,
+    identityConflicts: integrity.statistics?.identityConflicts ?? 0,
+    policy: 'fusion automatique uniquement par identifiant exact de catalogue ; proximité = candidat à examiner',
+  }));
+
   const attached = built.systems.flatMap((system) => system.planets.map((planet) => ({ system, planet })));
   const unresolved = built.candidatePlanetHosts.length;
   checks.push(check('identity.gaia-linkage', unresolved === 0 ? 'passed' : 'warning', {

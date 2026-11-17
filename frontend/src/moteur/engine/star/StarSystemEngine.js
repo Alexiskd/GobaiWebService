@@ -1,6 +1,7 @@
 import { propagateAstrometricRecord } from '../../data/astronomy/astrometry/AstrometricEngine.js';
 import { calculateExoplanetRecordPosition } from '../../data/astronomy/orbits/ExoplanetOrbitalEngine.js';
 import { resolveAstronomicalCrossReferences } from '../../data/astronomy/providers/AstronomicalCrossReferenceResolver.js';
+import { auditAstronomicalCatalog, classifyAstronomicalExistence } from '../../data/astronomy/providers/AstronomicalCatalogIntegrity.js';
 
 const isFiniteValue = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 
@@ -39,10 +40,12 @@ function enrichStar(records, targetEpochJulianYear) {
       ? { catalog: 'Gaia DR3', value: primary.sourceId }
       : null,
     coordinates: astrometricRecord.coordinates || null,
+    radiusSolar: isFiniteValue(primary.physical?.radiusSolar) ? Number(primary.physical.radiusSolar) : null,
     astrometry: astrometricRecord.astrometry || null,
     propagation,
     sourceRecords: records,
     provenance: records.map((record) => ({ id: record.id, source: record.source, retrievedAt: record.provenance?.retrievedAt ?? null })),
+    existenceEvidence: classifyAstronomicalExistence(primary),
   };
 }
 
@@ -63,12 +66,14 @@ function orbitalStateFor(planet, targetJulianDate, orbitOverridesByPlanetId) {
  */
 export function buildStarSystems(records = [], options = {}) {
   if (!Array.isArray(records)) throw new TypeError('records doit être un tableau.');
-  const graph = resolveAstronomicalCrossReferences(records, {
+  const catalogIntegrity = auditAstronomicalCatalog(records, { coordinateToleranceArcsec: options.coordinateToleranceArcsec ?? 1 });
+  const canonicalRecords = catalogIntegrity.canonicalRecords;
+  const graph = resolveAstronomicalCrossReferences(canonicalRecords, {
     coordinateToleranceArcsec: options.coordinateToleranceArcsec ?? 1,
     maxCoordinateCandidates: options.maxCoordinateCandidates ?? 5,
   });
-  const indexed = new Map(records.filter(Boolean).map((record, index) => [recordKey(record, index), record]));
-  const planets = records.filter((record) => record?.kind === 'exoplanet');
+  const indexed = new Map(canonicalRecords.filter(Boolean).map((record, index) => [recordKey(record, index), record]));
+  const planets = canonicalRecords.filter((record) => record?.kind === 'exoplanet');
   const systems = graph.entities.map((entity) => {
     const sourceRecords = entity.sourceRecords.map((key) => indexed.get(key)).filter(Boolean);
     const star = enrichStar(sourceRecords, options.targetEpochJulianYear);
@@ -87,10 +92,11 @@ export function buildStarSystems(records = [], options = {}) {
   const planetLinks = new Map(graph.planetHostLinks.map((link) => [link.planet, link]));
 
   planets.forEach((planet, index) => {
-    const key = recordKey(planet, records.indexOf(planet));
+    const key = recordKey(planet, canonicalRecords.indexOf(planet));
     const link = planetLinks.get(key);
     if (link?.status === 'linked-by-gaia-id' && systemBySourceKey.has(link.host)) {
       const system = systemBySourceKey.get(link.host);
+      if (!isFiniteValue(system.star.radiusSolar) && isFiniteValue(planet.host?.radiusSolar)) system.star.radiusSolar = Number(planet.host.radiusSolar);
       if (!system.star.sourceRecords?.some((record) => record?.source === 'CDS SIMBAD' && record.name) && planet.host?.name) {
         system.star.name = planet.host.name;
       }
@@ -103,6 +109,7 @@ export function buildStarSystems(records = [], options = {}) {
         discovery: planet.discovery || null,
         orbitalState: orbitalStateFor(planet, options.targetJulianDate, options.orbitOverridesByPlanetId),
         provenance: planet.provenance || null,
+        existenceEvidence: classifyAstronomicalExistence(planet),
       });
     } else {
       candidatePlanetHosts.push({
@@ -112,10 +119,12 @@ export function buildStarSystems(records = [], options = {}) {
         status: link?.status || 'unresolved-host',
         candidateStarSystemId: link?.host ? systems.find((system) => system.sourceRecordIds.includes(link.host))?.id || null : null,
         automaticAttachment: false,
+        existenceEvidence: classifyAstronomicalExistence(planet),
       });
     }
   });
 
+  const { canonicalRecords: _canonicalRecords, ...catalogIntegritySummary } = catalogIntegrity;
   return {
     schemaVersion: 1,
     engine: 'Gobai StarSystemEngine',
@@ -124,8 +133,11 @@ export function buildStarSystems(records = [], options = {}) {
     systems,
     candidatePlanetHosts,
     crossReferences: graph,
+    catalogIntegrity: catalogIntegritySummary,
     statistics: {
       inputRecords: records.filter(Boolean).length,
+      canonicalRecords: canonicalRecords.length,
+      exactDuplicateRecordsRemoved: catalogIntegrity.statistics.exactDuplicateRecordsRemoved,
       starSystems: systems.length,
       verifiedSystems: systems.filter((system) => system.identityStatus === 'verified-gaia-identity').length,
       attachedExoplanets: systems.reduce((sum, system) => sum + system.planets.length, 0),

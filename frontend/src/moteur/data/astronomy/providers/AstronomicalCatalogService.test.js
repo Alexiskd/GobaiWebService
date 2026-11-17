@@ -48,6 +48,9 @@ test('interroge NASA avec query/format minuscules et normalise l’orbite', asyn
   assert.match(url.searchParams.get('query'), /FROM pscomppars/);
   assert.match(url.searchParams.get('query'), /pl_orblper/);
   assert.match(url.searchParams.get('query'), /pl_orbtper/);
+  assert.match(url.searchParams.get('query'), /st_rad/);
+  assert.match(url.searchParams.get('query'), /pl_radj/);
+  assert.doesNotMatch(url.searchParams.get('query'), /pl_orblnode/);
   assert.equal(result.records[0].orbit.periodDays, 11.186);
 });
 
