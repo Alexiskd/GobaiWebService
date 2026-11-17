@@ -1,51 +1,64 @@
 /**
- * OfflineOrbitEngine — propagation orbitale locale, sans fetch, XHR ni dépendance réseau.
- * Planètes : VSOP87A quand la série locale existe, sinon éléments képlériens séculaires.
- * Lune : théorie ELP abrégée via planetOrbits.
- * Satellites : propagation képlérienne circulaire à partir de a et P du catalogue, orientée
- * dans le plan équatorial du parent. Le catalogue actuel ne fournit pas e, i, Ω, ω ni M0 :
- * ces paramètres ne sont donc pas inventés et le modèle satellite reste explicitement circulaire.
+ * Moteur orbital local et autonome.
+ * Planètes : calcul existant de planetOrbits (VSOP87 / éléments képlériens).
+ * Satellites : orbite circulaire calculée avec le demi-grand axe et la période du catalogue.
+ * Aucun appel réseau et aucune éphéméride distante.
  */
-import { earthPosition, heliocentric, AU_UNITS } from './planetOrbits.jsx';
+import { earthPosition, heliocentric } from './planetOrbits.jsx';
 
 const DAY_MS = 86_400_000;
 const J2000_MS = Date.UTC(2000, 0, 1, 12);
-const EARTH_RADIUS_KM = 6371;
 
-const norm = (v) => { const n = Math.hypot(...v) || 1; return v.map((x) => x / n); };
-const cross = (a, b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const normalize = (v) => {
+  const length = Math.hypot(...v) || 1;
+  return v.map((n) => n / length);
+};
 
-/** Position d'une planète dans le repère de scène, en UA. */
+const cross = (a, b) => [
+  a[1] * b[2] - a[2] * b[1],
+  a[2] * b[0] - a[0] * b[2],
+  a[0] * b[1] - a[1] * b[0],
+];
+
+/** Position héliocentrique d'une planète en UA. */
 export function calculatePlanetPosition(def, centuriesTT) {
   if (!def?.elements) return null;
-  return def.earth ? earthPosition(def.elements, centuriesTT) : heliocentric(def.elements, centuriesTT);
+  return def.earth
+    ? earthPosition(def.elements, centuriesTT)
+    : heliocentric(def.elements, centuriesTT);
 }
 
-/** Position satellite-parent en km, écliptique J2000. */
-export function calculateSatelliteRelativeKm(def, ms, poleScene = null) {
-  const a = Number(def?.aKm);
+/** Position d'un satellite par rapport à sa planète, en km écliptiques J2000. */
+export function calculateSatelliteRelativeKm(def, timeMs, parentPole = null) {
+  const radius = Number(def?.aKm);
   const period = Number(def?.periodDays);
-  if (!(a > 0) || !Number.isFinite(period) || period === 0) return { x: 0, y: 0, z: 0 };
-  const angle = (2 * Math.PI * (ms - J2000_MS)) / (period * DAY_MS);
-  const c = Math.cos(angle) * a;
-  const s = Math.sin(angle) * a;
-  if (!poleScene) return { x: c, y: s, z: 0 };
-  const n = norm(poleScene);
-  const ref = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-  const u = norm(cross(ref, n));
-  const w = cross(n, u);
-  // Base dans le repère Three.js, puis conversion scène (x,y,z) → écliptique (x,-z,y).
-  const q = [c*u[0]+s*w[0], c*u[1]+s*w[1], c*u[2]+s*w[2]];
-  return { x: q[0], y: -q[2], z: q[1] };
+  if (!(radius > 0) || !(period > 0)) return { x: 0, y: 0, z: 0 };
+
+  const angle = (2 * Math.PI * (timeMs - J2000_MS)) / (period * DAY_MS);
+  const x = radius * Math.cos(angle);
+  const y = radius * Math.sin(angle);
+  if (!parentPole) return { x, y, z: 0 };
+
+  // Oriente le plan circulaire selon l'axe de rotation connu de la planète.
+  const normal = normalize(parentPole);
+  const reference = Math.abs(normal[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+  const axisX = normalize(cross(reference, normal));
+  const axisY = cross(normal, axisX);
+  const scene = [
+    x * axisX[0] + y * axisY[0],
+    x * axisX[1] + y * axisY[1],
+    x * axisX[2] + y * axisY[2],
+  ];
+  return { x: scene[0], y: -scene[2], z: scene[1] };
 }
 
-/** Instance légère commune au moteur de scène. */
+/** Petite façade conservée pour ne pas modifier le moteur 3D existant. */
 export class OfflineOrbitEngine {
-  constructor() { this.mode = 'offline'; this.lastUpdateMs = 0; }
-  planet(def, centuries) { return calculatePlanetPosition(def, centuries); }
-  satellite(def, ms, pole) { return calculateSatelliteRelativeKm(def, ms, pole); }
-  updateClock(ms) { this.lastUpdateMs = ms; }
-  getStatus() { return { mode: this.mode, networkRequired: false, epochMs: this.lastUpdateMs }; }
-}
+  planet(def, centuriesTT) {
+    return calculatePlanetPosition(def, centuriesTT);
+  }
 
-export const ORBIT_ENGINE_CONSTANTS = Object.freeze({ DAY_MS, J2000_MS, EARTH_RADIUS_KM, AU_UNITS });
+  satellite(def, timeMs, parentPole) {
+    return calculateSatelliteRelativeKm(def, timeMs, parentPole);
+  }
+}
