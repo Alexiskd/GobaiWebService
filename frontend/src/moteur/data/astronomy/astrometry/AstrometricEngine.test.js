@@ -87,3 +87,80 @@ test('accepte un mouvement propre manquant comme nul sans inventer une mesure', 
   assert.equal(result.used.radialVelocity, false);
   assert.equal(result.parallaxMas, 50);
 });
+
+import {
+  buildGaiaAstrometricCovariance,
+  gaiaDR3RowToAstrometricRecord,
+  propagateAstrometricPositionCovariance,
+} from './AstrometricEngine.js';
+
+test('construit une covariance Gaia 5x5 avec corrélations symétriques', () => {
+  const covariance = buildGaiaAstrometricCovariance({
+    ra_error: 2, dec_error: 3, parallax_error: 4, pmra_error: 5, pmdec_error: 6,
+    ra_dec_corr: 0.5, pmra_pmdec_corr: -0.25,
+  });
+  assert.equal(covariance.length, 5);
+  assert.equal(covariance[0][0], 4);
+  assert.equal(covariance[0][1], 3);
+  assert.equal(covariance[1][0], 3);
+  assert.equal(covariance[3][4], -7.5);
+});
+
+test('rejette les coefficients de corrélation Gaia hors intervalle', () => {
+  assert.throws(() => buildGaiaAstrometricCovariance({
+    ra_error: 1, dec_error: 1, parallax_error: 1, pmra_error: 1, pmdec_error: 1,
+    ra_dec_corr: 1.2,
+  }), /ra_dec_corr/);
+});
+
+test('normalise une ligne Gaia DR3 avec covariance et provenance', () => {
+  const row = {
+    source_id: '123456', ref_epoch: 2016, ra: 217.4, dec: -62.6,
+    parallax: 768, pmra: -3781, pmdec: 769, radial_velocity: -20,
+    ra_error: 0.1, dec_error: 0.1, parallax_error: 0.02, pmra_error: 0.03, pmdec_error: 0.03,
+    radial_velocity_error: 0.2, astrometric_params_solved: 31,
+  };
+  const result = gaiaDR3RowToAstrometricRecord(row);
+  assert.equal(result.id, 'gaia-dr3:123456');
+  assert.equal(result.coordinates.epoch, 2016);
+  assert.equal(result.astrometry.covariance.length, 6);
+  assert.equal(result.provenance.catalog, 'gaiadr3.gaia_source');
+});
+
+test('propage la covariance Gaia vers une covariance 3D finie en pc²', () => {
+  const row = {
+    source_id: '123456', ref_epoch: 2016, ra: 217.4, dec: -62.6,
+    parallax: 768, pmra: -3781, pmdec: 769, radial_velocity: -20,
+    ra_error: 0.1, dec_error: 0.1, parallax_error: 0.02, pmra_error: 0.03, pmdec_error: 0.03,
+    ra_dec_corr: 0.2, dec_parallax_corr: -0.1, pmra_pmdec_corr: 0.3,
+  };
+  const normalized = gaiaDR3RowToAstrometricRecord(row);
+  const result = propagateAstrometricPositionCovariance(normalized, 2026);
+  assert.equal(result.covariancePc2.length, 3);
+  assert.equal(result.parameterOrder.length, 5);
+  assert.ok(result.sigmaPc.x > 0);
+  assert.ok(result.sigmaPc.y > 0);
+  assert.ok(result.sigmaPc.z > 0);
+  assert.ok(result.covariancePc2.flat().every(Number.isFinite));
+});
+
+test('la propagation standard inclut les incertitudes si une covariance est fournie', () => {
+  const normalized = gaiaDR3RowToAstrometricRecord({
+    source_id: '123456', ref_epoch: 2016, ra: 10, dec: 20,
+    parallax: 100, pmra: 10, pmdec: 20, radial_velocity: 5,
+    ra_error: 1, dec_error: 1, parallax_error: 0.2, pmra_error: 0.1, pmdec_error: 0.1,
+  });
+  const result = propagateAstrometricCoordinates(normalized, 2026);
+  assert.equal(result.positionUncertainty.method, 'linearized-jacobian');
+  assert.equal(result.positionUncertainty.covariancePc2.length, 3);
+});
+
+test('inclut l’incertitude de vitesse radiale dans une covariance 6x6', () => {
+  const normalized = gaiaDR3RowToAstrometricRecord({
+    source_id: '123456', ref_epoch: 2016, ra: 10, dec: 20,
+    parallax: 100, pmra: 10, pmdec: 20, radial_velocity: 5, radial_velocity_error: 0.5,
+    ra_error: 1, dec_error: 1, parallax_error: 0.2, pmra_error: 0.1, pmdec_error: 0.1,
+  });
+  const result = propagateAstrometricPositionCovariance(normalized, 2026);
+  assert.equal(result.parameterOrder[5], 'radial_velocity');
+});

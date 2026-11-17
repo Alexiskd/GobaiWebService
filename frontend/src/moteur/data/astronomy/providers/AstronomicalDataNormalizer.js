@@ -1,3 +1,5 @@
+import { buildGaiaAstrometricCovariance } from '../astrometry/AstrometricEngine.js';
+
 const numberOrNull = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const number = Number(value);
@@ -21,6 +23,14 @@ export function normalizeGaiaSource(row, retrievedAt = null) {
       properMotionRaMasYr: numberOrNull(row.pmra),
       properMotionDecMasYr: numberOrNull(row.pmdec),
       radialVelocityKmS: numberOrNull(row.radial_velocity),
+      ...( ['ra_error', 'dec_error', 'parallax_error', 'pmra_error', 'pmdec_error'].every((field) => numberOrNull(row[field]) !== null)
+        ? { covariance: (() => {
+          const base = buildGaiaAstrometricCovariance(row);
+          if (numberOrNull(row.radial_velocity_error) === null) return base;
+          const expanded = Array.from({ length: 6 }, (_, i) => Array.from({ length: 6 }, (_, j) => i < 5 && j < 5 ? base[i][j] : 0));
+          expanded[5][5] = Number(row.radial_velocity_error) ** 2;
+          return expanded;
+        })() } : {}),
     },
     photometry: { gaiaG: numberOrNull(row.phot_g_mean_mag), gaiaBpMinusRp: numberOrNull(row.bp_rp) },
     provenance: { provider: 'gaia', release: 'DR3', retrievedAt, raw: row },

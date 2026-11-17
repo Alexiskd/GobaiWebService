@@ -8,7 +8,17 @@ export {
   propagateAstrometricCoordinates,
   propagateAstrometricRecord,
   propagateAstrometricBatch,
+  buildGaiaAstrometricCovariance,
+  gaiaDR3RowToAstrometricRecord,
+  propagateAstrometricPositionCovariance,
 } from './astrometry/AstrometricEngine.js';
+
+export {
+  PROXIMA_CENTAURI_ASTROMETRY,
+  createProximaCentauriAstrometricRecord,
+  calculateProximaCentauriPosition,
+  propagateProximaCentauriRecord,
+} from './astrometry/ProximaCentauriAstrometry.js';
 
 export {
   EXOPLANET_ORBITAL_CONSTANTS,

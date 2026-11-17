@@ -122,3 +122,13 @@ test('refuse les appels navigateur directs SIMBAD/NASA quand aucun proxy de prod
   await assert.rejects(service.resolveSimbadName('Proxima Centauri'), /VITE_ASTRONOMY_PROXY_URL/);
   await assert.rejects(service.findExoplanetsByHost('Proxima Centauri'), /VITE_ASTRONOMY_PROXY_URL/);
 });
+
+test('sélectionne les erreurs et corrélations Gaia nécessaires à la covariance astrométrique', async () => {
+  const mock = mockFetch([{ source_id: '123', ra: 10, dec: 20, ref_epoch: 2016 }]);
+  const service = new AstronomicalCatalogService({ fetchImpl: mock.fetchImpl, endpoints: { gaia: 'https://mock.test/gaia' } });
+  await service.findGaiaSource('123');
+  const query = new URL(mock.calls[0]).searchParams.get('QUERY');
+  for (const field of ['ra_error', 'dec_error', 'parallax_error', 'pmra_error', 'pmdec_error', 'radial_velocity_error', 'ra_dec_corr', 'pmra_pmdec_corr']) {
+    assert.match(query, new RegExp(`\\b${field}\\b`));
+  }
+});

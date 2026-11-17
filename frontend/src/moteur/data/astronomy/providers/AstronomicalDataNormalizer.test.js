@@ -56,3 +56,14 @@ test('convertit un rayon NASA exprimé en rayons joviens vers des rayons terrest
   assert.ok(Math.abs(record.physical.radiusEarth - 11.2089) < 1e-10);
   assert.equal(record.physical.radiusSourceField, 'pl_radj-converted-to-earth-radii');
 });
+
+test('conserve la covariance Gaia DR3 lorsque les erreurs et corrélations sont disponibles', () => {
+  const star = normalizeGaiaSource({
+    source_id: '123456', ref_epoch: 2016, ra: 10, dec: 20, parallax: 100, pmra: 1, pmdec: 2,
+    ra_error: 0.1, dec_error: 0.2, parallax_error: 0.3, pmra_error: 0.4, pmdec_error: 0.5,
+    ra_dec_corr: 0.25, pmra_pmdec_corr: -0.2,
+  });
+  assert.equal(star.astrometry.covariance.length, 5);
+  assert.ok(Math.abs(star.astrometry.covariance[0][1] - 0.005) < 1e-12);
+  assert.ok(Math.abs(star.astrometry.covariance[3][4] + 0.04) < 1e-12);
+});

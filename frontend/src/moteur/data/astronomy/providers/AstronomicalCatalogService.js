@@ -16,7 +16,7 @@ export const ASTRONOMICAL_PROVIDERS = Object.freeze({
   exoplanet: { id: 'exoplanet', label: 'NASA Exoplanet Archive', endpoint: 'https://exoplanetarchive.ipac.caltech.edu/TAP/sync', table: 'pscomppars' },
 });
 
-const GAIA_COLUMNS = 'source_id,ra,dec,parallax,pmra,pmdec,radial_velocity,phot_g_mean_mag,bp_rp,ref_epoch';
+const GAIA_COLUMNS = 'source_id,ra,ra_error,dec,dec_error,parallax,parallax_error,pmra,pmra_error,pmdec,pmdec_error,radial_velocity,radial_velocity_error,ra_dec_corr,ra_parallax_corr,ra_pmra_corr,ra_pmdec_corr,dec_parallax_corr,dec_pmra_corr,dec_pmdec_corr,parallax_pmra_corr,parallax_pmdec_corr,pmra_pmdec_corr,astrometric_params_solved,phot_g_mean_mag,bp_rp,ref_epoch';
 const EXOPLANET_COLUMNS = 'pl_name,hostname,gaia_dr3_id,discoverymethod,disc_year,pl_orbper,pl_orbsmax,pl_orbeccen,pl_orbincl,pl_orblper,pl_orbtper,st_rad,pl_rade,pl_radj,pl_bmasse,pl_bmassj,pl_eqt,sy_dist,sy_snum,sy_pnum,ra,dec';
 
 export class AstronomicalCatalogService {
