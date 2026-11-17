@@ -1,10 +1,8 @@
-# Gobai Space — application Rust (Axum) déployable sur Render.
-# Le serveur Rust sert le frontend compilé et l'API d'éphémérides képlériennes.
+# Gobai Space — déploiement frontend uniquement, sans service backend.
 services:
   - type: web
-    name: gobai-server-rust
-    runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    healthCheckPath: /api/health
+    name: static-gobai
+    runtime: static
+    buildCommand: npm ci --prefix frontend && npm run build --prefix frontend
+    staticPublishPath: frontend/dist
     autoDeploy: false
