@@ -19,6 +19,7 @@ export {
   calculateProximaCentauriPosition,
   propagateProximaCentauriRecord,
 } from './astrometry/ProximaCentauriAstrometry.js';
+export { createProximaCentauriIllustrativeSystem } from './astrometry/ProximaCentauriIllustrativeSystem.js';
 
 export {
   EXOPLANET_ORBITAL_CONSTANTS,
@@ -51,6 +52,8 @@ export {
 
 export {
   PARSEC_IN_AU,
+  INTERSTELLAR_OVERVIEW_AU_PER_PC,
+  INTERSTELLAR_DISTANCE_COMPRESSION,
   createInterstellarEngineConfig,
   globalCameraPosition,
   resolveInterstellarSystemId,

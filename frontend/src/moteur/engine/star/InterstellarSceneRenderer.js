@@ -75,6 +75,8 @@ export function buildInterstellarSystemModel(starSystem, options = {}) {
     positionStatus: 'available', position, heliocentricParsecs, distancePc,
     distanceLightYears: distancePc * 3.261563777,
     localScene: buildExoplanetSceneModel(effectiveSystem, options),
+    representation: starSystem.representation || null,
+    starVisualColor: effectiveStar.visualColor ?? 0xffd27a,
     astrometricState,
     targetEpoch: astrometricState?.epoch ?? coordinates.epoch ?? null,
     warnings: [...(effectiveStar.propagation?.warnings || [])],
@@ -93,12 +95,24 @@ export function createInterstellarSystemGroup(THREE, model, options = {}) {
     return root;
   }
   root.position.set(model.position.x, model.position.y, model.position.z);
+  // Marqueur stellaire global indépendant du détail du système planétaire.
+  // Sa taille sera ajustée en pixels écran pour rester repérable au dézoom.
+  const markerGeometry = new THREE.SphereGeometry(1, 16, 12);
+  const markerMaterial = new THREE.MeshBasicMaterial({ color: model.starVisualColor ?? 0xffd27a, depthWrite: false });
+  const globalMarker = new THREE.Mesh(markerGeometry, markerMaterial);
+  globalMarker.name = `${model.name} — marqueur global`;
+  globalMarker.visible = true;
+  globalMarker.userData = { gobaiKind: 'interstellar-star-marker', sourceSystemId: model.sourceSystemId };
+  globalMarker.renderOrder = 20;
+  root.add(globalMarker);
   let localGroup = createExoplanetSystemGroup(THREE, model.localScene, options);
   localGroup.name = `local-planetary-system:${model.sourceSystemId}`;
   root.add(localGroup);
   root.userData.distancePc = model.distancePc;
   root.userData.distanceLightYears = model.distanceLightYears;
   root.userData.localGroup = localGroup;
+  root.userData.globalMarker = globalMarker;
+  root.userData.representation = model.representation;
   root.userData.loaded = true;
   root.userData.releaseResources = () => {
     if (!localGroup) return false;
@@ -123,7 +137,11 @@ export function createInterstellarSystemGroup(THREE, model, options = {}) {
     if (localGroup) localGroup.userData.updateFromModel(nextModel);
     return nextModel;
   };
-  root.userData.dispose = () => root.userData.releaseResources();
+  root.userData.dispose = () => {
+    root.userData.releaseResources();
+    markerGeometry.dispose?.();
+    markerMaterial.dispose?.();
+  };
   return root;
 }
 
@@ -172,7 +190,9 @@ export class InterstellarSceneRenderer {
   focusSystem(id, { distance = this.focusDistance } = {}) {
     const entry = this.systems.get(id);
     if (!entry || entry.model.positionStatus !== 'available') return { ok: false, reason: 'position-unavailable', id };
-    const p = entry.group.position;
+    // Le focus doit utiliser la position globale, pas la position locale
+    // recentrée autour de l'origine flottante de la scène.
+    const p = entry.model.position;
     const target = new this.THREE.Vector3(p.x, p.y, p.z);
     if (this.controls?.target?.copy) this.controls.target.copy(target);
     if (this.camera?.position?.copy) {
@@ -190,15 +210,37 @@ export class InterstellarSceneRenderer {
     const normalized = String(tier || '').toUpperCase();
     if (!entry || !['STAR', 'PLANETS', 'DETAILED'].includes(normalized)) return false;
     entry.group.userData.lodTier = normalized;
+    const marker = entry.group.userData.globalMarker;
+    if (marker) marker.visible = normalized === 'STAR';
     const localGroup = entry.group.userData.localGroup;
     if (!localGroup) return true;
     localGroup.traverse?.((object) => {
       const kind = object.userData?.gobaiKind;
-      if (kind === 'exoplanet') object.visible = normalized !== 'STAR' && Boolean(object.userData.positionAvailable ?? object.visible);
+      if (kind === 'host-star') object.visible = normalized !== 'STAR';
+      else if (kind === 'exoplanet') object.visible = normalized !== 'STAR' && Boolean(object.userData.positionAvailable ?? object.visible);
       else if (kind === 'exoplanet-orbit') object.visible = normalized === 'DETAILED';
     });
     return true;
   }
+  /** Maintient les marqueurs stellaires à une taille lisible en pixels pendant le dézoom. */
+  updateGlobalMarkers(camera, viewportHeight, { markerDiameterPx = 9 } = {}) {
+    if (!camera?.position || !Number.isFinite(viewportHeight) || viewportHeight <= 0) return 0;
+    const fov = Number(camera.fov) || 50;
+    const tangent = Math.tan(fov * Math.PI / 360);
+    let updated = 0;
+    for (const { group } of this.systems.values()) {
+      const marker = group.userData?.globalMarker;
+      if (!marker?.scale?.setScalar) continue;
+      const distance = camera.position.distanceTo
+        ? camera.position.distanceTo(group.position)
+        : Math.hypot(camera.position.x - group.position.x, camera.position.y - group.position.y, camera.position.z - group.position.z);
+      const radius = Math.max(1, distance * tangent * (markerDiameterPx / 2) / viewportHeight);
+      marker.scale.setScalar(radius);
+      updated += 1;
+    }
+    return updated;
+  }
+
   setSystemLoaded(id, loaded) {
     const entry = this.systems.get(id);
     if (!entry || entry.model.positionStatus !== 'available') return false;

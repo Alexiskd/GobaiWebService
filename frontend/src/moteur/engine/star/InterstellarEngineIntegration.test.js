@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   PARSEC_IN_AU,
+  INTERSTELLAR_OVERVIEW_AU_PER_PC,
+  INTERSTELLAR_DISTANCE_COMPRESSION,
   createInterstellarEngineConfig,
   globalCameraPosition,
   resolveInterstellarSystemId,
@@ -9,10 +11,13 @@ import {
   resolveInterstellarFocusDistance,
 } from './InterstellarEngineIntegration.js';
 
-test('la conversion parsec utilise la même échelle physique que les UA du Système solaire', () => {
+test('la vue interstellaire compresse les distances sans modifier l’échelle AU locale', () => {
   const config = createInterstellarEngineConfig({ auUnits: 23455 });
-  assert.equal(config.parsecToSceneUnits, 23455 * PARSEC_IN_AU);
+  assert.equal(config.parsecToSceneUnits, 23455 * INTERSTELLAR_OVERVIEW_AU_PER_PC);
   assert.equal(config.auToSceneUnits, 23455);
+  assert.equal(config.trueAuPerPc, PARSEC_IN_AU);
+  assert.equal(config.distanceCompressionFactor, INTERSTELLAR_DISTANCE_COMPRESSION);
+  assert.equal(config.distanceMode, 'compressed-interstellar-overview');
 });
 
 test('la configuration rejette une échelle AU invalide', () => {

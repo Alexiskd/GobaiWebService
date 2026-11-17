@@ -129,6 +129,7 @@ import { GaiaDR3SectorStreamer } from '../data/astronomy/providers/GaiaDR3Sector
 import { GaiaStarfieldLayer } from './star/GaiaStarfieldLayer.js';
 import { createAstronomicalSystemExplorer } from '../data/astronomy/AstronomicalSystemExplorer.js';
 import { createProximaCentauriAstrometricRecord } from '../data/astronomy/astrometry/ProximaCentauriAstrometry.js';
+import { createProximaCentauriIllustrativeSystem } from '../data/astronomy/astrometry/ProximaCentauriIllustrativeSystem.js';
 import { InterstellarSceneRenderer } from './star/InterstellarSceneRenderer.js';
 import {
   createInterstellarEngineConfig,
@@ -1303,6 +1304,22 @@ export class SolarEngine {
     this.galacticStreamingFrame = 0;
     this.galacticStreamingLastResult = null;
     this.interstellarLODFrame = 0;
+
+    // Proxima est présente dès l'ouverture : aucun appel réseau externe n'est requis
+    // pour obtenir un repère 3D lors du dézoom. Le système planétaire est schématique.
+    const currentYear = new Date().getUTCFullYear();
+    const currentJulianDate = Number.isFinite(this.simMs) ? this.simMs / 864e5 + 2440587.5 : 2451545.0;
+    const initialProxima = this.registerInterstellarSystem(createProximaCentauriIllustrativeSystem(), {
+      id: 'system:proxima-centauri',
+      targetEpoch: currentYear,
+      targetJulianDate: currentJulianDate,
+      scaleMode: 'readable',
+      auToSceneUnits: AU_UNITS,
+      perivolumeRadiusAu: 10,
+      backgroundRadius: config.parsecToSceneUnits * 3,
+      initialLod: 'STAR',
+    });
+    if (!initialProxima.ok) console.warn('[Gobai interstellar] Proxima Centauri non initialisée:', initialProxima);
   }
 
   /** Recherche un système par nom dans Gaia/SIMBAD/NASA puis l'enregistre dans la scène globale. */
@@ -1403,7 +1420,8 @@ export class SolarEngine {
     const focusTarget = {
       name: entry.model.name,
       r: Number.isFinite(options.focusRadius) && options.focusRadius > 0 ? options.focusRadius : this.interstellarConfig.focusRadius,
-      get: () => new THREE.Vector3(entry.group.position.x, entry.group.position.y, entry.group.position.z),
+      // La cible caméra reste dans le repère global ; le groupe 3D est recentré à chaque frame.
+      get: () => new THREE.Vector3(entry.model.position.x, entry.model.position.y, entry.model.position.z),
       interstellarSystemId: coreId,
     };
     const focusIndex = this.focusTargets.push(focusTarget) - 1;
@@ -1419,7 +1437,7 @@ export class SolarEngine {
       });
     }
     this.interstellarLOD?.forget(coreId);
-    this.interstellarRenderer.setSystemLOD(systemForScene.id, 'DETAILED');
+    this.interstellarRenderer.setSystemLOD(systemForScene.id, options.initialLod || (coreId === 'system:proxima-centauri' ? 'STAR' : 'DETAILED'));
     this.interstellarResourceLifecycle?.register(coreId, {
       release: () => this.interstellarRenderer?.setSystemLoaded(coreId, false),
       restore: () => this.interstellarRenderer?.setSystemLoaded(coreId, true),
@@ -1466,7 +1484,7 @@ export class SolarEngine {
     if (!result?.ok) return result || { ok: false, reason: 'renderer-unavailable', id };
     entry.targetEpoch = Number(targetEpoch);
     entry.model = this.interstellarRenderer.getSystem(entry.starSystem.id).model;
-    const position = entry.group.position;
+    const position = entry.model.position;
     const center = [position.x, position.y, position.z];
     this.updateExternalSystemPerivolume(id, center);
     this.galacticSpatialIndex?.upsert(id, entry.model.heliocentricParsecs, {
@@ -1700,7 +1718,7 @@ export class SolarEngine {
     for (const [id, entry] of this.interstellarSystems || []) {
       if (this.getCoreEffectiveState(id) !== 'ACTIVE') continue;
       entry.group.userData.updateLocalScene?.(entry.starSystem, { targetJulianDate: julianDate });
-      this.interstellarRenderer?.setSystemLOD(entry.starSystem.id, entry.group.userData.lodTier || 'DETAILED');
+      this.interstellarRenderer?.setSystemLOD(entry.starSystem.id, entry.group.userData.lodTier || 'STAR');
     }
   }
 
@@ -4102,6 +4120,7 @@ export class SolarEngine {
     }
     // Met à jour la matrice de la caméra.
     cam.updateMatrixWorld();
+    this.interstellarRenderer?.updateGlobalMarkers(cam, this.renderer?.domElement?.clientHeight || this.H || innerHeight);
     // Intérieur des géantes : dessiné seulement quand la caméra est dans l'astre, solidaire de sa rotation propre.
     for (const g of this.gasInteriors) {
       // Affiche l'intérieur si la caméra est dans l'astre, avec sa rotation propre.

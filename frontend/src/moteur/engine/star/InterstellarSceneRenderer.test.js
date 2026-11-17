@@ -32,13 +32,22 @@ test('renderer garde les systèmes dans un registre et refuse focus sans positio
   class Vector3 { constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;} }
   class Geometry { constructor(){} dispose(){} setAttribute(){} }
   class Material { constructor(options){Object.assign(this,options);} dispose(){} }
-  class Mesh { constructor(geometry,material){this.geometry=geometry;this.material=material;this.position={set(){}};this.userData={};} }
+  class Mesh { constructor(geometry,material){this.geometry=geometry;this.material=material;this.position={set(){}};this.scale={value:1,setScalar(v){this.value=v;}};this.userData={};} }
   class BufferAttribute { constructor(array,itemSize){this.array=array;this.itemSize=itemSize;} }
   const THREE = { Group, Vector3, Mesh, SphereGeometry: Geometry, MeshBasicMaterial: Material, BufferGeometry: Geometry, BufferAttribute, LineBasicMaterial: Material, Line: Mesh };
   const scene = { add(x){this.item=x;}, remove(){} };
   const renderer = new InterstellarSceneRenderer({ THREE, scene });
   const result = renderer.addSystem(system());
   assert.equal(result.model.positionStatus, 'available'); assert.equal(renderer.getSystem('proxima'), result);
+  assert.equal(result.group.userData.globalMarker.visible, true);
+  assert.equal(renderer.updateGlobalMarkers({ position: { x: 0, y: 0, z: 0 }, fov: 50 }, 900), 1);
+  assert.ok(result.group.userData.globalMarker.scale.value >= 1);
+  assert.equal(renderer.setSystemLOD('proxima', 'STAR'), true);
+  assert.equal(result.group.userData.globalMarker.visible, true);
+  assert.equal(renderer.setSystemLOD('proxima', 'PLANETS'), true);
+  assert.equal(result.group.userData.globalMarker.visible, false);
+  const focused = renderer.focusSystem('proxima');
+  assert.deepEqual(focused.target, result.model.position);
   const epochUpdate = renderer.updateSystemEpoch('proxima', 2025);
   assert.equal(epochUpdate.ok, true);
   assert.equal(result.model.targetEpoch, 2025);
@@ -59,9 +68,9 @@ test('renderer applique les niveaux LOD aux planètes et aux orbites', () => {
   const group = { userData: { localGroup } };
   renderer.systems.set('sys', { group, model: { positionStatus: 'available' } });
   assert.equal(renderer.setSystemLOD('sys', 'STAR'), true);
-  assert.equal(star.visible, true); assert.equal(planet.visible, false); assert.equal(orbit.visible, false);
+  assert.equal(star.visible, false); assert.equal(planet.visible, false); assert.equal(orbit.visible, false);
   assert.equal(renderer.setSystemLOD('sys', 'PLANETS'), true);
-  assert.equal(planet.visible, true); assert.equal(orbit.visible, false);
+  assert.equal(star.visible, true); assert.equal(planet.visible, true); assert.equal(orbit.visible, false);
   assert.equal(renderer.setSystemLOD('sys', 'DETAILED'), true);
   assert.equal(planet.visible, true); assert.equal(orbit.visible, true);
   assert.equal(renderer.setSystemLOD('sys', 'invalid'), false);

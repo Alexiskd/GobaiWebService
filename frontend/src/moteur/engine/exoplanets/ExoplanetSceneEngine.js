@@ -104,7 +104,7 @@ export function buildExoplanetSceneModel(starSystem, options = {}) {
     schemaVersion: 1,
     kind: 'exoplanet-scene-model',
     sourceSystemId: starSystem.id,
-    star: { id: starSystem.star.id, name: starSystem.star.name, identityStatus: starSystem.identityStatus, radiusSolar: starRadiusSolar },
+    star: { id: starSystem.star.id, name: starSystem.star.name, identityStatus: starSystem.identityStatus, radiusSolar: starRadiusSolar, visualColor: starSystem.star.visualColor ?? null },
     scaleMode,
     scaleFidelity: scaleMode === 'physical'
       ? (physicallyConsistentScale ? 'physical-distance-and-known-radii; unknown-radii-as-markers' : 'custom-scale-not-physically-consistent')
@@ -158,7 +158,7 @@ export function createExoplanetSystemGroup(THREE, sceneModel, options = {}) {
   const starRadius = sceneModel.scaleMode === 'physical'
     ? (finite(sceneModel.star.radiusSolar) ? Number(sceneModel.star.radiusSolar) * 109.2 * (sceneModel.units.earthRadiusSceneUnits || 0.18) : 0.05)
     : (finite(options.starVisualRadius) ? Math.max(0.01, Number(options.starVisualRadius)) : 2.5);
-  const star = new THREE.Mesh(new THREE.SphereGeometry(starRadius, 24, 16), new THREE.MeshBasicMaterial({ color: options.starColor ?? 0xffd27a }));
+  const star = new THREE.Mesh(new THREE.SphereGeometry(starRadius, 24, 16), new THREE.MeshBasicMaterial({ color: options.starColor ?? sceneModel.star.visualColor ?? 0xffd27a }));
   star.name = sceneModel.star.name || 'Host star';
   star.userData = { gobaiKind: 'host-star', astronomicalId: sceneModel.star.id, physicalRadiusKnown: finite(sceneModel.star.radiusSolar), radiusSolar: sceneModel.star.radiusSolar, representationMode: sceneModel.scaleMode }; 
   root.add(star);

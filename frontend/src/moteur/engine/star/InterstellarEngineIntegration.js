@@ -1,13 +1,24 @@
 export const PARSEC_IN_AU = 206264.80624709636;
+export const INTERSTELLAR_OVERVIEW_AU_PER_PC = 512;
+export const INTERSTELLAR_DISTANCE_COMPRESSION = PARSEC_IN_AU / INTERSTELLAR_OVERVIEW_AU_PER_PC;
 
 const positive = (value) => Number.isFinite(Number(value)) && Number(value) > 0;
 
-/** Unités cohérentes avec le moteur solaire : 1 parsec = 206264.806... UA. */
-export function createInterstellarEngineConfig({ auUnits = 23455 } = {}) {
+/**
+ * Le Système solaire conserve son échelle AU habituelle. Pour la vue globale,
+ * les distances entre systèmes sont compressées : 1 pc d'affichage = 512 UA
+ * de scène. Cela rend Proxima visible dans la plage de zoom de l'application.
+ */
+export function createInterstellarEngineConfig({ auUnits = 23455, overviewAuPerPc = INTERSTELLAR_OVERVIEW_AU_PER_PC } = {}) {
   if (!positive(auUnits)) throw new RangeError('auUnits doit être strictement positif.');
+  if (!positive(overviewAuPerPc)) throw new RangeError('overviewAuPerPc doit être strictement positif.');
   return Object.freeze({
     auToSceneUnits: Number(auUnits),
-    parsecToSceneUnits: Number(auUnits) * PARSEC_IN_AU,
+    parsecToSceneUnits: Number(auUnits) * Number(overviewAuPerPc),
+    overviewAuPerPc: Number(overviewAuPerPc),
+    trueAuPerPc: PARSEC_IN_AU,
+    distanceCompressionFactor: PARSEC_IN_AU / Number(overviewAuPerPc),
+    distanceMode: 'compressed-interstellar-overview',
     focusRadius: 2.5,
     focusDistance: 25,
     perivolumeRadiusAu: 10,
