@@ -485,6 +485,13 @@ export interface SatelliteData {
   aKm: number;
   // periodDays : durée d'un tour, en jours.
   periodDays: number;
+  // Éléments elliptiques facultatifs ; absents, l'orbite est circulaire (e = 0).
+  eccentricity?: number;
+  inclinationDeg?: number;
+  longitudeAscendingNodeDeg?: number;
+  argumentOfPeriapsisDeg?: number;
+  meanAnomalyAtEpochDeg?: number;
+  epochMs?: number;
 // Fin de SatelliteData.
 }
 

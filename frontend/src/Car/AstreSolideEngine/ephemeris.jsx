@@ -13,21 +13,15 @@ import { AU_UNITS, D } from './planetOrbits.jsx';
 // Réexporte le calcul des orbites : les appelants importent tout depuis ce fichier, comme avant.
 export {
   // Constantes.
-  D, AU_KM, AU_UNITS, TT_MINUS_UTC_S, MOON_EQUATOR_TILT_DEG, MOON_BARYCENTRE_SHARE,
+  D, AU_KM, AU_UNITS, TT_MINUS_UTC_S, MOON_KEPLER_ELEMENTS, keplerPositionFromElements,
   // Échelles de temps.
   centuriesTT, julianDayTT,
   // Positions, vitesses et orbites des planètes.
   solveKepler, elementsAt, heliocentric, heliocentricEcliptic, heliocentricState, orbitPositions,
-  // Lune, et centre de la Terre par rapport au barycentre Terre–Lune.
-  moonGeocentric, earthOffsetFromBarycentre, earthPosition,
+  // Position de la Terre dans le référentiel héliocentrique fixe.
+  earthPosition,
 // Fin des réexports.
 } from './planetOrbits.jsx';
-
-/** Rayon terrestre moyen (km). */
-const EARTH_RADIUS_KM = 6371;
-/** Sinus et cosinus d'un angle en degrés. */
-const sd = (deg) => Math.sin(deg * D);
-const cd = (deg) => Math.cos(deg * D);
 
 /** Position héliocentrique (UA, repère de la scène) → vecteur de la scène, en unités de scène. */
 export const toScene = (p) => new THREE.Vector3(p[0] * AU_UNITS, p[1] * AU_UNITS, p[2] * AU_UNITS);

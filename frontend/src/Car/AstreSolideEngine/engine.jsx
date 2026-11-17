@@ -18,7 +18,9 @@ import {
 // Importe nearestIndex et saveCamera, l'astre le plus proche et la sauvegarde de la caméra.
 import { nearestIndex, saveCamera } from './viewLock.jsx';
 // Importe les constantes et les calculs de position des astres, depuis ephemeris.
-import { AU_UNITS, D, centuriesTT, earthPosition, heliocentric, orbitPositions, lonLatToVec, moonGeocentric, moonToScene, MOON_EQUATOR_TILT_DEG } from './ephemeris.jsx';
+import { AU_UNITS, D, centuriesTT, earthPosition, heliocentric, orbitPositions, lonLatToVec } from './ephemeris.jsx';
+import { MOON_KEPLER_ELEMENTS } from './planetOrbits.jsx';
+import { satelliteState, synchronousBasis } from './satelliteMath.jsx';
 // Importe layoutLabels, le placement des étiquettes sans chevauchement.
 import { layoutLabels } from './labelLayout.jsx';
 // Importe bindInput, le branchement de la souris, du clavier et du tactile.
@@ -1015,9 +1017,7 @@ export class SolarEngine {
     // L'ajoute au groupe.
     this.moonGroup.add(this.moon);
 
-    // Orbite géocentrique de la Lune : un mois sidéral centré sur l'instant simulé, mêmes calculs que la Lune
-    // affichée (modèle ELP offline), recalculé au fil du temps (voir moonOrbit.jsx). Repère écliptique de la scène ;
-    // la ligne suit ensuite la Terre à chaque image.
+    // Orbite géocentrique de la Lune : ellipse képlérienne propagée par le même solveur que les autres satellites.
     this.moonOrbitTrail = new MoonOrbit({ color: MOON_ORBIT_COLOR, positionAt: (ms, out) => this.moonRelAt(ms, out) });
     // La ligne de l'orbite.
     this.moonOrbit = this.moonOrbitTrail.line;
@@ -1027,22 +1027,17 @@ export class SolarEngine {
     this.moonW = new THREE.Vector3();
     // Vecteur de la Terre à la Lune.
     this.moonRel = new THREE.Vector3();   // Terre → Lune
-    // Dernière position géocentrique : aucune.
-    this.moonGeo = null;                  // dernière position géocentrique calculée
-    // Table de positions du serveur : aucune.
-
-    // Source des positions : la théorie ELP.
-    this.moonSource = 'ELP';
-    // Quaternion de travail : inclinaison.
-    this.qTilt = new THREE.Quaternion();
+    // État géocentrique dérivé du vecteur képlérien courant.
+    this.moonGeo = null;
+    this.moonSource = 'Kepler à deux corps';
+    this.moonBasisMatrix = new THREE.Matrix4();
+    this.moonBasisX = new THREE.Vector3();
+    this.moonBasisY = new THREE.Vector3();
+    this.moonBasisZ = new THREE.Vector3();
     // Vecteur de travail : Soleil.
     this.tmpSun = new THREE.Vector3();
     // Vecteur de travail : Terre.
     this.tmpEarth = new THREE.Vector3();
-    // Quaternion de travail : rotation.
-    this.qSpin = new THREE.Quaternion();
-    // Vecteur de travail : axe des nœuds.
-    this.nodeAxis = new THREE.Vector3();
   // Fin de initMoon.
   }
 
@@ -3711,7 +3706,7 @@ export class SolarEngine {
   updateBodies(T, d) {
     // Pour chaque planète (début).
     this.planets.forEach((p) => {
-      // Position héliocentrique calculée par le modèle offline VSOP87A / Kepler.
+      // Position héliocentrique calculée par le solveur Kepler offline, Soleil fixe.
       p.ecl = calculateOrbitPosition(p.def, this.simMs);
       // Sa position dans la scène.
       p.w.set(p.ecl[0] * AU_UNITS, p.ecl[1] * AU_UNITS, p.ecl[2] * AU_UNITS);
@@ -3761,54 +3756,44 @@ export class SolarEngine {
   // Fin de updateBodies.
   }
 
-  // Lune en temps réel : position (théorie ELP abrégée) et orientation synchrone. La rotation est uniforme
-  // (méridien 0 vers la position moyenne de la Terre) alors que l'orbite ne l'est pas : la face visible oscille
-  // donc comme dans le ciel (libration en longitude), et l'équateur incliné de 1,54° donne la libration en latitude.
-  /** Vecteur Terre → Lune calculé offline par la théorie ELP. */
-  // moonRelAt : le vecteur de la Terre à la Lune à un instant donné (début).
+  // Lune : même propagation képlérienne à deux corps que les autres satellites.
   moonRelAt(ms, out = new THREE.Vector3()) {
-    // Position par la théorie, à cet instant.
-    const g = moonGeocentric(centuriesTT(ms));
-    // La convertit vers la scène.
-    return moonToScene(g, out);
-  // Fin de moonRelAt.
+    const state = satelliteState(MOON_KEPLER_ELEMENTS, null, ms, 60_000, null);
+    return out.set(state.rel[0], state.rel[1], state.rel[2]);
   }
 
-  // updateMoon : place et oriente la Lune (début).
-  updateMoon(T) {
-    // Position par la théorie.
-    const g = moonGeocentric(T);
-    // La position est issue du modèle ELP embarqué.
-    this.moonSource = 'théorie ELP offline';
-    // Garde la position géocentrique.
-    this.moonGeo = g;
-    // Vecteur de la Terre à la Lune.
-    moonToScene(g, this.moonRel);
-    // Position de la Lune dans la scène.
+  // Place la Lune en ajoutant son vecteur géocentrique à la position héliocentrique de la Terre.
+  updateMoon(_T) {
+    const state = satelliteState(MOON_KEPLER_ELEMENTS, null, this.simMs, 60_000, null);
+    this.moonSource = 'Kepler à deux corps';
+    this.moonRel.set(state.rel[0], state.rel[1], state.rel[2]);
     this.moonW.copy(this.earth.w).add(this.moonRel);
-    // Met à jour le tracé de l'orbite.
+
+    const distanceScene = this.moonRel.length();
+    const distanceKm = distanceScene * 6371;
+    const latitude = Math.asin(Math.max(-1, Math.min(1, this.moonRel.y / Math.max(distanceScene, 1e-12))));
+    const longitude = Math.atan2(-this.moonRel.z, this.moonRel.x);
+    this.moonGeo = {
+      lon: ((longitude / D) % 360 + 360) % 360,
+      lat: latitude / D,
+      distKm: distanceKm,
+    };
+
     this.moonOrbitTrail.update(this.simMs);
 
-    // Lois de Cassini : le nœud ascendant de l'équateur lunaire est le nœud descendant de l'orbite (Ω + 180°).
-    const nodeEq = (g.node + 180) * D;
-    // Axe des nœuds de l'équateur lunaire.
-    this.nodeAxis.set(Math.cos(nodeEq), 0, -Math.sin(nodeEq));
-    // Inclinaison de l'équateur autour de cet axe.
-    this.qTilt.setFromAxisAngle(this.nodeAxis, MOON_EQUATOR_TILT_DEG * D);
-    // Rotation synchrone : le méridien 0 vers la Terre moyenne.
-    this.qSpin.setFromAxisAngle(Y_AXIS, (g.meanLon + 180) * D);
-    // Orientation : l'inclinaison après la rotation.
-    this.moonGroup.quaternion.multiplyQuaternions(this.qTilt, this.qSpin);
+    // Orientation synchrone dérivée du plan orbital et de la vitesse képlérienne.
+    const basis = synchronousBasis(state.rel, state.vel);
+    this.moonBasisMatrix.makeBasis(
+      this.moonBasisX.fromArray(basis.x),
+      this.moonBasisY.fromArray(basis.y),
+      this.moonBasisZ.fromArray(basis.z),
+    );
+    this.moonGroup.quaternion.setFromRotationMatrix(this.moonBasisMatrix);
 
-    // Lumière cendrée : phase de la Terre vue de la Lune ≈ complément de la phase de la Lune vue de la Terre.
     if (this.moonTiles) {
-      // Direction du Soleil vue de la Lune.
       const toSun = this.tmpSun.copy(this.moonW).negate().normalize();
-      // Direction de la Terre vue de la Lune.
       const toEarth = this.tmpEarth.copy(this.moonRel).negate().normalize();
-      // Lumière cendrée : forte quand la Terre est pleine vue de la Lune.
       this.moonTiles.uniforms.earthshine.value = 1 - (1 + toSun.dot(toEarth)) / 2;
-    // Fin de ce cas.
     }
   // Fin de updateMoon.
   }

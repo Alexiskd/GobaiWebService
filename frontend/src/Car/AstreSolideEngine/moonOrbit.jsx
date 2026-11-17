@@ -1,7 +1,7 @@
 // Tracé de l'orbite de la Lune autour de la Terre.
 //
 // Cas particulier du tracé générique BodyOrbit (bodyOrbit.jsx) : seule la Lune a ses positions calculées par le
-// moteur lui-même (table JPL Horizons quand elle couvre l'instant, sinon théorie ELP), au lieu du moteur
+// moteur lui-même (solveur képlérien offline), au lieu du moteur
 // képlérien du backend. Tout le reste — fenêtre d'un mois sidéral centrée sur l'instant simulé, dégradé
 // d'opacité, fermeture de la boucle, recalcul au fil du temps — est celui du tracé générique.
 //

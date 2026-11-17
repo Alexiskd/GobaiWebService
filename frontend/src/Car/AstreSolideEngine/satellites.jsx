@@ -151,13 +151,9 @@ export class SatelliteSystem {
 
   /** Compatibilité : aucune table distante n’est nécessaire au modèle offline. */
   // setEphemeris : reçoit les tables de positions (début).
-  setEphemeris(satellites) {
-    // Pour chaque satellite reçu (début).
-    for (const s of satellites || []) {
-      // Garde sa table si elle a au moins quatre points.
-      if (Array.isArray(s.points) && s.points.length >= 4) this.tables.set(s.id, s.points);
-    // Fin de la boucle.
-    }
+  setEphemeris(_satellites) {
+    // Le moteur est strictement local : les trajectoires tabulées ou distantes ne remplacent jamais Kepler.
+    this.tables.clear();
   // Fin de setEphemeris.
   }
 

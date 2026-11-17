@@ -1,13 +1,13 @@
 /**
  * Satellites naturels (Jupiter, Saturne) : calculs purs, testés dans satelliteMath.test.jsx.
  *
- * Positions : table JPL Horizons planète → satellite (km, écliptique J2000), interpolée comme celle de la Lune ;
- * sans table, orbite circulaire de repli dans le plan équatorial de la planète (position indicative seulement).
+ * Positions : solveur képlérien elliptique commun aux planètes, avec éléments relatifs à la planète hôte.
+ * Si seuls aKm et periodDays sont fournis, e=0 et l'orbite est circulaire faute d'éléments supplémentaires.
  * Rotation : synchrone (face cachée comme la Lune) : longitude 0 tournée vers la planète, pôle Nord sur la normale
  * de l'orbite. L'hémisphère avant (apex du mouvement) est alors à 90° O, comme dans la convention de l'UAI.
  */
-// Importe interpolateState, l'interpolation d'une table de positions, depuis moonEphemeris.
-import { interpolateState } from './moonEphemeris.jsx';
+// Importe le solveur képlérien commun aux planètes et aux satellites.
+import { D, keplerPositionFromElements } from './planetOrbits.jsx';
 
 // Rayon de la Terre en kilomètres : l'unité de longueur de la scène.
 const KM_PER_EARTH_RADIUS = 6371;
@@ -21,58 +21,58 @@ const DAY_MS = 864e5;
 export const eclipticKmToScene = ({ x, y, z }) => [x / KM_PER_EARTH_RADIUS, z / KM_PER_EARTH_RADIUS, -y / KM_PER_EARTH_RADIUS];
 
 /**
- * Orbite de repli (km, écliptique) : cercle de rayon aKm, période periodDays, phase nulle à J2000, dans le plan
- * perpendiculaire à `pole` (pôle de la planète, repère de la scène) ou dans l'écliptique sans pôle connu.
+ * Position képlérienne relative au corps parent, en km dans le repère écliptique.
+ * Les données minimales aKm + periodDays définissent une orbite circulaire ; si e et les angles
+ * orbitaux sont présents, la même résolution elliptique que pour les planètes est utilisée.
  */
-// Déclare et exporte fallbackRelKm : la définition du satellite, l'instant en millisecondes et le pôle de la planète (aucun par défaut).
 export function fallbackRelKm(def, ms, pole = null) {
-  // Angle parcouru depuis J2000 : un tour par période.
-  const angle = (2 * Math.PI * (ms - J2000_MS)) / (def.periodDays * DAY_MS);
-  // Les deux coordonnées du point sur le cercle de rayon aKm.
-  const c = Math.cos(angle) * def.aKm, s = Math.sin(angle) * def.aKm;
-  // Sans pôle : cercle dans le plan de l'écliptique.
-  if (!pole) return { x: c, y: s, z: 0 };
-  // Base du plan équatorial dans la scène, puis retour à l'écliptique : scène (x, y, z) = écliptique (x, z, −y).
-  // Pôle rendu unitaire.
+  const periodDays = Number(def.periodDays);
+  const aKm = Number(def.aKm);
+  if (!(aKm > 0) || !Number.isFinite(periodDays) || periodDays === 0) {
+    throw new RangeError(`Éléments képlériens invalides pour le satellite ${def.id || def.name || ''}`);
+  }
+  const dtDays = (ms - (Number.isFinite(def.epochMs) ? def.epochMs : J2000_MS)) / DAY_MS;
+  const meanAnomaly = (Number(def.meanAnomalyAtEpochDeg || 0) * D)
+    + (2 * Math.PI * dtDays / periodDays);
+  const local = keplerPositionFromElements({
+    a: aKm,
+    e: Number.isFinite(def.eccentricity) ? def.eccentricity : 0,
+    inclination: (Number(def.inclinationDeg) || 0) * D,
+    ascendingNode: (Number(def.longitudeAscendingNodeDeg) || 0) * D,
+    argumentPeriapsis: (Number(def.argumentOfPeriapsisDeg) || 0) * D,
+    meanAnomaly,
+  });
+
+  // Sans pôle renseigné, le repère local est directement l'écliptique.
+  if (!pole) return { x: local[0], y: local[1], z: local[2] };
+
+  // Le pôle du parent définit la normale du plan de référence local, dans le repère Three.js.
   const n = norm(pole);
-  // Axe de référence : le deuxième axe de la scène, ou le premier quand le pôle en est trop proche.
   const ref = Math.abs(n[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
-  // Premier vecteur du plan équatorial : perpendiculaire à la référence et au pôle, unitaire.
   const u = norm(cross(ref, n));
-  // Second vecteur du plan : perpendiculaire au pôle et au premier.
-  const w = cross(n, u);
-  // Point de l'orbite dans la scène : combinaison des deux vecteurs.
-  const p = [c * u[0] + s * w[0], c * u[1] + s * w[1], c * u[2] + s * w[2]];
-  // Le renvoie dans le repère écliptique : (x, y, z) de la scène devient (x, −z, y).
-  return { x: p[0], y: -p[2], z: p[1] };
-// Fin de fallbackRelKm.
+  const v = cross(n, u);
+  const scene = [
+    local[0] * u[0] + local[1] * v[0] + local[2] * n[0],
+    local[0] * u[1] + local[1] * v[1] + local[2] * n[1],
+    local[0] * u[2] + local[1] * v[2] + local[2] * n[2],
+  ];
+  // Retour au repère écliptique utilisé par eclipticKmToScene.
+  return { x: scene[0], y: scene[2], z: -scene[1] };
 }
 
-/**
- * Position relative à la planète (repère de la scène) et vitesse (scène par seconde), à l'instant `ms`.
- * `exact` : vrai quand la table Horizons couvre l'instant.
- */
-// Déclare et exporte satelliteState : la définition, la table de points, l'instant, le pas de temps (une minute par défaut) et le pôle.
-export function satelliteState(def, points, ms, dtMs = 60_000, pole = null) {
-  // at : position interpolée dans la table à un instant, ou null sans table ou hors de la table.
-  const at = (t) => (points && interpolateState(points, t)) || null;
-  // Position de la table à l'instant demandé.
-  const p = at(ms);
-  // exact : vrai quand la table a donné une position.
-  const exact = Boolean(p);
-  // get : position à un instant, par la table quand elle couvre l'instant demandé, sinon par l'orbite de repli (aussi quand la table ne couvre pas cet instant voisin).
-  const get = (t) => (exact ? at(t) : fallbackRelKm(def, t, pole)) || fallbackRelKm(def, t, pole);
-  // Position relative dans la scène : celle de la table, ou celle du repli.
-  const rel = eclipticKmToScene(exact ? p : fallbackRelKm(def, ms, pole));
-  // Position un pas de temps avant.
-  const a = eclipticKmToScene(get(ms - dtMs));
-  // Position un pas de temps après.
-  const b = eclipticKmToScene(get(ms + dtMs));
-  // Facteur qui convertit l'écart entre ces deux positions en vitesse par seconde.
-  const s = 1000 / (2 * dtMs);
-  // Renvoie la position, la vitesse (différence des deux positions voisines) et exact.
-  return { rel, vel: [(b[0] - a[0]) * s, (b[1] - a[1]) * s, (b[2] - a[2]) * s], exact };
-// Fin de satelliteState.
+/** Position relative (rayons terrestres) et vitesse (scène/seconde), par propagation képlérienne offline. */
+export function satelliteState(def, _points, ms, dtMs = 60_000, pole = null) {
+  const position = fallbackRelKm(def, ms, pole);
+  const before = eclipticKmToScene(fallbackRelKm(def, ms - dtMs, pole));
+  const after = eclipticKmToScene(fallbackRelKm(def, ms + dtMs, pole));
+  const rel = eclipticKmToScene(position);
+  const scale = 1000 / (2 * dtMs);
+  return {
+    rel,
+    vel: [(after[0] - before[0]) * scale, (after[1] - before[1]) * scale, (after[2] - before[2]) * scale],
+    exact: false,
+    source: 'Kepler-two-body',
+  };
 }
 
 // norm : rend un vecteur unitaire (début).

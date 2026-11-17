@@ -39,7 +39,7 @@ test('Horizons : interpolation de Catmull-Rom précise au mètre entre deux poin
 });
 
 // Test : hors de la table.
-test('Horizons : hors de la table → null (repli sur la théorie ELP)', () => {
+test('Horizons : hors de la table → null (hors service : propagation Kepler locale)', () => {
   // Avant le début : null.
   assert.equal(interpolateState(table, -1), null);
   // Après la fin : null.

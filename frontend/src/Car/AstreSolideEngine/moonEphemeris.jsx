@@ -2,8 +2,7 @@
 
 /**
  * Position Terre → Lune (km, écliptique J2000) à l'instant `t` (ms UTC), par spline de Catmull-Rom sur la table
- * (pas régulier de 30 min). Erreur d'interpolation de l'ordre du mètre. `null` hors de la table : le moteur
- * revient alors à la théorie ELP abrégée.
+ * (pas régulier de 30 min). Erreur d'interpolation de l'ordre du mètre. `null` hors de la table : le moteur utilise désormais le solveur képlérien local.
  * @param {{ t: number, x: number, y: number, z: number }[]} points  triés par date
  */
 // Déclare et exporte interpolateState : la table des positions et l'instant.
