@@ -792,8 +792,25 @@ export function SolarScene({ data, onSettled, covered = false }) {
         }}
       // Fin du conteneur de la scène.
       />
-   
 
+      {/* KeepTrack remplace le rendu du globe terrestre lorsque la Terre est sélectionnée. */}
+      {currentBodyId === 'earth' && (
+        <Box
+          data-keeptrack-embed
+          sx={{ position: 'absolute', inset: 0, zIndex: 1, overflow: 'hidden', bgcolor: '#05070c' }}
+        >
+          <Box
+            component="iframe"
+            title="KeepTrack — suivi des satellites en orbite terrestre"
+            src="https://embed.keeptrack.space/"
+            loading="eager"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allow="fullscreen"
+            allowFullScreen
+            sx={{ display: 'block', width: '100%', height: '100%', border: 0, bgcolor: '#05070c' }}
+          />
+        </Box>
+      )}
 
       {/* Le bandeau du haut (ordinateur ; sur téléphone, dans la zone du titre). */}
       {!compact && hudTopEl}
