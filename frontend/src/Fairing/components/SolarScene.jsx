@@ -126,7 +126,6 @@ import { useTileBases } from './scene/useTileBases.jsx';
 import { FavoriteIcon } from './ui/icons.jsx';
 // Importe les deux zones de commandes du téléphone.
 import { MobileDock, MobileTopBar } from './ui/MobileZones.jsx';
-import { KeepTrackEarth } from './scene/KeepTrackEarth.jsx';
 
 // Scène complète : moteur 3D, calques, panneaux et barre d’outils.
 // La logique vit dans les hooks de `scene/` ; ce composant assemble et place les composantes.
@@ -247,9 +246,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const settingsOpen = panels.panel === 'settings'; const setSettingsOpen = (on) => panels.show('settings', on);
   // Moniteur de performance masqué par défaut ; activable depuis les paramètres.
   const [performanceMonitorVisible, setPerformanceMonitorVisible] = useState(false);
-  const [keepTrackObjectsVisible, setKeepTrackObjectsVisible] = useState(true);
-  const [keepTrackZoom, setKeepTrackZoom] = useState(1);
-  const [keepTrackResetSignal, setKeepTrackResetSignal] = useState(0);
   // Claude : posé dans le HUD à la place de la navigation, indépendant des autres fenêtres (il reste ouvert quand il
   // en ouvre une) et jamais modal — la scène et le moteur restent utilisables pendant tout l'échange.
   // État : panneau de Claude affiché ou non ; affiché au départ, puisqu'il tient la place de la navigation.
@@ -405,11 +401,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const atmosphere = useAtmosphere({ engine });
   // Commandes envoyées au moteur.
   const actions = useSceneActions({ engineRef, setAuto: camera.setAuto });
-  // Le pavé de zoom Gobai transmet aussi son facteur au moteur KeepTrack lorsqu'il affiche la Terre.
-  const zoomScene = useCallback((factor) => {
-    actions.zoom(factor);
-    setKeepTrackZoom((value) => Math.max(1, Math.min(30, value / factor)));
-  }, [actions]);
   // Ma position : suivie en direct (point bleu) et zoom d'arrivée, depuis l'icône ⌖ de la navball ou les paramètres.
   // « Ma position » : suivi et zoom d'arrivée.
   const myPosition = useMyPosition({ showPosition: actions.showPosition, goPlace: actions.pickPlace, push });
@@ -545,7 +536,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       // moonPlace : survole un lieu nommé de la Lune ; goToSite cible la Lune et choisit son altitude de survol.
       case 'moonPlace': actions.goMoonSite(cmd.place); break;
       // zoom : applique le facteur de zoom.
-      case 'zoom': zoomScene(cmd.factor); break;
+      case 'zoom': actions.zoom(cmd.factor); break;
       // reset : revient à la vue d'ensemble.
       case 'reset': actions.resetView(); break;
       // Tout autre type : rien n'est fait.
@@ -746,7 +737,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
         // Verrouillage : transmis au moteur.
         onToggleLock={(on) => engine?.setViewLock(on)}
         // Vue globale.
-        onReset={() => { actions.resetView(); setKeepTrackZoom(1); setKeepTrackResetSignal((v) => v + 1); }}
+        onReset={actions.resetView}
         // Aide : ouvre la fenêtre d'aide.
         onHelp={() => panels.setPanel('help')}
         // Son actif ou non.
@@ -763,8 +754,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onTogglePerformanceMonitor={() => setPerformanceMonitorVisible((visible) => !visible)}
         // Moniteur de performance : son état.
         performanceMonitorVisible={performanceMonitorVisible}
-        keepTrackObjectsVisible={keepTrackObjectsVisible}
-        onKeepTrackObjectsVisibleChange={setKeepTrackObjectsVisible}
         // Galerie : ouvre la fenêtre.
         onGallery={() => setGalleryOpen(true)}
         // Paramètres : ouvre la fenêtre.
@@ -804,13 +793,24 @@ export function SolarScene({ data, onSettled, covered = false }) {
       // Fin du conteneur de la scène.
       />
 
-      {/* KeepTrack remplace le globe terrestre ; son API officielle est reliée aux commandes de Gobai. */}
-      <KeepTrackEarth
-          visible={currentBodyId === 'earth'}
-          showTrackedObjects={keepTrackObjectsVisible}
-          zoomFactor={keepTrackZoom}
-          resetSignal={keepTrackResetSignal}
-      />
+      {/* KeepTrack remplace le rendu du globe terrestre lorsque la Terre est sélectionnée. */}
+      {currentBodyId === 'earth' && (
+        <Box
+          data-keeptrack-embed
+          sx={{ position: 'absolute', inset: 0, zIndex: 1, overflow: 'hidden', bgcolor: '#05070c' }}
+        >
+          <Box
+            component="iframe"
+            title="KeepTrack — suivi des satellites en orbite terrestre"
+            src="https://embed.keeptrack.space/"
+            loading="eager"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allow="fullscreen"
+            allowFullScreen
+            sx={{ display: 'block', width: '100%', height: '100%', border: 0, bgcolor: '#05070c' }}
+          />
+        </Box>
+      )}
 
       {/* Le bandeau du haut (ordinateur ; sur téléphone, dans la zone du titre). */}
       {!compact && hudTopEl}
@@ -832,7 +832,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       // Fin de la navball.
       />
       {/* Le pavé de zoom. */}
-      <ZoomPad onZoom={zoomScene} />
+      <ZoomPad onZoom={actions.zoom} />
       {/* La jauge LiDAR (ordinateur ; sur téléphone, sous le titre). */}
       {!compact && lidarEl}
       {/* L'indicateur de chargement des tuiles (ordinateur ; sur téléphone, sous le titre). */}
@@ -955,8 +955,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         open={settingsOpen}
         // Moniteur de performance, désactivé par défaut.
         performanceMonitorVisible={performanceMonitorVisible}
-        keepTrackObjectsVisible={keepTrackObjectsVisible}
-        onKeepTrackObjectsVisibleChange={setKeepTrackObjectsVisible}
         // Moniteur de performance : son changement.
         onPerformanceMonitorChange={setPerformanceMonitorVisible}
         // Fermeture.
