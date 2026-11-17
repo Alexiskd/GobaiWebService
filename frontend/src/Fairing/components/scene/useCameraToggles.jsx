@@ -31,8 +31,8 @@ export function useCameraToggles(engine, initial = {}) {
   const [orbits, setOrbits] = useState(true);
   // État : points et noms des planètes, affichés au départ.
   const [markers, setMarkers] = useState(true);
-  // État : points et noms des satellites, masqués au départ.
-  const [satellites, setSatellites] = useState(false);
+  // État : points et noms des satellites, affichés au départ avec les autres astres.
+  const [satellites, setSatellites] = useState(true);
   // État : ciel lointain, affiché au départ.
   const [sky, setSky] = useState(true);
   // État : atmosphères de Vénus et de Mars, réglables séparément depuis la fiche de chaque planète.

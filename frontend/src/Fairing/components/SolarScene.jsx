@@ -7,9 +7,8 @@ import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe bodyId, qui donne l'identifiant d'un astre.
 import { bodyId } from '@/Car/AstreSolideEngine/bodyPlaces';
 // Importe les astres enlevés par défaut, la visibilité par défaut, le test de famille masquée et la famille d'une planète.
-import { defaultHiddenBodies, defaultVisibility, isKindHidden, planetKind } from '@/Car/AstreSolideEngine/bodyKinds';
+import { defaultVisibility, isKindHidden, planetKind } from '@/Car/AstreSolideEngine/bodyKinds';
 // Importe le calcul et l'affichage en console des booléens de chaque astre.
-import { bodyBooleans, logBodyBooleans } from '@/Car/AstreSolideEngine/bodyBooleans';
 // Importe la création du magasin du HUD et le crochet qui le lit.
 import { createHudStore, useHud } from '@/Car/AstreSolideEngine/hudStore';
 // Importe le crochet du son des clics.
@@ -109,7 +108,6 @@ import { resolveAssistantAction } from './scene/assistantActions.jsx';
 // Lieux nommés de la Lune (sites d'alunissage, mers, cratères, régions) : la liste que l'assistant peut survoler.
 import { MOON_FEATURES } from '@/Car/AstreSolideEngine/moonFeatures';
 // Importe le chargement de l'état des cartes des satellites.
-import { fetchSatelliteStatus } from '@/Car/SystemeEngine/api/scene';
 // Importe la valeur « nuit », le lecteur, l'abonnement et la bascule jour/nuit.
 import { NIGHT, getDayNight, subscribeDayNight, toggleDayNight } from '@/Car/shared/lib/dayNight';
 // Importe l'enrobage qui anime le changement de thème.
@@ -301,48 +299,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const layers = useSceneLayers(tileLayers.layers);
   // Gère les fonds de carte de chaque astre.
   const bases = useTileBases({ engine, engineRef, status: tileLayers.status, layers, allLayers: tileLayers.layers, push, trekStatus: data.satelliteStatus || [] });
-  // Au premier instant tout est affiché ; dès que la liste des couches de cartes arrive, les astres sans couche
-  // sont décochés (voir plus bas, defaultHiddenBodies).
-  // Réglages de caméra et d'affichage, avec la visibilité par défaut.
+  // Tous les astres du catalogue restent affichés par défaut, indépendamment de la présence d'un fond de carte.
+  // Aucun astre n'est automatiquement décoché au chargement : les cases de Paramètres restent cochées.
   const camera = useCameraToggles(engine, defaultVisibility());
-  // Affichage par défaut selon les fonds de carte : appliqué une seule fois, quand on connaît la liste des couches
-  // et le nombre réel de fonds des satellites et des géantes (le même que dans leur fiche d'information). Un astre
-  // sans fond de carte est décoché dans Paramètres (voir shownByDefault). Liste injoignable : on n'enlève rien.
-  // État : état des cartes des satellites.
-  const [mapStatus, setMapStatus] = useState(null); // null = pas encore reçu ; [] = injoignable
-  // Effet exécuté une seule fois : charge cet état.
-  useEffect(() => {
-    // Crée un contrôleur d'annulation.
-    const ctrl = new AbortController();
-    // Lance le chargement.
-    fetchSatelliteStatus(ctrl.signal)
-      // Réussite : garde les lignes reçues, liste vide si ce n'est pas un tableau.
-      .then((rows) => setMapStatus(Array.isArray(rows) ? rows : []))
-      // Échec, sauf annulation volontaire : liste vide.
-      .catch((e) => { if (e?.name !== 'AbortError') setMapStatus([]); });
-    // Nettoyage : annule la requête en cours.
-    return () => ctrl.abort();
-  // Fin de l'effet ; aucune dépendance.
-  }, []);
-  // Référence : vrai une fois les réglages par défaut appliqués.
-  const defaultsApplied = useRef(false);
-  // Extrait la fonction qui fixe les astres enlevés.
-  const { setHiddenBodies } = camera;
-  // Effet qui applique l'affichage par défaut.
-  useEffect(() => {
-    // Une seule fois, et seulement quand les couches et l'état des cartes sont connus.
-    if (defaultsApplied.current || tileLayers.status !== 'ready' || mapStatus === null) return;
-    // Note que c'est fait.
-    defaultsApplied.current = true;
-    // Calcule les astres à enlever d'après la navigation, les couches, l'adresse de la page et l'état des cartes.
-    const hidden = defaultHiddenBodies(navBodies, tileLayers.layers, window.location.pathname, mapStatus);
-    // Les enregistre.
-    setHiddenBodies(new Set(hidden));
-    // Console : la fonction booléenne NASA JPL / Trek de chaque astre, une seule fois à l'ouverture.
-    // Écrit dans la console les booléens de chaque astre.
-    logBodyBooleans(bodyBooleans(navBodies, data.satelliteStatus, hidden));
-  // Fin de l'effet ; dépendances : les couches, l'état des cartes, la navigation, la fonction et l'état des satellites.
-  }, [tileLayers.status, tileLayers.layers, mapStatus, navBodies, setHiddenBodies, data.satelliteStatus]);
+  const { setBodyShown, setKind } = camera;
   // Aller à un astre enlevé (recherche) : on le remet d'abord, puis on s'y téléporte une fois le moteur à jour.
   // Extrait les fonctions d'affichage d'un astre et d'une famille.
   const { setBodyShown, setKind } = camera;
