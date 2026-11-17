@@ -8,6 +8,8 @@
  */
 // Importe interpolateState, l'interpolation d'une table de positions, depuis moonEphemeris.
 import { interpolateState } from './moonEphemeris.jsx';
+// Importe le propagateur orbital local utilisé lorsque aucune éphéméride n'est disponible.
+import { calculateSatelliteRelativeKm } from './OfflineOrbitEngine.js';
 
 // Rayon de la Terre en kilomètres : l'unité de longueur de la scène.
 const KM_PER_EARTH_RADIUS = 6371;

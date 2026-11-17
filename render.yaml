@@ -6,3 +6,9 @@ services:
     buildCommand: npm ci --prefix frontend && npm run build --prefix frontend
     staticPublishPath: frontend/dist
     autoDeploy: false
+
+    # Réécrit les URL de pages (ex. /soleil, /mars) vers l'application SPA.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
