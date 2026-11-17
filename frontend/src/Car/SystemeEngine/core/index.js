@@ -1,5 +1,6 @@
 export { SystemRegistry } from './SystemRegistry.js';
 export { PerivolumeManager, LOAD_STATE } from './PerivolumeManager.js';
+export { PerivolumeRenderingEngine } from './PerivolumeRenderingEngine.js';
 export { SystemManager } from './SystemManager.js';
 export { PERIVOLUME_RELATION, PERIVOLUME_LEVEL, createGobaiPerivolumeAxioms, applyPerivolumeAxioms } from './PerivolumeAxiomPolicy.js';
 export { perivolumeCube, perivolumeBox, perivolumePave, perivolumeSphere, perivolumeCylinder, perivolumeCylindre, verifyIsoperimetricInequality, verifierIsoperimetrie, containsPerivolumePoint } from './PerivolumeGeometry.js';
