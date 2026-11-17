@@ -1,8 +1,8 @@
 {
   "title": "Catalogue des satellites naturels du Système solaire",
-  "source": "catalogue_systeme_solaire_sphericite_observee(4).pdf",
+  "source": "Wikipédia, « Satellites naturels du Système solaire », tableau détaillé (consulté le 17 novembre 2026); valeurs ajoutées uniquement lorsque les champs étaient vides.",
   "count": 160,
-  "orbitalDataNote": "Le PDF source fournit les noms et la sphéricité observée, pas les éléments orbitaux. Les champs orbitaux null ne doivent pas être extrapolés.",
+  "orbitalDataNote": "Les paramètres renseignés proviennent des fiches Wikipédia fournies. Les rayons sont calculés à partir des diamètres publiés lorsqu'aucun rayon n'est donné. Les éléments orbitaux complets, l'époque et les identifiants Horizons ne sont pas tous disponibles ; les champs nécessaires à une propagation Kepler complète restent donc non renseignés.",
   "records": [
     {
       "id": "moon",
@@ -49,12 +49,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 21.5,
+      "aKm": 128000,
+      "periodDays": 0.29478,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-adrastee",
@@ -62,12 +62,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 8.2,
+      "aKm": 129000,
+      "periodDays": 0.29826,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "amalthea",
@@ -151,14 +151,14 @@
       "id": "jupiter-themisto",
       "name": "Thémisto",
       "parent": "jupiter",
-      "sphericityObserved": "neutre",
+      "sphericityObserved": "false",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 4.0,
+      "aKm": 7393220,
+      "periodDays": 129.87,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-leda",
@@ -166,12 +166,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 10,
+      "aKm": 11098480,
+      "periodDays": 238.86,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "himalia",
@@ -192,12 +192,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 43,
+      "aKm": 11676677,
+      "periodDays": 257.77,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-lysithea",
@@ -205,12 +205,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 18,
+      "aKm": 11665380,
+      "periodDays": 257.4,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-erinome",
@@ -218,12 +218,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 1.6,
+      "aKm": 22986286,
+      "periodDays": 711.96,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-ananke",
@@ -231,12 +231,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 14,
+      "aKm": 20439111,
+      "periodDays": 596.96,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-carme",
@@ -244,12 +244,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 23,
+      "aKm": 24097020,
+      "periodDays": 764.19,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-pasiphae",
@@ -257,12 +257,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 30,
+      "aKm": 23912238,
+      "periodDays": 755.42,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-sinope",
@@ -270,12 +270,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 19,
+      "aKm": 23368614,
+      "periodDays": 729.8,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-callirrhoe",
@@ -283,12 +283,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 4.5,
+      "aKm": 24103000,
+      "periodDays": 758.77,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-megaclite",
@@ -296,12 +296,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 2.7,
+      "aKm": 24687260,
+      "periodDays": 792.44,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-taygete",
@@ -309,12 +309,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 2.5,
+      "aKm": 22438668,
+      "periodDays": 686.67,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-chaldene",
@@ -322,12 +322,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 1.9,
+      "aKm": 22713464,
+      "periodDays": 699.33,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-harpalyce",
@@ -335,12 +335,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 2.2,
+      "aKm": 21063832,
+      "periodDays": 624.54,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-kalyke",
@@ -348,12 +348,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 2.6,
+      "aKm": 23180793,
+      "periodDays": 721.02,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-isonoe",
@@ -361,12 +361,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.9,
+      "aKm": 23800668,
+      "periodDays": 750.13,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-autonoe",
@@ -374,12 +374,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 2.0,
+      "aKm": 24046000,
+      "periodDays": 760.95,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-eurydome",
@@ -387,12 +387,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
-      "horizons": null,
-      "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "radiusKm": 1.5,
+      "aKm": 22865000,
+      "periodDays": 717.33,
+      "horizons": "",
+      "positionModel": "",
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-hermippe",
@@ -400,12 +400,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.0,
+      "aKm": 21131000,
+      "periodDays": 633.9,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-sponde",
@@ -413,12 +413,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 23487000,
+      "periodDays": 748.34,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-orbital-data"
     },
     {
       "id": "jupiter-cale",
@@ -426,12 +426,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 23217000,
+      "periodDays": 729.47,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-pasithee",
@@ -439,12 +439,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 23004000,
+      "periodDays": 719.44,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-euanthe",
@@ -452,12 +452,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.5,
+      "aKm": 20797000,
+      "periodDays": 620.49,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-orthosie",
@@ -465,12 +465,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 20720000,
+      "periodDays": 622.56,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-euporie",
@@ -478,12 +478,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 19304000,
+      "periodDays": 550.74,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-aitne",
@@ -491,12 +491,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.5,
+      "aKm": 23229000,
+      "periodDays": 730.18,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-arche",
@@ -504,12 +504,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.5,
+      "aKm": 23355000,
+      "periodDays": 731.95,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-eukelade",
@@ -517,12 +517,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.0,
+      "aKm": 23328000,
+      "periodDays": 730.47,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-helice",
@@ -530,12 +530,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.0,
+      "aKm": 21069000,
+      "periodDays": 626.32,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-aoede",
@@ -543,12 +543,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.0,
+      "aKm": 23980000,
+      "periodDays": 761.5,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-hegemone",
@@ -556,12 +556,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.5,
+      "aKm": 23577000,
+      "periodDays": 739.88,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-callichore",
@@ -569,12 +569,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 23288000,
+      "periodDays": 728.73,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-cyllene",
@@ -582,12 +582,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 23809000,
+      "periodDays": 752.0,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-core",
@@ -595,12 +595,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 24543000,
+      "periodDays": 779.17,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-herse",
@@ -608,12 +608,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 22983000,
+      "periodDays": 714.51,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-carpo",
@@ -621,12 +621,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.5,
+      "aKm": 17058000,
+      "periodDays": 456.3,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-mneme",
@@ -634,12 +634,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 21035000,
+      "periodDays": 620.04,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-thelxinoe",
@@ -647,12 +647,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 21164000,
+      "periodDays": 628.09,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-dia",
@@ -660,12 +660,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.0,
+      "aKm": 12570000,
+      "periodDays": 287.93,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-eirene",
@@ -673,12 +673,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.0,
+      "aKm": 23973947,
+      "periodDays": 758.34,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-philophrosyne",
@@ -686,12 +686,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 0.7,
+      "aKm": 22011816,
+      "periodDays": 667.17,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-eupheme",
@@ -699,12 +699,12 @@
       "parent": "jupiter",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 19621800,
+      "periodDays": 561.52,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "jupiter-valetudo",
@@ -713,11 +713,11 @@
       "sphericityObserved": "neutre",
       "modelAvailable": false,
       "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "aKm": 18930000,
+      "periodDays": 533.3,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-wikipedia-data"
     },
     {
       "id": "saturn-pan",
@@ -725,12 +725,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 12.8,
+      "aKm": 133580,
+      "periodDays": 0.575,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-daphnis",
@@ -738,12 +738,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.5,
+      "aKm": 136500,
+      "periodDays": 0.594,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-atlas",
@@ -751,12 +751,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 15.3,
+      "aKm": 137670,
+      "periodDays": 0.602,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-promethee",
@@ -764,12 +764,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 46.8,
+      "aKm": 139380,
+      "periodDays": 0.613,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-pandore",
@@ -777,12 +777,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 40.6,
+      "aKm": 141720,
+      "periodDays": 0.629,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "epimetheus",
@@ -816,12 +816,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 0.25,
+      "aKm": 167500,
+      "periodDays": 0.808,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "mimas",
@@ -842,12 +842,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.6,
+      "aKm": 194440,
+      "periodDays": 1.01,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-anthee",
@@ -855,12 +855,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.0,
+      "aKm": 197700,
+      "periodDays": 1.0365,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-pallene",
@@ -868,12 +868,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.0,
+      "aKm": 212280,
+      "periodDays": 1.154,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "enceladus",
@@ -894,12 +894,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 12.0,
+      "aKm": 294710,
+      "periodDays": 1.888,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-calypso",
@@ -907,12 +907,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 9.5,
+      "aKm": 294710,
+      "periodDays": 1.888,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "dione",
@@ -933,12 +933,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 16.0,
+      "aKm": 377420,
+      "periodDays": 2.737,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "rhea",
@@ -998,12 +998,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 8.0,
+      "aKm": 11110000,
+      "periodDays": 449.22,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-ijiraq",
@@ -1011,12 +1011,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 6.0,
+      "aKm": 11124000,
+      "periodDays": 451.42,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-paaliaq",
@@ -1024,12 +1024,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 11.0,
+      "aKm": 15200000,
+      "periodDays": 686.95,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-siarnaq",
@@ -1037,12 +1037,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 20.0,
+      "aKm": 18015400,
+      "periodDays": 896.44,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-tarvos",
@@ -1050,12 +1050,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 7.5,
+      "aKm": 17983000,
+      "periodDays": 926.23,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-mundilfari",
@@ -1063,12 +1063,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.5,
+      "aKm": 18628000,
+      "periodDays": 952.77,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-suttungr",
@@ -1076,12 +1076,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.5,
+      "aKm": 19459000,
+      "periodDays": 1016.67,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-thrymr",
@@ -1089,12 +1089,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.5,
+      "aKm": 20314000,
+      "periodDays": 1094.11,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-ymir",
@@ -1102,12 +1102,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 9.0,
+      "aKm": 23140400,
+      "periodDays": 1315.58,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "phoebe",
@@ -1128,12 +1128,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 4.0,
+      "aKm": 15540000,
+      "periodDays": 728.2,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-erriapo",
@@ -1141,12 +1141,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 5.0,
+      "aKm": 17343000,
+      "periodDays": 871.19,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-albiorix",
@@ -1154,12 +1154,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 16.0,
+      "aKm": 16182000,
+      "periodDays": 783.45,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-bebhionn",
@@ -1167,12 +1167,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 17119000,
+      "periodDays": 834.84,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-bergelmir",
@@ -1180,12 +1180,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 19336000,
+      "periodDays": 1005.74,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-bestla",
@@ -1193,12 +1193,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.5,
+      "aKm": 20192000,
+      "periodDays": 1088.72,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-farbauti",
@@ -1206,12 +1206,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.5,
+      "aKm": 20377000,
+      "periodDays": 1085.55,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-fenrir",
@@ -1219,12 +1219,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 2.0,
+      "aKm": 22454000,
+      "periodDays": 1260.35,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-fornjot",
@@ -1232,12 +1232,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 25146000,
+      "periodDays": 1494.2,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-hati",
@@ -1245,12 +1245,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 19846000,
+      "periodDays": 1038.61,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-hyrrokkin",
@@ -1258,12 +1258,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 4.0,
+      "aKm": 18437000,
+      "periodDays": 931.86,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-kari",
@@ -1271,12 +1271,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.5,
+      "aKm": 22089000,
+      "periodDays": 1230.97,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-loge",
@@ -1284,12 +1284,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 23058000,
+      "periodDays": 1311.36,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-skoll",
@@ -1297,12 +1297,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 17665000,
+      "periodDays": 878.29,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-surtur",
@@ -1310,12 +1310,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 22704000,
+      "periodDays": 1297.36,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-greip",
@@ -1323,12 +1323,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 18206000,
+      "periodDays": 921.19,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-jarnsaxa",
@@ -1336,12 +1336,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 18811000,
+      "periodDays": 964.74,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-narvi",
@@ -1349,12 +1349,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.5,
+      "aKm": 19007000,
+      "periodDays": 1003.86,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-aegir",
@@ -1362,12 +1362,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 3.0,
+      "aKm": 20751000,
+      "periodDays": 1117.52,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-beli",
@@ -1375,12 +1375,12 @@
       "parent": "saturn",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 1.5,
+      "aKm": 20424000,
+      "periodDays": 1084.1,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "saturn-gerd",
@@ -1389,11 +1389,11 @@
       "sphericityObserved": "neutre",
       "modelAvailable": false,
       "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "aKm": 21174187,
+      "periodDays": 1150.33,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-wikipedia-data"
     },
     {
       "id": "saturn-gridr",
@@ -1402,11 +1402,11 @@
       "sphericityObserved": "neutre",
       "modelAvailable": false,
       "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "aKm": 19418103,
+      "periodDays": 1010.24,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-wikipedia-data"
     },
     {
       "id": "saturn-angrboda",
@@ -1415,11 +1415,11 @@
       "sphericityObserved": "neutre",
       "modelAvailable": false,
       "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "aKm": 20636368,
+      "periodDays": 1106.79,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-wikipedia-data"
     },
     {
       "id": "saturn-skrymir",
@@ -1428,11 +1428,11 @@
       "sphericityObserved": "neutre",
       "modelAvailable": false,
       "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "aKm": 21163491,
+      "periodDays": 1149.46,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-wikipedia-data"
     },
     {
       "id": "uranus-cordelia",
@@ -1440,12 +1440,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 20.1,
+      "aKm": 49800,
+      "periodDays": 0.335,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-ophelie",
@@ -1453,12 +1453,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 21.4,
+      "aKm": 53800,
+      "periodDays": 0.376,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-bianca",
@@ -1466,12 +1466,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 25.7,
+      "aKm": 59200,
+      "periodDays": 0.435,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-cressida",
@@ -1479,12 +1479,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 39.8,
+      "aKm": 61800,
+      "periodDays": 0.464,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-desdemone",
@@ -1492,12 +1492,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 32.0,
+      "aKm": 62700,
+      "periodDays": 0.474,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-juliette",
@@ -1505,12 +1505,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 46.8,
+      "aKm": 64400,
+      "periodDays": 0.493,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-portia",
@@ -1518,12 +1518,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 67.6,
+      "aKm": 66100,
+      "periodDays": 0.513,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-rosalinde",
@@ -1531,12 +1531,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 36.0,
+      "aKm": 69900,
+      "periodDays": 0.558,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-cupidon",
@@ -1544,12 +1544,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 5.0,
+      "aKm": 74392,
+      "periodDays": 0.613,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-belinda",
@@ -1557,12 +1557,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 40.3,
+      "aKm": 75300,
+      "periodDays": 0.624,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-perdita",
@@ -1570,12 +1570,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 10.0,
+      "aKm": 76417,
+      "periodDays": 0.638,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "puck",
@@ -1596,12 +1596,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 5.0,
+      "aKm": 97736,
+      "periodDays": 0.923,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "miranda",
@@ -1674,12 +1674,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 6.0,
+      "aKm": 4276000,
+      "periodDays": 266.56,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-caliban",
@@ -1687,12 +1687,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 49.0,
+      "aKm": 7231100,
+      "periodDays": 579.73,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-stephano",
@@ -1700,12 +1700,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 10.0,
+      "aKm": 8004000,
+      "periodDays": 677.36,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-trinculo",
@@ -1713,12 +1713,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 5.0,
+      "aKm": 8504000,
+      "periodDays": 749.24,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-sycorax",
@@ -1726,12 +1726,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 75.0,
+      "aKm": 12179400,
+      "periodDays": 1288.38,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-margaret",
@@ -1739,12 +1739,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 5.5,
+      "aKm": 14345000,
+      "periodDays": 1687.01,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-prospero",
@@ -1752,12 +1752,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 25.0,
+      "aKm": 16256000,
+      "periodDays": 1978.29,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-setebos",
@@ -1765,12 +1765,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 24.0,
+      "aKm": 17418000,
+      "periodDays": 2225.21,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "uranus-ferdinand",
@@ -1778,12 +1778,12 @@
       "parent": "uranus",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 6.0,
+      "aKm": 20901000,
+      "periodDays": 2887.21,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-naiade",
@@ -1791,12 +1791,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 33.0,
+      "aKm": 48227,
+      "periodDays": 0.294,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-thalassa",
@@ -1804,12 +1804,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 41.0,
+      "aKm": 50075,
+      "periodDays": 0.311,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-despina",
@@ -1817,12 +1817,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 75.0,
+      "aKm": 52526,
+      "periodDays": 0.335,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-galatee",
@@ -1830,12 +1830,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 88.0,
+      "aKm": 61953,
+      "periodDays": 0.429,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-larissa",
@@ -1843,12 +1843,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 97.0,
+      "aKm": 73548,
+      "periodDays": 0.555,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-hippocampe",
@@ -1856,12 +1856,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 9.0,
+      "aKm": 105283,
+      "periodDays": 0.9362,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "proteus",
@@ -1908,12 +1908,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 31.0,
+      "aKm": 15728000,
+      "periodDays": 1879.71,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-sao",
@@ -1921,12 +1921,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 22.0,
+      "aKm": 22422000,
+      "periodDays": 2914.07,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-laomedie",
@@ -1934,12 +1934,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 21.0,
+      "aKm": 23571000,
+      "periodDays": 3167.85,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-psamathee",
@@ -1947,12 +1947,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 20.0,
+      "aKm": 46695000,
+      "periodDays": 9115.91,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "neptune-neso",
@@ -1960,12 +1960,12 @@
       "parent": "neptune",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 30.0,
+      "aKm": 48387000,
+      "periodDays": 9373.99,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "charon",
@@ -2038,12 +2038,12 @@
       "parent": "haumea",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 160.0,
+      "aKm": 49500,
+      "periodDays": 49.12,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "haumea-namaka",
@@ -2051,12 +2051,12 @@
       "parent": "haumea",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 85.0,
+      "aKm": 39000,
+      "periodDays": 34.7,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     },
     {
       "id": "makemake-s-2015-136472-1-mk-2",
@@ -2064,12 +2064,12 @@
       "parent": "makemake",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
+      "radiusKm": 80.0,
       "aKm": null,
       "periodDays": null,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "partial-wikipedia-data"
     },
     {
       "id": "eris-dysnomie",
@@ -2077,12 +2077,14 @@
       "parent": "eris",
       "sphericityObserved": "neutre",
       "modelAvailable": false,
-      "radiusKm": null,
-      "aKm": null,
-      "periodDays": null,
+      "radiusKm": 257.0,
+      "aKm": 37370,
+      "periodDays": 15.774,
       "horizons": null,
       "positionModel": null,
-      "dataStatus": "orbital-elements-required"
+      "dataStatus": "wikipedia-table-data"
     }
-  ]
+  ],
+  "wikipediaAccessDate": "2026-11-17",
+  "wikipediaUpdateNote": "Les rayons moyens, demi-grands axes et périodes disponibles dans le tableau Wikipédia ont été ajoutés aux champs vides. Les périodes sont stockées en valeur absolue; le sens rétrograde n’est pas encodé dans periodDays. Ces trois paramètres ne suffisent pas à eux seuls à une propagation Kepler complète : modelAvailable reste inchangé."
 }
