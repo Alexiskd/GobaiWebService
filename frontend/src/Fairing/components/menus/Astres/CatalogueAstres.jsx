@@ -7,7 +7,7 @@ import { fetchBodyListing } from '@/Car/api';
 // Importe Group, le groupe de réglages.
 import { Group } from '../../ui/Group.jsx';
 // Importe fold, qui normalise un texte (minuscules, sans accents).
-import { fold } from '@/Car/lib/format';
+import { fold } from '@/Car/shared/lib/format';
 
 /**
  * Catalogue des astres : planètes, planètes naines et satellites naturels.

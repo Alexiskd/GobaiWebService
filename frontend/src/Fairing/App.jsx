@@ -3,11 +3,11 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 // Importe de MUI la remise à zéro CSS, les styles globaux et le fournisseur de thème.
 import { CssBaseline, GlobalStyles, ThemeProvider } from '@mui/material';
 // Importe le lecteur et l'abonnement du réglage jour/nuit.
-import { getDayNight, subscribeDayNight } from '@/Car/lib/dayNight';
+import { getDayNight, subscribeDayNight } from '@/Car/shared/lib/dayNight';
 // Importe le lecteur et l'abonnement du réglage noir OLED.
-import { getOledBlack, subscribeOledBlack } from '@/Car/lib/oledBlack';
+import { getOledBlack, subscribeOledBlack } from '@/Car/shared/lib/oledBlack';
 // Importe la détection de l'appareil et le test de compatibilité.
-import { currentDevice, isDeviceSupported } from '@/Car/lib/deviceGate';
+import { currentDevice, isDeviceSupported } from '@/Car/shared/lib/deviceGate';
 // Importe SolarSystem, le composant principal de l'application.
 import SolarSystem from './components/SolarSystem.jsx';
 // Importe l'écran affiché sur un appareil non compatible.

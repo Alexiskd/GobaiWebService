@@ -7,7 +7,7 @@ import {
   // Le nombre de pensées par jour, l'année décimale, le flux en direct, la courbe du flux et la croissance de la population par seconde.
   PENSEES_PAR_JOUR, decimalYear, fluxCognitifEnDirect, fluxCurve, populationGrowthPerSecond,
 // Fin de la liste ; module d'origine.
-} from '@/Car/lib/fluxCognitif';
+} from '@/Car/shared/lib/fluxCognitif';
 // Importe scientific, qui écrit un nombre en notation scientifique.
 import { scientific } from '@/Car/engine/planetData';
 

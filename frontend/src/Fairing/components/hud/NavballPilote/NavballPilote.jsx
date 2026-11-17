@@ -21,7 +21,7 @@ import {
   // Les bornes et le pas de la sensibilité, puis le lecteur, le réglage et l'abonnement de la sensibilité du zoom.
   SENSITIVITY_MAX, SENSITIVITY_MIN, SENSITIVITY_STEP, getTiltZoomSensitivity, setTiltZoomSensitivity, subscribeTiltZoomSensitivity,
 // Fin de la liste ; module d'origine.
-} from '@/Car/lib/tiltSensitivity';
+} from '@/Car/shared/lib/tiltSensitivity';
 // Importe le calcul de l'attitude à partir d'une base.
 import { attitudeFromBasis } from './attitude.js';
 // Importe les icônes : cadenas, pilotage au téléphone et « Ma position ».

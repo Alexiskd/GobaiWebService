@@ -7,9 +7,9 @@ import { searchPlaces } from '@/Car/api';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe coords, qui met en forme des coordonnées.
-import { coords } from '@/Car/lib/format';
+import { coords } from '@/Car/shared/lib/format';
 // Importe la largeur de vue d'une adresse, la normalisation de texte, le type d'un résultat et sa vignette.
-import { ADDRESS_VIEW_M, fold, placeResultType, resultIcon } from '@/Car/lib/search';
+import { ADDRESS_VIEW_M, fold, placeResultType, resultIcon } from '@/Car/shared/lib/search';
 // Importe l'altitude pour une largeur de vue, la mise en forme et la lecture de coordonnées.
 import { altitudeForView, formatLatLon, parseLatLon } from '@/Car/engine/gps';
 // Importe l'icône de fermeture.

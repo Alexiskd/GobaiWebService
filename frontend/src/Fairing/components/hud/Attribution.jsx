@@ -19,7 +19,7 @@ import { SERVICE_ORGS, formatRepoDate, orgsFromRepos, visibleCredits } from './o
 // Importe la liste des API et son compteur.
 import { API_GROUPS, countApis } from './apiList.js';
 // Importe le blocage des API externes : état, abonnement, bascule et clé d'administration.
-import { apiState, getAdminToken, getApiBlockState, refreshServerBlocked, setAdminToken, setApiBlocked, subscribe } from '@/Car/lib/apiBlock';
+import { apiState, getAdminToken, getApiBlockState, refreshServerBlocked, setAdminToken, setApiBlocked, subscribe } from '@/Car/shared/lib/apiBlock';
 // Importe l'onglet du flux cognitif.
 import { FluxCognitif } from './FluxCognitif.jsx';
 // Onglet « Documentation API » : documentation de l'API gratuite.

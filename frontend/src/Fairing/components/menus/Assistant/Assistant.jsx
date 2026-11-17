@@ -5,7 +5,7 @@ import { Box, ButtonBase, Chip, CircularProgress, InputBase, Paper, Popper, Stac
 // Importe l'envoi d'une question à l'assistant et la lecture de sa configuration.
 import { askAssistant, fetchAssistantConfig } from '@/Car/api';
 // Importe le relevé des éléments actionnables de la page.
-import { collectInventory } from '@/Car/lib/domInventory';
+import { collectInventory } from '@/Car/shared/lib/domInventory';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe la hauteur de la bande des astres, celle du bandeau titre et edge.

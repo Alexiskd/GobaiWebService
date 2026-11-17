@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react';
 // Importe de MUI Box, Paper et Typography.
 import { Box, Paper, Typography } from '@mui/material';
 // Importe la valeur « nuit », le lecteur et l'abonnement du réglage jour/nuit.
-import { NIGHT, getDayNight, subscribeDayNight } from '@/Car/lib/dayNight';
+import { NIGHT, getDayNight, subscribeDayNight } from '@/Car/shared/lib/dayNight';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Car/engine/hudStore';
 // Importe le crochet de déplacement des panneaux.

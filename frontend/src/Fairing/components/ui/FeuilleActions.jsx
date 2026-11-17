@@ -7,7 +7,7 @@ import { CloseIcon } from './icons.jsx';
 // Importe MQ (requêtes média) et safe (marges de sécurité de l'écran).
 import { MQ, safe } from '@/Fairing/theme/mediaQueries';
 // Importe les calculs du geste : décalage, vitesse et décision de fermeture.
-import { dragOffset, dragVelocity, shouldClose } from '@/Car/lib/sheetGesture';
+import { dragOffset, dragVelocity, shouldClose } from '@/Car/shared/lib/sheetGesture';
 
 /**
  * Feuille du téléphone : panneau qui monte du bas de l'écran, à portée de pouce, et se referme en le tirant vers le

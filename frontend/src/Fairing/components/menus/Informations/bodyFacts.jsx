@@ -1,5 +1,5 @@
 // Importe les mises en forme de latitude, de longitude et de nombre.
-import { fmtLat, fmtLon, nf } from '@/Car/lib/format';
+import { fmtLat, fmtLon, nf } from '@/Car/shared/lib/format';
 // Importe atmosphereThickness, l'épaisseur de l'atmosphère d'un astre.
 import { atmosphereThickness } from '@/Car/engine/atmosphereData';
 // Importe bodyId, qui donne l'identifiant d'un astre.

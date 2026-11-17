@@ -9,7 +9,7 @@ import { useHud } from '@/Car/engine/hudStore';
 // Importe la table des astres cartographiés, qui donne la clé du HUD de chaque astre.
 import { TILED_BODY_BY_ID } from '@/Car/engine/tiledBodies';
 // Importe l'état de repos, le calcul de l'avancement et les deux délais d'affichage.
-import { HIDE_DELAY_MS, IDLE, SHOW_DELAY_MS, tileLoadStep } from '@/Car/lib/tileLoading';
+import { HIDE_DELAY_MS, IDLE, SHOW_DELAY_MS, tileLoadStep } from '@/Car/shared/lib/tileLoading';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe MQ (requêtes média prêtes à l'emploi) et safe (marge de sécurité de l'écran).

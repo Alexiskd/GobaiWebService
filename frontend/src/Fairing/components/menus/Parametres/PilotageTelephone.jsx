@@ -9,7 +9,7 @@ import {
   // Le réglage du zoom et les deux abonnements.
   setTiltZoomSensitivity, subscribeTiltSensitivity, subscribeTiltZoomSensitivity,
 // Fin de la liste ; module d'origine.
-} from '@/Car/lib/tiltSensitivity';
+} from '@/Car/shared/lib/tiltSensitivity';
 
 /** Une réglette de sensibilité : libellé, valeur (×1,00) et aide. */
 // Déclare le composant Sensibilite : identifiant, libellé, aide, valeur et rappel de changement.

@@ -3,9 +3,9 @@ import { useEffect, useMemo, useState } from 'react';
 // Importe de MUI les composants de liste, Paper (carte) et TextField (champ).
 import { List, ListItem, ListItemButton, ListItemText, Paper, TextField } from '@mui/material';
 // Importe coords, qui met en forme des coordonnées.
-import { coords } from '@/Car/lib/format';
+import { coords } from '@/Car/shared/lib/format';
 // Importe la largeur de vue d'une adresse et fold, qui normalise un texte pour la comparaison.
-import { ADDRESS_VIEW_M, fold } from '@/Car/lib/search';
+import { ADDRESS_VIEW_M, fold } from '@/Car/shared/lib/search';
 // Importe altitudeForView, qui donne l'altitude correspondant à une largeur de vue.
 import { altitudeForView } from '@/Car/engine/gps';
 

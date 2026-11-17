@@ -19,11 +19,11 @@ import { useInterfaceLanguage } from '@/Fairing/hooks/useInterfaceLanguage';
 // Importe le crochet qui crée le moteur 3D.
 import { useSolarEngine } from '@/Fairing/hooks/useSolarEngine';
 // Importe le lecteur et l'abonnement du mode économie d'énergie.
-import { getPowerSaving, setPowerSaving, subscribePowerSaving } from '@/Car/lib/powerSaving';
+import { getPowerSaving, setPowerSaving, subscribePowerSaving } from '@/Car/shared/lib/powerSaving';
 // Réglage du noir pur, actionnable par l'assistant comme par l'interrupteur de Paramètres.
-import { setOledBlack } from '@/Car/lib/oledBlack';
+import { setOledBlack } from '@/Car/shared/lib/oledBlack';
 // Importe la préparation et l'exécution du partage de la vue.
-import { shareData, shareView } from '@/Car/lib/share';
+import { shareData, shareView } from '@/Car/shared/lib/share';
 // Importe le crochet des couches de tuiles.
 import { useTileLayers } from '@/Fairing/hooks/useTileLayers';
 // Importe le crochet des messages temporaires.
@@ -111,7 +111,7 @@ import { MOON_FEATURES } from '@/Car/engine/moonFeatures';
 // Importe le chargement de l'état des cartes des satellites.
 import { fetchSatelliteStatus } from '@/Car/api/scene';
 // Importe la valeur « nuit », le lecteur, l'abonnement et la bascule jour/nuit.
-import { NIGHT, getDayNight, subscribeDayNight, toggleDayNight } from '@/Car/lib/dayNight';
+import { NIGHT, getDayNight, subscribeDayNight, toggleDayNight } from '@/Car/shared/lib/dayNight';
 // Importe l'enrobage qui anime le changement de thème.
 import { withThemeTransition } from '@/Fairing/theme/themeTransition';
 // Importe le crochet des commandes envoyées au moteur.

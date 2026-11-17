@@ -1,7 +1,7 @@
 // Importe useSyncExternalStore de React.
 import { useSyncExternalStore } from 'react';
 // Importe le lecteur, le réglage et l'abonnement du noir OLED.
-import { getOledBlack, setOledBlack, subscribeOledBlack } from '@/Car/lib/oledBlack';
+import { getOledBlack, setOledBlack, subscribeOledBlack } from '@/Car/shared/lib/oledBlack';
 // Importe Group, le groupe de réglages.
 import { Group } from '../../ui/Group.jsx';
 // Importe Switch, l'interrupteur.
