@@ -118,6 +118,7 @@ import { CoreActivityPolicy } from '../SystemeEngine/core/CoreActivityPolicy.js'
 import { TileMemoryPolicy } from '../SystemeEngine/core/TileMemoryPolicy.js';
 import { EngineActivityPolicy } from '../SystemeEngine/core/EngineActivityPolicy.js';
 import { SystemManager } from '../SystemeEngine/core/SystemManager.js';
+import { renderLoop } from '../SystemeEngine/core/RenderLoop.js';
 import { createGobaiPerivolumeAxioms } from '../SystemeEngine/core/PerivolumeAxiomPolicy.js';
 import { PerivolumeRenderingEngine } from '../SystemeEngine/core/PerivolumeRenderingEngine.js';
 import { ResourceManager } from '../SystemeEngine/core/ResourceManager.js';
@@ -291,8 +292,6 @@ export class SolarEngine {
     this.H = innerHeight;
     // Moteur pas arrêté.
     this.stopped = false;
-    // Identifiant de la prochaine image.
-    this.rafId = 0;
 
     // État de la caméra orbitale
     this.focus = 0;
@@ -491,35 +490,24 @@ export class SolarEngine {
     this.distGoal = START_DISTANCE;
     // Lie frame à l'instance.
     this.frame = this.frame.bind(this);
-    // Demande la première image.
-    this.rafId = requestAnimationFrame(this.frame);
-    // Onglet ou app en arrière-plan : la boucle d'affichage est arrêtée net (aucun calcul, aucun dessin), puis
-    // relancée au retour sans saut de temps.
+    // Enregistre le moteur comme variable de la boucle de rendu de l'application complète.
+    renderLoop.register('astre-solide', this.frame);
+    // En pause quand l'onglet est caché : la boucle de l'application gère l'arrêt des images.
     this.paused = false;
     // Scène non suspendue.
     this.suspended = false; // scène mise à l'arrêt par setSuspended
-    // onVisibility : au changement de visibilité de l'onglet (début).
+    // onVisibility : au changement de visibilité de l'onglet, le moteur note juste son état (début).
     this.onVisibility = () => {
       // Moteur arrêté : rien.
       if (this.stopped) return;
-      // Onglet caché (début).
-      if (document.hidden) {
-        // Annule l'image demandée.
-        cancelAnimationFrame(this.rafId);
-        // En pause.
-        this.paused = true;
-      // Onglet de retour après une pause (début).
-      } else if (this.paused) {
-        // Plus en pause.
-        this.paused = false;
-        // Scène suspendue : rien de plus.
-        if (this.suspended) return; // scène à l'arrêt : la boucle repart avec setSuspended(false)
+      // Onglet caché : en pause (la boucle de l'application cesse d'appeler frame).
+      this.paused = document.hidden;
+      // Onglet de retour : l'horloge repart de maintenant, sans saut de temps.
+      if (!this.paused) {
         // L'horloge repart de maintenant.
         this.lastNow = performance.now();
         // Note l'activité.
         this.markActive();
-        // Demande une image.
-        this.rafId = requestAnimationFrame(this.frame);
       // Fin du choix.
       }
     // Fin de onVisibility.
@@ -3367,16 +3355,14 @@ export class SolarEngine {
 
   // frame : une image (début).
   frame(now) {
-    // Moteur arrêté : rien.
-    if (this.stopped) return;
+    // Moteur arrêté, en pause (onglet caché) ou suspendu : rien.
+    if (this.stopped || this.paused || this.suspended) return;
     // Temps écoulé depuis la dernière image.
     const rawDt = now - this.lastNow;
     // 50 images par seconde au plus (20 au repos sur téléphone) : les rappels en trop sont sautés, rien n'est calculé
     // ni dessiné (voir paceFrame).
     if (!paceFrame(this.pacer || (this.pacer = { due: 0 }), now, this.frameMs)) {
-      // Image sautée : demande la suivante.
-      this.rafId = requestAnimationFrame(this.frame);
-      // Terminé.
+      // Image sautée : la boucle de l'application demandera la suivante.
       return;
     // Fin de ce cas.
     }
@@ -3503,8 +3489,7 @@ export class SolarEngine {
     }
     // Transmet les mesures au HUD, s'il y en a.
     if (perf) this.hud.set({ perf });
-    // Demande l'image suivante.
-    this.rafId = requestAnimationFrame(this.frame);
+    // L'image suivante est demandée par la boucle de rendu de l'application.
   // Fin de frame.
   }
 
@@ -3598,7 +3583,7 @@ export class SolarEngine {
   }
 
   /**
-   * Met la scène à l'arrêt : la boucle d'affichage du système solaire est arrêtée net (aucun calcul, aucun dessin).
+   * Met la scène à l'arrêt : frame() ne fait plus rien (aucun calcul, aucun dessin).
    * Relancée avec setSuspended(false), sans saut de temps.
    */
   // setSuspended : met la scène à l'arrêt, ou la relance (début).
@@ -3609,16 +3594,12 @@ export class SolarEngine {
     if (this.stopped || next === this.suspended) return;
     // Le garde.
     this.suspended = next;
-    // Annule l'image demandée.
-    cancelAnimationFrame(this.rafId);
     // À l'arrêt, ou onglet en pause : rien de plus.
     if (next || this.paused) return;
     // L'horloge repart de maintenant.
     this.lastNow = performance.now();
     // Note l'activité.
     this.markActive();
-    // Demande une image.
-    this.rafId = requestAnimationFrame(this.frame);
   // Fin de setSuspended.
   }
 
@@ -4608,8 +4589,8 @@ export class SolarEngine {
     this.lidarPoints?.dispose();
     // Retire les repères créés.
     this.markerEls?.forEach((el) => el.remove());
-    // Annule l'image demandée.
-    cancelAnimationFrame(this.rafId);
+    // Retire le moteur de la boucle de rendu de l'application.
+    renderLoop.unregister('astre-solide');
     // Libère la sonde de performance.
     this.perfProbe?.dispose();
     // N'écoute plus la visibilité de l'onglet.
