@@ -562,7 +562,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
     // Programme la demande après l'attente.
     const t = setTimeout(() => {
       // Demande la mention au fournisseur et la garde ; un échec est ignoré.
-      tilesApi.attribution(layerId, b, ctrl.signal).then((r) => setCopyright(r.copyright || '')).catch(() => {});
+      tilesApi.attribution(layerId, b, ctrl.signal).then((r) => { if (!ctrl.signal.aborted) setCopyright(r.copyright || ''); }).catch(() => {});
     // Fin de la programmation.
     }, ATTRIBUTION_DEBOUNCE_MS);
     // Nettoyage : annule l'attente et la requête.
@@ -626,9 +626,9 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
   // Début du rendu.
   return (
     // Boîte de dialogue : plein écran en mode compact, petite largeur sinon.
-    <Dialog open={open} onClose={onClose} fullScreen={compact} maxWidth="sm" fullWidth aria-label="Anthropic Node Open Source">
+    <Dialog open={open} onClose={onClose} fullScreen={compact} maxWidth="lg" fullWidth aria-label="Anthropic Node Open Source" PaperProps={{ sx: { overflow: 'hidden', borderRadius: compact ? 0 : 3, minHeight: compact ? '100%' : 600, maxHeight: compact ? '100%' : 'min(88vh, 900px)' } }}>
       {/* L'en-tête, avec le titre et la fermeture. */}
-      <PanelHeader title="Anthropic Node Open Source" onClose={onClose} />
+      <PanelHeader kicker="GOBai SPACE · RESSOURCES" title="Node — Sources & outils" onClose={onClose} sx={{ px: 2.5, pt: 2, pb: 1.5 }} />
       {/* La barre d'onglets (début de la balise). */}
       <Tabs
         // Onglet affiché.
@@ -643,7 +643,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
         // Nom pour les lecteurs d'écran.
         aria-label="Sections de la fenêtre Anthropic Node Open Source"
         // Hauteur de 40 px, filet en bas.
-        sx={{ flex: 'none', minHeight: 40, borderBottom: 1, borderColor: 'divider', '& .MuiTab-root': { minHeight: 40 } }}
+        sx={{ flex: 'none', px: 1.5, minHeight: 48, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600, minWidth: 104 } }}
       // Fin de la balise ouvrante.
       >
         {/* Onglet « Générique ». */}
@@ -661,9 +661,9 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
       {/* Fin de la barre d'onglets. */}
       </Tabs>
       {/* Contenu de la boîte de dialogue. */}
-      <DialogContent sx={{ pt: 1 }}>
+      <DialogContent sx={{ p: { xs: 1.5, sm: 2.5 }, bgcolor: 'background.default' }}>
         {/* Panneau de l'onglet, relié à son onglet pour les lecteurs d'écran. */}
-        <Box role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`}>
+        <Box role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`} sx={{ maxWidth: 1120, mx: 'auto', minWidth: 0 }}>
           {/* Le contenu de l'onglet affiché ; « Sources et Entreprises » par défaut. */}
           {tab === 'docs' ? <ApiDocs /> : tab === 'flux' ? <FluxCognitif /> : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />}
         {/* Fin du panneau. */}
@@ -671,7 +671,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
         {/* Note de bas de fenêtre. */}
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5 }}>
           {/* Le raccourci clavier. */}
-          Touche S pour ouvrir ou fermer cette fenêtre.
+          Touche S pour ouvrir ou fermer cette fenêtre. Les sources et outils sont regroupés par onglet.
         {/* Fin de la note. */}
         </Typography>
       {/* Fin du contenu. */}

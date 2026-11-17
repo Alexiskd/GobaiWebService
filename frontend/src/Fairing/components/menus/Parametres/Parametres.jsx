@@ -1,105 +1,98 @@
-// Importe de MUI la boîte de dialogue et son contenu.
-import { Dialog, DialogContent, FormControlLabel, Switch, Stack, Typography } from '@mui/material';
-// Importe useViewport, qui donne la catégorie d'écran.
+import { useState } from 'react';
+import {
+  Box, Dialog, DialogContent, FormControlLabel, Stack, Switch, Tab, Tabs, Typography,
+} from '@mui/material';
 import { useViewport } from '@/Fairing/hooks/useViewport';
-// Importe l'en-tête commun des fenêtres.
 import { PanelHeader } from '../../ui/PanelHeader.jsx';
-// Importe la section des familles d'astres.
 import { AstresAffiches } from './AstresAffiches.jsx';
-// Importe la section des repères.
 import { Reperes } from './Reperes.jsx';
-// Importe la section du pilotage au téléphone.
 import { PilotageTelephone } from './PilotageTelephone.jsx';
-// Importe la liste des astres.
 import { AllerAUnAstre } from './AllerAUnAstre.jsx';
-// Importe le catalogue des astres, lu sur le serveur.
 import { CatalogueAstres } from '../Astres/CatalogueAstres.jsx';
-// Importe la section de l'économie d'énergie.
 import { EconomieEnergie } from './EconomieEnergie.jsx';
-// Importe la section de l'apparence.
 import { Apparence } from './Apparence.jsx';
-// Importe la section de la position.
 import { MaPosition } from './MaPosition.jsx';
 
-/**
- * Fenêtre « Paramètres » (bouton ⚙ de la barre d'outils, à côté de la galerie). Une section par fichier, triées par thème :
- * Réglages globaux de l'application :
- *  - Reperes             repères globaux (orbites, points et noms) et ciel lointain
- *  - PilotageTelephone   sensibilité du pilotage par inclinaison
- *  - Apparence et économie d'énergie
- * Astres :
- *  - AstresAffiches      familles et visibilité des astres
- *  - AllerAUnAstre       navigation dans le système solaire
- * Appareil :
- *  - Apparence           thème « noir pur » pour écrans OLED
- *  - EconomieEnergie     interrupteur du rendu allégé (moins d'images par seconde, densité de pixels 1)
- */
-// Déclare et exporte le composant Parametres (début de la liste des propriétés).
-export function Parametres({
-  // Ouverture, fermeture, astres, affichage d'un astre, astre visé, sélection et familles.
-  open, onClose, bodies, onBodyShown, focus, onSelect, kinds, onKind,
-  // Les repères globaux du système solaire.
-  orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky,
-  // La position de l'appareil et le moniteur de performance.
-  onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange, engineRef,
-// Fin de la liste des propriétés.
-}) {
-  // Lit le mode compact.
-  const { compact } = useViewport();
-  // pick : va à un astre, puis ferme la fenêtre.
-  const pick = (index) => { onSelect(index); onClose(); };
+const tabs = [
+  { value: 'general', label: 'Général' },
+  { value: 'affichage', label: 'Affichage' },
+  { value: 'astres', label: 'Astres' },
+];
 
-  // Début du rendu.
+function PerformanceSetting({ visible, onChange }) {
   return (
-    // Boîte de dialogue : plein écran en mode compact, très petite largeur sinon.
-    <Dialog open={open} onClose={onClose} fullScreen={compact} maxWidth="xs" fullWidth aria-label="Paramètres">
-      {/* L'en-tête, avec le titre et la fermeture. */}
-      <PanelHeader title="Paramètres" onClose={onClose} />
-      {/* Contenu de la boîte de dialogue. */}
-      <DialogContent sx={{ pt: 1.5, px: 2, pb: 2 }}>
-        {/* La section de la position. */}
-        <MaPosition onGoPlace={onGoPlace} myPosition={myPosition} onDone={onClose} />
-        {/* Affichage du système solaire */}
-        {/* La section des repères (début de la balise). */}
-        <Reperes
-          // Les lignes d'orbite.
-          orbits={orbits} onOrbits={onOrbits}
-          // Les repères des planètes.
-          markers={markers} onMarkers={onMarkers}
-          // Les repères des satellites.
-          satellites={satellites} onSatellites={onSatellites}
-          // Le ciel.
-          sky={sky} onSky={onSky}
-        // Fin de la section des repères.
-        />
-        {/* Déplacement global */}
-        {/* Le pilotage au téléphone. */}
-        <PilotageTelephone />
-        {/* Appareil */}
-        {/* L'apparence. */}
-        <Apparence />
-        {/* L'économie d'énergie. */}
-        <EconomieEnergie />
-        {/* Ligne du moniteur de performance (début). */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ py: 1.25, borderBottom: 1, borderColor: 'divider' }}>
-          {/* Son libellé. */}
-          <Typography variant="body2">Moniteur de performance (CPU / GPU / FPS)</Typography>
-          {/* Son interrupteur : transmet le nouvel état. */}
-          <FormControlLabel sx={{ m: 0 }} label="" control={<Switch size="small" checked={performanceMonitorVisible} onChange={(event) => onPerformanceMonitorChange?.(event.target.checked)} />} />
-        {/* Fin de la ligne. */}
-        </Stack>
-        {/* Astres : familles, puis la liste complète (la plus longue, en dernier) */}
-        {/* Les familles d'astres. */}
-        <AstresAffiches kinds={kinds} onKind={onKind} />
-        {/* La liste des astres. */}
-        <AllerAUnAstre bodies={bodies} focus={focus} onPick={pick} onShown={onBodyShown} />
-        {/* Le catalogue lu sur le serveur : planètes, naines et satellites naturels, sans table embarquée. */}
-        <CatalogueAstres bodies={bodies} onSelect={onSelect} onBodyShown={onBodyShown} onDone={onClose} engineRef={engineRef} />
-      {/* Fin du contenu. */}
-      </DialogContent>
-    {/* Fin de la boîte de dialogue. */}
-    </Dialog>
-  // Fin du rendu.
+    <Box sx={{ px: 1.5, py: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="body2" fontWeight={600}>Moniteur de performance</Typography>
+        <Typography variant="caption" color="text.secondary">Mesure CPU, GPU et FPS</Typography>
+      </Box>
+      <FormControlLabel
+        sx={{ m: 0 }}
+        label=""
+        control={<Switch size="small" checked={Boolean(visible)} onChange={(event) => onChange?.(event.target.checked)} inputProps={{ 'aria-label': 'Afficher le moniteur de performance' }} />}
+      />
+    </Box>
   );
-// Fin de Parametres.
+}
+
+export function Parametres({
+  open, onClose, bodies, onBodyShown, focus, onSelect, kinds, onKind,
+  orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky,
+  onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange, engineRef,
+}) {
+  const { compact } = useViewport();
+  const [tab, setTab] = useState('general');
+  const pick = (index) => { onSelect?.(index); onClose?.(); };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen={compact}
+      maxWidth="md"
+      fullWidth
+      aria-label="Paramètres"
+      PaperProps={{ sx: { overflow: 'hidden', borderRadius: compact ? 0 : 3, minHeight: compact ? '100%' : 560, maxHeight: compact ? '100%' : 'min(82vh, 820px)' } }}
+    >
+      <PanelHeader kicker="GOBai SPACE" title="Paramètres" onClose={onClose} sx={{ px: 2.5, pt: 2, pb: 1.5 }} />
+      <Tabs
+        value={tab}
+        onChange={(_, value) => setTab(value)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        aria-label="Catégories des paramètres"
+        sx={{ px: 1.5, borderBottom: 1, borderColor: 'divider', flex: 'none', '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600 } }}
+      >
+        {tabs.map((item) => <Tab key={item.value} value={item.value} label={item.label} id={`settings-tab-${item.value}`} aria-controls={`settings-panel-${item.value}`} />)}
+      </Tabs>
+      <DialogContent sx={{ p: { xs: 1.5, sm: 2.5 }, bgcolor: 'background.default' }}>
+        <Box role="tabpanel" id={`settings-panel-${tab}`} aria-labelledby={`settings-tab-${tab}`} sx={{ maxWidth: 900, mx: 'auto' }}>
+          {tab === 'general' && (
+            <Stack spacing={1.5}>
+              <MaPosition onGoPlace={onGoPlace} myPosition={myPosition} onDone={onClose} />
+              <PilotageTelephone />
+              <Apparence />
+              <EconomieEnergie />
+              <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden', bgcolor: 'background.paper' }}>
+                <PerformanceSetting visible={performanceMonitorVisible} onChange={onPerformanceMonitorChange} />
+              </Box>
+            </Stack>
+          )}
+          {tab === 'affichage' && (
+            <Stack spacing={1.5}>
+              <Reperes orbits={orbits} onOrbits={onOrbits} markers={markers} onMarkers={onMarkers} satellites={satellites} onSatellites={onSatellites} sky={sky} onSky={onSky} />
+              <AstresAffiches kinds={kinds} onKind={onKind} />
+            </Stack>
+          )}
+          {tab === 'astres' && (
+            <Stack spacing={1.5}>
+              <AllerAUnAstre bodies={bodies} focus={focus} onPick={pick} onShown={onBodyShown} />
+              <CatalogueAstres bodies={bodies} onSelect={onSelect} onBodyShown={onBodyShown} onDone={onClose} engineRef={engineRef} />
+            </Stack>
+          )}
+        </Box>
+      </DialogContent>
+    </Dialog>
+  );
 }
