@@ -40,7 +40,7 @@ export function CatalogueAstres({
   const [error, setError] = useState(null);
   // État : compteur de relecture ; l'incrémenter redemande le listing.
   const [reload, setReload] = useState(0);
-  const [interstellarQuery, setInterstellarQuery] = useState('Proxima Centauri');
+  const [interstellarQuery, setInterstellarQuery] = useState('Tau Ceti');
   const [interstellarBusy, setInterstellarBusy] = useState(false);
   const [interstellarError, setInterstellarError] = useState(null);
   const [interstellarSystems, setInterstellarSystems] = useState([]);
@@ -200,7 +200,7 @@ export function CatalogueAstres({
             size="small" fullWidth value={interstellarQuery}
             onChange={(event) => setInterstellarQuery(event.target.value)}
             onKeyDown={(event) => { if (event.key === 'Enter' && !interstellarBusy) loadInterstellar(); }}
-            placeholder="Nom d’une étoile (ex. Proxima Centauri)"
+            placeholder="Nom d'une étoile (ex. Tau Ceti)"
             inputProps={{ 'aria-label': 'Rechercher un système extrasolaire' }}
           />
           <Button size="small" variant="contained" disabled={interstellarBusy || !interstellarQuery.trim()} onClick={loadInterstellar}>

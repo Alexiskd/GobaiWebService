@@ -132,8 +132,6 @@ import { createAstronomicalCatalogService } from '../SystemeEngine/data/astronom
 import { GaiaDR3SectorStreamer } from '../SystemeEngine/data/astronomy/providers/GaiaDR3SectorStreamer.js';
 import { GaiaStarfieldLayer } from '../StarEngine/GaiaStarfieldLayer.js';
 import { createAstronomicalSystemExplorer } from '../SystemeEngine/data/astronomy/AstronomicalSystemExplorer.js';
-import { createProximaCentauriAstrometricRecord } from '../SystemeEngine/data/astronomy/astrometry/ProximaCentauriAstrometry.js';
-import { createProximaCentauriIllustrativeSystem } from '../SystemeEngine/data/astronomy/astrometry/ProximaCentauriIllustrativeSystem.js';
 import { InterstellarSceneRenderer } from '../StarEngine/InterstellarSceneRenderer.js';
 import {
   createInterstellarEngineConfig,
@@ -1227,7 +1225,7 @@ export class SolarEngine {
       registry: this.coreRegistry,
       perivolumeManager: this.corePerivolumes,
       axioms: createGobaiPerivolumeAxioms({
-        earthSystem: 'system:earth', solarSystem: 'system:solar', proximaSystem: 'system:proxima-centauri',
+        earthSystem: 'system:earth', solarSystem: 'system:solar',
         earth: 'earth', moon: 'moon', mercury: 'mercury',
       }),
       onTransition: (event) => {
@@ -1291,21 +1289,6 @@ export class SolarEngine {
     this.galacticStreamingLastResult = null;
     this.interstellarLODFrame = 0;
 
-    // Proxima est présente dès l'ouverture : aucun appel réseau externe n'est requis
-    // pour obtenir un repère 3D lors du dézoom. Le système planétaire est schématique.
-    const currentYear = new Date().getUTCFullYear();
-    const currentJulianDate = Number.isFinite(this.simMs) ? this.simMs / 864e5 + 2440587.5 : 2451545.0;
-    const initialProxima = this.registerInterstellarSystem(createProximaCentauriIllustrativeSystem(), {
-      id: 'system:proxima-centauri',
-      targetEpoch: currentYear,
-      targetJulianDate: currentJulianDate,
-      scaleMode: 'readable',
-      auToSceneUnits: AU_UNITS,
-      perivolumeRadiusAu: 10,
-      backgroundRadius: config.parsecToSceneUnits * 3,
-      initialLod: 'STAR',
-    });
-    if (!initialProxima.ok) console.warn('[Gobai interstellar] Proxima Centauri non initialisée:', initialProxima);
   }
 
   /** Recherche un système par nom dans Gaia/SIMBAD/NASA puis l'enregistre dans la scène globale. */
@@ -1339,7 +1322,7 @@ export class SolarEngine {
       || result.systems.find((item) => (item.star?.sourceRecords || []).some((record) => fold(record?.name) === requested))
       || (result.systems.length === 1 ? result.systems[0] : null);
     if (!system) return { ok: false, reason: 'system-not-resolved', candidates: result.systems.map((item) => ({ id: item.id, name: item.star?.name || item.id })) };
-    const canonicalId = requested.includes('proxima centauri') ? 'system:proxima-centauri' : queryOptions.id;
+    const canonicalId = queryOptions.id;
     return this.registerInterstellarSystem(system, { ...queryOptions, targetEpoch: queryOptions.targetEpoch ?? year, id: canonicalId, requestedName: name });
   }
 
@@ -1352,37 +1335,7 @@ export class SolarEngine {
     const targetEpoch = Number.isFinite(Number(options.targetEpoch ?? options.targetEpochJulianYear))
       ? Number(options.targetEpoch ?? options.targetEpochJulianYear)
       : 2000 + (nowMs - Date.UTC(2000, 0, 1, 12)) / (365.25 * 864e5);
-    let systemForScene = starSystem;
-    if (coreId === 'system:proxima-centauri') {
-      const seed = createProximaCentauriAstrometricRecord();
-      const sourceStar = starSystem.star || {};
-      const sourceCoordinates = sourceStar.coordinates || {};
-      const sourceAstrometry = sourceStar.astrometry || {};
-      systemForScene = {
-        ...starSystem,
-        star: {
-          ...seed,
-          ...sourceStar,
-          coordinates: {
-            ...seed.coordinates,
-            ...Object.fromEntries(Object.entries(sourceCoordinates).filter(([, value]) => value !== null && value !== undefined && value !== '')),
-            epoch: sourceCoordinates.epoch !== null && sourceCoordinates.epoch !== undefined && Number.isFinite(Number(sourceCoordinates.epoch)) ? Number(sourceCoordinates.epoch) : seed.coordinates.epoch,
-          },
-          astrometry: {
-            ...seed.astrometry,
-            ...Object.fromEntries(Object.entries(sourceAstrometry).filter(([, value]) => value !== null && value !== undefined && value !== '')),
-          },
-          identifiers: [...(sourceStar.identifiers || []), ...seed.identifiers].filter((item, index, list) =>
-            list.findIndex((candidate) => candidate.catalog === item.catalog && candidate.value === item.value) === index),
-          provenance: {
-            ...seed.provenance,
-            ...(sourceStar.provenance || {}),
-            mergedAstrometry: true,
-            note: 'Paramètres du catalogue principal conservés ; champs absents complétés par les mesures SIMBAD documentées.',
-          },
-        },
-      };
-    }
+    const systemForScene = starSystem;
     const entry = this.interstellarRenderer.addSystem(systemForScene, {
       ...this.interstellarConfig,
       ...options,
@@ -1423,7 +1376,7 @@ export class SolarEngine {
       });
     }
     this.interstellarLOD?.forget(coreId);
-    this.interstellarRenderer.setSystemLOD(systemForScene.id, options.initialLod || (coreId === 'system:proxima-centauri' ? 'STAR' : 'DETAILED'));
+    this.interstellarRenderer.setSystemLOD(systemForScene.id, options.initialLod || 'DETAILED');
     this.interstellarResourceLifecycle?.register(coreId, {
       release: () => this.interstellarRenderer?.setSystemLoaded(coreId, false),
       restore: () => this.interstellarRenderer?.setSystemLoaded(coreId, true),
@@ -1797,7 +1750,7 @@ export class SolarEngine {
     return this.coreSystemManager?.getLoadProfile(id)?.state ?? this.corePerivolumes?.getState(id) ?? 'ACTIVE';
   }
 
-  // Enregistre un système externe déjà placé dans le repère global de la scène (ex. Proxima).
+  // Enregistre un système externe déjà placé dans le repère global de la scène.
   // Le moteur orbital local ne doit pas être utilisé comme position globale sans transformation ICRS dédiée.
   registerExternalSystemPerivolume({ id, center, radius, backgroundRadius = radius * 3, name = id } = {}) {
     if (!id || id === 'system:earth' || id === 'system:solar') throw new TypeError('Un identifiant de système externe distinct est requis.');

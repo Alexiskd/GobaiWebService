@@ -77,15 +77,15 @@ test('setState : les opacités suivent l\'état effectif', () => {
 test('sync : applique les états des décisions du SystemManager', () => {
   const { engine } = setup();
   engine.register({ id: 'system:solar', center: [0, 0, 0], radius: 10, backgroundRadius: 30 });
-  engine.register({ id: 'system:proxima-centauri', center: [100, 0, 0], radius: 10, backgroundRadius: 30 });
+  engine.register({ id: 'system:exemple', center: [100, 0, 0], radius: 10, backgroundRadius: 30 });
   const applied = engine.sync([
     { id: 'system:solar', state: LOAD_STATE.ACTIVE },
-    { id: 'system:proxima-centauri', state: LOAD_STATE.UNLOADED },
+    { id: 'system:exemple', state: LOAD_STATE.UNLOADED },
     { id: 'inconnu', state: LOAD_STATE.ACTIVE },
   ]);
   assert.equal(applied, 2);
   assert.equal(engine.get('system:solar').state, LOAD_STATE.ACTIVE);
-  assert.equal(engine.get('system:proxima-centauri').state, LOAD_STATE.UNLOADED);
+  assert.equal(engine.get('system:exemple').state, LOAD_STATE.UNLOADED);
 });
 
 test('updateCenter : déplace la bulle avec le système', () => {

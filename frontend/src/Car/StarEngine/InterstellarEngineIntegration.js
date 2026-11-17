@@ -7,7 +7,7 @@ const positive = (value) => Number.isFinite(Number(value)) && Number(value) > 0;
 /**
  * Le Système solaire conserve son échelle AU habituelle. Pour la vue globale,
  * les distances entre systèmes sont compressées : 1 pc d'affichage = 512 UA
- * de scène. Cela rend Proxima visible dans la plage de zoom de l'application.
+ * de scène. Cela rend les systèmes externes visibles dans la plage de zoom.
  */
 export function createInterstellarEngineConfig({ auUnits = 23455, overviewAuPerPc = INTERSTELLAR_OVERVIEW_AU_PER_PC } = {}) {
   if (!positive(auUnits)) throw new RangeError('auUnits doit être strictement positif.');
@@ -37,11 +37,10 @@ export function globalCameraPosition(cameraPosition, floatingOrigin) {
   };
 }
 
-/** Identifiant de périvolume stable, compatible avec l’axiome Soleil / Proxima Centauri. */
+/** Identifiant de périvolume stable et déterministe pour un système externe. */
 export function resolveInterstellarSystemId(starSystem, requestedId) {
   if (typeof requestedId === 'string' && requestedId.trim()) return requestedId.trim();
   const name = String(starSystem?.star?.name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-  if (name.includes('proxima centauri')) return 'system:proxima-centauri';
   const sourceId = String(starSystem?.id || name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   return `system:external:${sourceId || 'unknown'}`;
 }

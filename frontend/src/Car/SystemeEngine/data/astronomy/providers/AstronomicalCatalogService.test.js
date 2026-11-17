@@ -40,9 +40,9 @@ test('SIMBAD essaie un miroir après échec du premier endpoint', async () => {
 });
 
 test('interroge NASA avec query/format minuscules et normalise l’orbite', async () => {
-  const mock = mockFetch([{ pl_name: 'Proxima Cen b', hostname: 'Proxima Cen', pl_orbper: 11.186, pl_orbsmax: 0.0485 }]);
+  const mock = mockFetch([{ pl_name: 'Exemple Cen b', hostname: 'Exemple Cen', pl_orbper: 11.186, pl_orbsmax: 0.0485 }]);
   const service = new AstronomicalCatalogService({ fetchImpl: mock.fetchImpl, endpoints: { exoplanet: 'https://mock.test/TAP/sync' } });
-  const result = await service.findExoplanetsByHost('Proxima Cen');
+  const result = await service.findExoplanetsByHost('Exemple Cen');
   const url = new URL(mock.calls[0]);
   assert.equal(url.searchParams.get('format'), 'json');
   assert.match(url.searchParams.get('query'), /FROM pscomppars/);
@@ -55,10 +55,10 @@ test('interroge NASA avec query/format minuscules et normalise l’orbite', asyn
 });
 
 test('met en cache les requêtes identiques et expose les statistiques', async () => {
-  const mock = mockFetch([{ pl_name: 'Proxima Cen b', hostname: 'Proxima Cen' }]);
+  const mock = mockFetch([{ pl_name: 'Exemple Cen b', hostname: 'Exemple Cen' }]);
   const service = new AstronomicalCatalogService({ fetchImpl: mock.fetchImpl, endpoints: { exoplanet: 'https://mock.test/TAP/sync' } });
-  await service.findExoplanetsByHost('Proxima Cen');
-  const cached = await service.findExoplanetsByHost('Proxima Cen');
+  await service.findExoplanetsByHost('Exemple Cen');
+  const cached = await service.findExoplanetsByHost('Exemple Cen');
   assert.equal(cached.cache, 'hit');
   assert.equal(mock.calls.length, 1);
   assert.equal(service.getCacheStats().entries, 1);
@@ -119,8 +119,8 @@ test('recherche les exoplanètes par identifiant Gaia exact', async () => {
 
 test('refuse les appels navigateur directs SIMBAD/NASA quand aucun proxy de production n’est configuré', async () => {
   const service = new AstronomicalCatalogService({ fetchImpl: async () => { throw new Error('aucun appel direct attendu'); } });
-  await assert.rejects(service.resolveSimbadName('Proxima Centauri'), /sans proxy backend/);
-  await assert.rejects(service.findExoplanetsByHost('Proxima Centauri'), /sans proxy backend/);
+  await assert.rejects(service.resolveSimbadName('Étoile Exemple'), /sans proxy backend/);
+  await assert.rejects(service.findExoplanetsByHost('Étoile Exemple'), /sans proxy backend/);
 });
 
 test('sélectionne les erreurs et corrélations Gaia nécessaires à la covariance astrométrique', async () => {
