@@ -26,7 +26,9 @@ from datetime import datetime, timezone
 import pygame
 
 from gobai.data import MOON, PLANETS, SUN, SATELLITES
-from gobai.kepler import (AU_KM, EARTH_RADIUS_KM, centuries_tt, period_days)
+from gobai.gravity import body_mass_kg, dominant_body, format_distance_km
+from gobai.kepler import AU_KM, EARTH_RADIUS_KM, centuries_tt, period_days
+from gobai.scale import scale_level
 from gobai.simulation import (compute_state, moon_ecliptic_km,
                               orbit_polylines, satellite_ecliptic_km)
 
@@ -49,6 +51,24 @@ COLOR_DIM = (130, 138, 160)
 COLOR_PANEL = (16, 20, 34)
 COLOR_ORBIT = (70, 80, 110)
 COLOR_SAT_ORBIT = (90, 100, 130)
+
+NAMES = {"sun": SUN["nom"], "moon": MOON["nom"]}
+NAMES.update({p["id"]: p["nom"] for p in PLANETS})
+NAMES.update({s["id"]: s["nom"] for s in SATELLITES})
+
+
+def radius_km_of(body_id):
+    if body_id == "sun":
+        return SUN["radius"] * EARTH_RADIUS_KM
+    for p in PLANETS:
+        if p["id"] == body_id:
+            return p["radius"] * EARTH_RADIUS_KM
+    if body_id == "moon":
+        return MOON["radiusKm"]
+    for s in SATELLITES:
+        if s["id"] == body_id:
+            return s["radiusKm"]
+    return 1.0
 
 
 class Camera:
@@ -190,6 +210,19 @@ class App:
                                            COLOR_TEXT if body["id"] == self.selected else COLOR_DIM)
             self.screen.blit(label, (sx + r_px + 4, sy - label.get_height() / 2))
 
+    def dominant(self, positions):
+        bodies = []
+        for bid, (x, y) in positions.items():
+            r_km = radius_km_of(bid)
+            d = math.hypot(self.cam.x - x, self.cam.y - y)
+            bodies.append({"id": bid, "mass_kg": body_mass_kg(bid, r_km),
+                           "distance": d, "radius_km": r_km})
+        best = dominant_body(bodies)
+        if best is None:
+            return None, 0.0
+        altitude_km = max(0.0, best["distance"] * AU_KM - best["radius_km"])
+        return best, altitude_km
+
     def _draw_hud(self, positions):
         sim, cam, sel = self.sim, self.cam, self.selected
         lines = [
@@ -197,12 +230,17 @@ class App:
             f"Temps : {'en pause' if sim.paused else f'{sim.speed_days_per_s:g} j/s'}",
             f"Échelle : {AU_LABEL / cam.zoom:,.0f} km par écran de large".replace(",", " "),
         ]
+        dom, alt = self.dominant(positions)
+        if dom:
+            level = scale_level(alt, earth=dom["id"] == "earth", star=dom["id"] == "sun")
+            lines.append(f"Vue : {level}")
+            lines.append(f"Altitude : {format_distance_km(alt)} au-dessus de {NAMES[dom['id']]}")
         y = 12
         for line in lines:
             self.screen.blit(self.font.render(line, True, COLOR_TEXT), (12, y))
             y += 22
         y += 8
-        names = {"sun": SUN["nom"], "moon": MOON["nom"]}
+        names = NAMES
         by_id = {p["id"]: p for p in PLANETS}
         for s in SATELLITES:
             by_id[s["id"]] = s

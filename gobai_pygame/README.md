@@ -37,6 +37,13 @@ python3 main.py
   position héliocentrique écliptique, tracé d'orbite, troisième loi de Kepler.
 - `gobai/data.py` — portage de `frontend/src/Car/SystemeEngine/data/astronomy/data/` :
   planètes (rayon, rotation, couleur, 12 éléments), Lune, Soleil, satellites.
+- `gobai/simulation.py` — couche physique pure (espace monde en UA), sans pygame
+  ni Django : positions de tous les astres et tracés d'orbites à un instant donné.
+- `gobai/gravity.py` — portage de `gravityMath.jsx` : masses (NASA NSSDCA / JPL),
+  astre dominant (masse / distance²), formatage français des distances.
+- `gobai/scale.py` — portage de `scaleLevels.jsx` : niveau d'échelle de la vue,
+  de « Rue » à « Système solaire », affiché dans le HUD selon l'altitude au-dessus
+  de l'astre dominant.
 - `main.py` — l'application : caméra (zoom à la molette centré sur le curseur, suivi
   de l'astre sélectionné, déplacement au glisser), simulation temporelle (pause,
   vitesse en jours par seconde, retour à la date actuelle), orbites tracées à partir
