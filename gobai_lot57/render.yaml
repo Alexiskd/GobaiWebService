@@ -1,0 +1,8 @@
+# Gobai Space — déploiement frontend uniquement, sans service backend.
+services:
+  - type: web
+    name: static-gobai
+    runtime: static
+    buildCommand: npm ci --prefix frontend && npm run build --prefix frontend
+    staticPublishPath: frontend/dist
+    autoDeploy: false

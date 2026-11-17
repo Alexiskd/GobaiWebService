@@ -4,14 +4,15 @@
 
 - Frontend React/Vite uniquement.
 - Composants, styles, ressources publiques, données scientifiques embarquées et moteurs 3D conservés.
-- Connecteurs publics Gaia TAP, SIMBAD TAP et NASA Exoplanet Archive exécutés directement depuis le navigateur lorsque les fournisseurs autorisent CORS.
+- Positions de Hauméa, Makémaké et Éris préchargées dans le catalogue statique et calculées localement par le moteur orbital Kepler.
+- Le proxy Node TAP et sa configuration Render sont supprimés.
 - Politiques de périvolume et moteurs astrométriques/orbitaux conservés côté navigateur.
 
 Le dossier `backend/` a été supprimé. Cette archive ne contient ni serveur NestJS, ni service Node de production, ni migration PostgreSQL.
 
 ## Configuration Render
 
-Le blueprint `render.yaml` publie un Static Site :
+Le blueprint `render.yaml` ne publie qu’un Static Site, sans service backend :
 
 ```yaml
 services:

@@ -6,7 +6,7 @@
  * la Lune conserve les termes périodiques ELP. Aucun appel réseau par image de rendu.
  *
  * Éléments : table « Keplerian Elements for Approximate Positions of the Major Planets », valable de 1800 à 2050,
- * rangée dans backend/src/services/data/bodies.data.ts sous la forme
+ * rangée dans frontend/src/moteur/data/astronomy/data/bodies.data.ts sous la forme
  *   [a, a', e, e', I, I', L, L', ϖ, ϖ', Ω, Ω']   (a en UA, angles en degrés, dérives par siècle julien).
  * Ce sont des données statiques versionnées dans le dépôt, pas un service interrogé à l'exécution.
  *

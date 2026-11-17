@@ -1,5 +1,5 @@
-// Planètes naines importées de JPL Horizons (fichier produit par « npm run dwarf:import »). Ce fichier-là ne nous
-// emprunte qu'un type, effacé à la compilation : il n'y a donc aucun cycle à l'exécution.
+// Données statiques des planètes naines. Ce fichier-là ne nous emprunte qu'un type, effacé à la compilation :
+// il n'y a donc aucun cycle à l'exécution.
 import { DWARF_PLANETS_DATA } from './dwarf-planets.data';
 
 // Forme des données d'une planète.
@@ -413,7 +413,7 @@ const MAJOR_PLANETS: PlanetData[] = [
 
 /**
  * Tous les astres en orbite autour du Soleil que l'app affiche : les huit planètes et Pluton ci-dessus, puis les
- * planètes naines importées de JPL Horizons (voir dwarf-planets.data.ts, fichier produit par `npm run dwarf:import`).
+ * planètes naines statiques (voir dwarf-planets.data.ts).
  * La liste est classée par demi-grand axe croissant, si bien qu'une planète naine se place à sa distance réelle du
  * Soleil : Cérès entre Mars et Jupiter, les transneptuniennes après Neptune.
  */

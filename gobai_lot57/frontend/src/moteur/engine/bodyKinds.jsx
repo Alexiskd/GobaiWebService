@@ -14,7 +14,7 @@ export const BODY_KINDS = [
   // Famille « gas » : son libellé et ses exemples.
   { id: 'gas', label: 'Planètes gazeuses', hint: 'Jupiter, Saturne, Uranus, Neptune' },
   // Famille « dwarf » : son libellé et ses exemples.
-  { id: 'dwarf', label: 'Planètes naines', hint: 'Pluton, Cérès' },
+  { id: 'dwarf', label: 'Planètes naines', hint: 'Pluton, Cérès, Hauméa, Makémaké, Éris' },
   // Famille « satellite » : son libellé et ses exemples.
   { id: 'satellite', label: 'Satellites naturels', hint: 'Lune, Io, Titan, Phobos…' },
 // Fin de la liste.

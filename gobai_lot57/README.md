@@ -33,7 +33,7 @@ Le build sort dans `frontend/dist`. Le fichier `frontend/public/_redirects` cont
 
 Les composants React, MUI, le moteur 3D Three.js, les données astronomiques locales, les calculs orbitaux, le moteur stellaire/exoplanétaire, les périvolumes et leurs politiques de chargement sont conservés dans le frontend.
 
-Les connecteurs publics Gaia TAP, SIMBAD TAP et NASA Exoplanet Archive restent des appels navigateur directs. Leur fonctionnement dépend des politiques CORS, des quotas et de la disponibilité des fournisseurs.
+Les positions de Hauméa, Makémaké et Éris sont intégrées au catalogue local et calculées par le moteur orbital Kepler côté navigateur. Le proxy Node TAP a été retiré ; les recherches stellaires distantes ne sont donc pas garanties dans cette édition statique.
 
 ## Limites sans backend
 

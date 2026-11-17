@@ -5,7 +5,7 @@
  * pour les corps sans série publiée dans ce dépôt, et termes principaux ELP pour la Lune. Calcul local, sans
  * requête réseau à chaque image de rendu.
  *
- * Ce module est le pendant serveur de frontend/src/moteur/engine/planetOrbits.jsx : mêmes formules, mêmes
+ * Ce module est le pendant analytique de frontend/src/moteur/engine/planetOrbits.jsx : mêmes formules, mêmes
  * constantes, mêmes repères. Les deux sont vérifiés sur le même vecteur d'état de référence de Mars.
  *
  * Repères : écliptique J2000, x vers l'équinoxe de mars, z vers le pôle nord de l'écliptique. Le repère de la

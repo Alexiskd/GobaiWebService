@@ -119,8 +119,8 @@ test('recherche les exoplanètes par identifiant Gaia exact', async () => {
 
 test('refuse les appels navigateur directs SIMBAD/NASA quand aucun proxy de production n’est configuré', async () => {
   const service = new AstronomicalCatalogService({ fetchImpl: async () => { throw new Error('aucun appel direct attendu'); } });
-  await assert.rejects(service.resolveSimbadName('Proxima Centauri'), /VITE_ASTRONOMY_PROXY_URL/);
-  await assert.rejects(service.findExoplanetsByHost('Proxima Centauri'), /VITE_ASTRONOMY_PROXY_URL/);
+  await assert.rejects(service.resolveSimbadName('Proxima Centauri'), /sans proxy backend/);
+  await assert.rejects(service.findExoplanetsByHost('Proxima Centauri'), /sans proxy backend/);
 });
 
 test('sélectionne les erreurs et corrélations Gaia nécessaires à la covariance astrométrique', async () => {

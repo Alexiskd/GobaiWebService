@@ -24,9 +24,11 @@ const NAME_TO_ID = {
   // Planètes naines importées de JPL Horizons : leur nom français porte des accents, leur identifiant non.
   // Cérès : identifiant « ceres ».
   'Cérès': 'ceres',
-  // Haumea : identifiant « haumea ».
+  // Hauméa : identifiant « haumea ».
+  'Hauméa': 'haumea',
   Haumea: 'haumea',
-  // Makemake : identifiant « makemake ».
+  // Makémaké : identifiant « makemake ».
+  'Makémaké': 'makemake',
   Makemake: 'makemake',
   // Éris : identifiant « eris ».
   'Éris': 'eris',
