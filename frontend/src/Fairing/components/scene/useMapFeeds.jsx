@@ -99,7 +99,7 @@ export function useMapFeeds({ engine, push, clouds = true }) {
   // Effet des nuages réels.
   useEffect(() => {
     // Sans moteur, ou nuages de la Terre masqués : rien à faire.
-    if (!engine || !clouds) return undefined;
+    if (!engine || !clouds || !earthCloudTileUrl(0, 0, 0)) return undefined;
     // Crée un contrôleur d'annulation.
     const ctrl = new AbortController();
     // load : assemble la mosaïque de nuages à partir des tuiles.

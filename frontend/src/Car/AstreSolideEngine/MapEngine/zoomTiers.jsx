@@ -1,4 +1,4 @@
-// Paliers de zoom de la Terre, lus dans la table du serveur (GET /api/v1/tiles/earth/plan, voir backend earth-plan.ts) :
+// Paliers de zoom de la Terre, définis localement pour le mode statique :
 // de la vue de l'espace jusqu'à la rue, chaque palier donne le niveau de tuile le plus fin, le nombre maximal de tuiles
 // chargées (ordinateur, téléphone) et les détails affichés. Le palier suit la distance affichée en km. Rien n'est en
 // dur ici : sans table, aucun palier ne s'applique. Fonctions pures, testées dans zoomTiers.test.jsx.

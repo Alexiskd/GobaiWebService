@@ -1,5 +1,5 @@
 // Fonctions d'appel GET et POST, et base des routes.
-import { get, post, API_BASE } from './client.jsx';
+import { get, post } from './client.jsx';
 // Modèles 3D des astres, satellites sphériques, et inscription des satellites dans le moteur.
 import { BODY_MODELS, SPHERICAL_SATELLITE_IDS, registerSatelliteBodies } from '../../AstreSolideEngine/tiledBodies.jsx';
 // Données scientifiques embarquées : le cœur du système solaire fonctionne sans API Gobai.
@@ -72,7 +72,7 @@ export const fetchEarthWind = (signal) => get('/tiles/earth-wind', { signal });
 export const fetchEarthCloudCover = (signal) => get('/tiles/earth-clouds/cover', { signal });
 /** Adresse d'une tuile des nuages vus par satellite (Xweather, relayée par l'API). */
 // earthCloudTileUrl : l'adresse d'une tuile de nuages.
-export const earthCloudTileUrl = (z, x, y) => `${API_BASE}/tiles/earth-clouds/xweather/${z}/${x}/${y}`;
+export const earthCloudTileUrl = () => null;
 
 /** Satellites dont la carte NASA Trek est prête : [{ id, name, trek, source, label }]. */
 // fetchSatelliteStatus : l'état des cartes des satellites.
@@ -168,7 +168,7 @@ export const fetchAtmosphereCyclones = (signal) => get('/atmosphere/cyclones', {
 export const fetchAtmosphereLightning = (lon, lat, signal) => get('/atmosphere/lightning', { signal, query: { lon: lon.toFixed(3), lat: lat.toFixed(3) } });
 /** Adresse d'une tuile de la couche mondiale de la foudre (niveaux 0 à 3), relayée par le serveur. */
 // lightningTileUrl : la tuile.
-export const lightningTileUrl = (z, x, y) => `${API_BASE}/atmosphere/lightning/tiles/${z}/${x}/${y}`;
+export const lightningTileUrl = () => null;
 /**
  * Images radar disponibles (Rain Viewer) : { available, reason, frames: [{ id, time }], ageMin, stale, tile, source }.
  */
@@ -176,7 +176,7 @@ export const lightningTileUrl = (z, x, y) => `${API_BASE}/atmosphere/lightning/t
 export const fetchAtmosphereRadar = (signal) => get('/atmosphere/radar', { signal });
 /** Adresse d'une tuile radar décodée (PNG RVB : pluie, neige, couverture), relayée par le serveur. */
 // radarTileUrl : l'image et la tuile.
-export const radarTileUrl = (id, z, x, y) => `${API_BASE}/atmosphere/radar/${encodeURIComponent(id)}/${z}/${x}/${y}`;
+export const radarTileUrl = () => null;
 /** Orages : { frame, cells: [événements estimés], warnings: [avertissements officiels], stats, method, sources, stale }. */
 // fetchAtmosphereStorms : les orages.
 export const fetchAtmosphereStorms = (signal) => get('/atmosphere/storms', { signal });
@@ -188,13 +188,13 @@ export const fetchAtmosphereStorms = (signal) => get('/atmosphere/storms', { sig
 export const fetchAtmosphereAerosols = (signal) => get('/atmosphere/aerosols', { signal });
 /** Adresse de l'image observée d'un produit (« aod » ou « ai ») ; `version` change quand les données changent. */
 // aerosolObservedUrl : le produit et la version.
-export const aerosolObservedUrl = (product, version = '') => `${API_BASE}/atmosphere/aerosols/observed/${encodeURIComponent(product)}${version ? `?v=${encodeURIComponent(version)}` : ''}`;
+export const aerosolObservedUrl = () => null;
 /** Adresse d'une image de la prévision CAMS des poussières à une heure de validité (ISO). */
 // aerosolForecastUrl : l'heure.
-export const aerosolForecastUrl = (time) => `${API_BASE}/atmosphere/aerosols/forecast/${encodeURIComponent(time)}`;
+export const aerosolForecastUrl = () => null;
 /** Adresse de la légende de la prévision CAMS. */
 // aerosolLegendUrl : la légende.
-export const aerosolLegendUrl = () => `${API_BASE}/atmosphere/aerosols/forecast/legend`;
+export const aerosolLegendUrl = () => null;
 /** Vents par niveau et courants-jets : { validAt, available, reason, grid, levels: [{ id, label, altKm, available, u, v, maxMs }], jets, source }. */
 // fetchAtmosphereWinds : les vents.
 export const fetchAtmosphereWinds = (signal) => get('/atmosphere/winds', { signal });

@@ -3,8 +3,7 @@ import { validTiers } from './zoomTiers.jsx';
 // Importe le test de la carte marine, depuis marineChart.
 import { validMarine } from './marineChart.jsx';
 
-// Table de priorité des sources de la Terre, lue sur le serveur (GET /api/v1/tiles/earth/plan, voir backend
-// earth-plan.ts). Le navigateur ne garde aucune règle de choix en dur : il lit cette table, la vérifie et la convertit
+// Table de priorité des sources de la Terre, anciennement lue sur le serveur ; cette lecture est désactivée en mode statique. Le navigateur utilise les règles locales et convertit
 // en plan de chargement direct (les sources dans l'ordre de priorité, avec leurs emprises, leurs niveaux et les
 // adresses qu'il peut charger lui-même). Fonctions pures, testées dans earthPlan.test.jsx.
 
