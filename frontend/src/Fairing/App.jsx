@@ -20,6 +20,8 @@ import { makeTheme, statusBarColor } from './theme/theme.jsx';
 import { themeTransitionStyles } from './theme/themeTransition.jsx';
 // Importe le diagnostic de l'interface (?diagnostic=interface) et sa condition.
 import { DiagnosticInterface, wantsDiagnostic } from './diagnostic/DiagnosticInterface.jsx';
+// Importe RenderLoopRoot, qui possède la boucle de rendu de l'application complète.
+import { RenderLoopRoot } from './components/RenderLoopRoot.jsx';
 
 // Diagnostic demandé par l'adresse : lu une fois au chargement.
 const DIAGNOSTIC = wantsDiagnostic();
@@ -50,16 +52,20 @@ export default function App() {
   return (
     // Fournit le thème à toute l'application.
     <ThemeProvider theme={theme}>
-      {/* Remise à zéro CSS de MUI, avec la palette de couleurs du navigateur accordée au thème. */}
-      <CssBaseline enableColorScheme />
-      {/* Styles globaux de la transition entre thèmes. */}
-      <GlobalStyles styles={themeTransitionStyles} />
-      {/* Styles des éléments créés par le moteur 3D. */}
-      <SceneStyles />
-      {/* Appareil compatible : l'application ; sinon : l'écran d'excuse. */}
-      {SUPPORTED ? <SolarSystem /> : <AppareilNonCompatible />}
-      {/* Diagnostic de la mise en page, seulement si l'adresse le demande. */}
-      {DIAGNOSTIC && <DiagnosticInterface />}
+      {/* La boucle de rendu de l'application complète : démarre au montage, arrêtée au démontage. */}
+      <RenderLoopRoot>
+        {/* Remise à zéro CSS de MUI, avec la palette de couleurs du navigateur accordée au thème. */}
+        <CssBaseline enableColorScheme />
+        {/* Styles globaux de la transition entre thèmes. */}
+        <GlobalStyles styles={themeTransitionStyles} />
+        {/* Styles des éléments créés par le moteur 3D. */}
+        <SceneStyles />
+        {/* Appareil compatible : l'application ; sinon : l'écran d'excuse. */}
+        {SUPPORTED ? <SolarSystem /> : <AppareilNonCompatible />}
+        {/* Diagnostic de la mise en page, seulement si l'adresse le demande. */}
+        {DIAGNOSTIC && <DiagnosticInterface />}
+      {/* Fin de la boucle de rendu. */}
+      </RenderLoopRoot>
     {/* Fin du fournisseur de thème. */}
     </ThemeProvider>
   // Fin du rendu.
