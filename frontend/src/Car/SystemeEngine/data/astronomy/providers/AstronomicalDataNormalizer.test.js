@@ -16,14 +16,14 @@ test('ignore une ligne Gaia sans source_id', () => {
 });
 
 test('normalise une identification SIMBAD et sa classification', () => {
-  const object = normalizeSimbadObject({ main_id: 'Proxima Centauri', ra: 217.429, dec: -62.679, otype: '*', sp_type: 'M5.5Ve' });
-  assert.equal(object.name, 'Proxima Centauri');
+  const object = normalizeSimbadObject({ main_id: 'Étoile Exemple', ra: 217.429, dec: -62.679, otype: '*', sp_type: 'M5.5Ve' });
+  assert.equal(object.name, 'Étoile Exemple');
   assert.equal(object.classification.spectralType, 'M5.5Ve');
   assert.equal(object.coordinates.raDeg, 217.429);
 });
 
 test('normalise les paramètres orbitaux NASA en conservant unités et provenance', () => {
-  const planet = normalizeExoplanet({ pl_name: 'Proxima Cen b', hostname: 'Proxima Cen', pl_orbper: 11.186, pl_orbsmax: 0.0485, pl_orbeccen: 0.04, pl_orbincl: 89, pl_orblper: 120, pl_orbtper: 2458000, pl_rade: 1.1, pl_bmasse: 1.27, sy_dist: 1.3, ra: 217.4, dec: -62.6, gaia_dr3_id: '5853498713190525696' });
+  const planet = normalizeExoplanet({ pl_name: 'Exemple Cen b', hostname: 'Exemple Cen', pl_orbper: 11.186, pl_orbsmax: 0.0485, pl_orbeccen: 0.04, pl_orbincl: 89, pl_orblper: 120, pl_orbtper: 2458000, pl_rade: 1.1, pl_bmasse: 1.27, sy_dist: 1.3, ra: 217.4, dec: -62.6, gaia_dr3_id: '5853498713190525696' });
   assert.equal(planet.kind, 'exoplanet');
   assert.equal(planet.orbit.periodDays, 11.186);
   assert.equal(planet.orbit.semiMajorAxisAu, 0.0485);

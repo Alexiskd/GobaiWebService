@@ -7,7 +7,7 @@ const point = (x, y = 0, z = 0) => ({ x, y, z });
 test('indexe les systèmes dans des secteurs 3D et calcule des clés négatives correctement', () => {
   const index = new GalacticSpatialIndex({ sectorSizePc: 10 });
   index.upsert('sol', point(0, 0, 0));
-  index.upsert('proxima', point(4.2, 0, 0));
+  index.upsert('exemple', point(4.2, 0, 0));
   index.upsert('negative', point(-10.1, 0, 0));
   assert.equal(index.getStats().objects, 3);
   assert.equal(index.getStats().sectors, 2);

@@ -25,14 +25,6 @@ test('axiome système interne Terre/Soleil : le partenaire est limité à BACKGR
   assert.equal(manager.getLoadProfile('system:solar').update, false);
 });
 
-test('axiome système externe Soleil/Proxima : le partenaire est UNLOADED', () => {
-  const ids = ['system:solar', 'system:proxima-centauri'];
-  const manager = setup(ids, createGobaiPerivolumeAxioms(), { 'system:proxima-centauri': [20, 0, 0] });
-  const result = manager.update([20, 0, 0]);
-  assert.equal(result.find((item) => item.id === 'system:proxima-centauri').state, LOAD_STATE.ACTIVE);
-  assert.equal(result.find((item) => item.id === 'system:solar').state, LOAD_STATE.UNLOADED);
-});
-
 test('axiome astres interne Terre/Lune : la Lune passe en BACKGROUND', () => {
   const ids = ['body:earth', 'body:moon'];
   const manager = setup(ids, createGobaiPerivolumeAxioms());
@@ -72,12 +64,4 @@ test('appartenance aux périvolumes cubique, boîte, sphère et cylindre', () =>
   assert.equal(containsPerivolumePoint([2, 0, 0], [0, 0, 0], { type: 'box', length: 2, width: 2, height: 2 }), false);
   assert.equal(containsPerivolumePoint([0, 0, 0], [0, 0, 0], { type: 'sphere', radius: 1 }), true);
   assert.equal(containsPerivolumePoint([0.5, 1, 0], [0, 0, 0], { type: 'cylinder', radius: 1, height: 2 }), true);
-});
-
-test('axiome externe : entrer dans le périvolume du Soleil décharge Proxima', () => {
-  const ids = ['system:solar', 'system:proxima-centauri'];
-  const manager = setup(ids, createGobaiPerivolumeAxioms(), { 'system:proxima-centauri': [20, 0, 0] });
-  const result = manager.update([0, 0, 0]);
-  assert.equal(result.find((item) => item.id === 'system:solar').state, LOAD_STATE.ACTIVE);
-  assert.equal(result.find((item) => item.id === 'system:proxima-centauri').state, LOAD_STATE.UNLOADED);
 });

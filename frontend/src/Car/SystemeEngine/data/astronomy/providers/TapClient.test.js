@@ -24,7 +24,7 @@ test('convertit un TAP JSON metadata/data en objets', () => {
 });
 
 test('accepte également un tableau JSON d’objets', () => {
-  assert.deepEqual(parseTapRows([{ pl_name: 'Proxima Cen b' }]), [{ pl_name: 'Proxima Cen b' }]);
+  assert.deepEqual(parseTapRows([{ pl_name: 'Exemple Cen b' }]), [{ pl_name: 'Exemple Cen b' }]);
 });
 
 test('exécute une requête avec fetch injectable et conserve la provenance', async () => {

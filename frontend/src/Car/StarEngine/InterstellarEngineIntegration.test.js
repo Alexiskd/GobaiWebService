@@ -32,16 +32,12 @@ test('la conversion caméra refuse les vecteurs incomplets', () => {
   assert.throws(() => globalCameraPosition({ x: 1 }, { x: 0, y: 0, z: 0 }), /vecteurs 3D finis/);
 });
 
-test('Proxima reçoit l’identifiant canonique utilisé par les axiomes', () => {
-  assert.equal(resolveInterstellarSystemId({ star: { name: 'Proxima Centauri' }, id: 'gaia:123' }), 'system:proxima-centauri');
-});
-
 test('les autres systèmes reçoivent un identifiant externe déterministe', () => {
   assert.equal(resolveInterstellarSystemId({ star: { name: 'Alpha Centauri A' }, id: 'Gaia:42' }), 'system:external:gaia-42');
 });
 
 test('un identifiant explicitement fourni est conservé', () => {
-  assert.equal(resolveInterstellarSystemId({ star: { name: 'Proxima Centauri' } }, 'system:custom'), 'system:custom');
+  assert.equal(resolveInterstellarSystemId({ star: { name: 'Tau Ceti' } }, 'system:custom'), 'system:custom');
 });
 
 test('le périvolume couvre au moins dix UA', () => {

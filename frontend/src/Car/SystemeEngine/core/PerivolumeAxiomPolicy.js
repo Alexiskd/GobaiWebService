@@ -3,19 +3,17 @@ import { LOAD_STATE } from './PerivolumeManager.js';
 export const PERIVOLUME_RELATION = Object.freeze({ INTERNAL: 'internal', EXTERNAL: 'external' });
 export const PERIVOLUME_LEVEL = Object.freeze({ SYSTEM: 'system', BODY: 'body' });
 
-/** Configuration canonique des quatre axiomes. Les IDs sont personnalisables à l'intégration. */
+/** Configuration canonique des trois axiomes. Les IDs sont personnalisables à l'intégration. */
 export function createGobaiPerivolumeAxioms(ids = {}) {
   const value = {
     earthSystem: ids.earthSystem || 'system:earth',
     solarSystem: ids.solarSystem || 'system:solar',
-    proximaSystem: ids.proximaSystem || 'system:proxima-centauri',
     earth: ids.earth || 'body:earth',
     moon: ids.moon || 'body:moon',
     mercury: ids.mercury || 'body:mercury',
   };
   return [
     { id: 'systems-earth-solar-internal', level: PERIVOLUME_LEVEL.SYSTEM, relation: PERIVOLUME_RELATION.INTERNAL, members: [value.earthSystem, value.solarSystem] },
-    { id: 'systems-solar-proxima-external', level: PERIVOLUME_LEVEL.SYSTEM, relation: PERIVOLUME_RELATION.EXTERNAL, members: [value.solarSystem, value.proximaSystem] },
     { id: 'bodies-earth-moon-internal', level: PERIVOLUME_LEVEL.BODY, relation: PERIVOLUME_RELATION.INTERNAL, members: [value.earth, value.moon] },
     { id: 'bodies-earth-mercury-external', level: PERIVOLUME_LEVEL.BODY, relation: PERIVOLUME_RELATION.EXTERNAL, members: [value.earth, value.mercury] },
   ];

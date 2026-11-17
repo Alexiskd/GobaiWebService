@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { icrsToHeliocentricParsecs, icrsParsecsToScene, buildInterstellarSystemModel, InterstellarSceneRenderer } from './InterstellarSceneRenderer.js';
 
-const system = (overrides = {}) => ({ id: 'proxima', kind: 'star-system', identityStatus: 'verified-gaia-identity', star: {
-  id: 'gaia:1', name: 'Proxima Centauri', coordinates: { raDeg: 217.4289, decDeg: -62.6795, epoch: 2016, frame: 'ICRS' },
+const system = (overrides = {}) => ({ id: 'etoile-exemple', kind: 'star-system', identityStatus: 'verified-gaia-identity', star: {
+  id: 'gaia:1', name: 'Étoile exemple', coordinates: { raDeg: 217.4289, decDeg: -62.6795, epoch: 2016, frame: 'ICRS' },
   astrometry: { parallaxMas: 768.5 }, propagation: { distancePc: 1.301 },
 }, planets: [], ...overrides });
 
@@ -17,7 +17,7 @@ test('ICRS north pole is mapped to Gobai scene +Y', () => {
 test('transforme les parsecs vers les unités scène avec origine', () => {
   assert.deepEqual(icrsParsecsToScene({ x: 1, y: 2, z: 3 }, { parsecToSceneUnits: 10, origin: { x: 1, y: 2, z: 3 } }), { x: 11, y: 32, z: -17 });
 });
-test('modèle Proxima utilise une parallaxe et calcule sa position globale', () => {
+test('modèle de l'étoile exemple utilise une parallaxe et calcule sa position globale', () => {
   const model = buildInterstellarSystemModel(system());
   assert.equal(model.positionStatus, 'available'); assert.ok(model.distanceLightYears > 4.2 && model.distanceLightYears < 4.3);
   assert.ok(Number.isFinite(model.position.x));
@@ -38,24 +38,24 @@ test('renderer garde les systèmes dans un registre et refuse focus sans positio
   const scene = { add(x){this.item=x;}, remove(){} };
   const renderer = new InterstellarSceneRenderer({ THREE, scene });
   const result = renderer.addSystem(system());
-  assert.equal(result.model.positionStatus, 'available'); assert.equal(renderer.getSystem('proxima'), result);
+  assert.equal(result.model.positionStatus, 'available'); assert.equal(renderer.getSystem('etoile-exemple'), result);
   assert.equal(result.group.userData.globalMarker.visible, true);
   assert.equal(renderer.updateGlobalMarkers({ position: { x: 0, y: 0, z: 0 }, fov: 50 }, 900), 1);
   assert.ok(result.group.userData.globalMarker.scale.value >= 1);
-  assert.equal(renderer.setSystemLOD('proxima', 'STAR'), true);
+  assert.equal(renderer.setSystemLOD('etoile-exemple', 'STAR'), true);
   assert.equal(result.group.userData.globalMarker.visible, true);
-  assert.equal(renderer.setSystemLOD('proxima', 'PLANETS'), true);
+  assert.equal(renderer.setSystemLOD('etoile-exemple', 'PLANETS'), true);
   assert.equal(result.group.userData.globalMarker.visible, false);
-  const focused = renderer.focusSystem('proxima');
+  const focused = renderer.focusSystem('etoile-exemple');
   assert.deepEqual(focused.target, result.model.position);
-  const epochUpdate = renderer.updateSystemEpoch('proxima', 2025);
+  const epochUpdate = renderer.updateSystemEpoch('etoile-exemple', 2025);
   assert.equal(epochUpdate.ok, true);
   assert.equal(result.model.targetEpoch, 2025);
-  assert.equal(renderer.setSystemLoaded('proxima', false), true);
+  assert.equal(renderer.setSystemLoaded('etoile-exemple', false), true);
   assert.equal(result.group.userData.loaded, false);
-  assert.equal(renderer.setSystemLoaded('proxima', true), true);
+  assert.equal(renderer.setSystemLoaded('etoile-exemple', true), true);
   assert.equal(result.group.userData.loaded, true);
-  assert.equal(renderer.removeSystem('proxima'), true);
+  assert.equal(renderer.removeSystem('etoile-exemple'), true);
 });
 
 test('renderer applique les niveaux LOD aux planètes et aux orbites', () => {
@@ -78,7 +78,7 @@ test('renderer applique les niveaux LOD aux planètes et aux orbites', () => {
 
 test('le modèle global propage les coordonnées à targetEpoch quand une astrométrie complète existe', () => {
   const item = system({ star: {
-    id: 'gaia-dr3:5853498713190525696', name: 'Proxima Centauri',
+    id: 'gaia-dr3:5853498713190525696', name: 'Étoile exemple',
     coordinates: { frame: 'ICRS', epoch: 2000, raDeg: 217.4289422216058, decDeg: -62.67949018907555 },
     astrometry: { parallaxMas: 768.0665, properMotionRaMasYr: -3781.741, properMotionDecMasYr: 769.465, radialVelocityKmS: -20.578199 },
   } });
