@@ -9,6 +9,7 @@ import { loopTrailAlphas } from './orbitRibbonMath.jsx';
 import { SharedResourcePool } from '../SystemeEngine/core/SharedResourcePool.js';
 import { InstancedPickRegistry } from '../SystemeEngine/core/InstancedPickRegistry.js';
 import { acquireUnitSphereGeometry } from '../SystemeEngine/core/SharedGeometry.js';
+import { isSatelliteVisibleInPerivolume } from './satellitePerivolume.js';
 
 // Nombre de segments du cercle d'orbite : 256.
 const ORBIT_SEGMENTS = 256;
@@ -86,6 +87,8 @@ export class SatelliteSystem {
       const group = new THREE.Group();
       // Son nom : l'identifiant du satellite.
       group.name = def.id;
+      // Les satellites restent masqués hors du périvolume de leur planète hôte.
+      group.visible = false;
       // L'ajoute à la scène.
       scene.add(group);
       // Sphère de fond du satellite (début).
@@ -166,6 +169,8 @@ export class SatelliteSystem {
   update(ms, hotParent = null) {
     // Numéro de l'image, puis compteur avancé.
     const tick = this.tick++;
+    // Le système hôte actif est fourni par le coordinateur de périvolume.
+    this.activeParent = hotParent;
     // Pour chaque satellite (début).
     for (let i = 0; i < this.list.length; i++) {
       // Le satellite.
@@ -216,6 +221,8 @@ export class SatelliteSystem {
     for (const s of this.list) {
       // Position du groupe, relative à la cible.
       s.group.position.copy(s.w).sub(target);
+      // Pas de dépendance à une couche de nuages ou à une texture : seule l'entrée dans le périvolume compte.
+      s.group.visible = isSatelliteVisibleInPerivolume(s.parent, this.activeParent, s.hidden);
       // Le tracé de l'orbite est centré sur la planète.
       s.orbit.position.copy(s.parent.group.position);
       // Rayon de l'orbite.
