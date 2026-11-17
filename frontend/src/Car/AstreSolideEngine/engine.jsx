@@ -1,5 +1,6 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
+import { interpolateHorizonsVector, AU_KM } from './jplHorizonsClient.jsx';
 // Importe LidarGlobe et pickEarthAt, les nuages LiDAR calés sur le globe et le point de la Terre sous un pixel.
 import { LidarGlobe, pickEarthAt } from './LidarEngine/lidarGlobe.jsx';
 // Importe LidarPoints, les dalles LiDAR en points 3D.
@@ -1070,6 +1071,16 @@ export class SolarEngine {
   /** Tables JPL Horizons des satellites (GET /ephemeris/satellites). */
   // setSatelliteEphemeris : transmet les tables de positions des satellites.
   setSatelliteEphemeris(list) { this.satellites.setEphemeris(list); }
+
+  /** Vecteurs héliocentriques JPL Horizons (km, écliptique J2000) ; le calcul local reste le repli. */
+  setPlanetEphemeris(list) {
+    this.planetHorizonsTables = this.planetHorizonsTables || new Map();
+    for (const body of list || []) {
+      if (body?.id && Array.isArray(body.points) && body.points.length >= 2) {
+        this.planetHorizonsTables.set(body.id, body.points);
+      }
+    }
+  }
 
   // Lune en direct : lieux (alunissages, mers, cratères), sondes en orbite (JPL Horizons), modèle 3D NASA.
   initMoonLive() {
@@ -3727,7 +3738,13 @@ export class SolarEngine {
     this.planets.forEach((p) => {
       // Sa position héliocentrique. Pour la Terre, la table d'éléments décrit le barycentre Terre–Lune :
       // earthPosition y ajoute le décalage du centre de la Terre, jusqu'à 4 670 km, soit 0,73 rayon terrestre.
-      p.ecl = p.def.earth ? earthPosition(p.def.elements, T) : heliocentric(p.def.elements, T);
+      const jplPosition = interpolateHorizonsVector(
+        this.planetHorizonsTables?.get(bodyId(p.def)),
+        this.simMs,
+      );
+      p.ecl = jplPosition
+        ? [jplPosition.x / AU_KM, jplPosition.z / AU_KM, -jplPosition.y / AU_KM]
+        : (p.def.earth ? earthPosition(p.def.elements, T) : heliocentric(p.def.elements, T));
       // Sa position dans la scène.
       p.w.set(p.ecl[0] * AU_UNITS, p.ecl[1] * AU_UNITS, p.ecl[2] * AU_UNITS);
       // Sa rotation propre.
