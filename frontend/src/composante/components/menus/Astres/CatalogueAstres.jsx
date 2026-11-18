@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect, useMemo et useState.
 import { useEffect, useMemo, useState } from 'react';
 // Importe de MUI Box, Checkbox, Chip, CircularProgress, Stack et Typography.
-import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import { Box, Checkbox, Chip, CircularProgress, Stack, Typography } from '@mui/material';
 // Importe la lecture du listing d'affichage des astres.
 import { fetchBodyListing } from '@/moteur/api';
 // Importe Group, le groupe de réglages.
@@ -30,8 +30,6 @@ export function CatalogueAstres({
   onBodyShown,
   // Rappel de fin : referme la fenêtre après un déplacement.
   onDone,
-  // Référence du moteur 3D, pour découvrir et viser les systèmes extrasolaires.
-  engineRef,
 // Fin de la liste des propriétés.
 }) {
   // État : le listing reçu du serveur, null tant qu'il n'est pas arrivé.
@@ -40,36 +38,6 @@ export function CatalogueAstres({
   const [error, setError] = useState(null);
   // État : compteur de relecture ; l'incrémenter redemande le listing.
   const [reload, setReload] = useState(0);
-  const [interstellarQuery, setInterstellarQuery] = useState('Proxima Centauri');
-  const [interstellarBusy, setInterstellarBusy] = useState(false);
-  const [interstellarError, setInterstellarError] = useState(null);
-  const [interstellarSystems, setInterstellarSystems] = useState([]);
-
-  const loadInterstellar = async () => {
-    const query = interstellarQuery.trim();
-    if (!query) return;
-    const engine = engineRef?.current;
-    if (!engine?.loadInterstellarSystemByName) { setInterstellarError('Le moteur interstellaire n’est pas prêt.'); return; }
-    setInterstellarBusy(true);
-    setInterstellarError(null);
-    try {
-      const result = await engine.loadInterstellarSystemByName(query, { limit: 50 });
-      if (!result?.ok) {
-        setInterstellarError(result?.reason === 'system-not-resolved'
-          ? `Aucun système non ambigu trouvé pour « ${query} ».`
-          : (result?.warnings || []).join(' ') || 'Position globale indisponible.');
-      } else {
-        setInterstellarSystems(engine.getInterstellarSystems());
-      }
-    } catch (error) {
-      setInterstellarError(error?.message || 'Recherche astronomique impossible. Vérifie la connexion aux archives publiques.');
-    } finally { setInterstellarBusy(false); }
-  };
-
-  const focusInterstellar = (id) => {
-    const engine = engineRef?.current;
-    if (engine?.focusInterstellarSystem?.(id)) onDone?.();
-  };
 
   // Demande le listing au montage, et à chaque relecture (début de l'effet).
   useEffect(() => {
@@ -193,33 +161,6 @@ export function CatalogueAstres({
         </Box>
       ))}
       {/* Fin du listing. */}
-      <Box sx={{ mt: 2, pt: 1.5, borderTop: 1, borderColor: 'divider' }}>
-        <Typography sx={{ px: 1.5, pb: 1, fontSize: 14, fontWeight: 600 }}>Systèmes extrasolaires</Typography>
-        <Stack direction="row" spacing={1} sx={{ px: 1.5, pb: 1 }}>
-          <TextField
-            size="small" fullWidth value={interstellarQuery}
-            onChange={(event) => setInterstellarQuery(event.target.value)}
-            onKeyDown={(event) => { if (event.key === 'Enter' && !interstellarBusy) loadInterstellar(); }}
-            placeholder="Nom d’une étoile (ex. Proxima Centauri)"
-            inputProps={{ 'aria-label': 'Rechercher un système extrasolaire' }}
-          />
-          <Button size="small" variant="contained" disabled={interstellarBusy || !interstellarQuery.trim()} onClick={loadInterstellar}>
-            {interstellarBusy ? <CircularProgress size={18} color="inherit" /> : 'Rechercher'}
-          </Button>
-        </Stack>
-        {interstellarError && <Alert severity="warning" sx={{ mx: 1.5, mb: 1, fontSize: 12 }}>{interstellarError}</Alert>}
-        {interstellarSystems.map((system) => (
-          <Stack key={system.id} direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, py: 0.75 }}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{system.name}</Typography>
-              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
-                {system.distanceLightYears?.toFixed(2)} années-lumière · {system.state || 'chargement'}
-              </Typography>
-            </Box>
-            <Chip size="small" clickable color="primary" label="Voir" onClick={() => focusInterstellar(system.id)} />
-          </Stack>
-        ))}
-      </Box>
     {/* Fin du groupe. */}
     </Group>
   // Fin du rendu.
