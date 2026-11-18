@@ -43,7 +43,7 @@ export function toolbarActions({
     // « Ma position » n'est plus ici : elle est posée sous la navball, en icône (hud/NavballPilote).
     // Assistant : petit menu déroulant qui s'ouvre au-dessus du bouton (l'événement du clic donne son point d'ancrage).
     // Mistral : l'assistant, enfoncé quand son menu est ouvert.
-    { id: 'assistant', group: 'explore', icon: MISTRAL_ICON, label: 'Mistral', primary: true, pressed: assistantOpen, onClick: onAssistant, title: 'Mistral : poser une question sur le système solaire' },
+    { id: 'assistant', group: 'explore', icon: MISTRAL_ICON, label: 'Claude', primary: true, pressed: assistantOpen, onClick: onAssistant, title: 'Claude : poser une question sur le système solaire' },
     // Le bouton Informations n'existe plus : le menu des cartes est rendu dans le panneau des caractéristiques,
     // qui s'ouvre d'un appui sur son en-tête (et par la touche L).
     // Vue globale : retour à la vue d'ensemble.
