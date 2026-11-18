@@ -14,8 +14,8 @@ import { TILED_BODIES } from '@/Car/AstreSolideEngine/tiledBodies';
 import { PanelHeader } from '../ui/PanelHeader.jsx';
 // Importe l'arborescence du site et son compteur de pages.
 import { SITE_TREE, countPages } from './siteTree.js';
-// Importe les organisations, la mise en forme des dates, les organisations des dépôts et les crédits affichés.
-import { SERVICE_ORGS, formatRepoDate, orgsFromRepos, visibleCredits } from './openSourceCredits.js';
+// Importe la mise en forme des dates et les crédits affichés.
+import { formatRepoDate, visibleCredits } from './openSourceCredits.js';
 // Importe la liste des API et son compteur.
 import { API_GROUPS, countApis } from './apiList.js';
 // Importe le blocage des API externes : état, abonnement, bascule et clé d'administration.
@@ -42,8 +42,6 @@ const splitLabel = (text, fallback) => {
 // Fin de splitLabel.
 };
 
-// Organisations des dépôts, calculées une seule fois au chargement.
-const REPO_ORGS = orgsFromRepos();
 // Crédits affichés, calculés une seule fois au chargement.
 const CREDITS = visibleCredits();
 
@@ -53,6 +51,15 @@ const CREDITS = visibleCredits();
  */
 // Style des tableaux qui tiennent dans la largeur : colonnes fixes et textes coupés au besoin.
 const FIT_TABLE = { width: '100%', tableLayout: 'fixed', '& td': { overflowWrap: 'anywhere', wordBreak: 'break-word' } };
+
+/** Les services déclarés, découpés en familles : véritables API, serveurs de tuiles, puis stockage et diffusion de fichiers. */
+// Déclare les familles : leur catégorie dans la liste des API (`kind`), leur titre de section, puis la note affichée sous le tableau.
+const KIND_SECTIONS = [
+  { kind: 'api', title: 'API et web services', note: 'Services qui reçoivent des paramètres (coordonnées, requêtes textuelles, SQL/TAP), calculent, et renvoient des données structurées (JSON, XML, tables).' },
+  { kind: 'tiles', title: 'Services de tuiles cartographiques', note: 'Serveurs spécialisés qui découpent et délivrent des portions de cartes ou de données géographiques, raster ou vectorielles ; ils ne calculent rien à la demande.' },
+  { kind: 'static', title: 'CDN, stockage cloud et fichiers statiques', note: 'Espaces de stockage et réseaux de diffusion : aucun calcul ni requête complexe, seulement des fichiers bruts hébergés (images, polices, scripts, archives de tuiles).' },
+// Fin de la liste des familles.
+];
 
 /** Étiquette à bordure, comme dans la table des sources. */
 // Déclare le composant Tag : reçoit un contenu.
@@ -186,7 +193,7 @@ function Credits() {
 // Fin de Credits.
 }
 
-/** Onglet « Sources et Entreprises » : sources des données affichées, puis organisations et ce qu'elles fournissent. */
+/** Onglet « Sources et Entreprises » : sources des données affichées, puis services déclarés, séparés en API, tuiles et fichiers statiques. */
 // Déclare le composant SourcesAndCompanies : reçoit les lignes des sources.
 function SourcesAndCompanies({ rows }) {
   // Début du rendu.
@@ -222,65 +229,56 @@ function SourcesAndCompanies({ rows }) {
       {/* Fin de la note. */}
       </Typography>
 
-      {/* Deuxième titre. */}
-      <SectionTitle>Données et services</SectionTitle>
-      {/* Tableau des organisations, ajusté à la largeur. */}
-      <Table size="small" sx={FIT_TABLE}>
-        {/* Corps du tableau. */}
-        <TableBody>
-          {/* Une ligne par organisation, triées par nom sur une copie de la liste (début). */}
-          {[...SERVICE_ORGS].sort((a, b) => a.org.localeCompare(b.org, 'fr')).map(({ org, what }) => (
-            // La ligne.
-            <TableRow key={org}>
-              {/* Le nom de l'organisation, en étiquette. */}
-              <TableCell sx={{ pl: 0, verticalAlign: 'top', width: '40%' }}><Tag>{org}</Tag></TableCell>
-              {/* Ce qu'elle fournit, séparé par des points médians. */}
-              <TableCell sx={{ pr: 0 }}>{what.join(' · ')}</TableCell>
-            {/* Fin de la ligne. */}
-            </TableRow>
-          // Fin des lignes.
-          ))}
-        {/* Fin du corps du tableau. */}
-        </TableBody>
-      {/* Fin du tableau. */}
-      </Table>
-
-      {/* Troisième titre. */}
-      <SectionTitle>Entreprises derrière les logiciels libres</SectionTitle>
-      {/* Tableau des entreprises, ajusté à la largeur. */}
-      <Table size="small" sx={FIT_TABLE}>
-        {/* Corps du tableau. */}
-        <TableBody>
-          {/* Une ligne par organisation de dépôts (début). */}
-          {REPO_ORGS.map(({ org, items }) => (
-            // La ligne.
-            <TableRow key={org}>
-              {/* Le nom de l'organisation, en étiquette. */}
-              <TableCell sx={{ pl: 0, verticalAlign: 'top', width: '40%' }}><Tag>{org}</Tag></TableCell>
-              {/* Cellule des dépôts. */}
-              <TableCell sx={{ pr: 0 }}>
-                {/* Un élément par dépôt (début). */}
-                {items.map((item, i) => (
-                  // Balise span de clé unique.
-                  <Box component="span" key={item.repo + item.name}>
-                    {/* Un point médian avant chaque dépôt, sauf le premier. */}
-                    {i > 0 && ' · '}
-                    {/* Le lien du dépôt. */}
-                    <RepoLink item={item} />
-                  {/* Fin de la balise span. */}
-                  </Box>
-                // Fin des dépôts.
+      {/* Une section par famille de services déclarés (début). */}
+      {KIND_SECTIONS.map(({ kind, title, note }) => {
+        // Les services de la famille, pris dans la liste des API.
+        const list = API_GROUPS.flatMap((g) => g.items).filter((api) => api.kind === kind);
+        // Famille vide : rien n'est affiché.
+        if (!list.length) return null;
+        // Début du rendu de la famille.
+        return (
+          // Section nommée par son titre.
+          <Box key={kind} component="section" aria-label={title}>
+            {/* Le titre de la famille. */}
+            <SectionTitle>{title}</SectionTitle>
+            {/* Tableau des services, ajusté à la largeur. */}
+            <Table size="small" sx={FIT_TABLE}>
+              {/* Corps du tableau. */}
+              <TableBody>
+                {/* Une ligne par service (début). */}
+                {list.map((api) => (
+                  // La ligne, de clé unique.
+                  <TableRow key={api.name}>
+                    {/* Le nom du service et son adresse, sur 40 % de la largeur. */}
+                    <TableCell sx={{ pl: 0, verticalAlign: 'top', width: '40%' }}>
+                      {/* Le nom, en étiquette. */}
+                      <Tag>{api.name}</Tag>
+                      {/* Son adresse, en petit, jamais traduite. */}
+                      <Box component="span" translate="no" sx={{ display: 'block', fontSize: '0.78em', color: 'text.secondary', wordBreak: 'break-all' }}>{api.host}</Box>
+                    {/* Fin de la cellule de gauche. */}
+                    </TableCell>
+                    {/* L'usage du service. */}
+                    <TableCell sx={{ pr: 0 }}>{api.use}</TableCell>
+                  {/* Fin de la ligne. */}
+                  </TableRow>
+                // Fin des lignes.
                 ))}
-              {/* Fin de la cellule. */}
-              </TableCell>
-            {/* Fin de la ligne. */}
-            </TableRow>
-          // Fin des lignes.
-          ))}
-        {/* Fin du corps du tableau. */}
-        </TableBody>
-      {/* Fin du tableau. */}
-      </Table>
+              {/* Fin du corps du tableau. */}
+              </TableBody>
+            {/* Fin du tableau. */}
+            </Table>
+            {/* Note sous le tableau. */}
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {/* Son texte. */}
+              {note}
+            {/* Fin de la note. */}
+            </Typography>
+          {/* Fin de la section. */}
+          </Box>
+        // Fin du rendu de la famille.
+        );
+      // Fin des familles.
+      })}
     {/* Fin du conteneur. */}
     </Box>
   // Fin du rendu.
