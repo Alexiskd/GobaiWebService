@@ -3,8 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const bodiesPath = path.join(root, 'src/Car/SystemeEngine/data/astronomy/data/bodies.data.ts');
-const keplerPath = path.join(root, 'src/Car/SystemeEngine/data/astronomy/data/kepler-elements.ts');
+const bodiesPath = path.join(root, 'Car/Engine/SystemeEngine/data/astronomy/data/bodies.data.ts');
+const keplerPath = path.join(root, 'Car/Engine/SystemeEngine/data/astronomy/data/kepler-elements.ts');
 const bodies = fs.readFileSync(bodiesPath, 'utf8');
 const kepler = fs.readFileSync(keplerPath, 'utf8');
 const satRows = [...bodies.matchAll(/sat\('([^']+)',\s*'([^']+)',\s*'([^']+)',\s*([\d_.]+),\s*'[^']+',\s*'([^']+)',\s*([\d_]+),\s*([\d.\-]+)\)/g)];
