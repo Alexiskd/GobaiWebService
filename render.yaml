@@ -1,8 +1,43 @@
-# Gobai Space — déploiement frontend uniquement, sans service backend.
+# Render Blueprint : un seul service web (API NestJS + site React servi par l'API).
+# Build : installe et compile frontend puis backend. Start : node backend/dist/main.js (dossier backend).
 services:
   - type: web
-    name: static-gobai
-    runtime: static
-    buildCommand: npm ci --prefix frontend && npm run build --prefix frontend
-    staticPublishPath: frontend/dist
-    autoDeploy: false
+    name: gobai-space
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: NASA_API_KEY
+        sync: false
+      - key: PRICE_BODY_CENTS
+        sync: false
+      - key: PRICE_EARTH_CENTS
+        sync: false
+      - key: PRICE_ORBIT_HOUR_CENTS
+        sync: false
+      - key: PRICE_TILES_CENTS
+        sync: false
+      - key: PRICE_ALL_CENTS
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: BLOCKED_API_HOSTS
+        sync: false
+      - key: API_ADMIN_TOKEN
+        sync: false
+      - key: XWEATHER_CLIENT_ID
+        sync: false
+      - key: XWEATHER_CLIENT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+# PORT est fourni par Render. Les autres variables (tuiles...) : voir backend/.env.example.

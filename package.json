@@ -1,17 +1,16 @@
 {
-  "name": "gobai-space-static",
+  "name": "gobaidex",
   "version": "2.0.0",
   "private": true,
-  "description": "Gobai Space — frontend React/Vite autonome pour Render Static Site",
+  "description": "Go白ناन्टех : site React/Vite et API NestJS déployés en un seul service web (l'API sert le site compilé)",
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "install:frontend": "npm ci --prefix frontend",
-    "dev": "npm run dev --prefix frontend",
-    "build": "npm run build --prefix frontend",
-    "preview": "npm run preview --prefix frontend",
-    "test": "npm test --prefix frontend",
-    "verifie:imports": "npm run verifie:imports --prefix frontend"
+    "build": "npm run install:all && npm run build:frontend && npm run build:backend",
+    "install:all": "npm ci --prefix backend --include=dev && npm install --prefix frontend --include=dev",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend",
+    "start": "npm run start:prod --prefix backend"
   }
 }
