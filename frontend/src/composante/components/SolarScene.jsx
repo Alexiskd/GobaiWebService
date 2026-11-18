@@ -984,8 +984,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onPerformanceMonitorChange={setPerformanceMonitorVisible}
         // Fermeture.
         onClose={() => setSettingsOpen(false)}
-        // Référence du moteur, utilisée par le catalogue extrasolaire.
-        engineRef={engineRef}
         // Tous les astres, avec leur état.
         bodies={bodyStates}
         // Affichage d'un astre.
