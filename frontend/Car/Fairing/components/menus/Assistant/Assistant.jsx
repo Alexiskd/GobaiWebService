@@ -23,11 +23,6 @@ const SUGGESTIONS = [
   // Une autre question de connaissance.
   'Pourquoi Vénus tourne-t-elle à l’envers ?',
   // Une demande de déplacement.
-  'Emmène-moi sur Saturne',
-  // Une demande de réglage.
-  'Masque les lignes d’orbite',
-  // Une demande qui ouvre une fenêtre et change un réglage de cartographie.
-  'Montre-moi le LiDAR HD au-dessus de Toulouse',
 // Fin du tableau.
 ];
 
@@ -41,7 +36,7 @@ const MAX_CHARS = 1000;
 
 /** Réponse fixe tant qu'aucune clé d'API Mistral n'est enregistrée dans le navigateur : rien n'est envoyé. */
 // Réponse affichée tant que l'assistant n'est pas branché.
-const NOT_CONNECTED = 'L’assistant n’est pas branché : aucune clé d’API Mistral n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part. Pour brancher l’assistant, enregistrez une clé dans Paramètres → Mistral.';
+const NOT_CONNECTED = 'L’assistant n’est pas branché : aucune clé d’API Claude n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part. Pour brancher l’assistant, enregistrez une clé dans Paramètres → Claude.';
 
 /**
  * Couleurs et polices du menu, les mêmes de jour comme de nuit (le reste de l'interface suit le thème de l'application) :
@@ -75,7 +70,7 @@ const Bubble = ({ from, error, done, children }) => (
   // Fin de la balise ouvrante.
   >
     {/* L'auteur du message, pour les lecteurs d'écran seulement. */}
-    <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'Mistral : '}</Typography>
+    <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'Claude : '}</Typography>
     {/* S'il y a un texte (début). */}
     {children && (
       // Le texte : retours à la ligne gardés, mots trop longs coupés (césure française), rouge en cas d'erreur, police et taille selon l'auteur.
@@ -148,7 +143,7 @@ const Row = ({ children, ...props }) => (
 );
 
 /**
- * Menu « Mistral » : panneau de conversation avec l'assistant, jamais modal. Il n'y a ni voile ni blocage : pendant
+ * Menu « Claude » : panneau de conversation avec l'assistant, jamais modal. Il n'y a ni voile ni blocage : pendant
  * tout l'échange, l'utilisateur continue de tourner le globe, de zoomer et d'appuyer sur les boutons, et voit
  * l'assistant agir sur la scène en même temps.
  *
@@ -161,7 +156,7 @@ const Row = ({ children, ...props }) => (
  * Sur téléphone, le panneau se réduit à une barre de recherche avec le logo : les réponses ne sont pas affichées,
  * l'écran restant à la scène. Les actions demandées, elles, s'exécutent comme sur ordinateur.
  *
- * Conversation avec l'API Mistral, appelée directement depuis le navigateur (voir mistralAssistant.js) : le
+ * Conversation avec l'API Claude, appelée directement depuis le navigateur (voir mistralAssistant.js) : le
  * modèle reçoit l'inventaire des éléments actionnables de la page, relevé à chaque message, et désigne ceux sur
  * lesquels agir.
  * Tant qu'aucune clé d'API Mistral n'est enregistrée dans le navigateur (localStorage), la fenêtre reste en
@@ -171,7 +166,7 @@ const Row = ({ children, ...props }) => (
  * affichée sous la réponse. Une action hors de la liste autorisée est ignorée.
  */
 /**
- * Barre de Mistral sur téléphone : une seule pilule (logo, champ, bouton d'envoi), posée dans le flux du dock du bas
+ * Barre de Claude sur téléphone : une seule pilule (logo, champ, bouton d'envoi), posée dans le flux du dock du bas
  * (MobileDock), au-dessus de la bande des astres et de la navigation, écartée des bords et des zones de sécurité.
  * C'est le dock qui remonte au-dessus du clavier quand il s'ouvre. Les réponses ne sont pas affichées (l'écran reste
  * à la scène) ; pendant l'attente, le bouton d'envoi tourne.
@@ -186,7 +181,7 @@ function MobileBar({ text, setText, busy, send }) {
     // Conteneur dans le flux du dock : pleine largeur, marges latérales.
     <Box
       component="section"
-      aria-label="Mistral"
+      aria-label="Claude"
       data-assistant-panel=""
       sx={{
         // Dans le flux du dock (plus de position fixe propre) : le dock la place au-dessus de la barre de navigation.
@@ -573,7 +568,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           // Note de confidentialité (début de la balise).
           <Typography sx={{ flex: 'none', fontFamily: SANS, fontSize: 11.5, lineHeight: 1.45, color: C.muted }}>
             {/* Son texte. */}
-            Vos messages sont envoyés à l’API Mistral pour générer la réponse. N’y mettez pas d’informations personnelles.
+            Vos messages sont envoyés à l’API CLAUDE pour générer la réponse. N’y mettez pas d’informations personnelles.
           {/* Fin de la note. */}
           </Typography>
         // Fin du cas.
