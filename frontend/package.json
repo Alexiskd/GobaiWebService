@@ -9,8 +9,7 @@
     "build": "node scripts/verifie-imports.mjs src && vite build",
     "preview": "vite preview",
     "test": "node scripts/verifie-imports.mjs src && tsx --test \"src/**/*.test.jsx\"",
-    "verifie:imports": "node scripts/verifie-imports.mjs src",
-    "audit:astronomy": "node scripts/audit-astronomy-catalog.mjs"
+    "verifie:imports": "node scripts/verifie-imports.mjs src"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

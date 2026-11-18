@@ -69,7 +69,12 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <!-- Couleur de la barre du navigateur. -->
     <meta name="theme-color" content="#0d1a3a" />
-    <!-- Les données du noyau sont embarquées dans le bundle statique : aucun endpoint API ne doit être préchargé ici. -->
+    <!-- Données de démarrage demandées dès la lecture de la page, sans attendre le chargement du code de l'app -->
+    <link rel="preload" as="fetch" href="/api/v1/bodies" crossorigin="anonymous" />
+    <!-- Précharge la liste des villes. -->
+    <link rel="preload" as="fetch" href="/api/v1/cities" crossorigin="anonymous" />
+    <!-- Précharge la disponibilité des cartes des astres. -->
+    <link rel="preload" as="fetch" href="/api/v1/tiles/bodies/availability" crossorigin="anonymous" />
     <!-- Connexion ouverte d'avance vers Google Fonts. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <!-- Connexion ouverte d'avance vers les fichiers des polices. -->

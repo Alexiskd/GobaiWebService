@@ -8,7 +8,7 @@
  *   Déc   0..65535 → −π/2..+π/2
  *   mag   (V + 2) × 1000
  *   temp  température de couleur (K) / 2
- * Lecture : decodeStarCatalog() dans src/Car/StarEngine/SkyEngine/skyMath.jsx (même encodage que encodeStar).
+ * Lecture : decodeStarCatalog() dans src/moteur/engine/sky/skyMath.jsx (même encodage que encodeStar).
  *
  * Usage : node scripts/build-star-catalog.mjs chemin/vers/bsc5-short.json
  */
