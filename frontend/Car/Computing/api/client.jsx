@@ -1,5 +1,5 @@
-// Client réseau désactivé : Gobai Space fonctionne en mode frontend statique.
-// Les données scientifiques principales sont embarquées dans Car/SystemeEngine/data.
+// Client HTTP de l'API NestJS de Computing : les routes sont servies par `npm start` dans ce dossier,
+// avec repli local sur les données embarquées quand l'API ne répond pas (mode frontend statique).
 export const API_ROOT = '';
 export const API_BASE = '';
 export const PUBLIC_SITE_URL = '';
@@ -21,7 +21,19 @@ export class ApiError extends Error {
   }
 }
 
-// Réponses locales minimales conservant les contrats attendus par les hooks.
+// Sérialise une requête en paramètres d'adresse ; les valeurs non définies sont omises.
+function queryString(query) {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(query || {})) {
+    if (value === undefined || value === null) continue;
+    qs.set(key, String(value));
+  // Fin des paramètres.
+  }
+  const text = qs.toString();
+  return text ? `?${text}` : '';
+}
+
+// Réponses locales minimales conservant les contrats de l'API NestJS, embarquées pour le frontend statique.
 function staticResponse(path) {
   const p = String(path || '').split('?')[0];
   if (p === '/assistant/config') return { enabled: false, model: null };
@@ -47,13 +59,23 @@ function staticResponse(path) {
   return { available: false, items: [] };
 }
 
-// GET ne déclenche plus de fetch : il renvoie exclusivement des données locales de repli.
-export async function get(path, { signal } = {}) {
+// GET appelle l'API NestJS (main.ts) ; sans API joignable, il renvoie les données locales de repli.
+export async function get(path, { signal, query } = {}) {
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  const url = `${API_BASE}${resolveApiUrl(path)}${queryString(query)}`;
+  try {
+    const response = await fetch(url, { signal, headers: { accept: 'application/json' } });
+    // Une page HTML (le repli SPA) n'est pas un contrat : on garde le repli local.
+    const type = response.headers.get('content-type') || '';
+    if (response.ok && type.includes('json')) return await response.json();
+  } catch (error) {
+    // Une interruption remonte ; une API injoignable bascule sur le repli.
+    if (error?.name === 'AbortError') throw error;
+  }
   return staticResponse(path);
 }
 
-// Les opérations serveur (écriture, paiement, assistant distant) sont désactivées en mode statique.
+// Les opérations serveur (écriture, paiement, assistant distant) restent désactivées côté client.
 export async function post(path) {
   throw new ApiError(503, 'Fonction indisponible en mode statique', path);
 }
