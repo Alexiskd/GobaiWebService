@@ -1,0 +1,33 @@
+name: Mistral transfer
+on:
+  push:
+    branches: [mistral]
+permissions:
+  contents: write
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout GobaiWebService (branche mistral)
+        uses: actions/checkout@v4
+        with:
+          ref: mistral
+          path: gws
+      - name: Checkout static-gobai (main)
+        uses: actions/checkout@v4
+        with:
+          repository: Alexiskd/static-gobai
+          ref: main
+          path: static
+      - name: Transfert static-gobai vers GobaiWebService
+        run: |
+          cd gws
+          rsync -a --delete ../static/frontend/ frontend/
+          rsync -a ../static/docs/ docs/
+          for f in .gitignore .node-version ARCHITECTURE.md MODIFICATIONS_AFFICHAGE_ASTRES.txt README.md SATELLITES_PERIVOLUME.md STATIC-MIGRATION.md package.json render.yaml; do cp -f "../static/$f" "./$f"; done
+          git rm -q .github/workflows/mistral-transfer.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Mistral #1 : transfert du fonctionnement, des fonctionnalités et des donnees de static-gobai vers GobaiWebService" -m "Frontend remplace par l'edition statique (Car/Fairing), donnees worldometer et modeles Phobos/Deimos ajoutes, docs lots 33-58, configuration statique. Backend NestJS conserve."
+          git push
