@@ -23,8 +23,8 @@ const PANEL_PATHS = { sources: '/node', donate: '/faire-un-don' };
 /** Adresse de ce qui est affiché : la fenêtre ouverte d'abord, sinon l'astre ciblé, sinon l'accueil. */
 // Déclare et exporte sitePathFor : galerie ouverte, panneau ouvert et nom de l'astre.
 export function sitePathFor({ galleryOpen, panel, bodyName }) {
-  // Galerie ouverte : /galerie.
-  if (galleryOpen) return '/galerie';
+  // Fenêtre Données ouverte : /donnees.
+  if (galleryOpen) return '/donnees';
   // Panneau qui a une adresse : cette adresse.
   if (PANEL_PATHS[panel]) return PANEL_PATHS[panel];
   // Adresse de l'astre : son nom normalisé, précédé d'une barre oblique.
@@ -41,7 +41,7 @@ const HOME_TITLE = 'Système solaire 3D en direct · ∞ Go白ناन्टех 
 // Titres des fenêtres qui ont une adresse (début de l'objet).
 const WINDOW_TITLES = {
   // Titre de la galerie.
-  '/galerie': 'Galerie d’images du système solaire',
+  '/donnees': 'Données : documentation et galerie du système solaire',
   // Titre de la fenêtre des sources.
   '/node': 'Anthropic Node Open Source : sources des données',
   // Titre de la fenêtre de don.

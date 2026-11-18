@@ -67,8 +67,8 @@ import { Assistant } from './menus/Assistant/Assistant.jsx';
 import { Langue } from './menus/Langue.jsx';
 // Importe la fenêtre du plateau tournant.
 import { Plateau } from './menus/Plateau/Plateau.jsx';
-// Importe la galerie.
-import { Galerie } from './menus/Galerie/Galerie.jsx';
+// Importe la fenêtre Données (galerie et documentation).
+import { Donnees } from './menus/Donnees/Donnees.jsx';
 // Importe le panneau d'informations.
 import { Informations } from './menus/Informations/Informations.jsx';
 // Importe la fenêtre de recherche.
@@ -240,7 +240,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const panels = usePanels({ compact });
   // Langue : ouverte ou non, et son ouverture (le même nom qu'avant pour les appels existants).
   const languageOpen = panels.panel === 'language'; const setLanguageOpen = (on) => panels.show('language', on);
-  // Galerie : ouverte ou non, et son ouverture.
+  // Fenêtre Données : ouverte ou non, et son ouverture.
   const galleryOpen = panels.panel === 'gallery'; const setGalleryOpen = (on) => panels.show('gallery', on);
   // Paramètres : ouverts ou non, et leur ouverture.
   const settingsOpen = panels.panel === 'settings'; const setSettingsOpen = (on) => panels.show('settings', on);
@@ -255,7 +255,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const [navigatorOpen, setNavigatorOpen] = useState(false);
   // Plateau tournant : ouvert ou non, et son ouverture.
   const plateauOpen = panels.panel === 'plateau'; const setPlateauOpen = (on) => panels.show('plateau', on);
-  // Touches P (galerie) et T (plateau tournant), sauf pendant une saisie.
+  // Touches P (Données) et T (plateau tournant), sauf pendant une saisie.
   // Effet exécuté une seule fois : deux raccourcis clavier.
   useEffect(() => {
     // Déclare onKey, appelé à chaque touche enfoncée.
@@ -268,7 +268,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       // La touche, en minuscule.
       const k = e.key.toLowerCase();
-      // P : ouvre ou ferme la galerie.
+      // P : ouvre ou ferme la fenêtre Données.
       if (k === 'p') panels.toggle('gallery');
       // T : ouvre ou ferme le plateau tournant.
       else if (k === 't') panels.toggle('plateau');
@@ -417,8 +417,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   useEffect(() => {
     // Lit le chemin de l'adresse, sans barres obliques, en minuscules.
     const slug = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
-    // Adresse /galerie : ouvre la galerie.
-    if (slug === 'galerie') setGalleryOpen(true);
+    // Adresse /donnees : ouvre la fenêtre Données.
+    if (slug === 'donnees') setGalleryOpen(true);
     // Adresse /node : ouvre la fenêtre des sources.
     else if (slug === 'node') panels.setPanel('sources');
     // Adresse /faire-un-don : ouvre la fenêtre de don.
@@ -979,7 +979,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       // Fin de la fenêtre des paramètres.
       />
       {/* La galerie. */}
-      <Galerie open={galleryOpen} onClose={() => setGalleryOpen(false)} />
+      <Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} />
       {/* Le plateau tournant (début de la balise). */}
       <Plateau
         // Ouvert ou non.

@@ -6,8 +6,8 @@ import { fold } from '../../../Engine/shared/lib/format.jsx';
 
 // Fenêtres que l'assistant peut ouvrir : identifiant → nom affiché (début de l'objet).
 const WINDOWS = {
-  // Galerie, Paramètres, Recherche et Aide.
-  galerie: 'Galerie', parametres: 'Paramètres', recherche: 'Recherche', aide: 'Aide',
+  // Données, Paramètres, Recherche et Aide.
+  galerie: 'Données', parametres: 'Paramètres', recherche: 'Recherche', aide: 'Aide',
   // Sources, Langue et Informations.
   node: 'Anthropic Node Open Source', langue: 'Langue', informations: 'Informations',
 // Fin de l'objet.

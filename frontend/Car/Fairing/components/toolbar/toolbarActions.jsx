@@ -91,8 +91,8 @@ export function toolbarActions({
     // Partager : feuille de partage du téléphone, ou copie du lien de la vue sur ordinateur.
     // Partager (si le rappel existe) : icône seule.
     onShare && { id: 'share', group: 'help', icon: ShareIcon, label: 'Partager', iconOnly: true, onClick: onShare, title: 'Partager cette vue (lien de l’astre affiché)' },
-    // Galerie (si le rappel existe) : icône seule.
-    onGallery && { id: 'gallery', group: 'help', icon: GalleryIcon, label: 'Galerie', iconOnly: true, onClick: onGallery, title: 'Galerie : planètes, géantes, planètes naines et satellites (P)' },
+    // Données (si le rappel existe) : icône seule.
+    onGallery && { id: 'gallery', group: 'help', icon: GalleryIcon, label: 'Données', iconOnly: true, onClick: onGallery, title: 'Données : documentation (PDF) et galerie d\'images (P)' },
     // Moniteur de performance : activation/désactivation depuis la barre sur ordinateur.
     onTogglePerformanceMonitor && { id: 'performance', group: 'help', icon: SpeedIcon, label: 'Performances', short: 'Perf', iconOnly: true, pressed: performanceMonitorVisible, onClick: onTogglePerformanceMonitor, title: performanceMonitorVisible ? 'Masquer le moniteur de performance' : 'Afficher le moniteur de performance' },
     // Faire un don : accessible directement depuis la barre d'outils sur ordinateur.

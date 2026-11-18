@@ -7,8 +7,8 @@ import { siteHeadFor, sitePathFor } from './siteAddress.jsx';
 
 // Test : l'adresse dépend de la fenêtre ouverte, puis de l'astre ciblé.
 test('adresse du site : fenêtre ouverte, astre ciblé, sinon accueil', () => {
-  // Galerie ouverte : /galerie, même si un astre est ciblé.
-  assert.equal(sitePathFor({ galleryOpen: true, panel: null, bodyName: 'Mars' }), '/galerie');
+  // Galerie ouverte : /donnees, même si un astre est ciblé.
+  assert.equal(sitePathFor({ galleryOpen: true, panel: null, bodyName: 'Mars' }), '/donnees');
   // Panneau des sources ouvert : /node.
   assert.equal(sitePathFor({ galleryOpen: false, panel: 'sources', bodyName: 'Mars' }), '/node');
   // Fenêtre de don ouverte : /faire-un-don.
@@ -31,7 +31,7 @@ test('titre et adresse canonique : les mêmes que ceux du serveur pour la même 
   // La Terre prend un article dans son titre.
   assert.match(siteHeadFor('/terre', 'Terre').title, /^La Terre en 3D et en direct · /);
   // Titre de la galerie, quel que soit l'astre ciblé.
-  assert.equal(siteHeadFor('/galerie', 'Mars').title, 'Galerie d’images du système solaire · Go白ناन्टех (Gobai Space)');
+  assert.equal(siteHeadFor('/donnees', 'Mars').title, 'Données : documentation et galerie du système solaire · Go白ناन्टех (Gobai Space)');
   // Adresse canonique de l'accueil.
   assert.equal(siteHeadFor('/', 'Soleil').canonical, 'https://www.gobaispace.com/');
   // Début du titre de l'accueil.
