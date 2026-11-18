@@ -17,6 +17,12 @@ export default defineConfig({
     chunkSizeWarningLimit: 2500,
     // Options de Rollup (début).
     rollupOptions: {
+      // Entrées : la page principale, puis la page d'embarquement (embed.html), servie dans une iframe transparente.
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        embed: fileURLToPath(new URL('./embed.html', import.meta.url)),
+      // Fin des entrées.
+      },
       // Sortie (début).
       output: {
         // manualChunks : range chaque module dans un fichier (début).

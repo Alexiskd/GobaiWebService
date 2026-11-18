@@ -268,7 +268,7 @@ const MOON_PHASES = [
 // Déclare et exporte la classe SolarEngine (début).
 export class SolarEngine {
   // Constructeur : le conteneur, les données, les étiquettes, le HUD, l'API des tuiles et les deux fonctions de changement (début).
-  constructor({ container, data, labels, hud, tilesApi, onFocusChange, onTilesChange }) {
+  constructor({ container, data, labels, hud, tilesApi, onFocusChange, onTilesChange, embed }) {
     // Garde le conteneur.
     this.container = container;
     // Garde les données.
@@ -283,6 +283,8 @@ export class SolarEngine {
     this.tilesApi = tilesApi;
     // Garde la fonction de changement des tuiles, ou une fonction vide.
     this.onTilesChange = onTilesChange || (() => {});
+    // Mode embarqué : canevas alpha, espace transparent, ciel masqué (embed.html).
+    this.embed = Boolean(embed);
 
     // Largeur de la fenêtre.
     this.W = innerWidth;
@@ -531,7 +533,7 @@ export class SolarEngine {
     // Planète du système affiché sur téléphone : aucune.
     this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
-    const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true, powerPreference: 'high-performance', stencil: false, preserveDrawingBuffer: false });
+    const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true, powerPreference: 'high-performance', stencil: false, preserveDrawingBuffer: false, alpha: this.embed });
     // Plafond : la densité de l'écran (≤ 2 sur ordinateur et téléphone) ; la résolution adaptative
     // (adaptResolution) descend si besoin jusqu'au plancher du profil (0,75 sur ordinateur, 1,25 sur téléphone).
     this.dprMax = Math.min(devicePixelRatio || 1, this.power.dprMax);
@@ -564,7 +566,7 @@ export class SolarEngine {
     // Règle la taille.
     r.setSize(this.W, this.H);
     // Fond noir.
-    r.setClearColor(0x000000); // fond de l'espace : noir pur, sous le ciel lointain (désactivable)
+    r.setClearColor(0x000000, this.embed ? 0 : 1); // fond de l'espace : noir pur, sous le ciel lointain ; en embarquement, alpha 0 : l'espace est transparent
     // Effacement manuel.
     r.autoClear = false;       // effacement manuel : ciel lointain d'abord, puis la scène par-dessus
     // Ajoute le canevas au conteneur.
@@ -577,6 +579,8 @@ export class SolarEngine {
     this.cam = new THREE.PerspectiveCamera(45, this.W / this.H, 0.00001, 1e10);
     // Ciel au-delà du Système solaire, dans sa propre scène (indépendant de l'origine flottante et du plan proche).
     this.sky = new SkyLayer();
+    // En embarquement : le ciel lointain est masqué d'office (aucun fond étoilé derrière le globe).
+    if (this.embed) this.sky.setVisible(false);
     // Vecteur de travail du ciel : visée.
     this.skyFwd = new THREE.Vector3();
     // Vecteur de travail du ciel : direction du Soleil.
