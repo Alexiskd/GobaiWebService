@@ -2,13 +2,11 @@
 import { get, post, API_BASE } from './client';
 // Modèles 3D des astres, satellites sphériques, et inscription des satellites dans le moteur.
 import { BODY_MODELS, SPHERICAL_SATELLITE_IDS, registerSatelliteBodies } from '../engine/tiledBodies';
-// Données scientifiques embarquées : le cœur du système solaire fonctionne sans API Gobai.
-import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../data/astronomy/data/bodies.data';
 
 // fetchBodies : les astres.
-export const fetchBodies = async () => ({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES });
+export const fetchBodies = (signal) => get('/bodies', { signal });
 // fetchBodyListing : le listing d'affichage des astres (planètes, naines comprises, et leurs satellites naturels).
-export const fetchBodyListing = async () => ({ planets: PLANETS.map((p) => ({ ...p, aAu: p.elements[0], satellites: ALL_SATELLITES.filter((sat) => sat.parent === (p.name === 'Terre' ? 'earth' : p.name.toLowerCase())) })), counts: { planets: PLANETS.length, dwarfPlanets: PLANETS.filter((p) => p.dwarf).length, satellites: ALL_SATELLITES.length } });
+export const fetchBodyListing = (signal) => get('/bodies/listing', { signal });
 /** Nuages LAS/LAZ disponibles, leur en-tête géospatial et une URL Potree si le jeu a été converti. */
 // fetchPointClouds : les nuages de points.
 export const fetchPointClouds = (signal) => get('/pointclouds', { signal });
@@ -61,7 +59,7 @@ export const askAssistant = (messages, elements, signal) => post('/assistant/mes
 export const fetchBorders = (signal) => get('/borders', { signal });
 /** Réponse paginée { total, items } ; sans paramètre, toutes les villes. */
 // fetchCities : les villes.
-export const fetchCities = async () => ({ total: 0, items: [] });
+export const fetchCities = (params, signal) => get('/cities', { signal, query: params });
 
 
 /** Vents réels du moment (Open-Meteo) : grille { width, height, latStart, latStep, lonStart, lonStep, u[], v[] } en m/s. */
@@ -87,7 +85,7 @@ export const fetchSatelliteLayers = (body, signal) => get(`/tiles/satellites/${e
  * Les orbites sont toutes calculées par Kepler côté serveur. { planets: [{ id, trek, ready }], satellites: [...] }.
  */
 // fetchBodyAvailability : le test de chaque astre avant affichage.
-export const fetchBodyAvailability = async () => ({ planets: [], satellites: [] });
+export const fetchBodyAvailability = (signal) => get('/tiles/bodies/availability', { signal });
 
 /** Test avant affichage (client) : vrai seulement si l'astre a une carte NASA Trek. */
 // isBodyReady : vrai si l'astre a une carte NASA Trek.
@@ -113,12 +111,15 @@ export function readySatellites(satellites = [], availability = [], models = BOD
 // Tout ce dont la scène a besoin, en parallèle. `cities` est la liste (items) dans l'ordre d'importance.
 // Fonction fetchSceneData.
 export async function fetchSceneData(signal) {
-  // Le noyau scientifique est embarqué : aucun serveur Gobai n'est requis pour ouvrir la scène 3D.
-  if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+  // Demande en même temps
   const [bodies, cities, availability] = await Promise.all([
+    // les astres,
     fetchBodies(signal),
+    // les villes,
     fetchCities(undefined, signal),
-    fetchBodyAvailability(signal),
+    // et le test des astres ; s'il échoue (hors annulation), des listes vides.
+    fetchBodyAvailability(signal).catch((e) => { if (e.name === 'AbortError') throw e; return { planets: [], satellites: [] }; }),
+  // Fin des demandes.
   ]);
   // Satellites retenus.
   const satellites = readySatellites(bodies.satellites, availability.satellites);

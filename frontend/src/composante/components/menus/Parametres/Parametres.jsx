@@ -41,7 +41,7 @@ export function Parametres({
   // Les repères globaux du système solaire.
   orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky,
   // La position de l'appareil et le moniteur de performance.
-  onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange, engineRef,
+  onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange,
 // Fin de la liste des propriétés.
 }) {
   // Lit le mode compact.
@@ -94,7 +94,7 @@ export function Parametres({
         {/* La liste des astres. */}
         <AllerAUnAstre bodies={bodies} focus={focus} onPick={pick} onShown={onBodyShown} />
         {/* Le catalogue lu sur le serveur : planètes, naines et satellites naturels, sans table embarquée. */}
-        <CatalogueAstres bodies={bodies} onSelect={onSelect} onBodyShown={onBodyShown} onDone={onClose} engineRef={engineRef} />
+        <CatalogueAstres bodies={bodies} onSelect={onSelect} onBodyShown={onBodyShown} onDone={onClose} />
       {/* Fin du contenu. */}
       </DialogContent>
     {/* Fin de la boîte de dialogue. */}

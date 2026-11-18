@@ -16,7 +16,6 @@ import { xyzToLonLat } from './mercator';
 import { TileLayer } from './tileLayer';
 // Importe backdropScale, le rayon de la sphère de fond sous la carte, depuis tileGeometry.
 import { backdropScale } from './tileGeometry';
-import { applyBackdropMeshScale } from './backdropMeshScale.js';
 // Importe l'identifiant du calque des rues et sa source, depuis roadSource.
 import { ROADS_LAYER_ID, RoadSource } from './roadSource';
 // Importe viewportBounds, les limites géographiques de la vue, depuis viewport.
@@ -83,7 +82,6 @@ export class TileManager {
     this.api = api;
     // Garde la description de l'astre.
     this.body = body;
-    this.surfaceAtlasPipeline = body.surfaceAtlasPipeline || null;
     // Garde la fonction de changement.
     this.onChange = onChange;
     // Repère des tuiles.
@@ -431,23 +429,6 @@ export class TileManager {
 
   /** Couche de tuiles d'une source, réglée pour l'astre et l'appareil. */
   // buildLayer : crée la couche de tuiles d'une source (début).
-  setSurfaceAtlasPipeline(pipeline) {
-    this.surfaceAtlasPipeline = pipeline || null;
-    const layer = this.base?.layer;
-    if (!layer) return;
-    layer.surfaceAtlasPipeline = this.surfaceAtlasPipeline;
-    if (!this.surfaceAtlasPipeline) return;
-    // Si la couche existait avant l'activation du bridge, raccorde ses images
-    // déjà décodées sans re-télécharger les tuiles.
-    for (const entry of layer.entries()) {
-      const image = entry.map?.image;
-      if (!image) continue;
-      this.surfaceAtlasPipeline.attach({
-        id: `tile:${entry.key}`, image, uniforms: entry.mesh.material.uniforms, bodyId: this.body.name,
-      });
-    }
-  }
-
   buildLayer(source) {
     // Le moteur.
     const { engine } = this;
@@ -484,8 +465,6 @@ export class TileManager {
       nightLights: this.lightsSource,
       // Tuiles envoyées au GPU par image : 8.
       uploadsPerFrame: 8,
-      // Atlas expérimental partagé par le pipeline et identifiant scientifique de l'astre.
-      surfaceAtlasPipeline: this.surfaceAtlasPipeline, bodyId: this.body.name,
       // Rayon de l'astre en km : la distance affichée choisit le palier de zoom de la table du serveur.
       radiusKm: this.body.radiusKm || 0,
       // Appareil : tenu en main (budget du téléphone) et économie d'énergie (budget réduit), lus à chaque image.
@@ -577,15 +556,15 @@ export class TileManager {
   setShade(on) { this.uniforms.shade.value = on ? 1 : 0; }
 
   /**
-   * Rayon de la sphère de fond, en facteur du rayon de l'astre. Seule l'échelle du mesh change : ses enfants
-   * (nuages LiDAR de la Terre) ne bougent pas, et l'aplatissement des géantes (axe Y) est conservé.
+   * Rayon de la sphère de fond, en facteur du rayon de l'astre. Seule sa géométrie est mise à l'échelle : ses enfants
+   * (nuages LiDAR de la Terre) et sa forme (aplatissement des géantes gazeuses, porté par l'objet) ne bougent pas.
    */
   // placeBackdrop : le facteur voulu (début).
   placeBackdrop(k) {
     // Inchangé : rien (le calcul n'est refait que lorsque le mode ou le relief change).
     if (k === this.backdropK) return;
-    // Échelle de l'objet : compatible avec les géométries unitaires partagées, sans modifier leur buffer commun.
-    applyBackdropMeshScale(this.body.mesh, k, this.backdropK);
+    // Géométrie ramenée du facteur courant au facteur voulu (normales et volumes englobants suivent).
+    this.body.mesh.geometry.scale(k / this.backdropK, k / this.backdropK, k / this.backdropK);
     // Garde le facteur.
     this.backdropK = k;
   // Fin de placeBackdrop.
@@ -609,11 +588,6 @@ export class TileManager {
   }
 
   // ------------------------------------------------------------------ image
-
-  /** Applique le profil mémoire central à la couche active, sans reconstruire la carte. */
-  setCoreMemoryProfile(profile) {
-    return this.base?.layer?.setCoreMemoryProfile(profile) ?? false;
-  }
 
   // update : à chaque image (début).
   update() {
