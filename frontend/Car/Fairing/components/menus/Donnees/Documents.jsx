@@ -10,15 +10,13 @@ import './documents.css';
 /**
  * Documents : onglet « Documentation » de la fenêtre Données. Affiche les fiches construites à partir
  * des PDF de public/data/documents (un module JS par PDF dans data/), groupées par famille dynamique.
- * Une fiche ouverte montre les données extraites du document et permet d'afficher le PDF lui-même.
+ * Une fiche ouverte montre les données extraites du document et renvoie vers sa page Wikipédia.
  * Les styles sont limités au conteneur .gobai-docs.
  */
 // Déclare et exporte le composant Documents.
 export function Documents() {
   // État : la fiche ouverte, null si aucune.
   const [openId, setOpenId] = useState(null);
-  // État : le PDF affiché dans la visionneuse embarquée ou non.
-  const [pdfOpen, setPdfOpen] = useState(false);
   // La fiche ouverte (calcul mémorisé).
   const doc = useMemo(() => DOCUMENTS.find((d) => d.id === openId), [openId]);
 
@@ -30,7 +28,7 @@ export function Documents() {
       <div className="gobai-docs">
         <div className="docs-wrap">
           {/* Le retour à la liste. */}
-          <button className="doc-back" onClick={() => { setOpenId(null); setPdfOpen(false); }}>
+          <button className="doc-back" onClick={() => setOpenId(null)}>
             ← Toutes les fiches
           </button>
           {/* L'en-tête de la fiche : nom, désignation et pastilles. */}
@@ -45,9 +43,9 @@ export function Documents() {
           </header>
           {/* Les actions sur le document. */}
           <div className="doc-actions">
-            <button className="doc-btn" onClick={() => setPdfOpen((v) => !v)}>
-              {pdfOpen ? 'Masquer le PDF' : 'Afficher le PDF'}
-            </button>
+            <a className="doc-btn" href={doc.source} target="_blank" rel="noreferrer">
+              <OpenInNewIcon fontSize="small" /> Page Wikipédia
+            </a>
             <a className="doc-btn" href={doc.file} target="_blank" rel="noreferrer">
               <OpenInNewIcon fontSize="small" /> Ouvrir dans un onglet
             </a>
@@ -56,8 +54,6 @@ export function Documents() {
             </a>
             <a className="doc-src" href={doc.source} target="_blank" rel="noreferrer">Source : Wikipédia</a>
           </div>
-          {/* La visionneuse PDF, à la demande. */}
-          {pdfOpen && <iframe className="doc-pdf" src={doc.file} title={`PDF : ${doc.name}`} />}
           {/* Les données de la fiche. */}
           <section className="doc-grid">
             {/* La découverte (début du bloc). */}
