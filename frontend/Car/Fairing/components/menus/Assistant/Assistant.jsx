@@ -220,7 +220,7 @@ function MobileBar({ text, setText, busy, send }) {
           onBlur={() => setFocused(false)}
           // Entrée envoie ; Maj + Entrée passe à la ligne.
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (canSend) send(); } }}
-          placeholder={busy ? 'Mistral répond…' : 'Demander à Mistral…'}
+          placeholder={busy ? 'CLAUDE répond…' : 'Demander à CLAUDE…'}
           enterKeyHint="send"
           inputProps={{ 'aria-label': 'Message pour Mistral', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
           sx={{
@@ -460,7 +460,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
         <AutoAwesomeIcon sx={{ width: 20, height: 20, flex: 'none', color: C.accent }} />
         {/* Le titre « Mistral », en empattements. */}
         {/* Il prend la place restante et peut rétrécir ; trop étroit, il se termine par « … » au lieu de passer sous les boutons. */}
-        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Mistral</Typography>
+        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Claude</Typography>
         {/* L'état « Démonstration » n'est plus dans l'en-tête, trop étroit dans le rail : l'encadré sous l'en-tête le dit déjà. */}
         {/* Le bouton de l'arborescence des astres, quand le parent en propose une. */}
         {onNavigator && (
@@ -506,7 +506,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           // Encadré d'avertissement (début de la balise).
           <Typography role="status" sx={{ flex: 'none', px: 1.25, py: 1, lineHeight: 1.45, borderRadius: '10px', bgcolor: C.field, border: `1px solid ${C.border}`, color: C.muted, fontFamily: SANS, fontSize: 13 }}>
             {/* Son texte. */}
-            Fenêtre de démonstration : aucune clé d’API Mistral n’est enregistrée, aucune réponse n’est générée. Enregistrez une clé dans Paramètres → Mistral.
+            Fenêtre de démonstration : aucune clé d’API Claude n’est enregistrée, aucune réponse n’est générée. Enregistrez une clé dans Paramètres → Claude.
           {/* Fin de l'encadré. */}
           </Typography>
         // Fin du cas.
