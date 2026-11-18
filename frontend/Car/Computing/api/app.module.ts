@@ -4,8 +4,9 @@ import { SceneModule } from './scene/scene.module';
 import { TilesModule } from './tiles/tiles.module';
 import { DonationsModule } from './donations/donations.module';
 import { ContributionsModule } from './contributions/contributions.module';
+import { GalerieModule } from './galerie/galerie.module';
 
 @Module({
-  imports: [SceneModule, TilesModule, DonationsModule, ContributionsModule],
+  imports: [SceneModule, TilesModule, DonationsModule, ContributionsModule, GalerieModule],
 })
 export class AppModule {}
