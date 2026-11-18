@@ -60,3 +60,7 @@ desktop.ini
 __pycache__/
 # Fichiers Python compilés.
 *.pyc
+
+# Django
+db.sqlite3
+staticfiles/

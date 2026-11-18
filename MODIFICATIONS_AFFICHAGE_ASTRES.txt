@@ -1,0 +1,21 @@
+MODIFICATION GOBai SPACE — AFFICHAGE INITIAL DE TOUS LES ASTRES
+
+Fichiers modifiés :
+- frontend/src/Car/AstreSolideEngine/bodyKinds.jsx
+  * L'affichage initial ne dépend plus de la présence d'une couche cartographique.
+  * defaultHiddenBodies() ne masque plus aucun astre automatiquement.
+  * Les fonctions de compatibilité bodiesWithLayers() et shownByDefault() sont conservées.
+- frontend/src/Car/AstreSolideEngine/bodyKinds.test.jsx
+  * Tests adaptés à la nouvelle règle d'affichage.
+- frontend/src/Fairing/components/SolarScene.jsx
+  * Suppression d'une déclaration dupliquée de setBodyShown et setKind.
+
+Comportement :
+- Tous les astres présents dans le catalogue sont affichés au lancement.
+- Un astre reste visible même s'il n'a aucune couche de carte.
+- Les couches restent des ressources de surface/texture et ne filtrent plus le catalogue.
+- Les commandes manuelles des cases à cocher restent actives : l'utilisateur peut toujours masquer ou réafficher une famille ou un astre.
+
+Vérification :
+- Le ZIP a été modifié à partir du projet fourni.
+- Le build Vite et les tests n'ont pas été exécutés : les dépendances node_modules ne sont pas présentes dans l'archive.
