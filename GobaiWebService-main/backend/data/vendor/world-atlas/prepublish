@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Supprime les fichiers JSON produits par une exécution précédente.
+rm -rvf *-10m.json *-50m.json *-110m.json
+# Crée le dossier de travail build s'il manque.
+mkdir -p build
+
+# countries_shp : télécharge les pays de Natural Earth à une résolution donnée (début).
+countries_shp() {
+  # Si le fichier de formes n'est pas déjà là (début).
+  if [ ! -f build/ne_$1_admin_0_countries.shp ]; then
+    # Télécharge l'archive.
+    curl -o build/ne_$1_admin_0_countries.zip https://naciscdn.org/naturalearth/$1/cultural/ne_$1_admin_0_countries.zip
+    # La décompresse dans build.
+    unzip -od build build/ne_$1_admin_0_countries.zip
+    # Retire le droit d'exécution des fichiers extraits.
+    chmod a-x build/ne_$1_admin_0_countries.*
+  # Fin de ce cas.
+  fi
+# Fin de countries_shp.
+}
+
+# land_shp : télécharge les terres émergées de Natural Earth à une résolution donnée (début).
+land_shp() {
+  # Si le fichier de formes n'est pas déjà là (début).
+  if [ ! -f build/ne_$1_land.shp ]; then
+    # Télécharge l'archive.
+    curl -o build/ne_$1_land.zip https://naciscdn.org/naturalearth/$1/physical/ne_$1_land.zip
+    # La décompresse dans build.
+    unzip -od build build/ne_$1_land.zip
+    # Retire le droit d'exécution des fichiers extraits.
+    chmod a-x build/ne_$1_land.*
+  # Fin de ce cas.
+  fi
+# Fin de land_shp.
+}
+
+# countries : fabrique le fichier TopoJSON des pays à une résolution donnée (début).
+countries() {
+  # Télécharge les pays si besoin.
+  countries_shp $1
+  # Commande sur six lignes : convertit en TopoJSON les pays lus dans le fichier de formes (ligne 2), leur donne un identifiant et un nom (ligne 3), recoud les géométries (ligne 4), fusionne les pays en terres (ligne 5) et écrit countries-RÉSOLUTION.json (ligne 6).
+  geo2topo -q 1e5 -n countries=<( \
+      shp2json --encoding utf8 -n build/ne_$1_admin_0_countries.shp \
+        | ndjson-map 'i = d.properties.ISO_N3, d.id = i === "-99" ? (d.properties.SOV_A3 === "NOR" ? "578" : undefined) : i, d.properties = {name: d.properties.NAME}, d' \
+        | geostitch -n) \
+    | topomerge land=countries \
+    > countries-$1.json
+# Fin de countries.
+}
+
+# land : fabrique le fichier TopoJSON des terres émergées à une résolution donnée (début).
+land() {
+  # Télécharge les terres si besoin.
+  land_shp $1
+  # Commande sur six lignes : convertit en TopoJSON les terres lues dans le fichier de formes (ligne 2), retire leurs propriétés (ligne 3), recoud les géométries (ligne 4), les fusionne (ligne 5) et écrit land-RÉSOLUTION.json (ligne 6).
+  geo2topo -q 1e5 -n land=<( \
+      shp2json --encoding utf8 -n build/ne_$1_land.shp \
+        | ndjson-map 'delete d.properties, d' \
+        | geostitch -n) \
+    | topomerge land=land \
+    > land-$1.json
+# Fin de land.
+}
+
+# Pays au 1:10 000 000.
+countries 10m
+# Pays au 1:50 000 000.
+countries 50m
+# Pays au 1:110 000 000.
+countries 110m
+
+# Terres au 1:10 000 000.
+land 10m
+# Terres au 1:50 000 000.
+land 50m
+# Terres au 1:110 000 000.
+land 110m

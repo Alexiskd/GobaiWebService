@@ -1,0 +1,89 @@
+# Render Blueprint : un seul service web (API NestJS + site React servi par l'API).
+# Build : installe et compile frontend puis backend. Start : node backend/dist/main.js (dossier backend).
+services:
+  # Un service web.
+  - type: web
+    # Son nom.
+    name: gobai-space
+    # Environnement Node.
+    runtime: node
+    # Offre gratuite.
+    plan: free
+    # Commande de construction.
+    buildCommand: npm run build
+    # Commande de démarrage.
+    startCommand: npm start
+    # Adresse du contrôle de santé.
+    healthCheckPath: /api/health
+    # Déploiement automatique à chaque fusion.
+    autoDeploy: true
+    # Variables d'environnement (début).
+    envVars:
+      # Version de Node :
+      - key: NODE_VERSION
+        # la 22.
+        value: "22"
+      # PostgreSQL Render (Internal Database URL) : stocke la collection de la galerie et les tuiles lunaires.
+      - key: DATABASE_URL
+        # Valeur saisie dans le tableau de bord, jamais dans le dépôt.
+        sync: false
+      # Clé api.nasa.gov : valeur saisie dans le tableau de bord Render, jamais dans le dépôt.
+      - key: NASA_API_KEY
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Prix des exports par astre, en centimes (1 500 € par défaut).
+      - key: PRICE_BODY_CENTS
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Prix spécial de l'export de la Terre, en centimes (100 000 € par défaut).
+      - key: PRICE_EARTH_CENTS
+        sync: false
+      # Prix d'une heure de calcul d'orbite, par astre (1 000 € par défaut).
+      - key: PRICE_ORBIT_HOUR_CENTS
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Prix des tuiles de tous les astres.
+      - key: PRICE_TILES_CENTS
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Prix de l'ensemble du catalogue.
+      - key: PRICE_ALL_CENTS
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Secret de signature des sessions ET des clés d'API achetées. Sans lui : chaque redémarrage déconnecte
+      # tout le monde, et un paiement abouti ne peut délivrer aucune clé — la boutique reste donc fermée.
+      - key: SESSION_SECRET
+        # Valeur tirée au hasard par Render, qui la garde : personne n'a à manipuler ce secret, ni à le coller
+        # dans le tableau de bord. Et si cette variable reste vide, le serveur se débrouille seul : il tire un
+        # secret au premier démarrage et le range dans sa base (table app_secrets), d'où il le relit ensuite —
+        # les sessions et les clés d'API tiennent donc d'un redéploiement à l'autre sans que personne s'en
+        # occupe. Ce secret n'est jamais écrit dans le dépôt : il signe les clés d'API vendues, donc qui le
+        # connaît pourrait en fabriquer une sans payer.
+        generateValue: true
+      # API externes déconnectées : hôtes séparés par des virgules (ex. api.open-meteo.com,photon.komoot.io). Vide : aucune.
+      - key: BLOCKED_API_HOSTS
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Clé d'administration : autorise l'onglet « API » du site à déconnecter une API sur le serveur. Jamais dans le dépôt.
+      - key: API_ADMIN_TOKEN
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Nuages réels de la Terre (Xweather) : identifiants saisis dans le tableau de bord Render.
+      - key: XWEATHER_CLIENT_ID
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Secret du compte Xweather.
+      - key: XWEATHER_CLIENT_SECRET
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # Clé secrète Stripe (sk_test_… en mode test, sk_live_… pour de vrais paiements) : elle ouvre les dons et
+      # la boutique. Le serveur vérifie sa forme au démarrage et refuse une clé publique pk_… par erreur.
+      - key: STRIPE_SECRET_KEY
+        # Valeur saisie dans le tableau de bord, jamais dans le dépôt : c'est la seule clé de ce service qui
+        # peut déplacer de l'argent.
+        sync: false
+      # Assistant de la fenêtre « Claude » : clé de l'API Claude (sk-ant-…), saisie dans le tableau de bord Render.
+      - key: ANTHROPIC_API_KEY
+        # Valeur saisie dans le tableau de bord.
+        sync: false
+      # PORT est fourni par Render. Les autres variables (tuiles…) : voir backend/.env.example.

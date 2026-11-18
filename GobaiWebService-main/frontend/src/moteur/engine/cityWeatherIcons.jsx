@@ -1,0 +1,82 @@
+/**
+ * Pictogrammes météo de la fiche ville (SVG inline, 32×32, trait clair + accents soleil/pluie).
+ * Les tracés sont statiques : aucun contenu externe n'est injecté.
+ */
+
+// Dessin du soleil : son disque…
+const SUN = '<g class="w-sun"><circle cx="16" cy="16" r="5.4"/>'
+  // … et ses huit rayons.
+  + '<path d="M16 3.4v3.8M16 24.8v3.8M3.4 16h3.8M24.8 16h3.8M7.2 7.2l2.6 2.6M22.2 22.2l2.6 2.6M24.8 7.2l-2.6 2.6M9.8 22.2l-2.6 2.6"/></g>';
+
+// Dessin de la lune : un croissant.
+const MOON = '<g class="w-moon"><path d="M21.8 5.4a10.4 10.4 0 1 0 4.9 13.9A9 9 0 0 1 21.8 5.4Z"/></g>';
+
+// Dessin d'un nuage.
+const CLOUD = '<g class="w-cloud"><path d="M9 24.4h13.1a4.9 4.9 0 0 0 .5-9.8A7.7 7.7 0 0 0 8.3 16.3 4.7 4.7 0 0 0 9 24.4Z"/></g>';
+
+// Dessin d'un petit nuage, placé plus bas.
+const CLOUD_SMALL = '<g class="w-cloud"><path d="M7.4 25.4h12.4a4.5 4.5 0 0 0 .4-9 6.9 6.9 0 0 0-13 1.6 4.3 4.3 0 0 0 .2 7.4Z"/></g>';
+
+// Éclaircies de jour : un petit soleil en haut à droite…
+const PARTLY_DAY = '<g class="w-sun"><circle cx="21.4" cy="10.4" r="4"/>'
+  // … ses huit rayons…
+  + '<path d="M21.4 2.6v2.2M21.4 15.8v2.2M13.6 10.4h2.2M27 10.4h2.2M16 5l1.6 1.6M25.2 14.2l1.6 1.6M26.8 5l-1.6 1.6M17.6 14.2l-1.6 1.6"/></g>'
+  // … et le petit nuage devant.
+  + CLOUD_SMALL;
+
+// Éclaircies de nuit : un petit croissant de lune, réduit et décalé…
+const PARTLY_NIGHT = `<g class="w-moon"><path transform="translate(9.4 1.2) scale(.62)" d="M21.8 5.4a10.4 10.4 0 1 0 4.9 13.9A9 9 0 0 1 21.8 5.4Z"/></g>`
+  // … et le petit nuage devant.
+  + CLOUD_SMALL;
+
+// Brouillard : le nuage et deux traits horizontaux.
+const FOG = CLOUD + '<g class="w-fog"><path d="M7.2 27.4h15M10.4 30h14.4"/></g>';
+
+// Bruine : le nuage et trois petites gouttes.
+const DRIZZLE = CLOUD + '<g class="w-rain"><path d="M12.3 27.2l-1 2.3M17 27.2l-1 2.3M21.7 27.2l-1 2.3"/></g>';
+
+// Pluie : le nuage et trois gouttes plus longues.
+const RAIN = CLOUD + '<g class="w-rain"><path d="M12 27l-1.5 3.4M17 27l-1.5 3.4M22 27l-1.5 3.4"/></g>';
+
+// Neige : le nuage et trois flocons en croix.
+const SNOW = CLOUD + '<g class="w-snow"><path d="M12 27.2v2.5M10.8 28.4h2.4M17 27.2v2.5M15.8 28.4h2.4M22 27.2v2.5M20.8 28.4h2.4"/></g>';
+
+// Orage : le nuage et un éclair.
+const STORM = CLOUD + '<g class="w-bolt"><path d="M18.1 18.8l-4.8 7.1h3.3l-1.8 5 5.6-7.5h-3.3z"/></g>';
+
+// Table des pictogrammes par nom (début de l'objet).
+const ICONS = {
+  // Ciel dégagé de jour.
+  clear: SUN,
+  // Ciel dégagé de nuit.
+  moon: MOON,
+  // Éclaircies de jour.
+  partly: PARTLY_DAY,
+  // Éclaircies de nuit.
+  'partly-night': PARTLY_NIGHT,
+  // Couvert.
+  cloudy: CLOUD,
+  // Brouillard.
+  fog: FOG,
+  // Bruine.
+  drizzle: DRIZZLE,
+  // Pluie.
+  rain: RAIN,
+  // Neige.
+  snow: SNOW,
+  // Orage.
+  storm: STORM,
+// Fin de l'objet.
+};
+
+/** SVG d'un pictogramme météo ; « partly » devient lune + nuage la nuit. */
+// Déclare et exporte weatherIconSvg : le nom du pictogramme et l'indicateur de jour (vrai par défaut).
+export function weatherIconSvg(icon, isDay = true) {
+  // « partly » de nuit devient « partly-night ».
+  const key = icon === 'partly' && !isDay ? 'partly-night' : icon;
+  // Le dessin correspondant, le nuage à défaut.
+  const body = ICONS[key] || ICONS.cloudy;
+  // L'enveloppe dans une balise svg de 32 × 32, cachée aux lecteurs d'écran.
+  return `<svg class="cc-w-svg" viewBox="0 0 32 32" aria-hidden="true" focusable="false">${body}</svg>`;
+// Fin de weatherIconSvg.
+}

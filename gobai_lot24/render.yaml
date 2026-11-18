@@ -1,0 +1,9 @@
+# Gobai Space — Render Static Site uniquement.
+# Aucun serveur Node/NestJS, processus worker ou base PostgreSQL n'est déployé.
+services:
+  - type: web
+    name: gobai-space-static
+    runtime: static
+    buildCommand: npm ci --prefix frontend && npm run build --prefix frontend
+    staticPublishPath: frontend/dist
+    autoDeploy: false

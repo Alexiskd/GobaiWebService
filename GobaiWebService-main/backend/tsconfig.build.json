@@ -1,0 +1,8 @@
+// Configuration de TypeScript pour la construction (début).
+{
+  // Reprend tsconfig.json.
+  "extends": "./tsconfig.json",
+  // Exclut aussi les fichiers de test.
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
+// Fin de la configuration.
+}
