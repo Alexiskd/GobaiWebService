@@ -395,6 +395,15 @@ test('la source des fonds marins sert une tuile grossière à toutes les tuiles 
 // Fin du test.
 });
 
+test('relief de Mars : DEM MOLA numérique, altitudes signées et niveau global', () => {
+  const mars = normalizeRelief({ kind: 'terrarium', template: '/api/v1/tiles/mars-relief/{z}/{x}/{y}.png', minZoom: 0, maxZoom: 7, signed: true }, 3389.5);
+  assert.equal(mars.kind, 'terrarium');
+  assert.equal(mars.signed, true);
+  assert.equal(mars.minZoom, 0);
+  assert.equal(mars.maxZoom, 7);
+  assert.equal(mars.radiusM, 3389500);
+});
+
 test('relief de la Lune : découpage géographique et altitudes signées', () => {
   // Rayon de la Lune en mètres.
   const R = 1_737_400;

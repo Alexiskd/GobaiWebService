@@ -24,7 +24,6 @@ import { MoonColorService } from '../services/map-tiles/moon-color.service';
 import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
 // Relief de la Lune en tuiles Terrarium (altitudes LOLA de Moon Trek).
 import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
-// Relief de Mars : altitudes MOLA réencodées en Terrarium pour le moteur de relief partagé.
 import { MarsReliefService } from '../services/map-tiles/mars-relief.service';
 // Blend de la Lune : modèle 3D complet (carte réelle + relief) enregistré dans BP.
 import { MoonBlendService } from '../services/map-tiles/moon-blend.service';
@@ -95,7 +94,6 @@ import { EphemerisModule } from './ephemeris.module';
     { provide: MoonTileCacheService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new MoonTileCacheService(config) },
     // Relief de la Lune : fabrique sans argument (fetch global).
     { provide: MoonReliefService, useFactory: () => new MoonReliefService() },
-    // Relief de Mars : fabrique sans argument (ImageServer NASA Trek).
     { provide: MarsReliefService, useFactory: () => new MarsReliefService() },
     // Blend de la Lune : relief, tuiles Kaguya et couleurs SVS.
     { provide: MoonBlendService, inject: [MoonReliefService, MoonTileCacheService, MoonColorService], useFactory: (r: MoonReliefService, t: MoonTileCacheService, c: MoonColorService) => new MoonBlendService(r, t, c) },

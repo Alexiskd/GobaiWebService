@@ -52,7 +52,6 @@ import { MoonColorService } from '../services/map-tiles/moon-color.service';
 import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
 // Importe le relief de la Lune en tuiles Terrarium.
 import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
-// Relief géométrique de Mars issu des altitudes MOLA.
 import { MarsReliefService } from '../services/map-tiles/mars-relief.service';
 // Importe le blend de la Lune.
 import { MoonBlendService } from '../services/map-tiles/moon-blend.service';
@@ -129,7 +128,7 @@ export class TilesController {
     private readonly moonTiles: MoonTileCacheService,
     // Le relief de la Lune.
     private readonly moonRelief: MoonReliefService,
-    // Le relief de Mars.
+    // Le relief mesuré de Mars (MOLA / HRSC-MOLA).
     private readonly marsRelief: MarsReliefService,
     // Le blend de la Lune.
     private readonly moonBlend: MoonBlendService,
@@ -155,18 +154,6 @@ export class TilesController {
     private readonly earthCloudCover: EarthCloudCoverService,
   // Corps du constructeur vide.
   ) {}
-
-  // Route GET /api/v1/tiles/mars-relief/:z/:x/:y : altitudes MOLA en Terrarium.
-  @Get('mars-relief/:z/:x/:y')
-  @SkipThrottle()
-  @ApiOperation({ summary: 'Relief géométrique de Mars (Terrarium)', description: 'Altitudes MOLA globales de la NASA réencodées en PNG Terrarium pour le moteur de relief partagé.' })
-  @ApiOkResponse({ description: 'Tuile PNG Terrarium (altitudes MOLA en mètres).' })
-  @ApiBadRequestResponse({ type: ApiErrorDto })
-  @ApiBadGatewayResponse({ type: ApiErrorDto })
-  async marsReliefTile(@Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
-    const tile = await this.marsRelief.tile(parseTileCoordinate(z), parseTileCoordinate(x), parseTileCoordinate(y.replace(/\.png$/, '')));
-    sendTile(req, res, tile, MARS_TILE, { 'X-Cache': tile.cached ? 'HIT' : 'MISS' });
-  }
 
   // Route GET /api/v1/tiles/moon-color.jpg.
   @Get('moon-color.jpg')
@@ -859,6 +846,41 @@ export class TilesController {
     const body = await this.moonRelief.model(c, e);
     res.setHeader('Content-Disposition', `attachment; filename="lune-relief-${[360, 720, 1440].includes(c) ? c : 720}-x${Math.min(20, Math.max(1, Math.round(e) || 1))}.glb"`);
     sendTile(req, res, { body, contentType: 'model/gltf-binary' }, { maxAge: 86_400 });
+  }
+
+  // Route GET /api/v1/tiles/mars-relief/status : état du cache de relief martien.
+  @Get('mars-relief/status')
+  @ApiOperation({ summary: 'Relief de Mars : état du DEM MOLA' })
+  @ApiOkResponse({ description: 'Source DEM, cache et paramètres du modèle 3D.' })
+  marsReliefStatus(@Res() res: TileResponse): void {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(Buffer.from(JSON.stringify(this.marsRelief.status()), 'utf8'));
+  }
+
+  // Route GET /api/v1/tiles/mars-relief/model.glb : globe martien déformé par les altitudes MOLA.
+  @Get('mars-relief/model.glb')
+  @SkipThrottle()
+  @ApiOperation({ summary: 'Modèle 3D de Mars en relief MOLA (glTF binaire)', description: 'Maillage sphérique construit à partir des altitudes numériques MOLA/HRSC-MOLA, par rapport à l’aréoïde martien. cols = 360, 720 ou 1440 ; exaggeration = 1 à 10.' })
+  @ApiOkResponse({ description: 'Fichier .glb (model/gltf-binary).' })
+  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  async marsReliefModel(@Query('cols') cols: string | undefined, @Query('exaggeration') ex: string | undefined, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
+    const c = Number(cols ?? 720), e = Number(ex ?? 1);
+    const body = await this.marsRelief.model(c, e);
+    res.setHeader('Content-Disposition', `attachment; filename="mars-relief-${[360, 720, 1440].includes(c) ? c : 720}-x${Math.min(10, Math.max(1, e || 1))}.glb"`);
+    sendTile(req, res, { body, contentType: 'model/gltf-binary' }, { maxAge: 86_400 });
+  }
+
+  // Route GET /api/v1/tiles/mars-relief/:z/:x/:y : altitude mesurée MOLA en Terrarium.
+  @Get('mars-relief/:z/:x/:y')
+  @SkipThrottle()
+  @ApiOperation({ summary: 'Relief de Mars (Terrarium)', description: 'DEM numérique MOLA (NASA/GSFC/USGS), avec secours HRSC-MOLA. Les pixels sont des altitudes signées en mètres au-dessus de l’aréoïde martien, et non des couleurs de la couche hillshade.' })
+  @ApiOkResponse({ description: 'Tuile Terrarium PNG.' })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  async marsReliefTile(@Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
+    const tile = await this.marsRelief.tile(parseTileCoordinate(z), parseTileCoordinate(x), parseTileCoordinate(y.replace(/\.png$/, '')));
+    sendTile(req, res, tile, MOON_TILE, { 'X-Cache': tile.cached ? 'HIT' : 'MISS' });
   }
 
   // Route GET /api/v1/tiles/moon-relief/:z/:x/:y : relief de la Lune en Terrarium.

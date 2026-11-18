@@ -136,7 +136,7 @@ export const tileFragmentShader = [
   // Variables uniformes de l'ombrage du relief : la tuile d'altitude, sa portion, sa présence, sa pente, sa taille, l'exagération et les deux forces d'ombrage.
   'uniform sampler2D hMap;uniform vec4 hRect;uniform float hHas;uniform float hSlope;uniform float hSize;uniform float reliefExag;uniform float reliefShade;uniform float reliefImg;',
   // hTex : altitude d'un pixel de la tuile d'altitude, jamais négative.
-  'float hTex(vec2 q){vec4 t=texture2D(hMap,q);return max(0.,t.r*65280.+t.g*255.+t.b*.99609375-32768.);}',
+  'float hTex(vec2 q){vec4 t=texture2D(hMap,q);float h=t.r*65280.+t.g*255.+t.b*.99609375-32768.;return oceanOn>.5?(h<-11500.?0.:h):max(0.,h);}',
   // Fond des océans : profondeur (≤ 0) lue dans la tuile de profondeurs, pixel sans donnée à 0 ; oSlope et oSize comme
   // hSlope et hSize, oBoost = accentuation de l'ombrage des fonds (pentes douces).
   // Variables uniformes du fond des océans : la tuile de profondeurs, sa portion, sa présence, l'interrupteur, sa pente, sa taille et son accentuation.

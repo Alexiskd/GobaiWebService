@@ -1,5 +1,6 @@
 // Carte marine de la Terre (couche unique « earth-hd »), décrite par la table du serveur (champ `marine`, voir backend
-// earth-seafloor.ts et earth-plan.ts) : NOAA vue de l'espace, fondu vers GEBCO aux zooms moyens, GEBCO seule aux zooms forts. Les seuils sont la colonne « marine »
+// earth-seafloor.ts et earth-plan.ts) : teinte des océans de la NOAA (ETOPO 2022) vue de l'espace, fondu vers GEBCO
+// aux zooms moyens, GEBCO seule en relief ombré avec isobathes aux zooms forts. Les seuils sont la colonne « marine »
 // des paliers de la table. Fonctions pures, sans navigateur (testées dans marineChart.test.jsx) ; le chargement est
 // dans tileSource.jsx (marinePixelsAt), sous le masque de la mer des altitudes Terrarium.
 
@@ -7,7 +8,7 @@
 import { validTiers } from './zoomTiers';
 
 // Ordre des étapes de la carte marine, du plus lointain au plus proche.
-// NOAA domine les vues éloignées ; GEBCO prend progressivement le relais au rapprochement.
+// Déclare et exporte les étapes : NOAA, fondu, GEBCO.
 export const MARINE_STAGES = ['noaa', 'fondu', 'gebco'];
 
 /** Une couche d'images de la carte marine est-elle bien formée ? (modèle d'adresse et niveau le plus fin) */
@@ -27,30 +28,30 @@ export function validMarine(m) {
 }
 
 /**
- * Part de GEBCO dans l’image des fonds d’une tuile de niveau `z`, et isobathes à tracer, d’après la colonne « marine »
- * des paliers : le palier qui affiche ce niveau est le plus lointain dont le niveau max l’atteint. Étape « noaa » :
- * NOAA seule (0). Étape « gebco » : GEBCO seule (1), avec les isobathes. Étape « fondu » : la part de GEBCO augmente
- * niveau par niveau, du dernier niveau NOAA au premier niveau GEBCO. Sans paliers : NOAA seule.
+ * Part de GEBCO dans l'image des fonds d'une tuile de niveau `z`, et isobathes à tracer, d'après la colonne « marine »
+ * des paliers : le palier qui affiche ce niveau est le plus lointain dont le niveau max l'atteint. Étape « noaa » :
+ * NOAA seule (0). Étape « gebco » : GEBCO seule (1) avec isobathes. Étape « fondu » : la part croît niveau par niveau,
+ * du dernier niveau NOAA au premier niveau GEBCO. Sans paliers : GEBCO seule, sans isobathes (comme avant la table).
  */
 // Déclare et exporte marineMix : les paliers de la table et le niveau de la tuile.
 export function marineMix(tiers, z) {
-  // Sans paliers utilisables : NOAA seule, sans isobathes.
-  if (!validTiers(tiers)) return { gebco: 0, isobaths: false };
+  // Sans paliers utilisables : GEBCO seule, sans isobathes.
+  if (!validTiers(tiers)) return { gebco: 1, isobaths: false };
   // Paliers du plus lointain au plus proche (le dernier palier, sans limite, en tête).
   const far = [...tiers].sort((a, b) => (b.maxKm ?? Infinity) - (a.maxKm ?? Infinity));
   // Palier qui affiche ce niveau : le plus lointain dont le niveau max l'atteint, sinon le plus proche.
   const tier = far.find((t) => t.maxZoom >= z) ?? far[far.length - 1];
   // Son étape de la carte marine.
   const stage = tier.details?.marine;
-  // NOAA seule aux niveaux les plus éloignés.
+  // NOAA seule.
   if (stage === 'noaa') return { gebco: 0, isobaths: false };
-  // GEBCO seule aux niveaux les plus proches.
+  // GEBCO seule, avec isobathes.
   if (stage === 'gebco') return { gebco: 1, isobaths: true };
-  // Dernier niveau NOAA : le plus fin des paliers « noaa ».
+  // Dernier niveau NOAA : le plus fin des paliers « noaa » (−1 s'il n'y en a pas).
   const lastNoaa = Math.max(-1, ...far.filter((t) => t.details?.marine === 'noaa').map((t) => t.maxZoom));
   // Premier niveau GEBCO : juste après le plus fin des paliers qui ne sont pas « gebco ».
   const firstGebco = 1 + Math.max(lastNoaa, ...far.filter((t) => t.details?.marine !== 'gebco').map((t) => t.maxZoom));
-  // Fondu progressif : la part de GEBCO augmente de NOAA vers GEBCO.
+  // Fondu : part de GEBCO entre ces deux niveaux, bornée à [0, 1], sans isobathes.
   return { gebco: Math.min(1, Math.max(0, (z - lastNoaa) / (firstGebco - lastNoaa))), isobaths: false };
 // Fin de marineMix.
 }

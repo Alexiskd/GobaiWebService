@@ -148,12 +148,11 @@ export const TILED_BODIES = [
     airless: true, overlayMode: 'blend',
     // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive.
     pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200,
-    // Relief géométrique MOLA (NASA Mars Global Surveyor), converti côté API en tuiles Terrarium.
-    // Même moteur de relief que la Terre : maillage déplacé par les altitudes mesurées, niveaux 2 à 8.
-    relief: {
-      kind: 'terrarium', minZoom: 2, maxZoom: 8, exaggeration: 1, signed: true,
-      sources: [{ template: '/api/v1/tiles/mars-relief/{z}/{x}/{y}.png' }],
-    },
+    // Relief mesuré : DEM MOLA (NASA Mars Trek / NASA GSFC / USGS), altitudes signées en mètres au-dessus de l'aréoïde.
+    // La couche colorisée MOLA de Trek n'est PAS utilisée comme hauteur : le backend interroge le service DEM F32,
+    // puis convertit chaque pixel en Terrarium. La source HRSC-MOLA est utilisée en secours si MOLA Trek échoue.
+    relief: { kind: 'terrarium', minZoom: 0, maxZoom: 7, exaggeration: 1, signed: true,
+      sources: [{ template: '/api/v1/tiles/mars-relief/{z}/{x}/{y}.png' }] },
     // Modèle 3D au-delà de 2,2 rayons.
     modelSwitchRadii: 2.2,
   // Fin de Mars.
@@ -168,8 +167,11 @@ export const TILED_BODIES = [
     airless: true, overlayMode: 'blend',
     // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive.
     pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200,
-    // Relief estimé d'après l'image, force 0,4.
-    relief: { kind: 'image', strength: 0.4 },
+    // Relief mesuré : DEM MOLA (NASA Mars Trek / NASA GSFC / USGS), altitudes signées en mètres au-dessus de l'aréoïde.
+    // La couche colorisée MOLA de Trek n'est PAS utilisée comme hauteur : le backend interroge le service DEM F32,
+    // puis convertit chaque pixel en Terrarium. La source HRSC-MOLA est utilisée en secours si MOLA Trek échoue.
+    relief: { kind: 'terrarium', minZoom: 0, maxZoom: 7, exaggeration: 1, signed: true,
+      sources: [{ template: '/api/v1/tiles/mars-relief/{z}/{x}/{y}.png' }] },
     // Modèle 3D au-delà de 2,2 rayons.
     modelSwitchRadii: 2.2,
   // Fin de Mercure.
@@ -304,6 +306,11 @@ function satelliteTiledBody({ id, name, radiusKm }) {
     airless: id !== 'titan', overlayMode: 'blend',
     // Niveaux 0 et 1 gardés en mémoire, pas de préchargement.
     pinnedMaxZoom: 1, prefetch: false,
+    // Relief mesuré : DEM MOLA (NASA Mars Trek / NASA GSFC / USGS), altitudes signées en mètres au-dessus de l'aréoïde.
+    // La couche colorisée MOLA de Trek n'est PAS utilisée comme hauteur : le backend interroge le service DEM F32,
+    // puis convertit chaque pixel en Terrarium. La source HRSC-MOLA est utilisée en secours si MOLA Trek échoue.
+    relief: { kind: 'terrarium', minZoom: 0, maxZoom: 7, exaggeration: 1, signed: true,
+      sources: [{ template: '/api/v1/tiles/mars-relief/{z}/{x}/{y}.png' }] },
   // Fin des réglages.
   };
 // Fin de satelliteTiledBody.

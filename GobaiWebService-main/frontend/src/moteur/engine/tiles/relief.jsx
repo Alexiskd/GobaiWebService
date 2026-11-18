@@ -24,9 +24,9 @@ export const RELIEF_SEGMENTS = 16;
 /** Jupe des tuiles soulevées : plus profonde, les bords de deux tuiles voisines ne tombent pas à la même hauteur. */
 // Déclare et exporte la profondeur de la jupe des tuiles soulevées : 0,04.
 export const RELIEF_SKIRT = 0.04;
-/** Plus haut sommet possible (m) : marge des volumes englobants. */
+/** Plus haut sommet possible (m) : marge des volumes englobants, incluant Olympus Mons sur Mars. */
 // Déclare et exporte la plus grande altitude possible : 9000 m.
-export const MAX_HEIGHT_M = 22000;
+export const MAX_HEIGHT_M = 25000;
 
 /** Altitude (m) d'un pixel Terrarium (composantes 0 … 255). Le fond des mers est ramené à 0 : la mer reste plate. */
 // Déclare et exporte terrariumMeters : les trois composantes du pixel.

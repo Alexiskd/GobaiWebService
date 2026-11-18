@@ -151,6 +151,8 @@ export const API_DOC_GROUPS = [
       ['GET', '/tiles/lidar-hd/cities', 'Villes de France couvertes par le LiDAR HD.'],
       ['GET', '/pointclouds', 'Nuages de points disponibles (COPC/LAS, servis par plages HTTP Range).'],
       ['GET', '/tiles/moon-model.glb', 'Modèle 3D de la Lune (NASA, glTF binaire).'],
+      ['GET', '/tiles/mars-relief/{z}/{x}/{y}.png', 'Altitudes MOLA de Mars (Terrarium, DEM numérique).'],
+      ['GET', '/tiles/mars-relief/model.glb', 'Modèle 3D de Mars à partir du DEM MOLA.'],
       ['GET', '/tiles/models/{file}', 'Modèle 3D d’un astre irrégulier, comme Phobos ou Deimos (NASA).'],
       ['GET', '/engine/body.js', 'Moteur 3D de l’app en script : expose window.GobaiEngine.'],
     ],

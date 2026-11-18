@@ -15,7 +15,7 @@ import { tileFragmentShader, tileVertexShader } from './tileShaders';
 // Importe la projection Mercator, le choix d'une projection et l'emprise d'une tuile, depuis projection.
 import { EQUIRECTANGULAR, MERCATOR, projectionOf, tileBoundsIn } from './projection';
 // Importe les constantes et les fonctions du relief, depuis relief.
-import { MAX_HEIGHT_M, OCEAN_SHADE_BOOST, RELIEF_SKIRT, metersPerTexel, pointInTile, terrariumMeters, texelAt } from './relief';
+import { MAX_HEIGHT_M, OCEAN_SHADE_BOOST, RELIEF_SKIRT, metersPerTexel, pointInTile, terrariumMeters, terrariumRaw, texelAt } from './relief';
 // Importe nativeTile et OVERZOOM_LEVELS, la tuile native d'une tuile sur-zoomée et le nombre de niveaux, depuis overzoom.
 import { nativeTile, OVERZOOM_LEVELS } from './overzoom';
 // Importe le repli des lumières de la nuit (ancêtre déjà chargé), depuis nightLights.
@@ -1496,7 +1496,7 @@ export class TileLayer {
       // Lit ses couleurs.
       const d = ctx.getImageData(0, 0, 1, 1).data;
       // Les convertit en mètres.
-      return terrariumMeters(d[0], d[1], d[2]);
+      return this.reliefWanted?.signed ? terrariumRaw(d[0], d[1], d[2]) : terrariumMeters(d[0], d[1], d[2]);
     // Lecture refusée (début).
     } catch {
       // null.

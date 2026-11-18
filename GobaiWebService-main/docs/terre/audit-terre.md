@@ -107,9 +107,9 @@ Aucun fichier supprimé. Aucune API, source de données, variable d'environnemen
 
 ## Phase VI — Validation visuelle
 
-Avant : ![avant](avant.jpg)
+Avant : ![avant](avant.webp)
 
-Après : ![après](apres.jpg)
+Après : ![après](apres.webp)
 
 - Disque : dégradé naturel jusqu'au terminateur, océans bleus sous le voile de l'air, limbe bleu sans contour factice.
 - Terminateur : bande de crépuscule rougie, reflet du Soleil sur l'océan Indien, nuages éteints avec le sol.
@@ -120,11 +120,11 @@ Après : ![après](apres.jpg)
 Relief éclairé par le Soleil (cônes d'essai) : Soleil à droite, Soleil à gauche, puis l'ancien ombrage fixe du
 nord-ouest, gardé quand l'ombre jour/nuit est coupée :
 
-![relief](relief-soleil.jpg)
+![relief](relief-soleil.webp)
 
 Vue « Pollution lumineuse de toute la Terre », avant et après :
 
-![vue de nuit](vue-de-nuit-avant-apres.jpg)
+![vue de nuit](vue-de-nuit-avant-apres.webp)
 
 ## Phase VII — Compte rendu
 
@@ -203,12 +203,12 @@ Série de zoom sur Paris (banc, mêmes vues avant et après, Soleil derrière la
 De loin, la luminosité est la même : rien n'est éclairci en dézoomant. De près, la saturation disparaît et les
 villes restent lisibles.
 
-![série de zoom](pollution-multi-echelle.jpg)
+![série de zoom](pollution-multi-echelle.webp)
 
 Continuité pendant un chargement : tuile fine, repli seul (ancêtre ou mosaïque) et fondu à mi-course. L'écart de
 luminosité moyenne entre les trois reste sous 2 %.
 
-![repli et fondu](pollution-repli-fondu.jpg)
+![repli et fondu](pollution-repli-fondu.webp)
 
 - Tests unitaires : 395 réussis, dont 5 nouveaux (halo selon l'échelle, poids bicubiques, repli sur l'ancêtre,
   continuité dans le shader, préchargement des voisines). Les quatre échecs déjà présents sur `main` sont inchangés.
@@ -252,7 +252,7 @@ Chaîne des valeurs, de la mesure à l'écran :
 
 Les intensités restent dans le même ordre d'un bout à l'autre de la chaîne.
 
-![zones brillantes](pollution-zones-brillantes.jpg)
+![zones brillantes](pollution-zones-brillantes.webp)
 
 ### Validation
 
@@ -264,12 +264,12 @@ référence :
 | Sans bordure | 1,70 | 8,57 |
 | Bordée | 0,00 | 0,48 (comme la référence) |
 
-![raccord](pollution-raccord-tuiles.jpg)
+![raccord](pollution-raccord-tuiles.webp)
 
 **Vues rasantes** (détail mesuré près de l'horizon) : +18 % à 300 km, +12 % à 100 km et +19 % vers l'est, contre
 la première passe.
 
-![vue rasante](pollution-vue-rasante.jpg)
+![vue rasante](pollution-vue-rasante.webp)
 
 **Six régions, zoom continu de 15 300 km à 15 km (24 images chacune)** : Paris, Tokyo, Le Caire et le Nil, le Kansas
 rural, la Yakoutie (peu éclairée), et les Fidji au bord de l'antiméridien.
@@ -278,7 +278,7 @@ rural, la Yakoutie (peu éclairée), et les Fidji au bord de l'antiméridien.
   courbe de luminosité reste aussi régulière qu'avant.
 - La part saturée entre 750 et 170 km passe de 16,4 % à 8,3 % sur Paris.
 
-![régions](pollution-regions.jpg)
+![régions](pollution-regions.webp)
 
 **Écran de téléphone** (390 × 844 points, densité 2) : mêmes résultats que sur ordinateur. Rien ne disparaît.
 La saturation est divisée par deux à 68 km (29,6 % → 14,9 %).

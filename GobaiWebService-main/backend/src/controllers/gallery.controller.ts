@@ -66,15 +66,15 @@ export class GalleryController {
   // Pas de limite de débit : une page de galerie demande beaucoup de vignettes d'un coup.
   @SkipThrottle()
   // Titre de la route.
-  @ApiOperation({ summary: 'Vignette JPEG d’un média (640 px)' })
+  @ApiOperation({ summary: 'Vignette WebP d’un média (640 px)' })
   // Réponse 404 documentée : média inconnu.
   @ApiNotFoundResponse({ type: ApiErrorDto })
   // Méthode thumb : reçoit les paramètres validés et la réponse, qu'elle remplit elle-même.
   async thumb(@Param() p: MediaParamsDto, @Res() res: BinaryResponse): Promise<void> {
-    // Attend la vignette JPEG auprès du service.
+    // Attend la vignette WebP auprès du service.
     const body = await this.gallery.thumb(p.id);
-    // Type du contenu : image JPEG.
-    res.setHeader('Content-Type', 'image/jpeg');
+    // Type du contenu : les vignettes de la galerie sont converties en WebP.
+    res.setHeader('Content-Type', 'image/webp');
     // Cache d'un an, immuable : une vignette ne change jamais pour un identifiant donné.
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     // Envoie les octets.

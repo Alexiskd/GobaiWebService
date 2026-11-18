@@ -287,22 +287,22 @@ Taille du bouton, et distance au haut de l'écran.
 Téléphones en portrait. Avant : la barre de Claude couvre toute la navigation, et le bouton « Faire un don » flotte
 sur la scène. Après : titre et cœur en haut ; tiroir, Claude et navigation empilés en bas.
 
-![téléphones](telephones-avant-apres.jpg)
+![téléphones](telephones-avant-apres.webp)
 
 iPhone 15 en paysage. Avant : Claude chevauche la navigation. Après : tiroir et Claude côte à côte, navball en
 rangée sous le titre.
 
-![paysage](paysage-avant-apres.jpg)
+![paysage](paysage-avant-apres.webp)
 
 iPhone 15, après : les trois feuilles avec leur bouton Fermer, l'arborescence avec le tiroir, deux fenêtres plein
 écran.
 
-![feuilles et fenêtres](iphone-feuilles-fenetres.jpg)
+![feuilles et fenêtres](iphone-feuilles-fenetres.webp)
 
 Tablette en portrait. Avant : barre tronquée, et le bandeau du titre passe sous le panneau d'informations. Après :
 barre entière avec le menu « Menu », bandeau arrêté avant le panneau, compteur d'images dans le bandeau.
 
-![tablette](tablette-avant-apres.jpg)
+![tablette](tablette-avant-apres.webp)
 
 #### Limites du banc
 

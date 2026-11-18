@@ -84,8 +84,6 @@ import { isKindHidden, planetKind } from './bodyKinds';
 import { createSaturnRings } from './saturnRings';
 // Importe createSunSurface, la surface animée du Soleil et ses éruptions.
 import { createSunSurface } from './sunSurface';
-// Importe la couche Babylon.js de particules coronales, superposée au rendu Three.js.
-import { BabylonSunParticles } from './sunBabylonParticles';
 // Importe sitesFromRegions, qui place les régions actives réelles dans le repère propre du Soleil.
 import { sitesFromRegions } from './sunSurfaceMath';
 // Importe VolcanoLayer, les volcans en éruption sur la Terre.
@@ -228,9 +226,11 @@ const MOON_PHASES = [
 // Déclare et exporte la classe SolarEngine (début).
 export class SolarEngine {
   // Constructeur : le conteneur, les données, les étiquettes, le HUD, l'API des tuiles et les deux fonctions de changement (début).
-  constructor({ container, data, labels, hud, tilesApi, onFocusChange, onTilesChange }) {
+  constructor({ container, data, labels, hud, tilesApi, onFocusChange, onTilesChange, options = {} }) {
     // Garde le conteneur.
     this.container = container;
+    // Options additionnelles (profil Embed notamment), sans modifier le comportement de l’application principale.
+    this.options = options || {};
     // Garde les données.
     this.data = data;
     // Garde les étiquettes.
@@ -367,8 +367,6 @@ export class SolarEngine {
     this.initRenderer();
     // Crée le Soleil.
     this.initSun();
-    // Ajoute les particules coronales Babylon.js sur une couche transparente synchronisée à la caméra.
-    this.sunBabylonParticles = new BabylonSunParticles(this.container, this.data.bodies.sun.radius);
     // Crée les planètes.
     this.initPlanets();
     // Crée la Lune.
@@ -502,7 +500,7 @@ export class SolarEngine {
     // Planète du système affiché sur téléphone : aucune.
     this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
-    const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true });
+    const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true, alpha: Boolean(this.options.transparent), premultipliedAlpha: true });
     // Plafond : la densité de l'écran (≤ 1,75 sur ordinateur, ≤ 2 sur téléphone) ; la résolution adaptative
     // (adaptResolution) descend si besoin jusqu'au plancher du profil (0,75 sur ordinateur, 1,25 sur téléphone).
     this.dprMax = Math.min(devicePixelRatio || 1, this.power.dprMax);
@@ -534,8 +532,9 @@ export class SolarEngine {
     r.setPixelRatio(this.dpr);
     // Règle la taille.
     r.setSize(this.W, this.H);
-    // Fond noir.
-    r.setClearColor(0x000000); // fond de l'espace : noir pur, sous le ciel lointain (désactivable)
+    // Fond configurable : le profil Embed efface en alpha zéro ; l’application conserve son fond noir.
+    r.setClearColor(0x000000, this.options.transparent ? 0 : 1);
+    if (this.options.transparent) r.setClearAlpha(0);
     // Effacement manuel.
     r.autoClear = false;       // effacement manuel : ciel lointain d'abord, puis la scène par-dessus
     // Ajoute le canevas au conteneur.
@@ -548,6 +547,8 @@ export class SolarEngine {
     this.cam = new THREE.PerspectiveCamera(45, this.W / this.H, 0.00001, 1e10);
     // Ciel au-delà du Système solaire, dans sa propre scène (indépendant de l'origine flottante et du plan proche).
     this.sky = new SkyLayer();
+    // Le profil Embed ne dessine pas le ciel : les pixels hors globe restent transparents.
+    if (this.options.transparent || this.options.stars === false) this.sky.setVisible(false);
     // Vecteur de travail du ciel : visée.
     this.skyFwd = new THREE.Vector3();
     // Vecteur de travail du ciel : direction du Soleil.
@@ -2678,8 +2679,6 @@ export class SolarEngine {
     this.sky.render(this.renderer, this.cam, dt);
     // Dessine la scène par-dessus.
     this.renderer.render(this.scene, this.cam);
-    // Dessine les particules Babylon.js du Soleil sur une couche alpha, synchronisée avec la caméra principale.
-    this.sunBabylonParticles?.render(this.cam, this.sunMesh);
     // Fin de la mesure du rendu.
     probe.renderEnd();
     // Fin de la mesure de l'image.
@@ -3798,8 +3797,6 @@ export class SolarEngine {
     this.orbiters.dispose();
     // Libère ShadowCam.
     this.shadowcam.dispose();
-    // Libère la couche Babylon.js des particules solaires et son contexte WebGL.
-    this.sunBabylonParticles?.dispose();
     // Libère le ciel.
     this.sky.dispose();
     // Libère les satellites.

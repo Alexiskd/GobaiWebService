@@ -1,0 +1,29 @@
+{
+  "format": "glTF 2.0 binary (.glb)",
+  "models": [
+    {
+      "id": "mars",
+      "name": "Mars",
+      "file": "mars.glb",
+      "bytes": 3146436,
+      "radiusUnits": 1.0,
+      "vertices": 33153,
+      "triangles": 65536,
+      "texture": "embedded JPEG 2048x1024",
+      "surface": "Procedural UV sphere with cratered albedo and subtle illustrative relief",
+      "scientificNote": "Visual asset only; not a measured global DEM or navigation-grade surface model."
+    },
+    {
+      "id": "mercury",
+      "name": "Mercury",
+      "file": "mercury.glb",
+      "bytes": 3635784,
+      "radiusUnits": 1.0,
+      "vertices": 33153,
+      "triangles": 65536,
+      "texture": "embedded JPEG 2048x1024",
+      "surface": "Procedural UV sphere with cratered albedo and subtle illustrative relief",
+      "scientificNote": "Visual asset only; not a measured global DEM or navigation-grade surface model."
+    }
+  ]
+}

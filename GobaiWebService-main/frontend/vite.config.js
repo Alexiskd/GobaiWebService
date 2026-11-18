@@ -11,32 +11,31 @@ export default defineConfig({
   plugins: [react()],
   // Construction (début).
   build: {
+    // Points d'entrée : application, page iframe, API ES module et Web Component publics.
+    rollupOptions: {
+      input: {
+        app: fileURLToPath(new URL('./index.html', import.meta.url)),
+        embed: fileURLToPath(new URL('./embed.html', import.meta.url)),
+        'gobai-embed': fileURLToPath(new URL('./src/embed/client.js', import.meta.url)),
+        'gobai-planet': fileURLToPath(new URL('./src/embed/gobai-planet.js', import.meta.url)),
+      },
+      output: {
+        entryFileNames: (chunk) => chunk.name === 'gobai-embed' || chunk.name === 'gobai-planet'
+          ? '[name].js'
+          : 'assets/[name]-[hash].js',
+        manualChunks(id) {
+          if (id.includes('/backend/src/services/ephemeris/vsop87a/')) return 'vsop87-data';
+          if (!id.includes('/node_modules/')) return;
+          if (id.includes('/node_modules/three/')) return 'three-vendor';
+          if (id.includes('/node_modules/@mui/') || id.includes('/node_modules/@emotion/')) return 'ui-vendor';
+          if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/scheduler/')) return 'react-vendor';
+        },
+      },
+    },
     // Seuil de l'avertissement de taille des fichiers produits : 2 500 ko (500 ko par défaut). Les fichiers sont déjà
     // découpés (three.js, MUI, React, séries VSOP87A) ; three.js (~700 ko) et les séries VSOP87A (~1,3 Mo de source)
     // dépassent à eux seuls les 500 ko par défaut sans que ce soit un problème : ils restent en cache dans le navigateur.
     chunkSizeWarningLimit: 2500,
-    // Options de Rollup (début).
-    rollupOptions: {
-      // Sortie (début).
-      output: {
-        // manualChunks : range chaque module dans un fichier (début).
-        manualChunks(id) {
-          // Séries VSOP87A : données scientifiques séparées du bundle applicatif pour le cache navigateur.
-          if (id.includes('/backend/src/services/ephemeris/vsop87a/')) return 'vsop87-data';
-          // Hors des dépendances : choix automatique.
-          if (!id.includes('/node_modules/')) return;
-          // three.js : fichier « three-vendor ».
-          if (id.includes('/node_modules/three/')) return 'three-vendor';
-          // MUI et Emotion : fichier « ui-vendor ».
-          if (id.includes('/node_modules/@mui/') || id.includes('/node_modules/@emotion/')) return 'ui-vendor';
-          // React, React DOM et scheduler : fichier « react-vendor ».
-          if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/scheduler/')) return 'react-vendor';
-        // Fin de manualChunks.
-        },
-      // Fin de la sortie.
-      },
-    // Fin des options de Rollup.
-    },
   // Fin de la construction.
   },
   // Résolution des chemins (début).

@@ -77,7 +77,7 @@ describe('table de priorité des sources de la Terre', () => {
     expect([EARTH_TIERS[0].maxZoom, EARTH_TIERS[EARTH_TIERS.length - 1].maxZoom]).toEqual([19, 3]);
     // Sur téléphone, jamais plus de tuiles que sur ordinateur, et au moins 85 (la mosaïque instantanée).
     for (const t of EARTH_TIERS) expect(t.maxTiles.phone <= t.maxTiles.desktop && t.maxTiles.phone >= 85).toBe(true);
-    // La carte marine passe de NOAA (loin) à GEBCO seule (près).
+    // La carte marine passe de la teinte NOAA (loin) à GEBCO seule (près).
     expect([EARTH_TIERS[EARTH_TIERS.length - 1].details.marine, EARTH_TIERS[0].details.marine]).toEqual(['noaa', 'gebco']);
   // Fin du test.
   });
@@ -87,7 +87,7 @@ describe('table de priorité des sources de la Terre', () => {
     // La table.
     const plan = earthPlan(enabledSources(env), env);
     // Version 3, avec la carte marine du serveur.
-    expect([plan.version, plan.marine]).toEqual([4, earthMarine(env)]);
+    expect([plan.version, plan.marine]).toEqual([3, earthMarine(env)]);
     // Ordre des étapes, du plus lointain au plus proche.
     const order = ['noaa', 'fondu', 'gebco'];
     // Étapes des paliers, du plus lointain au plus proche.

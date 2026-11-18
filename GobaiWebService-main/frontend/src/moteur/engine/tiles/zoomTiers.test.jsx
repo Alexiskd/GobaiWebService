@@ -12,11 +12,11 @@ import { lonLatToXYZ, tileKey, xyzToLonLat } from './mercator.jsx';
 // Paliers d'essai, comme la table du serveur les sert (dans le désordre, pour vérifier le tri).
 const TIERS = [
   // Espace : sans limite, niveau 3.
-  { id: 'espace', maxKm: null, maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { marine: 'gebco' } },
+  { id: 'espace', maxKm: null, maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { marine: 'noaa' } },
   // Rue : jusqu'à 0,4 km, niveau 19.
-  { id: 'rue', maxKm: 0.4, maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'noaa' } },
+  { id: 'rue', maxKm: 0.4, maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'gebco' } },
   // Ville : jusqu'à 40 km, niveau 17.
-  { id: 'ville', maxKm: 40, maxZoom: 17, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'noaa' } },
+  { id: 'ville', maxKm: 40, maxZoom: 17, maxTiles: { desktop: 280, phone: 210 }, details: { marine: 'gebco' } },
   // Pays : jusqu'à 2 500 km, niveau 10.
   { id: 'pays', maxKm: 2500, maxZoom: 10, maxTiles: { desktop: 220, phone: 170 }, details: { marine: 'fondu' } },
 // Fin des paliers.
