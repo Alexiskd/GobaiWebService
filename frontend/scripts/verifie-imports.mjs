@@ -8,13 +8,13 @@
  * Il ne regarde que les modules du projet (chemins relatifs et alias « @/ ») : les paquets installés sont
  * l'affaire de npm et de Vite.
  *
- * Emploi : node scripts/verifie-imports.mjs src
+ * Emploi : node scripts/verifie-imports.mjs Car
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
-// Dossier à parcourir, donné en argument (« src » par défaut).
-const ROOT = resolve(process.argv[2] || 'src');
+// Dossier à parcourir, donné en argument (« Car » par défaut).
+const ROOT = resolve(process.argv[2] || 'Car');
 
 // Tous les fichiers de code du dossier.
 const files = [];

@@ -11,9 +11,9 @@
 
 ## Fichiers modifiés
 
-- `src/Car/AstreSolideEngine/jplHorizonsClient.jsx` : client JPL, parsing CSV, concurrence limitée et interpolation.
-- `src/Car/AstreSolideEngine/engine.jsx` : injection des vecteurs JPL dans les positions des planètes et des satellites.
-- `src/Fairing/components/scene/useMoonFeeds.jsx` : chargement JPL direct, sans endpoints du backend pour les éphémérides.
+- `Car/Engine/AstreSolideEngine/jplHorizonsClient.jsx` : client JPL, parsing CSV, concurrence limitée et interpolation.
+- `Car/Engine/AstreSolideEngine/engine.jsx` : injection des vecteurs JPL dans les positions des planètes et des satellites.
+- `Car/Fairing/components/scene/useMoonFeeds.jsx` : chargement JPL direct, sans endpoints du backend pour les éphémérides.
 
 ## Limites
 

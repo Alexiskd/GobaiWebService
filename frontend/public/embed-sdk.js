@@ -9,7 +9,7 @@
  *
  * Crée une <iframe> transparente affichant le globe 3D interactif, pilote le moteur par commandes
  * et reçoit ses événements via postMessage. Le protocole est défini côté page embarquée dans
- * src/embed/embedProtocol.js — ce fichier en est le miroir : le SDK est un script statique sans
+ * Car/Computing/embed/embedProtocol.js — ce fichier en est le miroir : le SDK est un script statique sans
  * bundler, il ne peut pas importer ce module. Tout changement doit être répercuté des deux côtés.
  */
 (function (global) {

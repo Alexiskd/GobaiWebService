@@ -47,8 +47,8 @@ export default defineConfig({
   resolve: {
     // Alias (début).
     alias: {
-      // « @ » désigne le dossier src.
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // « @ » désigne le dossier Car.
+      '@': fileURLToPath(new URL('./Car', import.meta.url)),
     // Fin des alias.
     },
   // Fin de la résolution.
