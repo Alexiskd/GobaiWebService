@@ -1,0 +1,120 @@
+/* Documents (styles limités au conteneur .gobai-docs, fenêtre Données — onglet Documentation). */
+/* Réutilise les variables de la galerie (--ink, --muted, --panel, --line, --void, --mono, --display). */
+
+/* Début de la règle pour « .gobai-docs ». */
+.gobai-docs {
+  /* Hérite des variables de la galerie : mêmes couleurs et polices. */
+  --planet: #8fb4e3;
+  /* Couleurs de la fenêtre. */
+  --ink: #e8ecf4; --muted: #8b93a7; --panel: #10131b; --line: #232838; --void: #07080d;
+  --display: 'Syne', sans-serif; --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  /* Couleur du texte et police de base. */
+  color: var(--ink); font-family: var(--sans);
+  /* Marges intérieures du bas pour laisser respirer. */
+  padding-bottom: 48px;
+/* Fin de la règle. */
+}
+
+/* Pour « .gobai-docs, .gobai-docs * » : calcul de la taille de la boîte : border-box. */
+.gobai-docs, .gobai-docs * { box-sizing: border-box; }
+
+/* Pour « .gobai-docs .docs-wrap » : largeur maximale : 1400px ; marge extérieure : 0 auto ; marges intérieures. */
+.gobai-docs .docs-wrap { max-width: 1400px; margin: 0 auto; padding: 28px max(16px, 3vw); }
+
+/* Pour « .gobai-docs .doc-head » : empilement des éléments. */
+.gobai-docs .doc-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+
+/* Pour « .gobai-docs .doc-title » : grand titre. */
+.gobai-docs .doc-title { font: 800 30px/1.1 var(--display); letter-spacing: .01em; margin: 0; }
+
+/* Pour « .gobai-docs .doc-sub » : sous-titre. */
+.gobai-docs .doc-sub { margin: 0; color: var(--muted); font-size: 14px; }
+
+/* Pour « .gobai-docs .doc-designation » : désignation à côté du titre. */
+.gobai-docs .doc-designation { font: 13px var(--mono); color: var(--muted); }
+
+/* Pour « .gobai-docs .doc-chips » : rangée de pastilles. */
+.gobai-docs .doc-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+
+/* Pour « .gobai-docs .doc-chip » : une pastille. */
+.gobai-docs .doc-chip { font: 11px var(--mono); padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--panel); }
+
+/* Pour « .gobai-docs .doc-actions » : rangée des actions. */
+.gobai-docs .doc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; }
+
+/* Pour « .gobai-docs .doc-btn » : un bouton d'action. */
+.gobai-docs .doc-btn {
+  display: inline-flex; align-items: center; gap: 6px; font: 500 13px var(--sans);
+  color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 14px; cursor: pointer; text-decoration: none;
+}
+.gobai-docs .doc-btn:hover { border-color: var(--muted); }
+
+/* Pour « .gobai-docs .doc-src » : lien vers la source. */
+.gobai-docs .doc-src { font: 12px var(--mono); color: var(--muted); margin-left: auto; text-decoration: none; }
+.gobai-docs .doc-src:hover { color: var(--ink); }
+
+/* Pour « .gobai-docs .doc-back » : bouton de retour. */
+.gobai-docs .doc-back {
+  font: 500 13px var(--sans); color: var(--muted); background: none; border: none;
+  padding: 0 0 14px; cursor: pointer; text-align: left;
+}
+.gobai-docs .doc-back:hover { color: var(--ink); }
+
+/* Pour « .gobai-docs .doc-pdf » : la visionneuse PDF. */
+.gobai-docs .doc-pdf { width: 100%; height: 78vh; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); margin-bottom: 20px; }
+
+/* Pour « .gobai-docs .doc-grid » : grille des blocs de données. */
+.gobai-docs .doc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 24px; }
+
+/* Pour « .gobai-docs .doc-card » : un bloc de données. */
+.gobai-docs .doc-card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+
+/* Pour « .gobai-docs .doc-card h2 » et les titres : petits titres. */
+.gobai-docs .doc-card h2, .gobai-docs .doc-text h2 { font: 600 13px var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+
+/* Pour « .gobai-docs dl » : liste de définitions en deux colonnes. */
+.gobai-docs dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; }
+.gobai-docs dt { font: 11px var(--mono); color: var(--muted); }
+.gobai-docs dd { margin: 0; font-size: 13px; }
+
+/* Pour « .gobai-docs .doc-text p » : paragraphes du résumé. */
+.gobai-docs .doc-text { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.gobai-docs .doc-text p { margin: 0 0 12px; font-size: 14px; line-height: 1.6; max-width: 90ch; }
+
+/* Pour « .gobai-docs .doc-group » : une section de groupe. */
+.gobai-docs .doc-group { margin-bottom: 28px; }
+
+/* Pour « .gobai-docs .doc-group-title » : titre du groupe. */
+.gobai-docs .doc-group-title { font: 600 16px var(--display); margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+
+/* Pour « .gobai-docs .doc-group-count » : compte du groupe. */
+.gobai-docs .doc-group-count { font: 11px var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
+
+/* Pour « .gobai-docs .doc-cards » : grille des cartes. */
+.gobai-docs .doc-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+
+/* Pour « .gobai-docs .doc-card-btn » : une carte cliquable. */
+.gobai-docs .doc-card-btn {
+  display: flex; flex-direction: column; gap: 4px; text-align: left; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+  color: var(--ink); font-family: var(--sans);
+}
+.gobai-docs .doc-card-btn:hover { border-color: var(--muted); }
+
+/* Pour « .gobai-docs .doc-card-name » : nom de la fiche. */
+.gobai-docs .doc-card-name { font: 600 16px var(--display); }
+
+/* Pour « .gobai-docs .doc-card-designation » : désignation. */
+.gobai-docs .doc-card-designation { font: 11px var(--mono); color: var(--muted); }
+
+/* Pour « .gobai-docs .doc-card-sum » : résumé réduit. */
+.gobai-docs .doc-card-sum { font-size: 12.5px; line-height: 1.5; color: var(--ink); opacity: .85; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Pour « .gobai-docs .doc-card-meta » : métadonnées rapides. */
+.gobai-docs .doc-card-meta { font: 11px var(--mono); color: var(--muted); margin-top: 4px; }
+
+/* Pour « .gobai-docs .doc-foot » : note de bas de page. */
+.gobai-docs .doc-foot { font: 12px var(--mono); color: var(--muted); margin-top: 8px; }
+.gobai-docs .doc-foot code { font-family: var(--mono); }

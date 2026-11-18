@@ -68,8 +68,8 @@ export const SITE_TREE = node('Accueil', '/', [
     node('Pluton', '/pluton', [node('Charon', '/charon')]),
   // Fin de la liste des enfants.
   ]),
-  // La page « Galerie » : /galerie.
-  node('Galerie', '/galerie'),
+  // La page « Données » : /donnees.
+  node('Données', '/donnees'),
   // La page « Anthropic Node Open Source » : /node.
   node('Anthropic Node Open Source', '/node'),
   // La page des dons : /faire-un-don.
