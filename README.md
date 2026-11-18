@@ -41,6 +41,10 @@ Supprimer le backend ne transforme pas les routes serveur en fonctionnalités st
 
 Ne jamais placer de clé privée, secret ou identifiant de base de données dans une variable `VITE_*` : ces valeurs sont incorporées au JavaScript livré au navigateur. Si une API tierce exige un secret ou un proxy, elle nécessite un service externe séparé.
 
+## API NestJS dans Computing
+
+L'API du frontend est traduite en NestJS dans `frontend/Car/Computing/api`. Le site statique n'en dépend pas : sans API joignable, le client de `Computing/api` replie sur les mêmes contrats embarqués. Pour la lancer localement : `npm install && npm start` dans ce dossier (hôte 127.0.0.1, port réglable par `API_PORT`).
+
 ## Déploiement manuel
 
 `autoDeploy: false` est conservé : le déploiement doit être déclenché manuellement dans Render. Aucun commit, push, pull request ou déploiement n'a été effectué par cette livraison.

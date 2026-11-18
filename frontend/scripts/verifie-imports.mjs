@@ -22,6 +22,8 @@ const files = [];
 (function walk(dir) {
   // Chaque entrée.
   for (const entry of readdirSync(dir)) {
+    // Les paquets installés sont l'affaire de npm : on ne les parcourt jamais.
+    if (entry === 'node_modules') continue;
     // Son chemin complet.
     const path = join(dir, entry);
     // Un dossier : on descend ; un fichier de code : on le garde.
