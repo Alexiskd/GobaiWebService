@@ -8,7 +8,7 @@ import {
   heliocentric, heliocentricEcliptic, heliocentricState, moonGeocentric, orbitPositions, solveKepler,
 } from './planetOrbits.jsx';
 // Importe la table des éléments d'orbite des planètes.
-import { PLANETS } from '../data/astronomy/data/bodies.data';
+import { PLANETS } from '../../../../backend/src/services/data/bodies.data';
 
 /** Éléments d'une planète par son nom. */
 const el = (nom) => PLANETS.find((p) => p.name === nom).elements;
