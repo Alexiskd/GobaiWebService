@@ -246,6 +246,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const settingsOpen = panels.panel === 'settings'; const setSettingsOpen = (on) => panels.show('settings', on);
   // Moniteur de performance masqué par défaut ; activable depuis les paramètres.
   const [performanceMonitorVisible, setPerformanceMonitorVisible] = useState(false);
+  // Affichage relativiste : les orbites suivent la métrique de Schwarzschild (rosette précessée, grille filaire).
+  const [schwarzschild, setSchwarzschild] = useState(false);
   // Mistral : posé dans le HUD à la place de la navigation, indépendant des autres fenêtres (il reste ouvert quand il
   // en ouvre une) et jamais modal — la scène et le moteur restent utilisables pendant tout l'échange.
   // État : panneau de Mistral affiché ou non ; affiché au départ, puisqu'il tient la place de la navigation.
@@ -730,6 +732,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
         night={night}
         // Ombre : bascule jour/nuit, avec la transition de thème.
         onToggleDayNight={() => withThemeTransition(toggleDayNight)}
+        // E = mc² : bascule l'affichage de Schwarzschild (orbites en rosette, grille filaire de courbure).
+        schwarzschild={schwarzschild}
+        onToggleSchwarzschild={() => setSchwarzschild((v) => engineRef.current?.setSchwarzschild(!v) ?? !v)}
         // Rotation : inverse l'état.
         onToggleAuto={() => camera.setAuto((v) => !v)}
         // Vue 3/4 : inverse l'état.

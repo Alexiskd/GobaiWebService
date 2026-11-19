@@ -18,6 +18,8 @@ export function Toolbar({
   hud, auto, tilt,
   // Les rappels de recherche, d'assistant, d'ombre, de rotation, de vue 3/4, de verrouillage, de vue globale et d'aide, avec leurs états.
   onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onToggleAuto, onToggleTilt, onToggleLock, onReset, onHelp,
+  // Affichage Schwarzschild : son état et son rappel (à côté du bouton Ombre).
+  schwarzschild, onToggleSchwarzschild,
   // Le son (actif par défaut), la langue, les sources, la galerie, les paramètres, le plateau et le partage.
   sound = true, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onGallery, onSettings, onPlateau, onShare, onContribute,
   // L'arborescence des astres (rappel et état), et le moniteur de performance (rappel et état).
@@ -45,6 +47,8 @@ export function Toolbar({
     // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre) ; le moniteur de
     // performance n'a de bouton que sur ordinateur (sur téléphone, la feuille « Données » affiche les mesures).
     onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onContribute,
+    // Affichage Schwarzschild : l'état et le rappel passés à la liste.
+    schwarzschild, onToggleSchwarzschild,
     // L'arborescence des astres, et le moniteur de performance hors téléphone.
     onNavigator, navigatorOpen, onTogglePerformanceMonitor: compact ? null : onTogglePerformanceMonitor, performanceMonitorVisible,
   // Fin de l'appel.
