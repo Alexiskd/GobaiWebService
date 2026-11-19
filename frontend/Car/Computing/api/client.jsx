@@ -45,6 +45,8 @@ function staticResponse(path) {
   if (p === '/ephemeris/satellites') return { source: 'local', satellites: [] };
   if (p === '/ephemeris/moon/phases') return { source: 'local', items: [] };
   if (p === '/tiles/moon-blend/status') return { database: false, variants: [] };
+  // Test de disponibilité des astres : sans serveur, rien n'est déclaré prêt (la Lune et le Soleil restent toujours là).
+  if (p === '/tiles/bodies/availability') return { planets: [], satellites: [] };
   if (p === '/borders') return { source: 'local', attribution: 'Données géographiques embarquées', count: 0, lines: [], coastlines: [] };
   if (p === '/places/labels') return { attribution: 'Catalogue statique', count: 0, items: [] };
   if (p === '/pointclouds') return { available: false, items: [] };
