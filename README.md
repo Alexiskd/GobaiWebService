@@ -45,6 +45,17 @@ Ne jamais placer de clé privée, secret ou identifiant de base de données dans
 
 L'API du frontend est traduite en NestJS dans `frontend/Car/Computing/api`. Le site statique n'en dépend pas : sans API joignable, le client de `Computing/api` replie sur les mêmes contrats embarqués. Pour la lancer localement : `npm install && npm start` dans ce dossier (hôte 127.0.0.1, port réglable par `API_PORT`).
 
+### Collection galerie raccordée à PostgreSQL
+
+Le module `galerie` de l'API expose `GET /galerie` : il lit la table PostgreSQL définie par `GALERIE_TABLE` (défaut : `galerie_items`) via `DATABASE_URL`. Le mappage de colonnes est souple (`url`/`file`, `title`/`titre`/`name`, `folder`/`dossier`/`album`, `kind`/`mime`), avec repli gracieux sur `{"total":0,"folders":[]}` en cas d'absence de `DATABASE_URL` ou d'erreur SQL.
+
+Pour déployer ce module sur Render, créez un **Web Service** avec :
+
+- Racine du dépôt : `frontend/Car/Computing/api`
+- Commande de build : `npm install`
+- Commande de démarrage : `npm start`
+- Variable d'environnement : `DATABASE_URL` = chaîne de connexion fournie par votre instance Render PostgreSQL
+
 ## Déploiement manuel
 
 `autoDeploy: false` est conservé : le déploiement doit être déclenché manuellement dans Render. Aucun commit, push, pull request ou déploiement n'a été effectué par cette livraison.

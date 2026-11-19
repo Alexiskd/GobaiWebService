@@ -1,15 +1,19 @@
 // Client HTTP de l'API NestJS de Computing : les routes sont servies par `npm start` dans ce dossier,
 // avec repli local sur les données embarquées quand l'API ne répond pas (mode frontend statique).
-export const API_ROOT = '';
-export const API_BASE = '';
+// Base d'origine de l'API : réglée à la construction par VITE_API_BASE (ex. https://gobai-api.onrender.com),
+// vide par défaut pour garder le mode même origine du site statique. Ce n'est jamais un secret.
+export const API_BASE = String(import.meta.env?.VITE_API_BASE ?? '').replace(/\/+$/, '');
+export const API_ROOT = API_BASE;
 export const PUBLIC_SITE_URL = '';
-export const PUBLIC_API_BASE = '';
+export const PUBLIC_API_BASE = API_BASE;
 export const PUBLIC_DOCS_URL = '';
 
 export function resolveApiUrl(path) {
   if (!path || typeof path !== 'string') return path;
-  // Les chemins locaux restent locaux ; aucune origine API n'est ajoutée.
-  return path;
+  // Une adresse déjà absolue (http/https, protocole relatif) reste telle quelle.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')) return path;
+  // Les chemins relatifs sont complétés par l'origine de l'API, quand elle est réglée.
+  return API_BASE ? `${API_BASE}${path}` : path;
 }
 
 export class ApiError extends Error {
