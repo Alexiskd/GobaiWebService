@@ -292,7 +292,7 @@ export function jokerPointSegments(segs, azimuth, outerAu, drop, pom) {
  * et finit en pompon (voir jokerPointSegments).
  * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène.
  */
-export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 6, jokerPoints = 6, exaggeration = WELL_EXAGGERATION, sunRadiusAu = 0.00465 }) {
+export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 48, jokerPoints = 12, exaggeration = WELL_EXAGGERATION, sunRadiusAu = 0.00465 }) {
   // Les rayons des anneaux.
   const radii = gridRadii(outerAu, rings, sunRadiusAu);
   // Segments des anneaux (rings × spokes) et des rayons (spokes × (rings − 1) tronçons) :
@@ -334,8 +334,7 @@ export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 6, jok
   const drop = (1 / 3) * throat;
   // Le rayon du pompon, en unités de scène.
   const pom = 0.002 * outerAu * AU_UNITS;
-  // Les pointes du chapeau : une par faisceau de rayons (le faisceau des six rayons, chacun la sienne), à
-  // azimuth au milieu du faisceau, entre deux rayons du puits.
+  // Les pointes du chapeau : une par faisceau de rayons, à azimuth entre deux rayons du puits.
   for (let j = 0; j < jokerPoints; j++) {
     // L'azimuth de la pointe, au milieu du faisceau.
     jokerPointSegments(segs, ((j + 0.5) / jokerPoints) * 2 * Math.PI, outerAu, drop, pom);
