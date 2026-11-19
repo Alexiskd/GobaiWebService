@@ -2929,6 +2929,25 @@ export class SolarEngine {
     this.scene.add(grid);
     // La garde.
     this.schwarzschild.grid = grid;
+    // Le second plan : la même courbure, posée sur le plan vertical perpendiculaire à l'écliptique — comme la
+    // sphère du Soleil traversée par deux disques circulaires perpendiculaires, le disque bleu sur l'écliptique,
+    // le disque violet qui le coupe à angle droit. La géométrie est la même (elle est partagée), seule la pose
+    // change : le plan entier est tourné d'un quart de tour autour de l'axe vertical de la scène.
+    const vertical = new THREE.LineSegments(gridGeometry, new THREE.LineBasicMaterial({
+      color: 0xb48fe0, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
+    }));
+    // Le quart de tour : le disque de l'écliptique (x-z) devient le disque vertical (y-z).
+    vertical.rotation.z = Math.PI / 2;
+    // Dessiné en même temps que le disque bleu.
+    vertical.renderOrder = 3;
+    // Jamais écarté du rendu : il suit le Soleil comme le premier.
+    vertical.frustumCulled = false;
+    // Son nom.
+    vertical.name = 'schwarzschild-grid-vertical';
+    // L'ajoute à la scène.
+    this.scene.add(vertical);
+    // La garde.
+    this.schwarzschild.gridVertical = vertical;
     // Pour chaque planète : sa rosette (le tracé cible du fondu), au même format que les rubans, et l'image
     // miroir de son ruban (le double affichage symétrique, collé sous forme de toupie).
     for (const p of this.planets) {
@@ -3009,6 +3028,18 @@ export class SolarEngine {
     // Si elle est visible, elle suit le Soleil, exactement au centre du puits de courbure (représentation de la
     // métrique de Schwarzschild) — et pas seulement pendant le fondu.
     if (grid.visible) grid.position.copy(this.sunMesh.position);
+    // Le disque vertical : le même fondu, la même pose sur le Soleil (il partage la géométrie du premier).
+    const vertical = s.gridVertical;
+    // S'il est posé : son opacité suit celle du disque bleu, et il suit le Soleil comme lui.
+    if (vertical) {
+      // La même opacité au fond de fondu.
+      vertical.material.opacity = 0.5 * eased;
+      // La même visibilité.
+      vertical.visible = eased > 0.002;
+      // La même pose, exactement centrée sur le Soleil.
+      if (vertical.visible) vertical.position.copy(this.sunMesh.position);
+    // Fin de ce cas.
+    }
   // Fin de updateSchwarzschildFade.
   }
 
@@ -4727,6 +4758,16 @@ export class SolarEngine {
       // Fin de ce cas.
       }
     // Fin des planètes.
+    }
+    // Libère le disque vertical, s'il a été posé : seul son matériau lui appartient (la géométrie est partagée
+    // avec le disque bleu, qui la libère).
+    if (this.schwarzschild?.gridVertical) {
+      // Son matériau, avant de le retirer de la scène.
+      this.schwarzschild.gridVertical.material.dispose();
+      this.scene.remove(this.schwarzschild.gridVertical);
+      // Plus de disque vertical.
+      this.schwarzschild.gridVertical = null;
+    // Fin de ce cas.
     }
     // Libère la grille filaire de la courbure, si elle a été posée.
     if (this.schwarzschild?.grid) {
