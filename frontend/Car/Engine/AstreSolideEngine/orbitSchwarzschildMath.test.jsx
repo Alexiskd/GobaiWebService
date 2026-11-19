@@ -6,6 +6,8 @@ import {
   precessionPerCenturyArcsec, precessionPerOrbitRad,
   schwarzschildGeodesic, schwarzschildGridSegments, schwarzschildRadiusM,
 } from './orbitSchwarzschildMath.jsx';
+// Le catalogue complet des astres : pour vérifier que la grille englobe le plus lointain (l'aphélie d'Éris).
+import { PLANETS } from '../SystemeEngine/data/astronomy/data/bodies.data.ts';
 
 // Éléments képlériens de Mercure, en tableau des douze nombres (J2000 + dérive séculaire).
 const MERCURY_ELEMENTS = [
@@ -72,13 +74,14 @@ test('mixPoints interpole chaque composante et borne les extrêmes', () => {
 });
 
 test('les rayons de la grille s’écartent du Soleil par pas croissants', () => {
-  // Vingt-huit anneaux sur un disque de 50 UA, la surface du Soleil comme bord intérieur (0,00465 UA).
-  const radii = gridRadii(50, 28, 0.00465);
+  // Vingt-huit anneaux sur un disque bordé par l'aphélie de la naine la plus lointaine (Éris : a(1+e) ≈ 97,7 UA,
+  // arrondi à 98 par le moteur), la surface du Soleil comme garde-fou intérieur (0,00465 UA, non atteinte ici).
+  const radii = gridRadii(98, 28, 0.00465);
   assert.equal(radii.length, 28);
-  // Premier anneau : espacement quadratique (50 × (1/28)²), qui n'est pas la surface du Soleil
+  // Premier anneau : espacement quadratique (98 × (1/28)²), qui n'est pas la surface du Soleil
   // (le garde-fou s'applique seulement si l'anneau voulait passer dessous).
-  assert.ok(Math.abs(radii[0] - 50 / 784) < 1e-9, `premier anneau = ${radii[0]} UA (attendu ≈ ${(50 / 784).toFixed(4)} UA)`);
-  assert.equal(radii[radii.length - 1], 50);
+  assert.ok(Math.abs(radii[0] - 98 / 784) < 1e-9, `premier anneau = ${radii[0]} UA (attendu ≈ ${(98 / 784).toFixed(4)} UA)`);
+  assert.equal(radii[radii.length - 1], 98);
   for (let i = 1; i < radii.length; i++) assert.ok(radii[i] > radii[i - 1], `anneau ${i} croissant`);
 });
 
@@ -177,4 +180,17 @@ test('la grille est un double puits : la seconde moitié est le miroir exact de 
     assert.equal(segs[half + i + 1], -segs[i + 1], `y du point ${i / 3}`);
     assert.equal(segs[half + i + 2], segs[i + 2], `z du point ${i / 3}`);
   }
+});
+
+test('la grille englobe tous les astres du système : aphélie de la naine la plus lointaine (Éris)', () => {
+  // L'aphélie de chaque astre du catalogue : a(1+e) ; Éris est de loin la plus lointaine (≈ 97,7 UA).
+  const aphelias = PLANETS.map((b) => b.elements[0] * (1 + b.elements[2]));
+  const farthest = Math.max(...aphelias);
+  // Le disque de la grille de Schwarzschild du moteur l'englobe, avec une marge.
+  const outer = Math.ceil(farthest);
+  assert.equal(outer, 98, `bord de grille = ${outer} UA (aphélie d'Éris arrondi au-dessus)`);
+  assert.ok(outer >= farthest, `la grille (${outer} UA) englobe l'aphélie le plus lointain (${farthest.toFixed(2)} UA)`);
+  // Le module des rayons renvoie bien ce bord pour ce disque.
+  const radii = gridRadii(outer, 28, 0.00465);
+  assert.equal(radii[radii.length - 1], outer);
 });
