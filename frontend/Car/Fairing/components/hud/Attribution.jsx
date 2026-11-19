@@ -22,6 +22,8 @@ import { API_GROUPS, countApis } from './apiList.js';
 import { apiState, getAdminToken, getApiBlockState, refreshServerBlocked, setAdminToken, setApiBlocked, subscribe } from '@/Engine/shared/lib/apiBlock';
 // Importe l'onglet du flux cognitif.
 import { FluxCognitif } from './FluxCognitif.jsx';
+// Importe l'onglet de la théorie quantique.
+import { TheorieQuantique } from './TheorieQuantique.jsx';
 // Onglet « Documentation API » : documentation de l'API gratuite.
 import { ApiDocs } from './ApiDocs.jsx';
 
@@ -633,7 +635,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
         value={tab}
         // Au changement : affiche l'onglet choisi.
         onChange={(e, v) => setTab(v)}
-        // Cinq onglets : défilement horizontal.
+        // Sept onglets : défilement horizontal.
         // Défilement horizontal.
         variant="scrollable"
         // Boutons de défilement affichés au besoin.
@@ -656,6 +658,8 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
         <Tab value="docs" label="Documentation API" id="node-tab-docs" aria-controls="node-panel-docs" />
         {/* Onglet « Flux cognitif ». */}
         <Tab value="flux" label="Flux cognitif" id="node-tab-flux" aria-controls="node-panel-flux" />
+        {/* Onglet « Théorie quantique ». */}
+        <Tab value="theorie" label="Théorie quantique" id="node-tab-theorie" aria-controls="node-panel-theorie" />
       {/* Fin de la barre d'onglets. */}
       </Tabs>
       {/* Contenu de la boîte de dialogue. */}
@@ -663,7 +667,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
         {/* Panneau de l'onglet, relié à son onglet pour les lecteurs d'écran. */}
         <Box role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`} sx={{ maxWidth: 1120, mx: 'auto', minWidth: 0 }}>
           {/* Le contenu de l'onglet affiché ; « Sources et Entreprises » par défaut. */}
-          {tab === 'docs' ? <ApiDocs /> : tab === 'flux' ? <FluxCognitif /> : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />}
+          {tab === 'theorie' ? <TheorieQuantique /> : tab === 'docs' ? <ApiDocs /> : tab === 'flux' ? <FluxCognitif /> : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />}
         {/* Fin du panneau. */}
         </Box>
         {/* Note de bas de fenêtre. */}
