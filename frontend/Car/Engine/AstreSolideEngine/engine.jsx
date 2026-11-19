@@ -2914,7 +2914,7 @@ export class SolarEngine {
     // plus lointaine du catalogue (Éris, a·(1+e) ≈ 97,7 UA, arrondi au-dessus) : la grille englobe tous les astres
     // du système, où qu'ils soient sur leur orbite, et le Soleil en reste exactement le centre.
     const outerAu = Math.ceil(Math.max(...PLANETS.map((b) => b.elements[0] * (1 + b.elements[2]))));
-    gridGeometry.setAttribute('position', new THREE.BufferAttribute(schwarzschildRays({ outerAu }), 3));
+    gridGeometry.setAttribute('position', new THREE.BufferAttribute(schwarzschildRays({ outerAu, rays: 2 }), 3));
     // Le maillage de la grille, en lignes, sans écriture de profondeur ni éclairage : un fil de courbure.
     const grid = new THREE.LineSegments(gridGeometry, new THREE.LineBasicMaterial({
       color: 0x6f86b8, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
