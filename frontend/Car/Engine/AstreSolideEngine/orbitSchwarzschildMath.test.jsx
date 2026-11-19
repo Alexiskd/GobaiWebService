@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { AU_UNITS, elementsAt } from './planetOrbits.jsx';
 import {
   GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, easeInOutCubic, gridRadii, gridWellY, mirrorY, mixPoints,
+  WELL_EXAGGERATION,
   precessionPerCenturyArcsec, precessionPerOrbitRad,
   schwarzschildGeodesic, schwarzschildGridSegments, schwarzschildRadiusM,
 } from './orbitSchwarzschildMath.jsx';
@@ -167,18 +168,39 @@ test('mirrorY inverse la hauteur et garde le plan de l\u2019\u00e9cliptique', ()
   assert.deepEqual([...out], [...mir]);
 });
 
-test('la grille est un double puits : la seconde moitié est le miroir exact de la première', () => {
-  // Les segments du double puits, sur un petit disque pour le test.
+test('la grille est un chapeau du joker : pointes pendantes sous le plan de l\u2019\u00e9cliptique', () => {
+  // Les segments du puits, sur un petit disque pour le test.
   const segs = schwarzschildGridSegments({ outerAu: 50, rings: 6, spokes: 8 });
-  // La moitié du tampon, en points entiers.
-  const half = segs.length / 2;
-  assert.equal(segs.length % 2, 0);
-  assert.equal(half % 3, 0);
-  // Chaque segment du dessus est le miroir exact de son homologue du dessous.
-  for (let i = 0; i < half; i += 3) {
-    assert.equal(segs[half + i], segs[i], `x du point ${i / 3}`);
-    assert.equal(segs[half + i + 1], -segs[i + 1], `y du point ${i / 3}`);
-    assert.equal(segs[half + i + 2], segs[i + 2], `z du point ${i / 3}`);
+  // Chaque point : sous le plan de l'écliptique (y ≤ 0), à la maille du bord près.
+  for (let i = 1; i < segs.length; i += 3) {
+    assert.ok(segs[i] <= 1e-6 * AU_UNITS, `y du point ${i / 3} = ${segs[i]}`);
+  // Fin des points.
+  }
+});
+
+test('les pointes du joker pendent du bord : recourbement vers l’intérieur et pompon au bout', () => {
+  // Un petit disque : l'attache au bord, le bout de la pointe, le pompon, loin du fouillis des pointes voisines.
+  const outerAu = 50, rings = 2, spokes = 8, strandSteps = 24, pomSteps = 12;
+  // Les paramètres du chapeau, recalculés comme dans le module (une pointe par faisceau de rayons).
+  const throat = -gridWellY(0.00465, outerAu, WELL_EXAGGERATION) * AU_UNITS;
+  const drop = (1 / 3) * throat;
+  const pom = 0.002 * outerAu * AU_UNITS;
+  // Les segments de la première pointe, après le puits (les anneaux, puis les rayons).
+  const depart = (rings * spokes + spokes * (rings - 1)) * 6;
+  const segs = schwarzschildGridSegments({ outerAu, rings, spokes, strandSteps });
+  // L'attache : au bord du disque, sur le plan de l'écliptique.
+  assert.ok(Math.abs(segs[depart + 1]) < 1e-9, `attache sur le plan : y = ${segs[depart + 1]}`);
+  const rAttache = Math.hypot(segs[depart], segs[depart + 2]);
+  assert.ok(Math.abs(rAttache - outerAu * AU_UNITS) < 1e-5 * outerAu * AU_UNITS, 'attache au bord du disque');
+  // Le bout du tissu : le relèvement final laisse la pointe à −0,8·drop, et recourbée vers l'intérieur (r = 0,7·outerAu).
+  const bout = depart + (strandSteps - 1) * 6 + 3;
+  assert.ok(Math.abs(segs[bout + 1] + 0.8 * drop) < 1e-6 * drop, `bout relevé à -0,8·drop : y = ${segs[bout + 1]}`);
+  assert.ok(Math.abs(Math.hypot(segs[bout], segs[bout + 2]) - 0.7 * outerAu * AU_UNITS) < 1e-5 * outerAu * AU_UNITS, 'bout recourbé vers l’intérieur');
+  // Le pompon : chaque point des deux cercles à distance pom du bout, ni plus ni moins.
+  for (let i = bout + 3; i < depart + (strandSteps + 2 * pomSteps) * 6; i += 3) {
+    const d = Math.hypot(segs[i] - segs[bout], segs[i + 1] - segs[bout + 1], segs[i + 2] - segs[bout + 2]);
+    assert.ok(Math.abs(d - pom) < 1e-4 * pom, `pompon au bout : d = ${d} au lieu de ${pom}`);
+  // Fin du pompon.
   }
 });
 
