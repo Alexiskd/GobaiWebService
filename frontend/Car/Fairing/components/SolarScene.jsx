@@ -11,6 +11,8 @@ import { defaultVisibility, isKindHidden, planetKind } from '@/Engine/AstreSolid
 // Importe le calcul et l'affichage en console des booléens de chaque astre.
 // Importe la création du magasin du HUD et le crochet qui le lit.
 import { createHudStore, useHud } from '@/Engine/AstreSolideEngine/hudStore';
+// Booléens NASA JPL / Trek de chaque astre : la fonction pure et son affichage console (une ligne par astre).
+import { bodyBooleans, logBodyBooleans } from '@/Engine/AstreSolideEngine/bodyBooleans';
 // Importe le crochet du son des clics.
 import { useBubbleSound } from '@/Fairing/hooks/useBubbleSound';
 // Importe le crochet de la langue de l'interface.
@@ -287,6 +289,14 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Moteur prêt (ou en échec) : l'écran de chargement peut finir sa barre et s'effacer.
   // Dès que le moteur existe ou a échoué, prévient le parent.
   useEffect(() => { if (engine || error) onSettled?.(); }, [engine, error, onSettled]);
+  // Booléens NASA JPL / Trek de chaque astre : affichés une seule fois, dans la console, à l'ouverture de l'application.
+  useEffect(() => {
+    // Le moteur prêt ou en échec suffit ; avant, les astres ne sont pas encore connus.
+    if (!engine && !error) return;
+    // Les booléens : les astres de la navigation, avec les disponibilités du serveur (statiques en mode statique).
+    logBodyBooleans(bodyBooleans(navBodies, data.satelliteStatus || [], camera.hiddenBodies));
+  // Une seule fois à l'ouverture : aucune dépendance.
+  }, []);
   // Sous l'écran de chargement, le moteur tourne au ralenti (voir SolarEngine.setCovered).
   // Transmet au moteur l'indicateur « couverte ».
   useEffect(() => { engine?.setCovered(covered); }, [engine, covered]);

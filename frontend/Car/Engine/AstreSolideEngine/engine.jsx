@@ -66,6 +66,9 @@ import { createMoonSurfaceMaterial, loadMoonModel } from './moonModel.jsx';
 import { ShadowCamLayer } from './shadowcam.jsx';
 // Importe la liste des astres tuilés et leurs altitudes minimales, depuis tiledBodies.
 import { GAS_MIN_ALTITUDE_RADII, TILED_BODIES, TILED_BODY_BY_ID, minAltitudeRadii } from './tiledBodies.jsx';
+// Importe la liste complète des astres (planètes et naines) : elle borne la grille de courbure à l'aphélie de la
+// plus lointaine (Éris), si bien que le disque filaire englobe toujours tous les astres du système.
+import { PLANETS } from '../SystemeEngine/data/astronomy/data/bodies.data.ts';
 // Importe UserMarker, le point de la position de l'utilisateur.
 import { UserMarker } from './userMarker.jsx';
 // Importe flightDistance et flightPlan, le zoom d'arrivée.
@@ -2906,9 +2909,11 @@ export class SolarEngine {
     this.schwarzschild = { progress: 0, goal: 0, lastDrawn: -1 };
     // La géométrie filaire (segments d'anneaux et de rayons).
     const gridGeometry = new THREE.BufferGeometry();
-    // Les segments, calculés par le module mathématique ; disque de 50 UA de rayon, bord intérieur borné par
-    // la surface du Soleil (rayon solaire ≈ 0,00465 UA, par défaut du module).
-    gridGeometry.setAttribute('position', new THREE.BufferAttribute(schwarzschildGridSegments({ outerAu: 50 }), 3));
+    // Les segments, calculés par le module mathématique. Le disque est borné par l'aphélie de la planète naine la
+    // plus lointaine du catalogue (Éris, a·(1+e) ≈ 97,7 UA, arrondi au-dessus) : la grille englobe tous les astres
+    // du système, où qu'ils soient sur leur orbite, et le Soleil en reste exactement le centre.
+    const outerAu = Math.ceil(Math.max(...PLANETS.map((b) => b.elements[0] * (1 + b.elements[2]))));
+    gridGeometry.setAttribute('position', new THREE.BufferAttribute(schwarzschildGridSegments({ outerAu }), 3));
     // Le maillage de la grille, en lignes, sans écriture de profondeur ni éclairage : un fil de courbure.
     const grid = new THREE.LineSegments(gridGeometry, new THREE.LineBasicMaterial({
       color: 0x6f86b8, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -3000,7 +3005,8 @@ export class SolarEngine {
     grid.material.opacity = 0.5 * eased;
     // Visible dès que le fondu commence, cachée et hors rendu une fois effacée.
     grid.visible = eased > 0.002;
-    // Si elle est visible, elle suit le Soleil.
+    // Si elle est visible, elle suit le Soleil, exactement au centre du puits de courbure (représentation de la
+    // métrique de Schwarzschild) — et pas seulement pendant le fondu.
     if (grid.visible) grid.position.copy(this.sunMesh.position);
   // Fin de updateSchwarzschildFade.
   }
@@ -3487,6 +3493,10 @@ export class SolarEngine {
     this.updateShadeFade(dt);
     // Avance le fondu Schwarzschild (orbites en rosette et grille de courbure).
     this.updateSchwarzschildFade(dt);
+    // La grille de courbure reste collée au Soleil, même une fois le fondu terminé (le `rebase` de l'origine
+    // flottante la déplacerait sinon) : le Soleil reste exactement le centre de la représentation.
+    const schwarzschildGrid = this.schwarzschild?.grid;
+    if (schwarzschildGrid?.visible) schwarzschildGrid.position.copy(this.sunMesh.position);
     // Note l'instant.
     this.lastNow = now;
     // Adapte la résolution.
