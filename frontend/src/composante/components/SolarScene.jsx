@@ -70,7 +70,10 @@ import { Langue } from './menus/Langue';
 import { Plateau } from './menus/Plateau/Plateau';
 // Importe la galerie.
 import { Galerie } from './menus/Galerie/Galerie';
-// Importe le panneau d'informations.
+// Importe la composante Boutique : exports payants.
+import { Boutique } from './menus/Boutique/Boutique';
+// Importe le test du retour de la page de paiement d'un export.
+import { hasPurchaseReturn } from '@/moteur/api/store';// Importe le panneau d'informations.
 import { Informations } from './menus/Informations/Informations';
 // Importe la fenêtre de recherche.
 import { Rechercher } from './menus/Rechercher';
@@ -246,6 +249,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const galleryOpen = panels.panel === 'gallery'; const setGalleryOpen = (on) => panels.show('gallery', on);
   // Paramètres : ouverts ou non, et leur ouverture.
   const settingsOpen = panels.panel === 'settings'; const setSettingsOpen = (on) => panels.show('settings', on);
+  // Boutique : ouverte ou non, et son ouverture ; elle s'ouvre seule au retour d'un paiement d'export.
+  const storeOpen = panels.panel === 'store'; const setStoreOpen = (on) => panels.show('store', on);
   // Moniteur de performance masqué par défaut ; activable depuis les paramètres.
   const [performanceMonitorVisible, setPerformanceMonitorVisible] = useState(false);
   // Claude : posé dans le HUD à la place de la navigation, indépendant des autres fenêtres (il reste ouvert quand il
@@ -453,6 +458,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const lidarPoints = useLidarPoints(engine);
   // Retour de Stripe : rouvre la fenêtre pour confirmer le don ou signaler son annulation.
   useEffect(() => { if (hasDonationReturn()) panels.setPanel('donate'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Effet exécuté une seule fois : au retour de la page de paiement d'un export, la Boutique s'ouvre (voir moteur/api/store).
+  useEffect(() => { if (hasPurchaseReturn()) panels.setPanel('store'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Adresse d'une fenêtre (https://www.gobaispace.com/galerie, /node) : ouverte dès l'arrivée.
   // Même liste que WINDOW_PAGES dans backend/src/services/data/body-pages.ts.
   // Effet exécuté une seule fois : ouvre la fenêtre demandée par l'adresse.
@@ -798,6 +805,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
         performanceMonitorVisible={performanceMonitorVisible}
         // Galerie : ouvre la fenêtre.
         onGallery={() => setGalleryOpen(true)}
+        // Boutique : ouvre la fenêtre des exports payants.
+        onStore={() => setStoreOpen(true)}
         // Paramètres : ouvre la fenêtre.
         onSettings={() => setSettingsOpen(true)}
         // Plateau tournant : ouvre la fenêtre.
@@ -1020,6 +1029,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
       {/* La galerie. */}
       <Galerie open={galleryOpen} onClose={() => setGalleryOpen(false)} />
+
+      {/* La boutique des exports payants. */}
+      <Boutique open={storeOpen} onClose={() => setStoreOpen(false)} />
       {/* Le plateau tournant (début de la balise). */}
       <Plateau
         // Ouvert ou non.

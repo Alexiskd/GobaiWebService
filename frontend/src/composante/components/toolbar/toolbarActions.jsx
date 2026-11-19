@@ -16,10 +16,9 @@ import {
   SearchIcon, PublicIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
   // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
-  GalleryIcon, SpeedIcon, FavoriteIcon, SettingsIcon,
+  GalleryIcon, SpeedIcon, StoreIcon, FavoriteIcon, SettingsIcon,
   // Arborescence des astres et plateau tournant.
-  AccountTreeIcon, ThreeSixtyIcon,
-// Fin de la liste ; module des icônes.
+  AccountTreeIcon, ThreeSixtyIcon,// Fin de la liste ; module des icônes.
 } from '../ui/icons';
 // Logo du bouton « Claude » : une image du dossier public.
 export const CLAUDE_LOGO = { img: '/claude-logo.png' };
@@ -31,10 +30,9 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
+  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
   // L'arborescence des astres : son rappel et son état.
-  onNavigator, navigatorOpen,
-// Fin de la liste des paramètres.
+  onNavigator, navigatorOpen,// Fin de la liste des paramètres.
 }) {
   // Renvoie la liste des actions (début du tableau).
   return [
@@ -86,6 +84,8 @@ export function toolbarActions({
     onLanguage && { id: 'lang', group: 'help', icon: TranslateIcon, label: languageLabel ? `Langue : ${languageLabel}` : 'Langue', short: 'Langue', iconOnly: true, onClick: onLanguage, title: 'Langue de l’interface' },
     // Contribuer : placer une dalle LiDAR sur le globe et voter sur le placement des autres.
     onContribute && { id: 'contribute', group: 'data', icon: AddLocationIcon, label: 'Contribuer', onClick: onContribute, title: 'Contribuer : placer un relevé LiDAR sur le globe et voter sur les placements' },
+    // Boutique : acheter l'export des modèles 3D, des tuiles ou du calcul d'orbite.
+    onStore && { id: 'store', group: 'data', icon: StoreIcon, label: 'Exports', onClick: onStore, title: 'Boutique : exporter le modèle 3D d’un astre, ses tuiles ou son orbite' },
     // Aide (si le rappel existe) : icône seule, raccourcis clavier.
     onHelp && { id: 'help', group: 'help', icon: HelpIcon, label: 'Aide', iconOnly: true, onClick: onHelp, title: 'Raccourcis clavier (?)' },
     // Partager : feuille de partage du téléphone, ou copie du lien de la vue sur ordinateur.
