@@ -1,7 +1,6 @@
 // Affichage Schwarzschild du système solaire : orbites en rosette (géodésiques intégrées, l'avance du
-// périhélie devient visible) et grille filaire formée de la famille des rayons issus du centre du Soleil
-// (chaque rayon est un méridien du paraboloïde de Flamm : un entonnoir simple, sous le plan de l'écliptique).
-// Fonctions pures, sans three.js, pour être testées.
+// périhélie devient visible) et grille filaire en double puits (paraboloïde de Flamm, collé symétriquement
+// sous la forme d'une toupie). Fonctions pures, sans three.js, pour être testées.
 //
 // La métrique de Schwarzschild dévie du modèle képlérien surtout par l'avance du périhélie :
 //   Δϖ = 6 π G M / (c² a (1 − e²))   (radians par orbite)
@@ -68,6 +67,30 @@ export function easeInOutCubic(u) {
   // Avant la moitié : accélération ; ensuite : décélération.
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 // Fin de easeInOutCubic.
+}
+
+/**
+ * Miroir d'un tracé par rapport au plan de l'écliptique : mêmes x et z, y inversé (un point par point).
+ * Le double affichage de la métrique de Schwarzschild colle ce miroir sous le tracé d'origine : les deux
+ * ensemble dessinent la toupie symétrique — deux puits recollés bord à bord.
+ * @param {Float32Array} points le tracé source (trois nombres par point)
+ * @param {Float32Array} [dst]   le tampon de sortie, de même longueur (sinon une copie est allouée)
+ * @returns {Float32Array} le miroir, symétrique du tracé source (le tampon fourni, modifié sur place)
+ */
+export function mirrorY(points, dst) {
+  // La copie de sortie : le tampon fourni, sinon un nouveau tableau de même longueur.
+  const out = dst || new Float32Array(points.length);
+  // Chaque point : x et z conservés, y inversé.
+  for (let i = 0; i < points.length; i += 3) {
+    // Les trois composantes.
+    out[i] = points[i];
+    out[i + 1] = -points[i + 1];
+    out[i + 2] = points[i + 2];
+  // Fin des points.
+  }
+  // Le miroir.
+  return out;
+// Fin de mirrorY.
 }
 
 /**
@@ -214,42 +237,63 @@ export function gridRadii(outerAu, rings, sunRadiusAu) {
 }
 
 /**
- * Géométrie filaire de la famille des rayons issus du centre du Soleil, au repère de la scène : chaque rayon
- * est un méridien du paraboloïde de Flamm, la vraie géométrie spatiale de la métrique de Schwarzschild. Du bord
- * du disque (profondeur nulle, sur le plan de l'écliptique) chaque rayon plonge vers la gorge du puits, sous
- * le Soleil — un entonnoir simple, tout entier sous le plan (y ≤ 0), sans miroir au-dessus.
- * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène.
+ * Géométrie filaire de la grille : segments (paires de points) pour anneaux et rayons, au repère de la scène.
+ * La grille est un double puits : chaque segment est collé à son symétrique par rapport au plan de l'écliptique
+ * (y inversé) — deux toupies recollées bord à bord, la courbure affichée en double, au-dessus et au-dessous.
+ * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène ; la seconde moitié
+ *                          du tampon est le miroir exact de la première.
  */
-export function schwarzschildRays({ outerAu, rays = 96, steps = 192, exaggeration = WELL_EXAGGERATION, sunRadiusAu = 0.00465 }) {
-  // Les pas d'un méridien : du rayon du Soleil au bord du disque, resserrés vers le centre, où la courbure plonge.
-  const radii = gridRadii(outerAu, steps, sunRadiusAu);
-  // Chaque rayon porte steps − 1 tronçons de deux points : le tampon des segments, préalloué.
-  const segs = new Float32Array(rays * (steps - 1) * 6);
-  // Le curseur d'écriture dans le tampon.
-  let k = 0;
-  // Pour chaque rayon (du début).
-  for (let i = 0; i < rays; i++) {
-    // L'angle de ce rayon, autour du Soleil.
-    const a = (i / rays) * 2 * Math.PI;
-    // Le cosinus et le sinus : la direction horizontale du rayon, fixe le long du méridien.
+export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 48, exaggeration = WELL_EXAGGERATION, sunRadiusAu = 0.00465 }) {
+  // Les rayons des anneaux.
+  const radii = gridRadii(outerAu, rings, sunRadiusAu);
+  // Segments des anneaux (rings × spokes) et des rayons (spokes × (rings − 1) tronçons) :
+  const segs = [];
+  // Pour chaque anneau (du début).
+  for (const r of radii) {
+    // La profondeur de cet anneau, en unités de scène.
+    const y = gridWellY(r, outerAu, exaggeration) * AU_UNITS;
+    // Pour chaque pas du cercle (du début).
+    for (let i = 0; i < spokes; i++) {
+      // Les angles des deux bouts du segment d'anneau.
+      const a0 = (i / spokes) * 2 * Math.PI, a1 = ((i + 1) / spokes) * 2 * Math.PI;
+      // Le segment, dans le plan x-z de la scène.
+      segs.push(Math.cos(a0) * r * AU_UNITS, y, Math.sin(a0) * r * AU_UNITS, Math.cos(a1) * r * AU_UNITS, y, Math.sin(a1) * r * AU_UNITS);
+    // Fin des pas.
+    }
+  // Fin des anneaux.
+  }
+  // Les rayons : chaque rayon suit la pente du puits par palier d'anneaux.
+  for (let i = 0; i < spokes; i++) {
+    // L'angle de ce rayon.
+    const a = (i / spokes) * 2 * Math.PI;
+    // Le cosinus et le sinus.
     const ca = Math.cos(a), sa = Math.sin(a);
-    // Du premier pas au dernier : le méridien suit le profil du puits (le √r de Flamm).
+    // Du premier anneau au bord (du début).
     for (let j = 1; j < radii.length; j++) {
-      // La profondeur des deux bouts du tronçon, en unités de scène.
+      // La profondeur des deux bouts.
       const y0 = gridWellY(radii[j - 1], outerAu, exaggeration) * AU_UNITS;
       const y1 = gridWellY(radii[j], outerAu, exaggeration) * AU_UNITS;
-      // Le tronçon : du rayon intérieur au rayon extérieur, à azimuth constant.
-      segs[k++] = ca * radii[j - 1] * AU_UNITS;
-      segs[k++] = y0;
-      segs[k++] = sa * radii[j - 1] * AU_UNITS;
-      segs[k++] = ca * radii[j] * AU_UNITS;
-      segs[k++] = y1;
-      segs[k++] = sa * radii[j] * AU_UNITS;
+      // Le segment du rayon.
+      segs.push(ca * radii[j - 1] * AU_UNITS, y0, sa * radii[j - 1] * AU_UNITS, ca * radii[j] * AU_UNITS, y1, sa * radii[j] * AU_UNITS);
     // Fin des tronçons.
     }
   // Fin des rayons.
   }
-  // La famille des rayons.
-  return segs;
-// Fin de schwarzschildRays.
+  // Le tampon des segments.
+  const single = new Float32Array(segs);
+  // Le double, symétrique : chaque point et son miroir par rapport au plan de l'écliptique.
+  const doubled = new Float32Array(single.length * 2);
+  // Le puits du dessous.
+  doubled.set(single, 0);
+  // Le puits du dessus, miroir exact (y inversé) : la toupie symétrique.
+  for (let i = 0; i < single.length; i += 3) {
+    // x et z inchangés, y inversé.
+    doubled[single.length + i] = single[i];
+    doubled[single.length + i + 1] = -single[i + 1];
+    doubled[single.length + i + 2] = single[i + 2];
+  // Fin du miroir.
+  }
+  // La grille en double.
+  return doubled;
+// Fin de schwarzschildGridSegments.
 }
