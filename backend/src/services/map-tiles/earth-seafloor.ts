@@ -110,7 +110,7 @@ export const SEAFLOOR_BY_ID = new Map(SEAFLOOR_LAYERS.map((l) => [l.id, l]));
  * `EARTH_SEAFLOOR=0` coupe la fusion.
  */
 // Altitudes Terrarium d'AWS : TERRARIUM_URL si elle est définie, sinon l'adresse publique.
-const TERRARIUM = process.env.TERRARIUM_URL?.trim() || 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+export const TERRARIUM = process.env.TERRARIUM_URL?.trim() || 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
 // Niveau maximal des tuiles des fonds et des altitudes lues pour la fusion : 10 (≈ 150 m par pixel à l'équateur).
 export const SEAFLOOR_FUSION_MAX_ZOOM = 10;
 
