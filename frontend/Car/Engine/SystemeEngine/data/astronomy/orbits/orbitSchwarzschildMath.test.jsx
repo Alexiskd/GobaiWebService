@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { AU_UNITS, elementsAt } from './planetOrbits.jsx';
+import { AU_UNITS, elementsAt } from '../../../../AstreSolideEngine/planetOrbits.jsx';
 import {
   GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, easeInOutCubic, gridRadii, gridWellY, mirrorY, mixPoints,
   precessionPerCenturyArcsec, precessionPerOrbitRad,
   schwarzschildGeodesic, schwarzschildGridSegments, schwarzschildRadiusM,
 } from './orbitSchwarzschildMath.jsx';
 // Le catalogue complet des astres : pour vérifier que la grille englobe le plus lointain (l'aphélie d'Éris).
-import { PLANETS } from '../SystemeEngine/data/astronomy/data/bodies.data.ts';
+import { PLANETS } from '../data/bodies.data.ts';
 
 // Éléments képlériens de Mercure, en tableau des douze nombres (J2000 + dérive séculaire).
 const MERCURY_ELEMENTS = [

@@ -57,7 +57,7 @@ import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
 // Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
 import {
   SCHWARZSCHILD_FADE_MS, easeInOutCubic, mirrorY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
-} from './orbitSchwarzschildMath.jsx';
+} from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
 import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
 // Importe le matériau de la surface de la Lune et le chargement d'un modèle 3D.
