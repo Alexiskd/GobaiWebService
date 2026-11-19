@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 // Importe tilesApi, le client de l'API des tuiles, transmis au moteur.
 import { tilesApi } from '@/Computing/api';
+// Verrou d'accès au cœur de l'app : seule une adresse de la liste d'autorisation peut créer le moteur.
+import { requireAccess } from '@/Engine/shared/lib/accessGate';
 
 /**
  * Crée le moteur 3D et le détruit au démontage.
@@ -27,6 +29,10 @@ export function useSolarEngine({ containerRef, data, labels, hud, engineRef }) {
     (async () => {
       // Début du bloc protégé : toute erreur d'initialisation est rattrapée plus bas.
       try {
+        // Le verrou : l'adresse du client doit être dans la liste d'autorisation, sans quoi tout le cœur de l'app
+        // (le moteur, les registres, les politiques, les tuiles, le HUD et les outils) reste bloqué derrière
+        // l'écran plein du motif de refus. Toute erreur d'autorisation remonte telle quelle.
+        await requireAccess();
         // Chargé à la demande : three.js reste hors du bundle initial.
         // Importe dynamiquement le module du moteur et en extrait la classe SolarEngine.
         const { SolarEngine } = await import('@/Engine/AstreSolideEngine/engine');
