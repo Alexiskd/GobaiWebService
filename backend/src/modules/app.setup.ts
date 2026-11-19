@@ -14,7 +14,7 @@ export function configureApp(app: INestApplication, config: AppConfig) {
   app.setGlobalPrefix('api');
   // Version dans l'adresse (/api/v1/…) ; une route sans version déclarée prend la version 1.
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-  // CORS ouvert à tous tant que l'API est gratuite (API_GRATUITE, voir common/cors.ts).
+  // CORS fermé par défaut : origines de la liste, ou autre site muni d'un jeton payé (voir common/cors.ts).
   app.enableCors(corsDelegate(config.corsOrigins));
   // Installe le filtre d'erreurs pour toute l'application.
   app.useGlobalFilters(new HttpExceptionFilter());
