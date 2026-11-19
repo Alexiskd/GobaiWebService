@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AU_UNITS, elementsAt } from './planetOrbits.jsx';
 import {
-  GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, easeInOutCubic, gridRadii, gridWellY, mirrorY, mixPoints,
+  GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, easeInOutCubic, gridRadii, gridWellY, mixPoints,
   precessionPerCenturyArcsec, precessionPerOrbitRad,
-  schwarzschildGeodesic, schwarzschildGridSegments, schwarzschildRadiusM,
+  schwarzschildGeodesic, schwarzschildRays, schwarzschildRadiusM,
 } from './orbitSchwarzschildMath.jsx';
 // Le catalogue complet des astres : pour vérifier que la grille englobe le plus lointain (l'aphélie d'Éris).
 import { PLANETS } from '../SystemeEngine/data/astronomy/data/bodies.data.ts';
@@ -153,32 +153,33 @@ test('l\u2019avance du p\u00e9rih\u00e9lie int\u00e9gr\u00e9e rejoint la formule
   assert.ok(Math.abs(advance - expected) / expected < 0.1, `Δφ = ${advance.toFixed(5)} rad au lieu de ${expected.toFixed(5)} rad`);
 });
 
-test('mirrorY inverse la hauteur et garde le plan de l\u2019\u00e9cliptique', () => {
-  // Deux points : le miroir garde x et z, inverse y.
-  const pts = new Float32Array([1, 2, 3, -4, 5, -6]);
-  const mir = mirrorY(pts);
-  assert.deepEqual([...mir], [1, -2, 3, -4, -5, -6]);
-  // L'originale est intacte.
-  assert.deepEqual([...pts], [1, 2, 3, -4, 5, -6]);
-  // Dans un tampon fourni : le même résultat, sans nouvelle allocation.
-  const out = new Float32Array(pts.length);
-  const back = mirrorY(pts, out);
-  assert.equal(back, out);
-  assert.deepEqual([...out], [...mir]);
-});
-
-test('la grille est un double puits : la seconde moitié est le miroir exact de la première', () => {
-  // Les segments du double puits, sur un petit disque pour le test.
-  const segs = schwarzschildGridSegments({ outerAu: 50, rings: 6, spokes: 8 });
-  // La moitié du tampon, en points entiers.
-  const half = segs.length / 2;
-  assert.equal(segs.length % 2, 0);
-  assert.equal(half % 3, 0);
-  // Chaque segment du dessus est le miroir exact de son homologue du dessous.
-  for (let i = 0; i < half; i += 3) {
-    assert.equal(segs[half + i], segs[i], `x du point ${i / 3}`);
-    assert.equal(segs[half + i + 1], -segs[i + 1], `y du point ${i / 3}`);
-    assert.equal(segs[half + i + 2], segs[i + 2], `z du point ${i / 3}`);
+test('la grille est la famille des rayons issus du centre : un entonnoir simple, tout sous le plan de l\u2019\u00e9cliptique', () => {
+  // Les valeurs par défaut : 96 rayons, 192 pas de méridien.
+  const rays = 96, steps = 192;
+  // Les segments de la famille des rayons, sur un petit disque pour le test.
+  const segs = schwarzschildRays({ outerAu: 50 });
+  // Le tampon : six nombres par tronçon, et chaque rayon porte steps − 1 tronçons.
+  assert.equal(segs.length, rays * (steps - 1) * 6, `tampon de ${segs.length} nombres`);
+  // Les échantillons d'un méridien (les mêmes rayons que gridRadii).
+  const radii = gridRadii(50, steps, 0.00465);
+  // Chaque tronçon : les deux bouts sous le plan de l'écliptique (y ≤ 0), à l'azimuth du même méridien.
+  for (let i = 0; i < segs.length; i += 6) {
+    assert.ok(segs[i + 1] <= 0 && segs[i + 4] <= 0, `tronçon ${i / 6} : y ≤ 0`);
+    // Le produit croisé des directions horizontales des deux bouts est nul : azimuth constant (un méridien, pas un anneau).
+    const cross = segs[i] * segs[i + 5] - segs[i + 2] * segs[i + 3];
+    const scale = Math.abs(segs[i] * segs[i + 5]) + Math.abs(segs[i + 2] * segs[i + 3]);
+    assert.ok(Math.abs(cross) <= 1e-5 * scale, `tronçon ${i / 6} : azimuth constant`);
+  // Fin des tronçons.
+  }
+  // Le dernier tronçon de chaque rayon touche le bord du disque : sur le plan (profondeur nulle), à r = outerAu.
+  for (let i = 0; i < rays; i++) {
+    // L'offset du dernier tronçon de ce rayon.
+    const last = (i * (steps - 1) + steps - 2) * 6;
+    assert.ok(Math.abs(segs[last + 4]) < 1e-6, `bord du rayon ${i} : y = ${segs[last + 4]}`);
+    // Le rayon horizontal du bout vaut le bord du disque, en unités de la scène.
+    const rBord = Math.hypot(segs[last + 3], segs[last + 5]);
+    assert.ok(Math.abs(rBord - radii[radii.length - 1] * AU_UNITS) < 1e-5 * radii[radii.length - 1] * AU_UNITS, `bord du rayon ${i} : r = outerAu`);
+  // Fin des rayons.
   }
 });
 
