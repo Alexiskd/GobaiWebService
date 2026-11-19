@@ -54,9 +54,9 @@ import { MoonOrbiters } from './moonOrbiters.jsx';
 import { MoonOrbit } from './moonOrbit.jsx';
 // Importe le ruban des orbites et la mise à jour de ses réglages partagés (taille du tampon de dessin, densité).
 import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
-// Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
+// Importe l'outillage Schwarzschild : rosette des orbites, rayons de courbure filaires, fondu et mélanges.
 import {
-  SCHWARZSCHILD_FADE_MS, easeInOutCubic, mirrorY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
+  SCHWARZSCHILD_FADE_MS, easeInOutCubic, mixPoints, schwarzschildGeodesic, schwarzschildRays,
 } from './orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
 import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
@@ -2897,9 +2897,10 @@ export class SolarEngine {
   }
 
   /**
-   * Pose les objets Schwarzschild de la scène : la grille filaire de la courbure (anneaux et rayons du
-   * paraboloïde de Flamm, centré sur le Soleil) et, pour chaque planète, la rosette précessée de son orbite
-   * (le tracé cible de la transition, l'autre étant la copie intacte de l'ellipse de Kepler).
+   * Pose les objets Schwarzschild de la scène : la grille filaire de la courbure (la famille des rayons issus
+   * du centre du Soleil, chaque rayon étant un méridien du paraboloïde de Flamm) et, pour chaque planète, la
+   * rosette précessée de son orbite (le tracé cible de la transition, l'autre étant la copie intacte de
+   * l'ellipse de Kepler).
    */
   // initSchwarzschild : les objets de la scène (début).
   initSchwarzschild() {
@@ -2907,13 +2908,13 @@ export class SolarEngine {
     const orbitT = centuriesTT(Date.now());
     // L'état du mode : progression (0 = Kepler, 1 = Schwarzschild), but et dernier mélange dessiné.
     this.schwarzschild = { progress: 0, goal: 0, lastDrawn: -1 };
-    // La géométrie filaire (segments d'anneaux et de rayons).
+    // La géométrie filaire (segments de rayons).
     const gridGeometry = new THREE.BufferGeometry();
     // Les segments, calculés par le module mathématique. Le disque est borné par l'aphélie de la planète naine la
     // plus lointaine du catalogue (Éris, a·(1+e) ≈ 97,7 UA, arrondi au-dessus) : la grille englobe tous les astres
     // du système, où qu'ils soient sur leur orbite, et le Soleil en reste exactement le centre.
     const outerAu = Math.ceil(Math.max(...PLANETS.map((b) => b.elements[0] * (1 + b.elements[2]))));
-    gridGeometry.setAttribute('position', new THREE.BufferAttribute(schwarzschildGridSegments({ outerAu }), 3));
+    gridGeometry.setAttribute('position', new THREE.BufferAttribute(schwarzschildRays({ outerAu }), 3));
     // Le maillage de la grille, en lignes, sans écriture de profondeur ni éclairage : un fil de courbure.
     const grid = new THREE.LineSegments(gridGeometry, new THREE.LineBasicMaterial({
       color: 0x6f86b8, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -2928,8 +2929,8 @@ export class SolarEngine {
     this.scene.add(grid);
     // La garde.
     this.schwarzschild.grid = grid;
-    // Pour chaque planète : sa rosette (le tracé cible du fondu), au même format que les rubans, et l'image
-    // miroir de son ruban (le double affichage symétrique, collé sous forme de toupie).
+    // Pour chaque planète : sa rosette (le tracé cible du fondu), au même format que les rubans — la courbure
+    // est portée par la seule famille des rayons, qui suivent le même méridien que l'orbite, sans image miroir.
     for (const p of this.planets) {
       // La géodésique de Schwarzschild (points de la rosette, sans point de fermeture).
       const rosette = schwarzschildGeodesic(p.def.elements, orbitT, ORBIT_POINTS, 3);
@@ -2943,16 +2944,6 @@ export class SolarEngine {
       p.rosetteOrbit = rosetteLoop;
       // La copie intacte de Kepler : le point de retour du fondu.
       p.keplerOrbit = p.orbitTrail.points.slice();
-      // Le double affichage : un deuxième ruban, indépendant (sa géométrie et son matériau), qui porte le miroir
-      // du tracé par rapport au plan de l'écliptique — la rosette et son miroir dessinent la toupie symétrique, et
-      // le fondu anime les deux en même temps (le miroir recopie le mélange dessiné, sans refaire le calcul).
-      const mirrorPoints = mirrorY(rosetteLoop);
-      // Le ruban du double, de la même couleur que son orbite.
-      p.orbitMirrorTrail = new OrbitRibbon({ points: mirrorPoints, color: p.def.color || '#8b97b3', name: `orbit-mirror-${bodyId(p.def)}` });
-      // Caché tant que Kepler règne.
-      p.orbitMirrorTrail.mesh.visible = false;
-      // L'ajoute à la scène.
-      this.scene.add(p.orbitMirrorTrail.mesh);
     // Fin des planètes.
     }
   // Fin de initSchwarzschild.
@@ -2987,14 +2978,6 @@ export class SolarEngine {
       mixPoints(p.keplerOrbit, p.rosetteOrbit, eased, p.orbitTrail.points);
       // La carte graphique relit le tampon des positions.
       p.orbitTrail.positionsChanged();
-      // Le double symétrique : le miroir du mélange, collé sous le plan de l'écliptique (toupie).
-      if (p.orbitMirrorTrail && this.schwarzschild.grid.visible) {
-        // Le miroir, dans le tampon du ruban double.
-        mirrorY(p.orbitTrail.points, p.orbitMirrorTrail.points);
-        // La carte graphique relit le tampon des positions du double.
-        p.orbitMirrorTrail.positionsChanged();
-      // Fin de ce cas.
-      }
     // Fin des planètes.
     }
     // Le mélange dessiné est à jour.
@@ -4333,15 +4316,6 @@ export class SolarEngine {
     for (const p of this.planets) {
       // Son orbite mise en avant si c'est la planète de la cible.
       p.orbitTrail.setFocused(p === focusPlanet);
-      // Le double symétrique suit : la même mise en avant, visible seulement en mode Schwarzschild et seulement si
-      // son orbite l'est.
-      if (p.orbitMirrorTrail) {
-        // La même mise en avant que l'orbite d'origine.
-        p.orbitMirrorTrail.setFocused(p === focusPlanet);
-        // La même visibilité.
-        p.orbitMirrorTrail.mesh.visible = p.orbit.visible && Boolean(this.schwarzschild?.grid.visible);
-      // Fin de ce cas.
-      }
       // Orbite cachée, ou traînée recalée il y a moins d'une demi-seconde : rien de plus.
       if (!p.orbit.visible || now - p.trailAt < 500) continue;
       // Instant de ce recalage.
@@ -4374,8 +4348,6 @@ export class SolarEngine {
       loopTrailAlphas(p.orbitTrail.alphas, head, p.trailDir);
       // Les renvoie à la carte graphique.
       p.orbitTrail.alphasChanged();
-      // Le double symétrique reprend les mêmes opacités (les deux tampons sont alignés point à point).
-      if (p.orbitMirrorTrail) { p.orbitMirrorTrail.alphas.set(p.orbitTrail.alphas); p.orbitMirrorTrail.alphasChanged(); }
     // Fin de la boucle.
     }
     // Orbite de la Lune mise en avant quand la Lune est visée.
@@ -4713,20 +4685,6 @@ export class SolarEngine {
     this.coreRenderDiagnosticsPolicy = null;
     this.coreRegistry?.clear();
     this.coreTargets = [];
-    // Retire les rubans miroirs (double affichage Schwarzschild) : chacun possède sa géométrie et son matériau.
-    for (const p of this.planets || []) {
-      // Le ruban miroir s'il existe : retiré de la scène, puis libéré.
-      if (p.orbitMirrorTrail) {
-        // Hors de la scène.
-        this.scene.remove(p.orbitMirrorTrail.mesh);
-        // La géométrie et le matériau.
-        p.orbitMirrorTrail.dispose();
-        // Plus de double.
-        p.orbitMirrorTrail = null;
-      // Fin de ce cas.
-      }
-    // Fin des planètes.
-    }
     // Libère la grille filaire de la courbure, si elle a été posée.
     if (this.schwarzschild?.grid) {
       // Sa géométrie, puis son matériau, avant de la retirer de la scène.
