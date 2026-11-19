@@ -7,7 +7,7 @@
 // À l'échelle réelle, cette avance est minuscule (Mercure : 43″ par siècle, soit 0,5·10⁻⁶ rad par orbite) :
 // dans la scène, un facteur d'exagération pédagogique la rend visible (rosette et creux de la grille).
 // Importe les éléments à la date demandée et l'unité astronomique de la scène.
-import { AU_UNITS, D, elementsAt } from './planetOrbits.jsx';
+import { AU_UNITS, D, elementsAt } from '../../../../AstreSolideEngine/planetOrbits.jsx';
 
 /** Constantes physiques (CODATA 2018, UAI) : produit GM du Soleil (m³/s²) et vitesse de la lumière (m/s). */
 export const GM_SUN = 1.32712440018e20;
