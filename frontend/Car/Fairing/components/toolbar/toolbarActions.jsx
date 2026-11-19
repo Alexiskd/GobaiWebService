@@ -10,6 +10,8 @@
  */
 // Importe l'ensemble des boutons masqués, gardé dans son propre module (sans import, pour la fenêtre « Node »).
 import { HIDDEN } from './hiddenActions.js';
+// Importe Box de MUI : l'icône texte « E=mc² » du bouton relativiste est un élément React sans saut de ligne.
+import { Box } from '@mui/material';
 // Importe les icônes employées par la barre.
 import {
   // Recherche, vue d'ensemble, ombre, rotation, vue 3/4 et verrouillage.
@@ -32,6 +34,8 @@ export function toolbarActions({
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
   onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
+  // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
+  schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
   onNavigator, navigatorOpen,
 // Fin de la liste des paramètres.
@@ -57,6 +61,10 @@ export function toolbarActions({
     // bleu nuit ; relâché = astres entièrement éclairés et interface gris doux.
     // Ombre (si le rappel existe) : bascule du groupe « camera », infobulle selon l'état.
     onToggleDayNight && { id: 'daynight', group: 'camera', icon: ShadowIcon, label: 'Ombre', iconOnly: true, pressed: night, onClick: onToggleDayNight, title: night ? 'Ombre activée : face des astres opposée au Soleil dans l’ombre' : 'Ombre désactivée : astres entièrement éclairés' },
+    // E = mc² : bascule du groupe « camera », juste après Ombre. Affiche les orbites selon la métrique de
+    // Schwarzschild (rosette précessée et grille filaire de courbure), fondu lent depuis les orbites de Kepler.
+    // L'icône est un élément React (texte en exposant), rendu tel quel par iconNode sans saut de ligne.
+    onToggleSchwarzschild && { id: 'schwarzschild', group: 'camera', icon: <Box component="span" sx={{ fontSize: 11, whiteSpace: 'nowrap', letterSpacing: '-0.02em' }}>E=mc²</Box>, label: 'E = mc²', iconOnly: true, pressed: schwarzschild, onClick: onToggleSchwarzschild, title: schwarzschild ? 'E = mc² activé : orbites de Schwarzschild (rosette) et grille de courbure' : 'E = mc² : orbites de Schwarzschild et grille de courbure (fondu depuis Kepler)' },
     // Rotation automatique : bascule.
     { id: 'auto', group: 'camera', icon: AutorenewIcon, label: 'Rotation', iconOnly: true, pressed: auto, onClick: onToggleAuto, title: 'Rotation automatique' },
     // Vue 3/4 automatique : bascule.
