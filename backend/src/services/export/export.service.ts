@@ -12,12 +12,8 @@ import { MOON, PLANETS, SUN } from '../data/bodies.data';
 import { TilesService } from '../map-tiles/map-imagery.service';
 import { MosaicService } from './mosaic.service';
 import { buildGlb, sphereMesh } from './glb';
-// Imagerie de la Terre (satellite HD et fonds GEBCO, sans passer par HTTP) et chlorophylle des océans.
+// Imagerie de la Terre (satellite HD et fonds GEBCO, sans passer par HTTP).
 import { EarthImageryService } from '../map-tiles/earth-imagery.service';
-// Chlorophylle des océans (image grise du mois).
-import { EarthChlorophyllService } from '../map-tiles/earth-chlorophyll.service';
-// Bornes de l'échelle de la chlorophylle et mention de ses données.
-import { CHL_ATTRIBUTION, CHL_MAX, CHL_MIN } from '../map-tiles/earth-chlorophyll';
 // Modèle d'adresse des altitudes Terrarium et table des fonds marins (mentions).
 import { SEAFLOOR_BY_ID, TERRARIUM } from '../map-tiles/earth-seafloor';
 // Régions actives du Soleil (NOAA SWPC, NASA DONKI).
@@ -25,7 +21,7 @@ import { SolarRegionsService } from '../sun/solar-regions.service';
 // Modèle du Soleil : régions, texture du plasma, boucles et protubérances.
 import { coronalLoops, prominences, sunRegions, sunTexture } from './sun-model';
 // Océans du modèle de la Terre : altitudes, textures et relief.
-import { composeSeabed, decodeChlorophyll, decodeTerrarium, fillGaps, reliefMesh, waterTexture, type ChlorophyllGrid, type MercatorGrid } from './earth-oceans';
+import { composeSeabed, decodeTerrarium, reliefMesh, waterTexture, type MercatorGrid } from './earth-oceans';
 import { SUN_KEY, bodyKey } from '../store/catalogue';
 import { centuriesTT, earthPosition, heliocentricState, osculatingElements, AU_KM } from '../ephemeris/planet-orbits';
 import { solarPosition } from '../ephemeris/solar-position';
@@ -76,8 +72,8 @@ export class ExportService {
   // Journal du service.
   private readonly log = new Logger('Exports');
 
-  // Constructeur : NestJS y injecte les tuiles, l'assemblage, et, s'ils sont là, l'imagerie de la Terre et la chlorophylle.
-  constructor(private readonly tiles: TilesService, private readonly mosaic: MosaicService, @Optional() private readonly earth?: EarthImageryService, @Optional() private readonly chlorophyll?: EarthChlorophyllService, @Optional() private readonly solarRegions?: SolarRegionsService) {}
+  // Constructeur : NestJS y injecte les tuiles, l'assemblage, et, s'ils sont là, l'imagerie de la Terre et les régions solaires.
+  constructor(private readonly tiles: TilesService, private readonly mosaic: MosaicService, @Optional() private readonly earth?: EarthImageryService, @Optional() private readonly solarRegions?: SolarRegionsService) {}
 
   /** Les astres exportables : les planètes du catalogue, la Lune, et le Soleil. */
   bodies(): ExportableBody[] {
@@ -228,7 +224,7 @@ export class ExportService {
   /**
    * Modèle 3D de la Terre (voir earth-oceans.ts) : le satellite HD assemblé au niveau `zoom` (Web Mercator). Avec les
    * océans : le sphéroïde soulevé par les altitudes Terrarium (relief exagéré), les fonds GEBCO au large, et un second
-   * objet, la surface de l'eau, colorée par la chlorophylle du mois et transparente sur les côtes.
+   * objet, la surface de l'eau, transparente sur les côtes.
    */
   private async earthModel(body: ExportableBody, grid: readonly [number, number], zoom: number, oceans: boolean, exaggeration: number) {
     // Imagerie de la Terre (présente : contrôlé par l'appelant).
@@ -255,14 +251,12 @@ export class ExportService {
     const sea = await this.assemble(zoom, (x, y) => earth.tile('earth-gebco', zoom, x, y).then((t) => t.body));
     // Texture du relief : le satellite, et les fonds GEBCO au large s'ils sont arrivés.
     if (sea) composeSeabed(land.raw, sea.raw, land.size, elevation);
-    // Chlorophylle du mois, ou null (couleur par défaut).
-    const chl = await this.chlorophyllGrid();
     // Côté de la texture de l'eau.
     const waterSize = Math.min(land.size, WATER_TEXTURE_MAX);
     // Texture de l'eau, en PNG avec transparence.
-    const water = await sharp(Buffer.from(waterTexture(waterSize, elevation, chl)), { raw: { width: waterSize, height: waterSize, channels: 4 } }).png({ compressionLevel: 9 }).toBuffer();
-    // Mentions : GEBCO, la NOAA, et la chlorophylle si elle a servi.
-    credits.push(SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution, 'Altitudes : AWS Terrain Tiles (Mapzen)', ...(chl ? [CHL_ATTRIBUTION] : []));
+    const water = await sharp(Buffer.from(waterTexture(waterSize, elevation, null)), { raw: { width: waterSize, height: waterSize, channels: 4 } }).png({ compressionLevel: 9 }).toBuffer();
+    // Mentions : GEBCO, la NOAA, et les altitudes.
+    credits.push(SEAFLOOR_BY_ID.get('earth-gebco')!.source.attribution, 'Altitudes : AWS Terrain Tiles (Mapzen)');
     // Relief : sphéroïde soulevé par les altitudes, exagérées.
     const relief = reliefMesh(body.radiusKm, grid[0], grid[1], body.flattening, elevation, exaggeration);
     // Surface de l'eau : sphéroïde au niveau de la mer.
@@ -330,23 +324,6 @@ export class ExportService {
     // Altitudes décodées.
     return { size, values: decodeTerrarium(img.raw, 3) };
   // Fin de elevation.
-  }
-
-  /** Chlorophylle du mois : grille comblée, ou null si le service ou ERDDAP ne répondent pas. */
-  private async chlorophyllGrid(): Promise<ChlorophyllGrid | null> {
-    // Pas de service : null.
-    if (!this.chlorophyll) return null;
-    // Essai (début).
-    try {
-      // L'image du mois.
-      const { png } = await this.chlorophyll.get();
-      // Ses pixels bruts : gris et transparence.
-      const { data, info } = await sharp(png).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-      // Grille décodée et comblée, avec ses dimensions.
-      return { grid: fillGaps(decodeChlorophyll(new Uint8Array(data.buffer, data.byteOffset, data.length), info.channels, CHL_MIN, CHL_MAX), info.width, info.height), w: info.width, h: info.height };
-    // En cas d'échec : null.
-    } catch { return null; }
-  // Fin de chlorophyllGrid.
   }
 
   /** Pixels RGB bruts encodés en JPEG. */

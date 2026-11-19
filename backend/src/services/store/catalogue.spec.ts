@@ -119,7 +119,7 @@ describe('catalogue', () => {
     const catalogue = buildCatalogue({});
     // Deux astres.
     const deux = [productById('body-mars', catalogue)!, productById('body-venus', catalogue)!];
-    expect(totalCents(deux)).toBe(99_800);
+    expect(totalCents(deux)).toBe(2 * 150_000);
     // Mise en forme française, espaces insécables normalisés pour la comparaison.
     expect(formatPrice(49_900).replace(/ | /g, ' ')).toBe('499,00 €');
     expect(formatPrice(499_900).replace(/ | /g, ' ')).toBe('4 999,00 €');
