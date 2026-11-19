@@ -1,7 +1,6 @@
 // Affichage Schwarzschild du système solaire : orbites en rosette (géodésiques intégrées, l'avance du
-// périhélie devient visible) et grille filaire en chapeau du joker : le puits du paraboloïde de Flamm en
-// simple, et, suspendues à son bord, les pointes du chapeau qui pendent, se recourbent et finissent en
-// pompon — une pointe par faisceau de rayons. Fonctions pures, sans three.js, pour être testées.
+// périhélie devient visible) et grille filaire en double puits (paraboloïde de Flamm, collé symétriquement
+// sous la forme d'une toupie). Fonctions pures, sans three.js, pour être testées.
 //
 // La métrique de Schwarzschild dévie du modèle képlérien surtout par l'avance du périhélie :
 //   Δϖ = 6 π G M / (c² a (1 − e²))   (radians par orbite)
@@ -238,61 +237,13 @@ export function gridRadii(outerAu, rings, sunRadiusAu) {
 }
 
 /**
- * Une pointe pendante du chapeau du joker, suspendue au bord du disque : le tissu plonge sous le plan de
- * l'écliptique, s'écarte d'abord du bord, puis le tissu retombe et se recourbe vers l'intérieur (le bout se
- * relève), close par un pompon — deux petits cercles perpendiculaires (un dans le plan x-z, un dans le plan
- * du méridien) posés au bout de la pointe. La chute du tissu reste courte devant la gorge du puits : la
- * métrique de Schwarzschild reste le puits de Flamm, le chapeau ne fait que l'habiller.
- * @param {number[]} segs   le tableau des segments de la grille (la pointe y est poussée)
- * @param {number}   azimuth l'azimuth de la pointe (le faisceau de rayons qui la porte), en radians
- * @param {number}   outerAu le rayon du bord du disque (le point d'attache), en UA
- * @param {number}   drop    la chute totale du tissu, en unités de scène
- * @param {number}   pom     le rayon du pompon, en unités de scène
- */
-export function jokerPointSegments(segs, azimuth, outerAu, drop, pom) {
-  // Les pas du tissu et du cercle du pompon.
-  const steps = 24, pomSteps = 12;
-  // Le cosinus et le sinus de l'azimuth : la pointe vit dans le plan vertical du faisceau.
-  const ca = Math.cos(azimuth), sa = Math.sin(azimuth);
-  // Le point courant du tissu : l'attache, au bord du disque, sur le plan de l'écliptique.
-  let px = ca * outerAu * AU_UNITS, py = 0, pz = sa * outerAu * AU_UNITS;
-  // Le long du tissu (du début).
-  for (let i = 1; i <= steps; i++) {
-    // Le paramètre du tissu (0 à l'attache, 1 au bout de la pointe).
-    const t = i / steps;
-    // Le rayon horizontal : le tissu s'écarte d'abord du bord, puis se recourbe vers l'intérieur.
-    const rho = outerAu * (1 + 0.15 * t - 0.45 * t * t);
-    // La profondeur : chute amortie (t^1,5), le bout se relève (le tissu retombe en pointe recourbée).
-    const y = -drop * Math.pow(t, 1.5) + 0.2 * drop * Math.max(0, (t - 0.8) / 0.2);
-    // Le point suivant du tissu.
-    const nx = ca * rho * AU_UNITS, ny = y, nz = sa * rho * AU_UNITS;
-    // Le segment du tissu.
-    segs.push(px, py, pz, nx, ny, nz);
-    // Le point courant passe au suivant.
-    px = nx, py = ny, pz = nz;
-  // Fin du tissu.
-  }
-  // Le pompon : deux petits cercles perpendiculaires posés au bout de la pointe (la boule du joker).
-  for (let i = 0; i < pomSteps; i++) {
-    // Les angles des deux bouts de chaque petit segment du cercle.
-    const a0 = (i / pomSteps) * 2 * Math.PI, a1 = ((i + 1) / pomSteps) * 2 * Math.PI;
-    // Le cercle dans le plan x-z.
-    segs.push(px + Math.cos(a0) * pom, py, pz + Math.sin(a0) * pom, px + Math.cos(a1) * pom, py, pz + Math.sin(a1) * pom);
-    // Le cercle dans le plan du méridien (la direction radiale, la hauteur).
-    segs.push(px + ca * Math.cos(a0) * pom, py + Math.sin(a0) * pom, pz + sa * Math.cos(a0) * pom, px + ca * Math.cos(a1) * pom, py + Math.sin(a1) * pom, pz + sa * Math.cos(a1) * pom);
-  // Fin du pompon.
-  }
-// Fin de jokerPointSegments.
-}
-
-/**
  * Géométrie filaire de la grille : segments (paires de points) pour anneaux et rayons, au repère de la scène.
- * La grille est le chapeau du joker : le puits du paraboloïde de Flamm en simple (jamais au-dessus du plan de
- * l'écliptique), et, suspendues à son bord, une pointe pendante par faisceau de rayons, qui plonge, se recourbe
- * et finit en pompon (voir jokerPointSegments).
- * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène.
+ * La grille est un double puits : chaque segment est collé à son symétrique par rapport au plan de l'écliptique
+ * (y inversé) — deux toupies recollées bord à bord, la courbure affichée en double, au-dessus et au-dessous.
+ * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène ; la seconde moitié
+ *                          du tampon est le miroir exact de la première.
  */
-export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 48, jokerPoints = 12, exaggeration = WELL_EXAGGERATION, sunRadiusAu = 0.00465 }) {
+export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 48, exaggeration = WELL_EXAGGERATION, sunRadiusAu = 0.00465 }) {
   // Les rayons des anneaux.
   const radii = gridRadii(outerAu, rings, sunRadiusAu);
   // Segments des anneaux (rings × spokes) et des rayons (spokes × (rings − 1) tronçons) :
@@ -328,19 +279,21 @@ export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 48, jo
     }
   // Fin des rayons.
   }
-  // La gorge du puits : la profondeur maximale du creux de Flamm, en unités de scène.
-  const throat = -gridWellY(sunRadiusAu, outerAu, exaggeration) * AU_UNITS;
-  // La chute totale du tissu : le tiers de la gorge, pour pendre sous le plan sans atteindre le fond du puits.
-  const drop = (1 / 3) * throat;
-  // Le rayon du pompon, en unités de scène.
-  const pom = 0.002 * outerAu * AU_UNITS;
-  // Les pointes du chapeau : une par faisceau de rayons, à azimuth entre deux rayons du puits.
-  for (let j = 0; j < jokerPoints; j++) {
-    // L'azimuth de la pointe, au milieu du faisceau.
-    jokerPointSegments(segs, ((j + 0.5) / jokerPoints) * 2 * Math.PI, outerAu, drop, pom);
-  // Fin des pointes.
+  // Le tampon des segments.
+  const single = new Float32Array(segs);
+  // Le double, symétrique : chaque point et son miroir par rapport au plan de l'écliptique.
+  const doubled = new Float32Array(single.length * 2);
+  // Le puits du dessous.
+  doubled.set(single, 0);
+  // Le puits du dessus, miroir exact (y inversé) : la toupie symétrique.
+  for (let i = 0; i < single.length; i += 3) {
+    // x et z inchangés, y inversé.
+    doubled[single.length + i] = single[i];
+    doubled[single.length + i + 1] = -single[i + 1];
+    doubled[single.length + i + 2] = single[i + 2];
+  // Fin du miroir.
   }
-  // La grille : le puits coiffé du chapeau du joker (plus de toupie, plus de miroir).
-  return new Float32Array(segs);
+  // La grille en double.
+  return doubled;
 // Fin de schwarzschildGridSegments.
 }

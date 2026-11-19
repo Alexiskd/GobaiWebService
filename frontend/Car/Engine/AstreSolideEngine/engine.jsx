@@ -2897,10 +2897,9 @@ export class SolarEngine {
   }
 
   /**
-   * Pose les objets Schwarzschild de la scène : la grille filaire de la courbure (le chapeau du joker : le
-   * puits du paraboloïde de Flamm, centré sur le Soleil, et les pointes pendantes de son bord, une par
-   * faisceau de rayons) et, pour chaque planète, la rosette précessée de son orbite (le tracé cible de la
-   * transition, l'autre étant la copie intacte de l'ellipse de Kepler).
+   * Pose les objets Schwarzschild de la scène : la grille filaire de la courbure (anneaux et rayons du
+   * paraboloïde de Flamm, centré sur le Soleil) et, pour chaque planète, la rosette précessée de son orbite
+   * (le tracé cible de la transition, l'autre étant la copie intacte de l'ellipse de Kepler).
    */
   // initSchwarzschild : les objets de la scène (début).
   initSchwarzschild() {
@@ -2908,7 +2907,7 @@ export class SolarEngine {
     const orbitT = centuriesTT(Date.now());
     // L'état du mode : progression (0 = Kepler, 1 = Schwarzschild), but et dernier mélange dessiné.
     this.schwarzschild = { progress: 0, goal: 0, lastDrawn: -1 };
-    // La géométrie filaire (segments d'anneaux, de rayons et de pointes).
+    // La géométrie filaire (segments d'anneaux et de rayons).
     const gridGeometry = new THREE.BufferGeometry();
     // Les segments, calculés par le module mathématique. Le disque est borné par l'aphélie de la planète naine la
     // plus lointaine du catalogue (Éris, a·(1+e) ≈ 97,7 UA, arrondi au-dessus) : la grille englobe tous les astres
