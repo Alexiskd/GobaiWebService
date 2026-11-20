@@ -40,6 +40,9 @@ export const API_DOC_EXAMPLES = [
 export const API_DOC_GROUPS = [
   {
     group: 'Scène', controller: 'scene/scene.controller.ts',
+    // Sources externes réellement interrogées par ce contrôleur (voir API_DOC_SOURCES) : la résistance du groupe
+    // (résistanceDuGroupe, plus bas) est celle de la plus fragile d’entre elles.
+    sources: ['interne', 'photon', 'ign-geoplateforme', 'nasa-donki-swpc', 'nasa-eonet-gvp', 'nasa-imagery', 'xweather', 'rainviewer', 'nws-alerts', 'open-meteo'],
     routes: [
       ['GET', '/borders', 'Frontières des pays et littoraux.'],
       ['GET', '/places', 'Recherche d’un lieu.'],
@@ -65,6 +68,7 @@ export const API_DOC_GROUPS = [
   },
   {
     group: 'Tuiles et cartes', controller: 'tiles/tiles.controller.ts',
+    sources: ['nasa-imagery', 'ign-geoplateforme', 'open-meteo', 'xweather', 'interne'],
     routes: [
       ['GET', '/tiles/layers', 'Liste des couches de tuiles.'],
       ['GET', '/tiles/layers/{id}', 'Modèle d’adresse d’une couche.'],
@@ -80,12 +84,14 @@ export const API_DOC_GROUPS = [
   },
   {
     group: 'Galerie', controller: 'galerie/galerie.controller.ts',
+    sources: ['interne'],
     routes: [
       ['GET', '/galerie', 'Photos et vidéos de la galerie, lues dans PostgreSQL (table GALERIE_TABLE, galerie_items par défaut) ; { total: 0, folders: [] } sans DATABASE_URL.'],
     ],
   },
   {
     group: 'Contributions', controller: 'contributions/contributions.controller.ts',
+    sources: ['interne'],
     routes: [
       ['GET', '/contributions', 'Liste des contributions.'],
       ['POST', '/contributions/signup', 'Inscription d’un contributeur.'],
@@ -97,6 +103,7 @@ export const API_DOC_GROUPS = [
   },
   {
     group: 'Dons', controller: 'donations/donations.controller.ts',
+    sources: ['stripe'],
     routes: [
       ['GET', '/donations/config', 'Réglage des dons (désactivés dans l’édition statique).'],
       ['POST', '/donations/orders', 'Création d’un ordre de don.'],
@@ -105,6 +112,110 @@ export const API_DOC_GROUPS = [
     ],
   },
 ];
+
+/**
+ * Résistance des sources externes réellement interrogées par ce backend : derrière chaque groupe de routes, une ou
+ * plusieurs API tierces (ou aucune, quand tout est interne). Chaque source est évaluée ici par le nombre de requêtes
+ * qu’elle peut raisonnablement absorber par jour, à l’échelle globale du site (tous les visiteurs confondus, pas par
+ * visiteur), et par la résistance qui en découle : la marge dont l’application dispose avant que cette source ne la
+ * limite ou ne la coupe. Les chiffres viennent des politiques publiées par chaque fournisseur, pas d’une mesure sur
+ * ce dépôt ; faute de chiffre publié, `parJour` reste `null` et la résistance se juge sur la politique connue (clé
+ * exigée, garantie de service, fragilité d’une page lue plutôt qu’appelée). Relevé le 20 novembre 2026.
+ */
+export const API_DOC_SOURCES = [
+  {
+    id: 'interne', nom: 'Base interne (PostgreSQL, calculs locaux VSOP87, données embarquées)', hotes: '—', parJour: null,
+    base: 'Aucun fournisseur tiers : la limite est celle du serveur et de la base de ce dépôt, pas d’un quota externe.',
+    resistance: 'interne',
+  },
+  {
+    id: 'nasa-imagery', nom: 'NASA GIBS, NASA Trek, USGS Astrogeology, portails cartographiques publics nationaux',
+    hotes: 'gibs.earthdata.nasa.gov, trek.nasa.gov, planetarymaps.usgs.gov, et une douzaine de portails WMS/WMTS publics (PDOK, geo.admin.ch, GSI, NGI, GEBCO, ArcGIS…)',
+    parJour: null,
+    base: 'Services publics sans clé ; aucune de ces agences ne publie de quota numérique, usage raisonnable demandé.',
+    resistance: 'elevee',
+  },
+  {
+    id: 'ign-geoplateforme', nom: 'IGN Géoplateforme (LiDAR HD, tuiles françaises)', hotes: 'data.geopf.fr', parJour: 864000,
+    base: 'Documenté par l’IGN (data.gouv.fr) : 10 requêtes/seconde par adresse IP pour le téléchargement, 40 pour la diffusion WMS — chiffre retenu : le plus bas des deux, converti par jour.',
+    resistance: 'elevee',
+  },
+  {
+    id: 'nasa-donki-swpc', nom: 'NASA DONKI + NOAA SWPC (activité solaire)', hotes: 'kauai.ccmc.gsfc.nasa.gov, services.swpc.noaa.gov', parJour: 24000,
+    base: 'Clé NASA enregistrée (api.nasa.gov) : 1000 requêtes/heure. SWPC : aucun quota publié, cadence de mise à jour à respecter.',
+    resistance: 'elevee',
+  },
+  {
+    id: 'nasa-eonet-gvp', nom: 'NASA EONET + Smithsonian Global Volcanism Program', hotes: 'eonet.gsfc.nasa.gov, volcano.si.edu', parJour: null,
+    base: 'EONET : API ouverte, aucune limite publiée. GVP : page HTML lue (pas une API) — fragile à un changement de mise en page, pas au débit.',
+    resistance: 'moyenne',
+  },
+  {
+    id: 'open-meteo', nom: 'Open-Meteo (vents, nébulosité)', hotes: 'api.open-meteo.com', parJour: 10000,
+    base: 'Documenté par Open-Meteo : 10 000 requêtes/jour (5000/heure, 600/minute) en usage non commercial, sans clé.',
+    resistance: 'moyenne',
+  },
+  {
+    id: 'rainviewer', nom: 'RainViewer (radar des précipitations)', hotes: 'api.rainviewer.com, tilecache.rainviewer.com', parJour: null,
+    base: 'Gratuit pour un usage personnel ou éducatif ; aucune limite chiffrée publiée, mais mise en cache fortement demandée.',
+    resistance: 'moyenne',
+  },
+  {
+    id: 'nws-alerts', nom: 'National Weather Service (alertes météo)', hotes: 'api.weather.gov', parJour: null,
+    base: 'Limite non publiée, décrite comme généreuse ; la pratique recommandée se limite à 1 requête/seconde.',
+    resistance: 'elevee',
+  },
+  {
+    id: 'photon', nom: 'Photon / Komoot (recherche de lieux)', hotes: 'photon.komoot.io', parJour: null,
+    base: 'Instance publique de démonstration : « usage raisonnable », throttlée à 1 requête/seconde par convention, sans garantie de disponibilité (déjà tombée en panne).',
+    resistance: 'faible',
+  },
+  {
+    id: 'xweather', nom: 'Xweather (foudre, nébulosité de repli)', hotes: 'data.api.xweather.com, maps.api.xweather.com', parJour: 500,
+    base: 'Palier gratuit documenté : 15 000 accès par mois, soit environ 500 par jour en moyenne.',
+    resistance: 'faible',
+  },
+  {
+    id: 'stripe', nom: 'Stripe (dons)', hotes: 'api.stripe.com, checkout.stripe.com', parJour: 8640000,
+    base: 'Documenté par Stripe : 100 requêtes/seconde en mode live, pour l’ensemble du compte.',
+    resistance: 'tresElevee',
+  },
+];
+
+/** Index des sources par identifiant, pour les retrouver depuis `sources` d’un groupe. */
+export const API_DOC_SOURCE_BY_ID = Object.fromEntries(API_DOC_SOURCES.map((s) => [s.id, s]));
+
+/** Libellé et couleur de chaque niveau de résistance (teintes du thème de la fenêtre Node). */
+export const API_DOC_RESISTANCE_LEVELS = {
+  tresElevee: { libelle: 'Très élevée', couleur: 'success.main' },
+  elevee: { libelle: 'Élevée', couleur: 'success.main' },
+  moyenne: { libelle: 'Moyenne', couleur: 'warning.main' },
+  faible: { libelle: 'Faible', couleur: 'error.main' },
+  interne: { libelle: 'Interne', couleur: 'info.main' },
+};
+
+// Ordre du plus fragile au plus solide ; « interne » n’entre pas dans la comparaison (aucun quota tiers).
+const RESISTANCE_ORDER = ['faible', 'moyenne', 'elevee', 'tresElevee'];
+
+/**
+ * Résistance d’un groupe de routes : celle de sa source externe la plus fragile (le maillon faible), avec le
+ * nombre de requêtes par jour qu’elle documente (ou `null`, faute de chiffre publié par le fournisseur).
+ * Un groupe entièrement interne (aucune source tierce) est jugé « interne ».
+ */
+export function resistanceDuGroupe(sources) {
+  // Sources tierces seulement : « interne » ne limite jamais le groupe.
+  const tierces = (sources || []).map((id) => API_DOC_SOURCE_BY_ID[id]).filter((s) => s && s.resistance !== 'interne');
+  // Aucune source tierce : le groupe ne dépend que de ce dépôt.
+  if (!tierces.length) return { resistance: 'interne', source: API_DOC_SOURCE_BY_ID.interne, parJour: null };
+  // Le rang le plus bas (le plus fragile) parmi les sources du groupe.
+  const rangMin = Math.min(...tierces.map((s) => RESISTANCE_ORDER.indexOf(s.resistance)));
+  // Les sources à ce rang : s’il y en a plusieurs, celle qui documente le plus petit nombre de requêtes par jour
+  // (à défaut de chiffre, la moins contraignante à afficher).
+  const auRang = tierces.filter((s) => RESISTANCE_ORDER.indexOf(s.resistance) === rangMin);
+  const source = auRang.reduce((pire, s) => (pire.parJour == null || (s.parJour != null && s.parJour < pire.parJour) ? s : pire), auRang[0]);
+  return { resistance: source.resistance, source, parJour: source.parJour };
+// Fin de resistanceDuGroupe.
+}
 
 /** Nombre total de routes documentées. */
 export const countDocRoutes = () => API_DOC_GROUPS.reduce((n, g) => n + g.routes.length, 0);
