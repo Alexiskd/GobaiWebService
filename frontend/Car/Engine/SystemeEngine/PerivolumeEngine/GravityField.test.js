@@ -84,11 +84,12 @@ test('profil de la toupie : les astres du système descendent sur le cône du ba
   assert.ok(y(10) < moon);
   // Sous la surface de l'astre, le profil reste celui de sa surface : pas de pointe infinie.
   assert.equal(y(0), y(1));
-  // Le profil est celui que dessine la grille : le point le plus bas des segments est le creux du centre.
+  // Le profil est celui que dessine la grille : son anneau le plus bas (le premier des 14, de rayon 235 / 14²) est
+  // à la hauteur que le profil donne à cette distance.
   const segs = systemWellSegments({ outer: 235, inner: 1, unitM: UNIT_KM * 1000, massKg: BODY_MASS_KG.earth, exaggeration: 2000, minDepth: 82 });
   let lowest = 0;
   for (let i = 1; i < segs.length / 2; i += 3) lowest = Math.min(lowest, segs[i]);
-  assert.ok(Math.abs(lowest - y(1)) < 1e-3);
+  assert.ok(Math.abs(lowest - y(235 / 196)) < 1e-3);
   // Sans masse : profil plat.
   assert.equal(systemWellProfile({ outer: 10, unitM: 1, massKg: 0, exaggeration: 1 })(5), 0);
 });
