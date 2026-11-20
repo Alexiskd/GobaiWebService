@@ -199,6 +199,22 @@ export function gridWellY(rAu, outerAu, exaggeration = WELL_EXAGGERATION) {
 }
 
 /**
+ * Pente de la grille à la distance r du Soleil (dérivée de gridWellY par rapport à r, sans unité : une hauteur
+ * de scène par unité de distance de scène, puisque UA et unités de scène ont le même facteur des deux côtés).
+ * Sert à faire suivre la courbure du puits à la lumière du Soleil : plus un astre est proche du centre, plus la
+ * grille est pentue sous lui, et c'est cette pente — pas la ligne droite entre les positions déjà descendues —
+ * qui doit orienter ses rayons.
+ *  d(gridWellY)/dr = exaggeration · √(rs / max(r, rs))   (dérivée de −exaggeration · (outer − 2√(rs·r)))
+ */
+export function gridWellSlope(rAu, exaggeration = WELL_EXAGGERATION) {
+  // Rayon de Schwarzschild, en UA.
+  const rsAu = schwarzschildRadiusM() / AU_M;
+  // Pente positive : la grille se redresse (moins pentue) en s'éloignant du centre.
+  return exaggeration * Math.sqrt(rsAu / Math.max(rAu, rsAu));
+// Fin de gridWellSlope.
+}
+
+/**
  * Rayons des anneaux de la grille : espacement quadratique (les cercles se resserrent vers le Soleil, où la
  * courbure plonge), du rayon du Soleil au bord du disque.
  * @returns {number[]} `rings` rayons, en UA, du premier anneau au bord extérieur.

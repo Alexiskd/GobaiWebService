@@ -56,7 +56,7 @@ import { MoonOrbit } from './moonOrbit.jsx';
 import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
 // Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
 import {
-  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, layOrbitOnWell, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
+  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellSlope, gridWellY, layOrbitOnWell, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
 } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
 import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
@@ -1053,6 +1053,8 @@ export class SolarEngine {
     this.tmpSun = new THREE.Vector3();
     // Vecteur de travail : Terre.
     this.tmpEarth = new THREE.Vector3();
+    // Vecteur de travail : direction du Soleil courbée le long de la pente du puits (updateSunDirections).
+    this.tmpSunCurved = new THREE.Vector3();
   // Fin de initMoon.
   }
 
@@ -4567,20 +4569,41 @@ export class SolarEngine {
   // Fin de sunAltitudeAt.
   }
 
-  // Direction du Soleil vue de chaque astre tuilé, dans le repère caméra (éclairage des tuiles et de l'atmosphère).
+  /**
+   * Direction du Soleil vue de chaque astre tuilé, dans le repère caméra (éclairage des tuiles et de l'atmosphère).
+   * Dans l'affichage de Schwarzschild, cette direction ne reste pas la ligne droite entre le Soleil et l'astre
+   * (tous deux déjà descendus dans leur toupie) : elle est mélangée, au rythme du fondu, avec la tangente de la
+   * grille à la distance de l'astre — la lumière suit alors la pente du puits plutôt que de le traverser en ligne
+   * droite, comme une bille qui roule sur sa paroi plutôt que de tomber au centre.
+   */
   updateSunDirections(cam = this.cam) {
+    // Rythme du fondu vers Schwarzschild (nul hors du mode : la direction reste la ligne droite d'aujourd'hui).
+    const eased = this.schwarzschild?.eased || 0;
     // Pour chaque astre tuilé (début).
     for (const tb of this.tiledBodies) {
-      // Sa direction du Soleil :
-      tb.sunDir
-        // la position du Soleil,
-        .copy(this.sunMesh.position)
-        // moins celle de l'astre,
-        .sub(tb.group.position)
-        // rendue unitaire,
-        .normalize()
-        // puis passée dans le repère de la caméra.
-        .transformDirection(cam.matrixWorldInverse);
+      // Direction droite, en ligne directe vers le Soleil (comportement d'origine).
+      tb.sunDir.copy(this.sunMesh.position).sub(tb.group.position).normalize();
+      // Mélange avec la tangente de la grille (début) : seulement si le fondu a commencé.
+      if (eased > 0) {
+        // Distance horizontale au Soleil (le puits est un paraboloïde de révolution autour de son axe vertical).
+        const dx = tb.group.position.x - this.sunMesh.position.x;
+        const dz = tb.group.position.z - this.sunMesh.position.z;
+        const rScene = Math.hypot(dx, dz);
+        // Rayon nul (astre au zénith du Soleil) : la tangente n'est pas définie, la ligne droite suffit déjà.
+        if (rScene > 1e-6) {
+          // Pente de la grille à cette distance (dérivée de gridWellY), puis angle de la tangente.
+          const slope = gridWellSlope(rScene / AU_UNITS);
+          const invLen = 1 / Math.sqrt(1 + slope * slope);
+          // Tangente orientée vers le Soleil (direction radiale inversée, descendante selon la pente).
+          this.tmpSunCurved.set((-dx / rScene) * invLen, -slope * invLen, (-dz / rScene) * invLen);
+          // Mélange ligne droite → tangente de la pente, au rythme du fondu.
+          tb.sunDir.lerp(this.tmpSunCurved, eased).normalize();
+        // Fin du cas rayon nul.
+        }
+      // Fin du mélange.
+      }
+      // Puis passée dans le repère de la caméra.
+      tb.sunDir.transformDirection(cam.matrixWorldInverse);
     // Fin de la boucle.
     }
   // Fin de updateSunDirections.
