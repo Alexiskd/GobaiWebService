@@ -67,6 +67,9 @@ export class SatelliteSystem {
     this.bx = new THREE.Vector3(); this.by = new THREE.Vector3(); this.bz = new THREE.Vector3();
     // Compteur d'images.
     this.tick = 0;
+    // Descente d'un satellite dans la toupie de sa planète (affichage Schwarzschild) : fonction (satellite) → décalage
+    // vertical en unités de scène, posée par le moteur ; null = aucune descente.
+    this.wellDrop = null;
     // Liste des satellites.
     this.list = [];
     // Matériaux Lambert partagés uniquement lorsque leur couleur et leurs options sont identiques.
@@ -174,6 +177,8 @@ export class SatelliteSystem {
       if (s.ready && s.parent !== hotParent && (tick + i) % COLD_EVERY) {
         // Il suit simplement sa planète.
         s.w.copy(s.parent.w).add(s.rel);
+        // Affichage Schwarzschild : le satellite descend dans la toupie de sa planète (0 hors de cet affichage).
+        if (this.wellDrop) s.w.y += this.wellDrop(s);
         // Passe au suivant.
         continue;
       // Fin de ce cas.
@@ -190,6 +195,8 @@ export class SatelliteSystem {
       s.exact = st.exact;
       // Sa position dans le monde : celle de sa planète plus sa position relative.
       s.w.copy(s.parent.w).add(s.rel);
+      // Affichage Schwarzschild : le satellite descend dans la toupie de sa planète (0 hors de cet affichage).
+      if (this.wellDrop) s.w.y += this.wellDrop(s);
       // Son repère de rotation synchrone.
       const b = synchronousBasis(st.rel, st.vel);
       // Matrice faite de ces trois axes.
@@ -218,6 +225,8 @@ export class SatelliteSystem {
       s.group.position.copy(s.w).sub(target);
       // Le tracé de l'orbite est centré sur la planète.
       s.orbit.position.copy(s.parent.group.position);
+      // L'anneau de l'orbite descend avec le satellite, pour qu'il reste sur son tracé.
+      if (this.wellDrop) s.orbit.position.y += this.wellDrop(s);
       // Rayon de l'orbite.
       const a = s.rel.length();
       // Orbite visible si les orbites sont affichées, si le satellite n'est pas masqué et si la caméra est assez proche de la planète.
