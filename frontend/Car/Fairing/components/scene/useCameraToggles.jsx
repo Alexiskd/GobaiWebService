@@ -44,8 +44,9 @@ export function useCameraToggles(engine, initial = {}) {
     setVenusAtmosphere(Boolean(on));
     setMarsAtmosphere(Boolean(on));
   }, []);
-  // État : nuages et atmosphère de la Terre, masqués au départ (calque séparé de sa couche unique, désactivé par défaut).
-  const [earthAtmosphere, setEarthAtmosphere] = useState(false);
+  // État : nuages et atmosphère de la Terre, affichés au départ (calque séparé de sa couche unique ; décochable dans
+  // Paramètres).
+  const [earthAtmosphere, setEarthAtmosphere] = useState(true);
   // Relief en volume de la Terre (vraies altitudes) : coupé par défaut — carte à plat, affichée plus vite. Le choix
   // est gardé dans le navigateur par le moteur.
   // État : relief affiché si la valeur enregistrée est un nombre positif.

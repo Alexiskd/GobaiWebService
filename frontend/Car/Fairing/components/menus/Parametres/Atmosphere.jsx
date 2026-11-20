@@ -4,14 +4,14 @@ import { Group } from '../../ui/Group.jsx';
 import { Switch } from '../../ui/Switch.jsx';
 
 /**
- * Catégorie « Atmosphère » : les nuages et l'atmosphère de la Terre (calque séparé de sa couche unique, désactivé par
+ * Catégorie « Atmosphère » : les nuages et l'atmosphère de la Terre (calque séparé de sa couche unique, activé par
  * défaut), puis l'atmosphère de Vénus et de Mars. Les nuages sont simulés : aucune source météo n'est interrogée.
  */
 // Déclare et exporte le composant Atmosphere (début de la liste des propriétés).
 export function Atmosphere({
   showEarthAtmosphere = true, showBodyAtmospheres = true,
   // Les nuages et l'atmosphère de la Terre, leur rappel et leur texte d'aide.
-  earthAtmosphere = false, onEarthAtmosphere, earthAtmosphereHint,
+  earthAtmosphere = true, onEarthAtmosphere, earthAtmosphereHint,
   // L'atmosphère de Vénus et de Mars, son rappel et son texte d'aide.
   atmospheres, onAtmospheres, atmospheresHint,
 // Fin de la liste des propriétés.
