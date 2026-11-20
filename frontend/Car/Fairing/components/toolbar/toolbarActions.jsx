@@ -10,8 +10,6 @@
  */
 // Importe l'ensemble des boutons masqués, gardé dans son propre module (sans import, pour la fenêtre « Node »).
 import { HIDDEN } from './hiddenActions.js';
-// Importe Box de MUI : l'icône texte « E=mc² » du bouton relativiste est un élément React sans saut de ligne.
-import { Box } from '@mui/material';
 // Importe les icônes employées par la barre.
 import {
   // Recherche, vue d'ensemble, ombre, rotation, vue 3/4 et verrouillage.
@@ -23,6 +21,8 @@ import {
   AccountTreeIcon, ThreeSixtyIcon, AutoAwesomeIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons.jsx';
+// Importe EmcIcon, la formule « E = mc² » composée pour le bouton de l'affichage relativiste.
+import { EmcIcon } from './EmcIcon.jsx';
 // Icône du bouton « Mistral » : le composant Material de l'assistant.
 const MISTRAL_ICON = AutoAwesomeIcon;
 
@@ -63,8 +63,9 @@ export function toolbarActions({
     onToggleDayNight && { id: 'daynight', group: 'camera', icon: ShadowIcon, label: 'Ombre', iconOnly: true, pressed: night, onClick: onToggleDayNight, title: night ? 'Ombre activée : face des astres opposée au Soleil dans l’ombre' : 'Ombre désactivée : astres entièrement éclairés' },
     // E = mc² : bascule du groupe « camera », juste après Ombre. Affiche les orbites selon la métrique de
     // Schwarzschild (rosette précessée et grille filaire de courbure), fondu lent depuis les orbites de Kepler.
-    // L'icône est un élément React (texte en exposant), rendu tel quel par iconNode sans saut de ligne.
-    onToggleSchwarzschild && { id: 'schwarzschild', group: 'camera', icon: <Box component="span" sx={{ fontSize: 11, whiteSpace: 'nowrap', letterSpacing: '-0.02em' }}>E=mc²</Box>, label: 'E = mc²', iconOnly: true, pressed: schwarzschild, onClick: onToggleSchwarzschild, title: schwarzschild ? 'E = mc² activé : orbites de Schwarzschild (rosette) et grille de courbure' : 'E = mc² : orbites de Schwarzschild et grille de courbure (fondu depuis Kepler)' },
+    // L'icône est le composant EmcIcon (formule composée) ; `wide` : sur ordinateur, une pastille assez large pour la
+    // formule entière, au lieu du carré de 32 px où elle débordait sur les boutons voisins.
+    onToggleSchwarzschild && { id: 'schwarzschild', group: 'camera', icon: EmcIcon, label: 'E = mc²', short: 'E = mc²', iconOnly: true, wide: true, pressed: Boolean(schwarzschild), onClick: onToggleSchwarzschild, title: schwarzschild ? 'E = mc² activé : orbites de Schwarzschild (rosette) et grille de courbure' : 'E = mc² : orbites de Schwarzschild et grille de courbure (fondu depuis Kepler)' },
     // Rotation automatique : bascule.
     { id: 'auto', group: 'camera', icon: AutorenewIcon, label: 'Rotation', iconOnly: true, pressed: auto, onClick: onToggleAuto, title: 'Rotation automatique' },
     // Vue 3/4 automatique : bascule.

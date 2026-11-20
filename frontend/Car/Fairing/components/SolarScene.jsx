@@ -751,7 +751,12 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onToggleDayNight={() => withThemeTransition(toggleDayNight)}
         // E = mc² : bascule l'affichage de Schwarzschild (orbites en rosette, grille filaire de courbure).
         schwarzschild={schwarzschild}
-        onToggleSchwarzschild={() => setSchwarzschild((v) => engineRef.current?.setSchwarzschild(!v) ?? !v)}
+        // Le moteur est réglé hors de la mise à jour d'état (un seul appel), et le bouton suit l'état réel du
+        // moteur : tant que le moteur n'est pas prêt, il reste relâché au lieu de s'allumer sans effet.
+        onToggleSchwarzschild={() => {
+          const moteur = engineRef.current;
+          setSchwarzschild(moteur ? Boolean(moteur.setSchwarzschild(!schwarzschild)) : false);
+        }}
         // Rotation : inverse l'état.
         onToggleAuto={() => camera.setAuto((v) => !v)}
         // Vue 3/4 : inverse l'état.
