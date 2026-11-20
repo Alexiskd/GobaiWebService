@@ -156,6 +156,10 @@ export const MOLECULE = {
   liaison: 'Liaison simple (paire d’électrons partagée) ; dans l’analogie, la gravitation entre le Soleil et Alpha Centauri.',
 };
 
+/** Auteur de la théorie Gobai Space, qui signe la page « Théorie quantique » (même nom que la balise meta author du site). */
+// AUTEUR : la signature de la page.
+export const AUTEUR = 'Alexis Bouvet-Mallet';
+
 /** Masse du Soleil, en kilogrammes (≈ 99,86 % de la masse du système solaire). */
 export const MASSE_SOLEIL_KG = 1.989e30;
 

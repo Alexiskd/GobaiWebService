@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe le module de données de l'onglet « Théorie quantique ».
-import { SYMBOLES, ELEMENTS, SOLARIUM, PROXIMUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG, NOMBRE_ELEMENTS, position, couchesElectroniques } from './theorieQuantique.js';
+import { SYMBOLES, ELEMENTS, SOLARIUM, PROXIMUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG, AUTEUR, NOMBRE_ELEMENTS, position, couchesElectroniques } from './theorieQuantique.js';
 
 // Test : le tableau périodique contient bien les 118 éléments connus.
 test('118 symboles, du hydrogène (1) à l’oganesson (118)', () => {
@@ -81,6 +81,13 @@ test('couches atomiques K à R = orbites de Mercure à Neptune, capacité 2n²',
 test('la masse du Soleil est d’environ 2 × 10^30 kg', () => {
   // Entre 1 et 3 × 10^30 kg.
   assert.ok(MASSE_SOLEIL_KG >= 1e30 && MASSE_SOLEIL_KG < 3e30);
+// Fin du test.
+});
+
+// Test : la page « Théorie quantique » est signée par son auteur (même nom que la balise meta author du site).
+test('la théorie est signée « Alexis Bouvet-Mallet »', () => {
+  // La signature affichée en bas de page.
+  assert.equal(AUTEUR, 'Alexis Bouvet-Mallet');
 // Fin du test.
 });
 

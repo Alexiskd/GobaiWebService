@@ -4,12 +4,14 @@
 // l'assemblage « SoaCen » (Solarium–Alpha Centauri), et le « tableau hypothétique » des systèmes stellaires proches.
 // Composants MUI.
 import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-// Données de l'onglet : éléments, Solarium, assemblage SoaCen, couches et masse du Soleil.
-import { ELEMENTS, SOLARIUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
+// Données de l'onglet : éléments, Solarium, assemblage SoaCen, couches, masse du Soleil et auteur (signature).
+import { ELEMENTS, SOLARIUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG, AUTEUR } from './theorieQuantique.js';
 // Le tableau hypothétique des systèmes stellaires proches.
 import { TableauHypothetique } from './TableauHypothetique.jsx';
 // La section « charge électrique du Soleil selon T » (description des calculs).
 import { ChargeSoleil } from './ChargeSoleil.jsx';
+// La section « caractéristiques d'un élément du tableau périodique ».
+import { CaracteristiquesElement } from './CaracteristiquesElement.jsx';
 // Importe scientific, qui écrit un nombre en notation scientifique française.
 import { scientific } from '@/Engine/AstreSolideEngine/planetData';
 
@@ -368,6 +370,18 @@ export function TheorieQuantique() {
       <SectionTitle>Charge électrique du Soleil selon T — description des calculs</SectionTitle>
       {/* La section des calculs. */}
       <ChargeSoleil />
+
+      {/* Septième titre. */}
+      <SectionTitle>Caractéristiques d’un élément du tableau périodique</SectionTitle>
+      {/* La section Z et masse atomique. */}
+      <CaracteristiquesElement />
+
+      {/* La signature de la théorie. */}
+      <Typography variant="body2" color="text.secondary" fontStyle="italic" sx={{ mt: 3, textAlign: 'right' }}>
+        {/* Son texte : la théorie Gobai Space signée par son auteur. */}
+        Théorie quantique Gobai Space — signée {AUTEUR}
+      {/* Fin de la signature. */}
+      </Typography>
     {/* Fin du conteneur. */}
     </Box>
   // Fin du rendu.
