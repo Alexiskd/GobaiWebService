@@ -6,7 +6,7 @@ import { APP_CONFIG } from './config.module';
 import type { AppConfig } from '../common/configuration';
 // Contrôleur des lieux : les routes de recherche et de noms de villes.
 import { PlacesController } from '../controllers/places.controller';
-// Service de recherche de villes, de lieux et d'adresses (Photon, géocodeur OpenStreetMap).
+// Service de recherche de villes et de lieux, interne (GeoNames embarqué, aucun service extérieur).
 import { PlacesService } from '../services/places/places.service';
 // Service des noms de villes du monde (Natural Earth), avec le nom dans l'écriture locale.
 import { CityLabelsService } from '../services/places/city-labels.service';
@@ -17,8 +17,8 @@ import { CityLabelsService } from '../services/places/city-labels.service';
   controllers: [PlacesController],
   // Services que le module fabrique :
   providers: [
-    // PlacesService, construit par une fabrique qui lui passe la configuration ;
-    { provide: PlacesService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new PlacesService(config) },
+    // PlacesService, le moteur de recherche interne (sans configuration) ;
+    PlacesService,
     // CityLabelsService, construit de la même façon (la configuration donne le fichier des villes).
     { provide: CityLabelsService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new CityLabelsService(config) },
   // Fin de la liste des services.

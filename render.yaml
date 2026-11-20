@@ -60,7 +60,7 @@ services:
         # occupe. Ce secret n'est jamais écrit dans le dépôt : il signe les clés d'API vendues, donc qui le
         # connaît pourrait en fabriquer une sans payer.
         generateValue: true
-      # API externes déconnectées : hôtes séparés par des virgules (ex. photon.komoot.io,eonet.gsfc.nasa.gov). Vide : aucune.
+      # API externes déconnectées : hôtes séparés par des virgules (ex. eonet.gsfc.nasa.gov,api.open-meteo.com). Vide : aucune.
       - key: BLOCKED_API_HOSTS
         # Valeur saisie dans le tableau de bord.
         sync: false

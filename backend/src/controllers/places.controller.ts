@@ -1,14 +1,14 @@
 // Outils NestJS : Controller, Get, Header, Query.
 import { Controller, Get, Header, Query } from '@nestjs/common';
 // Décorateurs Swagger pour la documentation.
-import { ApiBadGatewayResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBadGatewayResponse, ApiOkResponse, ApiOperation, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
 // Forme commune des réponses d'erreur.
 import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes des noms de villes, des paramètres de recherche et des résultats.
 import { CityLabelsDto, FindPlacesQueryDto, PlacesDto } from '../dto/places.dto';
 // Service des noms de villes (Natural Earth).
 import { CityLabelsService } from '../services/places/city-labels.service';
-// Service de recherche de lieux (Photon).
+// Service de recherche de lieux (moteur interne, GeoNames embarqué).
 import { PlacesService } from '../services/places/places.service';
 
 // Rubrique « Lieux » de la documentation.
@@ -50,17 +50,16 @@ export class PlacesController {
     // son titre ;
     summary: 'Rechercher un lieu dans le monde entier',
     // début de son texte ;
-    description: 'Villes et lieux du monde entier : Photon '
-      // suite du texte ;
-      + '(OpenStreetMap, sans clé) limité aux localités habitées (ville, bourg, village, hameau, quartier), '
-      // fin du texte.
-      + 'plus les adresses (rue, numéro) quand le texte ressemble à une adresse.',
+    description: 'Villes et lieux du monde entier, recherchés par le moteur interne du serveur (aucun service '
+      + 'extérieur) : ≈ 172 000 localités GeoNames (plus de 1 000 habitants, chefs-lieux), noms français et dans les '
+      + 'écritures locales des grandes villes. Accepte un début de nom, les accents omis, les fautes de frappe légères, '
+      + 'et une précision après une virgule (« Paris, Texas »). Une adresse est ramenée à sa localité.',
   // Fin de la description.
   })
   // Réponse 200 documentée : un PlacesDto.
   @ApiOkResponse({ type: PlacesDto })
-  // Réponse 502 documentée : le géocodeur n'a pas répondu.
-  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  // Réponse 503 documentée : la base des lieux n'a pas pu être chargée.
+  @ApiServiceUnavailableResponse({ type: ApiErrorDto })
   // Méthode find : reçoit les paramètres de requête validés (texte cherché q, nombre de résultats limit).
   find(@Query() q: FindPlacesQueryDto): Promise<PlacesDto> {
     // Délègue la recherche au service.

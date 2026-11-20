@@ -46,7 +46,7 @@ function earthPlaces(cities, worldCities = []) {
 // Fin de earthPlaces.
 }
 
-/** Recherche distante de toutes les localités du monde (OpenStreetMap via Photon, ou Uber Maps). */
+/** Recherche des localités du monde par le moteur interne du serveur (GeoNames embarqué). */
 // searchWorld : lance la recherche distante…
 const searchWorld = (q, signal) => searchPlaces(q, signal)
   // … et convertit chaque résultat en lieu (liste vide à défaut).

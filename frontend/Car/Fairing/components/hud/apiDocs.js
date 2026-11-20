@@ -42,7 +42,7 @@ export const API_DOC_GROUPS = [
     group: 'Scène', controller: 'scene/scene.controller.ts',
     // Sources externes réellement interrogées par ce contrôleur (voir API_DOC_SOURCES) : la résistance du groupe
     // (résistanceDuGroupe, plus bas) est celle de la plus fragile d’entre elles.
-    sources: ['interne', 'photon', 'ign-geoplateforme', 'nasa-donki-swpc', 'nasa-eonet-gvp'],
+    sources: ['interne', 'ign-geoplateforme', 'nasa-donki-swpc', 'nasa-eonet-gvp'],
     routes: [
       ['GET', '/borders', 'Frontières des pays et littoraux.'],
       ['GET', '/places', 'Recherche d’un lieu.'],
@@ -114,7 +114,7 @@ export const API_DOC_GROUPS = [
  */
 export const API_DOC_SOURCES = [
   {
-    id: 'interne', nom: 'Base interne (PostgreSQL, calculs locaux VSOP87, données embarquées)', hotes: '—', parJour: null,
+    id: 'interne', nom: 'Base interne (PostgreSQL, calculs locaux VSOP87, données embarquées : lieux GeoNames CC BY 4.0, Natural Earth)', hotes: '—', parJour: null,
     base: 'Aucun fournisseur tiers : la limite est celle du serveur et de la base de ce dépôt, pas d’un quota externe.',
     resistance: 'interne',
   },
@@ -139,11 +139,6 @@ export const API_DOC_SOURCES = [
     id: 'nasa-eonet-gvp', nom: 'NASA EONET + Smithsonian Global Volcanism Program', hotes: 'eonet.gsfc.nasa.gov, volcano.si.edu', parJour: null,
     base: 'EONET : API ouverte, aucune limite publiée. GVP : page HTML lue (pas une API) — fragile à un changement de mise en page, pas au débit.',
     resistance: 'moyenne',
-  },
-  {
-    id: 'photon', nom: 'Photon / Komoot (recherche de lieux)', hotes: 'photon.komoot.io', parJour: null,
-    base: 'Instance publique de démonstration : « usage raisonnable », throttlée à 1 requête/seconde par convention, sans garantie de disponibilité (déjà tombée en panne).',
-    resistance: 'faible',
   },
   {
     id: 'stripe', nom: 'Stripe (dons)', hotes: 'api.stripe.com, checkout.stripe.com', parJour: 8640000,

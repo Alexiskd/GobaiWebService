@@ -87,10 +87,10 @@ export class CityLabelsDto {
 // Forme de la réponse de GET /places.
 export class PlacesDto {
   // provider : le géocodeur utilisé.
-  @ApiProperty({ example: 'photon' }) provider: string;
+  @ApiProperty({ example: 'gobai', description: 'Moteur de recherche : « gobai », le moteur interne du serveur.' }) provider: string;
   // items : les lieux trouvés.
   @ApiProperty({ type: [PlaceDto] }) items: PlaceDto[];
   // attribution : la mention à afficher.
-  @ApiProperty({ example: '© contributeurs OpenStreetMap · Photon (komoot)' }) attribution: string;
+  @ApiProperty({ example: 'Lieux : GeoNames (CC BY 4.0) · Natural Earth' }) attribution: string;
 // Fin de PlacesDto.
 }

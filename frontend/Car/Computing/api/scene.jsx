@@ -22,7 +22,7 @@ export const fetchLidarTiles = (signal, { lon, lat, r, bbox }) => get('/lidar', 
   lon: lon.toFixed(5), lat: lat.toFixed(5), r: Number.isFinite(r) ? Math.round(r) : undefined,
   bbox: Array.isArray(bbox) && bbox.every(Number.isFinite) ? bbox.map((v) => v.toFixed(5)).join(',') : undefined,
 } });
-/** Recherche mondiale de lieux (Photon, via le backend) : { provider, items: [{ name, context, lon, lat }], attribution }. */
+/** Recherche mondiale de lieux (moteur interne du backend) : { provider, items: [{ name, context, lon, lat }], attribution }. */
 // searchPlaces : la recherche de lieux, 8 résultats au plus.
 export const searchPlaces = (q, signal) => get('/places', { signal, query: { q, limit: 8 } });
 /** Noms des villes du monde (Natural Earth, triés par population) : { attribution, count, items: [{ name, native?, script?, country, lon, lat, pop, capital }] }.
