@@ -17,6 +17,36 @@ const PARENT_ID = {
 /** Nom d'une planète dans une phrase : « la Terre », sinon le nom seul (« Jupiter »). */
 const inSentence = (name) => (name === 'Terre' ? 'la Terre' : name);
 
+/** Premier nombre d'un texte français (« 24 046 000 km » → 24046000), ou NaN. */
+export const leadingNumber = (text) => {
+  const m = String(text ?? '').replace(/[\s\u00a0\u202f]/g, '').match(/^\d+(?:[.,]\d+)?/);
+  return m ? Number(m[0].replace(',', '.')) : NaN;
+};
+
+/**
+ * Fiche d'un satellite documenté par un PDF (petits satellites de Jupiter, absents de la scène 3D) : mêmes champs
+ * qu'un satellite de la scène, plus `doc` (le document) et `inScene: false`.
+ */
+function documentEntry(doc, parentName) {
+  const facts = [
+    { term: 'Type', value: 'Satellite naturel', note: doc.group },
+    { term: 'Désignation', value: doc.designation, note: `découverte : ${doc.discovery.provisional}` },
+    { term: 'Dimensions', value: doc.physical.size },
+    { term: 'Masse', value: doc.physical.mass },
+    { term: 'Masse volumique', value: doc.physical.density },
+    { term: 'Albédo moyen', value: doc.physical.albedo },
+    { term: 'Orbite', value: doc.orbit.semiMajorAxis, note: `demi-grand axe autour de ${inSentence(parentName)}` },
+    { term: 'Période orbitale', value: doc.orbit.period, note: doc.motion === 'rétrograde' ? 'rétrograde' : 'prograde' },
+    { term: 'Excentricité', value: doc.orbit.eccentricity },
+    { term: 'Inclinaison', value: doc.orbit.inclination },
+    { term: 'Découverte', value: doc.discovery.date, note: [doc.discovery.who, doc.discovery.where].filter(Boolean).join(' · ') },
+  ].filter((f) => f.value);
+  return {
+    id: `doc-${doc.id}`, name: doc.name, kind: 'satellite', kindLabel: 'Satellite naturel', parentName, color: '#a7a29a',
+    aKm: leadingNumber(doc.orbit.semiMajorAxis), inScene: false, doc, facts,
+  };
+}
+
 /** Sans accents ni majuscules : pour la recherche. */
 export const fold = (v) => String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
@@ -38,16 +68,18 @@ function moonFixedFacts() {
 
 /**
  * Construit le catalogue : { groups: [{ id, name, entries }], entries } dans l'ordre d'affichage.
- * Une entrée : { id, name, kind, kindLabel, parentName, color, summary, facts: [{ term, value, note }] }.
+ * Une entrée : { id, name, kind, kindLabel, parentName, color, summary, facts: [{ term, value, note }], inScene, doc? }.
+ * `documents` : les fiches PDF (petits satellites de Jupiter) ; elles rejoignent les satellites de Jupiter, rangées
+ * avec eux par distance à la planète (elles ne sont pas dans la scène 3D : `inScene: false`).
  */
-export function buildBodyCatalog({ sun, moon, planets = [], satellites = [] }) {
+export function buildBodyCatalog({ sun, moon, planets = [], satellites = [], documents = [] }) {
   const groups = [];
   const add = (id, name, entries) => { if (entries.length) groups.push({ id, name, entries }); };
 
   // Le Soleil.
   if (sun) {
     add('etoile', 'Étoile', [{
-      id: 'soleil', name: sun.name || 'Soleil', kind: 'etoile', kindLabel: 'Étoile', parentName: null, color: sun.color || '#ffb300',
+      id: 'soleil', name: sun.name || 'Soleil', kind: 'etoile', kindLabel: 'Étoile', parentName: null, color: sun.color || '#ffb300', inScene: true,
       facts: SUN_FACTS.map(([term, value]) => ({ term, value })),
     }]);
   }
@@ -58,7 +90,7 @@ export function buildBodyCatalog({ sun, moon, planets = [], satellites = [] }) {
     const type = facts.find((f) => f.term === 'Type')?.value;
     return {
       id: slug(p.name), name: p.name, kind: p.dwarf ? 'naine' : 'planete',
-      kindLabel: type || (p.dwarf ? 'Planète naine' : 'Planète'), parentName: null, color: p.color || '#9aa4b2',
+      kindLabel: type || (p.dwarf ? 'Planète naine' : 'Planète'), parentName: null, color: p.color || '#9aa4b2', inScene: true,
       facts,
     };
   };
@@ -70,14 +102,20 @@ export function buildBodyCatalog({ sun, moon, planets = [], satellites = [] }) {
     const pid = PARENT_ID[p.name];
     const own = satellites
       .filter((s) => s.parent === pid)
-      .sort((a, b) => (a.aKm || 0) - (b.aKm || 0))
       .map((s) => ({
         id: s.id || slug(s.name), name: s.name, kind: 'satellite', kindLabel: 'Satellite naturel', parentName: p.name,
-        color: s.color || '#a7a29a',
+        color: s.color || '#a7a29a', aKm: s.aKm, inScene: true,
         facts: [{ term: 'Type', value: 'Satellite naturel' }, ...satelliteFacts({ parentName: inSentence(p.name) }, s)],
       }));
+    // Fiches PDF du même système (Jupiter), sans doublon avec un satellite de la scène.
+    if (pid === 'jupiter') {
+      const known = new Set(own.map((e) => fold(e.name)));
+      for (const doc of documents) if (!known.has(fold(doc.name))) own.push(documentEntry(doc, p.name));
+    }
+    // Du plus proche au plus lointain de la planète.
+    own.sort((a, b) => (Number.isFinite(a.aKm) ? a.aKm : Infinity) - (Number.isFinite(b.aKm) ? b.aKm : Infinity));
     if (pid === 'earth' && moon) {
-      own.unshift({ id: 'lune', name: moon.name || 'Lune', kind: 'satellite', kindLabel: 'Satellite naturel', parentName: p.name, color: moon.color || '#c9c6bf', facts: moonFixedFacts() });
+      own.unshift({ id: 'lune', name: moon.name || 'Lune', kind: 'satellite', kindLabel: 'Satellite naturel', parentName: p.name, color: moon.color || '#c9c6bf', inScene: true, facts: moonFixedFacts() });
     }
     const of = p.name === 'Terre' ? 'de la Terre' : `${/^[AEIOUÉÈ]/i.test(p.name) ? 'd’' : 'de '}${p.name}`;
     add(`satellites-${pid}`, `${own.length > 1 ? 'Satellites' : 'Satellite'} ${of}`, own);
@@ -86,7 +124,7 @@ export function buildBodyCatalog({ sun, moon, planets = [], satellites = [] }) {
   const entries = groups.flatMap((g) => g.entries);
   // Résumé d'une ligne pour la carte : type, diamètre, et planète pour un satellite.
   for (const e of entries) {
-    const diameter = e.facts.find((f) => f.term === 'Diamètre')?.value
+    const diameter = e.facts.find((f) => f.term === 'Diamètre' || f.term === 'Dimensions')?.value
       ?? (e.kind === 'etoile' ? '1 391 400 km' : null);
     e.summary = [e.kindLabel, diameter && `Ø ${diameter}`, e.parentName && `autour de ${inSentence(e.parentName)}`].filter(Boolean).join(' · ');
   }
@@ -98,6 +136,6 @@ export function filterCatalog(catalog, { query = '', group = 'tous' } = {}) {
   const q = fold(query).trim();
   return catalog.groups
     .filter((g) => group === 'tous' || g.id === group)
-    .map((g) => ({ ...g, entries: q ? g.entries.filter((e) => fold(`${e.name} ${e.kindLabel} ${e.parentName || ''}`).includes(q)) : g.entries }))
+    .map((g) => ({ ...g, entries: q ? g.entries.filter((e) => fold(`${e.name} ${e.kindLabel} ${e.parentName || ''} ${e.doc?.designation || ''}`).includes(q)) : g.entries }))
     .filter((g) => g.entries.length);
 }

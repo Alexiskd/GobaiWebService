@@ -171,3 +171,16 @@
 @media (pointer: coarse) {
   .gobai-docs .doc-filter, .gobai-docs .doc-btn, .gobai-docs .doc-back { min-height: 44px; }
 }
+
+/* Avertissement sur les incertitudes scientifiques, en haut de la Documentation. */
+.gobai-docs .doc-warning {
+  display: flex; align-items: flex-start; gap: 10px; margin: 0 0 18px; padding: 12px 14px; max-width: 900px;
+  border: 1px solid color-mix(in srgb, #e0b25a 45%, var(--line)); border-radius: 12px;
+  background: color-mix(in srgb, #e0b25a 10%, var(--panel)); color: var(--ink); font-size: 13.5px; line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.gobai-docs .doc-warning-icon {
+  flex: none; display: grid; place-items: center; width: 20px; height: 20px; margin-top: 1px; border-radius: 50%;
+  background: #e0b25a; color: #1a1408; font: 700 13px var(--sans);
+}
+.gobai-docs .doc-text-after { margin-top: 12px; }

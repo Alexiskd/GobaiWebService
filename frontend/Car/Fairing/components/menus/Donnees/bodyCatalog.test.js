@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../../../Engine/SystemeEngine/data/astronomy/data/bodies.data.ts';
-import { buildBodyCatalog, filterCatalog } from './bodyCatalog.js';
+import { DOCUMENTS } from './data/index.js';
+import { buildBodyCatalog, filterCatalog, leadingNumber } from './bodyCatalog.js';
 
 const catalog = buildBodyCatalog({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES });
 
@@ -37,4 +38,22 @@ test('recherche sans accents et filtre par groupe', () => {
   assert.equal(naines.length, 1);
   assert.ok(naines[0].entries.every((e) => e.kind === 'naine'));
   assert.equal(filterCatalog(catalog, { query: 'zzz' }).length, 0);
+});
+
+test('fiches PDF : rangées dans les satellites de Jupiter, triées par distance, hors scène', () => {
+  const withDocs = buildBodyCatalog({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES, documents: DOCUMENTS });
+  assert.equal(withDocs.entries.length, catalog.entries.length + DOCUMENTS.length);
+  const jupiter = withDocs.groups.find((g) => g.id === 'satellites-jupiter');
+  assert.equal(jupiter.entries.length, ALL_SATELLITES.filter((s) => s.parent === 'jupiter').length + DOCUMENTS.length);
+  const a = jupiter.entries.map((e) => e.aKm);
+  assert.deepEqual(a, [...a].sort((x, y) => x - y));
+  assert.ok(jupiter.entries.filter((e) => e.doc).every((e) => e.inScene === false && e.parentName === 'Jupiter'));
+  // Aucune section à part pour les PDF.
+  assert.ok(withDocs.groups.every((g) => g.id === 'satellites-jupiter' || g.entries.every((e) => !e.doc)));
+});
+
+test('leadingNumber : nombres français avec espaces', () => {
+  assert.equal(leadingNumber('24 046 000 km'), 24046000);
+  assert.equal(leadingNumber('129 000 km (1,806 rayon de Jupiter)'), 129000);
+  assert.ok(Number.isNaN(leadingNumber('inconnu')));
 });
