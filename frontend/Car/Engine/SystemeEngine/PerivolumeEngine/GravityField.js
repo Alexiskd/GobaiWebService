@@ -48,6 +48,23 @@ export function wellDepthM(rM, outerM, rsM, exaggeration) {
 }
 
 /**
+ * Profil de la toupie d'un système : la fonction qui donne, à la distance r du centre (unités de scène), la hauteur
+ * du cône du bas — négative vers le centre, nulle au bord, nulle aussi au-delà du bord (hors du système).
+ * C'est la surface sur laquelle reposent les astres du système dans l'affichage Schwarzschild : un satellite à la
+ * distance r de sa planète descend de cette hauteur. Mêmes paramètres que systemWellSegments, qui dessine ce profil.
+ */
+export function systemWellProfile({ outer, inner, unitM, massKg, exaggeration, minDepth = 0 }) {
+  if (!(outer > 0) || !(unitM > 0) || !(massKg > 0)) return () => 0;
+  const rsM = schwarzschildRadiusOfMass(massKg);
+  const floor = Math.min(Math.max(inner || 0, outer * 1e-4), outer);
+  const depth = (r) => wellDepthM(r * unitM, outer * unitM, rsM, exaggeration) / unitM;
+  // Creux réel au centre ; s'il n'atteint pas le minimum demandé, le profil entier est étiré jusqu'à lui.
+  const natural = -depth(floor);
+  const stretch = minDepth > 0 && natural > 0 && natural < minDepth ? minDepth / natural : 1;
+  return (r) => (r >= outer ? 0 : depth(Math.max(r, floor)) * stretch);
+}
+
+/**
  * Géométrie filaire de la toupie d'un système : anneaux et rayons du puits de gravité de l'astre central, doublés
  * par symétrie de part et d'autre du plan (deux toupies recollées bord à bord), comme la grille du Soleil.
  *  outer, inner : rayon extérieur (le système) et intérieur (la surface de l'astre), en unités de scène ;
@@ -60,16 +77,11 @@ export function wellDepthM(rM, outerM, rsM, exaggeration) {
  */
 export function systemWellSegments({ outer, inner, unitM, massKg, exaggeration, rings = 14, spokes = 32, minDepth = 0 }) {
   if (!(outer > 0) || !(unitM > 0) || !(massKg > 0)) return new Float32Array(0);
-  const rsM = schwarzschildRadiusOfMass(massKg);
   const floor = Math.min(Math.max(inner || 0, outer * 1e-4), outer);
+  const y = systemWellProfile({ outer, inner, unitM, massKg, exaggeration, minDepth });
   // Anneaux resserrés vers le centre (répartition quadratique), là où la pente est la plus forte.
   const radii = [];
   for (let i = 1; i <= rings; i++) radii.push(Math.max(floor, outer * (i / rings) ** 2));
-  const depth = (r) => wellDepthM(r * unitM, outer * unitM, rsM, exaggeration) / unitM;
-  // Creux réel au centre ; s'il n'atteint pas le minimum demandé, le profil entier est étiré jusqu'à lui.
-  const natural = -depth(floor);
-  const stretch = minDepth > 0 && natural > 0 && natural < minDepth ? minDepth / natural : 1;
-  const y = (r) => depth(r) * stretch;
   const segs = [];
   // Les anneaux : des cercles à la profondeur du puits.
   for (const r of radii) {

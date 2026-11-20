@@ -56,7 +56,7 @@ import { MoonOrbit } from './moonOrbit.jsx';
 import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
 // Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
 import {
-  SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, mirrorY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
+  SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, mirrorY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
 } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
 import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
@@ -129,7 +129,7 @@ import { renderLoop } from '../SystemeEngine/core/RenderLoop.js';
 import { createGobaiPerivolumeAxioms } from '../SystemeEngine/PerivolumeEngine/PerivolumeAxiomPolicy.js';
 import { PerivolumeSphereEngine } from '../SystemeEngine/PerivolumeEngine/PerivolumeSphereEngine.js';
 // Importe le champ gravitationnel : rayon de la sphère d'un astre (sphère de Hill) et toupie d'un système (puits de gravité).
-import { gravitySphereRadius, systemWellSegments } from '../SystemeEngine/PerivolumeEngine/GravityField.js';
+import { gravitySphereRadius, systemWellProfile, systemWellSegments } from '../SystemeEngine/PerivolumeEngine/GravityField.js';
 // Importe le choix du système visé par un clic (la plus petite sphère d'influence traversée).
 import { pickSystem } from '../SystemeEngine/PerivolumeEngine/systemPick.js';
 import { ResourceManager } from '../SystemeEngine/core/ResourceManager.js';
@@ -1310,6 +1310,28 @@ export class SolarEngine {
   }
 
   /**
+   * Descente d'un astre dans la toupie de son système parent, en unités de scène (négative : vers le bas), à la
+   * distance `distance` de l'astre central `parentId`. Nulle hors de l'affichage Schwarzschild ; elle suit son fondu,
+   * pour que les astres glissent dans le cône du bas quand on appuie sur E = mc² et remontent quand on le relâche.
+   */
+  wellDropIn(parentId, distance) {
+    const alpha = this.schwarzschild?.eased || 0;
+    if (!alpha || !parentId) return 0;
+    const profile = this.systemWellProfiles?.get(parentId);
+    return profile ? alpha * profile(distance) : 0;
+  }
+
+  /**
+   * Descente d'une planète dans la toupie du Soleil, en unités de scène, à `rAu` unités astronomiques du Soleil :
+   * la hauteur de la grille de courbure à cette distance (voir gridWellY), au rythme du fondu.
+   */
+  sunWellDrop(rAu) {
+    const s = this.schwarzschild;
+    if (!s?.eased || !(s.outerAu > 0) || !(rAu < s.outerAu)) return 0;
+    return s.eased * gridWellY(rAu, s.outerAu) * AU_UNITS;
+  }
+
+  /**
    * Pose la toupie de chaque astre : chaque astre est un système, avec sa toupie qui l'englobe. C'est son puits de
    * gravité (grille filaire double, comme celle du Soleil), inscrit dans sa sphère d'influence : le bord de la toupie
    * suit l'équateur de la sphère translucide, ses deux pointes se referment au-dessus et au-dessous de l'astre.
@@ -1321,6 +1343,10 @@ export class SolarEngine {
    */
   initSystemWells() {
     this.systemWells = [];
+    // Profil de la toupie de chaque astre, par identifiant : hauteur du cône du bas à une distance donnée.
+    this.systemWellProfiles = new Map();
+    // Les satellites descendent dans la toupie de leur planète, au rythme du fondu Schwarzschild.
+    if (this.satellites) this.satellites.wellDrop = (sat) => this.wellDropIn(sat.parent ? bodyId(sat.parent.def) : null, sat.rel.length());
     if (!this.perivolumeRoot) return;
     this.focusTargets.forEach((target, index) => {
       // Le rayon de la toupie : celui de la sphère d'influence de l'astre (0 pour le Soleil, qui a déjà la sienne).
@@ -1331,13 +1357,15 @@ export class SolarEngine {
       if (!id) return;
       // Moins de traits pour un satellite : ils sont des dizaines.
       const small = Boolean(target.satellite);
-      const positions = systemWellSegments({
+      const shape = {
         outer, inner: radius, unitM: EARTH_RADIUS_KM * 1000,
         massKg: bodyMassKg(id, radius * EARTH_RADIUS_KM), exaggeration: WELL_EXAGGERATION,
         minDepth: Math.max(outer * 0.35, radius * 1.6),
-        rings: small ? 8 : 14, spokes: small ? 24 : 32,
-      });
+      };
+      const positions = systemWellSegments({ ...shape, rings: small ? 8 : 14, spokes: small ? 24 : 32 });
       if (!positions.length) return;
+      // Le profil du cône du bas : la surface sur laquelle descendent les astres de ce système (ses satellites).
+      this.systemWellProfiles.set(id, systemWellProfile(shape));
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       // Même trait que la grille du Soleil : fin, additif, sans écriture de profondeur.
@@ -3012,13 +3040,15 @@ export class SolarEngine {
     // Le siècle courant de Temps terrestre, pour les éléments d'orbite.
     const orbitT = centuriesTT(Date.now());
     // L'état du mode : progression (0 = Kepler, 1 = Schwarzschild), but et dernier mélange dessiné.
-    this.schwarzschild = { progress: 0, goal: 0, lastDrawn: -1 };
+    this.schwarzschild = { progress: 0, goal: 0, lastDrawn: -1, eased: 0, outerAu: 0 };
     // La géométrie filaire (segments d'anneaux et de rayons).
     const gridGeometry = new THREE.BufferGeometry();
     // Les segments, calculés par le module mathématique. Le disque est borné par l'aphélie de la planète naine la
     // plus lointaine du catalogue (Éris, a·(1+e) ≈ 97,7 UA, arrondi au-dessus) : la grille englobe tous les astres
     // du système, où qu'ils soient sur leur orbite, et le Soleil en reste exactement le centre.
     const outerAu = Math.ceil(Math.max(...PLANETS.map((b) => b.elements[0] * (1 + b.elements[2]))));
+    // Gardé pour faire descendre les planètes sur cette même grille (voir sunWellDrop).
+    this.schwarzschild.outerAu = outerAu;
     gridGeometry.setAttribute('position', new THREE.BufferAttribute(schwarzschildGridSegments({ outerAu }), 3));
     // Le maillage de la grille, en lignes, sans écriture de profondeur ni éclairage : un fil de courbure.
     const grid = new THREE.LineSegments(gridGeometry, new THREE.LineBasicMaterial({
@@ -3045,6 +3075,12 @@ export class SolarEngine {
       rosetteLoop.set(rosette);
       // Le premier, répété à la fin.
       rosetteLoop.set(rosette.subarray(0, 3), rosette.length);
+      // La rosette descend dans le cône du bas de la toupie du Soleil : chaque point prend la hauteur de la grille
+      // à sa distance du Soleil. Le mélange Kepler → rosette fait ainsi glisser l'orbite dans la toupie.
+      for (let i = 0; i < rosetteLoop.length; i += 3) {
+        const rAu = Math.hypot(rosetteLoop[i], rosetteLoop[i + 1], rosetteLoop[i + 2]) / AU_UNITS;
+        if (rAu < outerAu) rosetteLoop[i + 1] += gridWellY(rAu, outerAu) * AU_UNITS;
+      }
       // Le garde.
       p.rosetteOrbit = rosetteLoop;
       // La copie intacte de Kepler : le point de retour du fondu.
@@ -3087,6 +3123,8 @@ export class SolarEngine {
     s.progress = next;
     // L'avancement amorti, côté dessin.
     const eased = easeInOutCubic(next);
+    // Gardé : les astres descendent dans leur toupie au même rythme (updateBodies, updateMoon, satellites).
+    s.eased = eased;
     // Pour chaque planète : le mélange des deux tracés, sur place, dans le ruban dessiné.
     for (const p of this.planets) {
       // Le mélange point à point (Kepler vers rosette, ou l'inverse) dans les points du ruban.
@@ -3963,6 +4001,8 @@ export class SolarEngine {
       p.ecl = calculateOrbitPosition(p.def, this.simMs);
       // Sa position dans la scène.
       p.w.set(p.ecl[0] * AU_UNITS, p.ecl[1] * AU_UNITS, p.ecl[2] * AU_UNITS);
+      // Affichage Schwarzschild : la planète descend dans le cône du bas de la toupie du Soleil, à sa distance.
+      p.w.y += this.sunWellDrop(Math.hypot(p.ecl[0], p.ecl[1], p.ecl[2]));
       // Sa rotation propre.
       p.mesh.rotation.y = (d / p.def.rotation) * TAU;
     // Fin de la boucle.
@@ -4021,6 +4061,8 @@ export class SolarEngine {
     this.moonSource = 'Kepler à deux corps';
     this.moonRel.set(state.rel[0], state.rel[1], state.rel[2]);
     this.moonW.copy(this.earth.w).add(this.moonRel);
+    // Affichage Schwarzschild : la Lune descend dans la toupie de la Terre, à sa distance.
+    this.moonW.y += this.wellDropIn('earth', this.moonRel.length());
 
     const distanceScene = this.moonRel.length();
     const distanceKm = distanceScene * 6371;
@@ -4164,6 +4206,8 @@ export class SolarEngine {
     this.moonGroup.position.copy(this.moonW).sub(this.target);
     // Son orbite suit la Terre.
     this.moonOrbit.position.copy(this.earth.group.position);
+    // Le tracé de son orbite descend avec elle.
+    this.moonOrbit.position.y += this.wellDropIn('earth', this.moonRel.length());
     // Orbite visible : si les orbites sont affichées, la Lune non masquée et la caméra assez près.
     this.moonOrbit.visible = this.orbitsOn && !this.moonHidden && this.dist < MOON_ORBIT_MAX_DIST;
     // Place les satellites.

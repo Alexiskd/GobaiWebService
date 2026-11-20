@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // Importe le champ gravitationnel des astres.
 import {
-  BODY_MASS_KG, bodyMassKg, gravitySphereRadius, hillRadius, schwarzschildRadiusOfMass, systemWellSegments, wellDepthM,
+  BODY_MASS_KG, bodyMassKg, gravitySphereRadius, hillRadius, schwarzschildRadiusOfMass, systemWellProfile, systemWellSegments, wellDepthM,
 } from './GravityField.js';
 
 // Rayon de la Terre en km : l'unité de scène du moteur.
@@ -69,4 +69,27 @@ test('toupie d’un petit astre : étirée jusqu’à l’englober, sans changer
   assert.equal(stretched.length, systemWellSegments(base).length);
   // Un puits déjà plus creux que le minimum n'est pas touché.
   assert.ok(Math.abs(lowest(systemWellSegments({ ...base, minDepth: natural / 2 })) - natural) < 1e-6);
+});
+
+test('profil de la toupie : les astres du système descendent sur le cône du bas, d’autant plus qu’ils sont proches du centre', () => {
+  // La toupie de la Terre, étirée pour l'englober : rayon 235, creux d'au moins 82 au centre.
+  const y = systemWellProfile({ outer: 235, inner: 1, unitM: UNIT_KM * 1000, massKg: BODY_MASS_KG.earth, exaggeration: 2000, minDepth: 82 });
+  // Au bord et au-delà (hors du système) : aucune descente.
+  assert.equal(y(235), 0);
+  assert.equal(y(1000), 0);
+  // À la distance de la Lune : une descente franche, mais moindre qu'au ras de la Terre.
+  const moon = y(60.3);
+  assert.ok(moon < -20 && moon > -82, String(moon));
+  assert.ok(Math.abs(y(1) + 82) < 1e-6);
+  assert.ok(y(10) < moon);
+  // Sous la surface de l'astre, le profil reste celui de sa surface : pas de pointe infinie.
+  assert.equal(y(0), y(1));
+  // Le profil est celui que dessine la grille : son anneau le plus bas (le premier des 14, de rayon 235 / 14²) est
+  // à la hauteur que le profil donne à cette distance.
+  const segs = systemWellSegments({ outer: 235, inner: 1, unitM: UNIT_KM * 1000, massKg: BODY_MASS_KG.earth, exaggeration: 2000, minDepth: 82 });
+  let lowest = 0;
+  for (let i = 1; i < segs.length / 2; i += 3) lowest = Math.min(lowest, segs[i]);
+  assert.ok(Math.abs(lowest - y(235 / 196)) < 1e-3);
+  // Sans masse : profil plat.
+  assert.equal(systemWellProfile({ outer: 10, unitM: 1, massKg: 0, exaggeration: 1 })(5), 0);
 });
