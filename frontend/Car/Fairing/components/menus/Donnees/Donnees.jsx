@@ -1,16 +1,14 @@
 // Fenêtre plein écran « Données » : en-tête, barre de navigation à onglets, puis le contenu de l'onglet choisi.
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Box, ButtonBase, CircularProgress, Dialog, IconButton, Tooltip, Typography } from '@mui/material';
-import { CloseIcon, DescriptionIcon, PsychologyIcon, ScienceIcon } from '../../ui/icons.jsx';
+import { CloseIcon, PsychologyIcon, ScienceIcon } from '../../ui/icons.jsx';
 
 // Chargées à l'ouverture de leur onglet seulement : rien de tout cela n'alourdit le démarrage de la scène 3D.
-const Documents = lazy(() => import('./Documents.jsx').then((m) => ({ default: m.Documents })));
 const FluxCognitif = lazy(() => import('../../hud/FluxCognitif.jsx').then((m) => ({ default: m.FluxCognitif })));
 const TheorieQuantique = lazy(() => import('../../hud/TheorieQuantique.jsx').then((m) => ({ default: m.TheorieQuantique })));
 
 /** Les onglets de la fenêtre, dans l'ordre de la barre : nom, nom court (téléphone), description et icône. */
 export const DONNEES_TABS = [
-  { id: 'documentation', name: 'Documentation', short: 'Docs', hint: 'Une fiche par astre de l’application, avec ses photos : Soleil, planètes, satellites', Icon: DescriptionIcon },
   { id: 'flux', name: 'Flux cognitif', short: 'Flux', hint: 'Page de recherche de l’auteur', Icon: PsychologyIcon },
   { id: 'theorie', name: 'Théorie quantique', short: 'Théorie', hint: 'Page de recherche de l’auteur', Icon: ScienceIcon },
 ];
@@ -91,21 +89,17 @@ function DonneesNav({ tab, onChange }) {
 }
 
 /**
- * Fenêtre plein écran « Données » : Documentation (une fiche par astre, avec les photos de Ma collection
- * directement dans la fiche), et les deux pages de recherche de l'auteur : Flux cognitif et Théorie
- * quantique.
+ * Fenêtre plein écran « Données » : les deux pages de recherche de l'auteur, Flux cognitif et Théorie quantique.
+ * La documentation des astres et leurs photos sont dans le panneau Caractéristiques et informations de chaque astre,
+ * et l'arborescence des astres dans la Navigation.
  *
  * L'en-tête et la barre de navigation restent fixes en haut ; seul le contenu défile. Les marges de sécurité de
  * l'iPhone (encoche, barre d'accueil) sont respectées en portrait comme en paysage.
  */
-export function Donnees({ open, onClose, onGoTo }) {
-  const [tab, setTab] = useState('documentation');
-  // Visionneuse d'image ouverte ou non (côté galerie et documents) : Échap la ferme d'abord.
-  const [lightbox, setLightbox] = useState(false);
+export function Donnees({ open, onClose }) {
+  const [tab, setTab] = useState('flux');
   const scrollRef = useRef(null);
 
-  useEffect(() => { if (!open) setLightbox(false); }, [open]);
-  const onLightboxChange = useCallback((v) => setLightbox(v), []);
   // Changer d'onglet ramène le contenu en haut.
   const changeTab = useCallback((id) => { setTab(id); scrollRef.current?.scrollTo?.({ top: 0 }); }, []);
 
@@ -114,7 +108,7 @@ export function Donnees({ open, onClose, onGoTo }) {
   return (
     <Dialog
       open={open}
-      onClose={(event, reason) => { if (lightbox && reason === 'escapeKeyDown') return; onClose?.(event, reason); }}
+      onClose={(event, reason) => onClose?.(event, reason)}
       fullScreen
       aria-label="Données"
       slotProps={{ paper: { sx: { bgcolor: V.void, color: V.ink, backgroundImage: 'none', backdropFilter: 'none', fontFamily: V.font } } }}
@@ -161,11 +155,9 @@ export function Donnees({ open, onClose, onGoTo }) {
       >
         {open && (
           <Suspense fallback={<Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}><CircularProgress sx={{ color: V.muted }} /></Box>}>
-            {tab === 'flux' || tab === 'theorie' ? (
-                <Box sx={{ maxWidth: 980, mx: 'auto', px: { xs: 2, sm: 3 }, py: 3, color: 'text.primary' }}>
-                  {tab === 'flux' ? <FluxCognitif /> : <TheorieQuantique />}
-                </Box>
-              ) : <Documents onGoTo={onGoTo} onLightboxChange={onLightboxChange} />}
+            <Box sx={{ maxWidth: 980, mx: 'auto', px: { xs: 2, sm: 3 }, py: 3, color: 'text.primary' }}>
+              {tab === 'theorie' ? <TheorieQuantique /> : <FluxCognitif />}
+            </Box>
           </Suspense>
         )}
       </Box>

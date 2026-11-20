@@ -71,7 +71,7 @@ import { useDonationPrompt } from './menus/Don/useDonationPrompt.jsx';
 import { Langue } from './menus/Langue.jsx';
 // Importe la fenêtre du plateau tournant.
 import { Plateau } from './menus/Plateau/Plateau.jsx';
-// Importe la fenêtre Données (galerie et documentation).
+// Importe la fenêtre Données (flux cognitif et théorie quantique).
 import { Donnees } from './menus/Donnees/Donnees.jsx';
 // Importe la boutique des exports et le test du retour de la page de paiement Stripe.
 import { Boutique } from './menus/Boutique/Boutique.jsx';
@@ -260,6 +260,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Navigation : l'assistant tient sa place dans le HUD, l'arborescence des astres s'ouvre à la demande, par son bouton.
   // État : arborescence de navigation ouverte ou non, fermée au départ.
   const [navigatorOpen, setNavigatorOpen] = useState(false);
+  // Rail de navigation déplacé à la main (ordinateur) : l'assistant n'a plus à s'en écarter.
+  const [navigatorMoved, setNavigatorMoved] = useState(false);
   // Plateau tournant : ouvert ou non, et son ouverture.
   const plateauOpen = panels.panel === 'plateau'; const setPlateauOpen = (on) => panels.show('plateau', on);
   // La boutique des exports.
@@ -702,7 +704,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
         // La pastille « Astres » ouvre et ferme l'arborescence.
         onNavigator={() => setNavigatorOpen((v) => !v)}
         // Écarté quand l'arborescence est ouverte : elle occupe la même place dans le HUD.
-        shifted={navigatorOpen}
+        shifted={navigatorOpen && !navigatorMoved}
         // Exécution des actions demandées.
         onAction={runAssistantAction}
       // Fin du panneau de l'assistant.
@@ -711,7 +713,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   );
   // L'arborescence des astres, ouverte par son bouton : elle garde son pilotage du zoom par le menu des satellites
   // (planète seule quand il est fermé, système complet quand il est ouvert).
-  const navigatorEl = navigatorOpen ? <Navigator bodies={shownBodies} focus={focus} onSelect={actions.selectFocus} /> : null;
+  const navigatorEl = navigatorOpen ? <Navigator bodies={shownBodies} focus={focus} onSelect={actions.selectFocus} onMovedChange={setNavigatorMoved} /> : null;
   // La jauge LiDAR.
   const lidarEl = <LidarJauge hud={hud} />;
   // L'indicateur de chargement des tuiles de l'astre visé.
@@ -977,12 +979,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       // Fin de la fenêtre des paramètres.
       />
       {/* La galerie. */}
-      <Donnees
-        open={galleryOpen}
-        onClose={() => setGalleryOpen(false)}
-        // Documentation : « Voir dans la scène » vise l'astre et ferme la fenêtre.
-        onGoTo={(name) => { if (engineRef.current?.focusBySlug(name)) setGalleryOpen(false); }}
-      />
+      <Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} />
       <Boutique open={storeOpen} onClose={() => setStoreOpen(false)} />
       {/* Le plateau tournant (début de la balise). */}
       <Plateau

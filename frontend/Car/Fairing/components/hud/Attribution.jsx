@@ -381,7 +381,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
     ...(extra ? extra.split(' · ').map((t) => splitLabel(t, 'Données')) : []),
     // Les éphémérides.
     ['Éphémérides', 'Orbites de Kepler calculées dans le navigateur · éléments moyens JPL SSD'],
-    // Les photos des fiches de la Documentation.
+    // Les photos des astres, dans le panneau Caractéristiques et informations.
     ['Photos des astres', 'Ma collection (photos et vidéos personnelles, servies par le serveur de Gobai Space)'],
     // Les modèles 3D de Phobos et de Deimos.
     ['Phobos et Deimos (modèles 3D)', 'NASA/JPL-Caltech — science.nasa.gov'],

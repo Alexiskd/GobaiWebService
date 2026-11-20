@@ -1,4 +1,6 @@
 // Importe de React les crochets useEffect, useRef et useState.
+import { BodyDocumentation } from './BodyDocumentation.jsx';
+import { SUN_FACTS } from './sunFacts.js';
 import { useEffect, useRef, useState } from 'react';
 // Importe de MUI Box, Collapse (repli animé), IconButton, Paper, Stack et Typography.
 import { Box, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material';
@@ -253,6 +255,8 @@ export function Informations({ hud, data, worldCities, phases, handlers, layersO
       <InformationsShell view={null} hud={hud} layersOpen={layersOpen} onCloseLayers={onCloseLayers} menu={menu} sun closable={!sunFocused}>
         {/* La fiche du Soleil, avec les éléments orbitaux de la Terre. */}
         <SunInfo earthElements={earth?.elements} />
+        {/* Photos (Ma collection) et documentation du Soleil. */}
+        <BodyDocumentation name={data.bodies.sun?.name || 'Soleil'} shownTerms={SUN_FACTS.map(([term]) => term)} />
       {/* Fin de la coquille. */}
       </InformationsShell>
     // Fin du rendu.
