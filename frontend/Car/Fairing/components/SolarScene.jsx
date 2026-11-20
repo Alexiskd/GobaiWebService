@@ -977,7 +977,12 @@ export function SolarScene({ data, onSettled, covered = false }) {
       // Fin de la fenêtre des paramètres.
       />
       {/* La galerie. */}
-      <Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} />
+      <Donnees
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        // Documentation : « Voir dans la scène » vise l'astre et ferme la fenêtre.
+        onGoTo={(name) => { if (engineRef.current?.focusBySlug(name)) setGalleryOpen(false); }}
+      />
       <Boutique open={storeOpen} onClose={() => setStoreOpen(false)} />
       {/* Le plateau tournant (début de la balise). */}
       <Plateau

@@ -1,11 +1,11 @@
 // Importe les mises en forme de latitude, de longitude et de nombre.
-import { fmtLat, fmtLon, nf } from '@/Engine/shared/lib/format';
+import { fmtLat, fmtLon, nf } from '../../../../Engine/shared/lib/format';
 // Importe atmosphereThickness, l'épaisseur de l'atmosphère d'un astre.
-import { atmosphereThickness } from '@/Engine/AstreSolideEngine/AtmosphereEngine/atmosphereData';
+import { atmosphereThickness } from '../../../../Engine/AstreSolideEngine/AtmosphereEngine/atmosphereData';
 // Importe bodyId, qui donne l'identifiant d'un astre.
-import { bodyId } from '@/Engine/AstreSolideEngine/bodyPlaces';
+import { bodyId } from '../../../../Engine/AstreSolideEngine/bodyPlaces';
 // Importe les caractéristiques fixes d'une planète, sa masse et la notation scientifique.
-import { planetData, planetMass, scientific } from '@/Engine/AstreSolideEngine/planetData';
+import { planetData, planetMass, scientific } from '../../../../Engine/AstreSolideEngine/planetData';
 
 // Rayon moyen de la Terre, en kilomètres.
 const EARTH_RADIUS_KM = 6371;

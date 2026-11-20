@@ -118,3 +118,56 @@
 /* Pour « .gobai-docs .doc-foot » : note de bas de page. */
 .gobai-docs .doc-foot { font: 12px var(--mono); color: var(--muted); margin-top: 8px; }
 .gobai-docs .doc-foot code { font-family: var(--mono); }
+
+/* ── Documentation de tous les astres : outils, cartes et fiches ── */
+
+/* Pastille d'un astre, à sa couleur (comme le rail de navigation). */
+.gobai-docs .doc-orb {
+  display: inline-block; flex: none; border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.8), transparent 22%),
+    radial-gradient(circle at 35% 30%, var(--orb), color-mix(in srgb, var(--orb), #101522 45%));
+}
+
+/* Recherche et filtres : la barre passe à la ligne sur ordinateur, les pastilles défilent sur téléphone. */
+.gobai-docs .doc-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; }
+.gobai-docs .doc-search {
+  display: flex; align-items: center; gap: 8px; flex: 1 1 280px; min-width: 0; max-width: 460px; min-height: 44px;
+  padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); color: var(--muted);
+}
+.gobai-docs .doc-search:focus-within { border-color: var(--muted); }
+/* 16 px : Safari sur iPhone ne zoome pas au focus. */
+.gobai-docs .doc-search input {
+  flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: 16px var(--sans);
+}
+.gobai-docs .doc-filters { display: flex; gap: 6px; flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.gobai-docs .doc-filters::-webkit-scrollbar { display: none; }
+.gobai-docs .doc-filter {
+  flex: none; white-space: nowrap; min-height: 36px; padding: 6px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: transparent; color: var(--muted); font: 500 13.5px var(--sans);
+}
+.gobai-docs .doc-filter:hover { color: var(--ink); }
+.gobai-docs .doc-filter.is-active { background: var(--ink); border-color: var(--ink); color: var(--void); }
+.gobai-docs .doc-filter:focus-visible, .gobai-docs .doc-card-btn:focus-visible, .gobai-docs .doc-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.gobai-docs .doc-count { margin: 0 0 16px; font: 12px var(--mono); color: var(--muted); }
+.gobai-docs .doc-empty { color: var(--muted); font-size: 14px; }
+
+/* Carte d'un astre : pastille et nom, puis résumé ; le texte passe à la ligne, jamais de chevauchement. */
+.gobai-docs .doc-card-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.gobai-docs .doc-card-head .doc-card-name { min-width: 0; overflow-wrap: anywhere; }
+.gobai-docs .doc-card-btn { min-width: 0; }
+.gobai-docs .doc-card-btn .doc-card-meta { overflow-wrap: anywhere; line-height: 1.5; }
+
+/* Fiche d'un astre. */
+.gobai-docs .doc-title-row { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.gobai-docs .doc-title-row .doc-title { overflow-wrap: anywhere; min-width: 0; }
+.gobai-docs .doc-btn-primary { background: var(--ink); color: var(--void); border-color: var(--ink); min-height: 40px; }
+.gobai-docs .doc-btn-primary:hover { opacity: .9; border-color: var(--ink); }
+.gobai-docs .doc-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px 22px; }
+.gobai-docs .doc-fact { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding-top: 10px; border-top: 1px solid var(--line); }
+.gobai-docs .doc-fact dd { font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+.gobai-docs .doc-fact-note { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--muted); line-height: 1.45; }
+
+/* Écran tactile : cibles de 44 px. */
+@media (pointer: coarse) {
+  .gobai-docs .doc-filter, .gobai-docs .doc-btn, .gobai-docs .doc-back { min-height: 44px; }
+}
