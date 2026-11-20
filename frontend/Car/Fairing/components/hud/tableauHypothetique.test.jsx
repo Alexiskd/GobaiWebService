@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe le module du tableau hypothétique.
-import { SYSTEMES, ALPHA_CENTAURI, countSystemes, countComposantes } from './tableauHypothetique.js';
+import { SYSTEMES, ALPHA_CENTAURI, countSystemes, countComposantes, countMonoEtoiles, countMultiples } from './tableauHypothetique.js';
 
 // Test : le tableau hypothétique contient le Système solaire (rang 0) plus les 48 systèmes voisins, rangs 0 à 48.
 test('49 systèmes : rang 0 (Système solaire) à rang 48 (40 Eridani)', () => {
@@ -56,5 +56,17 @@ test('Sirius A est la composante la plus lourde (2,063 M☉)', () => {
   const sirius = SYSTEMES.find((s) => s.rang === 7);
   assert.equal(sirius.nom, 'Sirius');
   assert.equal(sirius.composantes[0].masse, '2,063 M☉');
+// Fin du test.
+});
+
+// Test : 34 systèmes à une seule étoile (aucun problème à 3 corps) et 15 systèmes multiples, sur 49 au total.
+test('34 systèmes simples (une seule étoile, pas de problème à 3 corps) et 15 multiples', () => {
+  // Les compteurs.
+  assert.equal(countMonoEtoiles(), 34);
+  assert.equal(countMultiples(), 15);
+  // La somme fait bien les 49 systèmes, et chaque système est compté une seule fois.
+  assert.equal(countMonoEtoiles() + countMultiples(), countSystemes());
+  // Un système simple n'a qu'une composante ; un multiple en a au moins deux.
+  for (const s of SYSTEMES) assert.equal(s.composantes.length === 1, s.composantes.length < 2);
 // Fin du test.
 });

@@ -6,8 +6,8 @@
 import { Fragment } from 'react';
 // Composants MUI.
 import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-// Données : les systèmes et leurs composantes.
-import { SYSTEMES, ALPHA_CENTAURI } from './tableauHypothetique.js';
+// Données : les systèmes, leurs composantes et les compteurs simple/multiple.
+import { SYSTEMES, ALPHA_CENTAURI, countMonoEtoiles, countMultiples } from './tableauHypothetique.js';
 
 // Grille du dessin : 7 colonnes, taille d'une case, écart, pas et marge (unités du viewBox).
 const COLS = 7, CASE_L = 88, CASE_H = 52, ECART = 4, PAS_X = CASE_L + ECART, PAS_Y = CASE_H + ECART, MARGE = 8;
@@ -76,6 +76,15 @@ export function TableauHypothetique() {
     <Box>
       {/* La grille des systèmes. */}
       <GrilleSystemes />
+      {/* Le paragraphe de comparaison : systèmes simples (une seule étoile) et systèmes multiples. */}
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        {/* Son texte : 34 systèmes à une seule étoile (pas de problème à 3 corps) contre 15 systèmes multiples. */}
+        Sur les {SYSTEMES.length} systèmes découverts à moins de 16,3 a.l., <strong>{countMonoEtoiles()}</strong> n’ont
+        qu’une seule étoile — une seule composante, donc aucun problème à trois corps — et{' '}
+        <strong>{countMultiples()}</strong> sont des systèmes multiples (2 à 3 composantes, comme Alpha Centauri),
+        qui relèvent du problème à N corps.
+      {/* Fin du paragraphe. */}
+      </Typography>
       {/* Le titre de la liste détaillée. */}
       <Typography component="h4" variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2, mt: 2, mb: 0.5 }}>
         {/* Son texte. */}
