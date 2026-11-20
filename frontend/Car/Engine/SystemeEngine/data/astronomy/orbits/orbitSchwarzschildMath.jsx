@@ -70,30 +70,6 @@ export function easeInOutCubic(u) {
 }
 
 /**
- * Miroir d'un tracé par rapport au plan de l'écliptique : mêmes x et z, y inversé (un point par point).
- * Le double affichage de la métrique de Schwarzschild colle ce miroir sous le tracé d'origine : les deux
- * ensemble dessinent la toupie symétrique — deux puits recollés bord à bord.
- * @param {Float32Array} points le tracé source (trois nombres par point)
- * @param {Float32Array} [dst]   le tampon de sortie, de même longueur (sinon une copie est allouée)
- * @returns {Float32Array} le miroir, symétrique du tracé source (le tampon fourni, modifié sur place)
- */
-export function mirrorY(points, dst) {
-  // La copie de sortie : le tampon fourni, sinon un nouveau tableau de même longueur.
-  const out = dst || new Float32Array(points.length);
-  // Chaque point : x et z conservés, y inversé.
-  for (let i = 0; i < points.length; i += 3) {
-    // Les trois composantes.
-    out[i] = points[i];
-    out[i + 1] = -points[i + 1];
-    out[i + 2] = points[i + 2];
-  // Fin des points.
-  }
-  // Le miroir.
-  return out;
-// Fin de mirrorY.
-}
-
-/**
  * Mélange point à point de deux tracés de même longueur : out = from + u·(to − from).
  * Sert à la transition : u = 0 redonne Kepler, u = 1 la rosette de Schwarzschild.
  * @returns {Float32Array} out (le même tableau, modifié sur place)
@@ -290,19 +266,10 @@ export function schwarzschildSatelliteRosette({ e = 0, rsOverA = 0, n = 256, rev
 }
 
 /**
- * Avance du périastre par tour d'une orbite de Schwarzschild, en radians : 3π × rs / p (premier ordre).
- * Sert à régler l'exagération d'un système de satellites sur celle du système solaire.
- */
-export function periapsisAdvance(rsOverA, e = 0) {
-  return (3 * Math.PI * rsOverA) / (1 - e * e);
-}
-
-/**
  * Géométrie filaire de la grille : segments (paires de points) pour anneaux et rayons, au repère de la scène.
- * La grille est un double puits : chaque segment est collé à son symétrique par rapport au plan de l'écliptique
- * (y inversé) — deux toupies recollées bord à bord, la courbure affichée en double, au-dessus et au-dessous.
- * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène ; la seconde moitié
- *                          du tampon est le miroir exact de la première.
+ * La grille est le puits de gravité du Soleil : un seul cône, sous le plan de l'écliptique, dont le bord est dans ce
+ * plan et la pointe au Soleil.
+ * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène.
  */
 export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 48, exaggeration = WELL_EXAGGERATION, sunRadiusAu = 0.00465 }) {
   // Les rayons des anneaux.
@@ -340,21 +307,7 @@ export function schwarzschildGridSegments({ outerAu, rings = 28, spokes = 48, ex
     }
   // Fin des rayons.
   }
-  // Le tampon des segments.
-  const single = new Float32Array(segs);
-  // Le double, symétrique : chaque point et son miroir par rapport au plan de l'écliptique.
-  const doubled = new Float32Array(single.length * 2);
-  // Le puits du dessous.
-  doubled.set(single, 0);
-  // Le puits du dessus, miroir exact (y inversé) : la toupie symétrique.
-  for (let i = 0; i < single.length; i += 3) {
-    // x et z inchangés, y inversé.
-    doubled[single.length + i] = single[i];
-    doubled[single.length + i + 1] = -single[i + 1];
-    doubled[single.length + i + 2] = single[i + 2];
-  // Fin du miroir.
-  }
-  // La grille en double.
-  return doubled;
+  // Le tampon des segments : le puits seul, sous le plan de l'écliptique (le cône du bas).
+  return new Float32Array(segs);
 // Fin de schwarzschildGridSegments.
 }

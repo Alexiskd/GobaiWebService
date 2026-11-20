@@ -42,14 +42,12 @@ test('toupie d’un système : nulle au bord, la plus creuse au centre, plus cre
   // Vers le centre le puits se creuse : la profondeur est plus négative près de l'astre qu'à mi-distance.
   assert.ok(wellDepthM(1e7, 4e8, rsEarth, 2000) < wellDepthM(2e8, 4e8, rsEarth, 2000));
   assert.ok(wellDepthM(1e7, 4e8, rsJupiter, 2000) < wellDepthM(1e7, 4e8, rsEarth, 2000));
-  // La géométrie : (anneaux × rayons + rayons × (anneaux − 1)) segments, doublés par le miroir.
+  // La géométrie : (anneaux × rayons + rayons × (anneaux − 1)) segments, un seul cône sous le plan.
   const rings = 14, spokes = 32;
   const segs = systemWellSegments({ outer: 60, inner: 1, unitM: UNIT_KM * 1000, massKg: BODY_MASS_KG.earth, exaggeration: 2000, rings, spokes });
-  assert.equal(segs.length, 2 * 6 * (rings * spokes + spokes * (rings - 1)));
-  // La seconde moitié est le miroir exact de la première (y inversé).
-  const half = segs.length / 2;
-  assert.equal(segs[half + 1], -segs[1]);
-  assert.equal(segs[half], segs[0]);
+  assert.equal(segs.length, 6 * (rings * spokes + spokes * (rings - 1)));
+  // Aucun point au-dessus du bord : la toupie n'a plus de moitié haute.
+  for (let i = 1; i < segs.length; i += 3) assert.ok(segs[i] <= 0);
   // Tous les points restent dans le rayon du système.
   for (let i = 0; i < segs.length; i += 3) assert.ok(Math.hypot(segs[i], segs[i + 2]) <= 60 + 1e-3);
   // Sans masse ou sans étendue : pas de toupie.
@@ -58,7 +56,7 @@ test('toupie d’un système : nulle au bord, la plus creuse au centre, plus cre
 
 test('toupie d’un petit astre : étirée jusqu’à l’englober, sans changer de profil', () => {
   const base = { outer: 60, inner: 1, unitM: UNIT_KM * 1000, massKg: BODY_MASS_KG.earth, exaggeration: 2000 };
-  const lowest = (segs) => { let min = 0; for (let i = 1; i < segs.length / 2; i += 3) min = Math.min(min, segs[i]); return -min; };
+  const lowest = (segs) => { let min = 0; for (let i = 1; i < segs.length; i += 3) min = Math.min(min, segs[i]); return -min; };
   const natural = lowest(systemWellSegments(base));
   // Le puits réel de la Terre est presque plat à cette échelle : il ne dépasse pas son rayon.
   assert.ok(natural > 0 && natural < 2);
@@ -88,7 +86,7 @@ test('profil de la toupie : les astres du système descendent sur le cône du ba
   // à la hauteur que le profil donne à cette distance.
   const segs = systemWellSegments({ outer: 235, inner: 1, unitM: UNIT_KM * 1000, massKg: BODY_MASS_KG.earth, exaggeration: 2000, minDepth: 82 });
   let lowest = 0;
-  for (let i = 1; i < segs.length / 2; i += 3) lowest = Math.min(lowest, segs[i]);
+  for (let i = 1; i < segs.length; i += 3) lowest = Math.min(lowest, segs[i]);
   assert.ok(Math.abs(lowest - y(235 / 196)) < 1e-3);
   // Sans masse : profil plat.
   assert.equal(systemWellProfile({ outer: 10, unitM: 1, massKg: 0, exaggeration: 1 })(5), 0);

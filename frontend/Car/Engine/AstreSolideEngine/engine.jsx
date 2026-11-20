@@ -56,7 +56,7 @@ import { MoonOrbit } from './moonOrbit.jsx';
 import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
 // Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
 import {
-  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, mirrorY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
+  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
 } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
 import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
@@ -175,6 +175,8 @@ const UP_Y = new THREE.Vector3(0, 1, 0);
 const EARTH_RADIUS_KM = TILED_BODY_BY_ID.earth.radiusKm;
 // Demi-grand axe de l'orbite de la Lune, en kilomètres : sa distance moyenne à la Terre.
 const MOON_DISTANCE_KM = 384_400;
+// Rayon du Soleil en unités astronomiques : le fond de sa toupie, où il descend dans l'affichage Schwarzschild.
+const SUN_RADIUS_AU = 0.00465;
 // Distance de la vue globale : 1,3 million de rayons terrestres.
 const VIEW_DISTANCE = 1.3e6;     // distance de la vue globale
 // Distance maximale de la caméra.
@@ -1124,11 +1126,12 @@ export class SolarEngine {
     // Le Soleil et la Lune des données.
     const { sun, moon } = this.data.bodies;
     // Origine de la scène.
-    const zero = new THREE.Vector3();
+    // Position du Soleil dans le repère des astres : l'origine, sauf dans l'affichage Schwarzschild où il descend.
+    this.sunW = new THREE.Vector3();
     // Cibles (début) :
     this.focusTargets = [
       // le Soleil, à l'origine ;
-      { name: sun.name, r: sun.radius, get: () => zero },
+      { name: sun.name, r: sun.radius, get: () => this.sunW },
       // chaque planète (début) :
       ...this.planets.map((p) => ({
         // son nom, son rayon, sa fiche et sa position ;
@@ -1309,16 +1312,32 @@ export class SolarEngine {
     return gravitySphereRadius({ distance, massKg, parentMassKg, minimum: radius * 1.5 });
   }
 
+  /** Vrai dès que la représentation de Schwarzschild est à l'écran (fondu commencé) : les orbites de Kepler sont alors masquées. */
+  keplerOrbitsMasked() {
+    return (this.schwarzschild?.eased || 0) > 0.002;
+  }
+
   /**
-   * Descente d'un astre dans la toupie de son système parent, en unités de scène (négative : vers le bas), à la
-   * distance `distance` de l'astre central `parentId`. Nulle hors de l'affichage Schwarzschild ; elle suit son fondu,
-   * pour que les astres glissent dans le cône du bas quand on appuie sur E = mc² et remontent quand on le relâche.
+   * Descentes de l'affichage Schwarzschild, en unités de scène. Chaque astre est un système, et sa toupie est un
+   * cône sous le plan du système : le bord à la hauteur 0, la pointe au centre. Deux mouvements se composent :
+   *  - l'astre principal d'un système descend au fond de sa propre toupie (wellApexDrop) ;
+   *  - un astre qui tourne autour d'un autre se pose sur la pente de la toupie de celui-ci, à sa distance, donc
+   *    plus haut que lui (wellSlopeRise).
+   * Les deux suivent le fondu : nuls hors du mode, ils font glisser les astres quand on appuie sur E = mc².
    */
-  wellDropIn(parentId, distance) {
+
+  /** Descente d'un astre au fond de sa propre toupie : négative (vers le bas), nulle hors du mode. */
+  wellApexDrop(id) {
     const alpha = this.schwarzschild?.eased || 0;
-    if (!alpha || !parentId) return 0;
-    const profile = this.systemWellProfiles?.get(parentId);
-    return profile ? alpha * profile(distance) : 0;
+    const profile = alpha && id ? this.systemWellProfiles?.get(id) : null;
+    return profile ? alpha * profile(0) : 0;
+  }
+
+  /** Hauteur d'un astre au-dessus de son astre central `parentId`, à la distance `distance` de lui : positive ou nulle. */
+  wellSlopeRise(parentId, distance) {
+    const alpha = this.schwarzschild?.eased || 0;
+    const profile = alpha && parentId ? this.systemWellProfiles?.get(parentId) : null;
+    return profile ? alpha * (profile(distance) - profile(0)) : 0;
   }
 
   /**
@@ -1349,13 +1368,23 @@ export class SolarEngine {
   }
 
   /**
-   * Descente d'une planète dans la toupie du Soleil, en unités de scène, à `rAu` unités astronomiques du Soleil :
-   * la hauteur de la grille de courbure à cette distance (voir gridWellY), au rythme du fondu.
+   * Hauteur de la grille du Soleil à `rAu` unités astronomiques de lui, en unités de scène, au rythme du fondu :
+   * négative (sous le plan de l'écliptique), nulle au bord de la grille et au-delà. C'est là que se pose le bord de
+   * la toupie d'une planète ; à la distance du rayon du Soleil, c'est le fond où descend le Soleil lui-même.
    */
   sunWellDrop(rAu) {
     const s = this.schwarzschild;
     if (!s?.eased || !(s.outerAu > 0) || !(rAu < s.outerAu)) return 0;
-    return s.eased * gridWellY(rAu, s.outerAu) * AU_UNITS;
+    return s.eased * gridWellY(Math.max(rAu, SUN_RADIUS_AU), s.outerAu) * AU_UNITS;
+  }
+
+  /**
+   * Place la toupie d'un astre : son bord reste là où était l'astre avant de descendre, et l'astre repose au fond.
+   * La pointe du cône est donc exactement sur l'astre.
+   */
+  placeSystemWell({ id, target, well }) {
+    well.position.copy(target.get());
+    well.position.y -= this.wellApexDrop(id);
   }
 
   /**
@@ -1373,7 +1402,12 @@ export class SolarEngine {
     // Profil de la toupie de chaque astre, par identifiant : hauteur du cône du bas à une distance donnée.
     this.systemWellProfiles = new Map();
     // Les satellites descendent dans la toupie de leur planète, au rythme du fondu Schwarzschild.
-    if (this.satellites) this.satellites.wellDrop = (sat) => this.wellDropIn(sat.parent ? bodyId(sat.parent.def) : null, sat.rel.length());
+    if (this.satellites) {
+      // Hauteur de l'anneau d'un satellite au-dessus de sa planète (la pente de la toupie de la planète)…
+      this.satellites.ringDrop = (sat) => this.wellSlopeRise(sat.parent ? bodyId(sat.parent.def) : null, sat.rel.length());
+      // … et du satellite lui-même, qui descend en plus au fond de sa propre toupie.
+      this.satellites.wellDrop = (sat) => this.satellites.ringDrop(sat) + this.wellApexDrop(sat.def.id);
+    }
     if (!this.perivolumeRoot) return;
     this.focusTargets.forEach((target, index) => {
       // Le rayon de la toupie : celui de la sphère d'influence de l'astre (0 pour le Soleil, qui a déjà la sienne).
@@ -1892,7 +1926,7 @@ export class SolarEngine {
       if (position && this.perivolumeSpheres?.displayAlpha > 0) this.perivolumeSpheres.updateCenter(id, position.toArray());
     }
     // Chaque toupie suit son astre, quand elle est affichée.
-    for (const { target, well } of this.systemWells || []) if (well.visible) well.position.copy(target.get());
+    for (const system of this.systemWells || []) if (system.well.visible) this.placeSystemWell(system);
     for (const { id, target } of this.coreSystemVolumes || []) {
       const position = target.get();
       if (position) this.corePerivolumes.updateCenter(id, position.toArray());
@@ -3112,16 +3146,6 @@ export class SolarEngine {
       p.rosetteOrbit = rosetteLoop;
       // La copie intacte de Kepler : le point de retour du fondu.
       p.keplerOrbit = p.orbitTrail.points.slice();
-      // Le double affichage : un deuxième ruban, indépendant (sa géométrie et son matériau), qui porte le miroir
-      // du tracé par rapport au plan de l'écliptique — la rosette et son miroir dessinent la toupie symétrique, et
-      // le fondu anime les deux en même temps (le miroir recopie le mélange dessiné, sans refaire le calcul).
-      const mirrorPoints = mirrorY(rosetteLoop);
-      // Le ruban du double, de la même couleur que son orbite.
-      p.orbitMirrorTrail = new OrbitRibbon({ points: mirrorPoints, color: p.def.color || '#8b97b3', name: `orbit-mirror-${bodyId(p.def)}` });
-      // Caché tant que Kepler règne.
-      p.orbitMirrorTrail.mesh.visible = false;
-      // L'ajoute à la scène.
-      this.scene.add(p.orbitMirrorTrail.mesh);
     // Fin des planètes.
     }
   // Fin de initSchwarzschild.
@@ -3158,14 +3182,6 @@ export class SolarEngine {
       mixPoints(p.keplerOrbit, p.rosetteOrbit, eased, p.orbitTrail.points);
       // La carte graphique relit le tampon des positions.
       p.orbitTrail.positionsChanged();
-      // Le double symétrique : le miroir du mélange, collé sous le plan de l'écliptique (toupie).
-      if (p.orbitMirrorTrail && this.schwarzschild.grid.visible) {
-        // Le miroir, dans le tampon du ruban double.
-        mirrorY(p.orbitTrail.points, p.orbitMirrorTrail.points);
-        // La carte graphique relit le tampon des positions du double.
-        p.orbitMirrorTrail.positionsChanged();
-      // Fin de ce cas.
-      }
     // Fin des planètes.
     }
     // Le mélange dessiné est à jour.
@@ -3184,11 +3200,11 @@ export class SolarEngine {
     for (const { target, well } of this.systemWells || []) {
       well.material.opacity = 0.5 * eased;
       well.visible = grid.visible;
-      if (well.visible) well.position.copy(target.get());
     }
     // Si elle est visible, elle suit le Soleil, exactement au centre du puits de courbure (représentation de la
     // métrique de Schwarzschild) — et pas seulement pendant le fondu.
-    if (grid.visible) grid.position.copy(this.sunMesh.position);
+    // Le bord de la grille reste dans le plan de l'écliptique, à l'origine du repère : c'est le Soleil qui descend.
+    if (grid.visible) grid.position.copy(this.target).negate();
   // Fin de updateSchwarzschildFade.
   }
 
@@ -3699,7 +3715,7 @@ export class SolarEngine {
     // La grille de courbure reste collée au Soleil, même une fois le fondu terminé (le `rebase` de l'origine
     // flottante la déplacerait sinon) : le Soleil reste exactement le centre de la représentation.
     const schwarzschildGrid = this.schwarzschild?.grid;
-    if (schwarzschildGrid?.visible) schwarzschildGrid.position.copy(this.sunMesh.position);
+    if (schwarzschildGrid?.visible) schwarzschildGrid.position.copy(this.target).negate();
     // Note l'instant.
     this.lastNow = now;
     // Adapte la résolution.
@@ -4031,7 +4047,7 @@ export class SolarEngine {
       // Sa position dans la scène.
       p.w.set(p.ecl[0] * AU_UNITS, p.ecl[1] * AU_UNITS, p.ecl[2] * AU_UNITS);
       // Affichage Schwarzschild : la planète descend dans le cône du bas de la toupie du Soleil, à sa distance.
-      p.w.y += this.sunWellDrop(Math.hypot(p.ecl[0], p.ecl[1], p.ecl[2]));
+      p.w.y += this.sunWellDrop(Math.hypot(p.ecl[0], p.ecl[1], p.ecl[2])) + this.wellApexDrop(bodyId(p.def));
       // Sa rotation propre.
       p.mesh.rotation.y = (d / p.def.rotation) * TAU;
     // Fin de la boucle.
@@ -4091,7 +4107,7 @@ export class SolarEngine {
     this.moonRel.set(state.rel[0], state.rel[1], state.rel[2]);
     this.moonW.copy(this.earth.w).add(this.moonRel);
     // Affichage Schwarzschild : la Lune descend dans la toupie de la Terre, à sa distance.
-    this.moonW.y += this.wellDropIn('earth', this.moonRel.length());
+    this.moonW.y += this.wellSlopeRise('earth', this.moonRel.length()) + this.wellApexDrop('moon');
 
     const distanceScene = this.moonRel.length();
     const distanceKm = distanceScene * 6371;
@@ -4236,15 +4252,20 @@ export class SolarEngine {
     // Son orbite suit la Terre.
     this.moonOrbit.position.copy(this.earth.group.position);
     // Le tracé de son orbite descend avec elle.
-    this.moonOrbit.position.y += this.wellDropIn('earth', this.moonRel.length());
+    this.moonOrbit.position.y += this.wellSlopeRise('earth', this.moonRel.length());
     // Orbite visible : si les orbites sont affichées, la Lune non masquée et la caméra assez près.
-    this.moonOrbit.visible = this.orbitsOn && !this.moonHidden && this.dist < MOON_ORBIT_MAX_DIST;
+    // Dans la représentation de Schwarzschild, les orbites de Kepler sont masquées : celles des planètes et des
+    // satellites deviennent leur rosette (le même ruban, déformé), mais celle de la Lune est tracée sur sa vraie
+    // trajectoire de Kepler et n'a pas de rosette — elle disparaît donc dès que les astres descendent.
+    this.moonOrbit.visible = this.orbitsOn && !this.moonHidden && this.dist < MOON_ORBIT_MAX_DIST && !this.keplerOrbitsMasked();
     // Place les satellites.
     this.satellites.place(this.target, cam.position, this.orbitsOn);
     // Position du Soleil.
-    sunMesh.position.copy(this.target).negate();
+    // Le Soleil : à l'origine du repère, descendu au fond de sa toupie dans l'affichage Schwarzschild.
+    this.sunW.set(0, this.sunWellDrop(0), 0);
+    sunMesh.position.copy(this.sunW).sub(this.target);
     // Les périvolumes et les toupies des systèmes suivent la même origine flottante que le Soleil.
-    this.perivolumeRoot?.position.copy(sunMesh.position);
+    this.perivolumeRoot?.position.copy(this.target).negate();
     // Son halo le suit.
     this.glow.position.copy(sunMesh.position);
     // Sa lumière aussi.
@@ -4544,15 +4565,6 @@ export class SolarEngine {
     for (const p of this.planets) {
       // Son orbite mise en avant si c'est la planète de la cible.
       p.orbitTrail.setFocused(p === focusPlanet);
-      // Le double symétrique suit : la même mise en avant, visible seulement en mode Schwarzschild et seulement si
-      // son orbite l'est.
-      if (p.orbitMirrorTrail) {
-        // La même mise en avant que l'orbite d'origine.
-        p.orbitMirrorTrail.setFocused(p === focusPlanet);
-        // La même visibilité.
-        p.orbitMirrorTrail.mesh.visible = p.orbit.visible && Boolean(this.schwarzschild?.grid.visible);
-      // Fin de ce cas.
-      }
       // Orbite cachée, ou traînée recalée il y a moins d'une demi-seconde : rien de plus.
       if (!p.orbit.visible || now - p.trailAt < 500) continue;
       // Instant de ce recalage.
@@ -4585,8 +4597,6 @@ export class SolarEngine {
       loopTrailAlphas(p.orbitTrail.alphas, head, p.trailDir);
       // Les renvoie à la carte graphique.
       p.orbitTrail.alphasChanged();
-      // Le double symétrique reprend les mêmes opacités (les deux tampons sont alignés point à point).
-      if (p.orbitMirrorTrail) { p.orbitMirrorTrail.alphas.set(p.orbitTrail.alphas); p.orbitMirrorTrail.alphasChanged(); }
     // Fin de la boucle.
     }
     // Orbite de la Lune mise en avant quand la Lune est visée.
@@ -4924,20 +4934,6 @@ export class SolarEngine {
     this.coreRenderDiagnosticsPolicy = null;
     this.coreRegistry?.clear();
     this.coreTargets = [];
-    // Retire les rubans miroirs (double affichage Schwarzschild) : chacun possède sa géométrie et son matériau.
-    for (const p of this.planets || []) {
-      // Le ruban miroir s'il existe : retiré de la scène, puis libéré.
-      if (p.orbitMirrorTrail) {
-        // Hors de la scène.
-        this.scene.remove(p.orbitMirrorTrail.mesh);
-        // La géométrie et le matériau.
-        p.orbitMirrorTrail.dispose();
-        // Plus de double.
-        p.orbitMirrorTrail = null;
-      // Fin de ce cas.
-      }
-    // Fin des planètes.
-    }
     // Libère les toupies des astres.
     for (const { well } of this.systemWells || []) {
       well.geometry.dispose();

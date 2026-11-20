@@ -74,6 +74,9 @@ export class SatelliteSystem {
     // Descente d'un satellite dans la toupie de sa planète (affichage Schwarzschild) : fonction (satellite) → décalage
     // vertical en unités de scène, posée par le moteur ; null = aucune descente.
     this.wellDrop = null;
+    // Hauteur de l'anneau d'orbite d'un satellite au-dessus de sa planète, dans le même affichage : fonction
+    // (satellite) → décalage vertical, posée par le moteur ; null = aucun décalage.
+    this.ringDrop = null;
     // Liste des satellites.
     this.list = [];
     // Matériaux Lambert partagés uniquement lorsque leur couleur et leurs options sont identiques.
@@ -254,7 +257,7 @@ export class SatelliteSystem {
       // Le tracé de l'orbite est centré sur la planète.
       s.orbit.position.copy(s.parent.group.position);
       // L'anneau de l'orbite descend avec le satellite, pour qu'il reste sur son tracé.
-      if (this.wellDrop) s.orbit.position.y += this.wellDrop(s);
+      if (this.ringDrop) s.orbit.position.y += this.ringDrop(s);
       // Rayon de l'orbite.
       const a = s.rel.length();
       // Orbite visible si les orbites sont affichées, si le satellite n'est pas masqué et si la caméra est assez proche de la planète.
