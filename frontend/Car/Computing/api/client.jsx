@@ -64,10 +64,9 @@ function staticResponse(path) {
   if (p === '/sun/regions') return { source: 'simulation locale', regions: [], flares: [] };
   if (p === '/sun/activity') return { source: 'simulation locale', flares: [] };
   if (p === '/donations/config') return { enabled: false, currency: 'EUR', minAmount: 1 };
-  if (p === '/tiles/earth-wind' || p === '/tiles/earth-clouds/cover') return { available: false };
   if (p === '/places') return { provider: 'local', items: [], attribution: 'Recherche distante désactivée' };
   if (p === '/lidar') return { available: false, items: [] };
-  if (p === '/volcanoes' || p.startsWith('/atmosphere/')) return { available: false, items: [], features: [] };
+  if (p === '/volcanoes') return { available: false, items: [], features: [] };
   if (p === '/tiles/lidar-hd/cities') return { altitudeM: 0, items: [] };
   return { available: false, items: [] };
 }

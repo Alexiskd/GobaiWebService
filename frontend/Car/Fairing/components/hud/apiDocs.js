@@ -42,7 +42,7 @@ export const API_DOC_GROUPS = [
     group: 'Scène', controller: 'scene/scene.controller.ts',
     // Sources externes réellement interrogées par ce contrôleur (voir API_DOC_SOURCES) : la résistance du groupe
     // (résistanceDuGroupe, plus bas) est celle de la plus fragile d’entre elles.
-    sources: ['interne', 'photon', 'ign-geoplateforme', 'nasa-donki-swpc', 'nasa-eonet-gvp', 'nasa-imagery', 'xweather', 'rainviewer', 'nws-alerts', 'open-meteo'],
+    sources: ['interne', 'photon', 'ign-geoplateforme', 'nasa-donki-swpc', 'nasa-eonet-gvp'],
     routes: [
       ['GET', '/borders', 'Frontières des pays et littoraux.'],
       ['GET', '/places', 'Recherche d’un lieu.'],
@@ -55,20 +55,12 @@ export const API_DOC_GROUPS = [
       ['GET', '/sun/regions', 'Régions actives et éruptions du Soleil.'],
       ['GET', '/sun/activity', 'Activité solaire.'],
       ['GET', '/volcanoes', 'Volcans en éruption.'],
-      ['GET', '/atmosphere/fires', 'Incendies.'],
-      ['GET', '/atmosphere/fires/tiles/{tx}/{ty}', 'Points chauds d’une tuile.'],
-      ['GET', '/atmosphere/cyclones', 'Cyclones actifs.'],
-      ['GET', '/atmosphere/lightning', 'Foudre.'],
-      ['GET', '/atmosphere/radar', 'Radar des précipitations.'],
-      ['GET', '/atmosphere/storms', 'Orages.'],
-      ['GET', '/atmosphere/aerosols', 'Aérosols.'],
-      ['GET', '/atmosphere/winds', 'Vents.'],
       ['GET', '/assistant/config', 'Réglage de l’assistant côté serveur (désactivé : l’assistant passe par la clé de l’utilisateur).'],
     ],
   },
   {
     group: 'Tuiles et cartes', controller: 'tiles/tiles.controller.ts',
-    sources: ['nasa-imagery', 'ign-geoplateforme', 'open-meteo', 'xweather', 'interne'],
+    sources: ['nasa-imagery', 'ign-geoplateforme', 'interne'],
     routes: [
       ['GET', '/tiles/layers', 'Liste des couches de tuiles.'],
       ['GET', '/tiles/layers/{id}', 'Modèle d’adresse d’une couche.'],
@@ -76,8 +68,6 @@ export const API_DOC_GROUPS = [
       ['GET', '/tiles/satellites/status', 'État des cartes des satellites naturels.'],
       ['GET', '/tiles/satellites/{body}/layers', 'Couches d’un satellite ou d’une géante gazeuse.'],
       ['GET', '/tiles/moon-blend/status', 'Variantes du modèle 3D de la Lune.'],
-      ['GET', '/tiles/earth-wind', 'Vents du moment.'],
-      ['GET', '/tiles/earth-clouds/cover', 'Couverture nuageuse du moment.'],
       ['GET', '/tiles/earth/plan', 'Table de priorité des sources d’imagerie de la Terre.'],
       ['GET', '/tiles/lidar-hd/cities', 'Villes couvertes par le LiDAR HD.'],
     ],
@@ -151,28 +141,8 @@ export const API_DOC_SOURCES = [
     resistance: 'moyenne',
   },
   {
-    id: 'open-meteo', nom: 'Open-Meteo (vents, nébulosité)', hotes: 'api.open-meteo.com', parJour: 10000,
-    base: 'Documenté par Open-Meteo : 10 000 requêtes/jour (5000/heure, 600/minute) en usage non commercial, sans clé.',
-    resistance: 'moyenne',
-  },
-  {
-    id: 'rainviewer', nom: 'RainViewer (radar des précipitations)', hotes: 'api.rainviewer.com, tilecache.rainviewer.com', parJour: null,
-    base: 'Gratuit pour un usage personnel ou éducatif ; aucune limite chiffrée publiée, mais mise en cache fortement demandée.',
-    resistance: 'moyenne',
-  },
-  {
-    id: 'nws-alerts', nom: 'National Weather Service (alertes météo)', hotes: 'api.weather.gov', parJour: null,
-    base: 'Limite non publiée, décrite comme généreuse ; la pratique recommandée se limite à 1 requête/seconde.',
-    resistance: 'elevee',
-  },
-  {
     id: 'photon', nom: 'Photon / Komoot (recherche de lieux)', hotes: 'photon.komoot.io', parJour: null,
     base: 'Instance publique de démonstration : « usage raisonnable », throttlée à 1 requête/seconde par convention, sans garantie de disponibilité (déjà tombée en panne).',
-    resistance: 'faible',
-  },
-  {
-    id: 'xweather', nom: 'Xweather (foudre, nébulosité de repli)', hotes: 'data.api.xweather.com, maps.api.xweather.com', parJour: 500,
-    base: 'Palier gratuit documenté : 15 000 accès par mois, soit environ 500 par jour en moyenne.',
     resistance: 'faible',
   },
   {

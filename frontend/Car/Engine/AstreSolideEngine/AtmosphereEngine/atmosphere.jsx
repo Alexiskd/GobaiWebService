@@ -7,14 +7,14 @@ import { cloudVertexShader, earthCloudFragmentShader, shellFragmentShader, shell
 // Importe la somme des amplitudes du bruit et la qualité des shaders, depuis powerSaver.
 import { QUALITY, fbmNorm } from '../powerSaver.jsx';
 // Importe la taille de la texture de vent, l'état de l'animation, le contrôle d'une grille et la construction de la texture, depuis weatherFlow.
-import { WIND_TEXTURE_HEIGHT, WIND_TEXTURE_WIDTH, flowState, isWindGrid, windTexels } from '../weatherFlow.jsx';
+import { WIND_TEXTURE_HEIGHT, WIND_TEXTURE_WIDTH, flowState, windTexels } from '../weatherFlow.jsx';
 
 // Atmosphère d'une planète solide (voir atmosphereData.jsx) :
 //  - une coquille au sommet de l'atmosphère, dont le shader calcule la lumière du Soleil diffusée par l'air le long de
 //    chaque rayon de vue (Rayleigh + Mie, atmosphereScatter.jsx) et l'ajoute à l'image : liseré au limbe, voile sur
 //    le disque, ciel vu du sol ;
 //  - pour Vénus, la couche de nuages opaque qui cache le sol ; pour la Terre, des nuages simulés semi-transparents
-//    (motifs calculés, atmosphereClouds.jsx) ou réels (image satellite, grille de couverture) ;
+//    (motifs calculés, atmosphereClouds.jsx) ;
 //  - le mouvement de la météo : les nuages de la Terre suivent le vent (weatherFlow.jsx), ceux de Vénus font le tour
 //    de la planète (super-rotation), tous deux en accéléré.
 // Même direction du Soleil (`sunV`, repère caméra) et même réglage « Ombre » (`shade`) que les cartes de l'astre.
@@ -35,7 +35,7 @@ const MAX_VIEW_RADII = 400; // au-delà, l'astre ne fait que quelques pixels : l
 // Vecteur de travail.
 const tmp = new THREE.Vector3();
 
-/** Texture du champ de vent (weatherFlow.jsx) : grille réelle si elle est valide, sinon modèle. */
+/** Texture du champ de vent (weatherFlow.jsx) : le modèle de circulation générale quand la grille est absente. */
 // windTexture : la texture du champ de vent à partir d'une grille (début).
 function windTexture(grid) {
   // Texture de données RGBA, un octet par composante, à la taille de la texture de vent.
@@ -55,27 +55,6 @@ function windTexture(grid) {
 // Fin de windTexture.
 }
 
-/** Octets de la grille de nuages { width, height, cover (base64) }, ou null si elle est incohérente. */
-// Déclare et exporte decodeCover : la grille de couverture nuageuse.
-export function decodeCover(grid) {
-  // Grille absente, ou largeur et hauteur qui ne sont pas des entiers d'au moins 2 : null.
-  if (!grid || !Number.isInteger(grid.width) || !Number.isInteger(grid.height) || grid.width < 2 || grid.height < 2) return null;
-  // Couverture qui n'est pas une chaîne : null.
-  if (typeof grid.cover !== 'string') return null;
-  // Chaîne binaire décodée.
-  let binary;
-  // Décode le base64 ; en cas d'erreur : null.
-  try { binary = atob(grid.cover); } catch { return null; }
-  // Longueur différente de largeur × hauteur : null.
-  if (binary.length !== grid.width * grid.height) return null;
-  // Tableau d'octets de la même longueur.
-  const bytes = new Uint8Array(binary.length);
-  // Copie le code de chaque caractère.
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  // Renvoie les octets.
-  return bytes;
-// Fin de decodeCover.
-}
 
 /**
  * Atmosphère de l'astre `id` (rayon `radius` en unités de la scène), à ajouter au groupe de l'astre.
@@ -169,83 +148,6 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null) {
     group.add(simClouds);
     // L'ajoute aux couches qui tournent.
     cloudLayers.push(simClouds);
-    // Nuages réels : la grille reçue de l'API devient la carte de couverture (lignes du sud au nord, depuis -180°).
-    // setCloudCover : reçoit la grille de couverture réelle (début).
-    group.userData.setCloudCover = (grid) => {
-      // Ses octets.
-      const bytes = decodeCover(grid);
-      // Grille incohérente : refusée.
-      if (!bytes) return false;
-      // Les variables uniformes des nuages.
-      const u = simClouds.material.uniforms;
-      // Libère la carte précédente.
-      u.coverMap.value?.dispose();
-      // Texture de données à un canal, à la taille de la grille.
-      const texture = new THREE.DataTexture(bytes, grid.width, grid.height, THREE.LuminanceFormat, THREE.UnsignedByteType);
-      // Alignement d'un octet.
-      texture.unpackAlignment = 1; // un octet par case : les lignes ne sont pas alignées sur 4 octets
-      // Répétition horizontale.
-      texture.wrapS = THREE.RepeatWrapping;
-      // Pas de répétition verticale.
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      // Filtre d'agrandissement linéaire.
-      texture.magFilter = THREE.LinearFilter;
-      // Filtre de réduction linéaire.
-      texture.minFilter = THREE.LinearFilter;
-      // Signale à three.js que la texture est à envoyer.
-      texture.needsUpdate = true;
-      // La pose comme carte de couverture.
-      u.coverMap.value = texture;
-      // Mode 1 : grille de couverture.
-      u.coverOn.value = 1;
-      // Acceptée.
-      return true;
-    // Fin de setCloudCover.
-    };
-    // Vents réels du moment (GET /tiles/earth-wind) à la place du modèle de circulation générale.
-    // setWind : reçoit la grille de vent réelle (début).
-    group.userData.setWind = (grid) => {
-      // Grille inutilisable : refusée.
-      if (!isWindGrid(grid)) return false;
-      // Les variables uniformes des nuages.
-      const u = simClouds.material.uniforms;
-      // Libère la carte du vent précédente.
-      u.windMap.value?.dispose();
-      // Pose la nouvelle carte du vent.
-      u.windMap.value = windTexture(grid);
-      // Acceptée.
-      return true;
-    // Fin de setWind.
-    };
-    // Nuages réels vus par satellite : mosaïque mondiale en projection de Mercator (earthCloudMosaic.jsx).
-    // setCloudMosaic : reçoit le canevas de la mosaïque satellite (début).
-    group.userData.setCloudMosaic = (canvas) => {
-      // Canevas absent ou vide : refusé.
-      if (!canvas || !canvas.width || !canvas.height) return false;
-      // Les variables uniformes des nuages.
-      const u = simClouds.material.uniforms;
-      // Libère la carte précédente.
-      u.coverMap.value?.dispose();
-      // Texture faite à partir du canevas.
-      const texture = new THREE.CanvasTexture(canvas);
-      // Répétition horizontale.
-      texture.wrapS = THREE.RepeatWrapping;
-      // Pas de répétition verticale.
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      // Pas de mipmaps.
-      texture.generateMipmaps = false;
-      // Filtre de réduction linéaire.
-      texture.minFilter = THREE.LinearFilter;
-      // Filtre d'agrandissement linéaire.
-      texture.magFilter = THREE.LinearFilter;
-      // La pose comme carte de couverture.
-      u.coverMap.value = texture;
-      // Mode 2 : mosaïque satellite.
-      u.coverOn.value = 2;
-      // Acceptée.
-      return true;
-    // Fin de setCloudMosaic.
-    };
   // Fin du cas des nuages simulés.
   }
 

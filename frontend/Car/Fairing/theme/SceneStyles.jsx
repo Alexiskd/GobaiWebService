@@ -193,40 +193,6 @@ const sceneStyles = (theme) => ({
   ".cc-badges": { display: "flex", flexWrap: "wrap", gap: "5px", marginTop: "8px" },
   // Un badge.
   ".cc-badge": { border: "1px solid rgba(255, 255, 255, 0.36)", borderRadius: "999px", padding: "1px 8px", fontSize: "0.61rem", fontWeight: "600", letterSpacing: "0.09em", textTransform: "uppercase", color: "#e9eaee" },
-  // Le bloc météo.
-  ".cc-weather": { display: "flex", alignItems: "center", gap: "11px", marginTop: "10px", padding: "8px 10px", border: "1px solid rgba(255, 255, 255, 0.14)", borderRadius: "10px", background: "linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.015))" },
-  // L'icône météo.
-  ".cc-w-icon": { flex: "none", width: "42px", height: "42px", display: "grid", placeItems: "center", borderRadius: "11px", background: "radial-gradient(circle at 30% 24%, rgba(240, 178, 74, 0.15), rgba(150, 175, 220, 0.07) 62%, transparent 78%)" },
-  // Son dessin.
-  ".cc-w-svg": { width: "34px", height: "34px", fill: "none", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", overflow: "visible" },
-  // Le soleil.
-  ".cc-w-svg .w-sun": { stroke: "#f0b24a", fill: "rgba(240, 178, 74, 0.1)" },
-  // La lune.
-  ".cc-w-svg .w-moon": { stroke: "#e6ebf6", fill: "rgba(230, 235, 246, 0.08)" },
-  // Le nuage.
-  ".cc-w-svg .w-cloud": { stroke: "#d6dceb", fill: "rgba(214, 220, 235, 0.09)" },
-  // Le brouillard.
-  ".cc-w-svg .w-fog": { stroke: "#b7c0d2" },
-  // La pluie.
-  ".cc-w-svg .w-rain": { stroke: "#93c2ff" },
-  // La neige.
-  ".cc-w-svg .w-snow": { stroke: "#d7ecff" },
-  // L'éclair.
-  ".cc-w-svg .w-bolt": { stroke: "#f0b24a", fill: "rgba(240, 178, 74, 0.2)" },
-  // Le texte de la météo.
-  ".cc-w-body": { flex: "1", minWidth: "0" },
-  // Sa première ligne.
-  ".cc-w-head": { display: "flex", alignItems: "baseline", gap: "8px" },
-  // La température.
-  ".cc-w-temp": { color: "#fff", fontSize: "1.34rem", fontWeight: "650", letterSpacing: "-0.02em", lineHeight: "1", fontVariantNumeric: "tabular-nums" },
-  // Le temps qu'il fait.
-  ".cc-w-cond": { color: "#c5cad6", fontSize: "0.72rem", lineHeight: "1.2" },
-  // Les mesures.
-  ".cc-w-metrics": { display: "flex", flexWrap: "wrap", gap: "2px 10px", marginTop: "4px", color: "#e8eaf0", fontSize: "0.64rem", fontVariantNumeric: "tabular-nums" },
-  // Une mesure.
-  ".cc-w-metric": { whiteSpace: "nowrap" },
-  // Son libellé.
-  ".cc-w-metric em": { marginRight: "4px", fontStyle: "normal", color: "#8b91a0", letterSpacing: "0.02em" },
   // La population.
   ".cc-pop": { display: "flex", alignItems: "baseline", gap: "7px", marginTop: "12px" },
   // Son nombre.

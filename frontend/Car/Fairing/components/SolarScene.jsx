@@ -90,10 +90,8 @@ import { useCameraToggles } from './scene/useCameraToggles.jsx';
 import { useDocumentViewport } from './scene/useDocumentViewport.jsx';
 // Importe le crochet de l'affichage de la Terre.
 import { useEarthDisplay } from './scene/useEarthDisplay.jsx';
-// Importe le crochet des données de carte (villes, frontières, nuages, vent).
-import { CLOUD_SOURCE_TEXT, useMapFeeds } from './scene/useMapFeeds.jsx';
-// Importe le crochet du moteur atmosphérique : incendies et cyclones en direct.
-import { useAtmosphere } from './scene/useAtmosphere.jsx';
+// Importe le crochet des données de carte (villes, frontières).
+import { useMapFeeds } from './scene/useMapFeeds.jsx';
 // Importe le réglage de la pollution lumineuse de la Terre, pour sa mention dans les sources.
 import { EARTH_NIGHT_LIGHTS } from '@/Engine/AstreSolideEngine/MapEngine/nightLights';
 // Importe le crochet des données lunaires.
@@ -412,10 +410,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const { moonPhases } = useMoonFeeds(engine);
   // Régions actives du Soleil : les éruptions en 3D partent des vraies régions.
   useSunFeeds(engine);
-  // Villes, frontières et liste des villes du monde ; nuages réels de la Terre seulement quand ils sont affichés.
-  const { cityInfo, bordersInfo, worldCities, cloudSource } = useMapFeeds({ engine, push, clouds: camera.earthAtmosphere });
-  // Phénomènes atmosphériques en direct : réglages des calques, lectures du serveur, textes d'aide.
-  const atmosphere = useAtmosphere({ engine });
+  // Villes, frontières et liste des villes du monde.
+  const { cityInfo, bordersInfo, worldCities } = useMapFeeds({ engine, push });
   // Commandes envoyées au moteur.
   const actions = useSceneActions({ engineRef, setAuto: camera.setAuto });
   // Ma position : suivie en direct (point bleu) et zoom d'arrivée, depuis l'icône ⌖ de la navball ou les paramètres.
@@ -648,18 +644,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         atmosphereLayers={{
           earthAtmosphere: camera.earthAtmosphere,
           onEarthAtmosphere: camera.setEarthAtmosphere,
-          earthAtmosphereHint: camera.earthAtmosphere
-            ? `${CLOUD_SOURCE_TEXT[cloudSource]} ; décoché : globe nu`
-            : 'Nuages réels (Xweather, sinon Open-Meteo) et halo bleu ; décoché : globe nu',
-          settings: atmosphere.settings,
-          onUpdate: atmosphere.update,
-          fireHint: atmosphere.fireHint,
-          cycloneHint: atmosphere.cycloneHint,
-          lightningHint: atmosphere.lightningHint,
-          precipitationHint: atmosphere.precipitationHint,
-          stormHint: atmosphere.stormHint,
-          aerosolHint: atmosphere.aerosolHint,
-          windHint: atmosphere.windHint,
         }}
         earthLayers={{
           earthLayer: bases.baseLayer,
@@ -905,22 +889,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
           camera.sky ? SKY_ATTRIBUTION : '',
           // Celle de la pollution lumineuse, si elle est allumée (lumières de la nuit ou vue de toute la Terre).
           camera.nightLights || camera.lightView ? EARTH_NIGHT_LIGHTS.attribution : '',
-          // Celle des nuages de la Terre, s'ils sont affichés : réels ou simulés.
-          camera.earthAtmosphere ? CLOUD_SOURCE_TEXT[cloudSource] : '',
-          // Celle des incendies, s'ils sont allumés.
-          atmosphere.settings.fires.on ? 'Incendies : NASA FIRMS (LANCE · VIIRS, MODIS) et NASA EONET' : '',
-          // Celle des cyclones, s'ils sont allumés.
-          atmosphere.settings.cyclones.on ? 'Cyclones : NOAA NHC (positions et prévision officielle), JTWC (via NASA EONET), GDACS' : '',
-          // Celle de la foudre, si elle est allumée.
-          atmosphere.settings.lightning.on ? 'Foudre : Xweather (réseau Vaisala)' : '',
-          // Celle du radar, s'il est allumé (mention obligatoire de Rain Viewer).
-          atmosphere.settings.precipitation.on ? 'Radar des précipitations : Rain Viewer (rainviewer.com)' : '',
-          // Celle des orages, s'ils sont allumés.
-          atmosphere.settings.storms.on ? 'Orages : cellules estimées d’après Rain Viewer, avertissements NOAA NWS' : '',
-          // Celle des aérosols, s'ils sont allumés (mention de Copernicus demandée pour la prévision).
-          atmosphere.settings.aerosols.on ? 'Aérosols : NASA GIBS (VIIRS Deep Blue, OMPS) ; poussières prévues : contains modified Copernicus Atmosphere Monitoring Service information' : '',
-          // Celle des vents, s'ils sont allumés (licence CC BY 4.0 d'Open-Meteo).
-          atmosphere.settings.winds.on ? 'Vents et courants-jets : Open-Meteo (modèles météo, CC BY 4.0)' : '',
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
         // Ouverte si le panneau courant est celui des sources.

@@ -97,8 +97,6 @@ import { createSunSurface } from '../EruptionEngine/sunSurface.jsx';
 import { sitesFromRegions } from '../EruptionEngine/sunSurfaceMath.jsx';
 // Importe VolcanoLayer, les volcans en éruption sur la Terre.
 import { VolcanoLayer } from '../EruptionEngine/volcanoes.jsx';
-// Importe le repère atmosphérique de la Terre (incendies, cyclones ; moteur atmosphérique).
-import { AtmosphereLayers } from './AtmosphereEngine/atmosphereLayers.jsx';
 // Importe createShadedSphereMaterial, le matériau d'une sphère unie ombrée.
 import { createShadedSphereMaterial } from '../TextureEngine/sphereShade.jsx';
 // Importe createAtmosphere, l'atmosphère d'une planète.
@@ -447,10 +445,6 @@ export class SolarEngine {
     this.volcanoes = new VolcanoLayer();
     // L'ajoute au groupe de la Terre.
     this.earth.group.add(this.volcanoes.root);
-    // Phénomènes atmosphériques en direct (incendies, cyclones), posés plus tard : repère dans le groupe de la Terre.
-    this.atmosphereLayers = new AtmosphereLayers();
-    // L'ajoute au groupe de la Terre.
-    this.earth.group.add(this.atmosphereLayers.root);
     // Nuages LiDAR calés par GPS.
     this.lidar = new LidarGlobe(this); // nuages LiDAR calés par GPS, sur la Terre
     // Dalles LiDAR en points 3D.
@@ -3465,30 +3459,6 @@ export class SolarEngine {
   // setSkyVisible : affiche ou masque le ciel lointain.
   setSkyVisible(on) { this.sky.setVisible(on); }
 
-  /** Vents réels du moment (grille de GET /tiles/earth-wind) : ils entraînent les nuages de la Terre. Voir weatherFlow.jsx. */
-  // setEarthWind : transmet les vents aux nuages de la Terre (début).
-  setEarthWind(grid) {
-    // Vrai si l'atmosphère les a pris.
-    return Boolean(this.atmospheres.earth?.userData.setWind?.(grid));
-  // Fin de setEarthWind.
-  }
-
-  /** Nuages réels calculés : grille de couverture nuageuse du moment (GET /tiles/earth-clouds/cover). */
-  // setEarthCloudCover : transmet la couverture nuageuse (début).
-  setEarthCloudCover(grid) {
-    // Vrai si l'atmosphère l'a prise.
-    return Boolean(this.atmospheres.earth?.userData.setCloudCover?.(grid));
-  // Fin de setEarthCloudCover.
-  }
-
-  /** Nuages réels vus par satellite : mosaïque mondiale (canevas, projection de Mercator). Voir earthCloudMosaic.jsx. */
-  // setEarthCloudMosaic : transmet la mosaïque des nuages (début).
-  setEarthCloudMosaic(canvas) {
-    // Vrai si l'atmosphère l'a prise.
-    return Boolean(this.atmospheres.earth?.userData.setCloudMosaic?.(canvas));
-  // Fin de setEarthCloudMosaic.
-  }
-
   /**
    * Affiche ou masque l'atmosphère dessinée des planètes solides (Vénus, Terre, Mars) ; masquée, il reste le globe nu.
    * `ids` : les astres concernés (tous si absent). La Terre a son propre interrupteur (nuages et atmosphère).
@@ -3515,15 +3485,6 @@ export class SolarEngine {
   setVolcanoes(list) { this.volcanoes.set(list); }
   // setVolcanoesVisible : affiche ou masque les volcans en éruption.
   setVolcanoesVisible(on) { this.volcanoes.setVisible(on); }
-  /** Phénomènes atmosphériques : pose des données ('fires', 'fireDetail', 'cyclones') reçues du serveur. */
-  // setAtmosphereData : la nature, les données et l'instant de réception.
-  setAtmosphereData(kind, data, receivedAt) { this.atmosphereLayers.setData(kind, data, receivedAt); }
-  /** Phénomènes atmosphériques : règle un calque ({ visible, opacity, intensity, windowHours }). */
-  // setAtmosphereLayer : le nom du calque et ses réglages.
-  setAtmosphereLayer(name, settings) { this.atmosphereLayers.setLayer(name, settings); }
-  /** Phénomènes atmosphériques : où regarde la caméra ({ lon, lat, alt } en degrés et rayons terrestres), ou null. */
-  // atmosphereView : la vue notée à la dernière image.
-  atmosphereView() { return this.atmosphereLayers.view; }
 
   /**
    * Régions actives du Soleil : garde la réponse de /api/v1/sun/regions et la pose aussitôt. Les positions sont
@@ -3775,8 +3736,6 @@ export class SolarEngine {
     this.updateBorders();
     // Les volcans suivent la rotation de la Terre.
     if (this.shouldUpdateCoreEngine('volcanoes', 'earth')) this.volcanoes.sync(this.earth.mesh.rotation.y);
-    // Les calques atmosphériques aussi, et notent où regarde la caméra.
-    if (this.shouldUpdateCoreEngine('atmosphere', 'earth')) this.atmosphereLayers.update(this.earth.mesh.rotation.y, this.cam);
     // Met à jour les nuages LiDAR.
     if (this.shouldUpdateCoreEngine('lidar', 'earth')) this.lidar.update(this.cam);
     // Couche de tuiles de la Terre affichée, s'il y a une carte.
@@ -5042,8 +5001,6 @@ export class SolarEngine {
     this.countryLabels.dispose();
     // Libère les volcans.
     this.volcanoes.dispose();
-    // Libère les calques atmosphériques.
-    this.atmosphereLayers.dispose();
     // Libère la fiche de ville.
     this.cityCard.dispose();
     // Libère les noms des lieux de la Lune.

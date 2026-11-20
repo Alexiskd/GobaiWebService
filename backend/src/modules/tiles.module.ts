@@ -40,12 +40,6 @@ import { SatelliteTilesService } from '../services/map-tiles/satellite-tiles.ser
 import { EarthImageryService } from '../services/map-tiles/earth-imagery.service';
 // Service qui teste si un astre a une carte NASA Trek avant de l'afficher.
 import { BodyAvailabilityService } from '../services/map-tiles/body-availability.service';
-// Service des nuages réels de la Terre (Xweather), relayés avec un cache.
-import { XweatherCloudsService } from '../services/map-tiles/xweather-clouds.service';
-// Service des vents réels du moment (Open-Meteo).
-import { EarthWindService } from '../services/map-tiles/earth-wind.service';
-// Service de la couverture nuageuse du moment (Open-Meteo).
-import { EarthCloudCoverService } from '../services/map-tiles/earth-cloud-cover.service';
 // Module des éphémérides : ses services de positions sont utilisés par les tuiles.
 import { EphemerisModule } from './ephemeris.module';
 
@@ -83,12 +77,6 @@ import { EphemerisModule } from './ephemeris.module';
     { provide: EarthImageryService, useFactory: () => new EarthImageryService() },
     // Test de disponibilité des astres, construit directement par NestJS.
     BodyAvailabilityService,
-    // Nuages Xweather : fabrique sans argument (les identifiants sont lus dans l'environnement par le service).
-    { provide: XweatherCloudsService, useFactory: () => new XweatherCloudsService() },
-    // Vents : fabrique sans argument.
-    { provide: EarthWindService, useFactory: () => new EarthWindService() },
-    // Couverture nuageuse : fabrique sans argument.
-    { provide: EarthCloudCoverService, useFactory: () => new EarthCloudCoverService() },
     // Couleurs de la Lune : fabrique qui lui passe la configuration (adresse de l'image et adresses de secours).
     { provide: MoonColorService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new MoonColorService(config) },
     // Cache des tuiles de la Lune : fabrique qui lui passe la configuration (dossier du cache, niveaux à précharger).

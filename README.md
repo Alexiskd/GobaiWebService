@@ -11,8 +11,8 @@ Computing, Transmission — voir `ARCHITECTURE.md`).
 - **Frontend** : celui de l'édition statique. Les positions orbitales restent calculées dans le navigateur.
 - **API** : `frontend/Car/Computing/api/client.jsx` appelle `/api/v1` (ou `VITE_API_URL`). Sans API joignable, les
   lectures replient sur les contrats embarqués : le site reste publiable seul en Static Site.
-- **Habillage des astres** rebranché sur le serveur : disponibilité des cartes Trek, villes, nuages Xweather, foudre,
-  radar, aérosols, relief et couleur de la Lune, blend de la Lune (BP), phases de la Lune, blocage d'API côté serveur.
+- **Habillage des astres** rebranché sur le serveur : disponibilité des cartes Trek, villes,
+  relief et couleur de la Lune, blend de la Lune (BP), phases de la Lune, blocage d'API côté serveur.
 - **Exports** : la Boutique (`Fairing/components/menus/Boutique`) et le compte (`useCompte`, `CompteBox`) sont de
   retour, avec les routes `/store` et `/export` et le paiement Stripe.
 - **Assistant** : d'abord celui du serveur (`/assistant`, clé `ANTHROPIC_API_KEY`) ; à défaut, la clé enregistrée dans
