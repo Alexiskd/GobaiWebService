@@ -5,7 +5,7 @@
  *
  * Vérification du 20 nov. 2026, hôte par hôte, contre le code de frontend/Car :
  *  - retiré : JPL Horizons (ssd.jpl.nasa.gov) — plus aucun appel, les orbites sont calculées par Kepler dans le navigateur ;
- *  - ajoutés : Mistral AI (assistant), NASA SVS (vidéo de l'écran de chargement), Google Fonts (fichiers).
+ *  - ajoutés : Claude Platform et Mistral AI (assistant, avec la clé de l'utilisateur), NASA SVS (vidéo de l'écran de chargement), Google Fonts (fichiers).
  * `key: true` : le service n'est appelé que si l'utilisateur a saisi sa clé. `requis: true` : l'application ne
  * s'ouvre pas sans lui, son interrupteur est donc verrouillé dans l'onglet « API ».
  */
@@ -41,7 +41,8 @@ export const API_GROUPS = [
   {
     group: 'Assistant et accès',
     items: [
-      { name: 'Mistral AI', host: 'api.mistral.ai', use: 'Assistant : la question part directement du navigateur, avec la clé saisie dans Paramètres.', kind: 'api', key: true },
+      { name: 'Claude Platform (Anthropic)', host: 'api.anthropic.com', use: 'Assistant, si vous vous connectez à Claude : la question est relayée par le serveur avec votre propre clé, gardée dans votre navigateur.', kind: 'api', key: true },
+      { name: 'Mistral AI (La Plateforme)', host: 'api.mistral.ai', use: 'Assistant, si vous vous connectez à Mistral : la question est relayée par le serveur avec votre propre clé, gardée dans votre navigateur.', kind: 'api', key: true },
     ],
   },
 ];

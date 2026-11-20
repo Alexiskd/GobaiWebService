@@ -29,6 +29,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let error = 'Internal Server Error';
     // Message par défaut, volontairement vague : les détails d'une erreur inattendue ne sortent jamais du serveur.
     let message: string | string[] = 'Erreur interne du serveur';
+    // Champs de détail facultatifs, recopiés de l'erreur quand elle en porte.
+    const extra: Record<string, string> = {};
 
     // Si l'erreur est une erreur HTTP levée exprès (400, 404, 502…) :
     if (exception instanceof HttpException) {
@@ -48,6 +50,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message = b.message ?? exception.message;
         // nom : celui de l'objet, sinon le nom de la classe d'erreur.
         error = b.error ?? exception.name;
+        // Champs de détail facultatifs (assistant : nature du refus, fournisseur, page de paiement).
+        const d = body as Record<string, unknown>;
+        for (const k of ['code', 'provider', 'billingUrl']) if (typeof d[k] === 'string') extra[k] = d[k] as string;
       // Fin du cas « objet ».
       }
     // Sinon, erreur inattendue (bogue, panne) :
@@ -58,7 +63,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     // Répond avec le code retenu et le format unique : code, nom, message, adresse appelée et heure en ISO 8601.
-    res.status(statusCode).json({ statusCode, error, message, path: req.url, timestamp: new Date().toISOString() });
+    res.status(statusCode).json({ statusCode, error, message, ...extra, path: req.url, timestamp: new Date().toISOString() });
   // Fin de catch.
   }
 // Fin du filtre.

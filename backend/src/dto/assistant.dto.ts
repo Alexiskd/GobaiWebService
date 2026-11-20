@@ -5,13 +5,35 @@ import { Type } from 'class-transformer';
 // Règles de validation : taille maximale et minimale d'une liste, liste, valeur parmi un choix, champ facultatif, texte, longueur maximale et minimale, validation des objets imbriqués.
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsIn, IsOptional, IsString, MaxLength, MinLength, ValidateNested } from 'class-validator';
 
-// Forme de la réponse de GET assistant/config.
-export class AssistantStatusDto {
-  // enabled : vrai si la clé de l'API Claude est configurée ; le « ! » dit à TypeScript que le champ sera rempli ailleurs que dans un constructeur.
-  @ApiProperty({ example: true, description: 'Vrai si la clé de l’API Claude est configurée sur le serveur.' }) enabled!: boolean;
-  // model : nom du modèle utilisé.
-  @ApiProperty({ example: 'claude-haiku-5-5' }) model!: string;
-// Fin de AssistantStatusDto.
+// Fournisseurs proposés.
+const PROVIDERS = ['claude', 'mistral'] as const;
+
+/** Un fournisseur proposé à l'utilisateur. */
+export class AssistantProviderDto {
+  @ApiProperty({ enum: PROVIDERS, example: 'claude' }) id!: 'claude' | 'mistral';
+  @ApiProperty({ example: 'Claude' }) label!: string;
+  @ApiProperty({ example: 'claude-fable-5-2', description: 'Modèle utilisé : le plus performant du fournisseur.' }) model!: string;
+  @ApiProperty({ example: 'https://platform.claude.com/settings/billing', description: 'Page d’ajout d’un moyen de paiement ou de crédit.' }) billingUrl!: string;
+  @ApiProperty({ example: 'https://platform.claude.com/settings/keys', description: 'Page de création d’une clé d’API.' }) keysUrl!: string;
+}
+
+/** Réponse de GET assistant/config. */
+export class AssistantCatalogDto {
+  @ApiProperty({ type: [AssistantProviderDto] }) providers!: AssistantProviderDto[];
+}
+
+/** Corps de POST assistant/session (la clé est dans l'en-tête x-assistant-key). */
+export class AssistantSessionRequestDto {
+  @ApiProperty({ enum: PROVIDERS, example: 'mistral' })
+  @IsIn(PROVIDERS as unknown as string[])
+  provider!: 'claude' | 'mistral';
+}
+
+/** Réponse de POST assistant/session : la clé est valide et le compte peut payer. */
+export class AssistantSessionDto {
+  @ApiProperty({ enum: PROVIDERS, example: 'claude' }) provider!: 'claude' | 'mistral';
+  @ApiProperty({ example: 'Claude' }) label!: string;
+  @ApiProperty({ example: 'claude-fable-5-2', description: 'Modèle qui a répondu à l’appel de test.' }) model!: string;
 }
 
 // Forme d'un message de la conversation.
@@ -68,8 +90,12 @@ export class AssistantElementDto {
 // Fin de AssistantElementDto.
 }
 
-// Forme du corps de POST assistant/messages.
+// Forme du corps de POST assistant/messages (la clé est dans l'en-tête x-assistant-key).
 export class AssistantRequestDto {
+  @ApiProperty({ enum: PROVIDERS, example: 'claude', description: 'Fournisseur auquel l’utilisateur s’est connecté.' })
+  @IsIn(PROVIDERS as unknown as string[])
+  provider!: 'claude' | 'mistral';
+
   // Documente le champ suivant : une liste de messages.
   @ApiProperty({ type: [AssistantMessageDto], description: 'Conversation, du plus ancien au plus récent (12 messages au plus) ; le dernier vient du visiteur.' })
   // Validation : une liste de 1 à 12 éléments.
@@ -105,5 +131,8 @@ export class AssistantReplyDto {
   @ApiProperty({ example: 'Je vous emmène sur Titan.', description: 'Texte de la réponse (peut être vide si l’assistant ne fait qu’agir).' }) reply!: string;
   // actions : les actions à exécuter dans l'interface, dans l'ordre.
   @ApiProperty({ type: [AssistantActionDto], description: 'Actions à exécuter dans l’interface, dans l’ordre : boutons et réglages existants uniquement.' }) actions!: AssistantActionDto[];
+  // provider et model : qui a répondu.
+  @ApiProperty({ enum: PROVIDERS, example: 'claude' }) provider!: 'claude' | 'mistral';
+  @ApiProperty({ example: 'claude-fable-5-2' }) model!: string;
 // Fin de AssistantReplyDto.
 }

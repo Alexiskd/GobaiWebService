@@ -42,6 +42,7 @@ export const OPEN_SOURCE_CREDITS = [
 
 /** Organisations liées aux dépôts effectivement référencés ci-dessus. */
 export const SERVICE_ORGS = [
+  { org: 'Anthropic', what: ['API Claude de l’assistant (Claude Platform), appelée avec la clé de l’utilisateur'] },
   { org: 'CDS Strasbourg', what: ['Service SIMBAD déclaré dans le client de catalogue astronomique (désactivé par défaut sans proxy)'] },
   { org: 'Caltech / NASA', what: ['NASA Exoplanet Archive déclaré dans le client de catalogue astronomique (désactivé par défaut sans proxy)'] },
   { org: 'David Lorenz', what: ['Tuiles du Light Pollution Atlas référencées par le moteur cartographique'] },
@@ -51,7 +52,7 @@ export const SERVICE_ORGS = [
   { org: 'Meta', what: ['React et React DOM, dépendances de production'] },
   { org: 'MUI', what: ['Material UI et Material Icons, dépendances de production'] },
   { org: 'MyMemory', what: ['API de traduction appelée par les modules de traduction'] },
-  { org: 'Mistral AI', what: ['API de l’assistant, appelée avec la clé saisie par l’utilisateur'] },
+  { org: 'Mistral AI', what: ['API de l’assistant (La Plateforme), appelée avec la clé de l’utilisateur'] },
   { org: 'NASA', what: ['Image and Video Library appelée par la galerie', 'Vidéo du Scientific Visualization Studio sur l’écran de chargement'] },
   { org: 'OpenFreeMap', what: ['Tuiles cartographiques référencées par le moteur de routes'] },
   { org: 'Three.js', what: ['Bibliothèque 3D déclarée comme dépendance de production'] },

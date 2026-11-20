@@ -25,8 +25,12 @@ import {
 } from '../ui/icons.jsx';
 // Importe EmcIcon, la formule « E = mc² » composée pour le bouton de l'affichage relativiste.
 import { EmcIcon } from './EmcIcon.jsx';
-// Icône du bouton de l'assistant : le composant Material AutoAwesome.
-const MISTRAL_ICON = AutoAwesomeIcon;
+// Importe les logos des fournisseurs de l'assistant (Claude, Mistral), au format des icônes.
+import { PROVIDER_MARKS } from '../menus/Assistant/ProviderLogo.jsx';
+// Icône du bouton de l'assistant : le logo du fournisseur connecté, l'astre filant tant que personne n'est connecté.
+const assistantIcon = (provider) => PROVIDER_MARKS[provider] ?? AutoAwesomeIcon;
+// Nom du fournisseur pour l'infobulle.
+const PROVIDER_NAMES = { claude: 'Claude', mistral: 'Mistral' };
 
 /** Blocs de la barre ordinateur, dans l'ordre d'affichage. */
 export const TOOLBAR_GROUPS = ['explore', 'display', 'data', 'assistant', 'settings', 'info'];
@@ -44,7 +48,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -109,7 +113,7 @@ export function toolbarActions({
     // « Ma position » n'est plus ici : elle est posée sous la navball, en icône (hud/NavballPilote).
     // Assistant : petit menu déroulant qui s'ouvre au-dessus du bouton (l'événement du clic donne son point d'ancrage).
     // Assistant (Claude côté serveur, Mistral avec une clé du navigateur), enfoncé quand son menu est ouvert.
-    { id: 'assistant', group: 'assistant', icon: MISTRAL_ICON, label: 'Assistant', primary: true, pressed: assistantOpen, onClick: onAssistant, title: 'Assistant : poser une question sur le système solaire' },
+    { id: 'assistant', group: 'assistant', icon: assistantIcon(assistantProvider), label: 'Assistant', primary: true, pressed: assistantOpen, onClick: onAssistant, title: PROVIDER_NAMES[assistantProvider] ? `Assistant (connecté à ${PROVIDER_NAMES[assistantProvider]}) : poser une question sur le système solaire` : 'Assistant : se connecter avec sa clé Claude ou Mistral' },
     // ── Bloc « settings » — Réglages : langue, son, paramètres, performances.
     // Langue (si le rappel existe) : icône seule, libellé avec la langue en cours si elle est connue.
     onLanguage && { id: 'lang', group: 'settings', icon: TranslateIcon, label: languageLabel ? `Langue : ${languageLabel}` : 'Langue', short: 'Langue', iconOnly: true, onClick: onLanguage, title: 'Langue de l’interface' },

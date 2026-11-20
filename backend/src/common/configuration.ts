@@ -67,9 +67,11 @@ export interface AppConfig {
   };
   // pointclouds : le dossier des nuages de points.
   pointclouds: { dir: string };
-  /** Assistant de la fenêtre « Claude » (API Claude). Sans clé, l'assistant est fermé ; la clé reste côté serveur. */
-  // assistant : la clé de l'API Claude (facultative), le modèle et la limite de réponses par jour.
-  assistant: { anthropicApiKey?: string; model: string; dailyLimit: number };
+  /**
+   * Assistant : aucune clé côté serveur, chaque utilisateur se connecte avec la sienne (Claude ou Mistral). Seuls les
+   * modèles sont réglés ici, essayés dans l'ordre : le plus performant d'abord, un repli si le compte n'y a pas accès.
+   */
+  assistant: { claudeModels: string[]; mistralModels: string[] };
 // Fin de AppConfig.
 }
 
@@ -88,6 +90,12 @@ function positiveNumber(name: string, raw: string | undefined, fallback: number)
   // Renvoie le nombre.
   return n;
 // Fin de positiveNumber.
+}
+
+/** Modèles d'un fournisseur : celui de la variable d'environnement (s'il y en a un) puis ceux par défaut, sans doublon. */
+function modelList(fromEnv: string | undefined, defaults: string[]): string[] {
+  const first = fromEnv?.trim();
+  return [...new Set([...(first ? [first] : []), ...defaults])];
 }
 
 /** Lit et valide l'environnement. Échoue vite, avec un message clair, plutôt que de planter plus tard. */
@@ -216,19 +224,12 @@ export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConf
     },
     // Dossier des nuages de points : POINTCLOUD_DIR, ou « pointclouds ».
     pointclouds: { dir: env.POINTCLOUD_DIR?.trim() || 'pointclouds' },
-    // Assistant :
+    // Assistant : les modèles de chaque fournisseur. Le plus performant par défaut (claude-fable-5-2 chez Claude,
+    // mistral-large-latest chez Mistral) ; ASSISTANT_CLAUDE_MODEL et ASSISTANT_MISTRAL_MODEL le remplacent. Le
+    // modèle de repli ne sert que si le compte de l'utilisateur n'a pas accès au premier.
     assistant: {
-      // Clé collée avec des guillemets ou des espaces : on la nettoie.
-      // clé de l'API Claude : espaces retirés, guillemets et apostrophes du début et de la fin retirés, espaces retirés de nouveau ; undefined si rien ne reste ;
-      anthropicApiKey: env.ANTHROPIC_API_KEY?.trim().replace(/^["'`]+|["'`]+$/g, '').trim() || undefined,
-      // Modèle le plus performant par défaut : il lit l'inventaire du DOM et choisit lui-même l'élément sur lequel
-      // agir, ce qu'un petit modèle fait moins bien. Il coûte aussi nettement plus par message : la limite
-      // journalière ci-dessous est le garde-fou, et ASSISTANT_MODEL permet de redescendre à tout moment.
-      // modèle : ASSISTANT_MODEL, ou claude-opus-5-5 ;
-      model: env.ASSISTANT_MODEL?.trim() || 'claude-opus-5-5',
-      // limite par jour : ASSISTANT_DAILY_LIMIT, 1 000 par défaut.
-      dailyLimit: positiveNumber('ASSISTANT_DAILY_LIMIT', env.ASSISTANT_DAILY_LIMIT, 1000),
-    // Fin de assistant.
+      claudeModels: modelList(env.ASSISTANT_CLAUDE_MODEL, ['claude-fable-5-2', 'claude-opus-5-5']),
+      mistralModels: modelList(env.ASSISTANT_MISTRAL_MODEL, ['mistral-large-latest', 'mistral-medium-latest']),
     },
   // Fin de l'objet de configuration.
   };

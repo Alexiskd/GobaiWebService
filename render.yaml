@@ -74,8 +74,5 @@ services:
         # Valeur saisie dans le tableau de bord, jamais dans le dépôt : c'est la seule clé de ce service qui
         # peut déplacer de l'argent.
         sync: false
-      # Assistant de la fenêtre « Claude » : clé de l'API Claude (sk-ant-…), saisie dans le tableau de bord Render.
-      - key: ANTHROPIC_API_KEY
-        # Valeur saisie dans le tableau de bord.
-        sync: false
+      # Assistant : aucune clé côté serveur, chaque utilisateur se connecte avec la sienne (Claude ou Mistral).
       # PORT est fourni par Render. Les autres variables (tuiles…) : voir backend/.env.example.
