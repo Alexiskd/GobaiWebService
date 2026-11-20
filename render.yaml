@@ -60,20 +60,12 @@ services:
         # occupe. Ce secret n'est jamais écrit dans le dépôt : il signe les clés d'API vendues, donc qui le
         # connaît pourrait en fabriquer une sans payer.
         generateValue: true
-      # API externes déconnectées : hôtes séparés par des virgules (ex. api.open-meteo.com,photon.komoot.io). Vide : aucune.
+      # API externes déconnectées : hôtes séparés par des virgules (ex. photon.komoot.io,eonet.gsfc.nasa.gov). Vide : aucune.
       - key: BLOCKED_API_HOSTS
         # Valeur saisie dans le tableau de bord.
         sync: false
       # Clé d'administration : autorise l'onglet « API » du site à déconnecter une API sur le serveur. Jamais dans le dépôt.
       - key: API_ADMIN_TOKEN
-        # Valeur saisie dans le tableau de bord.
-        sync: false
-      # Nuages réels de la Terre (Xweather) : identifiants saisis dans le tableau de bord Render.
-      - key: XWEATHER_CLIENT_ID
-        # Valeur saisie dans le tableau de bord.
-        sync: false
-      # Secret du compte Xweather.
-      - key: XWEATHER_CLIENT_SECRET
         # Valeur saisie dans le tableau de bord.
         sync: false
       # Clé secrète Stripe (sk_test_… en mode test, sk_live_… pour de vrais paiements) : elle ouvre les dons et

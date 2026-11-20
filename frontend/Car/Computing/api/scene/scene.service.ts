@@ -60,11 +60,6 @@ export class SceneService {
     return { available: false, items: [], features: [] };
   }
 
-  // Toutes les couches atmosphériques relayées restent indisponibles.
-  atmosphereFeed() {
-    return { available: false, items: [], features: [] };
-  }
-
   // L'assistant serveur est débranché.
   assistantConfig() {
     return { enabled: false, model: null };

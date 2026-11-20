@@ -74,8 +74,8 @@ Le travail se fait en cinq lots, une PR chacun :
 - **Fonds marins** : `earth-gebco` et `earth-ncei` ne sont plus des fonds de carte. Leurs relais de tuiles restent :
   - GEBCO est déjà fondu au large dans la couche unique ;
   - la NOAA (ETOPO 2022) sera la teinte des océans vue de l'espace au lot 4.
-- **Nuages et atmosphère de la Terre** : interrupteur à part, désactivé par défaut. Tant qu'il est désactivé, ni les
-  nuages Xweather, ni la couverture nuageuse, ni le vent ne sont demandés. L'interrupteur « Atmosphère de Vénus et de
+- **Nuages et atmosphère de la Terre** : interrupteur à part, désactivé par défaut. Les nuages sont simulés : la météo en
+  temps réel (Xweather, Open-Meteo, Rain Viewer) a été retirée de l'app le 20 novembre 2026. L'interrupteur « Atmosphère de Vénus et de
   Mars » reste activé.
 - **Moniteur de performance** (Paramètres) : il s'affiche aussi sur téléphone et ajoute deux lignes pour la Terre :
   - première image et globe entier affichés, depuis l'ouverture de la page ;

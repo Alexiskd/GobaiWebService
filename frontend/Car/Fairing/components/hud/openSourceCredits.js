@@ -53,7 +53,6 @@ export const SERVICE_ORGS = [
   { org: 'MyMemory', what: ['API de traduction appelée par les modules de traduction'] },
   { org: 'Mistral AI', what: ['API de l’assistant, appelée avec la clé saisie par l’utilisateur'] },
   { org: 'NASA', what: ['Image and Video Library appelée par la galerie', 'Vidéo du Scientific Visualization Studio sur l’écran de chargement'] },
-  { org: 'Open-Meteo', what: ['API météo appelée par le moteur des villes'] },
   { org: 'OpenFreeMap', what: ['Tuiles cartographiques référencées par le moteur de routes'] },
   { org: 'Three.js', what: ['Bibliothèque 3D déclarée comme dépendance de production'] },
   { org: 'AWS', what: ['Tuiles d’altitude Terrarium référencées comme source de relief'] },

@@ -33,16 +33,6 @@ export class TilesService {
     return { database: false, variants: [] };
   }
 
-  // Les vents du moment (Open-Meteo) ne sont pas relayés.
-  earthWind() {
-    return { available: false };
-  }
-
-  // La couverture nuageuse du moment (Open-Meteo) n'est pas relayée.
-  earthCloudCover() {
-    return { available: false };
-  }
-
   // La table de priorité des sources de la Terre n'est pas servie.
   earthPlan() {
     return { available: false, items: [] };

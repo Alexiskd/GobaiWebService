@@ -35,7 +35,6 @@ export function PlanetSettings({
             {...atmosphereLayers}
             showBodyAtmospheres={false}
             showEarthAtmosphere
-            showEarthLayers
           />
         </>
       )}

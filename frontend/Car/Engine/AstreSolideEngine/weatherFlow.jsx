@@ -1,7 +1,7 @@
 // Moteur de mouvement de la météo : les nuages de la Terre sont entraînés par le vent.
 //
-//  - Champ de vent : une petite grille mondiale (vitesse vers l'est et vers le nord, en m/s). Elle vient des vents
-//    réels du moment relayés par l'API (GET /tiles/earth-wind), ou, à défaut, d'un modèle de la circulation générale :
+//  - Champ de vent : une petite grille mondiale (vitesse vers l'est et vers le nord, en m/s). Elle vient d'un
+//    modèle de la circulation générale (aucune source météo n'est interrogée) :
 //    alizés d'est sous les tropiques, vents d'ouest aux latitudes moyennes, vents d'est près des pôles.
 //  - Animation : chaque point de la couche de nuages est déplacé le long du vent local. Le déplacement réel est trop
 //    lent pour être vu (un nuage met des heures à traverser un pays) : le mouvement est accéléré, FLOW_SPAN_S secondes

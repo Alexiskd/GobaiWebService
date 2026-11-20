@@ -24,8 +24,8 @@ import {
 import { SkipThrottle } from '@nestjs/throttler';
 // Ouvre la liste des décorateurs Swagger importés :
 import {
-  // réponses 502, 400, 302, 204, 404 et 200, et description d'une route ;
-  ApiBadGatewayResponse, ApiBadRequestResponse, ApiFoundResponse, ApiNoContentResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation,
+  // réponses 502, 400, 302, 404 et 200, et description d'une route ;
+  ApiBadGatewayResponse, ApiBadRequestResponse, ApiFoundResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation,
   // paramètre documenté et rubrique.
   ApiParam, ApiTags,
 // Fin de l'import.
@@ -34,8 +34,8 @@ import {
 import { ApiErrorDto } from '../dto/api-error.dto';
 // Ouvre l'import de l'envoi de tuiles partagé :
 import {
-  // les règles de cache de chaque famille de tuiles (nuages, Terre, Terre de repli, Mars, Lune, satellites), la fonction sendTile et les types de requête et de réponse.
-  CLOUD_TILE, EARTH_FALLBACK_TILE, EARTH_TILE, MARS_TILE, MOON_TILE, SATELLITE_TILE, sendTile, type TileRequest, type TileResponse,
+  // les règles de cache de chaque famille de tuiles (Terre, Terre de repli, Mars, Lune, satellites), la fonction sendTile et les types de requête et de réponse.
+  EARTH_FALLBACK_TILE, EARTH_TILE, MARS_TILE, MOON_TILE, SATELLITE_TILE, sendTile, type TileRequest, type TileResponse,
 // Fin de l'import.
 } from '../common/tile-http';
 // Ouvre l'import des formes de données des tuiles :
@@ -68,12 +68,6 @@ import { BodyAvailabilityService } from '../services/map-tiles/body-availability
 import { EarthImageryService } from '../services/map-tiles/earth-imagery.service';
 // En-tête de cache de la table de priorité des sources de la Terre.
 import { EARTH_PLAN_CACHE } from '../services/map-tiles/earth-plan';
-// Service des nuages réels (Xweather).
-import { XweatherCloudsService } from '../services/map-tiles/xweather-clouds.service';
-// Service des vents réels (Open-Meteo).
-import { EarthWindService } from '../services/map-tiles/earth-wind.service';
-// Service de la couverture nuageuse (Open-Meteo).
-import { EarthCloudCoverService } from '../services/map-tiles/earth-cloud-cover.service';
 // Service de l'image mélangée de Mars et identifiant de sa couche.
 import { MarsBlendService, MARS_BLEND_LAYER_ID } from '../services/mars/mars-blend.service';
 // Ouvre l'import de la fusion de Mars :
@@ -86,15 +80,6 @@ import {
 } from '../services/mars/mars-fusion.service';
 
 /** Sous-ensemble de la réponse Express dont on a besoin (évite une dépendance de types). */
-// Interface minimale de la réponse pour une route qui ne fait que poser un en-tête et un code :
-interface StatusResponse {
-  // poser un en-tête ;
-  setHeader(name: string, value: string): unknown;
-  // fixer le code de réponse.
-  status(code: number): unknown;
-// Fin de StatusResponse.
-}
-
 // Interface minimale de la réponse pour une route qui envoie un contenu ou redirige :
 interface RedirectableResponse {
   // poser un en-tête ;
@@ -147,12 +132,6 @@ export class TilesController {
     private readonly availability: BodyAvailabilityService,
     // L'imagerie de la Terre.
     private readonly earth: EarthImageryService,
-    // Les nuages Xweather.
-    private readonly xweatherClouds: XweatherCloudsService,
-    // Les vents.
-    private readonly earthWind: EarthWindService,
-    // La couverture nuageuse.
-    private readonly earthCloudCover: EarthCloudCoverService,
   // Corps du constructeur vide.
   ) {}
 
@@ -556,114 +535,6 @@ export class TilesController {
     // Envoie la tuile avec la règle de cache des satellites (une semaine, immuable).
     sendTile(req, res, tile, SATELLITE_TILE);
   // Fin de satelliteTile.
-  }
-
-  // Route GET /api/v1/tiles/earth-wind.
-  @Get('earth-wind')
-  // Ouvre la description de la route :
-  @ApiOperation({
-    // son titre ;
-    summary: 'Vents réels du moment sur la Terre (Open-Meteo)',
-    // début de son texte (la grille et ses unités) ;
-    description: 'Grille mondiale tous les 20° (18 × 9 points, lignes du sud au nord) : vitesse vers l’est `u` et vers le nord '
-      // suite (altitude de la mesure, rafraîchissement) ;
-      + '`v` en m/s, à 700 hPa si disponible, sinon à 10 m. Rafraîchie toutes les 3 heures. Le site s’en sert pour '
-      // suite (réponse 204 si la source est injoignable) ;
-      + 'entraîner les nuages ; 204 sans contenu si la source est injoignable ou son quota épuisé (le site garde alors '
-      // fin du texte.
-      + 'son modèle de vents).',
-  // Fin de la description.
-  })
-  // Réponse 204 documentée : vents indisponibles.
-  @ApiNoContentResponse({ description: 'Vents indisponibles pour le moment.' })
-  // Méthode earthWindGrid, asynchrone ; la réponse est en mode passthrough (NestJS envoie la valeur renvoyée).
-  async earthWindGrid(@Res({ passthrough: true }) res: StatusResponse) {
-    // Essaie :
-    try {
-      // d'obtenir la grille des vents (gardée 3 heures en mémoire par le service) ;
-      const grid = await this.earthWind.get();
-      // cache public de 30 minutes (1 800 s) ;
-      res.setHeader('Cache-Control', 'public, max-age=1800');
-      // et renvoie la grille, en JSON.
-      return grid;
-    // En cas d'échec, quelle qu'en soit la cause :
-    } catch {
-      // Donnée facultative : pas d'erreur dans la console du navigateur, le site garde son modèle de vents.
-      // cache public de 5 minutes, pour ne pas réinterroger la source à chaque visiteur ;
-      res.setHeader('Cache-Control', 'public, max-age=300');
-      // code 204, « pas de contenu », plutôt qu'une erreur ;
-      res.status(204);
-      // rien n'est renvoyé.
-      return undefined;
-    // Fin du cas d'échec.
-    }
-  // Fin de earthWindGrid.
-  }
-
-  // Route GET /api/v1/tiles/earth-clouds/cover.
-  @Get('earth-clouds/cover')
-  // Ouvre la description de la route :
-  @ApiOperation({
-    // son titre ;
-    summary: 'Couverture nuageuse du moment sur la Terre (Open-Meteo)',
-    // début de son texte (la grille) ;
-    description: 'Grille mondiale de 24 × 12 cases de 15° : couverture totale calculée par les modèles météo pour l’heure '
-      // suite (format : un octet par case, en base64) ;
-      + 'en cours, un octet par case en base64 (0 = ciel clair, 255 = couvert), lignes du sud au nord depuis 180° Ouest. '
-      // suite (rafraîchissement, rôle de seconde source) ;
-      + 'Sans clé, rafraîchie toutes les heures. Seconde source de nuages réels du site, quand l’image satellite '
-      // fin du texte.
-      + 'Xweather n’est pas disponible ; 502 si Open-Meteo est injoignable.',
-  // Fin de la description.
-  })
-  // Réponse 502 documentée : Open-Meteo injoignable.
-  @ApiBadGatewayResponse({ type: ApiErrorDto })
-  // Cache public de 15 minutes (900 s).
-  @Header('Cache-Control', 'public, max-age=900')
-  // Méthode earthCloudCoverGrid.
-  earthCloudCoverGrid() {
-    // Renvoie la grille de couverture nuageuse (gardée une heure en mémoire par le service).
-    return this.earthCloudCover.get();
-  // Fin de earthCloudCoverGrid.
-  }
-
-  // Route GET /api/v1/tiles/earth-clouds/xweather/:z/:x/:y.
-  @Get('earth-clouds/xweather/:z/:x/:y')
-  // Ouvre la description de la route :
-  @ApiOperation({
-    // son titre ;
-    summary: 'Tuile des nuages de la Terre vus par satellite (Xweather)',
-    // début de son texte ;
-    description: 'Relaie une tuile Web Mercator de la couche satellite de Xweather Raster Maps (niveaux 0 à 3), gardée '
-      // fin du texte.
-      + '30 minutes en mémoire. Les identifiants restent sur le serveur. 503 sans identifiants Xweather.',
-  // Fin de la description.
-  })
-  // Réponse 200 documentée : une tuile PNG.
-  @ApiOkResponse({ description: 'Tuile PNG.' })
-  // Réponse 400 documentée : coordonnées invalides.
-  @ApiBadRequestResponse({ type: ApiErrorDto })
-  // Réponse 502 documentée : Xweather injoignable.
-  @ApiBadGatewayResponse({ type: ApiErrorDto })
-  // Méthode xweatherCloudTile, asynchrone ; ses paramètres :
-  async xweatherCloudTile(
-    // le niveau de zoom z ;
-    @Param('z') z: string,
-    // la colonne x ;
-    @Param('x') x: string,
-    // la ligne y ;
-    @Param('y') y: string,
-    // la requête ;
-    @Req() req: TileRequest,
-    // la réponse.
-    @Res() res: TileResponse,
-  // Elle ne renvoie rien.
-  ): Promise<void> {
-    // Attend la tuile de nuages auprès du service (qui garde les identifiants et un cache de 30 minutes), coordonnées converties en nombres.
-    const tile = await this.xweatherClouds.tile(parseTileCoordinate(z), parseTileCoordinate(x), parseTileCoordinate(y));
-    // Envoie la tuile avec la règle de cache des nuages (un quart d'heure).
-    sendTile(req, res, tile, CLOUD_TILE);
-  // Fin de xweatherCloudTile.
   }
 
   // Route GET /api/v1/tiles/lidar-hd/cities, déclarée avant la route attrape-tout « :layerId/:z/:x/:y ».

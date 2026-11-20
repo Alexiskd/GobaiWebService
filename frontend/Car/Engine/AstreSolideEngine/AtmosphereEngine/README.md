@@ -1,3 +1,3 @@
 # Atmosphere Engine — Astres solides
 
-Couches atmosphériques, nuages, aérosols, cyclones, précipitations, orages, foudre et flux atmosphériques.
+Atmosphères dessinées (diffusion de la lumière) et nuages simulés des planètes solides. Aucune source météo en direct n'est interrogée.

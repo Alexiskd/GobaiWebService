@@ -43,16 +43,6 @@ export class TilesController {
     return this.tiles.moonBlendStatus();
   }
 
-  @Get('/tiles/earth-wind')
-  earthWind() {
-    return this.tiles.earthWind();
-  }
-
-  @Get('/tiles/earth-clouds/cover')
-  earthCloudCover() {
-    return this.tiles.earthCloudCover();
-  }
-
   @Get('/tiles/earth/plan')
   earthPlan() {
     return this.tiles.earthPlan();

@@ -39,9 +39,6 @@ export const MOON_TILE: TileCachePolicy = { maxAge: 365 * DAY_S, immutable: true
 /** Fusions de Mars calculées par le serveur : une heure, puis un jour d'affichage immédiat avec vérification. */
 // Mars : 3 600 secondes, puis un jour d'affichage immédiat avec vérification.
 export const MARS_TILE: TileCachePolicy = { maxAge: 3600, staleWhileRevalidate: DAY_S };
-/** Nuages vus par satellite : image du moment, un quart d'heure. */
-// Nuages : 900 secondes.
-export const CLOUD_TILE: TileCachePolicy = { maxAge: 900 };
 
 // Fonction tileCacheControl : écrit l'en-tête Cache-Control d'une règle.
 export function tileCacheControl(policy: TileCachePolicy): string {

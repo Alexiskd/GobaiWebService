@@ -1,16 +1,10 @@
 // Importe loadWorldCityStats, les statistiques mondiales d'une ville.
 import { loadWorldCityStats } from './worldCityStats.jsx';
-// Importe loadCityWeather, la météo actuelle d'une ville.
-import { loadCityWeather } from './cityWeather.jsx';
 // Importe translateCity, la traduction du nom local et de la région.
 import { translateCity } from './cityTranslate.jsx';
-// Importe weatherIconSvg, le dessin d'un pictogramme météo.
-import { weatherIconSvg } from './cityWeatherIcons.jsx';
 
 // Format des nombres entiers, en français.
 const fmtInt = new Intl.NumberFormat('fr-FR');
-// Format des précipitations : une décimale au plus.
-const precipFormat = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 });
 // Formats d'heure déjà créés, par fuseau horaire.
 const timeFormats = new Map();
 
@@ -72,8 +66,6 @@ export class CityCard {
     this.city = null;
     // Statistiques mondiales : aucune.
     this.world = null;
-    // Météo : aucune.
-    this.weather = null;
     // Traduction : aucune.
     this.translation = null;
     // Fiche fermée.
@@ -97,14 +89,10 @@ export class CityCard {
     this.anchor = anchor;
     // Oublie les statistiques d'une autre ville.
     if (this.world?.city !== city) this.world = null;
-    // Oublie la météo d'une autre ville.
-    if (this.weather?.city !== city) this.weather = null;
     // Oublie la traduction d'une autre ville.
     if (this.translation?.city !== city) this.translation = null;
     // Lance le chargement des statistiques, sans l'attendre.
     void this.loadWorld(city);
-    // Lance le chargement de la météo.
-    void this.loadWeather(city);
     // Lance le chargement de la traduction.
     void this.loadTranslation(city);
     // Programme l'ouverture (début).
@@ -150,26 +138,6 @@ export class CityCard {
     // Fin de ce cas.
     }
   // Fin de loadWorld.
-  }
-
-  /** Complète la fiche avec la météo actuelle dès que la réponse arrive, si elle est déjà ouverte. */
-  // loadWeather, asynchrone : charge la météo (début).
-  async loadWeather(city) {
-    // Attend la météo.
-    const weather = await loadCityWeather(city);
-    // Aucune, ou ville changée : abandon.
-    if (!weather || this.city !== city) return;
-    // La garde, avec sa ville.
-    this.weather = { city, ...weather };
-    // Si la fiche est ouverte (début).
-    if (this.open) {
-      // Reconstruit le contenu.
-      this.render(city);
-      // La replace.
-      this.place();
-    // Fin de ce cas.
-    }
-  // Fin de loadWeather.
   }
 
   /** Complète la fiche avec la traduction française du nom local et de la région, si elle est ouverte. */
@@ -306,8 +274,6 @@ export class CityCard {
     const frag = document.createDocumentFragment();
     // Statistiques mondiales, si elles sont celles de cette ville.
     const world = this.world?.city === c ? this.world : null;
-    // Météo, si elle est celle de cette ville.
-    const weather = this.weather?.city === c ? this.weather : null;
     // Traduction, si elle est celle de cette ville.
     const translation = this.translation?.city === c ? this.translation : null;
     // Population : celle des statistiques, sinon celle de la ville.
@@ -361,9 +327,6 @@ export class CityCard {
       frag.appendChild(row);
     // Fin de ce cas.
     }
-
-    // Avec une météo : ajoute le bandeau météo.
-    if (weather) frag.appendChild(this.weatherBlock(weather));
 
     // Avec une population (début).
     if (pop > 0) {
@@ -459,16 +422,12 @@ export class CityCard {
     const sources = ['Natural Earth'];
     // Worldometer, avec des statistiques.
     if (world) sources.push('Worldometer');
-    // Open-Meteo, avec une météo.
-    if (weather) sources.push('Open-Meteo');
     // MyMemory, avec une traduction.
     if (translation) sources.push('MyMemory');
     // Texte des sources.
     const src = node('span', null, sources.join(' · '));
     // Mentions de crédit.
     const credits = [];
-    // Celle de la météo.
-    if (weather) credits.push('Météo actuelle : Open-Meteo (CC BY 4.0)');
     // Celle de la traduction.
     if (translation) credits.push('Traduction automatique : MyMemory (translated.net)');
     // En infobulle sur les sources.
@@ -482,74 +441,6 @@ export class CityCard {
     // Remplace le contenu de la fiche par le fragment.
     this.el.replaceChildren(frag);
   // Fin de render.
-  }
-
-  /** Bandeau météo : pictogramme, température, condition puis ressenti, vent et humidité. */
-  // weatherBlock : construit le bandeau météo (début).
-  weatherBlock(w) {
-    // Le bandeau.
-    const box = node('div', 'cc-weather');
-    // Son libellé pour les lecteurs d'écran.
-    box.setAttribute('aria-label', `Météo actuelle : ${w.label}, ${w.tempC} degrés`);
-    // Zone du pictogramme.
-    const icon = node('div', 'cc-w-icon');
-    // Le pictogramme, de jour ou de nuit.
-    icon.innerHTML = weatherIconSvg(w.icon, w.isDay);
-    // L'ajoute au bandeau.
-    box.appendChild(icon);
-
-    // Corps du bandeau.
-    const body = node('div', 'cc-w-body');
-    // Sa première ligne.
-    const head = node('div', 'cc-w-head');
-    // La température.
-    head.appendChild(node('strong', 'cc-w-temp', `${w.tempC}°`));
-    // La condition.
-    head.appendChild(node('span', 'cc-w-cond', w.label));
-    // Ajoute la ligne au corps.
-    body.appendChild(head);
-
-    // Ligne des mesures.
-    const metrics = node('div', 'cc-w-metrics');
-    // Le ressenti, s'il est connu.
-    if (w.feelsC !== null) metrics.appendChild(this.weatherMetric('Ressenti', `${w.feelsC}°`));
-    // Avec une vitesse de vent (début).
-    if (w.windKmh !== null) {
-      // Valeur : la vitesse, suivie de la direction si elle est connue.
-      const value = w.wind ? `${w.windKmh} km/h ${w.wind.short}` : `${w.windKmh} km/h`;
-      // La mesure « Vent ».
-      const metric = this.weatherMetric('Vent', value);
-      // Son infobulle : la provenance du vent.
-      if (w.wind) metric.title = `Vent venant du ${w.wind.from}`;
-      // L'ajoute.
-      metrics.appendChild(metric);
-    // Fin de ce cas.
-    }
-    // L'humidité, si elle est connue.
-    if (w.humidity !== null) metrics.appendChild(this.weatherMetric('Humidité', `${w.humidity} %`));
-    // Les précipitations, s'il y en a.
-    if (w.precipMm > 0) metrics.appendChild(this.weatherMetric('Précip.', `${precipFormat.format(w.precipMm)} mm`));
-    // Ajoute les mesures au corps.
-    body.appendChild(metrics);
-
-    // Ajoute le corps au bandeau.
-    box.appendChild(body);
-    // Renvoie le bandeau.
-    return box;
-  // Fin de weatherBlock.
-  }
-
-  // weatherMetric : une mesure, avec son libellé (début).
-  weatherMetric(label, value) {
-    // L'élément.
-    const el = node('span', 'cc-w-metric');
-    // Le libellé.
-    el.appendChild(node('em', null, label));
-    // La valeur.
-    el.appendChild(document.createTextNode(value));
-    // Le renvoie.
-    return el;
-  // Fin de weatherMetric.
   }
 
   // cell : une case de la grille de chiffres (début).
