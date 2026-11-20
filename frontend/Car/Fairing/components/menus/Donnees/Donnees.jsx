@@ -11,7 +11,7 @@ const TheorieQuantique = lazy(() => import('../../hud/TheorieQuantique.jsx').the
 
 /** Les onglets de la fenêtre, dans l'ordre de la barre : nom, nom court (téléphone), description et icône. */
 export const DONNEES_TABS = [
-  { id: 'documentation', name: 'Documentation', short: 'Docs', hint: 'Fiches des documents de référence (PDF)', Icon: DescriptionIcon },
+  { id: 'documentation', name: 'Documentation', short: 'Docs', hint: 'Une fiche par astre de l’application : Soleil, planètes, satellites', Icon: DescriptionIcon },
   { id: 'galerie', name: 'Galerie', short: 'Galerie', hint: 'Archives NASA et collection personnelle', Icon: GalleryIcon },
   { id: 'flux', name: 'Flux cognitif', short: 'Flux', hint: 'Page de recherche de l’auteur', Icon: PsychologyIcon },
   { id: 'theorie', name: 'Théorie quantique', short: 'Théorie', hint: 'Page de recherche de l’auteur', Icon: ScienceIcon },
@@ -99,7 +99,7 @@ function DonneesNav({ tab, onChange }) {
  * L'en-tête et la barre de navigation restent fixes en haut ; seul le contenu défile. Les marges de sécurité de
  * l'iPhone (encoche, barre d'accueil) sont respectées en portrait comme en paysage.
  */
-export function Donnees({ open, onClose }) {
+export function Donnees({ open, onClose, onGoTo }) {
   const [tab, setTab] = useState('documentation');
   // Visionneuse d'image ouverte ou non (côté galerie et documents) : Échap la ferme d'abord.
   const [lightbox, setLightbox] = useState(false);
@@ -167,7 +167,7 @@ export function Donnees({ open, onClose }) {
                 <Box sx={{ maxWidth: 980, mx: 'auto', px: { xs: 2, sm: 3 }, py: 3, color: 'text.primary' }}>
                   {tab === 'flux' ? <FluxCognitif /> : <TheorieQuantique />}
                 </Box>
-              ) : <Documents onLightboxChange={onLightboxChange} />}
+              ) : <Documents onGoTo={onGoTo} />}
           </Suspense>
         )}
       </Box>

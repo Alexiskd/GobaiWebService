@@ -6,28 +6,13 @@ import { Box, Chip, Stack, Table, TableBody, TableCell, TableRow, Typography } f
 import { fetchSolarActivity, fetchSolarRegions } from '@/Computing/api/scene';
 // Importe le libellé de l'indice Kp, les prochains apsides, les prochaines saisons et les grandeurs du Soleil en direct.
 import { kpLabel, nextApsides, nextSeasons, sunLive } from '@/Engine/EruptionEngine/sunMath';
+// Importe les caractéristiques fixes du Soleil.
+import { SUN_FACTS } from './sunFacts.js';
 
 // Carte d'identité (valeurs de référence UAI / NASA).
 // Carte d'identité du Soleil : libellé, puis valeur (début du tableau).
-const FACTS = [
-  // Le type spectral.
-  ['Type spectral', 'G2V, naine jaune'],
-  // Le rayon.
-  ['Rayon', '695 700 km (109 Terres, valeur nominale UAI)'],
-  // La masse.
-  ['Masse', '1,989 × 10³⁰ kg (333 000 Terres)'],
-  // La température de surface.
-  ['Température de surface', '5 772 K'],
-  // La température du cœur.
-  ['Température du cœur', '≈ 15 millions K'],
-  // La rotation.
-  ['Rotation', '25,4 j à l’équateur, ≈ 34 j aux pôles'],
-  // L'âge.
-  ['Âge', '≈ 4,6 milliards d’années'],
-  // Le cycle d'activité.
-  ['Cycle d’activité', 'Cycle 25 (début en décembre 2019)'],
-// Fin du tableau.
-];
+// Caractéristiques fixes du Soleil, partagées avec la Documentation de la fenêtre Données.
+const FACTS = SUN_FACTS;
 
 // nf : nombre au format français, avec un nombre fixe de décimales (0 par défaut).
 const nf = (n, d = 0) => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
