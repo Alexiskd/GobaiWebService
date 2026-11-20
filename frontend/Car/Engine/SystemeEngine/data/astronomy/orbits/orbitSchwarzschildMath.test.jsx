@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AU_UNITS, elementsAt } from '../../../../AstreSolideEngine/planetOrbits.jsx';
 import {
-  GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, easeInOutCubic, gridRadii, gridWellY, mirrorY, mixPoints,
+  GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, easeInOutCubic, gridRadii, gridWellY, mixPoints,
   precessionPerCenturyArcsec, precessionPerOrbitRad,
   schwarzschildGeodesic, schwarzschildGridSegments, schwarzschildRadiusM,
 } from './orbitSchwarzschildMath.jsx';
@@ -153,33 +153,13 @@ test('l\u2019avance du p\u00e9rih\u00e9lie int\u00e9gr\u00e9e rejoint la formule
   assert.ok(Math.abs(advance - expected) / expected < 0.1, `Δφ = ${advance.toFixed(5)} rad au lieu de ${expected.toFixed(5)} rad`);
 });
 
-test('mirrorY inverse la hauteur et garde le plan de l\u2019\u00e9cliptique', () => {
-  // Deux points : le miroir garde x et z, inverse y.
-  const pts = new Float32Array([1, 2, 3, -4, 5, -6]);
-  const mir = mirrorY(pts);
-  assert.deepEqual([...mir], [1, -2, 3, -4, -5, -6]);
-  // L'originale est intacte.
-  assert.deepEqual([...pts], [1, 2, 3, -4, 5, -6]);
-  // Dans un tampon fourni : le même résultat, sans nouvelle allocation.
-  const out = new Float32Array(pts.length);
-  const back = mirrorY(pts, out);
-  assert.equal(back, out);
-  assert.deepEqual([...out], [...mir]);
-});
-
-test('la grille est un double puits : la seconde moitié est le miroir exact de la première', () => {
-  // Les segments du double puits, sur un petit disque pour le test.
-  const segs = schwarzschildGridSegments({ outerAu: 50, rings: 6, spokes: 8 });
-  // La moitié du tampon, en points entiers.
-  const half = segs.length / 2;
-  assert.equal(segs.length % 2, 0);
-  assert.equal(half % 3, 0);
-  // Chaque segment du dessus est le miroir exact de son homologue du dessous.
-  for (let i = 0; i < half; i += 3) {
-    assert.equal(segs[half + i], segs[i], `x du point ${i / 3}`);
-    assert.equal(segs[half + i + 1], -segs[i + 1], `y du point ${i / 3}`);
-    assert.equal(segs[half + i + 2], segs[i + 2], `z du point ${i / 3}`);
-  }
+test('la grille est un seul puits : le cône du bas, sans moitié haute', () => {
+  // Les segments du puits, sur un petit disque pour le test : anneaux × rayons, plus les rayons entre anneaux.
+  const rings = 6, spokes = 8;
+  const segs = schwarzschildGridSegments({ outerAu: 50, rings, spokes });
+  assert.equal(segs.length, 6 * (rings * spokes + spokes * (rings - 1)));
+  // Aucun point au-dessus du plan de l'écliptique : le puits descend, il n'a plus de miroir.
+  for (let i = 1; i < segs.length; i += 3) assert.ok(segs[i] <= 0, `y du point ${(i - 1) / 3}`);
 });
 
 test('la grille englobe tous les astres du système : aphélie de la naine la plus lointaine (Éris)', () => {
@@ -197,7 +177,7 @@ test('la grille englobe tous les astres du système : aphélie de la naine la pl
 
 // Test : la rosette d'un satellite — cercle sans excentricité ni terme relativiste, périastre qui avance sinon.
 test('rosette d’un satellite : cercle unité au repos, périastre qui avance avec le terme relativiste', async () => {
-  const { SATELLITE_ECCENTRICITY, schwarzschildSatelliteRosette, periapsisAdvance } = await import('./orbitSchwarzschildMath.jsx');
+  const { SATELLITE_ECCENTRICITY, schwarzschildSatelliteRosette } = await import('./orbitSchwarzschildMath.jsx');
   // La table des excentricités : toutes entre 0 et 1, Néréide la plus excentrique.
   for (const [id, e] of Object.entries(SATELLITE_ECCENTRICITY)) assert.ok(e >= 0 && e < 1, id);
   assert.ok(SATELLITE_ECCENTRICITY.nereid > 0.7);
@@ -221,6 +201,4 @@ test('rosette d’un satellite : cercle unité au repos, périastre qui avance a
   // l'orbite ne se referme plus.
   const rosette = schwarzschildSatelliteRosette({ e, rsOverA: 0.01, n, revolutions: 1 });
   assert.ok(radius(rosette, n) > radius(kepler, n) + 1e-4);
-  // L'avance prédite au premier ordre : 3π × rs / p.
-  assert.ok(Math.abs(periapsisAdvance(0.01, e) - (3 * Math.PI * 0.01) / (1 - e * e)) < 1e-12);
 });

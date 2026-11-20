@@ -6,8 +6,8 @@
  *    celle de l'astre autour duquel il tourne. Un astre lourd et loin de son parent a une grande sphère ; un astre
  *    léger ou proche en a une petite : c'est son « poids dans l'espace » ;
  *  - chaque astre est un système, avec sa « toupie » qui l'englobe : son puits de gravité (surface de Flamm de la
- *    métrique de Schwarzschild), doublé par symétrie. Sa profondeur dépend de la masse de l'astre ; pour un astre
- *    léger elle est étirée jusqu'à se refermer autour de lui.
+ *    métrique de Schwarzschild), un cône sous le plan du système. Sa profondeur dépend de la masse de l'astre ; pour
+ *    un astre léger elle est étirée. L'astre principal repose au fond, ses satellites sur la pente.
  */
 
 // Importe les masses des astres (mesurées, ou estimées d'après le rayon) : la table que le moteur emploie déjà.
@@ -65,14 +65,14 @@ export function systemWellProfile({ outer, inner, unitM, massKg, exaggeration, m
 }
 
 /**
- * Géométrie filaire de la toupie d'un système : anneaux et rayons du puits de gravité de l'astre central, doublés
- * par symétrie de part et d'autre du plan (deux toupies recollées bord à bord), comme la grille du Soleil.
+ * Géométrie filaire de la toupie d'un système : anneaux et rayons du puits de gravité de l'astre central — un seul
+ * cône, sous le plan du système, comme la grille du Soleil. Le bord est à la hauteur 0, la pointe au centre.
  *  outer, inner : rayon extérieur (le système) et intérieur (la surface de l'astre), en unités de scène ;
  *  unitM : longueur d'une unité de scène en mètres ; massKg : masse de l'astre central ;
  *  exaggeration : la même que celle de la grille du Soleil, pour que les profondeurs se comparent d'un système à l'autre ;
  *  minDepth : creux minimal au centre, en unités de scène. Le puits réel d'un petit astre est presque plat : il ne
  *             l'engloberait pas. En dessous de ce minimum, toute la toupie est étirée en hauteur (même profil) pour
- *             que ses deux pointes se referment au-dessus et au-dessous de l'astre.
+ *             que sa pointe descende franchement sous le bord : l'astre s'y pose, au fond.
  * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène, centrés sur l'astre.
  */
 export function systemWellSegments({ outer, inner, unitM, massKg, exaggeration, rings = 14, spokes = 32, minDepth = 0 }) {
@@ -98,14 +98,5 @@ export function systemWellSegments({ outer, inner, unitM, massKg, exaggeration, 
       segs.push(ca * radii[j - 1], y(radii[j - 1]), sa * radii[j - 1], ca * radii[j], y(radii[j]), sa * radii[j]);
     }
   }
-  // Le double : la même toupie retournée (y inversé).
-  const single = new Float32Array(segs);
-  const doubled = new Float32Array(single.length * 2);
-  doubled.set(single, 0);
-  for (let i = 0; i < single.length; i += 3) {
-    doubled[single.length + i] = single[i];
-    doubled[single.length + i + 1] = -single[i + 1];
-    doubled[single.length + i + 2] = single[i + 2];
-  }
-  return doubled;
+  return new Float32Array(segs);
 }
