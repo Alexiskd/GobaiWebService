@@ -202,3 +202,47 @@ test('rosette d’un satellite : cercle unité au repos, périastre qui avance a
   const rosette = schwarzschildSatelliteRosette({ e, rsOverA: 0.01, n, revolutions: 1 });
   assert.ok(radius(rosette, n) > radius(kepler, n) + 1e-4);
 });
+
+// Test : une orbite posée sur le puits du Soleil — inclinée pour une planète, couchée pour une planète naine.
+test('orbite posée sur le puits : inclinaison gardée, ou effacée pour une planète naine', async () => {
+  const { layOrbitOnWell } = await import('./orbitSchwarzschildMath.jsx');
+  const outer = 98;
+  // Deux points à 40 UA du Soleil dans le plan, l'un 10 UA au-dessus de l'écliptique, l'autre 10 UA au-dessous.
+  const source = [40 * AU_UNITS, 10 * AU_UNITS, 0, 0, -10 * AU_UNITS, 40 * AU_UNITS];
+  // Planète : la hauteur de la grille s'ajoute, l'écart d'inclinaison entre les deux points reste de 20 UA.
+  const inclined = layOrbitOnWell(new Float32Array(source), outer);
+  assert.ok(Math.abs((inclined[1] - inclined[4]) / AU_UNITS - 20) < 1e-3);
+  // Planète naine : les deux points tombent à la même hauteur, celle de la grille à 40 UA, sous l'écliptique.
+  const flat = layOrbitOnWell(new Float32Array(source), outer, { flatten: true });
+  const expected = gridWellY(40, outer) * AU_UNITS;
+  assert.ok(expected < 0);
+  assert.ok(Math.abs(flat[1] - expected) < Math.abs(expected) * 1e-5);
+  assert.ok(Math.abs(flat[4] - expected) < Math.abs(expected) * 1e-5);
+  // x et z ne bougent pas.
+  assert.equal(flat[0], inclined[0]);
+  assert.equal(flat[5], inclined[5]);
+  // Au-delà du bord de la grille : hauteur nulle une fois couchée.
+  const far = layOrbitOnWell(new Float32Array([200 * AU_UNITS, 5 * AU_UNITS, 0]), outer, { flatten: true });
+  assert.equal(far[1], 0);
+});
+
+// Test : un satellite couché sur le plan de son système garde sa distance et sa direction dans le plan.
+test('satellite couché : même distance, même direction dans le plan, hauteur nulle à la fin', async () => {
+  const { flatRelative } = await import('./orbitSchwarzschildMath.jsx');
+  // Un satellite à 5 unités de sa planète, sur une orbite très inclinée.
+  const rel = [3, 4, 0];
+  // À 0 : la position de Kepler, intacte.
+  assert.deepEqual(flatRelative(...rel, 0), rel);
+  // À mi-fondu : la hauteur est à moitié, la distance reste 5.
+  const half = flatRelative(...rel, 0.5);
+  assert.equal(half[1], 2);
+  assert.ok(Math.abs(Math.hypot(...half) - 5) < 1e-12);
+  // À 1 : à plat, à 5 unités, toujours du côté +x.
+  const flat = flatRelative(...rel, 1);
+  assert.deepEqual(flat.map((v) => Math.round(v * 1e9) / 1e9), [5, 0, 0]);
+  // La direction dans le plan est gardée.
+  const tilted = flatRelative(1, 10, 1, 1);
+  assert.ok(Math.abs(tilted[0] - tilted[2]) < 1e-12 && tilted[0] > 0);
+  // Satellite à la verticale de la planète : il part vers +x, sans division par zéro.
+  assert.deepEqual(flatRelative(0, 7, 0, 1), [7, 0, 0]);
+});

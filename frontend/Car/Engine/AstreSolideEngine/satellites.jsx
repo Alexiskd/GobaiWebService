@@ -7,7 +7,7 @@ import { OrbitRibbon } from './orbitRibbon.jsx';
 // Importe les opacités de la traînée d'une orbite fermée.
 import { loopTrailAlphas } from './orbitRibbonMath.jsx';
 // Importe la rosette de Schwarzschild d'un satellite et le mélange de deux tracés.
-import { SATELLITE_ECCENTRICITY, mixPoints, schwarzschildSatelliteRosette } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
+import { SATELLITE_ECCENTRICITY, flatRelative, mixPoints, schwarzschildSatelliteRosette } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 import { SharedResourcePool } from '../SystemeEngine/core/SharedResourcePool.js';
 import { InstancedPickRegistry } from '../SystemeEngine/core/InstancedPickRegistry.js';
 import { acquireUnitSphereGeometry } from '../SystemeEngine/core/SharedGeometry.js';
@@ -16,6 +16,8 @@ import { acquireUnitSphereGeometry } from '../SystemeEngine/core/SharedGeometry.
 const ORBIT_SEGMENTS = 256;
 // Nombre de tours tracés par la rosette de Schwarzschild d'un satellite, comme pour les planètes.
 const SCHWARZSCHILD_REVOLUTIONS = 3;
+// Orientation d'un anneau d'orbite couché : le cercle unité est déjà dans le plan horizontal (x, z).
+const FLAT = new THREE.Quaternion();
 // Une orbite n'est tracée que si la caméra est assez près de la planète pour qu'elle fasse plus que quelques pixels.
 // Une orbite n'est tracée que si la caméra est à moins de 60 fois son rayon de la planète.
 const ORBIT_VIEW_RATIO = 60;
@@ -81,6 +83,9 @@ export class SatelliteSystem {
     // satellite ; appliqués anneau par anneau dans place().
     this.mixAlpha = 0;
     this.mixRsOverA = null;
+    // Systèmes à coucher sur le plan de Schwarzschild : fonction (satellite) → 0 (plan d'orbite de Kepler) à 1 (à
+    // plat), posée par le moteur ; null = aucun.
+    this.flatten = null;
     // Liste des satellites.
     this.list = [];
     // Matériaux Lambert partagés uniquement lorsque leur couleur et leurs options sont identiques.
@@ -139,6 +144,8 @@ export class SatelliteSystem {
         def, parent, group, mesh, orbit, trail,
         // Sa position dans le monde, sa position relative, sa vitesse, et ses deux indicateurs.
         w: new THREE.Vector3(), rel: new THREE.Vector3(), vel: new THREE.Vector3(), exact: false, ready: false,
+        // Orientation de l'anneau d'orbite calculée par Kepler, gardée pour pouvoir le coucher puis le relever.
+        orbitQuaternion: new THREE.Quaternion(),
       // Fin de l'ajout.
       });
     // Fin de la boucle.
@@ -190,6 +197,8 @@ export class SatelliteSystem {
       if (s.ready && s.parent !== hotParent && (tick + i) % COLD_EVERY) {
         // Il suit simplement sa planète.
         s.w.copy(s.parent.w).add(s.rel);
+        // Système couché sur le plan de Schwarzschild (planètes naines) : le satellite quitte son plan d'orbite incliné.
+        if (this.flatten) this.layFlat(s);
         // Affichage Schwarzschild : le satellite descend dans la toupie de sa planète (0 hors de cet affichage).
         if (this.wellDrop) s.w.y += this.wellDrop(s);
         // Passe au suivant.
@@ -208,6 +217,8 @@ export class SatelliteSystem {
       s.exact = st.exact;
       // Sa position dans le monde : celle de sa planète plus sa position relative.
       s.w.copy(s.parent.w).add(s.rel);
+      // Système couché sur le plan de Schwarzschild (planètes naines) : le satellite quitte son plan d'orbite incliné.
+      if (this.flatten) this.layFlat(s);
       // Affichage Schwarzschild : le satellite descend dans la toupie de sa planète (0 hors de cet affichage).
       if (this.wellDrop) s.w.y += this.wellDrop(s);
       // Son repère de rotation synchrone.
@@ -222,11 +233,25 @@ export class SatelliteSystem {
       this.basisM.makeBasis(this.bx.fromArray(o.x), this.by.fromArray(o.y), this.bz.fromArray(o.z));
       // Orientation du tracé de l'orbite.
       s.orbit.quaternion.setFromRotationMatrix(this.basisM);
+      // La garde : place() couche l'anneau à partir d'elle.
+      s.orbitQuaternion.copy(s.orbit.quaternion);
       // Taille du tracé : la distance à la planète.
       s.orbit.scale.setScalar(s.rel.length());
     // Fin de la boucle.
     }
   // Fin de update.
+  }
+
+  /**
+   * Couche un satellite sur le plan horizontal de son système, selon `this.flatten(s)` (0 à 1) : sa position
+   * relative à la planète tourne vers l'horizontale en gardant sa distance et sa direction dans le plan, puis sa
+   * position dans la scène est recalculée. Sans effet à 0.
+   */
+  layFlat(s) {
+    const a = this.flatten(s);
+    if (!(a > 0)) return;
+    const flat = flatRelative(s.rel.x, s.rel.y, s.rel.z, a);
+    s.w.set(s.parent.w.x + flat[0], s.parent.w.y + flat[1], s.parent.w.z + flat[2]);
   }
 
   /**
@@ -271,6 +296,14 @@ export class SatelliteSystem {
       s.orbit.position.copy(s.parent.group.position);
       // L'anneau de l'orbite descend avec le satellite, pour qu'il reste sur son tracé.
       if (this.ringDrop) s.orbit.position.y += this.ringDrop(s);
+      // Système couché : l'anneau tourne de son plan d'orbite vers le plan horizontal, au rythme du fondu.
+      if (this.flatten) {
+        const a = this.flatten(s);
+        if (a > 0 || s.laidFlat) {
+          s.orbit.quaternion.copy(s.orbitQuaternion).slerp(FLAT, a);
+          s.laidFlat = a > 0;
+        }
+      }
       // Rayon de l'orbite.
       const a = s.rel.length();
       // Orbite visible si les orbites sont affichées, si le satellite n'est pas masqué et si la caméra est assez proche de la planète.
