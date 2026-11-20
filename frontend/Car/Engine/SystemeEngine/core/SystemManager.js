@@ -1,5 +1,5 @@
-import { LOAD_STATE } from './PerivolumeManager.js';
-import { applyPerivolumeAxioms } from './PerivolumeAxiomPolicy.js';
+import { LOAD_STATE } from '../PerivolumeEngine/PerivolumeManager.js';
+import { applyPerivolumeAxioms } from '../PerivolumeEngine/PerivolumeAxiomPolicy.js';
 
 /** Orchestre les transitions de chargement sans dépendre de Three.js ni de React. */
 export class SystemManager {

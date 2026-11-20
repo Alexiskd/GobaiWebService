@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SystemManager } from './SystemManager.js';
-import { PerivolumeManager } from './PerivolumeManager.js';
+import { PerivolumeManager } from '../PerivolumeEngine/PerivolumeManager.js';
 import { SystemRegistry } from './SystemRegistry.js';
 
 test('unregister retire aussi l’état effectif mémorisé d’un système', () => {

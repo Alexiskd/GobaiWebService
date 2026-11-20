@@ -1,4 +1,4 @@
-import { LOAD_STATE } from './PerivolumeManager.js';
+import { LOAD_STATE } from '../PerivolumeEngine/PerivolumeManager.js';
 
 /** Cadence les moteurs spécialisés sans détruire leurs objets ni leurs ressources. */
 export class EngineActivityPolicy {

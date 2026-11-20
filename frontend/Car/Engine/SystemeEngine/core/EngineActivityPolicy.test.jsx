@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EngineActivityPolicy } from './EngineActivityPolicy.js';
-import { LOAD_STATE } from './PerivolumeManager.js';
+import { LOAD_STATE } from '../PerivolumeEngine/PerivolumeManager.js';
 
 test('moteur actif et moteur ciblé mis à jour à chaque image', () => {
   const policy = new EngineActivityPolicy();
