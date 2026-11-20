@@ -2282,6 +2282,8 @@ export class SolarEngine {
   zoom(f) {
     // Note l'activité.
     this.markActive();
+    // Zoom avant sur l'astre : la rotation automatique de la caméra autour de lui s'arrête d'elle-même.
+    if (f < 1) this.stopAutoRotate();
     // Arrête le zoom d'arrivée.
     this.zoomFlight = null; // zoom repris à la main : le zoom d'arrivée s'arrête là
     // Rayon de la cible.
@@ -2775,6 +2777,16 @@ export class SolarEngine {
 
   // setAutoRotate : active ou coupe la rotation automatique.
   setAutoRotate(on) { this.autoRotate = on; }
+
+  /**
+   * Coupe la rotation automatique depuis le moteur (zoom avant sur un astre) et prévient l'interface
+   * (`onAutoRotateChange`), pour que le bouton « Rotation » se relâche.
+   */
+  stopAutoRotate() {
+    if (!this.autoRotate) return;
+    this.autoRotate = false;
+    this.onAutoRotateChange?.(false);
+  }
   /** Vitesse de la rotation automatique autour de l'astre : multiplicateur de la vitesse d'origine (0,25 à 8). */
   // setRotateSpeed : règle le multiplicateur, entre 0,25 et 8 ; 1 s'il est illisible.
   setRotateSpeed(k) { const n = Number(k); this.rotateSpeed = Number.isFinite(n) ? clamp(n, 0.25, 8) : 1; }

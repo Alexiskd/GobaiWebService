@@ -287,6 +287,9 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
     const history = [...messages.filter((m) => !m.error), { from: 'user', text: question }];
     setMessages((m) => [...m, { from: 'user', text: question }]);
     setText('');
+    // Question envoyée : le champ perd le focus (plus de sélection ni de curseur ; sur iPhone, le clavier se ferme).
+    const active = globalThis.document?.activeElement;
+    if (active?.closest?.('[data-assistant-panel]')) active.blur();
     setBusy(true);
     try {
       const payload = history.slice(-MAX_HISTORY).map((m) => ({ role: m.from === 'user' ? 'user' : 'assistant', content: m.text.slice(0, MAX_CHARS) }));

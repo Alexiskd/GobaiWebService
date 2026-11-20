@@ -70,7 +70,6 @@ export function ToolbarButton({ action, compact, inMenu = false, onPick }) {
             sx={{
               minWidth: 0, height: 30, px: 1.4, mx: 0.25, borderRadius: 999, lineHeight: 1, textTransform: 'none',
               borderColor: 'divider', flex: 'none', boxShadow: 'none',
-              fontFamily: '"Google Sans", "Roboto", "Helvetica", "Arial", sans-serif',
               // Écran tactile : 44 px de haut, comme les autres cibles.
               '@media (pointer: coarse)': { height: 44, minHeight: 44 },
               ...(pressed ? null : { color: 'text.primary', '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' } }),
