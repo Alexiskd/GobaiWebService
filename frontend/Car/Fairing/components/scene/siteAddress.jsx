@@ -43,7 +43,7 @@ const WINDOW_TITLES = {
   // Titre de la galerie.
   '/donnees': 'Données : documentation et galerie du système solaire',
   // Titre de la fenêtre des sources.
-  '/node': 'Anthropic Node Open Source : sources des données',
+  '/node': 'Node Open Source : sources des données',
   // Titre de la fenêtre de don.
   '/faire-un-don': 'Dons au développeur de l’application Gobai',
 // Fin de l'objet.

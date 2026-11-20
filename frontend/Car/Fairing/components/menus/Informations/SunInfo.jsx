@@ -13,7 +13,7 @@ const FACTS = [
   // Le type spectral.
   ['Type spectral', 'G2V, naine jaune'],
   // Le rayon.
-  ['Rayon', '696 340 km (109 Terres)'],
+  ['Rayon', '695 700 km (109 Terres, valeur nominale UAI)'],
   // La masse.
   ['Masse', '1,989 × 10³⁰ kg (333 000 Terres)'],
   // La température de surface.

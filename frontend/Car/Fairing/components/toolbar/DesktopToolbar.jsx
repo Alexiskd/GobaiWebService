@@ -12,16 +12,17 @@ import { safe } from '@/Fairing/theme/mediaQueries';
 import { Readout } from '../hud/Readout.jsx';
 // Importe ToolbarButton, le bouton d'action.
 import { ToolbarButton } from './ToolbarButton.jsx';
+// Ordre des blocs, leurs noms et les blocs repliables.
+import { FOLDABLE_GROUPS, GROUP_LABELS, TOOLBAR_GROUPS } from './toolbarActions.jsx';
 
-// Ordinateur / laptop : une seule ligne alignée, groupes séparés, indicateur de zoom intégré à gauche. Si la ligne ne
-// tient pas dans l'écran (tablette en portrait, cibles tactiles de 44 px), le groupe « help » (son, langue, aide,
-// partage, galerie, performances, dons, sources, paramètres) passe dans un menu « Menu » : aucun bouton n'est caché
-// au bout d'un défilement horizontal.
+// Ordinateur / laptop : une seule ligne alignée, six blocs séparés (explorer, affichage, données, assistant, réglages,
+// infos), indicateur de zoom intégré à gauche. Si la ligne ne tient pas dans l'écran (tablette en portrait, cibles
+// tactiles de 44 px), les blocs « réglages » et « infos » passent dans un menu « Menu » : aucun bouton n'est caché au
+// bout d'un défilement horizontal.
 // Déclare et exporte le composant DesktopToolbar : reçoit le HUD et les actions.
 export function DesktopToolbar({ hud, actions }) {
-  // Les groupes de la barre, dans l'ordre d'affichage ; le groupe « layers » a disparu avec le bouton Informations,
-  // dont le menu des cartes est passé dans le panneau des caractéristiques…
-  const groups = ['explore', 'data', 'camera', 'help']
+  // Les blocs de la barre, dans l'ordre d'affichage (voir toolbarActions)…
+  const groups = TOOLBAR_GROUPS
     // … chacun avec ses actions…
     .map((g) => actions.filter((a) => a.group === g))
     // … sans les groupes vides.
@@ -31,7 +32,7 @@ export function DesktopToolbar({ hud, actions }) {
   const narrow = useMediaQuery('(max-width: 1200px)', { noSsr: true });
   // Référence de la barre, mesurée.
   const barRef = useRef(null);
-  // Vrai si le groupe « help » est replié dans le menu (la barre entière ne tient pas).
+  // Vrai si les blocs « réglages » et « infos » sont repliés dans le menu (la barre entière ne tient pas).
   const [fold, setFold] = useState(false);
   // Même valeur, lisible dans les écouteurs (sans attendre un rendu).
   const foldRef = useRef(false);
@@ -48,7 +49,7 @@ export function DesktopToolbar({ hud, actions }) {
     const el = barRef.current;
     // Pas encore rendue, ou déjà repliée : rien.
     if (!el || foldRef.current) return;
-    // Contenu plus large que la barre : largeur mémorisée, groupe « help » replié.
+    // Contenu plus large que la barre : largeur mémorisée, blocs repliables repliés.
     if (el.scrollWidth > el.clientWidth + 1) { needed.current = el.scrollWidth; setFolded(true); }
   // Fin du contrôle du débordement.
   };
@@ -82,10 +83,10 @@ export function DesktopToolbar({ hud, actions }) {
   }, []);
   // Passage des libellés aux icônes (ou l'inverse) : la barre change de largeur, elle est remesurée dépliée.
   useEffect(() => { setFolded(false); }, [narrow]);
-  // Les groupes affichés dans la barre : tous, ou tous sauf « help » une fois replié.
-  const shown = fold ? groups.filter((list) => list[0].group !== 'help') : groups;
-  // Les actions du menu : le groupe « help » une fois replié, aucune sinon.
-  const folded = fold ? groups.find((list) => list[0].group === 'help') || [] : [];
+  // Les blocs affichés dans la barre : tous, ou tous sauf les repliables une fois repliés.
+  const shown = fold ? groups.filter((list) => !FOLDABLE_GROUPS.has(list[0].group)) : groups;
+  // Les actions du menu : celles des blocs repliables une fois repliés (dans l'ordre de la barre), aucune sinon.
+  const folded = fold ? groups.filter((list) => FOLDABLE_GROUPS.has(list[0].group)).flat() : [];
 
   // Début du rendu.
   return (
@@ -117,8 +118,8 @@ export function DesktopToolbar({ hud, actions }) {
       <Readout hud={hud} />
       {/* Un bloc par groupe (début). */}
       {shown.map((list) => (
-        // Ligne du groupe, au rôle de groupe, nommée par le groupe de sa première action.
-        <Stack key={list[0].group} direction="row" spacing={0.25} role="group" aria-label={list[0].group} sx={{ alignItems: 'center' }}>
+        // Ligne du bloc, au rôle de groupe, nommée en clair pour les lecteurs d'écran.
+        <Stack key={list[0].group} direction="row" spacing={0.25} role="group" aria-label={GROUP_LABELS[list[0].group] || list[0].group} sx={{ alignItems: 'center' }}>
           {/* Filet vertical qui sépare du bloc précédent. */}
           <Divider orientation="vertical" flexItem sx={{ mx: 0.25, my: 0.5 }} />
           {/* Un bouton par action, en version ordinateur (en icône seule sur un écran de moins de 1 200 px). */}

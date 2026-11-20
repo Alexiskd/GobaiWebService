@@ -70,6 +70,8 @@ export function ToolbarButton({ action, compact, inMenu = false, onPick }) {
             sx={{
               minWidth: 0, height: 28, px: 1.1, mx: 0.25, borderRadius: 999, lineHeight: 1, textTransform: 'none',
               borderColor: 'divider', flex: 'none',
+              // Écran tactile : 44 px de haut, comme les autres cibles.
+              '@media (pointer: coarse)': { height: 44, minHeight: 44 },
               ...(pressed ? null : { color: 'text.primary', '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' } }),
             }}
           >
@@ -132,8 +134,9 @@ export function ToolbarButton({ action, compact, inMenu = false, onPick }) {
           sx={compact ? {
             // Icône au-dessus du libellé, toute la largeur, très petit texte.
             flexDirection: 'column', gap: 0, minWidth: 0, width: '100%', py: 0.25, px: 0.5, fontSize: 10, lineHeight: 1.15,
-          // Style de l'ordinateur : une seule ligne, 32 px de haut au moins, icône rapprochée du libellé.
-          } : { whiteSpace: 'nowrap', px: 1, py: 0.25, minHeight: 32, fontSize: 12.5, '& .MuiButton-startIcon': { mr: 0.5 } }}
+          // Style de l'ordinateur : une seule ligne, 32 px de haut au moins (44 px sur écran tactile : le `minHeight`
+          // posé ici masquerait sinon celui du thème), icône rapprochée du libellé.
+          } : { whiteSpace: 'nowrap', px: 1, py: 0.25, minHeight: 32, fontSize: 12.5, '& .MuiButton-startIcon': { mr: 0.5 }, '@media (pointer: coarse)': { minHeight: 44 } }}
         // Fin de la balise ouvrante.
         >
           {/* En mode compact, l'icône un peu plus grande. */}

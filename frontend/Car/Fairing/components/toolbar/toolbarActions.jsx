@@ -1,6 +1,8 @@
 // Actions de la barre d’outils. Sur petit écran, elles sont toutes dans le menu du bouton ⋯ (« Plus »), en haut à
 // droite, séparées par bloc ; `primary` repère les actions principales.
-// `group` = bloc de la barre ordinateur, séparés par un trait vertical.
+// `group` = bloc de la barre ordinateur, séparés par un trait vertical, dans l'ordre de TOOLBAR_GROUPS :
+// explorer, affichage, données, assistant, réglages, infos. Sur téléphone, PHONE_TAB range ces blocs dans les quatre
+// onglets du bas (Explorer, Affichage, Données, Menu).
 /** Boutons masqués de la barre : voir hiddenActions. Les anciennes composantes masquées (Tuile 3D, Modéliser, Lunes) ont été supprimées. */
 /**
  * Icônes : des composants Material de MUI, nommés dans ui/icons. Elles héritent de la couleur et de la taille du
@@ -23,8 +25,17 @@ import {
 } from '../ui/icons.jsx';
 // Importe EmcIcon, la formule « E = mc² » composée pour le bouton de l'affichage relativiste.
 import { EmcIcon } from './EmcIcon.jsx';
-// Icône du bouton « Mistral » : le composant Material de l'assistant.
+// Icône du bouton de l'assistant : le composant Material AutoAwesome.
 const MISTRAL_ICON = AutoAwesomeIcon;
+
+/** Blocs de la barre ordinateur, dans l'ordre d'affichage. */
+export const TOOLBAR_GROUPS = ['explore', 'display', 'data', 'assistant', 'settings', 'info'];
+/** Nom de chaque bloc, lu par les lecteurs d'écran. */
+export const GROUP_LABELS = { explore: 'Explorer', display: 'Affichage', data: 'Données', assistant: 'Assistant', settings: 'Réglages', info: 'Infos' };
+/** Blocs repliés dans le bouton « Menu » quand la barre ordinateur ne tient pas dans l'écran. */
+export const FOLDABLE_GROUPS = new Set(['settings', 'info']);
+/** Onglet du téléphone de chaque bloc : quatre onglets pour six blocs. */
+export const PHONE_TAB = { explore: 'explore', assistant: 'explore', display: 'display', data: 'data', settings: 'menu', info: 'menu' };
 
 // Déclare et exporte toolbarActions (début de la liste des paramètres).
 export function toolbarActions({
@@ -42,34 +53,32 @@ export function toolbarActions({
 }) {
   // Renvoie la liste des actions (début du tableau).
   return [
+    // ── Bloc « explore » — Explorer : chercher, naviguer entre les astres, revenir à la vue d’ensemble.
     // Rechercher : action principale du groupe « explore », avec son raccourci Ctrl K.
     { id: 'search', group: 'explore', icon: SearchIcon, label: 'Rechercher', primary: true, onClick: onSearch, title: 'Rechercher une ville ou un astre (Ctrl K)', kbd: 'Ctrl K' },
-    // « Ma position » n'est plus ici : elle est posée sous la navball, en icône (hud/NavballPilote).
-    // Assistant : petit menu déroulant qui s'ouvre au-dessus du bouton (l'événement du clic donne son point d'ancrage).
-    // Mistral : l'assistant, enfoncé quand son menu est ouvert.
-    { id: 'assistant', group: 'explore', icon: MISTRAL_ICON, label: 'Claude', primary: true, pressed: assistantOpen, onClick: onAssistant, title: 'Claude : poser une question sur le système solaire' },
+    // Astres : ouvre ou ferme l'arborescence des astres (bande du dock sur téléphone, rail sur ordinateur), qui
+    // n'avait de bouton que dans le panneau de l'assistant sur ordinateur, et aucun sur téléphone.
+    onNavigator && { id: 'navigator', group: 'explore', icon: AccountTreeIcon, label: 'Astres', iconOnly: true, pressed: navigatorOpen, onClick: onNavigator, title: 'Arborescence des astres : planètes et satellites' },
     // Le bouton Informations n'existe plus : le menu des cartes est rendu dans le panneau des caractéristiques,
     // qui s'ouvre d'un appui sur son en-tête (et par la touche L).
     // Vue globale : retour à la vue d'ensemble.
     { id: 'reset', group: 'explore', icon: PublicIcon, label: 'Vue globale', short: 'Global', primary: true, onClick: onReset, title: 'Retour à la vue d’ensemble (0 du pavé numérique)' },
-    // Astres : ouvre ou ferme l'arborescence des astres (bande du dock sur téléphone, rail sur ordinateur), qui
-    // n'avait de bouton que dans le panneau de l'assistant sur ordinateur, et aucun sur téléphone.
-    onNavigator && { id: 'navigator', group: 'explore', icon: AccountTreeIcon, label: 'Astres', iconOnly: true, pressed: navigatorOpen, onClick: onNavigator, title: 'Arborescence des astres : planètes et satellites' },
     // Plateau tournant : n'était ouvert que par la touche T, sans bouton (inaccessible sur téléphone).
     onPlateau && { id: 'plateau', group: 'explore', icon: ThreeSixtyIcon, label: 'Plateau tournant', short: 'Plateau', iconOnly: true, onClick: onPlateau, title: 'Plateau tournant : l’astre visé en tournant (T)' },
+    // ── Bloc « display » — Affichage : éclairage, relativité, mouvements automatiques de la caméra.
     // Ombre : bouton à bascule comme « Vue 3/4 ». Enfoncé = face des astres opposée au Soleil dans l'ombre et interface
     // bleu nuit ; relâché = astres entièrement éclairés et interface gris doux.
     // Ombre (si le rappel existe) : bascule du groupe « camera », infobulle selon l'état.
-    onToggleDayNight && { id: 'daynight', group: 'camera', icon: ShadowIcon, label: 'Ombre', iconOnly: true, pressed: night, onClick: onToggleDayNight, title: night ? 'Ombre activée : face des astres opposée au Soleil dans l’ombre' : 'Ombre désactivée : astres entièrement éclairés' },
+    onToggleDayNight && { id: 'daynight', group: 'display', icon: ShadowIcon, label: 'Ombre', iconOnly: true, pressed: night, onClick: onToggleDayNight, title: night ? 'Ombre activée : face des astres opposée au Soleil dans l’ombre' : 'Ombre désactivée : astres entièrement éclairés' },
     // E = mc² : bascule du groupe « camera », juste après Ombre. Affiche les orbites selon la métrique de
     // Schwarzschild (rosette précessée et grille filaire de courbure), fondu lent depuis les orbites de Kepler.
     // L'icône est le composant EmcIcon (formule composée) ; `wide` : sur ordinateur, une pastille assez large pour la
     // formule entière, au lieu du carré de 32 px où elle débordait sur les boutons voisins.
-    onToggleSchwarzschild && { id: 'schwarzschild', group: 'camera', icon: EmcIcon, label: 'E = mc²', short: 'E = mc²', iconOnly: true, wide: true, pressed: Boolean(schwarzschild), onClick: onToggleSchwarzschild, title: schwarzschild ? 'E = mc² activé : orbites de Schwarzschild (rosette), grille de courbure et périvolumes des astres et des systèmes' : 'E = mc² : orbites de Schwarzschild, grille de courbure et périvolumes (fondu depuis Kepler)' },
+    onToggleSchwarzschild && { id: 'schwarzschild', group: 'display', icon: EmcIcon, label: 'E = mc²', short: 'E = mc²', iconOnly: true, wide: true, pressed: Boolean(schwarzschild), onClick: onToggleSchwarzschild, title: schwarzschild ? 'E = mc² activé : orbites de Schwarzschild (rosette), grille de courbure et périvolumes des astres et des systèmes' : 'E = mc² : orbites de Schwarzschild, grille de courbure et périvolumes (fondu depuis Kepler)' },
     // Rotation automatique : bascule.
-    { id: 'auto', group: 'camera', icon: AutorenewIcon, label: 'Rotation', iconOnly: true, pressed: auto, onClick: onToggleAuto, title: 'Rotation automatique' },
+    { id: 'auto', group: 'display', icon: AutorenewIcon, label: 'Rotation', iconOnly: true, pressed: auto, onClick: onToggleAuto, title: 'Rotation automatique' },
     // Vue 3/4 automatique : bascule.
-    { id: 'tilt', group: 'camera', icon: CameraIcon, label: 'Vue 3/4', iconOnly: true, pressed: tilt, onClick: onToggleTilt, title: 'Vue 3/4 automatique en approchant du sol' },
+    { id: 'tilt', group: 'display', icon: CameraIcon, label: 'Vue 3/4', iconOnly: true, pressed: tilt, onClick: onToggleTilt, title: 'Vue 3/4 automatique en approchant du sol' },
     // Verrouillage : la vue se tourne vers l'astre le plus proche de l'astre focus (nommé sur le bouton) ; le zoom
     // avance toujours vers l'astre focus. Relâché : la caméra retrouve sa position d'origine. Toujours cliquable,
     // que cet astre soit ou non dans le champ de la caméra.
@@ -78,7 +87,7 @@ export function toolbarActions({
       // Cadenas fermé ou ouvert selon l'état. Icône seule sur ordinateur : le cadenas dit tout, et le nom de
       // l'astre reste dans l'infobulle et dans le nom lu par les lecteurs d'écran, qui tiennent le libellé.
       // Sur la feuille du téléphone, la tuile garde le nom de l'astre (`short`) : les tuiles ont toutes un texte.
-      id: 'lock', group: 'camera', icon: lock.on ? LockIcon : LockOpenIcon, label: `Verrouillage ${lock.name}`, short: lock.name, iconOnly: true,
+      id: 'lock', group: 'display', icon: lock.on ? LockIcon : LockOpenIcon, label: `Verrouillage ${lock.name}`, short: lock.name, iconOnly: true,
       // Enfoncé si verrouillé ; le clic demande l'état inverse.
       pressed: lock.on, onClick: () => onToggleLock(!lock.on),
       // Infobulle selon l'état (début).
@@ -89,30 +98,37 @@ export function toolbarActions({
         : `Verrouiller la vue sur ${lock.name}, l’astre le plus proche de ${lock.focusName} (astre focus)`,
     // Fin de l'objet.
     },
-    // Son (si le rappel existe) : icône seule du groupe « help », enfoncée si le son est actif, sans son de clic.
-    onToggleSound && { id: 'sound', group: 'help', icon: sound ? VolumeUpIcon : VolumeOffIcon, label: sound ? 'Son activé' : 'Son coupé', short: 'Son', iconOnly: true, pressed: sound, noSound: true, onClick: onToggleSound, title: sound ? 'Couper le son des clics' : 'Activer le son des clics' },
-    // Langue (si le rappel existe) : icône seule, libellé avec la langue en cours si elle est connue.
-    onLanguage && { id: 'lang', group: 'help', icon: TranslateIcon, label: languageLabel ? `Langue : ${languageLabel}` : 'Langue', short: 'Langue', iconOnly: true, onClick: onLanguage, title: 'Langue de l’interface' },
+    // ── Bloc « data » — Données : documents et images, contributions LiDAR, exports payants.
+    // Données (si le rappel existe) : icône seule.
+    onGallery && { id: 'gallery', group: 'data', icon: GalleryIcon, label: 'Données', iconOnly: true, onClick: onGallery, title: 'Données : documentation, galerie d’images, flux cognitif et théorie quantique (P)' },
     // Contribuer : placer une dalle LiDAR sur le globe et voter sur le placement des autres.
     onContribute && { id: 'contribute', group: 'data', icon: AddLocationIcon, label: 'Contribuer', onClick: onContribute, title: 'Contribuer : placer un relevé LiDAR sur le globe et voter sur les placements' },
-    // Aide (si le rappel existe) : icône seule, raccourcis clavier.
-    onHelp && { id: 'help', group: 'help', icon: HelpIcon, label: 'Aide', iconOnly: true, onClick: onHelp, title: 'Raccourcis clavier (?)' },
-    // Partager : feuille de partage du téléphone, ou copie du lien de la vue sur ordinateur.
-    // Partager (si le rappel existe) : icône seule.
-    onShare && { id: 'share', group: 'help', icon: ShareIcon, label: 'Partager', iconOnly: true, onClick: onShare, title: 'Partager cette vue (lien de l’astre affiché)' },
     // Boutique des exports : modèle 3D d'un astre, ses tuiles, son orbite (paiement Stripe côté serveur).
     onStore && { id: 'store', group: 'data', icon: StoreIcon, label: 'Exports', onClick: onStore, title: 'Boutique : exporter le modèle 3D d’un astre, ses tuiles ou son orbite' },
-    // Données (si le rappel existe) : icône seule.
-    onGallery && { id: 'gallery', group: 'help', icon: GalleryIcon, label: 'Données', iconOnly: true, onClick: onGallery, title: 'Données : documentation (PDF) et galerie d\'images (P)' },
-    // Moniteur de performance : activation/désactivation depuis la barre sur ordinateur.
-    onTogglePerformanceMonitor && { id: 'performance', group: 'help', icon: SpeedIcon, label: 'Performances', short: 'Perf', iconOnly: true, pressed: performanceMonitorVisible, onClick: onTogglePerformanceMonitor, title: performanceMonitorVisible ? 'Masquer le moniteur de performance' : 'Afficher le moniteur de performance' },
-    // Faire un don : accessible directement depuis la barre d'outils sur ordinateur.
-    onDonate && { id: 'donate', group: 'help', icon: FavoriteIcon, label: 'Faire un don', onClick: onDonate, title: 'Soutenir Gobai Space' },
-    // Anthropic Node Open Source (si le rappel existe) : icône seule, posée juste avant Paramètres — les deux
-    // fenêtres vont ensemble (ce dont le site est fait, et comment on le règle).
-    onSources && { id: 'sources', group: 'help', icon: CopyrightIcon, label: 'Anthropic Node Open Source', short: 'Node', iconOnly: true, onClick: onSources, title: 'Anthropic Node Open Source (S)' },
+    // ── Bloc « assistant » — Assistant : questions sur le système solaire.
+    // « Ma position » n'est plus ici : elle est posée sous la navball, en icône (hud/NavballPilote).
+    // Assistant : petit menu déroulant qui s'ouvre au-dessus du bouton (l'événement du clic donne son point d'ancrage).
+    // Assistant (Claude côté serveur, Mistral avec une clé du navigateur), enfoncé quand son menu est ouvert.
+    { id: 'assistant', group: 'assistant', icon: MISTRAL_ICON, label: 'Assistant', primary: true, pressed: assistantOpen, onClick: onAssistant, title: 'Assistant : poser une question sur le système solaire' },
+    // ── Bloc « settings » — Réglages : langue, son, paramètres, performances.
+    // Langue (si le rappel existe) : icône seule, libellé avec la langue en cours si elle est connue.
+    onLanguage && { id: 'lang', group: 'settings', icon: TranslateIcon, label: languageLabel ? `Langue : ${languageLabel}` : 'Langue', short: 'Langue', iconOnly: true, onClick: onLanguage, title: 'Langue de l’interface' },
+    // Son (si le rappel existe) : icône seule du groupe « help », enfoncée si le son est actif, sans son de clic.
+    onToggleSound && { id: 'sound', group: 'settings', icon: sound ? VolumeUpIcon : VolumeOffIcon, label: sound ? 'Son activé' : 'Son coupé', short: 'Son', iconOnly: true, pressed: sound, noSound: true, onClick: onToggleSound, title: sound ? 'Couper le son des clics' : 'Activer le son des clics' },
     // Paramètres (si le rappel existe) : icône seule.
-    onSettings && { id: 'settings', group: 'help', icon: SettingsIcon, label: 'Paramètres', iconOnly: true, onClick: onSettings, title: 'Paramètres : repères du système solaire, étoiles, aller à un astre' },
+    onSettings && { id: 'settings', group: 'settings', icon: SettingsIcon, label: 'Paramètres', iconOnly: true, onClick: onSettings, title: 'Paramètres : repères du système solaire, étoiles, aller à un astre' },
+    // Moniteur de performance : activation/désactivation depuis la barre sur ordinateur.
+    onTogglePerformanceMonitor && { id: 'performance', group: 'settings', icon: SpeedIcon, label: 'Performances', short: 'Perf', iconOnly: true, pressed: performanceMonitorVisible, onClick: onTogglePerformanceMonitor, title: performanceMonitorVisible ? 'Masquer le moniteur de performance' : 'Afficher le moniteur de performance' },
+    // ── Bloc « info » — Infos : aide, partage, sources du site, don.
+    // Aide (si le rappel existe) : icône seule, raccourcis clavier.
+    onHelp && { id: 'help', group: 'info', icon: HelpIcon, label: 'Aide', iconOnly: true, onClick: onHelp, title: 'Raccourcis clavier (?)' },
+    // Partager : feuille de partage du téléphone, ou copie du lien de la vue sur ordinateur.
+    // Partager (si le rappel existe) : icône seule.
+    onShare && { id: 'share', group: 'info', icon: ShareIcon, label: 'Partager', iconOnly: true, onClick: onShare, title: 'Partager cette vue (lien de l’astre affiché)' },
+    // Node Open Source (si le rappel existe) : icône seule — ce dont le site est fait.
+    onSources && { id: 'sources', group: 'info', icon: CopyrightIcon, label: 'Node Open Source', short: 'Node', iconOnly: true, onClick: onSources, title: 'Node Open Source : dépendances, sources des données et services utilisés (S)' },
+    // Faire un don : accessible directement depuis la barre d'outils sur ordinateur.
+    onDonate && { id: 'donate', group: 'info', icon: FavoriteIcon, label: 'Faire un don', onClick: onDonate, title: 'Soutenir Gobai Space' },
   // Fin du tableau : retire les entrées absentes et les boutons masqués.
   ].filter((a) => a && !HIDDEN.has(a.id));
 // Fin de toolbarActions.

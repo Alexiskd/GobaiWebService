@@ -7,7 +7,9 @@ import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe iconNode, le dessin d'une icône.
 import { iconNode } from './iconNode.jsx';
 // Importe les icônes des quatre espaces.
-import { ExploreIcon, NavigationIcon, StorageIcon, MenuIcon } from '../ui/icons.jsx';
+import { ExploreIcon, ShadowIcon, StorageIcon, MenuIcon } from '../ui/icons.jsx';
+// Onglet du téléphone de chaque bloc de la barre.
+import { PHONE_TAB } from './toolbarActions.jsx';
 // Importe FeuilleActions, la feuille qui monte du bas de l'écran.
 import { FeuilleActions } from '../ui/FeuilleActions.jsx';
 // Importe safe, la marge de sécurité de l'écran.
@@ -17,27 +19,25 @@ import { safe } from '@/Fairing/theme/mediaQueries';
 const TABS = [
   // Explorer.
   { id: 'explore', label: 'Explorer', icon: ExploreIcon, title: 'Explorer' },
-  // Orbite : le pilotage orbital.
-  { id: 'camera', label: 'Orbite', icon: NavigationIcon, title: 'Pilotage orbital' },
-  // L'espace « Couches » a disparu : son unique bouton (Informations) est passé dans le panneau des caractéristiques,
-  // qui s'ouvre d'un appui sur l'en-tête de son tiroir.
-  // Données : les données et les sources.
-  { id: 'data', label: 'Données', icon: StorageIcon, title: 'Données et sources' },
-  // Menu.
-  { id: 'help', label: 'Menu', icon: MenuIcon, title: 'Menu' },
+  // Affichage : éclairage, relativité, mouvements automatiques de la caméra, verrouillage.
+  { id: 'display', label: 'Affichage', icon: ShadowIcon, title: 'Affichage' },
+  // Données : documents et images, contributions, exports.
+  { id: 'data', label: 'Données', icon: StorageIcon, title: 'Données' },
+  // Menu : réglages et infos.
+  { id: 'menu', label: 'Menu', icon: MenuIcon, title: 'Menu : réglages et infos' },
 // Fin des espaces.
 ];
 
 // Titre de la feuille de chaque espace (début).
 const TITLES = {
   // Explorer.
-  explore: 'Explorer l’Univers',
-  // Orbite.
-  camera: 'Orbite et pilotage',
+  explore: 'Explorer',
+  // Affichage.
+  display: 'Affichage',
   // Données.
-  data: 'Données scientifiques',
+  data: 'Données',
   // Menu.
-  help: 'Menu et paramètres',
+  menu: 'Réglages et infos',
 // Fin des titres.
 };
 
@@ -194,8 +194,8 @@ export function CompactToolbar({ actions, hud }) {
   const anchorRef = useRef(null);
   // L'espace ouvert.
   const selected = TABS.find((tab) => tab.id === active);
-  // Les actions de cet espace.
-  const items = actions.filter((action) => action.group === active);
+  // Les actions de cet espace, dans l'ordre de la barre.
+  const items = actions.filter((action) => PHONE_TAB[action.group] === active);
 
   // close : referme la feuille.
   const close = () => setActive(null);
@@ -301,8 +301,8 @@ export function CompactToolbar({ actions, hud }) {
             {selected ? TITLES[selected.id] : ''}
           {/* Fin du titre. */}
           </Typography>
-          {/* Dans l'espace « Données » (début). */}
-          {selected?.id === 'data' && (
+          {/* Dans l'espace « Menu », avec les réglages (début). */}
+          {selected?.id === 'menu' && (
             // Bloc des performances (début).
             <Box sx={{ px: 1, mb: 1 }}>
               {/* Bouton du gestionnaire de performances (début). */}
