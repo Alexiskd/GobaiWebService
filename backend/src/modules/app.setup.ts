@@ -4,23 +4,18 @@ import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common
 import type { AppConfig } from '../common/configuration';
 // Filtre qui met toutes les erreurs au même format de réponse.
 import { HttpExceptionFilter } from '../common/http-exception.filter';
-// Délégué CORS : liste d'origines connues, ou site externe payant.
+// Délégué CORS : seulement les origines du frontend.
 import { corsDelegate } from '../common/cors';
 
-/**
- * Réglages communs à l'application réelle, aux tests de bout en bout et à l'export OpenAPI.
- * `isAllowedOrigin` : consultée par le CORS pour un site externe hors de la liste connue — vrai s'il a payé
- * son ajout (voir services/store/allowed-origins.service.ts). Sans argument : aucun site externe autorisé
- * (utilisé par l'export OpenAPI, qui ne sert jamais de vraies requêtes).
- */
+/** Réglages communs à l'application réelle, aux tests de bout en bout et à l'export OpenAPI. */
 // Déclare configureApp : applique à une application les réglages communs, d'après la configuration.
-export function configureApp(app: INestApplication, config: AppConfig, isAllowedOrigin: (origin: string) => boolean = () => false) {
+export function configureApp(app: INestApplication, config: AppConfig) {
   // Toutes les routes sont préfixées par /api.
   app.setGlobalPrefix('api');
   // Version dans l'adresse (/api/v1/…) ; une route sans version déclarée prend la version 1.
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-  // CORS fermé par défaut : origines de la liste, ou site externe payant ajouté aux CORS (voir common/cors.ts).
-  app.enableCors(corsDelegate(config.corsOrigins, isAllowedOrigin));
+  // CORS fermé : seul le frontend (config.corsOrigins) peut lire l'API depuis un navigateur (voir common/cors.ts).
+  app.enableCors(corsDelegate(config.corsOrigins));
   // Installe le filtre d'erreurs pour toute l'application.
   app.useGlobalFilters(new HttpExceptionFilter());
   // Installe un traitement appliqué à toutes les entrées (paramètres d'adresse, de requête, corps) :

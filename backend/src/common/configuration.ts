@@ -2,8 +2,6 @@
 import { join } from 'node:path';
 // Dossier des fichiers de dépôts tiers importés dans le projet.
 import { VENDOR_DIR } from './local-source';
-// Sites partenaires autorisés sans paiement (ajoutés aux origines CORS).
-import { freeApiOrigins } from './free-origins';
 
 /** Configuration de l'application, lue une seule fois au démarrage depuis l'environnement. */
 // Forme de la configuration de l'application.
@@ -11,7 +9,7 @@ export interface AppConfig {
   // port : le port d'écoute du serveur.
   port: number;
   /** `true` = toutes les origines (développement). */
-  // corsOrigins : les origines autorisées à appeler l'API (jamais toutes ; les clients payants passent par leur jeton).
+  // corsOrigins : les origines du frontend, seules autorisées à lire l'API depuis un navigateur.
   corsOrigins: string[];
   // throttle : la limite de débit, soit « limit » requêtes par fenêtre de « ttlMs » millisecondes.
   throttle: { ttlMs: number; limit: number };
@@ -124,9 +122,9 @@ export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConf
   return {
     // port : PORT, ou 3001 par défaut.
     port: positiveNumber('PORT', env.PORT, 3001),
-    // corsOrigins : CORS_ORIGIN, plus les sites de Gobai Space et les sites partenaires autorisés sans paiement (baibai).
-    // Jamais « toutes les origines » : un autre site n'est accepté que s'il envoie un jeton payé (voir common/cors.ts).
-    corsOrigins: [...new Set([...(cors ?? []), ...donationSiteUrls, ...freeApiOrigins(env)])],
+    // corsOrigins : le frontend seulement — les sites de Gobai Space (DONATION_SITE_URLS) et CORS_ORIGIN (autres adresses
+    // du frontend, ex. une préproduction). Aucun autre site, partenaire compris (voir common/cors.ts).
+    corsOrigins: [...new Set([...(cors ?? []), ...donationSiteUrls])],
     // Limite de débit :
     throttle: {
       // fenêtre : THROTTLE_TTL_SECONDS (60 par défaut), convertie en millisecondes ;

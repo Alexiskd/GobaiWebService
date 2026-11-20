@@ -45,12 +45,6 @@ export const SCOPE_ORBITS = 'orbits';
 export const scopeOfOrbit = (nom: string): Scope => `orbit:${bodyKey(nom)}`;
 /** Droit sur un astre : son modèle 3D et ses tuiles. */
 export const scopeOfBody = (nom: string): Scope => `body:${bodyKey(nom)}`;
-/**
- * Droit d'ajouter un site à la liste CORS (POST /store/cors-sites) : une fois son site ajouté, l'acheteur
- * appelle l'API en direct depuis un navigateur, sans plus présenter aucun jeton (voir common/cors.ts et
- * services/store/allowed-origins.service.ts). Ce droit ne sert qu'une fois, pour cet ajout.
- */
-export const SCOPE_CORS = 'cors';
 
 /** Un article du catalogue. */
 export interface Product {
@@ -80,7 +74,7 @@ export const LICENCE_SECONDS = 365 * 24 * 3600;
  * Prix par défaut, en centimes. Chacun se change par une variable d'environnement, sans toucher au code.
  * `orbitHour` : le calcul d'orbite d'un astre se loue à l'heure, 1 000 € l'heure.
  */
-const DEFAULT_PRICES = { body: 150_000, earth: 10_000_000, tiles: 199_900, all: 499_900, orbitHour: 100_000, corsSite: 29_900 };
+const DEFAULT_PRICES = { body: 150_000, earth: 10_000_000, tiles: 199_900, all: 499_900, orbitHour: 100_000 };
 
 /** Nombre d'heures maximal qu'une location d'orbite peut couvrir d'un coup : un mois. */
 export const MAX_ORBIT_HOURS = 744;
@@ -128,7 +122,6 @@ export function buildCatalogue(env: NodeJS.ProcessEnv = process.env): Product[] 
   const tiles = priceFrom(env, 'PRICE_TILES_CENTS', DEFAULT_PRICES.tiles);
   const all = priceFrom(env, 'PRICE_ALL_CENTS', DEFAULT_PRICES.all);
   const orbitHour = priceFrom(env, 'PRICE_ORBIT_HOUR_CENTS', DEFAULT_PRICES.orbitHour);
-  const corsSite = priceFrom(env, 'PRICE_CORS_SITE_CENTS', DEFAULT_PRICES.corsSite);
   // Un article par astre, puis les trois articles groupés.
   return [
     ...BODY_IDS.map((nom) => ({
@@ -172,15 +165,6 @@ export function buildCatalogue(env: NodeJS.ProcessEnv = process.env): Product[] 
       cents: all,
       scopes: [SCOPE_ALL],
       tiled: true,
-    },
-    {
-      id: 'cors-site',
-      label: 'Autoriser un site externe à appeler l’API (CORS)',
-      description: 'Ajoute l’adresse de votre site à la liste des sites autorisés à appeler l’API Gobai Space '
-        + 'directement depuis un navigateur, comme gobaispace.com lui-même — aucun jeton à présenter ensuite, '
-        + 'pour aucune requête. Un achat ajoute un seul site (POST /store/cors-sites, avec le jeton obtenu ici).',
-      cents: corsSite,
-      scopes: [SCOPE_CORS],
     },
   ];
 // Fin de buildCatalogue.

@@ -1,7 +1,7 @@
 // Décorateurs de documentation OpenAPI.
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 // Validateurs des champs reçus.
-import { IsInt, IsOptional, IsString, IsUrl, Matches, Max, MaxLength, Min } from 'class-validator';
+import { IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 // Conversion des paramètres reçus.
 import { Type } from 'class-transformer';
 // Borne de la location à l'heure.
@@ -73,17 +73,4 @@ export class LicenceDto {
 export class LicencesDto {
   @ApiProperty({ type: [LicenceDto], description: 'Les achats encore valables, du plus récent au plus ancien, chacun avec un jeton frais.' }) items: LicenceDto[];
   @ApiProperty({ example: true, description: 'Vrai quand les achats sont enregistrés en base et survivent à un redémarrage.' }) persistent: boolean;
-}
-
-/** Corps de POST /store/cors-sites. */
-export class RegisterCorsSiteDto {
-  @ApiProperty({ example: 'https://exemple.com', description: 'Adresse du site à autoriser : son origine (schéma + hôte + port) est ce qui compte, le chemin est ignoré.' })
-  @IsString() @IsUrl({ require_protocol: true }) @MaxLength(300)
-  origin: string;
-}
-
-/** Réponse de POST /store/cors-sites. */
-export class CorsSiteDto {
-  @ApiProperty({ example: 'https://exemple.com', description: 'Origine ajoutée, normalisée (schéma + hôte + port, en minuscules).' }) origin: string;
-  @ApiProperty({ example: true, description: 'Toujours vrai : une origine déjà présente est simplement mise à jour, sans erreur.' }) added: boolean;
 }

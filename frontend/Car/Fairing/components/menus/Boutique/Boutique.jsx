@@ -1,7 +1,7 @@
 // Crochets React.
 import { useCallback, useEffect, useState } from 'react';
 // Éléments d'interface.
-import { Alert, Box, Dialog, Divider, Link, Paper, Typography } from '@mui/material';
+import { Alert, Box, Dialog, Divider, Paper, Typography } from '@mui/material';
 // Catégorie d'écran.
 import { useViewport } from '../../../hooks/useViewport.jsx';
 // Compte Gobai Space : un seul compte pour tout le site.
@@ -10,12 +10,10 @@ import { useCompte } from '../../../hooks/useCompte.jsx';
 import { CompteBox } from '../../ui/CompteBox.jsx';
 // En-tête commun des fenêtres.
 import { PanelHeader } from '../../ui/PanelHeader.jsx';
-// Icône de lien externe.
-import { OpenInNewIcon } from '../../ui/icons.jsx';
 // API de la boutique.
 import { claimLicence, createOrder, fetchCatalogue, fetchExportBodies, fetchLicences, parsePurchaseReturn } from '../../../../Computing/api/store.jsx';
 // Adresses publiques de l'API et de sa documentation.
-import { PUBLIC_API_BASE, PUBLIC_DOCS_URL } from '../../../../Computing/api/client.jsx';
+import { PUBLIC_API_BASE } from '../../../../Computing/api/client.jsx';
 // Mise en forme du catalogue et explication des réglages manquants.
 import { missingLabel, sectionsOf } from './sections.jsx';
 // Carte d'un article.
@@ -263,7 +261,7 @@ export function Boutique({ open, onClose }) {
         ) : (
         // Fragment qui porte la boutique elle-même.
         <>
-        {/* Les deux adresses dont un acheteur a besoin : la base de l'API, et sa documentation. */}
+        {/* L'adresse dont un acheteur a besoin : la base de l'API. */}
         <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'transparent', display: 'grid', gap: 1 }}>
           {/* Le titre du bloc. */}
           <Typography component="h3" variant="subtitle2">Votre API</Typography>
@@ -275,25 +273,12 @@ export function Boutique({ open, onClose }) {
             <Typography sx={{ fontFamily: 'monospace', fontSize: '0.8rem', overflowWrap: 'anywhere' }}>{API}</Typography>
           {/* Fin de la base. */}
           </Box>
-          {/* La documentation, ouverte dans un nouvel onglet. */}
-          <Box sx={{ display: 'grid', gap: 0.25 }}>
-            {/* Son intitulé. */}
-            <Typography variant="caption" color="text.secondary">Documentation interactive</Typography>
-            {/* Le lien : chaque route, ses paramètres, ses réponses, et un bouton pour l'essayer avec votre clé. */}
-            <Link href={PUBLIC_DOCS_URL} target="_blank" rel="noreferrer" sx={{ fontFamily: 'monospace', fontSize: '0.8rem', overflowWrap: 'anywhere' }}>
-              {/* L'adresse, suivie de l'icône de lien externe. */}
-              {PUBLIC_DOCS_URL} <OpenInNewIcon sx={{ fontSize: '0.9rem', verticalAlign: '-0.15em' }} />
-            {/* Fin du lien. */}
-            </Link>
-          {/* Fin de la documentation. */}
-          </Box>
           {/* Comment la clé s'emploie. */}
           <Typography variant="caption" color="text.secondary">
             {/* Le texte. */}
             Votre clé est le jeton délivré à l’achat : présentez-la dans l’en-tête
             <Box component="code" sx={{ mx: 0.5 }}>Authorization: Bearer …</Box>
-            sur les routes <Box component="code">/export</Box>. Le bouton « Authorize » de la documentation
-            l’accepte aussi, pour essayer une route depuis le navigateur.
+            sur les routes <Box component="code">/export</Box>.
           {/* Fin du texte. */}
           </Typography>
         {/* Fin du bloc des adresses. */}
@@ -351,7 +336,7 @@ export function Boutique({ open, onClose }) {
           // La section, suivie d'un filet.
           <>
             {/* Les achats. */}
-            <MesAchats licences={shown} bodies={bodies} apiBase={API} docsUrl={PUBLIC_DOCS_URL} persistent={persistent} />
+            <MesAchats licences={shown} bodies={bodies} apiBase={API} persistent={persistent} />
             {/* Le filet. */}
             <Divider />
           {/* Fin de la section. */}
