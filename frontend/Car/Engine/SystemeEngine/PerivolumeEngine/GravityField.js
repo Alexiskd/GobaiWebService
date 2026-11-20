@@ -5,8 +5,9 @@
  *  - la sphère translucide d'un astre prend le rayon de sa sphère de Hill, la région où sa gravité l'emporte sur
  *    celle de l'astre autour duquel il tourne. Un astre lourd et loin de son parent a une grande sphère ; un astre
  *    léger ou proche en a une petite : c'est son « poids dans l'espace » ;
- *  - la « toupie » d'un système (le Soleil, une planète qui a des satellites) est son puits de gravité : la surface
- *    de Flamm de la métrique de Schwarzschild, dont la profondeur dépend de la masse de l'astre central.
+ *  - chaque astre est un système, avec sa « toupie » qui l'englobe : son puits de gravité (surface de Flamm de la
+ *    métrique de Schwarzschild), doublé par symétrie. Sa profondeur dépend de la masse de l'astre ; pour un astre
+ *    léger elle est étirée jusqu'à se refermer autour de lui.
  */
 
 // Importe les masses des astres (mesurées, ou estimées d'après le rayon) : la table que le moteur emploie déjà.
@@ -51,17 +52,24 @@ export function wellDepthM(rM, outerM, rsM, exaggeration) {
  * par symétrie de part et d'autre du plan (deux toupies recollées bord à bord), comme la grille du Soleil.
  *  outer, inner : rayon extérieur (le système) et intérieur (la surface de l'astre), en unités de scène ;
  *  unitM : longueur d'une unité de scène en mètres ; massKg : masse de l'astre central ;
- *  exaggeration : la même que celle de la grille du Soleil, pour que les profondeurs se comparent d'un système à l'autre.
+ *  exaggeration : la même que celle de la grille du Soleil, pour que les profondeurs se comparent d'un système à l'autre ;
+ *  minDepth : creux minimal au centre, en unités de scène. Le puits réel d'un petit astre est presque plat : il ne
+ *             l'engloberait pas. En dessous de ce minimum, toute la toupie est étirée en hauteur (même profil) pour
+ *             que ses deux pointes se referment au-dessus et au-dessous de l'astre.
  * @returns {Float32Array} 6 nombres par segment (deux points x, y, z), en unités de scène, centrés sur l'astre.
  */
-export function systemWellSegments({ outer, inner, unitM, massKg, exaggeration, rings = 14, spokes = 32 }) {
+export function systemWellSegments({ outer, inner, unitM, massKg, exaggeration, rings = 14, spokes = 32, minDepth = 0 }) {
   if (!(outer > 0) || !(unitM > 0) || !(massKg > 0)) return new Float32Array(0);
   const rsM = schwarzschildRadiusOfMass(massKg);
   const floor = Math.min(Math.max(inner || 0, outer * 1e-4), outer);
   // Anneaux resserrés vers le centre (répartition quadratique), là où la pente est la plus forte.
   const radii = [];
   for (let i = 1; i <= rings; i++) radii.push(Math.max(floor, outer * (i / rings) ** 2));
-  const y = (r) => wellDepthM(r * unitM, outer * unitM, rsM, exaggeration) / unitM;
+  const depth = (r) => wellDepthM(r * unitM, outer * unitM, rsM, exaggeration) / unitM;
+  // Creux réel au centre ; s'il n'atteint pas le minimum demandé, le profil entier est étiré jusqu'à lui.
+  const natural = -depth(floor);
+  const stretch = minDepth > 0 && natural > 0 && natural < minDepth ? minDepth / natural : 1;
+  const y = (r) => depth(r) * stretch;
   const segs = [];
   // Les anneaux : des cercles à la profondeur du puits.
   for (const r of radii) {
@@ -88,19 +96,4 @@ export function systemWellSegments({ outer, inner, unitM, massKg, exaggeration, 
     doubled[single.length + i + 2] = single[i + 2];
   }
   return doubled;
-}
-
-/**
- * Les systèmes qui portent une toupie : chaque planète autour de laquelle tourne au moins un satellite.
- *  satellites : [{ parent, distance }] — identifiant de la planète mère et distance à elle, en unités de scène.
- * Renvoie une table { identifiant de la planète → distance du satellite le plus lointain }.
- * Mercure et Vénus n'ont pas de satellite : pas de toupie. Un satellite (la Lune) n'en porte pas non plus.
- */
-export function systemExtents(satellites = []) {
-  const out = new Map();
-  for (const s of satellites) {
-    if (!s || typeof s.parent !== 'string' || !(s.distance > 0)) continue;
-    out.set(s.parent, Math.max(out.get(s.parent) || 0, s.distance));
-  }
-  return out;
 }
