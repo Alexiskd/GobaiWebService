@@ -10,7 +10,7 @@ export function StatusLine({ text, tone, title }) {
   // Début du rendu.
   return (
     // Ligne horizontale au rôle d'état, éléments centrés verticalement, avec infobulle et marges.
-    <Stack direction="row" spacing={1} alignItems="center" role="status" title={title} sx={{ px: 0.5, py: 1 }}>
+    <Stack direction="row" spacing={1} role="status" title={title} sx={{ alignItems: 'center', px: 0.5, py: 1 }}>
       {/* La pastille (début de la balise). */}
       <Box
         // Cachée aux lecteurs d'écran : purement décorative.

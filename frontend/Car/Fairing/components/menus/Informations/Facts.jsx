@@ -18,14 +18,10 @@ export function Facts({ items }) {
           key={term}
           // Disposition horizontale.
           direction="row"
-          // Libellé et valeur aux deux extrémités.
-          justifyContent="space-between"
-          // Alignés sur la ligne de base.
-          alignItems="baseline"
           // Espacement.
           spacing={2}
           // Marges, et un filet en haut de chaque ligne sauf la première.
-          sx={{ px: 1.5, py: 1, borderTop: i ? 1 : 0, borderColor: 'divider' }}
+          sx={{ justifyContent: 'space-between', alignItems: 'baseline', px: 1.5, py: 1, borderTop: i ? 1 : 0, borderColor: 'divider' }}
         // Fin de la balise ouvrante.
         >
           {/* Le libellé (dt), en couleur secondaire. */}

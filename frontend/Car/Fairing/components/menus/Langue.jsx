@@ -93,7 +93,7 @@ function LanguageRow({ entry, selected, scripts, extra, onPick }) {
         // Ligne principale (début).
         primary={(
           // Rangée alignée sur la ligne de base.
-          <Stack direction="row" spacing={1} alignItems="baseline" sx={{ minWidth: 0 }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'baseline', minWidth: 0 }}>
             {/* Le nom de la langue dans sa propre langue (son nom courant à défaut), en demi-gras. */}
             <Box component="span" sx={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis' }}>{entry.autonym || entry.name}</Box>
             {/* Si ce nom diffère du nom courant (début). */}
@@ -121,7 +121,7 @@ function LanguageRow({ entry, selected, scripts, extra, onPick }) {
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
         // Ligne secondaire en petit.
-        slotProps={{ secondary: { fontSize: 12 } }}
+        slotProps={{ secondary: { sx: { fontSize: 12 } } }}
       // Fin des textes.
       />
     {/* Fin de la ligne cliquable. */}
@@ -276,7 +276,7 @@ export function Langue({ open, onClose, language }) {
         )}
 
         {/* Rangée des deux raccourcis. */}
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
           {/* « Langue du navigateur » : pleine si elle est active ; un clic efface le choix. */}
           <Chip label="Langue du navigateur" color={effective?.auto ? 'primary' : 'default'} variant={effective?.auto ? 'filled' : 'outlined'} onClick={() => setLanguage(null)} />
           {/* « Français (original) » : pleine si le français est choisi ; un clic le choisit. */}
@@ -319,7 +319,7 @@ export function Langue({ open, onClose, language }) {
                 {/* Le libellé. */}
                 <Typography variant="caption" color="text.secondary">Écritures du pays</Typography>
                 {/* Rangée d'étiquettes. */}
-                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 0.5 }}>
+                <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mt: 0.5 }}>
                   {/* Une étiquette par écriture. */}
                   {countryScripts.map((c) => <Chip key={c} size="small" variant="outlined" label={scriptLabel(data.scripts, c)} />)}
                 {/* Fin de la rangée. */}

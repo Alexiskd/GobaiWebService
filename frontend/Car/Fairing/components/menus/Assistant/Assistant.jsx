@@ -455,7 +455,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       {/* L'en-tête du menu, souligné d'un filet ; masqué en mode réduit, où le logo passe dans la barre de saisie (début). */}
       {!bare && (
       // En-tête de hauteur fixe (jamais écrasé par la conversation) ; ses éléments passent à la ligne s'ils manquent de place.
-      <Stack direction="row" alignItems="center" useFlexGap spacing={1} sx={{ flex: 'none', flexWrap: 'wrap', rowGap: 0.75, px: 1.5, py: 1.1, borderBottom: `1px solid ${C.border}` }}>
+      <Stack direction="row" useFlexGap spacing={1} sx={{ alignItems: 'center', flex: 'none', flexWrap: 'wrap', rowGap: 0.75, px: 1.5, py: 1.1, borderBottom: `1px solid ${C.border}` }}>
         {/* L'icône de l'assistant. */}
         <AutoAwesomeIcon sx={{ width: 20, height: 20, flex: 'none', color: C.accent }} />
         {/* Le titre « Mistral », en empattements. */}
@@ -538,7 +538,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           {/* Pendant l'attente d'une réponse (début). */}
           {busy && (
             // Ligne d'attente, alignée à gauche.
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 'none', alignSelf: 'flex-start', px: 1 }}>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flex: 'none', alignSelf: 'flex-start', px: 1 }}>
               {/* Une petite roue orange. */}
               <CircularProgress size={14} sx={{ color: C.accent }} />
               {/* Le texte « Mistral répond… ». */}
@@ -581,7 +581,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       <Box sx={{ flex: 'none', px: 1.25, py: 1, ...(bare ? {} : { borderTop: `1px solid ${C.border}` }) }}>
         {/* Le formulaire : à la validation, envoie le texte sans recharger la page. */}
         {/* Boutons alignés en bas : le champ peut grandir sur plusieurs lignes sans les recouvrir. */}
-        <Stack component="form" direction="row" spacing={1} alignItems="flex-end" onSubmit={(e) => { e.preventDefault(); send(); }}>
+        <Stack component="form" direction="row" spacing={1} onSubmit={(e) => { e.preventDefault(); send(); }} sx={{ alignItems: 'flex-end' }}>
           {/* Mode réduit : le logo tient la place de l'en-tête, à gauche de la barre de recherche. */}
           {bare && <AutoAwesomeIcon sx={{ width: 20, height: 20, flex: 'none', ml: 0.25, mb: '9px', color: C.accent }} />}
           {/* Le champ de texte (début de la balise). */}

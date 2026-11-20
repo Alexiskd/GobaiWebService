@@ -60,12 +60,10 @@ export function Donnees({ open, onClose }) {
     <Dialog
       // Ouverte ou non.
       open={open}
-      // Fermeture.
-      onClose={onClose}
+      // Fermeture ; Échap ne ferme pas la fenêtre tant que la visionneuse d'image est ouverte (elle se ferme d'abord).
+      onClose={(event, reason) => { if (lightbox && reason === 'escapeKeyDown') return; onClose?.(event, reason); }}
       // Plein écran.
       fullScreen
-      // Échap ferme d'abord la visionneuse d'image, pas toute la fenêtre.
-      disableEscapeKeyDown={lightbox}
       // Nom pour les lecteurs d'écran.
       aria-label="Données"
       // Fond presque noir, sans flou d'arrière-plan.

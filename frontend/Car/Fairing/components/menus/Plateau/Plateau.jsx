@@ -59,7 +59,7 @@ export function Plateau({ open, onClose, engine, bodyId, bodyName, baseKey }) {
       // Plein écran en mode compact, largeur moyenne sinon.
       open={open} onClose={onClose} fullScreen={compact} maxWidth="md" fullWidth aria-label="Plateau tournant"
       // Fond presque noir, sans dégradé, sans débordement.
-      PaperProps={{ sx: { bgcolor: '#07090d', backgroundImage: 'none', overflow: 'hidden' } }}
+      slotProps={{ paper: { sx: { bgcolor: '#07090d', backgroundImage: 'none', overflow: 'hidden' } } }}
     // Fin de la balise ouvrante.
     >
       {/* L'en-tête : surtitre, nom de l'astre (« Terre » à défaut) et fermeture. */}
@@ -72,7 +72,7 @@ export function Plateau({ open, onClose, engine, bodyId, bodyName, baseKey }) {
         {/* Tant que la carte n'est pas prête (début). */}
         {state !== 'ready' && (
           // Bloc de message, centré en haut, sans capter les clics.
-          <Stack alignItems="center" spacing={1} sx={{ position: 'absolute', top: 16, left: 0, right: 0, pointerEvents: 'none' }}>
+          <Stack spacing={1} sx={{ alignItems: 'center', position: 'absolute', top: 16, left: 0, right: 0, pointerEvents: 'none' }}>
             {/* La roue de chargement, pendant le chargement. */}
             {state === 'loading' && <CircularProgress size={20} />}
             {/* Le message (début de la balise). */}

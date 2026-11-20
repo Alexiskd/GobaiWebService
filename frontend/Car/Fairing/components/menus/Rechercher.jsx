@@ -307,7 +307,7 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
     // Fin de la balise ouvrante.
     >
       {/* Ligne du champ et du bouton de fermeture, soulignée d'un filet. */}
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}>
         {/* Le champ de saisie (début de la balise). */}
         <InputBase
           // Référence pour le focus.

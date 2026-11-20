@@ -195,7 +195,7 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
       // Fin de la balise ouvrante.
       >
         {/* Ligne des pastilles, aussi large que son contenu. */}
-        <Stack direction="row" alignItems="center" sx={{ height: '100%', px: 1, width: 'max-content' }}>
+        <Stack direction="row" sx={{ alignItems: 'center', height: '100%', px: 1, width: 'max-content' }}>
           {/* Un élément par planète (début). */}
           {tree.map((planet, i) => {
             // Planète visée ?
@@ -268,14 +268,12 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
                   <Stack
                     // Disposition horizontale.
                     direction="row"
-                    // Éléments centrés verticalement.
-                    alignItems="center"
                     // Rôle de groupe.
                     role="group"
                     // Nom pour les lecteurs d'écran.
                     aria-label={`Satellites de ${planet.name}`}
                     // Cadre arrondi de 40 px de haut, à bordure fine et fond léger.
-                    sx={{ flex: 'none', height: 44, ml: 0.5, pl: 1, pr: 0.75, borderRadius: 5.5, border: 1, borderColor: 'divider', bgcolor: 'action.hover' }}
+                    sx={{ alignItems: 'center', flex: 'none', height: 44, ml: 0.5, pl: 1, pr: 0.75, borderRadius: 5.5, border: 1, borderColor: 'divider', bgcolor: 'action.hover' }}
                   // Fin de la balise ouvrante.
                   >
                     {/* Un élément par satellite (début). */}
