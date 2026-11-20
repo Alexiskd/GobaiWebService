@@ -198,3 +198,13 @@ export const countComposantes = () => SYSTEMES.reduce((n, s) => n + s.composante
 /** Le système Alpha Centauri, qui contient Proxima Centauri (le « Proximium » de la théorie). */
 // ALPHA_CENTAURI : le système rang 1.
 export const ALPHA_CENTAURI = SYSTEMES.find((s) => s.rang === 1);
+
+/**
+ * Nombre de systèmes à une seule étoile : une seule composante, donc aucun problème à trois corps (ni binaire, ni
+ * triple) — les systèmes « simples » du voisinage. Et nombre de systèmes multiples (2 ou 3 composantes), qui eux
+ * relèvent du problème à N corps.
+ */
+// countMonoEtoiles : systèmes à une seule composante (une seule étoile, pas de problème à 3 corps).
+export const countMonoEtoiles = () => SYSTEMES.filter((s) => s.composantes.length === 1).length;
+// countMultiples : systèmes à 2 composantes ou plus (problème à N corps).
+export const countMultiples = () => SYSTEMES.filter((s) => s.composantes.length >= 2).length;
