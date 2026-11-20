@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CoreActivityPolicy } from './CoreActivityPolicy.js';
-import { LOAD_STATE } from './PerivolumeManager.js';
+import { LOAD_STATE } from '../PerivolumeEngine/PerivolumeManager.js';
 
 test('CoreActivityPolicy: actif mis à jour à chaque image', () => {
   const policy = new CoreActivityPolicy({ backgroundEvery: 4 });

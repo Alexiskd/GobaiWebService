@@ -1,23 +1,23 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { PerivolumeRenderingEngine } from './PerivolumeRenderingEngine.js';
+import { PerivolumeSphereEngine } from './PerivolumeSphereEngine.js';
 import { LOAD_STATE } from './PerivolumeManager.js';
 
 // Construit un moteur rattaché à une scène neuve.
 function setup() {
-  const engine = new PerivolumeRenderingEngine({ THREE });
+  const engine = new PerivolumeSphereEngine({ THREE });
   const scene = new THREE.Scene();
   engine.attachScene(scene);
   return { engine, scene };
 }
 
 test('construction : THREE est requis', () => {
-  assert.throws(() => new PerivolumeRenderingEngine({}), TypeError);
+  assert.throws(() => new PerivolumeSphereEngine({}), TypeError);
 });
 
 test('attachScene : la scène est requise', () => {
-  const engine = new PerivolumeRenderingEngine({ THREE });
+  const engine = new PerivolumeSphereEngine({ THREE });
   assert.throws(() => engine.attachScene(null), TypeError);
 });
 

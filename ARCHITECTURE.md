@@ -6,6 +6,7 @@ frontend/
     ├── Engine/                          Moteurs de calcul et rendu (modélisation 3D)
     │   ├── SystemeEngine/               Orchestration, système, ressources, données orbitales
     │   │   ├── core/                    Scheduler, LOD, budgets GPU, ressources
+    │   │   ├── PerivolumeEngine/        Périvolumes : gestionnaire, axiomes, géométrie, sphères dessinées (E = mc²)
     │   │   └── data/astronomy/          Catalogue, éléments orbitaux, éphémérides
     │   ├── AstreSolideEngine/
     │   │   ├── MapEngine/               Cartes, projections, tuiles

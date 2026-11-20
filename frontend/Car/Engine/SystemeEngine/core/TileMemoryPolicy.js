@@ -1,4 +1,4 @@
-import { LOAD_STATE } from './PerivolumeManager.js';
+import { LOAD_STATE } from '../PerivolumeEngine/PerivolumeManager.js';
 
 /** Profils mémoire réversibles pour les caches de tuiles GPU/RAM. */
 export class TileMemoryPolicy {

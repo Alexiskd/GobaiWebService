@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TileMemoryPolicy } from './TileMemoryPolicy.js';
-import { LOAD_STATE } from './PerivolumeManager.js';
+import { LOAD_STATE } from '../PerivolumeEngine/PerivolumeManager.js';
 
 test('profil actif restaure les capacités nominales', () => {
   const policy = new TileMemoryPolicy();

@@ -1,4 +1,4 @@
-import { LOAD_STATE } from './PerivolumeManager.js';
+import { LOAD_STATE } from '../PerivolumeEngine/PerivolumeManager.js';
 
 /**
  * Traduit les états du périvolume en cadence de travail pour les moteurs coûteux.

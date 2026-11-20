@@ -120,14 +120,14 @@ import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProf
 // Importe PerfProbe, la sonde de performance.
 import { PerfProbe } from './perfProbe.jsx';
 import { SystemRegistry } from '../SystemeEngine/core/SystemRegistry.js';
-import { PerivolumeManager } from '../SystemeEngine/core/PerivolumeManager.js';
+import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
 import { CoreActivityPolicy } from '../SystemeEngine/core/CoreActivityPolicy.js';
 import { TileMemoryPolicy } from '../SystemeEngine/core/TileMemoryPolicy.js';
 import { EngineActivityPolicy } from '../SystemeEngine/core/EngineActivityPolicy.js';
 import { SystemManager } from '../SystemeEngine/core/SystemManager.js';
 import { renderLoop } from '../SystemeEngine/core/RenderLoop.js';
-import { createGobaiPerivolumeAxioms } from '../SystemeEngine/core/PerivolumeAxiomPolicy.js';
-import { PerivolumeRenderingEngine } from '../SystemeEngine/core/PerivolumeRenderingEngine.js';
+import { createGobaiPerivolumeAxioms } from '../SystemeEngine/PerivolumeEngine/PerivolumeAxiomPolicy.js';
+import { PerivolumeSphereEngine } from '../SystemeEngine/PerivolumeEngine/PerivolumeSphereEngine.js';
 import { ResourceManager } from '../SystemeEngine/core/ResourceManager.js';
 import { InterstellarResourceLifecycleManager } from '../SystemeEngine/core/InterstellarResourceLifecycleManager.js';
 import { InterstellarLODManager } from '../SystemeEngine/core/InterstellarLODManager.js';
@@ -1161,12 +1161,12 @@ export class SolarEngine {
     this.coreRegistry = new SystemRegistry();
     this.corePerivolumes = new PerivolumeManager({ hysteresis: 0.08 });
     // Crée le moteur de rendu des périverolumes : une bulle de verre translucide par système.
-    this.perivolumeRendering = new PerivolumeRenderingEngine({ THREE });
+    this.perivolumeSpheres = new PerivolumeSphereEngine({ THREE });
     // Rattache la scène : les bulles suivent les volumes de systèmes.
-    this.perivolumeRendering.attachScene(this.scene);
+    this.perivolumeSpheres.attachScene(this.scene);
     // Les périvolumes appartiennent à l'affichage Schwarzschild (bouton E = mc²) : masqués au départ, ils suivent
     // ensuite son fondu (voir updateSchwarzschildFade). Allumés, ils se montrent tous, même hors de portée.
-    this.perivolumeRendering.setDisplay(this.schwarzschild ? easeInOutCubic(this.schwarzschild.progress) : 0, { revealUnloaded: true });
+    this.perivolumeSpheres.setDisplay(this.schwarzschild ? easeInOutCubic(this.schwarzschild.progress) : 0, { revealUnloaded: true });
     this.coreGpuMemoryBudget = new SatelliteGpuBudgetOrchestrator({
       globalBudgetBytes: 512 * 1024 * 1024,
       defaultBodyBudgetBytes: 256 * 1024 * 1024,
@@ -1210,7 +1210,7 @@ export class SolarEngine {
         metadata: { focusIndex: index, kind: descriptor.kind, level: 'body' },
       });
       // Le même périvolume, dessiné : une sphère en fil de fer autour de chaque astre (Soleil, planètes, satellites).
-      this.perivolumeRendering.register({
+      this.perivolumeSpheres.register({
         id, center, radius: radius * 12, backgroundRadius: radius * 40, variant: 'body',
         metadata: { focusIndex: index, kind: descriptor.kind, level: 'body' },
       });
@@ -1228,7 +1228,7 @@ export class SolarEngine {
       this.coreRegistry.upsert({ id, name: id, kind: 'system', level: 'system' });
       this.corePerivolumes.register({ id, center: target.get().toArray(), radius, backgroundRadius: radius * 3, metadata: { ...metadata, level: 'system' } });
       // Ajoute la bulle de verre du système dans la scène.
-      this.perivolumeRendering?.register({ id, center: target.get().toArray(), radius, backgroundRadius: radius * 3 });
+      this.perivolumeSpheres?.register({ id, center: target.get().toArray(), radius, backgroundRadius: radius * 3 });
       this.coreSystemVolumes.push({ id, target });
     };
     if (earthTarget) {
@@ -1740,18 +1740,18 @@ export class SolarEngine {
       const position = target.get();
       if (position) this.corePerivolumes.updateCenter(id, position.toArray());
       // Le périvolume dessiné de l'astre suit sa position, seulement quand l'affichage Schwarzschild le montre.
-      if (position && this.perivolumeRendering?.displayAlpha > 0) this.perivolumeRendering.updateCenter(id, position.toArray());
+      if (position && this.perivolumeSpheres?.displayAlpha > 0) this.perivolumeSpheres.updateCenter(id, position.toArray());
     }
     for (const { id, target } of this.coreSystemVolumes || []) {
       const position = target.get();
       if (position) this.corePerivolumes.updateCenter(id, position.toArray());
       // La bulle de verre suit le système.
-      if (position) this.perivolumeRendering?.updateCenter(id, position.toArray());
+      if (position) this.perivolumeSpheres?.updateCenter(id, position.toArray());
     }
     const globalCamera = globalCameraPosition(this.cam.position, this.target);
     this.coreLastDecisions = this.coreSystemManager.update([globalCamera.x, globalCamera.y, globalCamera.z]);
     // Applique les états effectifs aux bulles de verre des périverolumes.
-    this.perivolumeRendering?.sync(this.coreLastDecisions);
+    this.perivolumeSpheres?.sync(this.coreLastDecisions);
     for (const [id, entry] of this.interstellarSystems || []) {
       const profile = this.coreSystemManager.getLoadProfile(id);
       this.interstellarResourceLifecycle?.update(id, profile.state);
@@ -1780,7 +1780,7 @@ export class SolarEngine {
     this.coreRegistry?.upsert({ id, name, kind: 'system', level: 'system', external: true });
     const entry = this.corePerivolumes?.register({ id, center, radius, backgroundRadius, metadata: { level: 'system', external: true } });
     // Ajoute la bulle de verre du système externe.
-    this.perivolumeRendering?.register({ id, center, radius, backgroundRadius });
+    this.perivolumeSpheres?.register({ id, center, radius, backgroundRadius });
     this.coreExternalSystemIds ||= new Set();
     this.coreExternalSystemIds.add(id);
     return entry;
@@ -1789,7 +1789,7 @@ export class SolarEngine {
   updateExternalSystemPerivolume(id, center) {
     if (!this.coreExternalSystemIds?.has(id)) return false;
     // Déplace la bulle de verre avec le système.
-    this.perivolumeRendering?.updateCenter(id, center);
+    this.perivolumeSpheres?.updateCenter(id, center);
     return this.corePerivolumes?.updateCenter(id, center) ?? false;
   }
 
@@ -1798,7 +1798,7 @@ export class SolarEngine {
     this.coreRegistry?.remove(id);
     this.coreSystemManager?.unregister(id);
     // Retire la bulle de verre du système.
-    this.perivolumeRendering?.unregister(id);
+    this.perivolumeSpheres?.unregister(id);
     return this.corePerivolumes?.unregister(id) ?? false;
   }
 
@@ -3016,7 +3016,7 @@ export class SolarEngine {
     // Visible dès que le fondu commence, cachée et hors rendu une fois effacée.
     grid.visible = eased > 0.002;
     // Les périvolumes (chaque astre, chaque système) font partie de cet affichage : même fondu que la grille.
-    this.perivolumeRendering?.setDisplay(eased);
+    this.perivolumeSpheres?.setDisplay(eased);
     // Si elle est visible, elle suit le Soleil, exactement au centre du puits de courbure (représentation de la
     // métrique de Schwarzschild) — et pas seulement pendant le fondu.
     if (grid.visible) grid.position.copy(this.sunMesh.position);
@@ -4714,7 +4714,7 @@ export class SolarEngine {
     this.gaiaStarfieldLayer = null;
     this.corePerivolumes?.clear();
     // Retire toutes les bulles de verre des périverolumes.
-    this.perivolumeRendering?.clear();
+    this.perivolumeSpheres?.clear();
     this.coreActivityPolicy?.reset();
     this.coreTileMemoryPolicy = null;
     this.coreEngineActivityPolicy?.reset();

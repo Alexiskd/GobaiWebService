@@ -1,6 +1,9 @@
 import { LOAD_STATE } from './PerivolumeManager.js';
 
 /**
+ * PerivolumeSphereEngine (ancien PerivolumeRenderingEngine) : c'est lui qui dessine les sphères translucides en fil
+ * de fer autour des astres et des systèmes (celles vues autour du Soleil et de Mercure). Rangé avec les autres
+ * moteurs de périvolume dans SystemeEngine/PerivolumeEngine.
  * Moteur de rendu des périverolumes : représente en 3D, dans la scène, le périverolume
  * de chaque système planétaire et solaire sous la forme d'une bulle de verre translucide,
  * avec une enveloppe fantôme pour la zone d'arrière-plan (BACKGROUND).
@@ -26,7 +29,7 @@ const DISPLAY_EPSILON = 0.002;
 const finiteVector = (v) => Array.isArray(v) && v.length >= 3 && v.slice(0, 3).every(Number.isFinite);
 
 // Déclare et exporte le moteur de rendu des périverolumes.
-export class PerivolumeRenderingEngine {
+export class PerivolumeSphereEngine {
   // Moteur Three.js injecté : le cœur du moteur reste indépendant de toute importation directe.
   #THREE;
   // Scène Three.js rattachée : peut être nulle tant qu'attachScene n'a pas été appelé.
