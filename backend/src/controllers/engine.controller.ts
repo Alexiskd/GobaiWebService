@@ -9,15 +9,15 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { EngineService } from '../services/engine/engine.service';
 // Origines autorisées sans paiement (sites Gobai, baibai, FREE_API_ORIGINS).
 import { isFreeOrigin } from '../common/free-origins';
-// Présence d'un jeton d'accès payé.
-import { hasPaidToken } from '../common/cors';
+// Liste payante des sites externes autorisés en CORS (table allowed_origins).
+import { AllowedOriginsService } from '../services/store/allowed-origins.service';
 
 // Routes sous /api/v1/engine.
 @ApiTags('Moteur')
 @Controller('engine')
 export class EngineController {
-  // Injection du service.
-  constructor(private readonly engine: EngineService) {}
+  // Injection des services.
+  constructor(private readonly engine: EngineService, private readonly origins: AllowedOriginsService) {}
 
   // GET /api/v1/engine/body.js : le script auto-déchiffrant, paramétrable, qui expose window.GobaiEngine. Public.
   @Get('body.js')
@@ -30,16 +30,16 @@ export class EngineController {
     return this.engine.bodyScript();
   }
 
-  // GET /api/v1/engine/key : la clé AES, servie aux seules origines autorisées (ou avec un jeton payé, ou en appel direct sans origine).
+  // GET /api/v1/engine/key : la clé AES, servie aux seules origines autorisées (ou un site payant ajouté aux CORS, ou en appel direct sans origine).
   @Get('key')
-  @ApiOperation({ summary: 'Clé de déchiffrement du moteur', description: 'Réservée aux origines autorisées (sites Gobai, baibai, FREE_API_ORIGINS) ou à un appel muni d’un jeton d’accès payé. Les autres reçoivent une erreur 403.' })
+  @ApiOperation({ summary: 'Clé de déchiffrement du moteur', description: 'Réservée aux origines autorisées (sites Gobai, baibai, FREE_API_ORIGINS) ou à un site externe ayant payé son ajout à la liste CORS (POST /store/cors-sites). Les autres reçoivent une erreur 403.' })
   // Jamais mise en cache partagée : la réponse dépend de l'origine.
   @Header('Cache-Control', 'no-store')
   key(@Req() req: Request, @Res({ passthrough: true }) res: Response): { key: string } {
     // Origine déclarée par le navigateur.
     const origin = req.headers.origin;
-    // Autorisé : pas d'origine (appel serveur/direct), origine libre, ou jeton payé.
-    const allowed = !origin || isFreeOrigin(req) || hasPaidToken(req);
+    // Autorisé : pas d'origine (appel serveur/direct), origine libre, ou site payant ajouté aux CORS.
+    const allowed = !origin || isFreeOrigin(req) || this.origins.isAllowed(origin);
     // Sinon : refus.
     if (!allowed) throw new ForbiddenException('Le moteur n’est pas ouvert à cette origine. Achetez un accès sur /api/v1/store/catalogue ou demandez l’ajout de votre site.');
     // Écho de l'origine pour que le navigateur autorisé puisse lire la réponse (le CORS global le fait déjà pour les origines listées).
