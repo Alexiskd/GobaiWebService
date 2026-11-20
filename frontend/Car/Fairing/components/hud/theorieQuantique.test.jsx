@@ -53,6 +53,9 @@ test('le Solarium ajouté au tableau : So, 119, période 8, groupe 1', () => {
   assert.equal(SOLARIUM.nom, 'Solarium');
   // Le nom est affiché dans la case du tableau théorique.
   assert.ok(SOLARIUM.nom.length > 0);
+  // La case affiche les quatre champs demandés : numéro atomique, masse atomique, nom, symbole.
+  assert.equal(SOLARIUM.masse, '1,00 M☉');
+  assert.ok(SOLARIUM.masseDetail.includes('10³⁰'));
   assert.equal(SOLARIUM.periode, 8);
   assert.equal(SOLARIUM.groupe, 1);
   // Son symbole ne collisionne avec aucun des 118 symboles connus.

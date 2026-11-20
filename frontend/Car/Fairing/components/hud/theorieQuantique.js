@@ -118,6 +118,9 @@ export const SOLARIUM = {
   periode: 8,
   groupe: 1,
   couches: couchesElectroniques(119),
+  // Masse atomique de l'élément hypothétique : la masse du Soleil, 1,00 M☉ (≈ 1,989 × 10^30 kg ≈ 1,2 × 10^57 u).
+  masse: '1,00 M☉',
+  masseDetail: '≈ 1,989 × 10³⁰ kg (≈ 1,2 × 10⁵⁷ u) — la masse du Soleil',
   note: 'Élément hypothétique de la théorie Gobai Space : le Soleil en serait le noyau.',
 };
 

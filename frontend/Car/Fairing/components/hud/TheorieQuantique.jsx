@@ -20,7 +20,7 @@ const SectionTitle = ({ children }) => (
 );
 
 // Tableau périodique : largeur et hauteur d'une case, écarts, pas et marge du dessin (unités du viewBox).
-const CASE_L = 34, CASE_H = 48, ECART = 3, PAS_X = CASE_L + ECART, PAS_Y = CASE_H + ECART, MARGE = 8;
+const CASE_L = 34, CASE_H = 56, ECART = 3, PAS_X = CASE_L + ECART, PAS_Y = CASE_H + ECART, MARGE = 8;
 // Largeur du dessin : marge, 18 groupes, moins le dernier écart, marge.
 const LARG_TABLE = MARGE * 2 + 18 * PAS_X - ECART;
 // Hauteur du dessin : marge, 10 lignes (7 périodes + Solarium + 2 lignes du bloc f), moins le dernier écart, marge.
@@ -68,14 +68,16 @@ function Case({ e, x, y, fond, texte }) {
       <Box component="text" x={x + CASE_L / 2} y={y + 22} fontSize="11" fontWeight="700" textAnchor="middle" sx={couleurTexte}>{e.symbole}</Box>
       {/* Le nom de l'élément, quand il en a un (ex. « Solarium »), sous le symbole. */}
       {e.nom && <Box component="text" x={x + CASE_L / 2} y={y + 31} fontSize="6.5" textAnchor="middle" sx={couleurTexte}>{e.nom}</Box>}
+      {/* La masse atomique, quand elle est définie (Solarium : 1,00 M☉), sous le nom. */}
+      {e.masse && <Box component="text" x={x + CASE_L / 2} y={y + 40} fontSize="6.5" fontWeight="600" textAnchor="middle" sx={couleurTexte}>{e.masse}</Box>}
       {/* La répartition par couches, en bas de case, sur une ou deux lignes. */}
       {lignes.map((ligne, i) => (
         // Une ligne de la répartition.
         <Box key={i} component="text" x={x + CASE_L / 2} y={y + CASE_H - 9 + i * 8} fontSize="6" textAnchor="middle" sx={couleurTexte}>{ligne}</Box>
       // Fin des lignes.
       ))}
-      {/* Infobulle : nom, symbole et répartition complète, pour les lecteurs d'écran et le survol. */}
-      <title>{`${e.z} ${e.symbole}${e.nom ? ` (${e.nom})` : ''} : couches K, L, M… = ${e.couches.join(', ')}`}</title>
+      {/* Infobulle : numéro, symbole, nom, masse et répartition complète, pour les lecteurs d'écran et le survol. */}
+      <title>{`${e.z} ${e.symbole}${e.nom ? ` (${e.nom})` : ''}${e.masse ? `, masse ${e.masse}${e.masseDetail ? ` ${e.masseDetail}` : ''}` : ''} : couches K, L, M… = ${e.couches.join(', ')}`}</title>
     {/* Fin du groupe. */}
     </g>
   // Fin du rendu.
@@ -298,7 +300,8 @@ export function TheorieQuantique() {
         Les 118 éléments connus (numéros 1 à 118) ; les deux lignes du bas sont le bloc f (lanthanides et actinides).
         En bas de chaque case, les chiffres sont la répartition des électrons par couche atomique (K, L, M…),
         par exemple le fer (26) : 2, 8, 14, 2. La case en surbrillance est ajoutée par la théorie : le{' '}
-        <strong>Solarium</strong> (So, n° {SOLARIUM.z}, période 8, groupe 1), dont le Soleil serait le noyau.
+        <strong>Solarium</strong> — n° atomique {SOLARIUM.z}, symbole <strong>So</strong>, nom <strong>Solarium</strong>,
+        masse atomique {SOLARIUM.masse} ({SOLARIUM.masseDetail}), période 8, groupe 1 — dont le Soleil serait le noyau.
         Dans la réalité, le plus lourd élément connu est l’oganesson (118) ; le 119 n’existe pas encore.
         Le <strong>Proximium</strong> (Pr, Proxima Centauri) a été retiré de ce tableau : il figure dans le tableau
         hypothétique ci-dessous.
