@@ -133,7 +133,7 @@ export function Documents() {
               {g.docs.map((d) => (
                 // La carte, cliquable, qui ouvre la fiche (début de la balise).
                 <button key={d.id} className="doc-card-btn"
-                  onClick={() => { setOpenId(d.id); setPdfOpen(false); }}>
+                  onClick={() => setOpenId(d.id)}>
                   {/* Le nom et la désignation. */}
                   <span className="doc-card-name">{d.name}</span>
                   <span className="doc-card-designation">{d.designation}</span>

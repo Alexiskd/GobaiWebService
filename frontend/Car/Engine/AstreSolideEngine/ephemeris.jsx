@@ -9,6 +9,8 @@
 import * as THREE from 'three';
 // Le calcul des orbites, sans dépendance.
 import { AU_UNITS, D } from './planetOrbits.jsx';
+// Rayon de la Terre en kilomètres : l'unité de longueur de la scène.
+import { EARTH_RADIUS_KM } from './gravityMath.jsx';
 
 // Réexporte le calcul des orbites : les appelants importent tout depuis ce fichier, comme avant.
 export {
@@ -39,7 +41,9 @@ export function lonLatToVec([lon, lat]) {
 export function moonToScene({ lon, lat, distKm }, out = new THREE.Vector3()) {
   // Distance en rayons terrestres.
   const r = distKm / EARTH_RADIUS_KM;
-  // Le vecteur.
-  return out.set(r * cd(lat) * cd(lon), r * sd(lat), -r * cd(lat) * sd(lon));
+  // Longitude et latitude en radians (cd et sd, jamais déclarés, faisaient échouer tout appel).
+  const lo = lon * D, la = lat * D;
+  // Le vecteur, avec la même convention d'axes que lonLatToVec.
+  return out.set(r * Math.cos(la) * Math.cos(lo), r * Math.sin(la), -r * Math.cos(la) * Math.sin(lo));
 // Fin de moonToScene.
 }

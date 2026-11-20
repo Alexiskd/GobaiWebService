@@ -159,7 +159,7 @@ export const SOLARIUM = {
 /**
  * Le deuxième élément ajouté par la théorie, sur la même optique : le « Proximium », placé en n = 3 (période 3, groupe 3,
  * dans le vide du bloc d de la troisième ligne). Son noyau serait Proxima Centauri, l'étoile la plus proche du Soleil
- * (≈ 4,24 années-lumière) : dans l'analogie, chaque étoile serait le noyau d'un atome géant.
+ * (≈ 4,25 années-lumière) : dans l'analogie, chaque étoile serait le noyau d'un atome géant.
  */
 // PROXIMUM : l'élément hypothétique n° 120, placé en n = 3.
 export const PROXIMUM = {
@@ -169,7 +169,7 @@ export const PROXIMUM = {
   periode: 3,
   groupe: 3,
   couches: couchesElectroniques(120),
-  note: 'Élément hypothétique de la théorie Gobai Space : Proxima Centauri en serait le noyau (étoile la plus proche, ≈ 4,24 a.l.).',
+  note: 'Élément hypothétique de la théorie Gobai Space : Proxima Centauri en serait le noyau (étoile la plus proche, ≈ 4,25 a.l.).',
 };
 
 /**

@@ -58,4 +58,4 @@ Pour déployer ce module sur Render, créez un **Web Service** avec :
 
 ## Déploiement manuel
 
-`autoDeploy: false` est conservé : le déploiement doit être déclenché manuellement dans Render. Aucun commit, push, pull request ou déploiement n'a été effectué par cette livraison.
+`autoDeploy: false` est conservé : le déploiement doit être déclenché manuellement dans Render.

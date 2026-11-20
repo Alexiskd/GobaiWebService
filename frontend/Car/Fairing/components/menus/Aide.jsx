@@ -20,7 +20,7 @@ const KEYS = [
   // G : les coordonnées GPS.
   ['G', 'Afficher ou masquer les coordonnées GPS'],
   // S : la fenêtre des sources.
-  ['S', 'Anthropic Node Open Source (NASA EOSDIS GIBS, Trek, JPL…)'],
+  ['S', 'Anthropic Node Open Source (sources, API, arborescence, théorie quantique)'],
   // P : la galerie.
   ['P', 'Galerie (images NASA et collection)'],
   // T : le plateau tournant.

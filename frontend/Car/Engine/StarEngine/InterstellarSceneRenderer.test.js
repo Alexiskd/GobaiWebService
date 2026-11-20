@@ -17,7 +17,7 @@ test('ICRS north pole is mapped to Gobai scene +Y', () => {
 test('transforme les parsecs vers les unités scène avec origine', () => {
   assert.deepEqual(icrsParsecsToScene({ x: 1, y: 2, z: 3 }, { parsecToSceneUnits: 10, origin: { x: 1, y: 2, z: 3 } }), { x: 11, y: 32, z: -17 });
 });
-test('modèle de l'étoile exemple utilise une parallaxe et calcule sa position globale', () => {
+test('modèle de l’étoile exemple utilise une parallaxe et calcule sa position globale', () => {
   const model = buildInterstellarSystemModel(system());
   assert.equal(model.positionStatus, 'available'); assert.ok(model.distanceLightYears > 4.2 && model.distanceLightYears < 4.3);
   assert.ok(Number.isFinite(model.position.x));
