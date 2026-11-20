@@ -52,6 +52,8 @@ import { MoonColorService } from '../services/map-tiles/moon-color.service';
 import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
 // Importe le relief de la Lune en tuiles Terrarium.
 import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
+// Importe le service du relief de Mars et de Mercure.
+import { BodyReliefService } from '../services/map-tiles/body-relief.service';
 // Importe le blend de la Lune.
 import { MoonBlendService } from '../services/map-tiles/moon-blend.service';
 // Service du modèle 3D de la Lune.
@@ -117,7 +119,7 @@ interface RedirectableResponse {
 @Controller('tiles')
 // Classe du contrôleur des tuiles.
 export class TilesController {
-  // Constructeur : NestJS y injecte quinze services, gardés en propriétés privées non modifiables.
+  // Constructeur : NestJS y injecte seize services, gardés en propriétés privées non modifiables.
   constructor(
     // Le service principal des tuiles.
     private readonly tiles: TilesService,
@@ -127,6 +129,8 @@ export class TilesController {
     private readonly moonTiles: MoonTileCacheService,
     // Le relief de la Lune.
     private readonly moonRelief: MoonReliefService,
+    // Le relief de Mars et de Mercure.
+    private readonly bodyRelief: BodyReliefService,
     // Le blend de la Lune.
     private readonly moonBlend: MoonBlendService,
     // Le modèle 3D de la Lune.
@@ -863,6 +867,36 @@ export class TilesController {
   async moonReliefTile(@Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
     const tile = await this.moonRelief.tile(parseTileCoordinate(z), parseTileCoordinate(x), parseTileCoordinate(y.replace(/\.png$/, '')));
     // Altitudes figées (relevés LOLA publiés) : cache d'un an, comme les images de la Lune.
+    sendTile(req, res, tile, MOON_TILE, { 'X-Cache': tile.cached ? 'HIT' : 'MISS' });
+  }
+
+  // Route GET /api/v1/tiles/relief/status.
+  @Get('relief/status')
+  @ApiOperation({ summary: 'Relief de Mars et de Mercure : état', description: 'Pour chaque astre : jeu de données, rayon de référence, niveau le plus fin, nombre de tuiles déjà gardées dans la base PostgreSQL et gabarit d’adresse des tuiles.' })
+  @ApiOkResponse({ description: '{ database, bodies: [{ id, label, dataset, radiusKm, maxZoom, stored, template }] }' })
+  // Méthode bodyReliefStatus : écrit l'état en JSON, jamais gardé en cache.
+  bodyReliefStatus(@Res() res: TileResponse): void {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(Buffer.from(JSON.stringify(this.bodyRelief.status()), 'utf8'));
+  }
+
+  // Route GET /api/v1/tiles/relief/:body/:z/:x/:y.
+  @Get('relief/:body/:z/:x/:y')
+  @SkipThrottle()
+  @ApiOperation({
+    summary: 'Relief de Mars ou de Mercure (Terrarium)',
+    description: 'body = mars (MOLA + HRSC 200 m, niveaux 0 à 8) ou mercury (DEM MESSENGER / USGS 665 m, niveaux 0 à 6), lus sur NASA Trek et réencodés '
+      + 'en Terrarium PNG de 256 px : altitude (m) = R × 256 + G + B / 256 − 32768, par rapport à la sphère de référence de l’astre. '
+      + 'Découpage géographique 2^(z+1) × 2^z, celui des images de l’astre.',
+  })
+  @ApiOkResponse({ description: 'Tuile Terrarium PNG.' })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  // Méthode bodyReliefTile : l'astre, z, x, y en texte (« .png » final toléré), la requête et la réponse.
+  async bodyReliefTile(@Param('body') body: string, @Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
+    const tile = await this.bodyRelief.tile(body.toLowerCase(), parseTileCoordinate(z), parseTileCoordinate(x), parseTileCoordinate(y.replace(/\.png$/, '')));
+    // Même politique de cache que les tuiles de la Lune ; l'en-tête X-Cache dit si la tuile vient du cache.
     sendTile(req, res, tile, MOON_TILE, { 'X-Cache': tile.cached ? 'HIT' : 'MISS' });
   }
 

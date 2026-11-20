@@ -221,8 +221,12 @@ export class TileManager {
     this.uniforms.reliefExag.value = this.reliefOn && r.kind === 'terrarium' ? exaggeration : 0;
     // Ombrage des pentes : celui du réglage pour un relief Terrarium actif, sinon 0.
     this.uniforms.reliefShade.value = this.reliefOn && r.kind === 'terrarium' ? r.shade : 0;
-    // Relief estimé : sa force pour un relief par l'image actif, sinon 0.
-    this.uniforms.reliefImg.value = this.reliefOn && r.kind === 'image' ? r.strength : 0;
+    // Relief estimé : sa force pour un relief par l'image actif. Un relief Terrarium peut aussi en porter un
+    // (`imageStrength`, Mars et Mercure) : il reste alors actif en permanence, le shader ne s'en servant que là où
+    // aucune altitude n'est affichée — relief en volume coupé, ou tuile d'altitude pas encore arrivée.
+    this.uniforms.reliefImg.value = r?.kind === 'terrarium' && r.imageStrength
+      ? r.imageStrength
+      : this.reliefOn && r.kind === 'image' ? r.strength : 0;
     // Fond des océans : actif avec un relief Terrarium actif et une source des fonds. Altitudes signées (la Lune) :
     // même passage du shader sans source des fonds, les valeurs négatives de la tuile creusent alors la surface.
     this.uniforms.oceanOn.value = this.reliefOn && r.kind === 'terrarium' && (this.oceanSource || r.signed) ? 1 : 0;

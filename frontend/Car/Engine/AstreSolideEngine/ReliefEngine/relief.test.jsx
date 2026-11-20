@@ -408,3 +408,26 @@ test('relief de la Lune : découpage géographique et altitudes signées', () =>
   assert.equal(moon.maxZoom, 8);
   assert.equal(normalizeRelief({ kind: 'terrarium', template: 'x' }, 6371).signed, undefined);
 });
+
+// Test : Mars et Mercure ont un relief Terrarium servi par le serveur, avec l'ombrage par l'image en repli.
+// Mêmes réglages que dans tiledBodies.jsx (qui ne se charge pas ici : il dépend de three.js), comme le test de la Lune.
+test('relief de Mars et de Mercure : tuiles d’altitude du serveur, ombrage par l’image gardé en repli', () => {
+  for (const [id, radiusKm, maxZoom] of [['mars', 3389.5, 8], ['mercury', 2439.7, 6]]) {
+    const relief = normalizeRelief({
+      kind: 'terrarium', minZoom: 3, maxZoom, exaggeration: 1, signed: true,
+      sources: [{ template: `/api/v1/tiles/relief/${id}/{z}/{x}/{y}.png` }], imageStrength: 0.4,
+    }, radiusKm);
+    // Relief en volume, altitudes signées, dans le découpage des images de l'astre.
+    assert.equal(relief.kind, 'terrarium', id);
+    assert.equal(relief.signed, true, id);
+    assert.equal(relief.minZoom, 3, id);
+    assert.equal(relief.maxZoom, maxZoom, id);
+    assert.equal(relief.radiusM, radiusKm * 1000, id);
+    assert.equal(relief.sources[0].template, `/api/v1/tiles/relief/${id}/{z}/{x}/{y}.png`);
+    // L'ombrage d'origine reste disponible quand le relief en volume est coupé.
+    assert.equal(relief.imageStrength, 0.4, id);
+  }
+  // Sans force d'ombrage par l'image (la Terre, la Lune) : rien n'est ajouté ; une force hors bornes est ramenée à 1.
+  assert.equal(normalizeRelief({ kind: 'terrarium', template: 'x' }, 6371).imageStrength, undefined);
+  assert.equal(normalizeRelief({ kind: 'terrarium', template: 'x', imageStrength: 3 }, 6371).imageStrength, 1);
+});
