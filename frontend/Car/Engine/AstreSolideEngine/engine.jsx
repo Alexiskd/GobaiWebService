@@ -2378,6 +2378,19 @@ export class SolarEngine {
   // Fin de localRadius.
   }
 
+  /**
+   * Vue de l'ensemble du système solaire (activation de la relativité générale) : la vue d'ensemble habituelle
+   * (Soleil visé, même azimut et même élévation), mais assez loin pour que toute la grille de Schwarzschild — jusqu'à
+   * l'aphélie de la planète la plus lointaine — tienne dans le champ de la caméra.
+   */
+  systemOverview() {
+    this.resetView();
+    const outerAu = this.schwarzschild?.outerAu || 0;
+    const halfFov = ((this.cam?.fov || 50) * Math.PI) / 360;
+    const fit = outerAu > 0 ? (outerAu * AU_UNITS * 1.1) / Math.tan(halfFov) : 0;
+    this.distGoal = clamp(Math.max(VIEW_DISTANCE, fit), VIEW_DISTANCE, MAX_DISTANCE);
+  }
+
   // resetView : revient à la vue globale (début).
   resetView() {
     // Cible : le Soleil.
@@ -3149,6 +3162,8 @@ export class SolarEngine {
     if (this.schwarzschild.goal === goal) return Boolean(on);
     // Garde le réglage demandé dans l'état du mode ; le fondu le rattrapera image par image.
     this.schwarzschild.goal = goal;
+    // Activation : la caméra dézoome sur l'ensemble du système solaire, pour voir toute la grille de courbure.
+    if (goal === 1) this.systemOverview();
     // Vrai.
     return Boolean(on);
   // Fin de setSchwarzschild.
