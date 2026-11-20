@@ -148,9 +148,18 @@ export const TILED_BODIES = [
     airless: true, overlayMode: 'blend',
     // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive.
     pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200,
-    // Pas de tuiles d'altitude branchées pour cet astre : relief estimé d'après l'image (ombrage seul, pas une mesure).
-    // Relief estimé d'après l'image, force 0,4.
-    relief: { kind: 'image', strength: 0.4 },
+    // Relief en volume, sur le modèle de la Lune : altitudes MOLA (Mars Global Surveyor) mélangées à HRSC (Mars
+    // Express), 200 m par pixel (NASA Mars Trek), réencodées en Terrarium par le serveur dans le découpage
+    // géographique des images de Mars. Altitudes signées par rapport à la sphère de référence : Hellas (vers −8,2 km)
+    // creuse la surface, Olympus Mons (vers +21,2 km) la soulève. Allumé et coupé par le réglage « relief en volume ».
+    relief: {
+      // Format Terrarium, niveaux 3 à 8 (au-delà, la tuile du niveau 8 est agrandie), sans exagération.
+      kind: 'terrarium', minZoom: 3, maxZoom: 8, exaggeration: 1, signed: true,
+      // Source unique : le relais du serveur (même origine que le site).
+      sources: [{ template: '/api/v1/tiles/relief/mars/{z}/{x}/{y}.png' }],
+      // Relief en volume coupé, ou altitude pas encore arrivée : l'ombrage estimé d'après l'image, force 0,4, comme avant.
+      imageStrength: 0.4,
+    },
     // Modèle 3D au-delà de 2,2 rayons.
     modelSwitchRadii: 2.2,
   // Fin de Mars.
@@ -165,9 +174,18 @@ export const TILED_BODIES = [
     airless: true, overlayMode: 'blend',
     // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive.
     pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200,
-    // Pas de tuiles d'altitude branchées pour cet astre : relief estimé d'après l'image (ombrage seul, pas une mesure).
-    // Relief estimé d'après l'image, force 0,4.
-    relief: { kind: 'image', strength: 0.4 },
+    // Relief en volume, sur le modèle de la Lune : modèle numérique d'élévation global de MESSENGER (USGS, 665 m par
+    // pixel, NASA Mercury Trek), réencodé en Terrarium par le serveur dans le découpage géographique des images de
+    // Mercure. Altitudes signées par rapport à la sphère de 2 439,4 km (environ −5,4 km à +4,5 km).
+    // Allumé et coupé par le réglage « relief en volume ».
+    relief: {
+      // Format Terrarium, niveaux 3 à 6 (la donnée ne porte pas plus fin : au-delà, la tuile du niveau 6 est agrandie).
+      kind: 'terrarium', minZoom: 3, maxZoom: 6, exaggeration: 1, signed: true,
+      // Source unique : le relais du serveur (même origine que le site).
+      sources: [{ template: '/api/v1/tiles/relief/mercury/{z}/{x}/{y}.png' }],
+      // Relief en volume coupé, ou altitude pas encore arrivée : l'ombrage estimé d'après l'image, force 0,4, comme avant.
+      imageStrength: 0.4,
+    },
     // Modèle 3D au-delà de 2,2 rayons.
     modelSwitchRadii: 2.2,
   // Fin de Mercure.

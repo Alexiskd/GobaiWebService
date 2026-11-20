@@ -142,6 +142,9 @@ export function normalizeRelief(cfg, radiusKm) {
       // Altitudes signées (la Lune : bassins sous la sphère de référence) : les valeurs négatives creusent la surface
       // sans source de fonds marins ; sur la Terre, elles restent à 0 (la mer).
       ...(cfg.signed ? { signed: true } : {}),
+      // Ombrage estimé d'après l'image, gardé là où aucune altitude n'est affichée (relief en volume coupé, ou
+      // tuile d'altitude pas encore chargée) : Mars et Mercure gardent ainsi leur ombrage d'origine.
+      ...(cfg.imageStrength > 0 ? { imageStrength: clamp(cfg.imageStrength, 0, 1) } : {}),
     // Fin du réglage.
     };
   // Fin du cas Terrarium.

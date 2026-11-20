@@ -23,6 +23,24 @@ Computing, Transmission — voir `ARCHITECTURE.md`).
 `frontend/Car/Computing/api` (petite API NestJS de l'édition statique) reste dans le dépôt mais n'est pas déployée :
 le service en ligne est `backend/`. Les mentions `frontend/src/…` plus bas dans ce fichier datent d'avant la fusion.
 
+## Relief de Mars et de Mercure (20 novembre 2026)
+
+Mars et Mercure ont le même moteur de relief en volume que la Lune.
+
+- **Serveur** : `GET /api/v1/tiles/relief/{mars|mercury}/{z}/{x}/{y}.png` rend une tuile Terrarium de 256 px
+  (altitude en m = R × 256 + G + B / 256 − 32768), dans le découpage géographique 2^(z+1) × 2^z des images de
+  l'astre. `GET /api/v1/tiles/relief/status` donne l'état. Code : `backend/src/services/map-tiles/body-relief*.ts`.
+- **Sources** (NASA Trek, ImageServer ArcGIS, `exportImage` en TIFF flottant) : Mars = MOLA + HRSC mélangés à 200 m,
+  niveaux 0 à 8 ; Mercure = DEM MESSENGER / USGS à 665 m, niveaux 0 à 6. Adresses remplaçables par
+  `MARS_RELIEF_IMAGESERVER_URL` et `MERCURY_RELIEF_IMAGESERVER_URL`.
+- **Cache** : mémoire du processus, puis table `body_relief_tiles` de la base si `DATABASE_URL` est réglé. Pas de
+  préchargement : une tuile est fabriquée à sa première demande. Une réponse sans aucune altitude n'est ni servie
+  ni gardée.
+- **Moteur** : `relief` de Mars et de Mercure dans `tiledBodies.jsx` passe à `terrarium` (altitudes signées), avec
+  `imageStrength: 0.4` : l'ombrage estimé d'après l'image reste affiché quand le relief en volume est coupé.
+- **Interface** : l'interrupteur « Relief 3D » (le même réglage que celui de la Terre) apparaît dans les réglages
+  de la Lune, de Mars et de Mercure.
+
 ## Natural satellites (Jupiter, Saturn)
 
 Io, Europa, Ganymede, Callisto, Mimas, Enceladus, Tethys, Dione, Rhea, Titan and Iapetus are shown like the Moon: synchronous rotation (longitude 0 facing the planet), tiled global mosaics, orbit lines, focus targets and markers.
