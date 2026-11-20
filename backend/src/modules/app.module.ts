@@ -56,8 +56,6 @@ import { LidarTilesModule } from './lidar-tiles.module';
 import { EngineModule } from './engine.module';
 // Module du balisage SEO des pages (titre, description, Open Graph, X/Twitter), stocké dans PostgreSQL.
 import { SeoModule } from './seo.module';
-// Module des sites externes autorisés en CORS (table allowed_origins) : importé ici pour que main.ts puisse le lire (app.get).
-import { OriginsModule } from './origins.module';
 
 // Ouvre la déclaration du module racine.
 @Module({
@@ -123,8 +121,6 @@ import { OriginsModule } from './origins.module';
     LidarTilesModule,
     // Balisage SEO des pages (titre, description, Open Graph, X/Twitter), table seo_tags : /api/v1/seo
     SeoModule,
-    // Sites externes autorisés en CORS (table allowed_origins) : StoreModule et EngineModule l'importent aussi.
-    OriginsModule,
   // Fin de la liste des modules importés.
   ],
   // Seul contrôleur déclaré directement par le module racine : la supervision.

@@ -29,8 +29,6 @@ import { apiState, getApiBlockState, refreshServerBlocked, setApiBlocked, subscr
 import { FluxCognitif } from './FluxCognitif.jsx';
 // Importe l'onglet de la théorie quantique.
 import { TheorieQuantique } from './TheorieQuantique.jsx';
-// Importe l'onglet « Documentation API ».
-import { ApiDocs } from './ApiDocs.jsx';
 // Importe les briques de style communes de la fenêtre.
 import { Carte, Chiffre, Etiquette, Fiche, GrilleChiffres, MONO, Note, Precision, Section } from './nodeUi.jsx';
 
@@ -67,7 +65,6 @@ const ONGLETS = [
   { id: 'sources', label: 'Sources et Entreprises', aide: 'Origine des données affichées' },
   { id: 'apis', label: 'API', aide: 'Services externes appelés' },
   { id: 'tree', label: 'Arborescence', aide: 'Les pages du site' },
-  { id: 'docs', label: 'Documentation API', aide: 'L’API NestJS du dépôt' },
   { id: 'flux', label: 'Flux cognitif', aide: 'F(t) = P(t) × p' },
   { id: 'theorie', label: 'Théorie quantique', aide: 'L’échelle de la matière' },
 ];
@@ -399,7 +396,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
   ].filter(Boolean);
 
   // Le contenu de l'onglet affiché.
-  const contenu = tab === 'theorie' ? <TheorieQuantique /> : tab === 'docs' ? <ApiDocs /> : tab === 'flux' ? <FluxCognitif />
+  const contenu = tab === 'theorie' ? <TheorieQuantique /> : tab === 'flux' ? <FluxCognitif />
     : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />;
 
   // Début du rendu.

@@ -1,6 +1,7 @@
 /**
- * Sites partenaires autorisés à utiliser l'API sans payer : les routes payantes les laissent passer sans jeton, et ils
- * sont ajoutés aux origines CORS. Liste par défaut, plus la variable FREE_API_ORIGINS (séparées par des virgules).
+ * Sites partenaires autorisés à utiliser l'API sans payer : les routes payantes les laissent passer sans jeton. Ils ne
+ * sont PAS dans les origines CORS (réservées au frontend, voir common/cors.ts). Liste par défaut, plus la variable
+ * FREE_API_ORIGINS (séparées par des virgules).
  */
 import type { Request } from 'express';
 

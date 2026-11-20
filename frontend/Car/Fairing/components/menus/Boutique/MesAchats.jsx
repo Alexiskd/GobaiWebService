@@ -1,9 +1,7 @@
 // Crochets React.
 import { useEffect, useMemo, useState } from 'react';
 // Éléments d'interface.
-import { Alert, Box, Button, Card, CardContent, Chip, Link, MenuItem, Stack, TextField, Typography } from '@mui/material';
-// Icône de lien externe.
-import { OpenInNewIcon } from '../../ui/icons.jsx';
+import { Alert, Box, Button, Card, CardContent, Chip, MenuItem, Stack, TextField, Typography } from '@mui/material';
 // Appels vérifiés au backend.
 import { requestExport, verifyExportAccess } from '../../../../Computing/api/store.jsx';
 import { get } from '../../../../Computing/api/client.jsx';
@@ -188,7 +186,7 @@ function AchatCard({ licence, apiBase, bodies = [], layers = [] }) {
   );
 }
 
-export function MesAchats({ licences, bodies = [], apiBase, docsUrl, persistent }) {
+export function MesAchats({ licences, bodies = [], apiBase, persistent }) {
   const [layers, setLayers] = useState([]);
   useEffect(() => {
     let alive = true;
@@ -205,7 +203,6 @@ export function MesAchats({ licences, bodies = [], apiBase, docsUrl, persistent 
         JWT est signé, mais sa charge n’est pas chiffrée : ne le partagez pas publiquement. Les permissions sont
         contrôlées à nouveau sur chaque route de téléchargement.
         {persistent === false && ' Attention : ce serveur garde les achats en mémoire, ils seront perdus à son redémarrage.'}
-        {docsUrl && <> {' '}Documentation de l’API : <Link href={docsUrl} target="_blank" rel="noreferrer">ouvrir Swagger <OpenInNewIcon sx={{ fontSize: '0.9rem', verticalAlign: '-0.15em' }} /></Link></>}
       </Typography>
       <Stack spacing={1}>
         {licences.map((licence) => <AchatCard key={licence.payment || licence.product.id} licence={licence} bodies={bodies} layers={layers} apiBase={apiBase} />)}

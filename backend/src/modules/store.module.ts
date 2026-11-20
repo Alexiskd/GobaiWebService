@@ -16,8 +16,6 @@ import { TilesModule } from './tiles.module';
 import { ContributionsModule } from './contributions.module';
 // Module du Soleil, qui expose ses régions actives : elles placent les éruptions du modèle 3D du Soleil.
 import { SunModule } from './sun.module';
-// Module des sites externes autorisés en CORS : l'article « cors-site » y ajoute le site de l'acheteur.
-import { OriginsModule } from './origins.module';
 // Configuration de l'application.
 import { APP_CONFIG } from './config.module';
 // Type de la configuration.
@@ -26,8 +24,8 @@ import type { AppConfig } from '../common/configuration';
 // Ouvre la déclaration du module.
 @Module({
   // Le module des tuiles fournit le service des couches, dont l'assemblage a besoin ; celui des contributions
-  // fournit le service des comptes, qui reconnaît l'acheteur connecté ; celui des origines, la liste CORS.
-  imports: [TilesModule, ContributionsModule, SunModule, OriginsModule],
+  // fournit le service des comptes, qui reconnaît l'acheteur connecté.
+  imports: [TilesModule, ContributionsModule, SunModule],
   // Routes du module : la boutique et les exports.
   controllers: [StoreController, ExportController],
   // Services du module.

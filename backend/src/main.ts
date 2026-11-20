@@ -34,8 +34,6 @@ import { docsPaywall } from './common/docs-paywall';
 import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderLlmsFull } from './services/data/body-pages';
 // Service du balisage SEO (table seo_tags) : titre et description de chaque page, lus en base s'ils y sont rangés.
 import { SeoTagsService } from './services/seo/seo-tags.service';
-// Liste payante des sites externes autorisés en CORS (table allowed_origins).
-import { AllowedOriginsService } from './services/store/allowed-origins.service';
 
 /**
  * Service web unique : l'API sert aussi le site compilé (frontend/dist), sur la même origine.
@@ -162,12 +160,10 @@ async function bootstrap() {
   });
   // Service du balisage SEO (table seo_tags) : déjà chargé en mémoire, puisque NestFactory.create a attendu onModuleInit.
   const seoTags = app.get(SeoTagsService);
-  // Liste des sites externes autorisés en CORS (table allowed_origins) : déjà chargée en mémoire, pour la même raison.
-  const allowedOrigins = app.get(AllowedOriginsService);
   // Branche le site compilé ; site vaut le dossier servi, ou null s'il est absent.
   const site = serveFrontend(app, seoTags);
-  // Applique les réglages communs : préfixe /api, version v1, CORS (origines connues + liste payante), filtre d'erreurs, validation.
-  configureApp(app, config, (origin) => allowedOrigins.isAllowed(origin));
+  // Applique les réglages communs : préfixe /api, version v1, CORS (frontend seulement), filtre d'erreurs, validation.
+  configureApp(app, config);
   // Adresse publique : https://www.gobaispace.com en ligne, localhost en développement.
   // Adresse publique du service d'après le port configuré.
   const url = publicUrl(config.port);

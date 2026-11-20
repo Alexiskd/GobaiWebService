@@ -12,8 +12,6 @@ export const API_BASE = `${ROOT}/v1`;
 export const PUBLIC_SITE_URL = String(import.meta.env?.VITE_PUBLIC_SITE_URL || 'https://www.gobaispace.com').replace(/\/+$/, '');
 // Base publique de l'API.
 export const PUBLIC_API_BASE = `${PUBLIC_SITE_URL}/api/v1`;
-// Documentation interactive de l'API (Swagger).
-export const PUBLIC_DOCS_URL = `${PUBLIC_SITE_URL}/api/docs`;
 
 /** URL absolue d'un chemin renvoyé par l'API (« /api/v1/… »), même si l'API est sur un autre domaine. */
 export function resolveApiUrl(path) {

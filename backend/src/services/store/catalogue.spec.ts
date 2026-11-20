@@ -10,8 +10,8 @@ describe('catalogue', () => {
   it('vend chaque astre à l’unité, son orbite à l’heure, les tuiles et le tout', () => {
     // Le catalogue, sans variable d'environnement.
     const catalogue = buildCatalogue({});
-    // Un article d'export et un article d'orbite par astre, plus les tuiles, le forfait complet, et le site CORS.
-    expect(catalogue).toHaveLength(BODY_IDS.length * 2 + 3);
+    // Un article d'export et un article d'orbite par astre, plus les tuiles et le forfait complet.
+    expect(catalogue).toHaveLength(BODY_IDS.length * 2 + 2);
     // Les articles d'orbite sont les seuls à prix horaire.
     expect(catalogue.filter((p) => p.hourly).map((p) => p.id)).toEqual(BODY_IDS.map((n) => `orbit-${bodyKey(n)}`));
     // Les astres vendus comprennent les planètes et la Lune.
