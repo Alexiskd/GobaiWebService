@@ -237,6 +237,48 @@ export function gridRadii(outerAu, rings, sunRadiusAu) {
 }
 
 /**
+ * Rosette de Schwarzschild d'un satellite autour de sa planète, dans le plan de son orbite et en unités de son
+ * demi-grand axe : même équation que pour les planètes (u'' = 1/p − u + 3/2 × rs × u²), intégrée en RK4.
+ *  e          excentricité de l'orbite (0 : cercle — la rosette se confond alors avec lui) ;
+ *  rsOverA    rayon de Schwarzschild de la planète, déjà exagéré, divisé par le demi-grand axe ;
+ *  n          nombre de segments ; revolutions : nombre de tours tracés.
+ * Le tracé part du périastre, sur l'axe x, et tourne dans le plan x-z, comme le cercle unité des anneaux d'orbite.
+ * @returns {Float32Array} (n + 1) points x, y, z (y = 0), en unités du demi-grand axe.
+ */
+export function schwarzschildSatelliteRosette({ e = 0, rsOverA = 0, n = 256, revolutions = 3 }) {
+  const ecc = Math.min(0.95, Math.max(0, Number(e) || 0));
+  const rs = Math.max(0, Number(rsOverA) || 0);
+  // Paramètre de l'ellipse (demi-grand axe 1) et pas angulaire.
+  const p = 1 - ecc * ecc;
+  const dPhi = (2 * Math.PI * revolutions) / n;
+  const accel = (u) => 1 / p - u + 1.5 * rs * u * u;
+  const out = new Float32Array((n + 1) * 3);
+  // Départ au périastre : r = 1 − e, vitesse radiale nulle.
+  let u = 1 / (1 - ecc), du = 0;
+  for (let i = 0; i <= n; i++) {
+    const r = u > 0 ? 1 / u : p;
+    const phi = i * dPhi;
+    out[3 * i] = r * Math.cos(phi); out[3 * i + 1] = 0; out[3 * i + 2] = r * Math.sin(phi);
+    // Un pas de Runge-Kutta d'ordre 4 sur (u, du).
+    const k1u = du, k1d = accel(u);
+    const k2u = du + dPhi / 2 * k1d, k2d = accel(u + dPhi / 2 * k1u);
+    const k3u = du + dPhi / 2 * k2d, k3d = accel(u + dPhi / 2 * k2u);
+    const k4u = du + dPhi * k3d, k4d = accel(u + dPhi * k3u);
+    u += dPhi / 6 * (k1u + 2 * k2u + 2 * k3u + k4u);
+    du += dPhi / 6 * (k1d + 2 * k2d + 2 * k3d + k4d);
+  }
+  return out;
+}
+
+/**
+ * Avance du périastre par tour d'une orbite de Schwarzschild, en radians : 3π × rs / p (premier ordre).
+ * Sert à régler l'exagération d'un système de satellites sur celle du système solaire.
+ */
+export function periapsisAdvance(rsOverA, e = 0) {
+  return (3 * Math.PI * rsOverA) / (1 - e * e);
+}
+
+/**
  * Géométrie filaire de la grille : segments (paires de points) pour anneaux et rayons, au repère de la scène.
  * La grille est un double puits : chaque segment est collé à son symétrique par rapport au plan de l'écliptique
  * (y inversé) — deux toupies recollées bord à bord, la courbure affichée en double, au-dessus et au-dessous.

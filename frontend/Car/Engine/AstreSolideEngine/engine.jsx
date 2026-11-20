@@ -56,7 +56,7 @@ import { MoonOrbit } from './moonOrbit.jsx';
 import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
 // Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
 import {
-  SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, mirrorY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
+  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, mirrorY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
 } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
 import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
@@ -129,7 +129,7 @@ import { renderLoop } from '../SystemeEngine/core/RenderLoop.js';
 import { createGobaiPerivolumeAxioms } from '../SystemeEngine/PerivolumeEngine/PerivolumeAxiomPolicy.js';
 import { PerivolumeSphereEngine } from '../SystemeEngine/PerivolumeEngine/PerivolumeSphereEngine.js';
 // Importe le champ gravitationnel : rayon de la sphère d'un astre (sphère de Hill) et toupie d'un système (puits de gravité).
-import { gravitySphereRadius, systemWellProfile, systemWellSegments } from '../SystemeEngine/PerivolumeEngine/GravityField.js';
+import { gravitySphereRadius, schwarzschildRadiusOfMass, systemWellProfile, systemWellSegments } from '../SystemeEngine/PerivolumeEngine/GravityField.js';
 // Importe le choix du système visé par un clic (la plus petite sphère d'influence traversée).
 import { pickSystem } from '../SystemeEngine/PerivolumeEngine/systemPick.js';
 import { ResourceManager } from '../SystemeEngine/core/ResourceManager.js';
@@ -1319,6 +1319,33 @@ export class SolarEngine {
     if (!alpha || !parentId) return 0;
     const profile = this.systemWellProfiles?.get(parentId);
     return profile ? alpha * profile(distance) : 0;
+  }
+
+  /**
+   * Rayon de Schwarzschild de la planète d'un satellite, exagéré et divisé par le demi-grand axe du satellite :
+   * le terme relativiste de sa rosette (voir schwarzschildSatelliteRosette).
+   * L'exagération est réglée système par système pour que le satellite le plus proche de chaque planète précesse
+   * autant que Mercure autour du Soleil : à l'exagération du système solaire, le rayon de Schwarzschild d'une planète
+   * (2,8 m pour Jupiter, 9 mm pour la Terre) ne déplacerait aucune orbite de façon visible. Les satellites plus
+   * lointains précessent moins, en proportion inverse de leur distance, comme les planètes lointaines.
+   */
+  satelliteRsOverA(sat) {
+    const parentId = sat?.parent ? bodyId(sat.parent.def) : null;
+    const aKm = sat?.def.aKm;
+    if (!parentId || !(aKm > 0)) return 0;
+    this.satelliteRosetteScale ||= new Map();
+    let scale = this.satelliteRosetteScale.get(parentId);
+    if (scale === undefined) {
+      // Terme relativiste de Mercure à l'écran (rayon de Schwarzschild exagéré du Soleil sur son demi-grand axe) :
+      // la référence du système solaire.
+      const mercury = PLANETS.find((b) => bodyId(b) === 'mercury') || PLANETS[0];
+      const reference = ((schwarzschildRadiusOfMass(bodyMassKg('sun')) / AU_M) * GEODESIC_EXAGGERATION) / mercury.elements[0];
+      // Demi-grand axe du satellite le plus proche de cette planète : c'est lui qui reçoit ce terme de référence.
+      const innerKm = Math.min(...this.satellites.list.filter((s) => s.parent === sat.parent && s.def.aKm > 0).map((s) => s.def.aKm));
+      scale = Number.isFinite(innerKm) ? reference * innerKm : 0;
+      this.satelliteRosetteScale.set(parentId, scale);
+    }
+    return scale / aKm;
   }
 
   /**
@@ -3151,6 +3178,8 @@ export class SolarEngine {
     grid.visible = eased > 0.002;
     // Les périvolumes (chaque astre, chaque système) font partie de cet affichage : même fondu que la grille.
     this.perivolumeSpheres?.setDisplay(eased);
+    // Les orbites des satellites naturels passent elles aussi du cercle de Kepler à leur rosette de Schwarzschild.
+    this.satellites?.setSchwarzschildMix(eased, (sat) => this.satelliteRsOverA(sat));
     // Les toupies des astres : même opacité et même fondu que la grille du Soleil.
     for (const { target, well } of this.systemWells || []) {
       well.material.opacity = 0.5 * eased;

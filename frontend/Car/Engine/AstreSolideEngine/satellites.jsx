@@ -6,12 +6,16 @@ import { orbitBasis, relDistanceKm, satelliteState, synchronousBasis } from './s
 import { OrbitRibbon } from './orbitRibbon.jsx';
 // Importe les opacités de la traînée d'une orbite fermée.
 import { loopTrailAlphas } from './orbitRibbonMath.jsx';
+// Importe la rosette de Schwarzschild d'un satellite et le mélange de deux tracés.
+import { mixPoints, schwarzschildSatelliteRosette } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 import { SharedResourcePool } from '../SystemeEngine/core/SharedResourcePool.js';
 import { InstancedPickRegistry } from '../SystemeEngine/core/InstancedPickRegistry.js';
 import { acquireUnitSphereGeometry } from '../SystemeEngine/core/SharedGeometry.js';
 
 // Nombre de segments du cercle d'orbite : 256.
 const ORBIT_SEGMENTS = 256;
+// Nombre de tours tracés par la rosette de Schwarzschild d'un satellite, comme pour les planètes.
+const SCHWARZSCHILD_REVOLUTIONS = 3;
 // Une orbite n'est tracée que si la caméra est assez près de la planète pour qu'elle fasse plus que quelques pixels.
 // Une orbite n'est tracée que si la caméra est à moins de 60 fois son rayon de la planète.
 const ORBIT_VIEW_RATIO = 60;
@@ -108,7 +112,9 @@ export class SatelliteSystem {
       // L'ajoute au groupe.
       group.add(mesh);
       // Tracé de l'orbite : un ruban sur le cercle partagé, de la couleur du satellite (voir orbitRibbon.jsx).
-      const trail = new OrbitRibbon({ points: this.circle, color: def.color || '#8fa3d0', name: `orbit-${def.id}` });
+      // Chaque anneau a sa copie du cercle unité : l'affichage Schwarzschild la déforme en rosette, satellite par
+      // satellite (voir setSchwarzschildMix), sans toucher au cercle de référence.
+      const trail = new OrbitRibbon({ points: new Float32Array(this.circle), color: def.color || '#8fa3d0', name: `orbit-${def.id}` });
       // Traînée : le cercle est tourné pour que le satellite soit au point 0 et qu'il aille vers les angles
       // décroissants (voir orbitBasis) ; les points qu'il vient de quitter sont donc aux angles croissants.
       loopTrailAlphas(trail.alphas, 0, -1);
@@ -214,6 +220,28 @@ export class SatelliteSystem {
     // Fin de la boucle.
     }
   // Fin de update.
+  }
+
+  /**
+   * Affichage Schwarzschild des orbites des satellites : chaque anneau passe du cercle de Kepler à la rosette de
+   * Schwarzschild du satellite autour de sa planète, selon `alpha` (0 = cercle, 1 = rosette).
+   *  rsOverA : fonction (satellite) → rayon de Schwarzschild exagéré de la planète divisé par le demi-grand axe.
+   * Les rosettes sont calculées une seule fois, au premier appel où alpha dépasse 0.
+   */
+  setSchwarzschildMix(alpha, rsOverA) {
+    const a = Math.min(1, Math.max(0, Number(alpha) || 0));
+    for (const s of this.list) {
+      // Rien à faire tant que le mode n'a jamais été allumé pour ce satellite.
+      if (!s.rosette && a === 0) continue;
+      if (!s.rosette) {
+        s.rosette = schwarzschildSatelliteRosette({
+          e: s.def.eccentricity, rsOverA: rsOverA ? rsOverA(s) : 0, n: ORBIT_SEGMENTS, revolutions: SCHWARZSCHILD_REVOLUTIONS,
+        });
+      }
+      // Mélange du cercle de référence vers la rosette, écrit dans les points de l'anneau.
+      mixPoints(this.circle, s.rosette, a, s.trail.points);
+      s.trail.positionsChanged();
+    }
   }
 
   /** Placement autour de la cible (origine flottante) et visibilité des orbites. */

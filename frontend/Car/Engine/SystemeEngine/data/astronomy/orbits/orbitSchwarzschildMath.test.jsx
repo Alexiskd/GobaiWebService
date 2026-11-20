@@ -194,3 +194,29 @@ test('la grille englobe tous les astres du système : aphélie de la naine la pl
   const radii = gridRadii(outer, 28, 0.00465);
   assert.equal(radii[radii.length - 1], outer);
 });
+
+// Test : la rosette d'un satellite — cercle sans excentricité ni terme relativiste, périastre qui avance sinon.
+test('rosette d’un satellite : cercle unité au repos, périastre qui avance avec le terme relativiste', async () => {
+  const { schwarzschildSatelliteRosette, periapsisAdvance } = await import('./orbitSchwarzschildMath.jsx');
+  // Sans excentricité ni relativité : le cercle unité, dans le plan x-z, n + 1 points.
+  const circle = schwarzschildSatelliteRosette({ e: 0, rsOverA: 0, n: 64, revolutions: 1 });
+  assert.equal(circle.length, 65 * 3);
+  for (let i = 0; i < circle.length; i += 3) {
+    assert.ok(Math.abs(Math.hypot(circle[i], circle[i + 2]) - 1) < 1e-6);
+    assert.equal(circle[i + 1], 0);
+  }
+  // Ellipse de Kepler (sans relativité) : départ au périastre (1 − e), apoastre (1 + e) un demi-tour plus loin,
+  // et retour au périastre après un tour — l'orbite se referme.
+  const n = 720, e = 0.2;
+  const kepler = schwarzschildSatelliteRosette({ e, rsOverA: 0, n, revolutions: 1 });
+  const radius = (pts, i) => Math.hypot(pts[3 * i], pts[3 * i + 2]);
+  assert.ok(Math.abs(radius(kepler, 0) - 0.8) < 1e-6);
+  assert.ok(Math.abs(radius(kepler, n / 2) - 1.2) < 1e-4);
+  assert.ok(Math.abs(radius(kepler, n) - 0.8) < 1e-4);
+  // Avec le terme relativiste : après un tour, le satellite n'est pas revenu au périastre (il y arrive plus tard),
+  // l'orbite ne se referme plus.
+  const rosette = schwarzschildSatelliteRosette({ e, rsOverA: 0.01, n, revolutions: 1 });
+  assert.ok(radius(rosette, n) > radius(kepler, n) + 1e-4);
+  // L'avance prédite au premier ordre : 3π × rs / p.
+  assert.ok(Math.abs(periapsisAdvance(0.01, e) - (3 * Math.PI * 0.01) / (1 - e * e)) < 1e-12);
+});
