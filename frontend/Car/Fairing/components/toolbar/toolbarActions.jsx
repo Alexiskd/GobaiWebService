@@ -23,7 +23,7 @@ import {
   AccountTreeIcon, ThreeSixtyIcon, AutoAwesomeIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons.jsx';
-// Importe EmcIcon, la formule « E = mc² » composée pour le bouton de l'affichage relativiste.
+// Importe EmcIcon, le profil d'Einstein (image PNG) du bouton de l'affichage relativiste.
 import { EmcIcon } from './EmcIcon.jsx';
 // Importe les logos des fournisseurs de l'assistant (Claude, Mistral), au format des icônes.
 import { PROVIDER_MARKS } from '../menus/Assistant/ProviderLogo.jsx';
@@ -74,11 +74,10 @@ export function toolbarActions({
     // bleu nuit ; relâché = astres entièrement éclairés et interface gris doux.
     // Ombre (si le rappel existe) : bascule du groupe « camera », infobulle selon l'état.
     onToggleDayNight && { id: 'daynight', group: 'display', icon: ShadowIcon, label: 'Ombre', iconOnly: true, pressed: night, onClick: onToggleDayNight, title: night ? 'Ombre activée : face des astres opposée au Soleil dans l’ombre' : 'Ombre désactivée : astres entièrement éclairés' },
-    // E = mc² : bascule du groupe « camera », juste après Ombre. Affiche les orbites selon la métrique de
+    // Relativité (anciennement « E = mc² ») : bascule juste après Ombre. Affiche les orbites selon la métrique de
     // Schwarzschild (rosette précessée et grille filaire de courbure), fondu lent depuis les orbites de Kepler.
-    // L'icône est le composant EmcIcon (formule composée) ; `wide` : sur ordinateur, une pastille assez large pour la
-    // formule entière, au lieu du carré de 32 px où elle débordait sur les boutons voisins.
-    onToggleSchwarzschild && { id: 'schwarzschild', group: 'display', icon: EmcIcon, label: 'E = mc²', short: 'E = mc²', iconOnly: true, wide: true, pressed: Boolean(schwarzschild), onClick: onToggleSchwarzschild, title: schwarzschild ? 'E = mc² activé : orbites de Schwarzschild (rosette), grille de courbure et périvolumes des astres et des systèmes' : 'E = mc² : orbites de Schwarzschild, grille de courbure et périvolumes (fondu depuis Kepler)' },
+    // L'icône est le profil d'Einstein (EmcIcon, image PNG), dans un bouton icône carré comme ses voisins.
+    onToggleSchwarzschild && { id: 'schwarzschild', group: 'display', icon: EmcIcon, label: 'Relativité (E = mc²)', short: 'Relativité', iconOnly: true, pressed: Boolean(schwarzschild), onClick: onToggleSchwarzschild, title: schwarzschild ? 'Relativité activée : orbites de Schwarzschild (rosette), grille de courbure et périvolumes des astres et des systèmes' : 'Relativité : orbites de Schwarzschild, grille de courbure et périvolumes (fondu depuis Kepler)' },
     // Rotation automatique : bascule.
     { id: 'auto', group: 'display', icon: AutorenewIcon, label: 'Rotation', iconOnly: true, pressed: auto, onClick: onToggleAuto, title: 'Rotation automatique' },
     // Vue 3/4 automatique : bascule.

@@ -91,6 +91,12 @@ export function useCameraToggles(engine, initial = {}) {
 
   // Transmet la rotation automatique au moteur.
   useEffect(() => { engine?.setAutoRotate(auto); }, [engine, auto]);
+  // Le moteur coupe lui-même la rotation au zoom avant sur un astre : l'état du bouton « Rotation » suit.
+  useEffect(() => {
+    if (!engine) return undefined;
+    engine.onAutoRotateChange = (on) => setAuto(Boolean(on));
+    return () => { if (engine.onAutoRotateChange) engine.onAutoRotateChange = null; };
+  }, [engine]);
   // Transmet la vue 3/4 au moteur.
   useEffect(() => { engine?.setTilt(tilt); }, [engine, tilt]);
   // Transmet la vitesse de rotation au moteur.
