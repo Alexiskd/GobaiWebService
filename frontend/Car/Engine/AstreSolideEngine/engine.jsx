@@ -56,7 +56,7 @@ import { MoonOrbit } from './moonOrbit.jsx';
 import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
 // Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
 import {
-  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
+  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, layOrbitOnWell, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
 } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
 import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
@@ -1426,6 +1426,9 @@ export class SolarEngine {
       this.satellites.ringDrop = (sat) => this.wellSlopeRise(sat.parent ? bodyId(sat.parent.def) : null, sat.rel.length());
       // … et du satellite lui-même, qui descend en plus au fond de sa propre toupie.
       this.satellites.wellDrop = (sat) => this.satellites.ringDrop(sat) + this.wellApexDrop(sat.def.id);
+      // Le système d'une planète naine est couché sur le plan de Schwarzschild avec elle : ses satellites quittent
+      // leur plan d'orbite incliné (celui de Pluton est presque perpendiculaire à l'écliptique), au rythme du fondu.
+      this.satellites.flatten = (sat) => (sat.parent?.def.dwarf ? this.schwarzschild?.eased || 0 : 0);
     }
     if (!this.perivolumeRoot) return;
     this.focusTargets.forEach((target, index) => {
@@ -3164,10 +3167,8 @@ export class SolarEngine {
       rosetteLoop.set(rosette.subarray(0, 3), rosette.length);
       // La rosette descend dans le cône du bas de la toupie du Soleil : chaque point prend la hauteur de la grille
       // à sa distance du Soleil. Le mélange Kepler → rosette fait ainsi glisser l'orbite dans la toupie.
-      for (let i = 0; i < rosetteLoop.length; i += 3) {
-        const rAu = Math.hypot(rosetteLoop[i], rosetteLoop[i + 1], rosetteLoop[i + 2]) / AU_UNITS;
-        if (rAu < outerAu) rosetteLoop[i + 1] += gridWellY(rAu, outerAu) * AU_UNITS;
-      }
+      // Planète naine : son orbite est couchée sur la grille, sans l'inclinaison de Kepler (voir layOrbitOnWell).
+      layOrbitOnWell(rosetteLoop, outerAu, { flatten: Boolean(p.def.dwarf) });
       // Le garde.
       p.rosetteOrbit = rosetteLoop;
       // La copie intacte de Kepler : le point de retour du fondu.
@@ -4070,7 +4071,14 @@ export class SolarEngine {
       // Sa position dans la scène.
       p.w.set(p.ecl[0] * AU_UNITS, p.ecl[1] * AU_UNITS, p.ecl[2] * AU_UNITS);
       // Affichage Schwarzschild : la planète descend dans le cône du bas de la toupie du Soleil, à sa distance.
-      p.w.y += this.sunWellDrop(Math.hypot(p.ecl[0], p.ecl[1], p.ecl[2])) + this.wellApexDrop(bodyId(p.def));
+      if (p.def.dwarf) {
+        // Planète naine : dans l'affichage Schwarzschild, elle quitte son orbite inclinée de Kepler pour se poser
+        // sur la grille du Soleil. Sa hauteur de Kepler s'efface au rythme du fondu, et la hauteur de la grille est
+        // prise à sa distance dans le plan de l'écliptique. Ses satellites, placés par rapport à elle, la suivent.
+        p.w.y = p.w.y * (1 - (this.schwarzschild?.eased || 0)) + this.sunWellDrop(Math.hypot(p.ecl[0], p.ecl[2])) + this.wellApexDrop(bodyId(p.def));
+      } else {
+        p.w.y += this.sunWellDrop(Math.hypot(p.ecl[0], p.ecl[1], p.ecl[2])) + this.wellApexDrop(bodyId(p.def));
+      }
       // Sa rotation propre.
       p.mesh.rotation.y = (d / p.def.rotation) * TAU;
     // Fin de la boucle.

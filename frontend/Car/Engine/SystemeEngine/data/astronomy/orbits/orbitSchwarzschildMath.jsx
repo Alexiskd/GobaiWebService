@@ -266,6 +266,44 @@ export function schwarzschildSatelliteRosette({ e = 0, rsOverA = 0, n = 256, rev
 }
 
 /**
+ * Position relative d'un satellite couchée sur le plan horizontal de son système : même distance à la planète, même
+ * direction dans le plan (x, z), hauteur ramenée vers 0 selon `alpha` (0 = position de Kepler, 1 = à plat).
+ * La hauteur est réduite d'abord, puis x et z sont allongés pour retrouver la distance : le satellite reste sur son
+ * cercle au lieu de se rapprocher de la planète. Un satellite exactement à la verticale de la planète part vers +x.
+ * @returns {number[]} [x, y, z]
+ */
+export function flatRelative(x, y, z, alpha) {
+  const a = Math.min(1, Math.max(0, Number(alpha) || 0));
+  if (a === 0) return [x, y, z];
+  const distance = Math.hypot(x, y, z);
+  const height = y * (1 - a);
+  const reach = Math.sqrt(Math.max(0, distance * distance - height * height));
+  const planar = Math.hypot(x, z);
+  if (planar < 1e-12) return [reach, height, 0];
+  return [(x / planar) * reach, height, (z / planar) * reach];
+}
+
+/**
+ * Pose le tracé d'une orbite sur le puits de gravité du Soleil (le « plan de Schwarzschild ») : chaque point prend
+ * la hauteur de la grille à sa distance du Soleil. Modifie `points` sur place (trois nombres par point, unités de
+ * scène, y vers le haut) et le rend.
+ *  flatten = faux : la hauteur de la grille s'ajoute à la hauteur du point — l'orbite garde son inclinaison ;
+ *  flatten = vrai : la hauteur du point est remplacée par celle de la grille — l'inclinaison de Kepler est effacée,
+ *                   l'orbite est couchée sur le puits. C'est le cas des planètes naines, dont l'orbite très inclinée
+ *                   (Éris : 44°) sortirait sinon loin au-dessus et au-dessous de la grille.
+ * Au-delà du bord de la grille (outerAu), la hauteur de la grille est nulle.
+ */
+export function layOrbitOnWell(points, outerAu, { flatten = false } = {}) {
+  for (let i = 0; i < points.length; i += 3) {
+    // Distance au Soleil : dans le plan de l'écliptique si l'orbite est couchée, dans l'espace sinon.
+    const rAu = (flatten ? Math.hypot(points[i], points[i + 2]) : Math.hypot(points[i], points[i + 1], points[i + 2])) / AU_UNITS;
+    const well = rAu < outerAu ? gridWellY(rAu, outerAu) * AU_UNITS : 0;
+    points[i + 1] = flatten ? well : points[i + 1] + well;
+  }
+  return points;
+}
+
+/**
  * Géométrie filaire de la grille : segments (paires de points) pour anneaux et rayons, au repère de la scène.
  * La grille est le puits de gravité du Soleil : un seul cône, sous le plan de l'écliptique, dont le bord est dans ce
  * plan et la pointe au Soleil.
