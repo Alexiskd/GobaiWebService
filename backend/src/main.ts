@@ -30,6 +30,8 @@ import { publicUrl } from './common/public-url';
 import { setupOpenApi } from './modules/openapi';
 // Pages des astres pour le référencement : recherche d'une page d'après l'adresse, et rendus HTML, Markdown et llms-full.txt.
 import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderLlmsFull } from './services/data/body-pages';
+// Service du balisage SEO (table seo_tags) : titre et description de chaque page, lus en base s'ils y sont rangés.
+import { SeoTagsService } from './services/seo/seo-tags.service';
 
 /**
  * Service web unique : l'API sert aussi le site compilé (frontend/dist), sur la même origine.
@@ -39,7 +41,8 @@ import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, rende
  * Dossier réglable avec FRONTEND_DIST ; absent (développement avec Vite), seule l'API est servie.
  */
 // Déclare serveFrontend : reçoit l'application et renvoie le dossier du site servi, ou null s'il n'y a pas de site compilé.
-function serveFrontend(app: NestExpressApplication): string | null {
+// seoTags : balisage SEO (table seo_tags) déjà chargé en mémoire ; getPageTags reste synchrone, donc sans effet sur le rendu.
+function serveFrontend(app: NestExpressApplication, seoTags: SeoTagsService): string | null {
   // Dossier du site compilé : FRONTEND_DIST si elle est définie (espaces retirés), sinon frontend/dist, deux niveaux au-dessus de backend/dist ; resolve le rend absolu.
   const dir = resolve(process.env.FRONTEND_DIST?.trim() || join(__dirname, '..', '..', 'frontend', 'dist'));
   // Chemin complet de index.html, la page unique de l'application.
@@ -101,8 +104,8 @@ function serveFrontend(app: NestExpressApplication): string | null {
     if (body) {
       // reprend la page déjà rendue dans le cache, si elle existe ;
       let html = bodyPages.get(body.slug);
-      // sinon la fabrique à partir du modèle (titre, description, chiffres de l'astre), la range dans le cache et la garde dans html ;
-      if (!html) bodyPages.set(body.slug, (html = renderBodyPage(template, body)));
+      // sinon la fabrique à partir du modèle (titre, description, chiffres de l'astre, et balisage de la table seo_tags s'il y en a), la range dans le cache et la garde dans html ;
+      if (!html) bodyPages.set(body.slug, (html = renderBodyPage(template, body, seoTags.getPageTags(body.slug))));
       // envoie le HTML avec le type text/html ;
       res.type('html').send(html);
       // et termine ici : la requête est traitée.
@@ -153,8 +156,10 @@ async function bootstrap() {
     res.json(assetLinks);
   // Fin de la route assetlinks.json.
   });
+  // Service du balisage SEO (table seo_tags) : déjà chargé en mémoire, puisque NestFactory.create a attendu onModuleInit.
+  const seoTags = app.get(SeoTagsService);
   // Branche le site compilé ; site vaut le dossier servi, ou null s'il est absent.
-  const site = serveFrontend(app);
+  const site = serveFrontend(app, seoTags);
   // Applique les réglages communs : préfixe /api, version v1, CORS, filtre d'erreurs, validation des entrées.
   configureApp(app, config);
   // Adresse publique : https://www.gobaispace.com en ligne, localhost en développement.

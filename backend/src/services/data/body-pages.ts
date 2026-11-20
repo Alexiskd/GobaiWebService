@@ -220,18 +220,26 @@ const escapeHtml = (s: string): string =>
   // en remplaçant les quatre caractères spéciaux (&, <, >, ") par leur code.
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** index.html du site, avec le titre, la description, l'adresse canonique, les chiffres et la FAQ propres à la page. */
+/**
+ * index.html du site, avec le titre, la description, l'adresse canonique, les chiffres et la FAQ propres à la page.
+ * tags : balisage SEO (titre, description…) lu dans la table seo_tags (voir seo-tags.service.ts) ; absent ou
+ * sans valeur pour une clé donnée, le texte écrit ci-dessous dans le code (body.heading, body.description) sert
+ * de repli, pour que le site reste correct même sans base de données.
+ */
 // Fonction renderBodyPage : fabrique le HTML d'une page à partir du modèle index.html.
-export function renderBodyPage(template: string, body: BodyPage): string {
+export function renderBodyPage(template: string, body: BodyPage, tags?: Map<string, string>): string {
   // Adresse de la page.
   const url = `${SITE_URL}/${body.slug}`;
   // Astre : « Mars en 3D et en direct · Système solaire 3D Go白ناन्टех (Gobai Space) » ; fenêtre : sans le mot-clé.
   // Nom du site dans le titre : sans le mot-clé pour une fenêtre, avec pour un astre.
   const site = body.kind === 'fenêtre' ? `${APP_NAME} (Gobai Space)` : `${SITE_KEYWORD} ${APP_NAME} (Gobai Space)`;
+  // Titre et description bruts (avant mise en forme HTML) : ceux de la table seo_tags s'ils sont renseignés, sinon ceux écrits dans le code.
+  const titleText = tags?.get('title') || `${body.heading} · ${site}`;
+  const descriptionText = tags?.get('description') || body.description;
   // Titre complet, rendu inoffensif.
-  const title = escapeHtml(`${body.heading} · ${site}`);
+  const title = escapeHtml(titleText);
   // Description, rendue inoffensive.
-  const description = escapeHtml(body.description);
+  const description = escapeHtml(descriptionText);
   // Chiffres et questions de la page.
   const { facts, questions } = bodyContent(body);
   // Fonction meta : remplace le contenu d'une balise meta désignée par son nom,
@@ -331,9 +339,9 @@ export function renderBodyPage(template: string, body: BodyPage): string {
       // son adresse,
       url,
       // son titre,
-      name: `${body.heading} · ${site}`,
+      name: titleText,
       // sa description,
-      description: body.description,
+      description: descriptionText,
       // sa langue,
       inLanguage: 'fr',
       // le site dont elle fait partie,
@@ -351,7 +359,7 @@ export function renderBodyPage(template: string, body: BodyPage): string {
           // son nom,
           name: body.name,
           // sa description,
-          description: body.description,
+          description: descriptionText,
           // et ses chiffres, chacun sous forme de propriété nommée.
           additionalProperty: facts.map((f) => ({ '@type': 'PropertyValue', name: f.label, value: f.value })),
         // Fin du sujet.
