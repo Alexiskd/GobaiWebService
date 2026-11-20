@@ -31,7 +31,7 @@ export function corsDelegate(allowed: string[], isAllowedOrigin: (origin: string
     // Pré-vérification OPTIONS d'un autre site : acceptée sans donnée (la vraie requête qui suit reste filtrée).
     if (origin && req.method === 'OPTIONS') return callback(null, { origin: true });
     // Autre site : autorisé seulement s'il a payé son ajout à la liste CORS ; sinon refusé (false).
-    return callback(null, { origin: Boolean(origin) && isAllowedOrigin(origin) });
+    return callback(null, { origin: origin ? isAllowedOrigin(origin) : false });
   // Fin du délégué.
   };
 // Fin de corsDelegate.
