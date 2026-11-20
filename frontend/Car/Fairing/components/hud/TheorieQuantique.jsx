@@ -8,6 +8,8 @@ import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/mat
 import { ELEMENTS, SOLARIUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
 // Le tableau hypothétique des systèmes stellaires proches.
 import { TableauHypothetique } from './TableauHypothetique.jsx';
+// La section « charge électrique du Soleil selon T » (description des calculs).
+import { ChargeSoleil } from './ChargeSoleil.jsx';
 // Importe scientific, qui écrit un nombre en notation scientifique française.
 import { scientific } from '@/Engine/AstreSolideEngine/planetData';
 
@@ -361,6 +363,11 @@ export function TheorieQuantique() {
         (~80 M_J), frontière entre naine rouge et naine brune.
       {/* Fin de la légende. */}
       </Typography>
+
+      {/* Sixième titre. */}
+      <SectionTitle>Charge électrique du Soleil selon T — description des calculs</SectionTitle>
+      {/* La section des calculs. */}
+      <ChargeSoleil />
     {/* Fin du conteneur. */}
     </Box>
   // Fin du rendu.
