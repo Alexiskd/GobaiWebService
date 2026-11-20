@@ -17,7 +17,7 @@ Le blueprint `render.yaml` ne publie qu’un Static Site, sans service backend :
 ```yaml
 services:
   - type: web
-    name: gobai-space-static
+    name: static-gobai
     runtime: static
     buildCommand: npm ci --prefix frontend && npm run build --prefix frontend
     staticPublishPath: frontend/dist

@@ -22,8 +22,6 @@
 
 ## Pages par astre
 
-Chaque page existe aussi en texte Markdown, avec les chiffres de l'astre (diamètre, distance, orbite, pesanteur, température) et des questions-réponses : ajouter `.md` à son adresse, par exemple https://www.gobaispace.com/mars.md. Tout le site en un seul texte : https://www.gobaispace.com/llms-full.txt
-
 - [Soleil](https://www.gobaispace.com/soleil) : L’étoile au centre du système solaire, 109 fois le diamètre de la Terre, avec ses caractéristiques.
 - [Mercure](https://www.gobaispace.com/mercure) : La planète la plus proche du Soleil, habillée de la carte NASA de sa surface criblée de cratères.
 - [Vénus](https://www.gobaispace.com/venus) : La planète à la rotation rétrograde, avec la carte NASA de son relief caché sous les nuages.
@@ -55,6 +53,10 @@ Chaque page existe aussi en texte Markdown, avec les chiffres de l'astre (diamè
 - [Obéron](https://www.gobaispace.com/oberon) : La grande lune la plus lointaine d’Uranus, très cratérisée, survolée par Voyager 2 en 1986, à sa position réelle.
 - [Triton](https://www.gobaispace.com/triton) : La plus grande lune de Neptune, sur son orbite rétrograde, survolée par Voyager 2 en 1989, à sa position réelle.
 - [Charon](https://www.gobaispace.com/charon) : La grande lune de Pluton, survolée par New Horizons en 2015, à sa position réelle.
+- [Cérès](https://www.gobaispace.com/ceres) : La planète naine de la ceinture d’astéroïdes, à sa position réelle.
+- [Hauméa](https://www.gobaispace.com/haumea) : La planète naine allongée de la ceinture de Kuiper, à sa position réelle.
+- [Makémaké](https://www.gobaispace.com/makemake) : La planète naine de la ceinture de Kuiper, à sa position réelle.
+- [Éris](https://www.gobaispace.com/eris) : La planète naine la plus massive connue, au-delà de la ceinture de Kuiper, à sa position réelle.
 
 ## Autres pages
 

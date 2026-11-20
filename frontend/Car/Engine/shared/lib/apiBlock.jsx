@@ -169,18 +169,6 @@ export function installFetchGuard() {
 // Fin de installFetchGuard.
 }
 
-// apiBase : adresse de base de l'API du site (même règle que moteur/api/client).
-const apiBase = () => `${(import.meta.env?.VITE_API_URL || '/api').replace(/\/$/, '')}/v1`;
-
-// applyServer : range dans l'état la réponse du serveur.
-function applyServer(body) {
-  // Liste permanente.
-  const permanent = cleanHosts(body?.permanent);
-  // Met à jour l'état.
-  setState({ server: cleanHosts(body?.runtime), permanent, editable: Boolean(body?.editable), loaded: true });
-// Fin de applyServer.
-}
-
 /** En mode statique, aucun état serveur n'est consulté. */
 export async function refreshServerBlocked() {
   setState({ server: [], permanent: [], editable: false, loaded: true });

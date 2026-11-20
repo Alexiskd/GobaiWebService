@@ -67,7 +67,7 @@ export function Parametres({
       >
         {tabs.map((item) => <Tab key={item.value} value={item.value} label={item.label} id={`settings-tab-${item.value}`} aria-controls={`settings-panel-${item.value}`} />)}
       </Tabs>
-      <DialogContent sx={{ p: { xs: 1.5, sm: 2.5 }, bgcolor: 'background.default' }}>
+      <DialogContent sx={{ p: { xs: 1.5, sm: 2.5 }, bgcolor: (t) => (t.palette.mode === 'dark' ? t.palette.background.default : 'transparent') }}>
         <Box role="tabpanel" id={`settings-panel-${tab}`} aria-labelledby={`settings-tab-${tab}`} sx={{ maxWidth: 900, mx: 'auto' }}>
           {tab === 'general' && (
             <Stack spacing={1.5}>

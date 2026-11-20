@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "node scripts/verifie-imports.mjs Car && vite build",
     "preview": "vite preview",
-    "test": "node scripts/verifie-imports.mjs Car && tsx --test \"Car/**/*.test.jsx\"",
+    "test": "node scripts/verifie-imports.mjs Car && tsx --test \"Car/**/*.test.jsx\" \"Car/**/*.test.js\"",
     "verifie:imports": "node scripts/verifie-imports.mjs Car",
     "audit:astronomy": "node scripts/audit-astronomy-catalog.mjs"
   },
