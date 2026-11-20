@@ -727,7 +727,7 @@ function DownloadButton({ image, className, label }) {
 }
 
 // Déclare le composant Lightbox : l'image, son rang, le total, la fermeture et la navigation.
-function Lightbox({ image, index, total, onClose, onNav }) {
+export function Lightbox({ image, index, total, onClose, onNav }) {
   // État : l'adresse affichée, la vignette au départ.
   const [src, setSrc] = useState(image.thumb);
 

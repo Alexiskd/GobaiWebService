@@ -1,22 +1,81 @@
 // Onglet « Documentation » de la fenêtre Données : une fiche par astre présent dans l'application.
-import { useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../../../Engine/SystemeEngine/data/astronomy/data/bodies.data';
 import { DOCUMENTS } from './data/index.js';
-import { buildBodyCatalog, filterCatalog } from './bodyCatalog.js';
+import { bodyTree, buildBodyCatalog, filterCatalog } from './bodyCatalog.js';
 import { DownloadIcon, OpenInNewIcon, PlaceIcon, SearchIcon } from '../../ui/icons.jsx';
+import { BodyGallery } from './BodyGallery.jsx';
 import './documents.css';
+
+// Galerie complète (catégories, Archives NASA, Ma collection) : chargée seulement à l'ouverture.
+const GalerieApp = lazy(() => import('./GalerieApp.jsx').then((m) => ({ default: m.GalerieApp })));
 
 /** Le catalogue est construit une fois : les données de la scène sont embarquées et fixes. */
 let CATALOG = null;
-const catalog = () => (CATALOG ||= buildBodyCatalog({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES }));
+const catalog = () => (CATALOG ||= buildBodyCatalog({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES, documents: DOCUMENTS }));
+
+/** Identifiant de la vue « galerie complète » dans la Documentation. */
+const GALLERY = '__galerie__';
+
+/** Avertissement affiché en haut de la Documentation (liste et fiches). */
+const UNCERTAINTY = 'Ces informations peuvent être faussées par les incertitudes scientifiques : mesures approchées, valeurs révisées au fil des observations et des missions, modèles simplifiés. Pour un usage précis, vérifiez les sources de référence.';
+
+function Uncertainty() {
+  return (
+    <p className="doc-warning" role="note">
+      <span aria-hidden="true" className="doc-warning-icon">!</span>
+      <span>{UNCERTAINTY}</span>
+    </p>
+  );
+}
 
 /** Pastille de l'astre, à sa couleur (même rendu que le rail de navigation). */
 const Orb = ({ color, size = 14 }) => (
   <span className="doc-orb" aria-hidden="true" style={{ '--orb': color, width: size, height: size }} />
 );
 
+/**
+ * Un nœud de l'arborescence. Un appui sur la ligne déplie ou replie ses enfants (le Soleil montre les planètes et les
+ * planètes naines, une planète montre ses satellites) ; une ligne sans enfant ouvre la fiche. Le bouton « Fiche »
+ * ouvre la fiche de l'astre de la ligne. Les branches (Planètes, Planètes naines) n'ont pas de fiche.
+ */
+function TreeNode({ node, depth, expanded, onToggle, onOpen }) {
+  const hasChildren = node.children.length > 0;
+  const isOpen = hasChildren && expanded.has(node.id);
+  const e = node.entry;
+  const count = node.count ?? node.children.length;
+  const what = e ? (e.kind === 'etoile' ? 'planètes' : 'satellites') : 'astres';
+  return (
+    <li className="doc-tree-item" role="treeitem" aria-expanded={hasChildren ? isOpen : undefined} aria-level={depth + 1}>
+      <div className={`doc-tree-row ${e ? '' : 'is-branch'}`}>
+        <button
+          className="doc-tree-main"
+          onClick={() => (hasChildren ? onToggle(node.id) : onOpen(e.id))}
+          aria-label={hasChildren ? `${node.name} : ${isOpen ? 'replier' : 'afficher'} ${count} ${what}` : `${node.name} : ouvrir la fiche`}
+        >
+          <span className={`doc-tree-chevron ${isOpen ? 'is-open' : ''}`} aria-hidden="true">{hasChildren ? '›' : ''}</span>
+          {e && <Orb color={e.color} size={depth === 0 ? 22 : depth >= 3 ? 12 : 16} />}
+          <span className="doc-tree-name">{node.name}</span>
+          {hasChildren && <span className="doc-group-count" aria-hidden="true">{count}</span>}
+          {e && <span className="doc-tree-meta">{e.kindLabel}{e.inScene === false ? ' · hors scène' : ''}</span>}
+        </button>
+        {e && hasChildren && (
+          <button className="doc-tree-sheet" onClick={() => onOpen(e.id)} aria-label={`Fiche de ${node.name}`}>Fiche</button>
+        )}
+      </div>
+      {isOpen && (
+        <ul className="doc-tree-children" role="group">
+          {node.children.map((child) => (
+            <TreeNode key={child.id} node={child} depth={depth + 1} expanded={expanded} onToggle={onToggle} onOpen={onOpen} />
+          ))}
+        </ul>
+      )}
+    </li>
+  );
+}
+
 /** Fiche d'un astre : ses caractéristiques, et « Voir dans la scène ». */
-function BodySheet({ entry, onBack, onGoTo }) {
+function BodySheet({ entry, onBack, onGoTo, onLightboxChange }) {
   return (
     <div className="docs-wrap">
       <button className="doc-back" onClick={onBack}>← Tous les astres</button>
@@ -30,13 +89,22 @@ function BodySheet({ entry, onBack, onGoTo }) {
           {entry.parentName && <span className="doc-chip">Autour de {entry.parentName}</span>}
         </div>
       </header>
-      {onGoTo && (
-        <div className="doc-actions">
+      <Uncertainty />
+      <div className="doc-actions">
+        {onGoTo && entry.inScene !== false && (
           <button className="doc-btn doc-btn-primary" onClick={() => onGoTo(entry.name)}>
             <PlaceIcon fontSize="small" /> Voir dans la scène
           </button>
-        </div>
-      )}
+        )}
+        {entry.doc && (
+          <>
+            <a className="doc-btn" href={entry.doc.source} target="_blank" rel="noreferrer"><OpenInNewIcon fontSize="small" /> Page Wikipédia</a>
+            <a className="doc-btn" href={entry.doc.file} target="_blank" rel="noreferrer"><OpenInNewIcon fontSize="small" /> Ouvrir le PDF</a>
+            <a className="doc-btn" href={entry.doc.file} download><DownloadIcon fontSize="small" /> Télécharger</a>
+          </>
+        )}
+        {entry.inScene === false && <span className="doc-src">Ce satellite n’est pas dans la scène 3D.</span>}
+      </div>
       <section className="doc-card">
         <h2>Caractéristiques</h2>
         <dl className="doc-facts">
@@ -51,110 +119,77 @@ function BodySheet({ entry, onBack, onGoTo }) {
           ))}
         </dl>
       </section>
-    </div>
-  );
-}
-
-/** Fiche d'un document PDF (petits satellites de Jupiter, hors de la scène 3D). */
-function PdfSheet({ doc, onBack }) {
-  return (
-    <div className="docs-wrap">
-      <button className="doc-back" onClick={onBack}>← Tous les astres</button>
-      <header className="doc-head">
-        <h1 className="doc-title">{doc.name}</h1>
-        <span className="doc-designation">{doc.designation}</span>
-        <div className="doc-chips">
-          <span className="doc-chip">{doc.group}</span>
-          <span className="doc-chip">Orbite {doc.motion === 'rétrograde' ? 'rétrograde' : 'prograde'}</span>
-          <span className="doc-chip">{doc.physical.size}</span>
-        </div>
-      </header>
-      <div className="doc-actions">
-        <a className="doc-btn" href={doc.source} target="_blank" rel="noreferrer"><OpenInNewIcon fontSize="small" /> Page Wikipédia</a>
-        <a className="doc-btn" href={doc.file} target="_blank" rel="noreferrer"><OpenInNewIcon fontSize="small" /> Ouvrir le PDF</a>
-        <a className="doc-btn" href={doc.file} download><DownloadIcon fontSize="small" /> Télécharger</a>
-      </div>
-      <section className="doc-grid">
-        <div className="doc-card">
-          <h2>Découverte</h2>
-          <dl>
-            <dt>Découvreur</dt><dd>{doc.discovery.who}</dd>
-            {doc.discovery.where ? <><dt>Lieu</dt><dd>{doc.discovery.where}</dd></> : null}
-            <dt>Date</dt><dd>{doc.discovery.date}</dd>
-            <dt>Désignation d'origine</dt><dd>{doc.discovery.provisional}</dd>
-          </dl>
-        </div>
-        <div className="doc-card">
-          <h2>Orbite</h2>
-          <dl>
-            <dt>Demi-grand axe</dt><dd>{doc.orbit.semiMajorAxis}</dd>
-            <dt>Période de révolution</dt><dd>{doc.orbit.period}</dd>
-            <dt>Excentricité</dt><dd>{doc.orbit.eccentricity}</dd>
-            <dt>Inclinaison</dt><dd>{doc.orbit.inclination}</dd>
-          </dl>
-        </div>
-        <div className="doc-card">
-          <h2>Caractéristiques physiques</h2>
-          <dl>
-            <dt>Dimensions</dt><dd>{doc.physical.size}</dd>
-            <dt>Masse</dt><dd>{doc.physical.mass}</dd>
-            <dt>Masse volumique</dt><dd>{doc.physical.density}</dd>
-            <dt>Albédo moyen</dt><dd>{doc.physical.albedo}</dd>
-          </dl>
-        </div>
-      </section>
-      <section className="doc-text">
-        <h2>Résumé</h2>
-        <p>{doc.summary}</p>
-        <h2>Origine du nom</h2>
-        <p>{doc.mythology}</p>
-      </section>
+      {/* Galerie de l'astre : ses images NASA, dans sa fiche. */}
+      <BodyGallery key={entry.id} entry={entry} onLightboxChange={onLightboxChange} />
+      {entry.doc && (
+        <section className="doc-text doc-text-after">
+          <h2>Résumé</h2>
+          <p>{entry.doc.summary}</p>
+          <h2>Origine du nom</h2>
+          <p>{entry.doc.mythology}</p>
+        </section>
+      )}
     </div>
   );
 }
 
 /**
  * Documentation : une fiche par astre présent dans l'application — le Soleil, les planètes, les planètes naines, la
- * Lune et chaque satellite naturel de la scène —, groupées, avec une recherche (sans accents) et un filtre par groupe.
+ * Lune et chaque satellite naturel —, rangées en arborescence : le Soleil d'abord ; un appui dessus montre les
+ * Planètes et les Planètes naines ; un appui sur une planète montre ses satellites. Une recherche (sans accents)
+ * remplace l'arborescence par les fiches trouvées. Les fiches
+ * tirées des PDF (petits satellites de Jupiter) sont rangées avec les autres satellites de Jupiter, par distance.
  * Une fiche ouverte montre les caractéristiques de l'astre et « Voir dans la scène » (`onGoTo`, qui vise l'astre et
- * ferme la fenêtre). Les fiches tirées des PDF (petits satellites de Jupiter, absents de la scène) suivent à la fin.
+ * ferme la fenêtre ; absent pour un satellite qui n'est pas dans la scène). Un avertissement sur les incertitudes
+ * scientifiques ouvre la page.
  */
-export function Documents({ onGoTo }) {
+export function Documents({ onGoTo, onLightboxChange }) {
   const [openId, setOpenId] = useState(null);
   const [query, setQuery] = useState('');
-  const [group, setGroup] = useState('tous');
+  // Nœuds dépliés de l'arborescence : gardés quand on ouvre une fiche puis qu'on revient.
+  const [expanded, setExpanded] = useState(() => new Set());
   const topRef = useRef(null);
   const all = catalog();
 
-  const shown = useMemo(() => filterCatalog(all, { query, group }), [all, query, group]);
-  const pdfShown = useMemo(() => {
-    if (group !== 'tous' && group !== 'pdf') return [];
-    const q = query.trim().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-    return DOCUMENTS.filter((d) => !q || `${d.name} ${d.designation} ${d.group}`.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().includes(q));
-  }, [query, group]);
-  const count = shown.reduce((n, g) => n + g.entries.length, 0) + pdfShown.length;
+  const tree = useMemo(() => bodyTree(all), [all]);
+  const searching = query.trim().length > 0;
+  const shown = useMemo(() => (searching ? filterCatalog(all, { query }) : []), [all, query, searching]);
+  const toggle = (id) => setExpanded((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const count = shown.reduce((n, g) => n + g.entries.length, 0);
 
   const open = (id) => { setOpenId(id); topRef.current?.scrollIntoView?.({ block: 'start' }); };
   const back = () => setOpenId(null);
 
-  const entry = openId && all.entries.find((e) => `astre:${e.id}` === openId);
-  const pdf = openId && DOCUMENTS.find((d) => `pdf:${d.id}` === openId);
+  const entry = openId && openId !== GALLERY && all.entries.find((e) => e.id === openId);
 
   return (
     <div className="gobai-docs" ref={topRef}>
-      {entry ? <BodySheet entry={entry} onBack={back} onGoTo={onGoTo} />
-        : pdf ? <PdfSheet doc={pdf} onBack={back} />
-          : (
+      {entry ? <BodySheet entry={entry} onBack={back} onGoTo={onGoTo} onLightboxChange={onLightboxChange} />
+        : openId === GALLERY ? (
+          <>
+            <div className="docs-wrap docs-wrap-tight"><button className="doc-back" onClick={back}>← Documentation</button></div>
+            <Suspense fallback={<p className="doc-count docs-wrap">Chargement de la galerie…</p>}>
+              <GalerieApp onLightboxChange={onLightboxChange} />
+            </Suspense>
+          </>
+        ) : (
             <div className="docs-wrap">
               <header className="doc-head">
                 <h1 className="doc-title">Documentation</h1>
                 <p className="doc-sub">
-                  {all.entries.length} astres présents dans l’application : le Soleil, {all.groups.find((g) => g.id === 'planetes')?.entries.length ?? 0} planètes,
-                  {' '}{all.groups.find((g) => g.id === 'naines')?.entries.length ?? 0} planètes naines, la Lune et les satellites naturels de la scène.
+                  {all.entries.length} astres : le Soleil, {all.groups.find((g) => g.id === 'planetes')?.entries.length ?? 0} planètes,
+                  {' '}{all.groups.find((g) => g.id === 'naines')?.entries.length ?? 0} planètes naines, la Lune et
+                  {' '}{all.entries.filter((e) => e.kind === 'satellite' && e.name !== 'Lune').length} autres satellites naturels,
+                  {' '}dont {all.entries.filter((e) => e.doc).length} petits satellites de Jupiter documentés par des PDF (absents de la scène 3D).
                 </p>
               </header>
+              <Uncertainty />
 
-              {/* Recherche et filtre par groupe : la barre passe à la ligne, les pastilles défilent sur téléphone. */}
+              {/* Recherche : sans texte, l'arborescence ; avec un texte, les fiches trouvées. */}
               <div className="doc-tools">
                 <label className="doc-search">
                   <SearchIcon fontSize="small" aria-hidden="true" />
@@ -164,23 +199,30 @@ export function Documents({ onGoTo }) {
                     autoComplete="off" spellCheck={false}
                   />
                 </label>
-                <div className="doc-filters" role="group" aria-label="Filtrer par groupe">
-                  {[{ id: 'tous', name: 'Tous' }, ...all.groups, { id: 'pdf', name: 'Documents PDF' }].map((g) => (
-                    <button key={g.id} className={`doc-filter ${group === g.id ? 'is-active' : ''}`} aria-pressed={group === g.id} onClick={() => setGroup(g.id)}>
-                      {g.name}
-                    </button>
-                  ))}
-                </div>
               </div>
 
-              <p className="doc-count" role="status">{count} {count > 1 ? 'fiches' : 'fiche'}</p>
+              {!searching && (
+                <nav aria-label="Arborescence des astres">
+                  <ul className="doc-tree" role="tree">
+                    <TreeNode node={tree.root} depth={0} expanded={expanded} onToggle={toggle} onOpen={open} />
+                  </ul>
+                </nav>
+              )}
+
+              {!searching && (
+                <button className="doc-btn doc-gallery-all" onClick={() => open(GALLERY)}>
+                  Galerie complète · Archives NASA par catégorie et Ma collection
+                </button>
+              )}
+
+              {searching && <p className="doc-count" role="status">{count} {count > 1 ? 'fiches' : 'fiche'}</p>}
 
               {shown.map((g) => (
                 <section key={g.id} className="doc-group">
                   <h2 className="doc-group-title">{g.name} <span className="doc-group-count">{g.entries.length}</span></h2>
                   <div className="doc-cards">
                     {g.entries.map((e) => (
-                      <button key={e.id} className="doc-card-btn" onClick={() => open(`astre:${e.id}`)}>
+                      <button key={e.id} className="doc-card-btn" onClick={() => open(e.id)}>
                         <span className="doc-card-head"><Orb color={e.color} /><span className="doc-card-name">{e.name}</span></span>
                         <span className="doc-card-meta">{e.summary}</span>
                       </button>
@@ -189,24 +231,8 @@ export function Documents({ onGoTo }) {
                 </section>
               ))}
 
-              {pdfShown.length > 0 && (
-                <section className="doc-group">
-                  <h2 className="doc-group-title">Documents PDF · petits satellites de Jupiter <span className="doc-group-count">{pdfShown.length}</span></h2>
-                  <p className="doc-sub">Fiches établies à partir des PDF du dossier data ; ces satellites ne sont pas dans la scène 3D.</p>
-                  <div className="doc-cards">
-                    {pdfShown.map((d) => (
-                      <button key={d.id} className="doc-card-btn" onClick={() => open(`pdf:${d.id}`)}>
-                        <span className="doc-card-name">{d.name}</span>
-                        <span className="doc-card-designation">{d.designation}</span>
-                        <span className="doc-card-sum">{d.summary}</span>
-                        <span className="doc-card-meta">{d.physical.size} · {d.orbit.period}</span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
-              )}
 
-              {count === 0 && <p className="doc-empty">Aucun astre ne correspond à « {query} ».</p>}
+              {searching && count === 0 && <p className="doc-empty">Aucun astre ne correspond à « {query} ».</p>}
 
               <p className="doc-foot">
                 Caractéristiques tirées des données de la scène 3D et de la fenêtre Informations. Fiches PDF : textes issus de
