@@ -75,6 +75,30 @@ function storage() {
 // Origines déjà annoncées au navigateur.
 const preconnected = new Set(); // origines déjà annoncées au navigateur
 
+/**
+ * Dernière description reçue de chaque couche pendant la session (mémoire vive seulement, partagée par toutes
+ * les sources) : une couche resélectionnée peu après (aller-retour entre deux fonds, calque coupé puis rallumé,
+ * changement d'astre) repart avec elle sans redemander GET /tiles/layers/:id au serveur. Valable
+ * MIN_REFRESH_GAP_MS, et jamais à moins d'une minute de l'expiration de son jeton.
+ */
+const sessionLayerInfo = new Map(); // layerId → { info, at }
+// Marge avant l'expiration annoncée : une minute (comme layerInfoCache.jsx).
+const SESSION_EXPIRY_MARGIN_MS = 60_000;
+
+/** Description de la couche reçue il y a peu dans cette session, encore valable ; sinon null. */
+export function freshSessionInfo(layerId, now = Date.now()) {
+  const hit = sessionLayerInfo.get(layerId);
+  if (!hit || now - hit.at > MIN_REFRESH_GAP_MS) return null;
+  const expires = hit.info?.expiresAt ? Date.parse(hit.info.expiresAt) : NaN;
+  if (Number.isFinite(expires) && expires - now <= SESSION_EXPIRY_MARGIN_MS) return null;
+  return hit.info;
+}
+
+/** Garde la description reçue pour la session. */
+export function rememberSessionInfo(layerId, info, now = Date.now()) {
+  if (info) sessionLayerInfo.set(layerId, { info, at: now });
+}
+
 // readColors : les mesures de couleur gardées (début).
 function readColors() {
   // Les lit dans le stockage ; un objet vide en cas d'absence ou d'erreur.
@@ -271,6 +295,17 @@ export class TileSource {
 
   // start, asynchrone : démarre la couche (début).
   async start() {
+    // Description reçue il y a peu dans cette session : la couche repart avec elle, sans requête au serveur. Le
+    // renouvellement avant expiration reste programmé comme d'habitude.
+    const session = freshSessionInfo(this.layerId);
+    if (session) {
+      this.info = session;
+      this.status = 'ready';
+      // lastRefresh reste à 0 : si les tuiles se mettent à échouer, la description peut être redemandée aussitôt.
+      this.scheduleRefresh();
+      this.preconnect();
+      return this;
+    }
     // Description gardée de la visite précédente : les tuiles partent tout de suite, la description à jour arrive
     // en arrière-plan (voir layerInfoCache.jsx).
     // Description gardée de la visite précédente.
@@ -328,6 +363,8 @@ export class TileSource {
         this.scheduleRefresh();
         // Enregistre la description pour la visite suivante.
         saveLayerInfo(storage(), this.layerId, info);
+        // Et pour une resélection de la couche pendant cette session.
+        rememberSessionInfo(this.layerId, info);
         // Ouvre les connexions d'avance.
         this.preconnect();
       // Fin de la réponse.
