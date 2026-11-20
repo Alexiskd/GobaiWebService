@@ -12,12 +12,11 @@
   --ink: #e8e9f0;
   /* Variable --muted = #8a8fa6. */
   --muted: #8a8fa6;
-  /* Variable --display = 'Syne', 'Arial Black', sans-serif. */
-  --display: 'Syne', 'Arial Black', sans-serif;
-  /* Variable --body = 'IBM Plex Sans', system-ui, sans-serif. */
-  --body: 'IBM Plex Sans', system-ui, sans-serif;
-  /* Variable --mono = 'IBM Plex Mono', ui-monospace, monospace. */
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* Polices : Google Sans, celle de toute l'interface (chargée par index.html), pour les titres et le texte ;
+     police à chasse fixe du système pour les chiffres et les codes. Plus aucune police propre à la fenêtre. */
+  --display: "Google Sans", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --body: "Google Sans", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   /* Jeu de couleurs annoncé au navigateur : dark. */
   color-scheme: dark;
 /* Fin de la règle. */
@@ -78,8 +77,8 @@
 .gobai-gallery h1 {
   /* Marge extérieure : 6px 0 0. */
   margin: 6px 0 0;
-  /* Police (raccourci : graisse, taille, interligne, famille) : 800 clamp(30px, 5vw, 56px)/1 var(--display). */
-  font: 800 clamp(30px, 5vw, 56px)/1 var(--display);
+  /* Police (raccourci : graisse, taille, interligne, famille) : 700 clamp(30px, 5vw, 56px)/1 var(--display). */
+  font: 700 clamp(30px, 5vw, 56px)/1 var(--display);
   /* Espacement des lettres : -.02em. */
   letter-spacing: -.02em;
   /* Répartition du texte sur les lignes : balance. */
@@ -441,8 +440,8 @@
 .gobai-gallery .spheres { display: flex; flex-direction: column; gap: 24px; }
 /* Pour « .gobai-gallery .sph-hero » : mode d'affichage : flex ; retour à la ligne des éléments : wrap ; espacement entre les éléments : 20px 32px ; répartition des éléments sur l'axe principal : space-between ; alignement des éléments sur l'axe secondaire : flex-end. */
 .gobai-gallery .sph-hero { display: flex; flex-wrap: wrap; gap: 20px 32px; justify-content: space-between; align-items: flex-end; }
-/* Pour « .gobai-gallery .sph-title » : marge extérieure : 6px 0 8px ; police (raccourci : graisse, taille, interligne, famille) : 800 clamp(26px, 4vw, 44px)/1 var(--display) ; espacement des lettres : -.02em. */
-.gobai-gallery .sph-title { margin: 6px 0 8px; font: 800 clamp(26px, 4vw, 44px)/1 var(--display); letter-spacing: -.02em; }
+/* Pour « .gobai-gallery .sph-title » : marge extérieure : 6px 0 8px ; police (raccourci : graisse, taille, interligne, famille) : 700 clamp(26px, 4vw, 44px)/1 var(--display) ; espacement des lettres : -.02em. */
+.gobai-gallery .sph-title { margin: 6px 0 8px; font: 700 clamp(26px, 4vw, 44px)/1 var(--display); letter-spacing: -.02em; }
 /* Pour « .gobai-gallery .sph-lede » : marge extérieure : 0 ; largeur maximale : 60ch ; couleur du texte : var(--muted). */
 .gobai-gallery .sph-lede { margin: 0; max-width: 60ch; color: var(--muted); }
 /* Début de la règle pour « .gobai-gallery .sph-live ». */
@@ -459,8 +458,8 @@
 @keyframes sph-pulse { 50% { opacity: .25; } }
 /* Pour « .gobai-gallery .sph-live-label » : police (raccourci : graisse, taille, interligne, famille) : 500 11px var(--mono) ; espacement des lettres : .1em ; casse du texte : uppercase ; couleur du texte : var(--muted). */
 .gobai-gallery .sph-live-label { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
-/* Pour « .gobai-gallery .sph-live-count » : colonnes occupées dans la grille : 1 / -1 ; police (raccourci : graisse, taille, interligne, famille) : 800 clamp(30px, 5vw, 48px)/1.1 var(--display) ; forme des chiffres : tabular-nums ; couleur du texte : var(--planet). */
-.gobai-gallery .sph-live-count { grid-column: 1 / -1; font: 800 clamp(30px, 5vw, 48px)/1.1 var(--display); font-variant-numeric: tabular-nums; color: var(--planet); }
+/* Pour « .gobai-gallery .sph-live-count » : colonnes occupées dans la grille : 1 / -1 ; police (raccourci : graisse, taille, interligne, famille) : 700 clamp(30px, 5vw, 48px)/1.1 var(--display) ; forme des chiffres : tabular-nums ; couleur du texte : var(--planet). */
+.gobai-gallery .sph-live-count { grid-column: 1 / -1; font: 700 clamp(30px, 5vw, 48px)/1.1 var(--display); font-variant-numeric: tabular-nums; color: var(--planet); }
 /* Pour « .gobai-gallery .sph-live-meta » : colonnes occupées dans la grille : 1 / -1 ; police (raccourci : graisse, taille, interligne, famille) : 12px var(--mono) ; couleur du texte : var(--muted). */
 .gobai-gallery .sph-live-meta { grid-column: 1 / -1; font: 12px var(--mono); color: var(--muted); }
 /* Pour « .gobai-gallery .sph-facts » : mode d'affichage : grid ; colonnes de la grille : repeat(4, 1fr) ; espacement entre les éléments : 10px ; marge extérieure : 0. */
@@ -655,8 +654,8 @@
 .gobai-gallery .cat-orbs-satellites i:nth-child(odd) { transform: translateY(-9px); }
 /* Pour « .gobai-gallery .cat-orbs-satellites i:nth-child(even) » : transformation : translateY(9px). */
 .gobai-gallery .cat-orbs-satellites i:nth-child(even) { transform: translateY(9px); }
-/* Pour « .gobai-gallery .cat-name » : police (raccourci : graisse, taille, interligne, famille) : 800 clamp(18px, 1.9vw, 24px)/1.1 var(--display) ; espacement des lettres : -.01em. */
-.gobai-gallery .cat-name { font: 800 clamp(18px, 1.9vw, 24px)/1.1 var(--display); letter-spacing: -.01em; }
+/* Pour « .gobai-gallery .cat-name » : police (raccourci : graisse, taille, interligne, famille) : 700 clamp(18px, 1.9vw, 24px)/1.1 var(--display) ; espacement des lettres : -.01em. */
+.gobai-gallery .cat-name { font: 700 clamp(18px, 1.9vw, 24px)/1.1 var(--display); letter-spacing: -.01em; }
 /* Pour « .gobai-gallery .cat.is-active .cat-name » : couleur du texte : var(--c). */
 .gobai-gallery .cat.is-active .cat-name { color: var(--c); }
 /* Pour « .gobai-gallery .cat-sub » : taille du texte : 13px ; couleur du texte : #c5c8d6. */
@@ -669,20 +668,28 @@
 @media (max-width: 460px) { .gobai-gallery .cats { grid-template-columns: 1fr; } }
 
 /* Vues de la galerie : archives NASA / ma collection */
-/* Pour « .gobai-gallery .views » : mode d'affichage : flex ; espacement entre les éléments : 8px ; retour à la ligne des éléments : wrap. */
-.gobai-gallery .views { display: flex; gap: 8px; flex-wrap: wrap; }
+/* Barre des vues (Archives NASA, Ma collection) : contrôle segmenté, dans le même style que la navigation de la
+   fenêtre Données. Défile horizontalement au lieu de passer à la ligne ou de se chevaucher. */
+.gobai-gallery .views {
+  display: inline-flex; gap: 4px; padding: 4px; max-width: 100%; overflow-x: auto; scrollbar-width: none;
+  border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--panel) 80%, transparent);
+  align-self: flex-start;
+}
+.gobai-gallery .views::-webkit-scrollbar { display: none; }
 /* Début de la règle pour « .gobai-gallery .view-tab ». */
 .gobai-gallery .view-tab {
   /* Marge intérieure : 8px 16px ; rayon des coins : 999px ; bordure : 1px solid var(--line). */
-  padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+  padding: 8px 16px; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; flex: none;
   /* Fond : transparent ; curseur de la souris : pointer ; police (raccourci : graisse, taille, interligne, famille) : 500 13px var(--mono) ; espacement des lettres : .06em ; casse du texte : uppercase. */
-  background: transparent; cursor: pointer; font: 500 13px var(--mono); letter-spacing: .06em; text-transform: uppercase;
+  background: transparent; cursor: pointer; font: 500 14px/1.2 var(--body); letter-spacing: 0;
+  transition: background-color .15s, color .15s;
   /* Couleur du texte : var(--muted). */
   color: var(--muted);
 /* Fin de la règle. */
 }
 /* Pour « .gobai-gallery .view-tab:hover » : couleur de la bordure : var(--muted) ; couleur du texte : var(--ink). */
-.gobai-gallery .view-tab:hover { border-color: var(--muted); color: var(--ink); }
+.gobai-gallery .view-tab:hover { color: var(--ink); background: rgba(255,255,255,.06); }
+.gobai-gallery .view-tab:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 /* Pour « .gobai-gallery .view-tab.is-active » : fond : var(--ink) ; couleur de la bordure : var(--ink) ; couleur du texte : var(--void). */
 .gobai-gallery .view-tab.is-active { background: var(--ink); border-color: var(--ink); color: var(--void); }
 

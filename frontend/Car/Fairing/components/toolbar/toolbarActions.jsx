@@ -18,7 +18,7 @@ import {
   SearchIcon, PublicIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
   // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
-  GalleryIcon, SpeedIcon, StoreIcon, FavoriteIcon, SettingsIcon,
+  GalleryIcon, StoreIcon, FavoriteIcon, SettingsIcon,
   // Arborescence des astres, plateau tournant et icône de l'assistant.
   AccountTreeIcon, ThreeSixtyIcon, AutoAwesomeIcon,
 // Fin de la liste ; module des icônes.
@@ -48,7 +48,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onContribute,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -114,15 +114,13 @@ export function toolbarActions({
     // Assistant : petit menu déroulant qui s'ouvre au-dessus du bouton (l'événement du clic donne son point d'ancrage).
     // Assistant (Claude côté serveur, Mistral avec une clé du navigateur), enfoncé quand son menu est ouvert.
     { id: 'assistant', group: 'assistant', icon: assistantIcon(assistantProvider), label: 'Assistant', primary: true, pressed: assistantOpen, onClick: onAssistant, title: PROVIDER_NAMES[assistantProvider] ? `Assistant (connecté à ${PROVIDER_NAMES[assistantProvider]}) : poser une question sur le système solaire` : 'Assistant : se connecter avec sa clé Claude ou Mistral' },
-    // ── Bloc « settings » — Réglages : langue, son, paramètres, performances.
+    // ── Bloc « settings » — Réglages : langue, son, paramètres (le moniteur de performance se règle dans Paramètres).
     // Langue (si le rappel existe) : icône seule, libellé avec la langue en cours si elle est connue.
     onLanguage && { id: 'lang', group: 'settings', icon: TranslateIcon, label: languageLabel ? `Langue : ${languageLabel}` : 'Langue', short: 'Langue', iconOnly: true, onClick: onLanguage, title: 'Langue de l’interface' },
     // Son (si le rappel existe) : icône seule du groupe « help », enfoncée si le son est actif, sans son de clic.
     onToggleSound && { id: 'sound', group: 'settings', icon: sound ? VolumeUpIcon : VolumeOffIcon, label: sound ? 'Son activé' : 'Son coupé', short: 'Son', iconOnly: true, pressed: sound, noSound: true, onClick: onToggleSound, title: sound ? 'Couper le son des clics' : 'Activer le son des clics' },
     // Paramètres (si le rappel existe) : icône seule.
     onSettings && { id: 'settings', group: 'settings', icon: SettingsIcon, label: 'Paramètres', iconOnly: true, onClick: onSettings, title: 'Paramètres : repères du système solaire, étoiles, aller à un astre' },
-    // Moniteur de performance : activation/désactivation depuis la barre sur ordinateur.
-    onTogglePerformanceMonitor && { id: 'performance', group: 'settings', icon: SpeedIcon, label: 'Performances', short: 'Perf', iconOnly: true, pressed: performanceMonitorVisible, onClick: onTogglePerformanceMonitor, title: performanceMonitorVisible ? 'Masquer le moniteur de performance' : 'Afficher le moniteur de performance' },
     // ── Bloc « info » — Infos : aide, partage, sources du site, don.
     // Aide (si le rappel existe) : icône seule, raccourcis clavier.
     onHelp && { id: 'help', group: 'info', icon: HelpIcon, label: 'Aide', iconOnly: true, onClick: onHelp, title: 'Raccourcis clavier (?)' },

@@ -1,6 +1,10 @@
 import { LOAD_STATE } from '../PerivolumeEngine/PerivolumeManager.js';
 import { applyPerivolumeAxioms } from '../PerivolumeEngine/PerivolumeAxiomPolicy.js';
 
+const PROFILE_ACTIVE = Object.freeze({ state: LOAD_STATE.ACTIVE, render: true, update: true, priority: 100 });
+const PROFILE_BACKGROUND = Object.freeze({ state: LOAD_STATE.BACKGROUND, render: true, update: false, priority: 20 });
+const PROFILE_UNLOADED = Object.freeze({ state: LOAD_STATE.UNLOADED, render: false, update: false, priority: 0 });
+
 /** Orchestre les transitions de chargement sans dépendre de Three.js ni de React. */
 export class SystemManager {
   constructor({ registry, perivolumeManager, onTransition, axioms = [] } = {}) {
@@ -32,10 +36,12 @@ export class SystemManager {
     return true;
   }
 
+  // Profils partagés et figés : interrogés plusieurs fois par image, ils ne créent plus d'objet à chaque appel.
   getLoadProfile(id) {
     const state = this.effectiveStates.get(id) ?? this.perivolumeManager.getState(id);
-    if (state === LOAD_STATE.ACTIVE) return { state, render: true, update: true, priority: 100 };
-    if (state === LOAD_STATE.BACKGROUND) return { state, render: true, update: false, priority: 20 };
-    return { state: state ?? LOAD_STATE.UNLOADED, render: false, update: false, priority: 0 };
+    if (state === LOAD_STATE.ACTIVE) return PROFILE_ACTIVE;
+    if (state === LOAD_STATE.BACKGROUND) return PROFILE_BACKGROUND;
+    if (state && state !== LOAD_STATE.UNLOADED) return Object.freeze({ state, render: false, update: false, priority: 0 });
+    return PROFILE_UNLOADED;
   }
 }

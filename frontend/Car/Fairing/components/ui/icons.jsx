@@ -83,6 +83,10 @@ export { default as OpenInNewIcon } from '@mui/icons-material/OpenInNew';
 export { default as LogoutIcon } from '@mui/icons-material/Logout';
 export { default as KeyIcon } from '@mui/icons-material/Key';
 export { default as ArrowBackIcon } from '@mui/icons-material/ArrowBack';
+// Onglets de la fenêtre Données : documentation, recherche (flux cognitif) et science (théorie quantique).
+export { default as DescriptionIcon } from '@mui/icons-material/Description';
+export { default as PsychologyIcon } from '@mui/icons-material/Psychology';
+export { default as ScienceIcon } from '@mui/icons-material/Science';
 // Ville d'un résultat de recherche.
 export { default as LocationCityIcon } from '@mui/icons-material/LocationCity';
 // Lieu enregistré, et accueil.

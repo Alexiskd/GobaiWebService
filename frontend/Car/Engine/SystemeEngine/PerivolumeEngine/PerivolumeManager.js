@@ -35,7 +35,8 @@ export class PerivolumeManager {
     const entry = this.#entries.get(id);
     if (!entry) return false;
     if (!finiteVector(center)) throw new TypeError(`Centre invalide pour ${id}.`);
-    entry.center = [...center.slice(0, 3)];
+    // Copie sur place, sans nouveau tableau : appelée à chaque image pour chaque astre.
+    entry.center[0] = center[0]; entry.center[1] = center[1]; entry.center[2] = center[2];
     return true;
   }
 

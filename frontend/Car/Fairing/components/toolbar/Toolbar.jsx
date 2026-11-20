@@ -24,8 +24,8 @@ export function Toolbar({
   schwarzschild, onToggleSchwarzschild,
   // Le son (actif par défaut), la langue, les sources, la galerie, les paramètres, le plateau et le partage.
   sound = true, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onGallery, onSettings, onPlateau, onShare, onContribute, onStore,
-  // L'arborescence des astres (rappel et état), et le moniteur de performance (rappel et état).
-  onNavigator, navigatorOpen, onTogglePerformanceMonitor, performanceMonitorVisible,
+  // L'arborescence des astres (rappel et état).
+  onNavigator, navigatorOpen,
 // Fin de la liste des propriétés.
 }) {
   // Lit le mode compact de l'écran.
@@ -48,13 +48,13 @@ export function Toolbar({
     // Les états affichés par les boutons.
     auto, tilt, sound,
     // Tous les autres rappels et libellés.
-    // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre) ; le moniteur de
-    // performance n'a de bouton que sur ordinateur (sur téléphone, la feuille « Données » affiche les mesures).
+    // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre). Le moniteur de
+    // performance n'est plus dans la barre : il s'active dans Paramètres.
     onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onContribute,
     // Affichage Schwarzschild : l'état et le rappel passés à la liste.
     schwarzschild, onToggleSchwarzschild,
     // L'arborescence des astres, et le moniteur de performance hors téléphone.
-    onNavigator, navigatorOpen, onTogglePerformanceMonitor: compact ? null : onTogglePerformanceMonitor, performanceMonitorVisible,
+    onNavigator, navigatorOpen,
   // Fin de l'appel.
   });
   // Petit écran : la barre compacte ; sinon : la barre de l'ordinateur.

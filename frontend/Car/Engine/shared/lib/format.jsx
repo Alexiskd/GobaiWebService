@@ -1,9 +1,15 @@
 // Formats partagés par les composants : nombres français, coordonnées, recherche sans accents.
 
-// Fonction nf : un nombre au format français,
-export const nf = (value, digits = 0) =>
-  // avec le nombre de décimales demandé.
-  Number(value).toLocaleString('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+// Un formateur par nombre de décimales, créé une fois : nf est appelé par le HUD plusieurs fois par seconde, et
+// toLocaleString avec options recréait un formateur à chaque appel.
+const NF_BY_DIGITS = new Map();
+
+// Fonction nf : un nombre au format français, avec le nombre de décimales demandé.
+export const nf = (value, digits = 0) => {
+  let f = NF_BY_DIGITS.get(digits);
+  if (!f) NF_BY_DIGITS.set(digits, (f = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: digits, maximumFractionDigits: digits })));
+  return f.format(Number(value));
+};
 
 // Fonction fold :
 export const fold = (value = '') =>
