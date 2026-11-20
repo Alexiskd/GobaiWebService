@@ -32,7 +32,8 @@ test('register : crée une bulle de verre, un fil de fer et une enveloppe d\'arr
   const glass = group.children[0];
   assert.equal(glass.material.transparent, true);
   assert.ok(glass.material.opacity > 0 && glass.material.opacity < 0.5);
-  assert.ok(glass.material.transmission > 0);
+  // Un voile simple : pas de transmission, qui coûterait un second rendu de la scène à chaque image.
+  assert.equal(glass.material.transmission, undefined);
   assert.equal(glass.material.depthWrite, false);
   const background = group.children[2];
   assert.ok(background.geometry.parameters.radius > glass.geometry.parameters.radius);

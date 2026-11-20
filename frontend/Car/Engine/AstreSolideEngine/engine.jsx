@@ -177,6 +177,8 @@ const EARTH_RADIUS_KM = TILED_BODY_BY_ID.earth.radiusKm;
 const MOON_DISTANCE_KM = 384_400;
 // Rayon du Soleil en unités astronomiques : le fond de sa toupie, où il descend dans l'affichage Schwarzschild.
 const SUN_RADIUS_AU = 0.00465;
+// Une toupie n'est dessinée que si son rayon vaut au moins 1/400 de sa distance à la caméra (quelques pixels).
+const WELL_MIN_APPARENT = 400;
 // Distance de la vue globale : 1,3 million de rayons terrestres.
 const VIEW_DISTANCE = 1.3e6;     // distance de la vue globale
 // Distance maximale de la caméra.
@@ -1312,6 +1314,18 @@ export class SolarEngine {
     return gravitySphereRadius({ distance, massKg, parentMassKg, minimum: radius * 1.5 });
   }
 
+  /**
+   * Met l'orbite d'une planète au mélange Kepler → rosette du moment, si elle ne l'est pas déjà : le mélange point à
+   * point est écrit dans les points du ruban, que la carte graphique relit.
+   */
+  mixPlanetOrbit(p) {
+    const eased = this.schwarzschild?.eased || 0;
+    if (p.orbitMix === eased || !p.rosetteOrbit) return;
+    mixPoints(p.keplerOrbit, p.rosetteOrbit, eased, p.orbitTrail.points);
+    p.orbitTrail.positionsChanged();
+    p.orbitMix = eased;
+  }
+
   /** Vrai dès que la représentation de Schwarzschild est à l'écran (fondu commencé) : les orbites de Kepler sont alors masquées. */
   keplerOrbitsMasked() {
     return (this.schwarzschild?.eased || 0) > 0.002;
@@ -1399,6 +1413,11 @@ export class SolarEngine {
    */
   initSystemWells() {
     this.systemWells = [];
+    // Un seul matériau pour toutes les toupies (même trait que la grille du Soleil : fin, additif, sans écriture de
+    // profondeur) : leur opacité est la même, et le fondu ne règle plus qu'une valeur au lieu d'une par astre.
+    this.systemWellMaterial = new THREE.LineBasicMaterial({
+      color: 0x6f86b8, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
+    });
     // Profil de la toupie de chaque astre, par identifiant : hauteur du cône du bas à une distance donnée.
     this.systemWellProfiles = new Map();
     // Les satellites descendent dans la toupie de leur planète, au rythme du fondu Schwarzschild.
@@ -1429,12 +1448,10 @@ export class SolarEngine {
       this.systemWellProfiles.set(id, systemWellProfile(shape));
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      // Même trait que la grille du Soleil : fin, additif, sans écriture de profondeur.
-      const well = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
-        color: 0x6f86b8, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
-      }));
+      // Sphère englobante calculée une fois : le moteur de rendu écarte ainsi les toupies hors du champ de la caméra.
+      geometry.computeBoundingSphere();
+      const well = new THREE.LineSegments(geometry, this.systemWellMaterial);
       well.renderOrder = 3;
-      well.frustumCulled = false;
       well.visible = false;
       well.name = `schwarzschild-well:${id}`;
       this.perivolumeRoot.add(well);
@@ -1926,7 +1943,16 @@ export class SolarEngine {
       if (position && this.perivolumeSpheres?.displayAlpha > 0) this.perivolumeSpheres.updateCenter(id, position.toArray());
     }
     // Chaque toupie suit son astre, quand elle est affichée.
-    for (const system of this.systemWells || []) if (system.well.visible) this.placeSystemWell(system);
+    if (this.systemWellsOn) {
+      const cam = this.cam.position;
+      for (const system of this.systemWells) {
+        // Toupie trop petite à l'écran (moins de 1/400 de sa distance à la caméra) : ni placée ni dessinée.
+        const p = system.target.get();
+        const distance = Math.hypot(p.x - this.target.x - cam.x, p.y - this.target.y - cam.y, p.z - this.target.z - cam.z);
+        system.well.visible = !this.isTargetHidden(system.target) && system.radius * WELL_MIN_APPARENT > distance;
+        if (system.well.visible) this.placeSystemWell(system);
+      }
+    }
     for (const { id, target } of this.coreSystemVolumes || []) {
       const position = target.get();
       if (position) this.corePerivolumes.updateCenter(id, position.toArray());
@@ -3177,13 +3203,10 @@ export class SolarEngine {
     // Gardé : les astres descendent dans leur toupie au même rythme (updateBodies, updateMoon, satellites).
     s.eased = eased;
     // Pour chaque planète : le mélange des deux tracés, sur place, dans le ruban dessiné.
-    for (const p of this.planets) {
-      // Le mélange point à point (Kepler vers rosette, ou l'inverse) dans les points du ruban.
-      mixPoints(p.keplerOrbit, p.rosetteOrbit, eased, p.orbitTrail.points);
-      // La carte graphique relit le tampon des positions.
-      p.orbitTrail.positionsChanged();
-    // Fin des planètes.
-    }
+    // Les orbites des planètes ne sont remélangées ici que si elles sont à l'écran ; les autres le seront quand
+    // elles réapparaîtront (voir mixPlanetOrbit, appelé au placement). Pendant le fondu, cela évite de recalculer
+    // et de renvoyer à la carte graphique 2 048 points par planète pour des tracés invisibles.
+    for (const p of this.planets) if (p.orbit.visible) this.mixPlanetOrbit(p);
     // Le mélange dessiné est à jour.
     s.lastDrawn = next;
     // La grille : visible en fondu avec les orbites, posée sur le Soleil (le centre de la courbure).
@@ -3197,10 +3220,10 @@ export class SolarEngine {
     // Les orbites des satellites naturels passent elles aussi du cercle de Kepler à leur rosette de Schwarzschild.
     this.satellites?.setSchwarzschildMix(eased, (sat) => this.satelliteRsOverA(sat));
     // Les toupies des astres : même opacité et même fondu que la grille du Soleil.
-    for (const { target, well } of this.systemWells || []) {
-      well.material.opacity = 0.5 * eased;
-      well.visible = grid.visible;
-    }
+    if (this.systemWellMaterial) this.systemWellMaterial.opacity = 0.5 * eased;
+    this.systemWellsOn = grid.visible;
+    // Bouton relâché, fondu terminé : toutes les toupies sortent du rendu d'un coup.
+    if (!this.systemWellsOn) for (const system of this.systemWells || []) system.well.visible = false;
     // Si elle est visible, elle suit le Soleil, exactement au centre du puits de courbure (représentation de la
     // métrique de Schwarzschild) — et pas seulement pendant le fondu.
     // Le bord de la grille reste dans le plan de l'écliptique, à l'origine du repère : c'est le Soleil qui descend.
@@ -4245,6 +4268,8 @@ export class SolarEngine {
       p.orbit.position.copy(this.target).negate();
       // Orbite visible : si les orbites sont affichées, la planète non masquée et la caméra assez loin.
       p.orbit.visible = this.orbitsOn && !p.hidden && this.dist > 3000;
+      // Orbite à l'écran : son tracé est mis au mélange Kepler → rosette du moment (sans effet s'il y est déjà).
+      if (p.orbit.visible) this.mixPlanetOrbit(p);
     // Fin de la boucle.
     });
     // Position de la Lune.
@@ -4937,9 +4962,9 @@ export class SolarEngine {
     // Libère les toupies des astres.
     for (const { well } of this.systemWells || []) {
       well.geometry.dispose();
-      well.material.dispose();
       well.parent?.remove(well);
     }
+    this.systemWellMaterial?.dispose();
     this.systemWells = [];
     // Libère la grille filaire de la courbure, si elle a été posée.
     if (this.schwarzschild?.grid) {

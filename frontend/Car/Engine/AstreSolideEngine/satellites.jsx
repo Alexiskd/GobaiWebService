@@ -77,6 +77,10 @@ export class SatelliteSystem {
     // Hauteur de l'anneau d'orbite d'un satellite au-dessus de sa planète, dans le même affichage : fonction
     // (satellite) → décalage vertical, posée par le moteur ; null = aucun décalage.
     this.ringDrop = null;
+    // Mélange cercle → rosette demandé par l'affichage Schwarzschild (0 = cercle), et le terme relativiste de chaque
+    // satellite ; appliqués anneau par anneau dans place().
+    this.mixAlpha = 0;
+    this.mixRsOverA = null;
     // Liste des satellites.
     this.list = [];
     // Matériaux Lambert partagés uniquement lorsque leur couleur et leurs options sont identiques.
@@ -229,22 +233,31 @@ export class SatelliteSystem {
    * Affichage Schwarzschild des orbites des satellites : chaque anneau passe du cercle de Kepler à la rosette de
    * Schwarzschild du satellite autour de sa planète, selon `alpha` (0 = cercle, 1 = rosette).
    *  rsOverA : fonction (satellite) → rayon de Schwarzschild exagéré de la planète divisé par le demi-grand axe.
-   * Les rosettes sont calculées une seule fois, au premier appel où alpha dépasse 0.
+   * Les rosettes sont calculées une seule fois, la première fois que l'anneau est à l'écran dans ce mode.
    */
   setSchwarzschildMix(alpha, rsOverA) {
-    const a = Math.min(1, Math.max(0, Number(alpha) || 0));
-    for (const s of this.list) {
-      // Rien à faire tant que le mode n'a jamais été allumé pour ce satellite.
-      if (!s.rosette && a === 0) continue;
-      if (!s.rosette) {
-        s.rosette = schwarzschildSatelliteRosette({
-          e: s.def.eccentricity ?? SATELLITE_ECCENTRICITY[s.def.id] ?? 0, rsOverA: rsOverA ? rsOverA(s) : 0, n: ORBIT_SEGMENTS, revolutions: SCHWARZSCHILD_REVOLUTIONS,
-        });
-      }
-      // Mélange du cercle de référence vers la rosette, écrit dans les points de l'anneau.
-      mixPoints(this.circle, s.rosette, a, s.trail.points);
-      s.trail.positionsChanged();
+    // Seule la cible est notée ici : le mélange lui-même est fait dans place(), pour les seuls anneaux à l'écran.
+    // Pendant le fondu, cela évite de recalculer et de renvoyer à la carte graphique des dizaines d'anneaux cachés.
+    this.mixAlpha = Math.min(1, Math.max(0, Number(alpha) || 0));
+    this.mixRsOverA = rsOverA || null;
+  }
+
+  /** Met l'anneau d'un satellite au mélange cercle → rosette demandé, s'il ne l'est pas déjà. */
+  applySchwarzschildMix(s) {
+    const a = this.mixAlpha || 0;
+    if (s.mixAlpha === a) return;
+    // Rien à faire tant que le mode n'a jamais été allumé pour ce satellite.
+    if (!s.rosette && a === 0) { s.mixAlpha = 0; return; }
+    if (!s.rosette) {
+      s.rosette = schwarzschildSatelliteRosette({
+        e: s.def.eccentricity ?? SATELLITE_ECCENTRICITY[s.def.id] ?? 0, rsOverA: this.mixRsOverA ? this.mixRsOverA(s) : 0,
+        n: ORBIT_SEGMENTS, revolutions: SCHWARZSCHILD_REVOLUTIONS,
+      });
     }
+    // Mélange du cercle de référence vers la rosette, écrit dans les points de l'anneau.
+    mixPoints(this.circle, s.rosette, a, s.trail.points);
+    s.trail.positionsChanged();
+    s.mixAlpha = a;
   }
 
   /** Placement autour de la cible (origine flottante) et visibilité des orbites. */
@@ -262,6 +275,8 @@ export class SatelliteSystem {
       const a = s.rel.length();
       // Orbite visible si les orbites sont affichées, si le satellite n'est pas masqué et si la caméra est assez proche de la planète.
       s.orbit.visible = orbitsOn && !s.hidden && camPos.distanceTo(s.parent.group.position) < a * ORBIT_VIEW_RATIO;
+      // Anneau à l'écran : son tracé est mis au mélange cercle → rosette du moment (sans effet s'il y est déjà).
+      if (s.orbit.visible) this.applySchwarzschildMix(s);
     // Fin de la boucle.
     }
   // Fin de place.
