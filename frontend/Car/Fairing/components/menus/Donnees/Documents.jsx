@@ -1,21 +1,74 @@
 // Onglet « Documentation » de la fenêtre Données : une fiche par astre présent dans l'application.
-import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { get, resolveApiUrl } from '@/Computing/api/client';
 import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../../../Engine/SystemeEngine/data/astronomy/data/bodies.data';
 import { DOCUMENTS } from './data/index.js';
 import { bodyTree, buildBodyCatalog, filterCatalog } from './bodyCatalog.js';
 import { DownloadIcon, OpenInNewIcon, PlaceIcon, SearchIcon } from '../../ui/icons.jsx';
-import { BodyGallery } from './BodyGallery.jsx';
+import { photosOf } from './collectionPhotos.js';
+import { CollectionViewer } from './Collection.jsx';
 import './documents.css';
 
-// Galerie complète (catégories, Archives NASA, Ma collection) : chargée seulement à l'ouverture.
-const GalerieApp = lazy(() => import('./GalerieApp.jsx').then((m) => ({ default: m.GalerieApp })));
+/**
+ * Ma collection (GET /galerie : photos et vidéos personnelles servies par le serveur), chargée une fois à la
+ * première ouverture de la Documentation, puis gardée pour toutes les fiches. null tant qu'elle n'est pas arrivée.
+ */
+let COLLECTION = null;
+function useCollection() {
+  const [data, setData] = useState(COLLECTION);
+  useEffect(() => {
+    if (COLLECTION) return undefined;
+    const ctrl = new AbortController();
+    get('/galerie', { signal: ctrl.signal })
+      .then((d) => { COLLECTION = d; setData(d); })
+      .catch((e) => { if (e.name !== 'AbortError') setData({ error: e.message, folders: [] }); });
+    return () => ctrl.abort();
+  }, []);
+  return data;
+}
+
+/**
+ * Photos et vidéos de l'astre, directement dans sa fiche (sous son titre) : vignettes, et visionneuse plein écran au
+ * toucher. Rien n'est affiché pour un astre qui n'a aucun média dans Ma collection.
+ */
+function SheetPhotos({ name, collection, onLightboxChange }) {
+  const items = useMemo(
+    () => photosOf(name, collection).map((i) => ({ ...i, url: resolveApiUrl(i.url), thumbUrl: resolveApiUrl(i.thumbUrl) })),
+    [name, collection],
+  );
+  const [open, setOpen] = useState(null);
+  const [all, setAll] = useState(false);
+  useEffect(() => { onLightboxChange?.(open != null); }, [open, onLightboxChange]);
+  useEffect(() => () => onLightboxChange?.(false), [onLightboxChange]);
+  const close = useCallback(() => setOpen(null), []);
+  const nav = useCallback((d) => setOpen((i) => (i == null ? i : (i + d + items.length) % items.length)), [items.length]);
+  if (!items.length) return null;
+  const shown = all ? items : items.slice(0, 8);
+  return (
+    <>
+      <div className="doc-photos" aria-label={`Photos de ${name}`}>
+        {shown.map((item, i) => (
+          <button key={item.id} className="doc-photo" onClick={() => setOpen(i)} aria-label={`Agrandir : ${item.title}`}>
+            <img src={item.thumbUrl} alt="" loading="lazy" decoding="async" />
+            {item.kind === 'video' && <span className="doc-photo-play" aria-hidden="true">▶</span>}
+          </button>
+        ))}
+      </div>
+      {items.length > shown.length && (
+        <button className="doc-btn doc-photos-more" onClick={() => setAll(true)}>Toutes les photos ({items.length})</button>
+      )}
+      {open != null && items[open] && (
+        <div className="gobai-gallery">
+          <CollectionViewer item={items[open]} index={open} total={items.length} onClose={close} onNav={nav} />
+        </div>
+      )}
+    </>
+  );
+}
 
 /** Le catalogue est construit une fois : les données de la scène sont embarquées et fixes. */
 let CATALOG = null;
 const catalog = () => (CATALOG ||= buildBodyCatalog({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES, documents: DOCUMENTS }));
-
-/** Identifiant de la vue « galerie complète » dans la Documentation. */
-const GALLERY = '__galerie__';
 
 /** Avertissement affiché en haut de la Documentation (liste et fiches). */
 const UNCERTAINTY = 'Ces informations peuvent être faussées par les incertitudes scientifiques : mesures approchées, valeurs révisées au fil des observations et des missions, modèles simplifiés. Pour un usage précis, vérifiez les sources de référence.';
@@ -75,7 +128,7 @@ function TreeNode({ node, depth, expanded, onToggle, onOpen }) {
 }
 
 /** Fiche d'un astre : ses caractéristiques, et « Voir dans la scène ». */
-function BodySheet({ entry, onBack, onGoTo, onLightboxChange }) {
+function BodySheet({ entry, onBack, onGoTo, collection, onLightboxChange }) {
   return (
     <div className="docs-wrap">
       <button className="doc-back" onClick={onBack}>← Tous les astres</button>
@@ -90,6 +143,8 @@ function BodySheet({ entry, onBack, onGoTo, onLightboxChange }) {
         </div>
       </header>
       <Uncertainty />
+      {/* Les photos de l'astre (Ma collection), directement dans sa fiche. */}
+      <SheetPhotos key={entry.id} name={entry.name} collection={collection} onLightboxChange={onLightboxChange} />
       <div className="doc-actions">
         {onGoTo && entry.inScene !== false && (
           <button className="doc-btn doc-btn-primary" onClick={() => onGoTo(entry.name)}>
@@ -119,8 +174,6 @@ function BodySheet({ entry, onBack, onGoTo, onLightboxChange }) {
           ))}
         </dl>
       </section>
-      {/* Galerie de l'astre : ses images NASA, dans sa fiche. */}
-      <BodyGallery key={entry.id} entry={entry} onLightboxChange={onLightboxChange} />
       {entry.doc && (
         <section className="doc-text doc-text-after">
           <h2>Résumé</h2>
@@ -164,19 +217,13 @@ export function Documents({ onGoTo, onLightboxChange }) {
   const open = (id) => { setOpenId(id); topRef.current?.scrollIntoView?.({ block: 'start' }); };
   const back = () => setOpenId(null);
 
-  const entry = openId && openId !== GALLERY && all.entries.find((e) => e.id === openId);
+  const entry = openId && all.entries.find((e) => e.id === openId);
+  const collection = useCollection();
 
   return (
     <div className="gobai-docs" ref={topRef}>
-      {entry ? <BodySheet entry={entry} onBack={back} onGoTo={onGoTo} onLightboxChange={onLightboxChange} />
-        : openId === GALLERY ? (
-          <>
-            <div className="docs-wrap docs-wrap-tight"><button className="doc-back" onClick={back}>← Documentation</button></div>
-            <Suspense fallback={<p className="doc-count docs-wrap">Chargement de la galerie…</p>}>
-              <GalerieApp onLightboxChange={onLightboxChange} />
-            </Suspense>
-          </>
-        ) : (
+      {entry ? <BodySheet entry={entry} onBack={back} onGoTo={onGoTo} collection={collection} onLightboxChange={onLightboxChange} />
+        : (
             <div className="docs-wrap">
               <header className="doc-head">
                 <h1 className="doc-title">Documentation</h1>
@@ -207,12 +254,6 @@ export function Documents({ onGoTo, onLightboxChange }) {
                     <TreeNode node={tree.root} depth={0} expanded={expanded} onToggle={toggle} onOpen={open} />
                   </ul>
                 </nav>
-              )}
-
-              {!searching && (
-                <button className="doc-btn doc-gallery-all" onClick={() => open(GALLERY)}>
-                  Galerie complète · Archives NASA par catégorie et Ma collection
-                </button>
               )}
 
               {searching && <p className="doc-count" role="status">{count} {count > 1 ? 'fiches' : 'fiche'}</p>}

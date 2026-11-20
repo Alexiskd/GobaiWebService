@@ -381,12 +381,12 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
     ...(extra ? extra.split(' · ').map((t) => splitLabel(t, 'Données')) : []),
     // Les éphémérides.
     ['Éphémérides', 'Orbites de Kepler calculées dans le navigateur · éléments moyens JPL SSD'],
-    // La galerie.
-    ['Galerie', 'NASA Image and Video Library (images-api.nasa.gov)'],
+    // Les photos des fiches de la Documentation.
+    ['Photos des astres', 'Ma collection (photos et vidéos personnelles, servies par le serveur de Gobai Space)'],
     // Les modèles 3D de Phobos et de Deimos.
     ['Phobos et Deimos (modèles 3D)', 'NASA/JPL-Caltech — science.nasa.gov'],
     // Les lunes sphériques.
-    ['Lunes sphériques', 'JPL SSD, NASA NSSDC · images : NASA Image and Video Library'],
+    ['Lunes sphériques', 'JPL SSD, NASA NSSDC'],
   // Fin des lignes ; les entrées absentes sont retirées.
   ].filter(Boolean);
 
