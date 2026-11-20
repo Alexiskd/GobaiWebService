@@ -15,6 +15,13 @@ const APPEARANCE_BY_STATE = {
   UNLOADED: { visible: false, glassOpacity: 0, wireOpacity: 0, color: 0x9fdcff },
 };
 
+// Apparence d'un périvolume hors de portée quand l'affichage les révèle tous (mode Schwarzschild, E = mc²) :
+// très estompé, pour situer chaque astre sans masquer la scène.
+const REVEALED_UNLOADED = { visible: true, glassOpacity: 0.02, wireOpacity: 0.06, color: 0x9fdcff };
+
+// En dessous de cette opacité d'ensemble, les périvolumes sont retirés du rendu (plus rien à dessiner).
+const DISPLAY_EPSILON = 0.002;
+
 // Vérifie qu'un vecteur est un tableau 3D de nombres finis.
 const finiteVector = (v) => Array.isArray(v) && v.length >= 3 && v.slice(0, 3).every(Number.isFinite);
 
@@ -34,6 +41,23 @@ export class PerivolumeRenderingEngine {
     this.opacity = opacity;
     this.wireOpacity = wireOpacity;
     this.segments = Math.max(8, Math.trunc(segments) || 48);
+    // Opacité d'ensemble (0 = tout masqué, 1 = apparence normale) : le moteur Schwarzschild la fait suivre son fondu.
+    this.displayAlpha = 1;
+    // Vrai : les périvolumes hors de portée (UNLOADED) restent visibles, très estompés.
+    this.revealUnloaded = false;
+  }
+
+  /**
+   * Règle l'affichage d'ensemble : `alpha` de 0 (tout masqué) à 1 (apparence normale), appliqué aussitôt à tous
+   * les périvolumes. `revealUnloaded` : montre aussi, estompés, ceux qui sont hors de portée.
+   * C'est par ici que le moteur Schwarzschild (bouton E = mc²) allume et éteint les périvolumes en fondu.
+   */
+  setDisplay(alpha, { revealUnloaded = this.revealUnloaded } = {}) {
+    if (!Number.isFinite(alpha)) throw new TypeError('alpha doit être un nombre fini.');
+    this.displayAlpha = Math.min(1, Math.max(0, alpha));
+    this.revealUnloaded = Boolean(revealUnloaded);
+    for (const entry of this.#entries.values()) this.#apply(entry);
+    return this.displayAlpha;
   }
 
   // Rattache la scène Three.js : les bulles déjà enregistrées y sont ajoutées.
@@ -44,7 +68,11 @@ export class PerivolumeRenderingEngine {
   }
 
   // Enregistre un périverolume à représenter : une bulle de verre par système.
-  register({ id, center = [0, 0, 0], radius, backgroundRadius = radius * 3, metadata = {} } = {}) {
+  /**
+   * `variant` : « system » (défaut) = bulle de verre, fil de fer et enveloppe d'arrière-plan ; « body » = simple
+   * sphère en fil de fer, légère, pour le périvolume de chaque astre (des dizaines à l'écran).
+   */
+  register({ id, center = [0, 0, 0], radius, backgroundRadius = radius * 3, metadata = {}, variant = 'system' } = {}) {
     if (typeof id !== 'string' || !id.trim()) throw new TypeError('id requis.');
     if (!finiteVector(center)) throw new TypeError(`Centre invalide pour ${id}.`);
     if (!Number.isFinite(radius) || radius <= 0) throw new RangeError(`Rayon invalide pour ${id}.`);
@@ -52,7 +80,9 @@ export class PerivolumeRenderingEngine {
       throw new RangeError(`backgroundRadius doit être supérieur ou égal au rayon pour ${id}.`);
     }
     if (this.#entries.has(id)) this.unregister(id);
-    const entry = this.#buildEntry(id, radius, backgroundRadius, metadata);
+    const entry = variant === 'body'
+      ? this.#buildBodyEntry(id, radius, backgroundRadius, metadata)
+      : this.#buildEntry(id, radius, backgroundRadius, metadata);
     entry.group.position.set(center[0], center[1], center[2]);
     this.#entries.set(id, entry);
     if (this.#scene) this.#scene.add(entry.group);
@@ -61,6 +91,21 @@ export class PerivolumeRenderingEngine {
   }
 
   // Construit le groupe Three.js d'un périverolume : verre, fil de fer et enveloppe d'arrière-plan.
+  // Périvolume d'un astre : une seule sphère en fil de fer, à peu de segments (pas de verre : la transmission
+  // coûte une passe de rendu, intenable pour chaque planète et chaque satellite).
+  #buildBodyEntry(id, radius, backgroundRadius, metadata) {
+    const T = this.#THREE;
+    const group = new T.Group();
+    group.name = `perivolume:${id}`;
+    const segments = Math.max(8, Math.round(this.segments / 2));
+    const geometry = new T.SphereGeometry(radius, segments, Math.max(6, Math.round(segments / 2)));
+    const wireMaterial = new T.MeshBasicMaterial({ color: 0xbfe9ff, transparent: true, opacity: this.wireOpacity, wireframe: true, depthWrite: false });
+    const wire = new T.Mesh(geometry, wireMaterial);
+    wire.renderOrder = 6;
+    group.add(wire);
+    return { id, group, glass: null, wire, background: null, radius, backgroundRadius, metadata, variant: 'body', state: LOAD_STATE.UNLOADED };
+  }
+
   #buildEntry(id, radius, backgroundRadius, metadata) {
     const T = this.#THREE;
     const group = new T.Group();
@@ -112,7 +157,7 @@ export class PerivolumeRenderingEngine {
     const background = new T.Mesh(backgroundGeometry, backgroundMaterial);
     background.renderOrder = 4;
     group.add(background);
-    return { id, group, glass, wire, background, radius, backgroundRadius, metadata, state: LOAD_STATE.UNLOADED };
+    return { id, group, glass, wire, background, radius, backgroundRadius, metadata, variant: 'system', state: LOAD_STATE.UNLOADED };
   }
 
   // Met à jour le centre d'une bulle (les astres et systèmes se déplacent avec les éphémérides).
@@ -128,15 +173,24 @@ export class PerivolumeRenderingEngine {
   setState(id, state) {
     const entry = this.#entries.get(id);
     if (!entry) return false;
-    const look = APPEARANCE_BY_STATE[state] ?? APPEARANCE_BY_STATE.UNLOADED;
-    entry.group.visible = look.visible;
-    entry.glass.material.opacity = look.glassOpacity;
-    entry.glass.material.color.setHex(look.color);
-    entry.wire.material.opacity = look.wireOpacity;
-    entry.background.material.opacity = look.wireOpacity * 0.4;
     entry.state = state;
     entry.group.userData.perivolumeState = state;
+    this.#apply(entry);
     return true;
+  }
+
+  // Applique à un périvolume l'apparence de son état, multipliée par l'opacité d'ensemble.
+  #apply(entry) {
+    const known = APPEARANCE_BY_STATE[entry.state] ?? APPEARANCE_BY_STATE.UNLOADED;
+    const look = !known.visible && this.revealUnloaded ? REVEALED_UNLOADED : known;
+    const alpha = this.displayAlpha;
+    entry.group.visible = look.visible && alpha > DISPLAY_EPSILON;
+    entry.wire.material.opacity = look.wireOpacity * alpha;
+    if (entry.glass) {
+      entry.glass.material.opacity = look.glassOpacity * alpha;
+      entry.glass.material.color.setHex(look.color);
+    }
+    if (entry.background) entry.background.material.opacity = look.wireOpacity * 0.4 * alpha;
   }
 
   // Applique en bloc les décisions du SystemManager : un état par identifiant.
@@ -154,7 +208,7 @@ export class PerivolumeRenderingEngine {
     const entry = this.#entries.get(id);
     if (!entry) return null;
     const p = entry.group.position;
-    return { id, center: [p.x, p.y, p.z], radius: entry.radius, backgroundRadius: entry.backgroundRadius, state: entry.state, metadata: entry.metadata };
+    return { id, center: [p.x, p.y, p.z], radius: entry.radius, backgroundRadius: entry.backgroundRadius, state: entry.state, metadata: entry.metadata, variant: entry.variant, visible: entry.group.visible };
   }
 
   // Retire une bulle de la scène et libère ses géométries et matériaux.
@@ -162,11 +216,12 @@ export class PerivolumeRenderingEngine {
     const entry = this.#entries.get(id);
     if (!entry) return false;
     entry.group.parent?.remove(entry.group);
-    entry.glass.geometry.dispose();
-    entry.background.geometry.dispose();
-    entry.glass.material.dispose();
+    // Le fil de fer partage la géométrie de la bulle quand il y en a une ; sinon (astre) il a la sienne.
+    (entry.glass ?? entry.wire).geometry.dispose();
+    entry.background?.geometry.dispose();
+    entry.glass?.material.dispose();
     entry.wire.material.dispose();
-    entry.background.material.dispose();
+    entry.background?.material.dispose();
     return this.#entries.delete(id);
   }
 
