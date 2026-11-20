@@ -1,14 +1,21 @@
 // Onglet « Documentation » de la fenêtre Données : une fiche par astre présent dans l'application.
-import { useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../../../Engine/SystemeEngine/data/astronomy/data/bodies.data';
 import { DOCUMENTS } from './data/index.js';
 import { bodyTree, buildBodyCatalog, filterCatalog } from './bodyCatalog.js';
 import { DownloadIcon, OpenInNewIcon, PlaceIcon, SearchIcon } from '../../ui/icons.jsx';
+import { BodyGallery } from './BodyGallery.jsx';
 import './documents.css';
+
+// Galerie complète (catégories, Archives NASA, Ma collection) : chargée seulement à l'ouverture.
+const GalerieApp = lazy(() => import('./GalerieApp.jsx').then((m) => ({ default: m.GalerieApp })));
 
 /** Le catalogue est construit une fois : les données de la scène sont embarquées et fixes. */
 let CATALOG = null;
 const catalog = () => (CATALOG ||= buildBodyCatalog({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES, documents: DOCUMENTS }));
+
+/** Identifiant de la vue « galerie complète » dans la Documentation. */
+const GALLERY = '__galerie__';
 
 /** Avertissement affiché en haut de la Documentation (liste et fiches). */
 const UNCERTAINTY = 'Ces informations peuvent être faussées par les incertitudes scientifiques : mesures approchées, valeurs révisées au fil des observations et des missions, modèles simplifiés. Pour un usage précis, vérifiez les sources de référence.';
@@ -68,7 +75,7 @@ function TreeNode({ node, depth, expanded, onToggle, onOpen }) {
 }
 
 /** Fiche d'un astre : ses caractéristiques, et « Voir dans la scène ». */
-function BodySheet({ entry, onBack, onGoTo }) {
+function BodySheet({ entry, onBack, onGoTo, onLightboxChange }) {
   return (
     <div className="docs-wrap">
       <button className="doc-back" onClick={onBack}>← Tous les astres</button>
@@ -112,6 +119,8 @@ function BodySheet({ entry, onBack, onGoTo }) {
           ))}
         </dl>
       </section>
+      {/* Galerie de l'astre : ses images NASA, dans sa fiche. */}
+      <BodyGallery key={entry.id} entry={entry} onLightboxChange={onLightboxChange} />
       {entry.doc && (
         <section className="doc-text doc-text-after">
           <h2>Résumé</h2>
@@ -134,7 +143,7 @@ function BodySheet({ entry, onBack, onGoTo }) {
  * ferme la fenêtre ; absent pour un satellite qui n'est pas dans la scène). Un avertissement sur les incertitudes
  * scientifiques ouvre la page.
  */
-export function Documents({ onGoTo }) {
+export function Documents({ onGoTo, onLightboxChange }) {
   const [openId, setOpenId] = useState(null);
   const [query, setQuery] = useState('');
   // Nœuds dépliés de l'arborescence : gardés quand on ouvre une fiche puis qu'on revient.
@@ -155,12 +164,19 @@ export function Documents({ onGoTo }) {
   const open = (id) => { setOpenId(id); topRef.current?.scrollIntoView?.({ block: 'start' }); };
   const back = () => setOpenId(null);
 
-  const entry = openId && all.entries.find((e) => e.id === openId);
+  const entry = openId && openId !== GALLERY && all.entries.find((e) => e.id === openId);
 
   return (
     <div className="gobai-docs" ref={topRef}>
-      {entry ? <BodySheet entry={entry} onBack={back} onGoTo={onGoTo} />
-        : (
+      {entry ? <BodySheet entry={entry} onBack={back} onGoTo={onGoTo} onLightboxChange={onLightboxChange} />
+        : openId === GALLERY ? (
+          <>
+            <div className="docs-wrap docs-wrap-tight"><button className="doc-back" onClick={back}>← Documentation</button></div>
+            <Suspense fallback={<p className="doc-count docs-wrap">Chargement de la galerie…</p>}>
+              <GalerieApp onLightboxChange={onLightboxChange} />
+            </Suspense>
+          </>
+        ) : (
             <div className="docs-wrap">
               <header className="doc-head">
                 <h1 className="doc-title">Documentation</h1>
@@ -191,6 +207,12 @@ export function Documents({ onGoTo }) {
                     <TreeNode node={tree.root} depth={0} expanded={expanded} onToggle={toggle} onOpen={open} />
                   </ul>
                 </nav>
+              )}
+
+              {!searching && (
+                <button className="doc-btn doc-gallery-all" onClick={() => open(GALLERY)}>
+                  Galerie complète · Archives NASA par catégorie et Ma collection
+                </button>
               )}
 
               {searching && <p className="doc-count" role="status">{count} {count > 1 ? 'fiches' : 'fiche'}</p>}

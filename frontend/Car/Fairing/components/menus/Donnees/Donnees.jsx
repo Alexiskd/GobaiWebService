@@ -1,18 +1,16 @@
 // Fenêtre plein écran « Données » : en-tête, barre de navigation à onglets, puis le contenu de l'onglet choisi.
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Box, ButtonBase, CircularProgress, Dialog, IconButton, Tooltip, Typography } from '@mui/material';
-import { CloseIcon, DescriptionIcon, GalleryIcon, PsychologyIcon, ScienceIcon } from '../../ui/icons.jsx';
+import { CloseIcon, DescriptionIcon, PsychologyIcon, ScienceIcon } from '../../ui/icons.jsx';
 
 // Chargées à l'ouverture de leur onglet seulement : rien de tout cela n'alourdit le démarrage de la scène 3D.
-const GalerieApp = lazy(() => import('./GalerieApp.jsx').then((m) => ({ default: m.GalerieApp })));
 const Documents = lazy(() => import('./Documents.jsx').then((m) => ({ default: m.Documents })));
 const FluxCognitif = lazy(() => import('../../hud/FluxCognitif.jsx').then((m) => ({ default: m.FluxCognitif })));
 const TheorieQuantique = lazy(() => import('../../hud/TheorieQuantique.jsx').then((m) => ({ default: m.TheorieQuantique })));
 
 /** Les onglets de la fenêtre, dans l'ordre de la barre : nom, nom court (téléphone), description et icône. */
 export const DONNEES_TABS = [
-  { id: 'documentation', name: 'Documentation', short: 'Docs', hint: 'Une fiche par astre de l’application : Soleil, planètes, satellites', Icon: DescriptionIcon },
-  { id: 'galerie', name: 'Galerie', short: 'Galerie', hint: 'Archives NASA et collection personnelle', Icon: GalleryIcon },
+  { id: 'documentation', name: 'Documentation', short: 'Docs', hint: 'Une fiche et une galerie par astre de l’application : Soleil, planètes, satellites', Icon: DescriptionIcon },
   { id: 'flux', name: 'Flux cognitif', short: 'Flux', hint: 'Page de recherche de l’auteur', Icon: PsychologyIcon },
   { id: 'theorie', name: 'Théorie quantique', short: 'Théorie', hint: 'Page de recherche de l’auteur', Icon: ScienceIcon },
 ];
@@ -93,8 +91,9 @@ function DonneesNav({ tab, onChange }) {
 }
 
 /**
- * Fenêtre plein écran « Données » : Documentation (fiches des PDF de data/), Galerie (images NASA et collection
- * personnelle), et les deux pages de recherche de l'auteur : Flux cognitif et Théorie quantique.
+ * Fenêtre plein écran « Données » : Documentation (une fiche par astre, avec sa galerie d'images NASA ; la galerie
+ * complète et Ma collection y sont aussi), et les deux pages de recherche de l'auteur : Flux cognitif et Théorie
+ * quantique.
  *
  * L'en-tête et la barre de navigation restent fixes en haut ; seul le contenu défile. Les marges de sécurité de
  * l'iPhone (encoche, barre d'accueil) sont respectées en portrait comme en paysage.
@@ -162,12 +161,11 @@ export function Donnees({ open, onClose, onGoTo }) {
       >
         {open && (
           <Suspense fallback={<Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}><CircularProgress sx={{ color: V.muted }} /></Box>}>
-            {tab === 'galerie' ? <GalerieApp onLightboxChange={onLightboxChange} />
-              : tab === 'flux' || tab === 'theorie' ? (
+            {tab === 'flux' || tab === 'theorie' ? (
                 <Box sx={{ maxWidth: 980, mx: 'auto', px: { xs: 2, sm: 3 }, py: 3, color: 'text.primary' }}>
                   {tab === 'flux' ? <FluxCognitif /> : <TheorieQuantique />}
                 </Box>
-              ) : <Documents onGoTo={onGoTo} />}
+              ) : <Documents onGoTo={onGoTo} onLightboxChange={onLightboxChange} />}
           </Suspense>
         )}
       </Box>

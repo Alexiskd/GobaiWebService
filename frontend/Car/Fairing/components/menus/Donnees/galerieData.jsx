@@ -301,6 +301,8 @@ const EXCLUDE = [
 // Satellites naturels affichés, par planète. `q` = nom anglais utilisé par la NASA.
 // Déclare et exporte les lunes affichées, par astre (début de l'objet).
 export const MOONS = {
+  // Le Soleil (galerie d'un astre dans la Documentation) : pas de lune.
+  sun: [],
   // Aucune lune affichée pour Mercure.
   mercury: [],
   // Aucune lune affichée pour Vénus.
@@ -384,7 +386,7 @@ export const MOONS = {
 // Lunes mineures, par astre (début de l'objet).
 const MINOR_MOONS = {
   // Aucune pour Mercure, Vénus, la Terre, Mars, Cérès, Hauméa et Makémaké.
-  mercury: [], venus: [], earth: [], mars: [], ceres: [], haumea: [], makemake: [],
+  mercury: [], venus: [], earth: [], mars: [], ceres: [], haumea: [], makemake: [], sun: [],
   // Celles de Pluton.
   pluto: ['nix', 'hydra', 'styx', 'kerberos'],
   // Celle d'Éris.
@@ -873,4 +875,44 @@ export async function collectPlanetImages(planet, signal) {
     // … triées de la plus ancienne à la plus récente.
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 // Fin de collectPlanetImages.
+}
+
+
+/**
+ * Le Soleil, pour la galerie de sa fiche dans la Documentation (il n'est pas dans les catégories de la galerie) :
+ * recherche « sun » dans les archives des grandes missions solaires.
+ */
+export const SUN_GALLERY = {
+  id: 'sun', category: 'etoile', name: 'Soleil', q: 'sun', color: '#ffb300', distance: '0 UA',
+  missions: [
+    { id: 'sdo', name: 'SDO', q: 'solar dynamics observatory', year: '2010–' },
+    { id: 'soho', name: 'SOHO', q: 'soho', year: '1995–' },
+    { id: 'parker', name: 'Parker Solar Probe', q: 'parker solar probe', year: '2018–' },
+  ],
+};
+
+/** Nom anglais (utilisé par la NASA) des satellites dont le nom français s'en écarte. */
+const ENGLISH_NAME = {
+  amalthée: 'amalthea', adrastée: 'adrastea', phœbé: 'phoebe', épiméthée: 'epimetheus', protée: 'proteus',
+  japet: 'iapetus', encelade: 'enceladus', europe: 'europa', lune: 'moon', déimos: 'deimos', néréide: 'nereid',
+};
+const plain = (v) => String(v ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+/**
+ * Cible de la galerie pour la fiche d'un astre de la Documentation : { planet, body }, ou null si la galerie n'a pas
+ * d'archives pour lui. `name` : nom français de l'astre ; `parentName` : celui de sa planète, pour un satellite.
+ * Un satellite absent des listes de la galerie est cherché sous son nom anglais (ou son nom sans accents).
+ */
+export function galleryTargetFor(name, parentName = null) {
+  if (!parentName) {
+    if (plain(name) === 'soleil') return { planet: SUN_GALLERY, body: { id: 'sun', name: 'Soleil', q: 'sun', kind: 'planet' } };
+    const planet = PLANETS.find((p) => plain(p.name) === plain(name));
+    return planet ? { planet, body: { id: planet.id, name: planet.name, q: planet.q, kind: 'planet' } } : null;
+  }
+  const planet = PLANETS.find((p) => plain(p.name) === plain(parentName));
+  if (!planet) return null;
+  const known = MOONS[planet.id].find((m) => plain(m.name) === plain(name));
+  if (known) return { planet, body: { ...known, kind: 'moon' } };
+  const q = ENGLISH_NAME[String(name).toLowerCase()] ?? plain(name).replace(/[^a-z]/g, '');
+  return q ? { planet, body: { id: q, name, q, kind: 'moon' } } : null;
 }

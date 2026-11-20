@@ -215,3 +215,29 @@
 .gobai-docs .doc-tree-sheet:hover { border-color: var(--muted); }
 @media (pointer: coarse) { .gobai-docs .doc-tree-sheet { min-height: 44px; } }
 @media (prefers-reduced-motion: reduce) { .gobai-docs .doc-tree-chevron { transition: none; } }
+
+/* ── Galerie d'un astre, dans sa fiche ── */
+.gobai-docs .doc-gallery { margin-top: 12px; }
+.gobai-docs .doc-gallery-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
+.gobai-docs .doc-gallery-head h2 { margin: 0; }
+.gobai-docs .doc-gallery-src { font: 11px var(--mono); color: var(--muted); }
+.gobai-docs .doc-gallery-missions { margin-bottom: 10px; }
+.gobai-docs .doc-gallery-year { font: 11px var(--mono); opacity: .7; margin-left: 4px; }
+.gobai-docs .doc-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+@media (max-width: 480px) { .gobai-docs .doc-gallery-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.gobai-docs .doc-gallery-tile {
+  position: relative; display: block; aspect-ratio: 1; padding: 0; overflow: hidden; cursor: zoom-in;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--void);
+}
+.gobai-docs .doc-gallery-tile img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .4s; }
+.gobai-docs .doc-gallery-tile:hover img { transform: scale(1.05); }
+.gobai-docs .doc-gallery-tile:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.gobai-docs .doc-gallery-cap {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 8px 6px; text-align: left;
+  font: 11px var(--mono); color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.75));
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gobai-docs .doc-gallery-more { margin-top: 10px; }
+.gobai-docs .doc-gallery-all { margin: 18px 0 6px; }
+.gobai-docs .docs-wrap-tight { padding-bottom: 0; }
+@media (prefers-reduced-motion: reduce) { .gobai-docs .doc-gallery-tile img { transition: none; } }
