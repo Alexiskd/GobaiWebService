@@ -1,0 +1,23 @@
+<!doctype html>
+<!-- Page d'embarquement : un seul globe interactif, sans fond ni interface, pour être affiché dans une iframe transparente d'un site hôte.
+     Le fond de la page reste transparent (aucune couleur peinte) : le site hôte voit son propre fond derrière le globe. -->
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Globe 3D embarqué · Gobai Space</title>
+    <!-- La page ne peint jamais de fond : html, body et #globe restent transparents, le canevas couvre toute la fenêtre. -->
+    <style>
+      html, body { margin: 0; background: transparent; overflow: hidden; }
+      #globe, #globe canvas { position: fixed; inset: 0; width: 100%; height: 100%; background: transparent; }
+    </style>
+  </head>
+  <body>
+    <!-- Conteneur du globe : le moteur y ajoute son canevas ; rien d'autre n'est rendu (aucune interface). -->
+    <div id="globe" translate="no"></div>
+    <!-- Racine des styles globaux du moteur (étiquettes posées hors de React) : aucun nœud visible. -->
+    <div id="styles" hidden></div>
+    <script type="module" src="/Car/Computing/embed/main.jsx"></script>
+  </body>
+</html>

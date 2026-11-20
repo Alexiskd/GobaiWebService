@@ -6,10 +6,11 @@
   "scripts": {
     "start": "vite",
     "dev": "vite",
-    "build": "node scripts/verifie-imports.mjs src && vite build",
+    "build": "node scripts/verifie-imports.mjs Car && vite build",
     "preview": "vite preview",
-    "test": "node scripts/verifie-imports.mjs src && tsx --test \"src/**/*.test.jsx\"",
-    "verifie:imports": "node scripts/verifie-imports.mjs src"
+    "test": "node scripts/verifie-imports.mjs Car && tsx --test \"Car/**/*.test.jsx\" \"Car/**/*.test.js\"",
+    "verifie:imports": "node scripts/verifie-imports.mjs Car",
+    "audit:astronomy": "node scripts/audit-astronomy-catalog.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

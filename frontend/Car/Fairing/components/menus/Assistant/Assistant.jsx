@@ -1,0 +1,687 @@
+// Importe de React les crochets useEffect, useRef et useState.
+import { useEffect, useRef, useState } from 'react';
+// Importe de MUI Box, ButtonBase, Chip, CircularProgress, Paper, Popper (bloc ancré à un élément), Stack, TextField et Typography.
+import { Box, ButtonBase, Chip, CircularProgress, InputBase, Paper, Popper, Stack, TextField, Typography } from '@mui/material';
+// Importe l'appel direct à l'API Mistral et la lecture de la clé enregistrée dans le navigateur.
+import { askMistral, isConnected } from '@/Engine/shared/lib/mistralAssistant';
+// Importe le relevé des éléments actionnables de la page.
+import { collectInventory } from '@/Engine/shared/lib/domInventory';
+// Importe useViewport, qui donne la catégorie d'écran.
+import { useViewport } from '@/Fairing/hooks/useViewport';
+// Importe la hauteur de la bande des astres, celle du bandeau titre et edge.
+import { RAIL, STRIP_H, TITLE_H, edge } from '@/Fairing/theme/layout';
+// Importe MQ (requêtes média, dont l'écran tactile) et safe, qui donne une marge de sécurité de l'écran.
+import { MQ, safe } from '@/Fairing/theme/mediaQueries';
+// Icônes de l'astre filant (logo de l'assistant), de la coche, de la fermeture et de l'envoi.
+import { AutoAwesomeIcon, CheckIcon, CloseIcon, SendIcon } from '../../ui/icons.jsx';
+
+/** Questions proposées : un appui les envoie dans la conversation. */
+// Questions proposées (début du tableau).
+const SUGGESTIONS = [
+  // Une question de connaissance.
+  'Quelle est la plus grande lune du système solaire ?',
+  // Une autre question de connaissance.
+  'Pourquoi Vénus tourne-t-elle à l’envers ?',
+  // Une demande de déplacement.
+// Fin du tableau.
+];
+
+/** Mêmes bornes que l'API (assistant.dto.ts) : 12 messages par envoi, 1 000 caractères par message. */
+// Nombre maximal de messages envoyés à chaque question.
+const MAX_HISTORY = 12;
+// Hauteur de la barre d'outils de l'ordinateur, marge comprise.
+const DESKTOP_BAR_H = 52; // barre d'outils du bas (ordinateur) et sa marge
+// Longueur maximale d'un message, en caractères.
+const MAX_CHARS = 1000;
+
+/** Réponse fixe tant qu'aucune clé d'API Mistral n'est enregistrée dans le navigateur : rien n'est envoyé. */
+// Réponse affichée tant que l'assistant n'est pas branché.
+const NOT_CONNECTED = 'L’assistant n’est pas branché : aucune clé d’API Claude n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part. Pour brancher l’assistant, enregistrez une clé dans Paramètres → Claude.';
+
+/**
+ * Couleurs et polices du menu, les mêmes de jour comme de nuit (le reste de l'interface suit le thème de l'application) :
+ * fond anthracite chaud, texte blanc cassé, lignes survolées en gris plus clair, orange de l'accent pour l'action principale.
+ * Les réponses de Mistral sont en caractères à empattements, le reste en caractères bâtons.
+ */
+// Couleurs du menu (début de l'objet).
+const C = {
+  // Le fond du panneau, celui du champ, celui d'une ligne survolée et la bordure.
+  panel: '#1f1e1d', field: '#262624', row: '#30302e', border: '#3b3a37',
+  // Le texte, le texte atténué, l'accent orange et l'erreur.
+  text: '#eceae3', muted: '#a3a097', accent: '#d97757', error: '#e5867a',
+// Fin de l'objet.
+};
+// Police bâton.
+const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+// Police à empattements.
+const SERIF = 'Georgia, "Iowan Old Style", "Times New Roman", serif';
+
+/** Un message : celui de l'utilisateur dans une pastille grise à droite, la réponse de Mistral à nu, en empattements. */
+// Déclare le composant Bubble : l'auteur, l'erreur, les actions faites et le texte.
+const Bubble = ({ from, error, done, children }) => (
+  // Le bloc du message (début de la balise).
+  <Box
+    // Message de l'utilisateur…
+    sx={from === 'user'
+      // … pastille grise alignée à droite, de 85 % de la largeur au plus…
+      ? { alignSelf: 'flex-end', maxWidth: '85%', minWidth: 0, flex: 'none', px: 1.5, py: 0.9, borderRadius: '14px', bgcolor: C.row }
+      // … réponse de Mistral : sur toute la largeur, avec un trait rouge à gauche en cas d'erreur ; jamais écrasée par ses voisines.
+      : { alignSelf: 'stretch', minWidth: 0, flex: 'none', px: 0.5, py: 0.25, ...(error ? { pl: 1.25, borderLeft: `2px solid ${C.error}` } : {}) }}
+  // Fin de la balise ouvrante.
+  >
+    {/* L'auteur du message, pour les lecteurs d'écran seulement. */}
+    <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'Claude : '}</Typography>
+    {/* S'il y a un texte (début). */}
+    {children && (
+      // Le texte : retours à la ligne gardés, mots trop longs coupés (césure française), rouge en cas d'erreur, police et taille selon l'auteur.
+      <Typography lang="fr" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', wordBreak: 'break-word', hyphens: 'auto', color: error ? C.error : C.text, fontFamily: from === 'user' ? SANS : SERIF, fontSize: from === 'user' ? 14 : 15, lineHeight: 1.5 }}>
+        {/* Son contenu. */}
+        {children}
+      {/* Fin du texte. */}
+      </Typography>
+    // Fin du cas.
+    )}
+    {/* S'il y a des actions faites (début). */}
+    {done?.length > 0 && (
+      // Rangée d'étiquettes, nommée pour les lecteurs d'écran.
+      <Stack direction="row" useFlexGap spacing={0.5} sx={{ flexWrap: 'wrap', mt: children ? 0.75 : 0 }} aria-label="Actions effectuées">
+        {/* Une étiquette par action, précédée d'une coche ; son libellé passe à la ligne au lieu d'être coupé ou de déborder. */}
+        {done.map((label, i) => <Chip key={i} size="small" variant="outlined" icon={<CheckIcon />} label={label} sx={chipWrap} />)}
+      {/* Fin de la rangée. */}
+      </Stack>
+    // Fin du cas.
+    )}
+  {/* Fin du bloc du message. */}
+  </Box>
+// Fin de Bubble.
+);
+
+/** Étiquette dont le texte passe sur plusieurs lignes : hauteur libre, libellé coupé proprement, coche alignée en haut. */
+// Style d'une étiquette à libellé long (début de l'objet).
+const chipWrap = {
+  // Couleurs et police du menu ; hauteur libre et largeur bornée à celle du panneau.
+  color: C.muted, borderColor: C.border, fontFamily: SANS, height: 'auto', minHeight: 24, maxWidth: '100%', alignItems: 'flex-start', py: 0.25,
+  // Le libellé : retour à la ligne autorisé, mots longs coupés, interligne serré.
+  '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.35, py: '2px' },
+  // La coche : alignée sur la première ligne du libellé.
+  '& .MuiChip-icon': { mt: '3px' },
+// Fin de l'objet.
+};
+
+/** Texte lu par les lecteurs d'écran, absent de l'affichage. */
+// Style d'un texte invisible à l'écran mais lu par les lecteurs d'écran.
+const visuallyHidden = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
+
+/** Ligne cliquable, comme une entrée de menu : texte à gauche, fond gris au survol et au clavier. */
+// Déclare le composant Row : le contenu et les autres propriétés.
+const Row = ({ children, ...props }) => (
+  // Le bouton de la ligne (début de la balise).
+  <ButtonBase
+    // Les propriétés reçues.
+    {...props}
+    // Début du style.
+    sx={{
+      // Texte à gauche, toute la largeur, coins arrondis.
+      justifyContent: 'flex-start', textAlign: 'left', width: '100%', px: 1.25, py: 0.8, borderRadius: '8px',
+      // Bloc souple qui garde sa hauteur : le texte passe à la ligne au lieu de chevaucher la ligne suivante.
+      display: 'flex', flex: 'none', minWidth: 0, whiteSpace: 'normal', overflowWrap: 'anywhere', wordBreak: 'break-word',
+      // Couleur et police du texte.
+      color: C.text, fontFamily: SANS, fontSize: 14, lineHeight: 1.35,
+      // Au survol ou au focus clavier : fond gris.
+      '&:hover, &.Mui-focusVisible': { bgcolor: C.row },
+      // Désactivée : texte atténué.
+      '&.Mui-disabled': { color: C.muted },
+    // Fin du style.
+    }}
+  // Fin de la balise ouvrante.
+  >
+    {/* Le contenu. */}
+    {children}
+  {/* Fin du bouton. */}
+  </ButtonBase>
+// Fin de Row.
+);
+
+/**
+ * Menu « Claude » : panneau de conversation avec l'assistant, jamais modal. Il n'y a ni voile ni blocage : pendant
+ * tout l'échange, l'utilisateur continue de tourner le globe, de zoomer et d'appuyer sur les boutons, et voit
+ * l'assistant agir sur la scène en même temps.
+ *
+ * Deux positions, choisies par `placement` :
+ *  - « popper » : petit menu déroulant ancré au bouton « Mistral » de la barre d'outils (position d'origine) ;
+ *  - « hud »    : posé à la place de la navigation — rail de gauche sur ordinateur, bande du bas sur téléphone —
+ *                 pour que le déplacement vers les astres se demande à Mistral. La navigation reste accessible par
+ *                 son bouton.
+ *
+ * Sur téléphone, le panneau se réduit à une barre de recherche avec le logo : les réponses ne sont pas affichées,
+ * l'écran restant à la scène. Les actions demandées, elles, s'exécutent comme sur ordinateur.
+ *
+ * Conversation avec l'API Claude, appelée directement depuis le navigateur (voir mistralAssistant.js) : le
+ * modèle reçoit l'inventaire des éléments actionnables de la page, relevé à chaque message, et désigne ceux sur
+ * lesquels agir.
+ * Tant qu'aucune clé d'API Mistral n'est enregistrée dans le navigateur (localStorage), la fenêtre reste en
+ * démonstration : chaque message reçoit la même réponse fixe et rien n'est envoyé.
+ * L'assistant peut aussi agir sur l'interface : le serveur renvoie des actions (aller sur un astre, ouvrir une fenêtre,
+ * régler l'affichage…) que `onAction` exécute avec les fonctions des boutons existants ; chaque action faite est
+ * affichée sous la réponse. Une action hors de la liste autorisée est ignorée.
+ */
+/**
+ * Barre de Claude sur téléphone : une seule pilule (logo, champ, bouton d'envoi), posée dans le flux du dock du bas
+ * (MobileDock), au-dessus de la bande des astres et de la navigation, écartée des bords et des zones de sécurité.
+ * C'est le dock qui remonte au-dessus du clavier quand il s'ouvre. Les réponses ne sont pas affichées (l'écran reste
+ * à la scène) ; pendant l'attente, le bouton d'envoi tourne.
+ */
+function MobileBar({ text, setText, busy, send }) {
+  // Vrai quand le champ a le focus : la pilule s'éclaire.
+  const [focused, setFocused] = useState(false);
+  // Envoi possible : texte non vide et aucune réponse attendue.
+  const canSend = !busy && Boolean(text.trim());
+  // Rendu.
+  return (
+    // Conteneur dans le flux du dock : pleine largeur, marges latérales.
+    <Box
+      component="section"
+      aria-label="Claude"
+      data-assistant-panel=""
+      sx={{
+        // Dans le flux du dock (plus de position fixe propre) : le dock la place au-dessus de la barre de navigation.
+        position: 'relative',
+        // Marges latérales, zones de sécurité comprises (encoche en paysage) ; en écran large, la rangée du dock les porte.
+        pl: `calc(${safe('left')} + 10px)`, pr: `calc(${safe('right')} + 10px)`, '@media (min-width: 700px)': { pl: 0, pr: `calc(${safe('right')} + 8px)` },
+        // Le conteneur ne capte pas les gestes : seule la pilule le fait, la scène reste manipulable autour.
+        pointerEvents: 'none',
+      }}
+    >
+      {/* La pilule : formulaire, envoi à la validation sans recharger la page. */}
+      <Box
+        component="form"
+        onSubmit={(e) => { e.preventDefault(); if (canSend) send(); }}
+        sx={{
+          pointerEvents: 'auto',
+          display: 'flex', alignItems: 'center', gap: 1,
+          width: '100%', maxWidth: 560, mx: 'auto', boxSizing: 'border-box',
+          minHeight: 52, pl: 1.5, pr: 0.75, py: 0.75,
+          borderRadius: '26px', fontFamily: SANS, color: C.text,
+          // Fond anthracite légèrement transparent et flouté : la scène reste devinée derrière.
+          bgcolor: 'rgba(31, 30, 29, 0.88)', backdropFilter: 'blur(14px) saturate(140%)', WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+          border: `1px solid ${focused ? C.muted : C.border}`,
+          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.45)',
+          transition: 'border-color 120ms',
+        }}
+      >
+        {/* L'icône de l'assistant, centrée verticalement. */}
+        <AutoAwesomeIcon sx={{ width: 22, height: 22, flex: 'none', color: C.accent }} />
+        {/* Le champ : une à trois lignes, 16 px pour que Safari ne zoome pas au focus. */}
+        <InputBase
+          multiline maxRows={3} fullWidth
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          // Entrée envoie ; Maj + Entrée passe à la ligne.
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (canSend) send(); } }}
+          placeholder={busy ? 'CLAUDE répond…' : 'Demander à CLAUDE…'}
+          enterKeyHint="send"
+          inputProps={{ 'aria-label': 'Message pour Mistral', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
+          sx={{
+            flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, py: 0.25,
+            '& textarea': { overflowWrap: 'anywhere', p: 0 },
+            '& textarea::placeholder': { color: C.muted, opacity: 1 },
+          }}
+        />
+        {/* Le bouton d'envoi, rond, orange ; roue d'attente pendant la réponse. */}
+        <ButtonBase
+          type="submit"
+          disabled={!canSend}
+          aria-label={busy ? 'Mistral répond' : 'Envoyer'}
+          sx={{
+            // Cible tactile de 44 × 44 px (au lieu de 40), ronde, de taille fixe.
+            flex: 'none', width: 44, height: 44, borderRadius: '50%',
+            bgcolor: canSend ? C.accent : C.row, color: canSend ? '#1f1e1d' : C.muted,
+            transition: 'background-color 120ms',
+            '&:active': { transform: 'scale(0.94)' },
+          }}
+        >
+          {busy ? <CircularProgress size={18} sx={{ color: C.accent }} /> : <SendIcon sx={{ fontSize: 20 }} />}
+        </ButtonBase>
+      </Box>
+    </Box>
+  );
+}
+
+// Déclare et exporte le composant Assistant : ouverture, ancrage, position, décalage, fermeture, navigation et actions.
+export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, placement = 'popper', shifted = false }) {
+  // Lit le mode compact.
+  const { compact } = useViewport();
+  // État : assistant configuré sur le serveur (null tant qu'on ne le sait pas).
+  const [enabled, setEnabled] = useState(null); // null = pas encore su
+  // État : les messages de la conversation.
+  const [messages, setMessages] = useState([]);
+  // État : le texte en cours de saisie.
+  const [text, setText] = useState('');
+  // État : une réponse est attendue.
+  const [busy, setBusy] = useState(false);
+  // Référence vers la fin de la conversation, pour y faire défiler.
+  const endRef = useRef(null);
+  // Référence : vrai tant que le composant est monté.
+  const alive = useRef(true);
+  // Référence : la table des éléments du dernier relevé, par identifiant, pour exécuter un clic demandé.
+  const inventory = useRef(new Map());
+  // La met à vrai au montage et à faux au démontage.
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+
+  /**
+   * Exécute une action demandée par le modèle. Le clic sur un élément de la page est fait ici, où se trouve la
+   * table du dernier relevé ; toutes les autres actions partent au parent, qui les revalide contre sa liste fermée.
+   *
+   * L'élément est recherché par son identifiant de relevé, puis vérifié : s'il a quitté la page entre l'envoi et
+   * la réponse — le visiteur a changé d'écran entre-temps — le clic est abandonné plutôt que porté à l'aveugle.
+   */
+  // Déclare runAction : reçoit l'action et renvoie son libellé, ou null si elle est refusée.
+  const runAction = (action) => {
+    // Action autre qu'un clic sur un élément : le parent s'en occupe.
+    if (action?.name !== 'agir_sur_un_element') return onAction?.(action) ?? null;
+    // L'identifiant demandé.
+    const id = action?.input?.element;
+    // L'élément du dernier relevé portant cet identifiant.
+    const el = typeof id === 'string' ? inventory.current.get(id) : null;
+    // Identifiant inconnu : refusé, rien n'est cliqué.
+    if (!el) return null;
+    // Élément qui a quitté la page : refusé, l'écran a changé depuis le relevé.
+    if (!globalThis.document?.contains?.(el)) return null;
+    // Élément désactivé : refusé, le clic n'aurait aucun effet.
+    if (el.disabled || el.getAttribute?.('aria-disabled') === 'true') return null;
+    // Clique l'élément, comme le ferait le visiteur.
+    el.click?.();
+    // Renvoie le libellé de l'action faite, avec le nom de l'élément cliqué.
+    return `Clic sur « ${el.getAttribute?.('aria-label') || el.getAttribute?.('title') || (el.textContent || '').trim().slice(0, 40) || id} »`;
+  // Fin de runAction.
+  };
+
+  // À l'ouverture : une clé d'API Mistral est-elle enregistrée dans ce navigateur ?
+  // Effet relancé à l'ouverture.
+  useEffect(() => {
+    // Menu fermé : rien à faire.
+    if (!open) return undefined;
+    // Lecture synchrone du localStorage : vrai seulement si une clé est enregistrée.
+    setEnabled(isConnected());
+    // Rien à nettoyer : la lecture est synchrone.
+    return undefined;
+  // Fin de l'effet ; dépendance : l'ouverture.
+  }, [open]);
+
+  // Échap ferme le menu (sauf si une autre fenêtre a déjà traité la touche).
+  // Effet de la touche Échap.
+  useEffect(() => {
+    // Menu fermé : rien à faire.
+    if (!open) return undefined;
+    // onKey : Échap ferme le menu, sauf si la touche a déjà été traitée.
+    const onKey = (e) => { if (e.key === 'Escape' && !e.defaultPrevented) onClose?.(); };
+    // Écoute les touches sur toute la fenêtre.
+    window.addEventListener('keydown', onKey);
+    // Nettoyage : retire l'écouteur.
+    return () => window.removeEventListener('keydown', onKey);
+  // Fin de l'effet ; dépendances : l'ouverture et la fermeture.
+  }, [open, onClose]);
+
+  // À chaque nouveau message, fait défiler jusqu'à la fin de la conversation.
+  useEffect(() => { if (open) endRef.current?.scrollIntoView({ block: 'nearest' }); }, [open, messages, busy]);
+
+  // Déclare send : envoie une question (celle donnée, sinon le texte saisi).
+  const send = async (value) => {
+    // La question, sans espaces autour, limitée à 1 000 caractères.
+    const question = String(value ?? text).trim().slice(0, MAX_CHARS);
+    // Question vide ou réponse en attente : rien à faire.
+    if (!question || busy) return;
+    // Historique à envoyer : les messages sans erreur, plus la question.
+    const history = [...messages.filter((m) => !m.error), { from: 'user', text: question }];
+    // Ajoute la question à la conversation affichée.
+    setMessages((m) => [...m, { from: 'user', text: question }]);
+    // Vide le champ.
+    setText('');
+    // Si l'assistant n'est pas branché.
+    if (!enabled) {
+      // Ajoute la réponse fixe de démonstration.
+      setMessages((m) => [...m, { from: 'assistant', text: NOT_CONNECTED }]);
+      // Rien n'est envoyé.
+      return;
+    // Fin du cas.
+    }
+    // Note qu'une réponse est attendue.
+    setBusy(true);
+    // Début du bloc protégé.
+    try {
+      // Les 12 derniers messages, au format de l'API (rôle et contenu limité à 1 000 caractères).
+      const payload = history.slice(-MAX_HISTORY).map((m) => ({ role: m.from === 'user' ? 'user' : 'assistant', content: m.text.slice(0, MAX_CHARS) }));
+      // Relève les éléments actionnables de l'écran : c'est ainsi que le modèle voit l'interface.
+      const { elements, byId } = collectInventory();
+      // Garde la table du relevé, pour retrouver un élément que le modèle désignerait.
+      inventory.current = byId;
+      // Envoie la conversation et l'inventaire à l'API Mistral, et attend la réponse et les actions.
+      const { reply, actions = [] } = await askMistral(payload, elements);
+      // Composant démonté entre-temps : on s'arrête.
+      if (!alive.current) return;
+      // Actions demandées par le modèle : exécutées dans l'ordre, celles qui sont refusées sont ignorées.
+      // Exécute chaque action ; garde le libellé de celles qui sont acceptées.
+      const done = actions.map((a) => runAction(a)).filter(Boolean);
+      // Texte affiché : la réponse, sinon « C'est fait. » s'il y a eu des actions, sinon un refus.
+      const shown = reply || (done.length ? 'C’est fait.' : 'Je ne peux pas faire cette action dans l’interface.');
+      // Ajoute la réponse à la conversation, avec les actions faites.
+      setMessages((m) => [...m, { from: 'assistant', text: shown, done }]);
+    // En cas d'échec.
+    } catch (e) {
+      // Si le composant est toujours monté : ajoute un message d'erreur.
+      if (alive.current) setMessages((m) => [...m, { from: 'assistant', error: true, text: e.message || 'L’assistant n’a pas pu répondre.' }]);
+    // Dans tous les cas.
+    } finally {
+      // Si le composant est toujours monté : plus de réponse attendue.
+      if (alive.current) setBusy(false);
+    // Fin du bloc.
+    }
+  // Fin de send.
+  };
+
+  // Menu fermé : rien n'est affiché.
+  if (!open) return null;
+
+  // Petit menu déroulant : ancré au bouton « Mistral » de la barre d'outils, il se déroule au-dessus ; sur téléphone,
+  // ancré au bouton ⋯ du haut de l'écran, il se déroule dessous. Pas de voile ni de blocage : la scène reste visible
+  // et utilisable. Sans bouton d'ancrage (bouton disparu de l'écran), il se pose en bas à gauche.
+  // Hauteur de ce qui occupe le bas de l'écran.
+  const barH = compact ? STRIP_H : DESKTOP_BAR_H; // ce qui occupe le bas de l'écran
+  // Hauteur réservée hors du menu : bandeau titre et bande en mode compact, barre d'outils sinon.
+  const reserved = compact ? TITLE_H + STRIP_H : DESKTOP_BAR_H;
+  // Position « hud » : le panneau prend la place de la navigation au lieu de se dérouler sous un bouton.
+  const hud = placement === 'hud';
+  // Ancré seulement en position « popper », et si le bouton d'ancrage est encore dans la page.
+  const anchored = !hud && Boolean(anchorEl && document.body.contains(anchorEl));
+  /**
+   * Mode réduit du téléphone : le panneau n'est plus qu'une barre de recherche avec le logo. Les réponses ne sont
+   * pas affichées — l'écran reste à la scène — mais les actions demandées s'exécutent quand même.
+   */
+  // Mode réduit : sur téléphone.
+  const bare = compact;
+  /**
+   * Décalage quand l'arborescence des astres est ouverte : elle occupe exactement la même place (rail de gauche sur
+   * ordinateur, bande du bas sur téléphone). Le panneau s'écarte alors pour que les deux restent utilisables.
+   */
+  // Place prise par l'arborescence quand elle est ouverte : la largeur du rail, ou la hauteur de la bande.
+  const shift = shifted ? (compact ? STRIP_H : RAIL + 12) : 0;
+  // Style de position du panneau, selon le mode (début).
+  const placed = hud
+    // Position « hud » : sur téléphone, la bande du bas sur toute la largeur ; sur ordinateur, le rail de gauche, centré.
+    ? (compact
+      // Téléphone : collé en bas, toute la largeur, au-dessus de la scène et de l'arborescence si elle est ouverte.
+      ? { position: 'fixed', left: 0, right: 0, bottom: `calc(${shift}px + ${safe('bottom')})`, pb: shift ? 0 : safe('bottom'), zIndex: (t) => t.zIndex.toolbar - 5 }
+      // Ordinateur : à gauche, centré en hauteur, à la largeur du rail des astres, écarté de l'arborescence ouverte.
+      : { position: 'fixed', left: `calc(${edge('left')} + ${shift}px)`, top: '50%', transform: 'translateY(-50%)', zIndex: (t) => t.zIndex.hud })
+    // Position « popper » sans ancrage : fixé en bas à gauche, au-dessus de la barre du bas.
+    : (anchored ? {} : { position: 'fixed', left: edge('left', 8), bottom: `calc(${barH}px + ${safe('bottom')} + 16px)`, zIndex: (t) => t.zIndex.toolbar + 5 });
+  // Téléphone, position « hud » : la barre flottante dédiée.
+  if (bare && hud) return <MobileBar text={text} setText={setText} busy={busy} send={send} />;
+  // Le panneau du menu (début).
+  const panel = (
+    // La carte (début de la balise).
+    <Paper
+      // Rendue en balise section.
+      component="section"
+      // Ombre marquée.
+      elevation={8}
+      // Nom pour les lecteurs d'écran.
+      aria-label="Mistral"
+      // Marque le panneau : ses propres boutons sont exclus de l'inventaire, pour qu'il ne se clique pas lui-même.
+      data-assistant-panel=""
+      // Début du style.
+      sx={{
+        // En colonne, sans débordement.
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        // Couleurs propres au menu, bordure fine, coins arrondis, police bâton.
+        bgcolor: C.panel, color: C.text, backgroundImage: 'none', border: `1px solid ${C.border}`, borderRadius: '14px', fontFamily: SANS,
+        // Largeur : toute la bande du bas en mode réduit, celle du rail en position « hud », 340 px sinon.
+        width: bare && hud ? 'auto' : compact ? 'min(340px, calc(100vw - 16px))' : hud ? RAIL : 340,
+        // Jamais plus large que l'écran, et ses enfants peuvent rétrécir sans déborder.
+        maxWidth: 'calc(100vw - 16px)', minWidth: 0, boxSizing: 'border-box',
+        // Mode réduit : pas d'angles arrondis en bas, la barre est collée au bord de l'écran.
+        ...(bare && hud ? { borderRadius: '14px 14px 0 0', borderBottom: 'none' } : {}),
+        // Téléphone : au plus 46 % de la hauteur, le menu est en haut et le clavier en bas, la scène reste visible entre.
+        // Hauteur maximale : aucune contrainte en mode réduit (une seule ligne), selon l'écran sinon.
+        ...(bare ? {} : { maxHeight: compact ? `min(340px, 46dvh, calc(100dvh - ${reserved}px - 24px))` : `min(440px, calc(100dvh - ${reserved}px - 96px))` }),
+        // La position calculée plus haut.
+        ...placed,
+      // Fin du style.
+      }}
+    // Fin de la balise ouvrante.
+    >
+      {/* L'en-tête du menu, souligné d'un filet ; masqué en mode réduit, où le logo passe dans la barre de saisie (début). */}
+      {!bare && (
+      // En-tête de hauteur fixe (jamais écrasé par la conversation) ; ses éléments passent à la ligne s'ils manquent de place.
+      <Stack direction="row" useFlexGap spacing={1} sx={{ alignItems: 'center', flex: 'none', flexWrap: 'wrap', rowGap: 0.75, px: 1.5, py: 1.1, borderBottom: `1px solid ${C.border}` }}>
+        {/* L'icône de l'assistant. */}
+        <AutoAwesomeIcon sx={{ width: 20, height: 20, flex: 'none', color: C.accent }} />
+        {/* Le titre « Mistral », en empattements. */}
+        {/* Il prend la place restante et peut rétrécir ; trop étroit, il se termine par « … » au lieu de passer sous les boutons. */}
+        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Claude</Typography>
+        {/* L'état « Démonstration » n'est plus dans l'en-tête, trop étroit dans le rail : l'encadré sous l'en-tête le dit déjà. */}
+        {/* Le bouton de l'arborescence des astres, quand le parent en propose une. */}
+        {onNavigator && (
+          <Chip
+            // Petite pastille cliquable.
+            size="small" variant="outlined" clickable
+            // Son libellé.
+            label="Astres"
+            // Au clic : ouvre ou ferme l'arborescence.
+            onClick={onNavigator}
+            // Infobulle.
+            title="Arborescence des astres"
+            // Couleurs du menu, qui s'éclaircissent au survol ; écran tactile : 44 px de haut (cible tactile).
+            sx={{ flex: 'none', color: C.muted, borderColor: C.border, fontFamily: SANS, '&:hover': { bgcolor: C.row, color: C.text }, [MQ.coarse]: { height: 44, borderRadius: '22px' } }}
+          // Fin de la pastille.
+          />
+        )}
+        {/* Fin du bouton de l'arborescence. */}
+        {/* Le bouton de fermeture (début de la balise). */}
+        <ButtonBase
+          // Au clic : ferme le menu.
+          onClick={onClose}
+          // Nom pour les lecteurs d'écran.
+          aria-label="Fermer"
+          // Carré arrondi de 28 px (44 px sur écran tactile), qui s'éclaire au survol.
+          sx={{ flex: 'none', width: 28, height: 28, borderRadius: '8px', color: C.muted, fontSize: 16, '&:hover, &.Mui-focusVisible': { bgcolor: C.row, color: C.text }, [MQ.coarse]: { width: 44, height: 44 } }}
+        // Fin de la balise ouvrante.
+        >
+          {/* La croix. */}
+          <CloseIcon sx={{ fontSize: 16 }} />
+        {/* Fin du bouton. */}
+        </ButtonBase>
+      {/* Fin de l'en-tête. */}
+      </Stack>
+      )}
+      {/* Fin de l'en-tête conditionnel. */}
+      {/* Zone de conversation, qui défile sans entraîner la page ; absente en mode réduit (début). */}
+      {!bare && (
+      // Seule partie qui rétrécit quand la place manque : elle défile, ses blocs gardent leur hauteur et ne se chevauchent pas.
+      <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 1, px: 1.25, pt: 1.25, pb: 1.25, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain' }}>
+        {/* Si l'assistant n'est pas branché (début). */}
+        {enabled === false && (
+          // Encadré d'avertissement (début de la balise).
+          <Typography role="status" sx={{ flex: 'none', px: 1.25, py: 1, lineHeight: 1.45, borderRadius: '10px', bgcolor: C.field, border: `1px solid ${C.border}`, color: C.muted, fontFamily: SANS, fontSize: 13 }}>
+            {/* Son texte. */}
+            Fenêtre de démonstration : aucune clé d’API Claude n’est enregistrée, aucune réponse n’est générée. Enregistrez une clé dans Paramètres → Claude.
+          {/* Fin de l'encadré. */}
+          </Typography>
+        // Fin du cas.
+        )}
+
+        {/* La conversation, annoncée aux lecteurs d'écran ; hauteur minimale tant qu'elle est vide, hors mode compact. */}
+        {/* Hauteur fixée par son contenu (flex: none) : elle ne peut plus être écrasée sous les suggestions. */}
+        <Stack spacing={1} sx={{ flex: 'none', minWidth: 0 }} aria-live="polite">
+          {/* S'il n'y a aucun message (début). */}
+          {messages.length === 0 ? (
+            // Bloc d'accueil, centré.
+            <Box sx={{ textAlign: 'center', px: 1, py: 1.5 }}>
+              {/* L'invitation. */}
+              <Typography sx={{ fontFamily: SERIF, fontSize: 18, lineHeight: 1.3, color: C.text }}>Posez une question ou demandez une action</Typography>
+              {/* L'avertissement (début de la balise). */}
+              <Typography sx={{ mt: 0.75, fontFamily: SANS, fontSize: 13, lineHeight: 1.45, color: C.muted }}>
+                {/* Son texte. */}
+                Les réponses sont générées par une IA et peuvent contenir des erreurs.
+              {/* Fin de l'avertissement. */}
+              </Typography>
+            {/* Fin du bloc d'accueil. */}
+            </Box>
+          // Sinon (début).
+          ) : (
+            // Une bulle par message.
+            messages.map((m, i) => <Bubble key={i} from={m.from} error={m.error} done={m.done}>{m.text}</Bubble>)
+          // Fin du choix.
+          )}
+          {/* Pendant l'attente d'une réponse (début). */}
+          {busy && (
+            // Ligne d'attente, alignée à gauche.
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flex: 'none', alignSelf: 'flex-start', px: 1 }}>
+              {/* Une petite roue orange. */}
+              <CircularProgress size={14} sx={{ color: C.accent }} />
+              {/* Le texte « Mistral répond… ». */}
+              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: C.muted }}>Mistral répond…</Typography>
+            {/* Fin de la ligne d'attente. */}
+            </Stack>
+          // Fin du cas.
+          )}
+          {/* Le repère de fin de conversation. */}
+          <Box ref={endRef} />
+        {/* Fin de la conversation. */}
+        </Stack>
+
+        {/* Suggestions : seulement avant le premier message, ensuite elles laissent la place à la conversation. */}
+        {/* Avant le premier message (début). */}
+        {messages.length === 0 && (
+          // La liste des suggestions.
+          <Stack spacing={0.25} sx={{ flex: 'none' }}>
+            {/* Une ligne par suggestion (deux seulement en mode compact) ; un clic l'envoie. */}
+            {(compact ? SUGGESTIONS.slice(0, 2) : SUGGESTIONS).map((s) => <Row key={s} disabled={busy} onClick={() => send(s)}>{s}</Row>)}
+          {/* Fin de la liste. */}
+          </Stack>
+        // Fin du cas.
+        )}
+        {/* Avant le premier message (début). */}
+        {messages.length === 0 && (
+          // Note de confidentialité (début de la balise).
+          <Typography sx={{ flex: 'none', fontFamily: SANS, fontSize: 11.5, lineHeight: 1.45, color: C.muted }}>
+            {/* Son texte. */}
+            Vos messages sont envoyés à l’API CLAUDE pour générer la réponse. N’y mettez pas d’informations personnelles.
+          {/* Fin de la note. */}
+          </Typography>
+        // Fin du cas.
+        )}
+      {/* Fin de la zone de conversation. */}
+      </Box>
+      )}
+      {/* Fin de la zone de conversation conditionnelle. */}
+      {/* Zone de saisie ; sans filet en mode réduit, où elle est seule dans le panneau. */}
+      <Box sx={{ flex: 'none', px: 1.25, py: 1, ...(bare ? {} : { borderTop: `1px solid ${C.border}` }) }}>
+        {/* Le formulaire : à la validation, envoie le texte sans recharger la page. */}
+        {/* Boutons alignés en bas : le champ peut grandir sur plusieurs lignes sans les recouvrir. */}
+        <Stack component="form" direction="row" spacing={1} onSubmit={(e) => { e.preventDefault(); send(); }} sx={{ alignItems: 'flex-end' }}>
+          {/* Mode réduit : le logo tient la place de l'en-tête, à gauche de la barre de recherche. */}
+          {bare && <AutoAwesomeIcon sx={{ width: 20, height: 20, flex: 'none', ml: 0.25, mb: '9px', color: C.accent }} />}
+          {/* Le champ de texte (début de la balise). */}
+          <TextField
+            // Petite taille.
+            size="small"
+            // Toute la largeur.
+            fullWidth
+            // Sur plusieurs lignes : le texte long reste visible en entier (jusqu'à 4 lignes, puis il défile).
+            multiline maxRows={4}
+            // Entrée envoie le message ; Maj + Entrée passe à la ligne.
+            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
+            // Le texte saisi.
+            value={text}
+            // À chaque frappe : met le texte à jour.
+            onChange={(e) => setText(e.target.value)}
+            // Texte indicatif.
+            placeholder="Écrire à Mistral…"
+            // Nom pour les lecteurs d'écran et longueur maximale.
+            slotProps={{ htmlInput: { 'aria-label': 'Message pour Mistral', maxLength: MAX_CHARS } }}
+            // Début du style.
+            sx={{
+              // Le cadre du champ (début).
+              '& .MuiOutlinedInput-root': {
+                // Couleurs du menu, coins arrondis, texte de 16 px en mode compact.
+                bgcolor: C.field, color: C.text, borderRadius: '12px', fontFamily: SANS, fontSize: compact ? 16 : 14, lineHeight: 1.4, py: '9px',
+                // Bordure au repos.
+                '& fieldset': { borderColor: C.border },
+                // Bordure au survol.
+                '&:hover fieldset': { borderColor: C.muted },
+                // Bordure au focus, sans épaississement.
+                '&.Mui-focused fieldset': { borderColor: C.muted, borderWidth: 1 },
+              // Fin du cadre.
+              },
+              // Couleur du texte indicatif.
+              '& textarea::placeholder': { color: C.muted, opacity: 1 },
+              // Le texte saisi : mots longs coupés, pas de défilement horizontal.
+              '& textarea': { overflowWrap: 'anywhere' },
+              // Le champ peut rétrécir à côté des boutons.
+              minWidth: 0,
+            // Fin du style.
+            }}
+          // Fin du champ.
+          />
+          {/* Le bouton d'envoi (début de la balise). */}
+          <ButtonBase
+            // Il valide le formulaire.
+            type="submit"
+            // Désactivé pendant l'attente ou si le texte est vide.
+            disabled={busy || !text.trim()}
+            // Nom pour les lecteurs d'écran.
+            aria-label="Envoyer"
+            // Début du style.
+            sx={{
+              // Carré arrondi de 40 px, orange, à flèche sombre.
+              flex: 'none', width: 40, height: 40, borderRadius: '12px', bgcolor: C.accent, color: '#1f1e1d', fontSize: 18, fontWeight: 700,
+              // Au survol ou au focus : orange plus clair.
+              '&:hover, &.Mui-focusVisible': { bgcolor: '#e08a6d' },
+              // Désactivé : gris.
+              '&.Mui-disabled': { bgcolor: C.row, color: C.muted },
+            // Fin du style.
+            }}
+          // Fin de la balise ouvrante.
+          >
+            {/* La flèche d'envoi. */}
+            <SendIcon sx={{ fontSize: 20 }} />
+          {/* Fin du bouton. */}
+          </ButtonBase>
+        {/* Fin du formulaire. */}
+        </Stack>
+      {/* Fin de la zone de saisie. */}
+      </Box>
+    {/* Fin de la carte. */}
+    </Paper>
+  // Fin du panneau.
+  );
+
+  // Sans ancrage : le panneau seul.
+  if (!anchored) return panel;
+  // Sinon (début du rendu).
+  return (
+    // Le bloc ancré (début de la balise).
+    <Popper
+      // Toujours ouvert.
+      open
+      // Ancré au bouton.
+      anchorEl={anchorEl}
+      // Sous le bouton en mode compact, au-dessus sinon.
+      placement={compact ? 'bottom-end' : 'top-start'}
+      // Écart de 10 px, retournement et maintien dans l'écran, avec 8 px de marge.
+      modifiers={[{ name: 'offset', options: { offset: [0, 10] } }, { name: 'flip', options: { padding: 8 } }, { name: 'preventOverflow', options: { padding: 8, altAxis: true, tether: false } }]}
+      // Au-dessus des barres d'outils.
+      sx={{ zIndex: (t) => t.zIndex.toolbar + 5 }}
+    // Fin de la balise ouvrante.
+    >
+      {/* Le panneau. */}
+      {panel}
+    {/* Fin du bloc ancré. */}
+    </Popper>
+  // Fin du rendu.
+  );
+// Fin de Assistant.
+}
