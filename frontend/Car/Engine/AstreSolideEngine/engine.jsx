@@ -56,7 +56,7 @@ import { MoonOrbit } from './moonOrbit.jsx';
 import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
 // Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
 import {
-  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellSlope, gridWellY, layOrbitOnWell, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
+  AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, layOrbitOnWell, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
 } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
 import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
@@ -177,6 +177,12 @@ const MOON_DISTANCE_KM = 384_400;
 const SUN_RADIUS_AU = 0.00465;
 // Une toupie n'est dessinée que si son rayon vaut au moins 1/400 de sa distance à la caméra (quelques pixels).
 const WELL_MIN_APPARENT = 400;
+// Les décisions de chargement des périvolumes (actif, arrière-plan, déchargé) sont réévaluées une image sur trois :
+// elles changent à l'échelle de la seconde, pas de l'image.
+const CORE_DECISION_EVERY = 3;
+// Formats du HUD, créés une fois : un toLocaleString avec options recrée un formateur à chaque appel (10 fois par seconde).
+const HUD_DATE_FORMAT = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium', timeStyle: 'medium' });
+const HUD_INT_FORMAT = new Intl.NumberFormat('fr-FR');
 // Creux minimal de la toupie d'un astre, en part de son rayon : 100 %, la toupie est aussi profonde que large d'un
 // côté (35 % avant l'amplification de la représentation).
 const WELL_MIN_DEPTH_SHARE = 1;
@@ -724,7 +730,7 @@ export class SolarEngine {
         // Tout autre astre à anneaux garde un disque uni.
         const ring = bodyId(def) === 'saturn'
           // Saturne : anneaux modélisés, éclairés depuis la position du Soleil ;
-          ? createSaturnRings(def.radius, () => this.sunMesh.position)
+          ? createSaturnRings(def.radius, () => this.sunLight.position)
           // sinon un disque uni (début) :
           : new THREE.Mesh(
             // de 1,25 à 2,3 rayons,
@@ -1047,8 +1053,6 @@ export class SolarEngine {
     this.tmpSun = new THREE.Vector3();
     // Vecteur de travail : Terre.
     this.tmpEarth = new THREE.Vector3();
-    // Vecteur de travail : direction du Soleil courbée le long de la pente du puits (updateSunDirections).
-    this.tmpSunCurved = new THREE.Vector3();
   // Fin de initMoon.
   }
 
@@ -1940,11 +1944,23 @@ export class SolarEngine {
     if (!this.coreSystemManager || !this.cam) return;
     this.coreActivityPolicy?.beginFrame();
     this.coreEngineActivityPolicy?.beginFrame();
-    for (const { id, target } of this.coreTargets) {
-      const position = target.get();
-      if (position) this.corePerivolumes.updateCenter(id, position.toArray());
-      // Le périvolume dessiné de l'astre suit sa position, seulement quand l'affichage Schwarzschild le montre.
-      if (position && this.perivolumeSpheres?.displayAlpha > 0) this.perivolumeSpheres.updateCenter(id, position.toArray());
+    // Les décisions de chargement (actif, arrière-plan, déchargé) changent lentement : elles sont réévaluées une
+    // image sur CORE_DECISION_EVERY, au lieu de chaque image. Les bulles et les toupies affichées, elles, suivent
+    // leur astre à chaque image.
+    this.coreDecisionFrame = (this.coreDecisionFrame || 0) + 1;
+    const decide = !this.coreLastDecisions || this.coreDecisionFrame % CORE_DECISION_EVERY === 0;
+    const spheresShown = this.perivolumeSpheres?.displayAlpha > 0;
+    // Tableau de travail réutilisé : plus de tableau neuf par astre et par image.
+    const c = this.coreCenterScratch || (this.coreCenterScratch = [0, 0, 0]);
+    if (decide || spheresShown) {
+      for (const { id, target } of this.coreTargets) {
+        const position = target.get();
+        if (!position) continue;
+        c[0] = position.x; c[1] = position.y; c[2] = position.z;
+        if (decide) this.corePerivolumes.updateCenter(id, c);
+        // Le périvolume dessiné de l'astre suit sa position, seulement quand l'affichage Schwarzschild le montre.
+        if (spheresShown) this.perivolumeSpheres.updateCenter(id, c);
+      }
     }
     // Chaque toupie suit son astre, quand elle est affichée.
     if (this.systemWellsOn) {
@@ -1959,26 +1975,33 @@ export class SolarEngine {
     }
     for (const { id, target } of this.coreSystemVolumes || []) {
       const position = target.get();
-      if (position) this.corePerivolumes.updateCenter(id, position.toArray());
+      if (!position) continue;
+      c[0] = position.x; c[1] = position.y; c[2] = position.z;
+      if (decide) this.corePerivolumes.updateCenter(id, c);
       // La bulle de verre suit le système.
-      if (position) this.perivolumeSpheres?.updateCenter(id, position.toArray());
+      this.perivolumeSpheres?.updateCenter(id, c);
     }
     const globalCamera = globalCameraPosition(this.cam.position, this.target);
-    this.coreLastDecisions = this.coreSystemManager.update([globalCamera.x, globalCamera.y, globalCamera.z]);
-    // Applique les états effectifs aux bulles de verre des périverolumes.
-    this.perivolumeSpheres?.sync(this.coreLastDecisions);
-    for (const [id, entry] of this.interstellarSystems || []) {
-      const profile = this.coreSystemManager.getLoadProfile(id);
-      this.interstellarResourceLifecycle?.update(id, profile.state);
-      entry.group.visible = Boolean(profile.render);
-      entry.group.userData.perivolumeState = profile.state;
-      entry.group.userData.simulationPaused = !profile.update;
-      entry.group.userData.perivolumePriority = profile.priority;
+    if (decide) {
+      this.coreLastDecisions = this.coreSystemManager.update([globalCamera.x, globalCamera.y, globalCamera.z]);
+      // Applique les états effectifs aux bulles de verre des périvolumes.
+      this.perivolumeSpheres?.sync(this.coreLastDecisions);
+      for (const [id, entry] of this.interstellarSystems || []) {
+        const profile = this.coreSystemManager.getLoadProfile(id);
+        this.interstellarResourceLifecycle?.update(id, profile.state);
+        // Visible s'il doit être rendu ET s'il est dans un secteur galactique chargé (voir
+        // updateGalacticSectorStreaming) : sans ce second test, la visibilité décidée par le streaming était
+        // écrasée à chaque image.
+        entry.group.visible = Boolean(profile.render) && entry.group.userData.galacticSectorResident !== false;
+        entry.group.userData.perivolumeState = profile.state;
+        entry.group.userData.simulationPaused = !profile.update;
+        entry.group.userData.perivolumePriority = profile.priority;
+      }
     }
     this.updateGalacticSectorStreaming(globalCamera);
     this.updateInterstellarEphemerides();
     this.updateInterstellarLOD();
-    this.coreGpuMemoryBudget?.updatePerivolumeDecisions(this.coreLastDecisions);
+    if (decide) this.coreGpuMemoryBudget?.updatePerivolumeDecisions(this.coreLastDecisions);
     // L’ordonnanceur est raccordé, mais aucune tâche physique ou visuelle critique n’est déplacée dans ce lot.
     this.coreScheduler.flush();
   }
@@ -2020,7 +2043,13 @@ export class SolarEngine {
   // Vérifie si un moteur spécialisé doit travailler selon le périvolume effectif de son astre.
   shouldUpdateCoreEngine(engine, bodyId) {
     const state = this.getCoreEffectiveState(bodyId);
-    const focused = this.coreTargets?.some(({ id, focusIndex }) => id === bodyId && focusIndex === this.focus) ?? false;
+    // Indice de focus de chaque astre, construit une fois (au lieu d'un parcours de tous les astres à chaque appel,
+    // plusieurs fois par image).
+    if (this.coreFocusIndexFor !== this.coreTargets) {
+      this.coreFocusIndexById = new Map((this.coreTargets || []).map(({ id, focusIndex }) => [id, focusIndex]));
+      this.coreFocusIndexFor = this.coreTargets;
+    }
+    const focused = this.coreFocusIndexById.get(bodyId) === this.focus;
     return this.coreEngineActivityPolicy?.shouldUpdate(engine, { state, focused }) ?? true;
   }
 
@@ -4036,6 +4065,8 @@ export class SolarEngine {
       p.ecl = calculateOrbitPosition(p.def, this.simMs);
       // Sa position dans la scène.
       p.w.set(p.ecl[0] * AU_UNITS, p.ecl[1] * AU_UNITS, p.ecl[2] * AU_UNITS);
+      // Hauteur réelle (Kepler), gardée pour mesurer la descente Schwarzschild ajoutée ci-dessous.
+      const keplerY = p.w.y;
       // Affichage Schwarzschild : la planète descend dans le cône du bas de la toupie du Soleil, à sa distance.
       if (p.def.dwarf) {
         // Planète naine : dans l'affichage Schwarzschild, elle quitte son orbite inclinée de Kepler pour se poser
@@ -4045,6 +4076,9 @@ export class SolarEngine {
       } else {
         p.w.y += this.sunWellDrop(Math.hypot(p.ecl[0], p.ecl[1], p.ecl[2])) + this.wellApexDrop(bodyId(p.def));
       }
+      // Descente verticale due à l'affichage Schwarzschild (0 hors du mode) : l'éclairage la retire pour garder la
+      // direction réelle du Soleil (voir updateSunDirections).
+      p.wellDropY = p.w.y - keplerY;
       // Sa rotation propre.
       p.mesh.rotation.y = (d / p.def.rotation) * TAU;
     // Fin de la boucle.
@@ -4104,7 +4138,10 @@ export class SolarEngine {
     this.moonRel.set(state.rel[0], state.rel[1], state.rel[2]);
     this.moonW.copy(this.earth.w).add(this.moonRel);
     // Affichage Schwarzschild : la Lune descend dans la toupie de la Terre, à sa distance.
-    this.moonW.y += this.wellSlopeRise('earth', this.moonRel.length()) + this.wellApexDrop('moon');
+    const moonDrop = this.wellSlopeRise('earth', this.moonRel.length()) + this.wellApexDrop('moon');
+    this.moonW.y += moonDrop;
+    // Descente totale de la Lune (celle de la Terre comprise), retirée par l'éclairage.
+    this.moonWellDropY = (this.earth.wellDropY || 0) + moonDrop;
 
     const distanceScene = this.moonRel.length();
     const distanceKm = distanceScene * 6371;
@@ -4267,8 +4304,10 @@ export class SolarEngine {
     this.perivolumeRoot?.position.copy(this.target).negate();
     // Son halo le suit.
     this.glow.position.copy(sunMesh.position);
-    // Sa lumière aussi.
+    // Sa lumière aussi, mais à la hauteur réelle du Soleil vue de l'astre visé : les descentes de l'affichage
+    // Schwarzschild (Soleil et astre au fond de leurs toupies) ne changent pas l'inclinaison de la lumière.
     this.sunLight.position.copy(sunMesh.position);
+    this.sunLight.position.y += this.wellDropOfTarget(this.focusTargets?.[this.focus]) - this.sunW.y;
 
     // Près de la surface d'une planète, la caméra est solidaire de sa rotation propre : le sol reste fixe à l'écran
     // et la rotation automatique est suspendue. Plus loin, retour à la rotation automatique autour de l'astre.
@@ -4490,7 +4529,7 @@ export class SolarEngine {
     // Rendue unitaire.
     up.normalize();
     // Sinus de la hauteur du Soleil au-dessus de l'horizon.
-    const sinSunAlt = this.skyToSun.copy(this.sunMesh.position).sub(E.group.position).normalize().dot(up);
+    const sinSunAlt = this.earthToSun(this.skyToSun).dot(up);
     // Intensité visée du ciel, d'après l'éblouissement et le voile du jour.
     sky.setTargetIntensity(skyVisibility({ glare, veil: daySkyVeil(altitudeKm, sinSunAlt) }));
   // Fin de updateSky.
@@ -4522,48 +4561,49 @@ export class SolarEngine {
     // Verticale du lieu, dans la scène.
     const normal = lonLatToVec([lon, lat]).transformDirection(mesh.matrixWorld);
     // Direction du Soleil depuis la Terre.
-    const toSun = this.tmpSun.copy(this.sunMesh.position).sub(this.earth.group.position).normalize();
+    const toSun = this.earthToSun(this.tmpSun);
     // Hauteur du Soleil, en degrés.
     return Math.asin(clamp(normal.dot(toSun), -1, 1)) / D;
   // Fin de sunAltitudeAt.
   }
 
+  /** Direction réelle du Soleil vue de la Terre (unitaire), sans les descentes de l'affichage Schwarzschild. */
+  earthToSun(out) {
+    out.copy(this.sunMesh.position).sub(this.earth.group.position);
+    out.y += (this.earth.wellDropY || 0) - this.sunW.y;
+    return out.normalize();
+  }
+
+  /**
+   * Descente verticale d'une cible de focus dans l'affichage Schwarzschild (0 hors du mode) : celle de sa planète,
+   * de la Lune, ou d'un satellite (sa planète plus sa propre toupie).
+   */
+  wellDropOfTarget(target) {
+    if (!target) return 0;
+    if (target.body) return target.body.wellDropY || 0;
+    if (target.moon) return this.moonWellDropY || 0;
+    const sat = target.satellite;
+    if (sat) return (sat.parent?.wellDropY || 0) + (this.satellites?.wellDrop?.(sat) || 0);
+    return 0;
+  }
+
   /**
    * Direction du Soleil vue de chaque astre tuilé, dans le repère caméra (éclairage des tuiles et de l'atmosphère).
-   * Dans l'affichage de Schwarzschild, cette direction ne reste pas la ligne droite entre le Soleil et l'astre
-   * (tous deux déjà descendus dans leur toupie) : elle est mélangée, au rythme du fondu, avec la tangente de la
-   * grille à la distance de l'astre — la lumière suit alors la pente du puits plutôt que de le traverser en ligne
-   * droite, comme une bille qui roule sur sa paroi plutôt que de tomber au centre.
+   * C'est toujours la direction réelle : dans l'affichage Schwarzschild, le Soleil et l'astre descendent au fond de
+   * leurs toupies, mais ces descentes sont retirées ici, pour que l'inclinaison de la lumière sur l'astre ne change
+   * pas quand on passe sur le plan de Schwarzschild.
    */
   updateSunDirections(cam = this.cam) {
-    // Rythme du fondu vers Schwarzschild (nul hors du mode : la direction reste la ligne droite d'aujourd'hui).
-    const eased = this.schwarzschild?.eased || 0;
-    // Pour chaque astre tuilé (début).
     for (const tb of this.tiledBodies) {
-      // Direction droite, en ligne directe vers le Soleil (comportement d'origine).
-      tb.sunDir.copy(this.sunMesh.position).sub(tb.group.position).normalize();
-      // Mélange avec la tangente de la grille (début) : seulement si le fondu a commencé.
-      if (eased > 0) {
-        // Distance horizontale au Soleil (le puits est un paraboloïde de révolution autour de son axe vertical).
-        const dx = tb.group.position.x - this.sunMesh.position.x;
-        const dz = tb.group.position.z - this.sunMesh.position.z;
-        const rScene = Math.hypot(dx, dz);
-        // Rayon nul (astre au zénith du Soleil) : la tangente n'est pas définie, la ligne droite suffit déjà.
-        if (rScene > 1e-6) {
-          // Pente de la grille à cette distance (dérivée de gridWellY), puis angle de la tangente.
-          const slope = gridWellSlope(rScene / AU_UNITS);
-          const invLen = 1 / Math.sqrt(1 + slope * slope);
-          // Tangente orientée vers le Soleil (direction radiale inversée, descendante selon la pente).
-          this.tmpSunCurved.set((-dx / rScene) * invLen, -slope * invLen, (-dz / rScene) * invLen);
-          // Mélange ligne droite → tangente de la pente, au rythme du fondu.
-          tb.sunDir.lerp(this.tmpSunCurved, eased).normalize();
-        // Fin du cas rayon nul.
-        }
-      // Fin du mélange.
-      }
+      // L'astre correspondant (planète, ou la Lune), retrouvé une fois.
+      if (tb.wellSource === undefined) tb.wellSource = tb.id === 'moon' ? 'moon' : (this.planets.find((p) => bodyId(p.def) === tb.id) ?? null);
+      const drop = tb.wellSource === 'moon' ? (this.moonWellDropY || 0) : (tb.wellSource?.wellDropY || 0);
+      // Ligne droite vers le Soleil, descentes retirées (nulles hors du mode).
+      tb.sunDir.copy(this.sunMesh.position).sub(tb.group.position);
+      tb.sunDir.y += drop - this.sunW.y;
+      tb.sunDir.normalize();
       // Puis passée dans le repère de la caméra.
       tb.sunDir.transformDirection(cam.matrixWorldInverse);
-    // Fin de la boucle.
     }
   // Fin de updateSunDirections.
   }
@@ -4673,7 +4713,7 @@ export class SolarEngine {
     // La cible.
     const f = this.focusTarget();
     // Date simulée, en français,
-    const date = new Date(this.simMs).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'medium' })
+    const date = HUD_DATE_FORMAT.format(this.simMs)
       // avec « temps réel » à vitesse 1.
       + (this.speed === 1 ? ' · temps réel' : '');
 
@@ -4713,7 +4753,7 @@ export class SolarEngine {
       // Distance de sa planète au Soleil.
       const sau = Math.hypot(...sat.parent.ecl);
       // Texte : son nom, sa planète et sa distance à elle,
-      focusText = `${f.name} · satellite de ${sat.parent.def.name} · ${Math.round(this.satellites.distanceKm(sat)).toLocaleString('fr-FR')} km de son centre`
+      focusText = `${f.name} · satellite de ${sat.parent.def.name} · ${HUD_INT_FORMAT.format(Math.round(this.satellites.distanceKm(sat)))} km de son centre`
         // la distance au Soleil, la précision de la position et l'échelle.
         + ` · ${sau.toFixed(3)} UA du Soleil${sat.exact ? '' : ' · position approchée'} · échelle réelle 1:1`;
     // Fin de ce cas.
@@ -4884,7 +4924,7 @@ export class SolarEngine {
     // Nom de la phase.
     const phase = MOON_PHASES[Math.round(elong / 45) % 8];
     // Texte : distance à la Terre, phase, part éclairée et source.
-    let text = `Lune · ${Math.round(g.distKm).toLocaleString('fr-FR')} km de la Terre · ${phase} · ${Math.round(lit * 100)} % éclairée · position ${this.moonSource}`;
+    let text = `Lune · ${HUD_INT_FORMAT.format(Math.round(g.distKm))} km de la Terre · ${phase} · ${Math.round(lit * 100)} % éclairée · position ${this.moonSource}`;
 
     // De près, sous 3 rayons (début).
     if (this.dist < f.r * 3) {

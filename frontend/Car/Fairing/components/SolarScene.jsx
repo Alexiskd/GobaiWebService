@@ -761,10 +761,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onSources={() => panels.setPanel('sources')}
         // Dons : ouvre la fenêtre.
         onDonate={() => panels.setPanel('donate')}
-        // Moniteur de performance : l'affiche ou le masque.
-        onTogglePerformanceMonitor={() => setPerformanceMonitorVisible((visible) => !visible)}
-        // Moniteur de performance : son état.
-        performanceMonitorVisible={performanceMonitorVisible}
         // Galerie : ouvre la fenêtre.
         onStore={() => setStoreOpen(true)}
         onGallery={() => setGalleryOpen(true)}

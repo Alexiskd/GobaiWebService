@@ -23,15 +23,15 @@ test('rayon et sphère : traversée devant la caméra seulement', () => {
   assert.equal(rayHitsSphere(O, AHEAD, [0, 0, -100], 0), false);
 });
 
-test('clic sur un système : son astre principal, et le plus petit système quand ils sont emboîtés', () => {
+test('clic sur un système : son astre principal, le plus gros quand les systèmes sont emboîtés', () => {
   const earth = { id: 'earth', center: [0, 0, -1000], radius: 235 };
   const moon = { id: 'moon', center: [60, 0, -1000], radius: 9.6 };
   const mars = { id: 'mars', center: [5000, 0, -1000], radius: 170 };
   // Clic dans le système de la Terre, loin de la Lune : la Terre.
   assert.equal(pickSystem(O, AHEAD, [earth, moon, mars]).id, 'earth');
-  // Clic qui traverse aussi la sphère de la Lune : la Lune, système le plus précis.
+  // Clic qui traverse aussi la sphère de la Lune : toujours la Terre, l'astre le plus gros du système.
   const towardMoon = [60 / Math.hypot(60, 1000), 0, -1000 / Math.hypot(60, 1000)];
-  assert.equal(pickSystem(O, towardMoon, [earth, moon, mars]).id, 'moon');
+  assert.equal(pickSystem(O, towardMoon, [earth, moon, mars]).id, 'earth');
   // Clic dans le vide : rien.
   assert.equal(pickSystem(O, [0, 1, 0], [earth, moon, mars]), null);
   // La caméra est dans le système de la Terre et vise Jupiter au loin : la sphère de la Terre, traversée de
@@ -43,4 +43,14 @@ test('clic sur un système : son astre principal, et le plus petit système quan
   assert.equal(pickSystem(O, [0, 1, 0], [around, jupiter]), null);
   // Entrées invalides ignorées.
   assert.equal(pickSystem(O, AHEAD, [null, { id: 'x', radius: 5 }]), null);
+});
+
+test('système de Jupiter : un satellite au bord de la sphère, qui dépasse devant, renvoie quand même à Jupiter', () => {
+  const jupiter = { id: 'jupiter', center: [0, 0, -100000], radius: 8000 };
+  // Ganymède près du bord avant de la sphère de Jupiter, sa petite sphère dépasse vers la caméra.
+  const ganymede = { id: 'ganymede', center: [0, 0, -92050], radius: 100 };
+  const mars = { id: 'mars', center: [0, 0, -40000], radius: 170 };
+  assert.equal(pickSystem(O, AHEAD, [jupiter, ganymede]).id, 'jupiter');
+  // Mars devant Jupiter sur la même ligne de visée : le système le plus proche, Mars.
+  assert.equal(pickSystem(O, AHEAD, [jupiter, ganymede, mars]).id, 'mars');
 });

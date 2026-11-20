@@ -171,38 +171,32 @@ function hideMarker(o) {
  * @param {object[]} bodies  repères du moteur : { el, name, pos, kind, enabled, focused }
  */
 // layoutBodies : les repères, la caméra et la taille de l'écran (début).
+// Liste de travail des repères à placer, réutilisée à chaque image.
+const layoutItems = [];
+
 function layoutBodies(bodies, cam, W, H) {
   // Instant présent, pour les mesures des noms.
   const now = performance.now();
   // Pour chaque repère : sa position à l'écran et ses mesures (début).
-  const items = bodies.map((b) => {
-    // Projection de sa position à l'écran.
+  // Objets de travail réutilisés d'une image à l'autre (un par repère) : plus de centaines d'objets neufs par image.
+  const items = layoutItems;
+  items.length = 0;
+  for (const b of bodies) {
+    const o = b._layout || (b._layout = {});
+    o.el = b.el; o.name = b.name; o.enabled = b.enabled;
+    o.sat = b.kind === 'satellite';
+    o.focused = Boolean(b.focused);
+    // Repère masqué (case décochée, astre assez grand pour être vu) : ni projeté ni trié.
+    if (b.enabled === false) { hideMarker(o); continue; }
     v3.copy(b.pos).project(cam);
-    // Abscisse en pixels CSS.
-    const x = ((v3.x + 1) / 2) * W;
-    // Ordonnée en pixels CSS.
-    const y = ((1 - v3.y) / 2) * H;
-    // Satellite ?
-    const sat = b.kind === 'satellite';
-    // Astre visé ?
-    const focused = Boolean(b.focused);
-    // Renvoie l'objet de placement (début) :
-    return {
-      // l'élément, le nom, la famille, la mise en avant et l'activation ;
-      el: b.el, name: b.name, sat, focused, enabled: b.enabled,
-      // la distance à la caméra (priorité) ;
-      q: b.pos.distanceTo(cam.position),
-      // visible s'il est devant la caméra et à l'écran (marge de 30 pixels) ;
-      ok: v3.z <= 1 && x > -30 && x < W + 30 && y > -30 && y < H + 30,
-      // sa position ;
-      x, y,
-      // le rayon de son anneau.
-      r: sat ? (focused ? DOT_R.satelliteFocus : DOT_R.satellite) : (focused ? DOT_R.planetFocus : DOT_R.planet),
-    // Fin de l'objet.
-    };
-  // Fin des mesures.
-  });
-  // Ordre de priorité : l'astre visé, puis les planètes avant les satellites, puis du plus proche au plus lointain.
+    o.x = ((v3.x + 1) / 2) * W;
+    o.y = ((1 - v3.y) / 2) * H;
+    o.ok = v3.z <= 1 && o.x > -30 && o.x < W + 30 && o.y > -30 && o.y < H + 30;
+    if (!o.ok) { hideMarker(o); continue; }
+    o.q = b.pos.distanceTo(cam.position);
+    o.r = o.sat ? (o.focused ? DOT_R.satelliteFocus : DOT_R.satellite) : (o.focused ? DOT_R.planetFocus : DOT_R.planet);
+    items.push(o);
+  }
   items.sort((a, b) => (b.focused - a.focused) || (a.sat - b.sat) || (a.q - b.q));
   // Premier passage : les anneaux. Chaque repère visible garde son anneau, sauf s'il se confond avec un anneau déjà
   // retenu (astres alignés vus de loin) ; les noms seront placés ensuite en évitant TOUS les anneaux.

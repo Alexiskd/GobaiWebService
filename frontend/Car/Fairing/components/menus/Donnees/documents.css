@@ -7,8 +7,8 @@
   --planet: #8fb4e3;
   /* Couleurs de la fenêtre. */
   --ink: #e8ecf4; --muted: #8b93a7; --panel: #10131b; --line: #232838; --void: #07080d;
-  --display: 'Syne', sans-serif; --mono: 'IBM Plex Mono', monospace;
-  --sans: 'IBM Plex Sans', sans-serif;
+  --display: "Google Sans", "Roboto", "Helvetica Neue", Arial, sans-serif; --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans: "Google Sans", "Roboto", "Helvetica Neue", Arial, sans-serif;
   /* Couleur du texte et police de base. */
   color: var(--ink); font-family: var(--sans);
   /* Marges intérieures du bas pour laisser respirer. */
@@ -26,7 +26,7 @@
 .gobai-docs .doc-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
 
 /* Pour « .gobai-docs .doc-title » : grand titre. */
-.gobai-docs .doc-title { font: 800 30px/1.1 var(--display); letter-spacing: .01em; margin: 0; }
+.gobai-docs .doc-title { font: 700 30px/1.1 var(--display); letter-spacing: .01em; margin: 0; }
 
 /* Pour « .gobai-docs .doc-sub » : sous-titre. */
 .gobai-docs .doc-sub { margin: 0; color: var(--muted); font-size: 14px; }
