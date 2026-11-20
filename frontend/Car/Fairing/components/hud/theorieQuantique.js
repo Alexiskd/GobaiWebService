@@ -137,6 +137,20 @@ export const PROXIMUM = {
   note: 'Élément hypothétique de la théorie Gobai Space : Proxima Centauri en serait le noyau (étoile la plus proche, ≈ 4,24 a.l.).',
 };
 
+/**
+ * La molécule ajoutée par la théorie, sur la même optique que le Solarium et le Proximium : « SoPr », molécule
+ * diatomique formée du Solarium (So, noyau = le Soleil) et du Proximium (Px, noyau = Proxima Centauri), liés par une
+ * liaison simple (paire d'électrons partagée) — dans l'analogie, la « liaison » serait la gravitation entre les deux
+ * étoiles les plus proches l'une de l'autre.
+ */
+// MOLECULE : la molécule hypothétique SoPr.
+export const MOLECULE = {
+  nom: 'SoPr',
+  formule: 'So–Px',
+  atomes: [SOLARIUM, PROXIMUM],
+  liaison: 'Liaison simple (paire d’électrons partagée) ; dans l’analogie, la gravitation entre le Soleil et Proxima Centauri.',
+};
+
 /** Masse du Soleil, en kilogrammes (≈ 99,86 % de la masse du système solaire). */
 export const MASSE_SOLEIL_KG = 1.989e30;
 

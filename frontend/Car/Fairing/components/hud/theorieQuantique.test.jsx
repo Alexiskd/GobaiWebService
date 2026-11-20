@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe le module de données de l'onglet « Théorie quantique ».
-import { SYMBOLES, ELEMENTS, SOLARIUM, PROXIMUM, COUCHES, MASSE_SOLEIL_KG, NOMBRE_ELEMENTS, position, couchesElectroniques } from './theorieQuantique.js';
+import { SYMBOLES, ELEMENTS, SOLARIUM, PROXIMUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG, NOMBRE_ELEMENTS, position, couchesElectroniques } from './theorieQuantique.js';
 
 // Test : le tableau périodique contient bien les 118 éléments connus.
 test('118 symboles, du hydrogène (1) à l’oganesson (118)', () => {
@@ -108,5 +108,17 @@ test('le Proximium ajouté au tableau : Px, 120, n = 3 (période 3, groupe 3)', 
   assert.ok(!SYMBOLES.includes(PROXIMUM.symbole) && PROXIMUM.symbole !== SOLARIUM.symbole);
   // Le Solarium (119) a lui [2, 8, 18, 32, 32, 18, 8, 1].
   assert.deepEqual(SOLARIUM.couches, [2, 8, 18, 32, 32, 18, 8, 1]);
+// Fin du test.
+});
+
+// Test : la molécule SoPr réunit le Solarium et le Proximium.
+test('la molécule SoPr = Solarium (119) + Proximium (120)', () => {
+  // Son nom et sa formule.
+  assert.equal(MOLECULE.nom, 'SoPr');
+  assert.equal(MOLECULE.formule, 'So–Px');
+  // Ses deux atomes, dans l'ordre : Solarium puis Proximium.
+  assert.deepEqual(MOLECULE.atomes.map((a) => a.z), [SOLARIUM.z, PROXIMUM.z]);
+  assert.equal(MOLECULE.atomes[0], SOLARIUM);
+  assert.equal(MOLECULE.atomes[1], PROXIMUM);
 // Fin du test.
 });

@@ -1,11 +1,11 @@
 // Onglet « Théorie quantique » de la fenêtre Node : la théorie Gobai Space (le système solaire serait un atome d'une
 // masse très grande), la correspondance couches atomiques / orbites des planètes, et le tableau périodique dessiné
-// avec la répartition des électrons par couche atomique (K, L, M…) et les éléments hypothétiques « Solarium » (119)
-// et « Proximium » (120, n = 3) ajoutés.
+// avec la répartition des électrons par couche atomique (K, L, M…), les éléments hypothétiques « Solarium » (119)
+// et « Proximium » (120, n = 3) ajoutés, et la molécule « SoPr » (Solarium–Proximium) dessinée.
 // Composants MUI.
 import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-// Données de l'onglet : éléments, Solarium, Proximium, couches et masse du Soleil.
-import { ELEMENTS, SOLARIUM, PROXIMUM, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
+// Données de l'onglet : éléments, Solarium, Proximium, molécule SoPr, couches et masse du Soleil.
+import { ELEMENTS, SOLARIUM, PROXIMUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
 // Importe scientific, qui écrit un nombre en notation scientifique française.
 import { scientific } from '@/Engine/AstreSolideEngine/planetData';
 
@@ -119,6 +119,61 @@ function TableauPeriodique() {
   // Fin du rendu.
   );
 // Fin de TableauPeriodique.
+}
+
+/** La molécule SoPr en SVG : les deux noyaux (Soleil = Solarium, Proxima Centauri = Proximium) reliés par une liaison. */
+// MoleculeSoPr : dessine la molécule diatomique So–Px, avec la paire d'électrons partagée au milieu de la liaison.
+function MoleculeSoPr() {
+  // Les deux atomes de la molécule, avec leur position dans le dessin.
+  const atomes = [
+    { e: MOLECULE.atomes[0], x: 150, y: 140, label: 'Soleil' },
+    { e: MOLECULE.atomes[1], x: 410, y: 140, label: 'Proxima Centauri' },
+  ];
+  // Le milieu de la liaison.
+  const mx = (atomes[0].x + atomes[1].x) / 2, my = atomes[0].y;
+  // Début du rendu.
+  return (
+    // Le dessin (début de la balise).
+    <Box
+      // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
+      component="svg" viewBox="0 0 560 300" role="img"
+      // Description pour les lecteurs d'écran : la molécule SoPr et ses deux atomes.
+      aria-label={`Molécule SoPr : Solarium (Soleil, So, 119) et Proximium (Proxima Centauri, Px, 120) reliés par une liaison simple avec une paire d'électrons partagée`}
+      // Toute la largeur, hauteur proportionnelle, couleur secondaire.
+      sx={{ display: 'block', width: '100%', maxWidth: 520, height: 'auto', mx: 'auto', color: 'text.secondary', mt: 1 }}
+    // Fin de la balise ouvrante.
+    >
+      {/* La liaison, avec la paire d'électrons partagée au milieu (début). */}
+      <line x1={atomes[0].x + 26} y1={my} x2={atomes[1].x - 26} y2={my} stroke="currentColor" strokeWidth="2" />
+      {/* Les deux électrons partagés, au milieu de la liaison. */}
+      <circle cx={mx} cy={my - 7} r="4" sx={{ fill: (t) => t.palette.primary.main }} />
+      <circle cx={mx} cy={my + 7} r="4" sx={{ fill: (t) => t.palette.primary.main }} />
+      {/* La formule, au-dessus de la liaison. */}
+      <text x={mx} y={my - 46} fontSize="15" fontWeight="700" textAnchor="middle" fill="currentColor">{MOLECULE.nom}</text>
+      {/* Un atome par noyau (début). */}
+      {atomes.map(({ e, x, y, label }, i) => (
+        // Le groupe de l'atome.
+        <g key={e.z}>
+          {/* Deux couches autour du noyau. */}
+          <circle cx={x} cy={y} r="38" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.2" />
+          <circle cx={x} cy={y} r="52" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="1" strokeDasharray="3 4" />
+          {/* Le noyau, en surbrillance : primaire pour le Solarium, secondaire pour le Proximium. */}
+          <circle cx={x} cy={y} r="26" sx={{ fill: (t) => (i === 0 ? t.palette.primary.main : t.palette.secondary.main) }} />
+          {/* Le symbole de l'élément, au centre du noyau. */}
+          <Box component="text" x={x} y={y - 1} fontSize="12" fontWeight="700" textAnchor="middle" sx={{ fill: (t) => (i === 0 ? t.palette.primary.contrastText : t.palette.secondary.contrastText) }}>{e.symbole}</Box>
+          {/* Le numéro atomique, sous le symbole. */}
+          <Box component="text" x={x} y={y + 12} fontSize="8.5" textAnchor="middle" sx={{ fill: (t) => (i === 0 ? t.palette.primary.contrastText : t.palette.secondary.contrastText) }}>{e.z}</Box>
+          {/* Le nom du noyau, sous l'atome. */}
+          <text x={x} y={y + 72} fontSize="11" fontWeight="600" textAnchor="middle" fill="currentColor">{`${label} · ${e.nom}`}</text>
+        {/* Fin du groupe. */}
+        </g>
+      // Fin des atomes.
+      ))}
+    {/* Fin du dessin. */}
+    </Box>
+  // Fin du rendu.
+  );
+// Fin de MoleculeSoPr.
 }
 
 // Schéma de l'atome : centre du dessin, rayon de la première orbite et écart entre deux orbites (unités du viewBox).
@@ -247,6 +302,21 @@ export function TheorieQuantique() {
         <strong>Proximium</strong> (Px, n° {PROXIMUM.z}, placé en n = 3), dont Proxima Centauri — l’étoile la plus proche
         du Soleil, ≈ 4,24 années-lumière — serait le noyau. Dans la réalité, le plus lourd élément connu est
         l’oganesson (118) ; le 119 et le 120 n’existent pas encore.
+      {/* Fin de la légende. */}
+      </Typography>
+
+      {/* Quatrième titre. */}
+      <SectionTitle>La molécule {MOLECULE.nom} ({MOLECULE.formule})</SectionTitle>
+      {/* Le schéma de la molécule. */}
+      <MoleculeSoPr />
+      {/* La légende de la molécule. */}
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        {/* Son texte : la molécule SoPr, deux noyaux liés. */}
+        La molécule <strong>{MOLECULE.nom}</strong> ({MOLECULE.formule}) réunit les deux éléments de la théorie :
+        le <strong>Solarium</strong> (So, 119 — le Soleil) et le <strong>Proximium</strong> (Px, 120 — Proxima Centauri),
+        reliés par une liaison simple avec une paire d’électrons partagée. Dans l’analogie, cette « liaison » serait la
+        gravitation entre les deux étoiles les plus proches l’une de l’autre (≈ 4,24 années-lumière) — toujours une
+        analogie spéculative, pas un modèle scientifique établi.
       {/* Fin de la légende. */}
       </Typography>
     {/* Fin du conteneur. */}
