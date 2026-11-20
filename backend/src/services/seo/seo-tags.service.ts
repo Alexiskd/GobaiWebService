@@ -3,7 +3,7 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 // Pool : un groupe de connexions à PostgreSQL.
 import { Pool } from 'pg';
 // Pages des astres et des fenêtres, et nom du site : source du balisage à ranger en base au premier démarrage.
-import { APP_NAME, BODY_PAGES, SITE_KEYWORD, SITE_URL, WINDOW_PAGES, type BodyPage } from '../data/body-pages';
+import { APP_NAME, BODY_PAGES, SITE_KEYWORD, SITE_URL, WINDOW_PAGES, focusKeyword, type BodyPage } from '../data/body-pages';
 
 /**
  * Balisage SEO des pages (titre, description, adresse canonique, balises Open Graph et X/Twitter), en base
@@ -46,7 +46,7 @@ const SCHEMA = `
   );
 `;
 
-/** Les huit balises écrites par renderBodyPage pour une page, dans l'ordre où elles apparaissent dans index.html. */
+/** Les neuf balises écrites par renderBodyPage pour une page, dans l'ordre où elles apparaissent dans index.html. */
 // Fonction tagsFor : la liste des balises d'une page, à partir de son contenu écrit dans body-pages.ts.
 function tagsFor(body: BodyPage): Omit<SeoTagRow, 'position'>[] {
   // Adresse de la page.
@@ -56,10 +56,13 @@ function tagsFor(body: BodyPage): Omit<SeoTagRow, 'position'>[] {
   // Titre et description de départ.
   const title = `${body.heading} · ${site}`;
   const description = body.description;
-  // Les huit lignes : titre, description, adresse canonique, puis les quatre balises des réseaux sociaux.
+  // Mot-clé de référencement : la planète mère pour un satellite, la position réelle pour les autres astres.
+  const keywords = focusKeyword(body);
+  // Les neuf lignes : titre, description, mot-clé, adresse canonique, puis les quatre balises des réseaux sociaux.
   return [
     { page_slug: body.slug, tag_type: 'title', tag_name: 'title', tag_content: title },
     { page_slug: body.slug, tag_type: 'meta', tag_name: 'description', tag_content: description },
+    { page_slug: body.slug, tag_type: 'meta', tag_name: 'keywords', tag_content: keywords },
     { page_slug: body.slug, tag_type: 'link', tag_name: 'canonical', tag_content: url },
     { page_slug: body.slug, tag_type: 'meta', tag_name: 'og:url', tag_content: url },
     { page_slug: body.slug, tag_type: 'meta', tag_name: 'og:title', tag_content: title },
@@ -116,7 +119,7 @@ export class SeoTagsService implements OnModuleInit, OnModuleDestroy {
     const pool = this.pool!;
     // Crée la table si elle n'existe pas.
     await pool.query(SCHEMA);
-    // Amorce une page absente : insère ses huit lignes ; une page déjà présente (même une seule ligne) n'est pas touchée.
+    // Amorce une page absente : insère ses neuf lignes ; une page déjà présente (même une seule ligne) n'est pas touchée.
     for (const body of [...BODY_PAGES, ...WINDOW_PAGES]) {
       // Lignes de cette page, dans l'ordre d'affichage.
       const rows = tagsFor(body);
