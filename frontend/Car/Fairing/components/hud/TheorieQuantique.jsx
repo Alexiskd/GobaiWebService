@@ -1,10 +1,10 @@
 // Onglet « Théorie quantique » de la fenêtre Node : la théorie Gobai Space (le système solaire serait un atome d'une
 // masse très grande), la correspondance couches atomiques / orbites des planètes, le tableau périodique dessiné
 // avec la répartition des électrons par couche atomique (K, L, M…) et l'élément hypothétique « Solarium » (119),
-// la molécule « SoPr » (Solarium–Proximium), et le « tableau hypothétique » des systèmes stellaires proches.
+// la molécule « SoaCen » (Solarium–Alpha Centauri), et le « tableau hypothétique » des systèmes stellaires proches.
 // Composants MUI.
 import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-// Données de l'onglet : éléments, Solarium, molécule SoPr, couches et masse du Soleil.
+// Données de l'onglet : éléments, Solarium, molécule SoaCen, couches et masse du Soleil.
 import { ELEMENTS, SOLARIUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
 // Le tableau hypothétique des systèmes stellaires proches.
 import { TableauHypothetique } from './TableauHypothetique.jsx';
@@ -119,13 +119,13 @@ function TableauPeriodique() {
 // Fin de TableauPeriodique.
 }
 
-/** La molécule SoPr en SVG : les deux noyaux (Soleil = Solarium, Proxima Centauri = Proximium) reliés par une liaison. */
-// MoleculeSoPr : dessine la molécule diatomique So–Pr, avec la paire d'électrons partagée au milieu de la liaison.
-function MoleculeSoPr() {
+/** La molécule SoaCen en SVG : les deux noyaux (Soleil = Solarium « So », Alpha Centauri « aCen ») reliés par une liaison. */
+// MoleculeSoaCen : dessine la molécule diatomique So–aCen, avec la paire d'électrons partagée au milieu de la liaison.
+function MoleculeSoaCen() {
   // Les deux atomes de la molécule, avec leur position dans le dessin.
   const atomes = [
     { e: MOLECULE.atomes[0], x: 150, y: 140, label: 'Soleil' },
-    { e: MOLECULE.atomes[1], x: 410, y: 140, label: 'Proxima Centauri' },
+    { e: MOLECULE.atomes[1], x: 410, y: 140, label: 'Alpha Centauri' },
   ];
   // Le milieu de la liaison.
   const mx = (atomes[0].x + atomes[1].x) / 2, my = atomes[0].y;
@@ -135,8 +135,8 @@ function MoleculeSoPr() {
     <Box
       // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
       component="svg" viewBox="0 0 560 300" role="img"
-      // Description pour les lecteurs d'écran : la molécule SoPr et ses deux atomes.
-      aria-label={`Molécule SoPr : Solarium (Soleil, So, 119) et Proximium (Proxima Centauri, Pr, 120) reliés par une liaison simple avec une paire d'électrons partagée`}
+      // Description pour les lecteurs d'écran : la molécule SoaCen et ses deux atomes.
+      aria-label={`Molécule SoaCen : Solarium (Soleil, So, 119) et aCen (Alpha Centauri / Proxima Centauri, 120) reliés par une liaison simple avec une paire d'électrons partagée`}
       // Toute la largeur, hauteur proportionnelle, couleur secondaire.
       sx={{ display: 'block', width: '100%', maxWidth: 520, height: 'auto', mx: 'auto', color: 'text.secondary', mt: 1 }}
     // Fin de la balise ouvrante.
@@ -157,8 +157,8 @@ function MoleculeSoPr() {
           <circle cx={x} cy={y} r="52" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="1" strokeDasharray="3 4" />
           {/* Le noyau, en surbrillance : primaire pour le Solarium, secondaire pour le Proximium. */}
           <circle cx={x} cy={y} r="26" sx={{ fill: (t) => (i === 0 ? t.palette.primary.main : t.palette.secondary.main) }} />
-          {/* Le symbole de l'élément, au centre du noyau. */}
-          <Box component="text" x={x} y={y - 1} fontSize="12" fontWeight="700" textAnchor="middle" sx={{ fill: (t) => (i === 0 ? t.palette.primary.contrastText : t.palette.secondary.contrastText) }}>{e.symbole}</Box>
+          {/* Le symbole de l'atome (So, aCen), au centre du noyau. */}
+          <Box component="text" x={x} y={y - 1} fontSize="12" fontWeight="700" textAnchor="middle" sx={{ fill: (t) => (i === 0 ? t.palette.primary.contrastText : t.palette.secondary.contrastText) }}>{MOLECULE.symboles[i]}</Box>
           {/* Le numéro atomique, sous le symbole. */}
           <Box component="text" x={x} y={y + 12} fontSize="8.5" textAnchor="middle" sx={{ fill: (t) => (i === 0 ? t.palette.primary.contrastText : t.palette.secondary.contrastText) }}>{e.z}</Box>
           {/* Le nom du noyau, sous l'atome. */}
@@ -171,7 +171,7 @@ function MoleculeSoPr() {
     </Box>
   // Fin du rendu.
   );
-// Fin de MoleculeSoPr.
+// Fin de MoleculeSoaCen.
 }
 
 // Schéma de l'atome : centre du dessin, rayon de la première orbite et écart entre deux orbites (unités du viewBox).
@@ -306,16 +306,26 @@ export function TheorieQuantique() {
       {/* Quatrième titre. */}
       <SectionTitle>La molécule {MOLECULE.nom} ({MOLECULE.formule})</SectionTitle>
       {/* Le schéma de la molécule. */}
-      <MoleculeSoPr />
+      <MoleculeSoaCen />
       {/* La légende de la molécule. */}
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : la molécule SoPr, deux noyaux liés. */}
-        La molécule <strong>{MOLECULE.nom}</strong> ({MOLECULE.formule}) réunit les deux éléments de la théorie :
-        le <strong>Solarium</strong> (So, 119 — le Soleil) et le <strong>Proximium</strong> (Pr, 120 — Proxima Centauri),
-        reliés par une liaison simple avec une paire d’électrons partagée. Dans l’analogie, cette « liaison » serait la
-        gravitation entre les deux étoiles les plus proches l’une de l’autre (≈ 4,24 années-lumière) — toujours une
-        analogie spéculative, pas un modèle scientifique établi.
+        {/* Son texte : la molécule SoaCen, deux noyaux liés. */}
+        La molécule <strong>{MOLECULE.nom}</strong> ({MOLECULE.formule}) réunit les deux astres de la théorie :
+        le <strong>Solarium</strong> (So, 119 — le Soleil) et <strong>aCen</strong> (Alpha Centauri, qui contient Proxima
+        Centauri — le Proximium du tableau hypothétique), reliés par une liaison simple avec une paire d’électrons
+        partagée. Dans l’analogie, cette « liaison » serait la gravitation entre les deux étoiles les plus proches l’une
+        de l’autre (≈ 4,24 années-lumière) — toujours une analogie spéculative, pas un modèle scientifique établi.
       {/* Fin de la légende. */}
+      </Typography>
+      {/* Le paragraphe sur le problème à trois corps. */}
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        {/* Son texte : Alpha Centauri est un système triple, sans solution analytique générale. */}
+        <strong>Le problème à trois corps :</strong> Alpha Centauri est un système triple (A, B et Proxima). Poincaré a
+        montré qu’il n’existe pas de solution analytique générale pour trois corps en interaction gravitationnelle :
+        leurs orbites ne sont pas des ellipses parfaites et deviennent chaotiques à long terme — on les calcule par
+        intégration numérique. Dans l’analogie Gobai, la « molécule » Soleil–aCen est donc en réalité un problème à
+        trois corps, ce qui illustre la limite de l’analogie.
+      {/* Fin du paragraphe. */}
       </Typography>
 
       {/* Cinquième titre. */}

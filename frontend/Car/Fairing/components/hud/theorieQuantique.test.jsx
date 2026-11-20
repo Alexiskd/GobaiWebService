@@ -112,11 +112,14 @@ test('le Proximium : Pr, 120, Proxima Centauri du tableau hypothétique', () => 
 // Fin du test.
 });
 
-// Test : la molécule SoPr réunit le Solarium et le Proximium.
-test('la molécule SoPr = Solarium (119) + Proximium (120)', () => {
-  // Son nom et sa formule.
-  assert.equal(MOLECULE.nom, 'SoPr');
-  assert.equal(MOLECULE.formule, 'So–Pr');
+// Test : la molécule SoaCen (So–aCen) réunit le Solarium et le Proximium ; « Pr » est remplacé par « aCen ».
+test('la molécule SoaCen = Solarium (119) + aCen (120), symboles So et aCen', () => {
+  // Son nom, sa formule et ses symboles affichés.
+  assert.equal(MOLECULE.nom, 'SoaCen');
+  assert.equal(MOLECULE.formule, 'So–aCen');
+  assert.deepEqual(MOLECULE.symboles, ['So', 'aCen']);
+  // Aucun « Pr » dans la molécule.
+  assert.ok(!MOLECULE.nom.includes('Pr') && !MOLECULE.formule.includes('Pr'));
   // Ses deux atomes, dans l'ordre : Solarium puis Proximium.
   assert.deepEqual(MOLECULE.atomes.map((a) => a.z), [SOLARIUM.z, PROXIMUM.z]);
   assert.equal(MOLECULE.atomes[0], SOLARIUM);

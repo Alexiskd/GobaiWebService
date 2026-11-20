@@ -138,17 +138,19 @@ export const PROXIMUM = {
 };
 
 /**
- * La molécule ajoutée par la théorie, sur la même optique que le Solarium et le Proximium : « SoPr », molécule
- * diatomique formée du Solarium (So, noyau = le Soleil) et du Proximium (Pr, noyau = Proxima Centauri), liés par une
- * liaison simple (paire d'électrons partagée) — dans l'analogie, la « liaison » serait la gravitation entre les deux
- * étoiles les plus proches l'une de l'autre.
+ * La molécule ajoutée par la théorie, sur la même optique que le Solarium et le Proximium : « SoaCen », molécule
+ * diatomique formée du Solarium (So, noyau = le Soleil) et d'« aCen » (Alpha Centauri / Proxima Centauri — le
+ * Proximium du tableau hypothétique), liés par une liaison simple (paire d'électrons partagée) — dans l'analogie,
+ * la « liaison » serait la gravitation entre le Soleil et Alpha Centauri, les deux étoiles les plus proches.
+ * Le symbole « Pr » est abandonné dans la molécule au profit du code « aCen » (alpha Centauri).
  */
-// MOLECULE : la molécule hypothétique SoPr.
+// MOLECULE : la molécule hypothétique SoaCen (So–aCen).
 export const MOLECULE = {
-  nom: 'SoPr',
-  formule: 'So–Pr',
+  nom: 'SoaCen',
+  formule: 'So–aCen',
+  symboles: ['So', 'aCen'],
   atomes: [SOLARIUM, PROXIMUM],
-  liaison: 'Liaison simple (paire d’électrons partagée) ; dans l’analogie, la gravitation entre le Soleil et Proxima Centauri.',
+  liaison: 'Liaison simple (paire d’électrons partagée) ; dans l’analogie, la gravitation entre le Soleil et Alpha Centauri.',
 };
 
 /** Masse du Soleil, en kilogrammes (≈ 99,86 % de la masse du système solaire). */
