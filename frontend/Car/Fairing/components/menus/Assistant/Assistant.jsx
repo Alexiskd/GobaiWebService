@@ -38,7 +38,7 @@ const MAX_CHARS = 1000;
 
 /** Réponse fixe tant qu'aucune clé d'API Mistral n'est enregistrée dans le navigateur : rien n'est envoyé. */
 // Réponse affichée tant que l'assistant n'est pas branché.
-const NOT_CONNECTED = 'L’assistant n’est pas branché : le serveur n’a pas de clé d’API Claude et aucune clé n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part. Pour brancher l’assistant, enregistrez une clé dans Paramètres → Claude.';
+const NOT_CONNECTED = 'L’assistant n’est pas branché : le serveur n’a pas de clé d’API Claude et aucune clé Mistral n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part. Pour brancher l’assistant, enregistrez une clé Mistral dans Paramètres → Mistral.';
 
 /**
  * Couleurs et polices du menu, les mêmes de jour comme de nuit (le reste de l'interface suit le thème de l'application) :
@@ -72,7 +72,7 @@ const Bubble = ({ from, error, done, children }) => (
   // Fin de la balise ouvrante.
   >
     {/* L'auteur du message, pour les lecteurs d'écran seulement. */}
-    <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'Claude : '}</Typography>
+    <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'Assistant : '}</Typography>
     {/* S'il y a un texte (début). */}
     {children && (
       // Le texte : retours à la ligne gardés, mots trop longs coupés (césure française), rouge en cas d'erreur, police et taille selon l'auteur.
@@ -183,7 +183,7 @@ function MobileBar({ text, setText, busy, send }) {
     // Conteneur dans le flux du dock : pleine largeur, marges latérales.
     <Box
       component="section"
-      aria-label="Claude"
+      aria-label="Assistant"
       data-assistant-panel=""
       sx={{
         // Dans le flux du dock (plus de position fixe propre) : le dock la place au-dessus de la barre de navigation.
@@ -222,9 +222,9 @@ function MobileBar({ text, setText, busy, send }) {
           onBlur={() => setFocused(false)}
           // Entrée envoie ; Maj + Entrée passe à la ligne.
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (canSend) send(); } }}
-          placeholder={busy ? 'CLAUDE répond…' : 'Demander à CLAUDE…'}
+          placeholder={busy ? 'L’assistant répond…' : 'Poser une question…'}
           enterKeyHint="send"
-          inputProps={{ 'aria-label': 'Message pour Mistral', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
+          inputProps={{ 'aria-label': 'Message pour l’assistant', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
           sx={{
             flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, py: 0.25,
             '& textarea': { overflowWrap: 'anywhere', p: 0 },
@@ -235,7 +235,7 @@ function MobileBar({ text, setText, busy, send }) {
         <ButtonBase
           type="submit"
           disabled={!canSend}
-          aria-label={busy ? 'Mistral répond' : 'Envoyer'}
+          aria-label={busy ? 'L’assistant répond' : 'Envoyer'}
           sx={{
             // Cible tactile de 44 × 44 px (au lieu de 40), ronde, de taille fixe.
             flex: 'none', width: 44, height: 44, borderRadius: '50%',
@@ -435,7 +435,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       // Ombre marquée.
       elevation={8}
       // Nom pour les lecteurs d'écran.
-      aria-label="Mistral"
+      aria-label="Assistant"
       // Marque le panneau : ses propres boutons sont exclus de l'inventaire, pour qu'il ne se clique pas lui-même.
       data-assistant-panel=""
       // Début du style.
@@ -465,9 +465,9 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       <Stack direction="row" useFlexGap spacing={1} sx={{ alignItems: 'center', flex: 'none', flexWrap: 'wrap', rowGap: 0.75, px: 1.5, py: 1.1, borderBottom: `1px solid ${C.border}` }}>
         {/* L'icône de l'assistant. */}
         <AutoAwesomeIcon sx={{ width: 20, height: 20, flex: 'none', color: C.accent }} />
-        {/* Le titre « Mistral », en empattements. */}
+        {/* Le titre « Assistant », en empattements. */}
         {/* Il prend la place restante et peut rétrécir ; trop étroit, il se termine par « … » au lieu de passer sous les boutons. */}
-        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Claude</Typography>
+        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Assistant</Typography>
         {/* L'état « Démonstration » n'est plus dans l'en-tête, trop étroit dans le rail : l'encadré sous l'en-tête le dit déjà. */}
         {/* Le bouton de l'arborescence des astres, quand le parent en propose une. */}
         {onNavigator && (
@@ -513,7 +513,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           // Encadré d'avertissement (début de la balise).
           <Typography role="status" sx={{ flex: 'none', px: 1.25, py: 1, lineHeight: 1.45, borderRadius: '10px', bgcolor: C.field, border: `1px solid ${C.border}`, color: C.muted, fontFamily: SANS, fontSize: 13 }}>
             {/* Son texte. */}
-            Fenêtre de démonstration : l’assistant du serveur n’est pas branché et aucune clé n’est enregistrée dans ce navigateur, aucune réponse n’est générée. Enregistrez une clé dans Paramètres → Claude.
+            Fenêtre de démonstration : l’assistant du serveur n’est pas branché et aucune clé n’est enregistrée dans ce navigateur, aucune réponse n’est générée. Enregistrez une clé Mistral dans Paramètres → Mistral.
           {/* Fin de l'encadré. */}
           </Typography>
         // Fin du cas.
@@ -548,8 +548,8 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
             <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flex: 'none', alignSelf: 'flex-start', px: 1 }}>
               {/* Une petite roue orange. */}
               <CircularProgress size={14} sx={{ color: C.accent }} />
-              {/* Le texte « Mistral répond… ». */}
-              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: C.muted }}>Mistral répond…</Typography>
+              {/* Le texte « L’assistant répond… ». */}
+              <Typography sx={{ fontFamily: SANS, fontSize: 13, color: C.muted }}>L’assistant répond…</Typography>
             {/* Fin de la ligne d'attente. */}
             </Stack>
           // Fin du cas.
@@ -575,7 +575,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           // Note de confidentialité (début de la balise).
           <Typography sx={{ flex: 'none', fontFamily: SANS, fontSize: 11.5, lineHeight: 1.45, color: C.muted }}>
             {/* Son texte. */}
-            Vos messages sont envoyés à l’API CLAUDE pour générer la réponse. N’y mettez pas d’informations personnelles.
+            Vos messages sont envoyés à l’API Claude (Anthropic) par le serveur, ou à l’API Mistral si vous avez enregistré une clé dans ce navigateur. N’y mettez pas d’informations personnelles.
           {/* Fin de la note. */}
           </Typography>
         // Fin du cas.
@@ -606,9 +606,9 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
             // À chaque frappe : met le texte à jour.
             onChange={(e) => setText(e.target.value)}
             // Texte indicatif.
-            placeholder="Écrire à Mistral…"
+            placeholder="Poser une question…"
             // Nom pour les lecteurs d'écran et longueur maximale.
-            slotProps={{ htmlInput: { 'aria-label': 'Message pour Mistral', maxLength: MAX_CHARS } }}
+            slotProps={{ htmlInput: { 'aria-label': 'Message pour l’assistant', maxLength: MAX_CHARS } }}
             // Début du style.
             sx={{
               // Le cadre du champ (début).

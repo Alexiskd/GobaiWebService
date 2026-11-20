@@ -9,7 +9,7 @@ const WINDOWS = {
   // Données, Paramètres, Recherche et Aide.
   galerie: 'Données', parametres: 'Paramètres', recherche: 'Recherche', aide: 'Aide',
   // Sources, Langue et Informations.
-  node: 'Anthropic Node Open Source', langue: 'Langue', informations: 'Informations',
+  node: 'Node Open Source', langue: 'Langue', informations: 'Informations',
 // Fin de l'objet.
 };
 // Réglages que l'assistant peut changer : identifiant → nom affiché (début de l'objet).

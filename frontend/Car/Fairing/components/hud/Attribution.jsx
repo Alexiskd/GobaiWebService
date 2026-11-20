@@ -1,8 +1,7 @@
-// Fenêtre « Node » (Anthropic Node Open Source) : tout ce sur quoi l'application repose — dépôts et dépendances,
-// sources des données, API externes, arborescence du site, documentation de l'API — et les deux pages de recherche
-// de l'auteur (flux cognitif, théorie quantique). Refonte : une navigation latérale sur ordinateur (onglets
-// horizontaux sur téléphone), les mêmes briques de style dans chaque onglet (nodeUi.jsx), et un contenu revérifié
-// contre le projet (édition statique : plus de serveur, donc plus de clé d'administration ni de backend documenté).
+// Fenêtre « Node » (Node Open Source) : tout ce sur quoi l'application repose — sources des données, services
+// externes appelés (API), logiciels libres (dépôts et dépendances) et pages du site. Une navigation latérale sur
+// ordinateur (onglets horizontaux sur téléphone), les mêmes briques de style dans chaque onglet (nodeUi.jsx).
+// Les pages de recherche de l'auteur (flux cognitif, théorie quantique) sont dans la fenêtre « Données ».
 // Importe de React les crochets useEffect, useState et useSyncExternalStore.
 import { useEffect, useState, useSyncExternalStore } from 'react';
 // Importe de MUI Box, la boîte de dialogue, Link, l'interrupteur et les onglets.
@@ -25,10 +24,6 @@ import { SERVICE_ORGS, visibleCredits } from './openSourceCredits.js';
 import { API_GROUPS, countApis } from './apiList.js';
 // Importe le blocage des API externes : état, abonnement, relecture et bascule.
 import { apiState, getApiBlockState, refreshServerBlocked, setApiBlocked, subscribe } from '@/Engine/shared/lib/apiBlock';
-// Importe l'onglet du flux cognitif.
-import { FluxCognitif } from './FluxCognitif.jsx';
-// Importe l'onglet de la théorie quantique.
-import { TheorieQuantique } from './TheorieQuantique.jsx';
 // Importe les briques de style communes de la fenêtre.
 import { Carte, Chiffre, Etiquette, Fiche, GrilleChiffres, MONO, Note, Precision, Section } from './nodeUi.jsx';
 
@@ -60,13 +55,13 @@ const TOUTES_API = API_GROUPS.flatMap((g) => g.items);
  * pages de recherche de l'auteur.
  */
 // Déclare la liste des onglets.
+// Dans l'ordre où l'on en a besoin : d'où viennent les données, quels services sont appelés, sur quels logiciels le
+// site repose, quelles pages il a. Flux cognitif et Théorie quantique sont dans la fenêtre « Données ».
 const ONGLETS = [
-  { id: 'credits', label: 'Générique', aide: 'Dépôts et dépendances' },
-  { id: 'sources', label: 'Sources et Entreprises', aide: 'Origine des données affichées' },
-  { id: 'apis', label: 'API', aide: 'Services externes appelés' },
-  { id: 'tree', label: 'Arborescence', aide: 'Les pages du site' },
-  { id: 'flux', label: 'Flux cognitif', aide: 'F(t) = P(t) × p' },
-  { id: 'theorie', label: 'Théorie quantique', aide: 'L’échelle de la matière' },
+  { id: 'sources', label: 'Sources des données', aide: 'Origine des données affichées' },
+  { id: 'apis', label: 'Services (API)', aide: 'Services externes appelés' },
+  { id: 'credits', label: 'Logiciels libres', aide: 'Dépôts et dépendances' },
+  { id: 'tree', label: 'Pages du site', aide: 'Arborescence du site' },
 ];
 
 /** Les services déclarés, découpés en familles : véritables API, serveurs de tuiles, puis stockage et diffusion de fichiers. */
@@ -321,7 +316,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
   // État : la mention du fournisseur pour la zone visible.
   const [copyright, setCopyright] = useState('');
   // État : l'onglet affiché, « Générique » au départ.
-  const [tab, setTab] = useState('credits');
+  const [tab, setTab] = useState('sources');
 
   // Clé de la vue : la couche, le zoom et les quatre limites ; null sans limites.
   const key = b ? `${layerId}|${b.zoom}|${b.north}|${b.south}|${b.east}|${b.west}` : null;
@@ -396,18 +391,17 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
   ].filter(Boolean);
 
   // Le contenu de l'onglet affiché.
-  const contenu = tab === 'theorie' ? <TheorieQuantique /> : tab === 'flux' ? <FluxCognitif />
-    : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />;
+  const contenu = tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />;
 
   // Début du rendu.
   return (
     // Fenêtre large ; plein écran en mode compact. La hauteur est fixe sur ordinateur : changer d'onglet ne la fait pas sauter.
     <Dialog
-      open={open} onClose={onClose} fullScreen={compact} maxWidth="lg" fullWidth aria-label="Anthropic Node Open Source"
+      open={open} onClose={onClose} fullScreen={compact} maxWidth="lg" fullWidth aria-label="Node Open Source"
       slotProps={{ paper: { sx: { overflow: 'hidden', height: compact ? '100%' : 'min(88vh, 900px)' } } }}
     >
       {/* En-tête : surtitre, titre et bouton de fermeture. */}
-      <PanelHeader kicker="Go白ناन्टех · Anthropic Node Open Source" title="Node — sources, outils et recherche" onClose={onClose} sx={{ px: 2.5, pt: 2, pb: 1.5 }} />
+      <PanelHeader kicker="Go白ناन्टех · Node Open Source" title="Node — sources et outils" onClose={onClose} sx={{ px: 2.5, pt: 2, pb: 1.5 }} />
       {/* Corps : navigation à gauche et contenu à droite sur ordinateur ; navigation au-dessus sur téléphone. */}
       <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: compact ? 'column' : 'row' }}>
         {/* Les onglets : verticaux avec une ligne d'aide sur ordinateur, horizontaux et défilants sur téléphone. */}
@@ -417,7 +411,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
           orientation={compact ? 'horizontal' : 'vertical'}
           variant="scrollable"
           scrollButtons={compact ? 'auto' : false}
-          aria-label="Sections de la fenêtre Anthropic Node Open Source"
+          aria-label="Sections de la fenêtre Node Open Source"
           sx={compact
             ? { flex: 'none', px: 1, borderBottom: 1, borderColor: 'divider' }
             : { flex: 'none', width: 232, py: 1, borderRight: 1, borderColor: 'divider', '& .MuiTabs-indicator': { left: 0, right: 'auto', width: 3 } }}

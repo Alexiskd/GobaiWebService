@@ -10,6 +10,9 @@ import { PanelHeader } from '../../ui/PanelHeader.jsx';
 const GalerieApp = lazy(() => import('./GalerieApp.jsx').then((m) => ({ default: m.GalerieApp })));
 // Déclare Documents en chargement différé : le module est demandé à la première ouverture de l'onglet.
 const Documents = lazy(() => import('./Documents.jsx').then((m) => ({ default: m.Documents })));
+// Pages de recherche de l'auteur, venues de la fenêtre Node : chargées seulement à l'ouverture de leur onglet.
+const FluxCognitif = lazy(() => import('../../hud/FluxCognitif.jsx').then((m) => ({ default: m.FluxCognitif })));
+const TheorieQuantique = lazy(() => import('../../hud/TheorieQuantique.jsx').then((m) => ({ default: m.TheorieQuantique })));
 
 // Identifiant de la balise link des polices de la fenêtre Données.
 const FONTS_ID = 'galerie-fonts';
@@ -20,9 +23,14 @@ const FONTS_URL = 'https://fonts.googleapis.com/css2?family=Syne:wght@600;800&fa
 const TABS = [
   { id: 'documentation', name: 'Documentation' },
   { id: 'galerie', name: 'Galerie' },
+  { id: 'flux', name: 'Flux cognitif' },
+  { id: 'theorie', name: 'Théorie quantique' },
 ];
 
-/** Fenêtre plein écran « Données » : onglet Documentation (fiches des PDF de data/) et onglet Galerie (images NASA et collection personnelle). */
+/**
+ * Fenêtre plein écran « Données » : Documentation (fiches des PDF de data/), Galerie (images NASA et collection
+ * personnelle), et les deux pages de recherche de l'auteur : Flux cognitif et Théorie quantique.
+ */
 // Déclare et exporte le composant Donnees : ouverture, fermeture et onglet affiché.
 export function Donnees({ open, onClose }) {
   // État : l'onglet affiché, la documentation au départ.
@@ -102,10 +110,13 @@ export function Donnees({ open, onClose }) {
             </div>
             {/* Zone d'attente : une roue centrée pendant le chargement du module. */}
             <Suspense fallback={<Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}><CircularProgress /></Box>}>
-              {/* Selon l'onglet : la documentation, ou la galerie. */}
-              {tab === 'galerie'
-                ? <GalerieApp onLightboxChange={onLightboxChange} />
-                : <Documents onLightboxChange={onLightboxChange} />}
+              {/* Selon l'onglet : la galerie, une page de recherche (dans une colonne lisible), ou la documentation. */}
+              {tab === 'galerie' ? <GalerieApp onLightboxChange={onLightboxChange} />
+                : tab === 'flux' || tab === 'theorie' ? (
+                  <Box sx={{ maxWidth: 980, mx: 'auto', px: { xs: 2, sm: 3 }, py: 3, color: 'text.primary' }}>
+                    {tab === 'flux' ? <FluxCognitif /> : <TheorieQuantique />}
+                  </Box>
+                ) : <Documents onLightboxChange={onLightboxChange} />}
             {/* Fin de la zone d'attente. */}
             </Suspense>
           </>
