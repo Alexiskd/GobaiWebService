@@ -18,7 +18,7 @@ import {
   SearchIcon, PublicIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
   // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
-  GalleryIcon, StoreIcon, FavoriteIcon, SettingsIcon,
+  ScienceIcon, StoreIcon, FavoriteIcon, SettingsIcon,
   // Arborescence des astres, plateau tournant et icône de l'assistant.
   AccountTreeIcon, ThreeSixtyIcon, AutoAwesomeIcon,
 // Fin de la liste ; module des icônes.
@@ -103,7 +103,7 @@ export function toolbarActions({
     },
     // ── Bloc « data » — Données : documents et images, contributions LiDAR, exports payants.
     // Données (si le rappel existe) : icône seule.
-    onGallery && { id: 'gallery', group: 'data', icon: GalleryIcon, label: 'Données', iconOnly: true, onClick: onGallery, title: 'Données : documentation, galerie d’images, flux cognitif et théorie quantique (P)' },
+    onGallery && { id: 'gallery', group: 'data', icon: ScienceIcon, label: 'Données', iconOnly: true, onClick: onGallery, title: 'Données : flux cognitif et théorie quantique (P)' },
     // Contribuer : placer une dalle LiDAR sur le globe et voter sur le placement des autres.
     onContribute && { id: 'contribute', group: 'data', icon: AddLocationIcon, label: 'Contribuer', onClick: onContribute, title: 'Contribuer : placer un relevé LiDAR sur le globe et voter sur les placements' },
     // Boutique des exports : modèle 3D d'un astre, ses tuiles, son orbite (paiement Stripe côté serveur).
