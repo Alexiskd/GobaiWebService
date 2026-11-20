@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // Importe le champ gravitationnel des astres.
 import {
-  BODY_MASS_KG, bodyMassKg, gravitySphereRadius, hillRadius, schwarzschildRadiusOfMass, systemExtents, systemWellSegments, wellDepthM,
+  BODY_MASS_KG, bodyMassKg, gravitySphereRadius, hillRadius, schwarzschildRadiusOfMass, systemWellSegments, wellDepthM,
 } from './GravityField.js';
 
 // Rayon de la Terre en km : l'unité de scène du moteur.
@@ -56,14 +56,17 @@ test('toupie d’un système : nulle au bord, la plus creuse au centre, plus cre
   assert.equal(systemWellSegments({ outer: 0, unitM: 1, massKg: 1, exaggeration: 1 }).length, 0);
 });
 
-test('systèmes : seules les planètes qui ont des satellites portent une toupie', () => {
-  const extents = systemExtents([
-    { parent: 'earth', distance: 60.3 }, { parent: 'jupiter', distance: 66 }, { parent: 'jupiter', distance: 295 },
-    { parent: 'mars', distance: 3.7 }, { parent: 'saturn', distance: 0 }, null,
-  ]);
-  assert.deepEqual([...extents.keys()].sort(), ['earth', 'jupiter', 'mars']);
-  assert.equal(extents.get('jupiter'), 295);
-  // Mercure et la Lune n'ont aucun satellite : absents.
-  assert.equal(extents.has('mercury'), false);
-  assert.equal(extents.has('moon'), false);
+test('toupie d’un petit astre : étirée jusqu’à l’englober, sans changer de profil', () => {
+  const base = { outer: 60, inner: 1, unitM: UNIT_KM * 1000, massKg: BODY_MASS_KG.earth, exaggeration: 2000 };
+  const lowest = (segs) => { let min = 0; for (let i = 1; i < segs.length / 2; i += 3) min = Math.min(min, segs[i]); return -min; };
+  const natural = lowest(systemWellSegments(base));
+  // Le puits réel de la Terre est presque plat à cette échelle : il ne dépasse pas son rayon.
+  assert.ok(natural > 0 && natural < 2);
+  // Avec un creux minimal de 20 unités, les pointes se referment bien au-delà de l'astre (rayon 1).
+  const stretched = systemWellSegments({ ...base, minDepth: 20 });
+  assert.ok(Math.abs(lowest(stretched) - 20) < 1e-3);
+  // Le bord reste à la hauteur zéro et le rayon ne change pas : seule la hauteur est étirée.
+  assert.equal(stretched.length, systemWellSegments(base).length);
+  // Un puits déjà plus creux que le minimum n'est pas touché.
+  assert.ok(Math.abs(lowest(systemWellSegments({ ...base, minDepth: natural / 2 })) - natural) < 1e-6);
 });

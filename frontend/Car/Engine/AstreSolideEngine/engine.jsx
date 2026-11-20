@@ -129,7 +129,7 @@ import { renderLoop } from '../SystemeEngine/core/RenderLoop.js';
 import { createGobaiPerivolumeAxioms } from '../SystemeEngine/PerivolumeEngine/PerivolumeAxiomPolicy.js';
 import { PerivolumeSphereEngine } from '../SystemeEngine/PerivolumeEngine/PerivolumeSphereEngine.js';
 // Importe le champ gravitationnel : rayon de la sphère d'un astre (sphère de Hill) et toupie d'un système (puits de gravité).
-import { gravitySphereRadius, systemExtents, systemWellSegments } from '../SystemeEngine/PerivolumeEngine/GravityField.js';
+import { gravitySphereRadius, systemWellSegments } from '../SystemeEngine/PerivolumeEngine/GravityField.js';
 import { ResourceManager } from '../SystemeEngine/core/ResourceManager.js';
 import { InterstellarResourceLifecycleManager } from '../SystemeEngine/core/InterstellarResourceLifecycleManager.js';
 import { InterstellarLODManager } from '../SystemeEngine/core/InterstellarLODManager.js';
@@ -1271,7 +1271,7 @@ export class SolarEngine {
       },
     });
     this.coreLastDecisions = [];
-    // Les toupies des systèmes planétaires (puits de gravité de chaque planète qui a des satellites).
+    // Les toupies : chaque astre est un système, avec son puits de gravité qui l'englobe.
     this.initSystemWells();
     // Raccordement réel des systèmes distants à la scène principale et au catalogue public.
     this.initInterstellarIntegration();
@@ -1308,30 +1308,34 @@ export class SolarEngine {
   }
 
   /**
-   * Pose la toupie de chaque système planétaire : le puits de gravité (grille filaire double, comme celle du
-   * Soleil) de chaque planète autour de laquelle tourne au moins un satellite — la Terre, Mars, Jupiter, Saturne,
-   * Uranus, Neptune, Pluton. Mercure et Vénus n'ont pas de satellite : pas de toupie ; la Lune et les autres
-   * satellites n'en portent pas non plus. La profondeur vient de la masse de la planète, avec la même exagération
-   * que la grille du Soleil : les toupies se comparent entre elles.
+   * Pose la toupie de chaque astre : chaque astre est un système, avec sa toupie qui l'englobe. C'est son puits de
+   * gravité (grille filaire double, comme celle du Soleil), inscrit dans sa sphère d'influence : le bord de la toupie
+   * suit l'équateur de la sphère translucide, ses deux pointes se referment au-dessus et au-dessous de l'astre.
+   * Planètes, planètes naines, Lune et satellites en portent une ; le Soleil garde la sienne, la grille du système
+   * solaire. La profondeur vient de la masse de l'astre (même exagération que la grille du Soleil) ; quand ce creux
+   * réel ne suffit pas à englober l'astre, la toupie est étirée jusqu'à 35 % de son rayon, et au moins 1,6 fois le
+   * rayon de l'astre.
    * Masquées hors de l'affichage Schwarzschild (bouton E = mc²), elles en suivent le fondu.
    */
   initSystemWells() {
     this.systemWells = [];
     if (!this.perivolumeRoot) return;
-    // Distance du satellite le plus lointain de chaque planète, en unités de scène ; la Lune compte pour la Terre.
-    const extents = systemExtents([
-      { parent: 'earth', distance: MOON_DISTANCE_KM / EARTH_RADIUS_KM },
-      ...(this.satellites?.list || []).map((sat) => ({ parent: sat.parent ? bodyId(sat.parent.def) : null, distance: (sat.def.aKm || 0) / EARTH_RADIUS_KM })),
-    ]);
-    for (const planet of this.planets) {
-      const id = bodyId(planet.def);
-      const extent = extents.get(id);
-      if (!extent) continue;
+    this.focusTargets.forEach((target, index) => {
+      // Le rayon de la toupie : celui de la sphère d'influence de l'astre (0 pour le Soleil, qui a déjà la sienne).
+      const outer = this.gravitySphereRadiusOf(target, index);
+      if (!(outer > 0)) return;
+      const radius = Math.max(Number(target.r) || 0, 1e-6);
+      const id = target.body ? bodyId(target.body.def) : target.moon ? 'moon' : target.satellite?.def.id;
+      if (!id) return;
+      // Moins de traits pour un satellite : ils sont des dizaines.
+      const small = Boolean(target.satellite);
       const positions = systemWellSegments({
-        outer: extent * 1.15, inner: planet.def.radius, unitM: EARTH_RADIUS_KM * 1000,
-        massKg: bodyMassKg(id, planet.def.radius * EARTH_RADIUS_KM), exaggeration: WELL_EXAGGERATION,
+        outer, inner: radius, unitM: EARTH_RADIUS_KM * 1000,
+        massKg: bodyMassKg(id, radius * EARTH_RADIUS_KM), exaggeration: WELL_EXAGGERATION,
+        minDepth: Math.max(outer * 0.35, radius * 1.6),
+        rings: small ? 8 : 14, spokes: small ? 24 : 32,
       });
-      if (!positions.length) continue;
+      if (!positions.length) return;
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       // Même trait que la grille du Soleil : fin, additif, sans écriture de profondeur.
@@ -1343,8 +1347,8 @@ export class SolarEngine {
       well.visible = false;
       well.name = `schwarzschild-well:${id}`;
       this.perivolumeRoot.add(well);
-      this.systemWells.push({ id, planet, well });
-    }
+      this.systemWells.push({ id, target, well });
+    });
   }
 
   // Initialise les connecteurs astronomiques navigateur et le renderer distant partagé avec la scène principale.
@@ -1830,8 +1834,8 @@ export class SolarEngine {
       // Le périvolume dessiné de l'astre suit sa position, seulement quand l'affichage Schwarzschild le montre.
       if (position && this.perivolumeSpheres?.displayAlpha > 0) this.perivolumeSpheres.updateCenter(id, position.toArray());
     }
-    // Les toupies des systèmes suivent leur planète, quand elles sont affichées.
-    for (const { planet, well } of this.systemWells || []) if (well.visible) well.position.copy(planet.w);
+    // Chaque toupie suit son astre, quand elle est affichée.
+    for (const { target, well } of this.systemWells || []) if (well.visible) well.position.copy(target.get());
     for (const { id, target } of this.coreSystemVolumes || []) {
       const position = target.get();
       if (position) this.corePerivolumes.updateCenter(id, position.toArray());
@@ -3107,11 +3111,11 @@ export class SolarEngine {
     grid.visible = eased > 0.002;
     // Les périvolumes (chaque astre, chaque système) font partie de cet affichage : même fondu que la grille.
     this.perivolumeSpheres?.setDisplay(eased);
-    // Les toupies des systèmes planétaires : même opacité et même fondu que la grille du Soleil.
-    for (const { planet, well } of this.systemWells || []) {
+    // Les toupies des astres : même opacité et même fondu que la grille du Soleil.
+    for (const { target, well } of this.systemWells || []) {
       well.material.opacity = 0.5 * eased;
       well.visible = grid.visible;
-      if (well.visible) well.position.copy(planet.w);
+      if (well.visible) well.position.copy(target.get());
     }
     // Si elle est visible, elle suit le Soleil, exactement au centre du puits de courbure (représentation de la
     // métrique de Schwarzschild) — et pas seulement pendant le fondu.
@@ -4837,7 +4841,7 @@ export class SolarEngine {
       }
     // Fin des planètes.
     }
-    // Libère les toupies des systèmes planétaires.
+    // Libère les toupies des astres.
     for (const { well } of this.systemWells || []) {
       well.geometry.dispose();
       well.material.dispose();
