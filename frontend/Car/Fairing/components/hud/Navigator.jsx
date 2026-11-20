@@ -7,7 +7,7 @@ import { useHudDraggable } from '@/Fairing/hooks/useHudDraggable';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe la largeur du rail, la hauteur de la bande et edge, la distance à un bord.
-import { RAIL, STRIP_H, edge } from '@/Fairing/theme/layout';
+import { RAIL_BOTTOM, RAIL_TOP, RAIL_W, STRIP_H, edge } from '@/Fairing/theme/layout';
 // Importe MQ (requêtes média, dont l'écran tactile) et safe, qui donne une marge de sécurité de l'écran.
 import { MQ, safe } from '@/Fairing/theme/mediaQueries';
 
@@ -134,7 +134,10 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
   // Effet du rail.
   useEffect(() => {
     // Hors mode compact : fait défiler le rail pour que le groupe courant soit visible.
-    if (!compact) groupRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (compact) return;
+    groupRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    // Satellite visé : visible aussi dans la liste des satellites, qui défile dans sa propre zone.
+    activeRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   // Fin de l'effet ; dépendances : le mode compact, l'astre visé et le repli.
   }, [compact, focus, folded]);
 
@@ -335,204 +338,136 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect }) {
   // Fin du mode compact.
   }
 
-  // Grand écran : le rail vertical (début du rendu).
+  // Ordinateur : rail de gauche, ajusté à la fenêtre (voir RAIL_W, RAIL_TOP, RAIL_BOTTOM dans theme/layout) :
+  //  - largeur fluide, de 208 à 260 px selon la largeur de la fenêtre ;
+  //  - posé entre le bandeau du haut et la barre d'outils du bas, centré dans cette zone (haut + bas + marge auto),
+  //    jamais plus haut qu'elle : au-delà, la liste défile à l'intérieur et l'en-tête reste visible ;
+  //  - écran bas (moins de 760 px) : lignes plus serrées ; la liste d'un système à très nombreux satellites
+  //    (Jupiter, Saturne) défile dans sa propre zone, pour que les planètes suivantes restent accessibles ;
+  //  - noms trop longs terminés par « … » (nom complet en infobulle) : rien ne passe sous les numéros.
+  const short = '@media (max-height: 760px)';
   return (
-    // Le rail (début de la balise).
     <Paper
-      // Rendu en balise nav.
       component="nav"
-      // Ombre moyenne.
       elevation={4}
-      // Nom pour les lecteurs d'écran.
       aria-label="Navigation du système solaire"
-      // Référence pour le déplacement.
       ref={drag.ref}
-      // Style de position, après déplacement.
       style={drag.style}
-      // Début du style.
       sx={{
-        // Fixé au bord gauche, centré verticalement, au niveau du HUD.
-        position: 'fixed', zIndex: (t) => t.zIndex.hud, left: edge('left'), top: '50%', transform: 'translateY(-50%)',
-        // Largeur du rail ; hauteur limitée, avec défilement vertical fin.
-        width: RAIL, maxHeight: 'calc(100dvh - 120px)', overflowY: 'auto', scrollbarWidth: 'thin',
-        // Marges intérieures ; arrondi à droite seulement.
-        p: '14px 10px 18px', borderRadius: '0 16px 16px 0',
-        // Couleurs du thème (bleu la nuit, blanc et gris le jour) : voir theme.jsx.
-        // Couleur unie et non dégradé : une transition CSS ne sait pas fondre un dégradé (changement de thème).
-        // Fond uni : bleu nuit en thème sombre, gris clair sinon.
+        position: 'fixed', zIndex: (t) => t.zIndex.hud, left: edge('left'),
+        top: edge('top', RAIL_TOP), bottom: edge('bottom', RAIL_BOTTOM), height: 'fit-content', my: 'auto',
+        // Même hauteur maximale une fois déplacé à la main (le haut est alors fixé, le bas libéré).
+        maxHeight: `calc(100dvh - ${safe('top')} - ${safe('bottom')} - ${RAIL_TOP + RAIL_BOTTOM}px)`,
+        width: RAIL_W, maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 28px)`, boxSizing: 'border-box',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        borderRadius: '0 16px 16px 0',
         bgcolor: (t) => (t.palette.mode === 'dark' ? '#0d1a3c' : '#c9ced6'),
-        // Bordure fine.
         border: 1, borderColor: 'divider',
-      // Fin du style.
       }}
-    // Fin de la balise ouvrante.
     >
-      {/* L'en-tête du rail (début de la balise). */}
+      {/* En-tête (poignée de déplacement) : toujours visible, la liste défile dessous. */}
       <Box
-        // Propriétés de la poignée de déplacement.
         {...drag.handleProps}
-        // Début du style.
         sx={{
-          // Icône et titre en ligne, en demi-gras, couleur secondaire.
-          display: 'flex', alignItems: 'center', gap: 1.25, px: 1.5, pb: 1.75, color: 'text.secondary', fontSize: 14, fontWeight: 600,
-          // Curseur en main, texte non sélectionnable, gestes tactiles réservés.
+          flex: 'none', display: 'flex', alignItems: 'center', gap: 1.25, px: 2.25, pt: 1.75, pb: 1.25,
+          color: 'text.secondary', fontSize: 14, fontWeight: 600, borderBottom: 1, borderColor: 'divider',
           cursor: 'grab', userSelect: 'none', touchAction: 'none',
-        // Fin du style.
+          [short]: { pt: 1.25, pb: 0.75 },
         }}
-      // Fin de la balise ouvrante.
       >
-        {/* Le symbole de poignée, décoratif. */}
         <Box component="span" aria-hidden="true" sx={{ color: 'text.disabled', fontSize: 20, lineHeight: 1 }}>⠿</Box>
-        {/* Le titre « Navigation ». */}
-        Navigation
-      {/* Fin de l'en-tête. */}
+        <Box component="span" sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Navigation</Box>
       </Box>
 
-      {/* La liste des planètes, en colonne. */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-        {/* Un groupe par planète (début). */}
+      {/* Liste des astres : seule partie qui défile. */}
+      <Box sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', scrollbarWidth: 'thin', display: 'flex', flexDirection: 'column', gap: 0.25, p: '8px 8px 12px', [short]: { gap: 0, py: 0.5 } }}>
         {tree.map((planet) => {
-          // Planète visée ?
           const current = focus === planet.index;
-          // A-t-elle des satellites ?
           const hasMoons = planet.moons.length > 0;
-          // Sa branche est ouverte si elle en a, que c'est la planète courante et que le menu n'est pas replié.
           const open = hasMoons && planet.name === ownerName && !folded;
-          // Début du rendu du groupe.
           return (
-            // Le groupe, de clé unique ; il reçoit la référence si c'est la planète courante.
-            <Box key={planet.name} ref={planet.name === owner?.name ? groupRef : undefined}>
-              {/* Le bouton de la planète (début de la balise). */}
+            <Box key={planet.name} ref={planet.name === owner?.name ? groupRef : undefined} sx={{ flex: 'none' }}>
               <ButtonBase
-                // Marque l'élément courant pour les lecteurs d'écran.
                 aria-current={current ? 'true' : undefined}
-                // Indique si la branche est ouverte, seulement s'il y a des satellites.
                 aria-expanded={hasMoons ? open : undefined}
-                // Au clic : choix de la planète.
                 onClick={() => pickPlanet(planet)}
-                // Début du style.
+                title={planet.name}
                 sx={{
-                  // Toute la largeur, 38 px de haut au moins, contenu en ligne.
-                  width: '100%', minHeight: 38, [MQ.coarse]: { minHeight: 44 }, display: 'flex', alignItems: 'center', gap: 1.5, px: '13px', py: '4px',
-                  // Bordure transparente, forme arrondie, texte aligné à gauche.
-                  border: '1px solid transparent', borderRadius: '24px', color: 'text.primary', fontSize: 14, textAlign: 'left',
-                  // Fond de survol.
+                  width: '100%', minHeight: 38, [MQ.coarse]: { minHeight: 44 }, display: 'flex', alignItems: 'center', gap: 1.25, px: 1.5, py: '4px',
+                  border: '1px solid transparent', borderRadius: '24px', color: 'text.primary', fontSize: 14, lineHeight: 1.3, textAlign: 'left',
+                  [short]: { minHeight: 32, fontSize: 13.5 },
                   '&:hover': { bgcolor: 'action.hover' },
-                  // Planète visée : fond de sélection, bordure visible et fond de survol plus marqué.
                   ...(current && { bgcolor: 'action.selected', borderColor: 'divider', '&:hover': { bgcolor: 'action.focus' } }),
-                  // La surbrillance de la pastille.
                   ...orbHover,
-                // Fin du style.
                 }}
-              // Fin de la balise ouvrante.
               >
-                {/* La pastille de la planète. */}
                 <Orb color={planet.color} size={14} />
-                {/* Son nom, qui prend la largeur restante. */}
-                <Box component="span" sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>{planet.name}</Box>
-                {/* Son numéro (début de la balise), décoratif, en chiffres de largeur fixe. */}
-                <Box component="span" aria-hidden="true" sx={{ fontSize: 12, fontWeight: 700, color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>
-                  {/* Le numéro fourni, sinon l'indice plus un, sur deux chiffres. */}
-                  {planet.number ?? String(planet.index + 1).padStart(2, '0')}
-                {/* Fin du numéro. */}
-                </Box>
-                {/* Si elle a des satellites (début). */}
+                <Box component="span" sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{planet.name}</Box>
+                {/* Nombre de satellites, discret. */}
                 {hasMoons && (
-                  // Le chevron (début de la balise).
-                  <Box
-                    // Rendu en balise span.
-                    component="span"
-                    // Caché aux lecteurs d'écran.
-                    aria-hidden="true"
-                    // Tourné vers le bas quand la branche est ouverte, avec transition.
-                    sx={{ width: 14, color: 'text.secondary', fontSize: 23, lineHeight: 1, transition: 'transform .18s ease', transform: open ? 'rotate(90deg)' : 'none' }}
-                  // Fin de la balise ouvrante.
-                  >
-                    {/* Le signe ›. */}
-                    ›
-                  {/* Fin du chevron. */}
-                  </Box>
-                // Fin du cas.
+                  <Box component="span" aria-hidden="true" sx={{ flex: 'none', fontSize: 11, color: 'text.disabled', fontVariantNumeric: 'tabular-nums' }}>{planet.moons.length}</Box>
                 )}
-              {/* Fin du bouton de la planète. */}
+                <Box component="span" aria-hidden="true" sx={{ flex: 'none', fontSize: 12, fontWeight: 700, color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>
+                  {planet.number ?? String(planet.index + 1).padStart(2, '0')}
+                </Box>
+                {/* Flèche de dépliage ; place gardée sans satellites, pour que les numéros restent alignés. */}
+                <Box
+                  component="span"
+                  aria-hidden="true"
+                  sx={{ flex: 'none', width: 14, color: 'text.secondary', fontSize: 23, lineHeight: 1, transition: 'transform .18s ease', transform: open ? 'rotate(90deg)' : 'none', visibility: hasMoons ? 'visible' : 'hidden' }}
+                >
+                  ›
+                </Box>
               </ButtonBase>
 
-              {/* Si la branche est ouverte (début). */}
               {open && (
-                // Le bloc des satellites, en retrait, bordé à gauche d'un trait vertical.
-                <Box sx={{ position: 'relative', m: '2px 0 8px 27px', p: '1px 0 2px 25px', borderLeft: 1, borderColor: 'divider' }}>
-                  {/* Un bouton par satellite (début). */}
+                <Box
+                  role="group"
+                  aria-label={`Satellites de ${planet.name}`}
+                  sx={{
+                    position: 'relative', m: '2px 0 6px 22px', p: '1px 2px 2px 20px', borderLeft: 1, borderColor: 'divider',
+                    // Système à nombreux satellites : sa liste défile dans sa zone, bornée à 40 % de la hauteur.
+                    maxHeight: 'min(360px, 40dvh)', overflowY: 'auto', overscrollBehavior: 'contain', scrollbarWidth: 'thin',
+                  }}
+                >
                   {planet.moons.map((moon) => {
-                    // Satellite visé ?
                     const moonCurrent = focus === moon.index;
-                    // Début du rendu du satellite.
                     return (
-                      // Le bouton du satellite (début de la balise).
                       <ButtonBase
-                        // Clé unique : son nom.
                         key={moon.name}
-                        // Marque l'élément courant pour les lecteurs d'écran.
+                        ref={moonCurrent ? activeRef : undefined}
                         aria-current={moonCurrent ? 'true' : undefined}
-                        // Au clic : vise le satellite.
                         onClick={() => onSelect(moon.index)}
-                        // Début du style.
+                        title={moon.name}
                         sx={{
-                          // Toute la largeur, 30 px de haut au moins, contenu aligné à gauche.
                           position: 'relative', width: '100%', minHeight: 30, [MQ.coarse]: { minHeight: 44 }, display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
-                          // Marges, arrondi et texte un peu plus petit.
-                          gap: 1.5, p: '3px 10px 3px 12px', borderRadius: '9px', color: 'text.primary', fontSize: 13, textAlign: 'left',
-                          // Fond de survol.
+                          gap: 1.25, p: '3px 8px 3px 10px', borderRadius: '9px', color: 'text.primary', fontSize: 13, lineHeight: 1.3, textAlign: 'left',
+                          [short]: { minHeight: 28 },
                           '&:hover': { bgcolor: 'action.hover' },
-                          // Satellite visé : fond bleuté.
                           ...(moonCurrent && { bgcolor: 'rgba(65, 112, 180, .2)' }),
-                          // La surbrillance de la pastille.
                           ...orbHover,
-                        // Fin du style.
                         }}
-                      // Fin de la balise ouvrante.
                       >
-                        {/* Branche de l'arborescence : trait horizontal terminé par un nœud. */}
-                        {/* Le trait de la branche (début de la balise). */}
                         <Box
-                          // Rendu en balise span.
                           component="span"
-                          // Caché aux lecteurs d'écran.
                           aria-hidden="true"
-                          // Début du style.
                           sx={{
-                            // Trait horizontal de 22 px, à gauche du bouton, à mi-hauteur.
-                            position: 'absolute', left: -26, top: '50%', width: 22, height: '1px', bgcolor: 'divider',
-                            // Terminé par un nœud rond de 7 px.
+                            position: 'absolute', left: -21, top: '50%', width: 18, height: '1px', bgcolor: 'divider',
                             '&::before': { content: '""', position: 'absolute', left: -1, top: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: 'text.disabled' },
-                          // Fin du style.
                           }}
-                        // Fin du trait.
                         />
-                        {/* La pastille du satellite. */}
-                        <Orb color={moon.color} size={17} />
-                        {/* Son nom, qui prend la largeur restante. */}
-                        <Box component="span" sx={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>{moon.name}</Box>
-                      {/* Fin du bouton du satellite. */}
+                        <Orb color={moon.color} size={15} />
+                        <Box component="span" sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{moon.name}</Box>
                       </ButtonBase>
-                    // Fin du rendu du satellite.
                     );
-                  // Fin des satellites.
                   })}
-                {/* Fin du bloc des satellites. */}
                 </Box>
-              // Fin du cas.
               )}
-            {/* Fin du groupe. */}
             </Box>
-          // Fin du rendu du groupe.
           );
-        // Fin des groupes.
         })}
-      {/* Fin de la liste des planètes. */}
       </Box>
-    {/* Fin du rail. */}
     </Paper>
-  // Fin du rendu.
   );
 // Fin de Navigator.
 });

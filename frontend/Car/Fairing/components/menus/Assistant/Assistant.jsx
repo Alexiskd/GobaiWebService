@@ -9,7 +9,7 @@ import { askAssistant, connectAssistant } from '@/Computing/api/assistant';
 // Relevé des éléments actionnables de la page.
 import { collectInventory } from '@/Engine/shared/lib/domInventory';
 import { useViewport } from '@/Fairing/hooks/useViewport';
-import { RAIL, STRIP_H, TITLE_H, edge } from '@/Fairing/theme/layout';
+import { RAIL_W, STRIP_H, TITLE_H, edge } from '@/Fairing/theme/layout';
 import { MQ, safe } from '@/Fairing/theme/mediaQueries';
 import { AutoAwesomeIcon, CheckIcon, CloseIcon, LogoutIcon, SendIcon } from '../../ui/icons.jsx';
 import { BillingScreen, LoginScreen } from './AssistantGate.jsx';
@@ -321,11 +321,12 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
   // Téléphone : la fenêtre se réduit à une barre de saisie (les réponses ne sont pas affichées).
   const bare = compact;
   // Place prise par l'arborescence des astres quand elle est ouverte : le panneau s'en écarte.
-  const shift = shifted ? (compact ? STRIP_H : RAIL + 12) : 0;
+  // Téléphone : la hauteur de la bande ; ordinateur : la largeur du rail (qui suit la fenêtre), plus 12 px.
+  const shift = shifted ? (compact ? `${STRIP_H}px` : `(${RAIL_W} + 12px)`) : '0px';
   const placed = hud
     ? (compact
-      ? { position: 'fixed', left: 0, right: 0, bottom: `calc(${shift}px + ${safe('bottom')})`, pb: shift ? 0 : safe('bottom'), zIndex: (t) => t.zIndex.toolbar - 5 }
-      : { position: 'fixed', left: `calc(${edge('left')} + ${shift}px)`, top: '50%', transform: 'translateY(-50%)', zIndex: (t) => t.zIndex.hud })
+      ? { position: 'fixed', left: 0, right: 0, bottom: `calc(${shift} + ${safe('bottom')})`, pb: shifted ? 0 : safe('bottom'), zIndex: (t) => t.zIndex.toolbar - 5 }
+      : { position: 'fixed', left: `calc(${edge('left')} + ${shift})`, top: '50%', transform: 'translateY(-50%)', zIndex: (t) => t.zIndex.hud })
     : (anchored ? {} : { position: 'fixed', left: edge('left', 8), bottom: `calc(${barH}px + ${safe('bottom')} + 16px)`, zIndex: (t) => t.zIndex.toolbar + 5 });
 
   // Ce que montre la fenêtre : connexion, facturation, vérification en cours, ou conversation.
@@ -370,7 +371,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
         bgcolor: C.panel, color: C.text, backgroundImage: 'none', border: `1px solid ${C.border}`, borderRadius: '14px', fontFamily: SANS,
         // Largeur : sur téléphone (dock), toute la largeur utile, 560 px au plus ; celle du rail en position « hud » ; 340 px sinon.
-        width: bare && hud ? '100%' : compact ? 'min(360px, calc(100vw - 16px))' : hud ? RAIL : 340,
+        width: bare && hud ? '100%' : compact ? 'min(360px, calc(100vw - 16px))' : hud ? RAIL_W : 340,
         maxWidth: bare && hud ? 560 : 'calc(100vw - 16px)', minWidth: 0, boxSizing: 'border-box',
         ...(bare && hud ? { mx: 'auto' } : {}),
         maxHeight: compact ? `min(520px, 62dvh, calc(100dvh - ${reserved}px - 24px))` : `min(520px, calc(100dvh - ${reserved}px - 96px))`,

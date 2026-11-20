@@ -5,7 +5,14 @@ import { safe } from './mediaQueries.jsx';
 // Marge au bord de l'écran : 14 pixels.
 export const GUTTER = 14;      // marge au bord de l'écran (px)
 // Largeur du rail des astres : 260 pixels.
-export const RAIL = 260;       // largeur du rail des astres (ordinateur)
+export const RAIL = 260;       // largeur maximale du rail des astres (ordinateur)
+/**
+ * Rail des astres (ordinateur) : sa largeur suit celle de la fenêtre (208 px au plus étroit, 260 px au plus large),
+ * et il tient entre le bandeau du haut (logo, titre, date) et la barre d'outils du bas.
+ */
+export const RAIL_W = `clamp(208px, 19vw, ${RAIL}px)`;
+export const RAIL_TOP = 96;     // place du bandeau du haut, marge comprise (ordinateur)
+export const RAIL_BOTTOM = 76;  // place de la barre d'outils du bas, marge comprise (ordinateur)
 // Hauteur de la bande des astres : 52 pixels.
 export const STRIP_H = 52;     // hauteur de la bande des astres (mobile)
 // Ordinateur : distance entre le bas de l'écran et le bas des boutons +/−, posés juste au-dessus de la barre d'outils
