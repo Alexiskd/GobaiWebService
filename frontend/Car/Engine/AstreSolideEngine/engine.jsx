@@ -179,6 +179,11 @@ const MOON_DISTANCE_KM = 384_400;
 const SUN_RADIUS_AU = 0.00465;
 // Une toupie n'est dessinée que si son rayon vaut au moins 1/400 de sa distance à la caméra (quelques pixels).
 const WELL_MIN_APPARENT = 400;
+// Creux minimal de la toupie d'un astre, en part de son rayon : 100 %, la toupie est aussi profonde que large d'un
+// côté (35 % avant l'amplification de la représentation).
+const WELL_MIN_DEPTH_SHARE = 1;
+// Opacité du trait de la grille du Soleil et des toupies, mode pleinement affiché (0,5 avant l'amplification).
+const WELL_LINE_OPACITY = 0.8;
 // Distance de la vue globale : 1,3 million de rayons terrestres.
 const VIEW_DISTANCE = 1.3e6;     // distance de la vue globale
 // Distance maximale de la caméra.
@@ -1407,7 +1412,7 @@ export class SolarEngine {
    * suit l'équateur de la sphère translucide, ses deux pointes se referment au-dessus et au-dessous de l'astre.
    * Planètes, planètes naines, Lune et satellites en portent une ; le Soleil garde la sienne, la grille du système
    * solaire. La profondeur vient de la masse de l'astre (même exagération que la grille du Soleil) ; quand ce creux
-   * réel ne suffit pas à englober l'astre, la toupie est étirée jusqu'à 35 % de son rayon, et au moins 1,6 fois le
+   * réel ne suffit pas à englober l'astre, la toupie est étirée jusqu'à la valeur de son rayon (WELL_MIN_DEPTH_SHARE), et au moins 1,6 fois le
    * rayon de l'astre.
    * Masquées hors de l'affichage Schwarzschild (bouton E = mc²), elles en suivent le fondu.
    */
@@ -1443,7 +1448,7 @@ export class SolarEngine {
       const shape = {
         outer, inner: radius, unitM: EARTH_RADIUS_KM * 1000,
         massKg: bodyMassKg(id, radius * EARTH_RADIUS_KM), exaggeration: WELL_EXAGGERATION,
-        minDepth: Math.max(outer * 0.35, radius * 1.6),
+        minDepth: Math.max(outer * WELL_MIN_DEPTH_SHARE, radius * 1.6),
       };
       const positions = systemWellSegments({ ...shape, rings: small ? 8 : 14, spokes: small ? 24 : 32 });
       if (!positions.length) return;
@@ -3213,7 +3218,7 @@ export class SolarEngine {
     // La grille : visible en fondu avec les orbites, posée sur le Soleil (le centre de la courbure).
     const grid = s.grid;
     // Son opacité, au maximum à fond de fondu.
-    grid.material.opacity = 0.5 * eased;
+    grid.material.opacity = WELL_LINE_OPACITY * eased;
     // Visible dès que le fondu commence, cachée et hors rendu une fois effacée.
     grid.visible = eased > 0.002;
     // Les périvolumes (chaque astre, chaque système) font partie de cet affichage : même fondu que la grille.
@@ -3221,7 +3226,7 @@ export class SolarEngine {
     // Les orbites des satellites naturels passent elles aussi du cercle de Kepler à leur rosette de Schwarzschild.
     this.satellites?.setSchwarzschildMix(eased, (sat) => this.satelliteRsOverA(sat));
     // Les toupies des astres : même opacité et même fondu que la grille du Soleil.
-    if (this.systemWellMaterial) this.systemWellMaterial.opacity = 0.5 * eased;
+    if (this.systemWellMaterial) this.systemWellMaterial.opacity = WELL_LINE_OPACITY * eased;
     this.systemWellsOn = grid.visible;
     // Bouton relâché, fondu terminé : toutes les toupies sortent du rendu d'un coup.
     if (!this.systemWellsOn) for (const system of this.systemWells || []) system.well.visible = false;

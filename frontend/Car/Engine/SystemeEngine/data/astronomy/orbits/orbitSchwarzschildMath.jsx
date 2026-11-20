@@ -19,11 +19,16 @@ export const AU_M = 1.495978707e11;
 /**
  * Exagération pédagogique du rayon de Schwarzschild dans l'intégration des géodésiques : l'équation intégrée
  * reste la vraie équation de la métrique, seule l'échelle de la courbure est multipliée, pour que la rosette
- * (Mercure ≈ 1° par orbite au lieu de 0,1″) se voie à l'œil nu.
+ * (Mercure ≈ 4° par orbite au lieu de 0,1″) se voie à l'œil nu. Représentation amplifiée le 20 novembre 2026 :
+ * 150 000 au lieu de 60 000, la rosette de Mercure tourne deux fois et demie plus vite.
  */
-export const GEODESIC_EXAGGERATION = 60000;
-/** Exagération visuelle du creux de la grille (le profil √r, signature de la courbure, est conservé). */
-export const WELL_EXAGGERATION = 2000;
+export const GEODESIC_EXAGGERATION = 150000;
+/**
+ * Exagération visuelle du creux de la grille (le profil √r, signature de la courbure, est conservé).
+ * Représentation amplifiée le 20 novembre 2026 : 10 000 au lieu de 2 000, le puits du Soleil est cinq fois plus
+ * creux (environ 28 UA au centre pour 98 UA de rayon).
+ */
+export const WELL_EXAGGERATION = 10000;
 /** Durée de la transition entre orbites de Kepler et de Schwarzschild, en millisecondes. */
 export const SCHWARZSCHILD_FADE_MS = 2500;
 

@@ -13,14 +13,14 @@ import { LOAD_STATE } from './PerivolumeManager.js';
 
 // Apparence par état : visibilité, opacité du verre, opacité du fil de fer et teinte.
 const APPEARANCE_BY_STATE = {
-  ACTIVE: { visible: true, glassOpacity: 0.12, wireOpacity: 0.26, color: 0x9fdcff },
-  BACKGROUND: { visible: true, glassOpacity: 0.04, wireOpacity: 0.08, color: 0x9fdcff },
+  ACTIVE: { visible: true, glassOpacity: 0.16, wireOpacity: 0.4, color: 0x9fdcff },
+  BACKGROUND: { visible: true, glassOpacity: 0.06, wireOpacity: 0.16, color: 0x9fdcff },
   UNLOADED: { visible: false, glassOpacity: 0, wireOpacity: 0, color: 0x9fdcff },
 };
 
 // Apparence d'un périvolume hors de portée quand l'affichage les révèle tous (mode Schwarzschild, E = mc²) :
 // très estompé, pour situer chaque astre sans masquer la scène.
-const REVEALED_UNLOADED = { visible: true, glassOpacity: 0.02, wireOpacity: 0.06, color: 0x9fdcff };
+const REVEALED_UNLOADED = { visible: true, glassOpacity: 0.03, wireOpacity: 0.09, color: 0x9fdcff };
 
 // En dessous de cette opacité d'ensemble, les périvolumes sont retirés du rendu (plus rien à dessiner).
 const DISPLAY_EPSILON = 0.002;
