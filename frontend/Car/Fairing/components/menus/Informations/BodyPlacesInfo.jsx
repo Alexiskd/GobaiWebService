@@ -8,6 +8,8 @@ import { Facts } from './Facts.jsx';
 import { MoonExtras } from './MoonExtras.jsx';
 // Importe le Blend de la Lune (modèle 3D complet enregistré dans BP).
 import { MoonBlend } from './MoonBlend.jsx';
+// Documentation et photos de l'astre (fiche de la documentation, Ma collection).
+import { BodyDocumentation, UncertaintyNote } from './BodyDocumentation.jsx';
 
 /** Composante adaptative : recherche de lieux, fiche et sections du panneau « en direct ». */
 // Déclare et exporte le composant BodyPlacesInfo : la vue de l'astre, les rappels et le composant de recherche.
@@ -49,6 +51,9 @@ export function BodyPlacesInfo({ view, handlers, Search }) {
       {/* Fin de la section de recherche. */}
       </Section>
 
+      {/* Avertissement sur les incertitudes scientifiques, en tête des caractéristiques et de la documentation. */}
+      <UncertaintyNote />
+
       {/* S'il y a des caractéristiques (début). */}
       {facts.length > 0 && (
         // Section titrée.
@@ -61,6 +66,9 @@ export function BodyPlacesInfo({ view, handlers, Search }) {
         </Section>
       // Fin du cas.
       )}
+
+      {/* Photos (Ma collection) et documentation de l'astre : ce que sa fiche ajoute aux caractéristiques en direct. */}
+      <BodyDocumentation name={name} shownTerms={facts.map((f) => f.term)} note={false} />
 
       {/* Pour la Lune : ses sections propres. */}
       {moon && <MoonExtras moon={moon} phases={phases} handlers={handlers} />}

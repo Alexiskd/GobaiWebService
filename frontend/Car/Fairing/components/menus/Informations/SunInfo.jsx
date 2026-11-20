@@ -11,7 +11,7 @@ import { SUN_FACTS } from './sunFacts.js';
 
 // Carte d'identité (valeurs de référence UAI / NASA).
 // Carte d'identité du Soleil : libellé, puis valeur (début du tableau).
-// Caractéristiques fixes du Soleil, partagées avec la Documentation de la fenêtre Données.
+// Caractéristiques fixes du Soleil, partagées avec la documentation des astres.
 const FACTS = SUN_FACTS;
 
 // nf : nombre au format français, avec un nombre fixe de décimales (0 par défaut).
