@@ -18,7 +18,7 @@ import {
   SearchIcon, PublicIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
   // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
-  GalleryIcon, SpeedIcon, FavoriteIcon, SettingsIcon,
+  GalleryIcon, SpeedIcon, StoreIcon, FavoriteIcon, SettingsIcon,
   // Arborescence des astres, plateau tournant et icône de l'assistant.
   AccountTreeIcon, ThreeSixtyIcon, AutoAwesomeIcon,
 // Fin de la liste ; module des icônes.
@@ -33,7 +33,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
+  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onTogglePerformanceMonitor, performanceMonitorVisible, onContribute,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -99,6 +99,8 @@ export function toolbarActions({
     // Partager : feuille de partage du téléphone, ou copie du lien de la vue sur ordinateur.
     // Partager (si le rappel existe) : icône seule.
     onShare && { id: 'share', group: 'help', icon: ShareIcon, label: 'Partager', iconOnly: true, onClick: onShare, title: 'Partager cette vue (lien de l’astre affiché)' },
+    // Boutique des exports : modèle 3D d'un astre, ses tuiles, son orbite (paiement Stripe côté serveur).
+    onStore && { id: 'store', group: 'data', icon: StoreIcon, label: 'Exports', onClick: onStore, title: 'Boutique : exporter le modèle 3D d’un astre, ses tuiles ou son orbite' },
     // Données (si le rappel existe) : icône seule.
     onGallery && { id: 'gallery', group: 'help', icon: GalleryIcon, label: 'Données', iconOnly: true, onClick: onGallery, title: 'Données : documentation (PDF) et galerie d\'images (P)' },
     // Moniteur de performance : activation/désactivation depuis la barre sur ordinateur.

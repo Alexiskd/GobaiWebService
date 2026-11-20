@@ -1,5 +1,9 @@
 # Gobai Space — migration frontend statique
 
+> Depuis la fusion du 20 novembre 2026 avec GobaiWebService, ce frontend est de nouveau servi avec l'API du dossier
+> `backend/` (voir le README). Ce document décrit l'édition statique seule, toujours possible : sans API joignable,
+> le client replie sur les contrats embarqués et les fonctions serveur listées plus bas restent indisponibles.
+
 ## Contenu de cette édition
 
 - Frontend React/Vite uniquement.

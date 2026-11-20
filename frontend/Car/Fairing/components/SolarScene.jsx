@@ -71,6 +71,9 @@ import { Langue } from './menus/Langue.jsx';
 import { Plateau } from './menus/Plateau/Plateau.jsx';
 // Importe la fenêtre Données (galerie et documentation).
 import { Donnees } from './menus/Donnees/Donnees.jsx';
+// Importe la boutique des exports et le test du retour de la page de paiement Stripe.
+import { Boutique } from './menus/Boutique/Boutique.jsx';
+import { hasPurchaseReturn } from '@/Computing/api/store';
 // Importe le panneau d'informations.
 import { Informations } from './menus/Informations/Informations.jsx';
 // Importe la fenêtre de recherche.
@@ -259,6 +262,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const [navigatorOpen, setNavigatorOpen] = useState(false);
   // Plateau tournant : ouvert ou non, et son ouverture.
   const plateauOpen = panels.panel === 'plateau'; const setPlateauOpen = (on) => panels.show('plateau', on);
+  // La boutique des exports.
+  const storeOpen = panels.panel === 'store'; const setStoreOpen = (on) => panels.show('store', on);
   // Touches P (Données) et T (plateau tournant), sauf pendant une saisie.
   // Effet exécuté une seule fois : deux raccourcis clavier.
   useEffect(() => {
@@ -423,6 +428,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const lidarPoints = useLidarPoints(engine);
   // Retour de Stripe : rouvre la fenêtre pour confirmer le don ou signaler son annulation.
   useEffect(() => { if (hasDonationReturn()) panels.setPanel('donate'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Au retour de Stripe après un achat d'export : rouvre la boutique, qui délivre la clé.
+  useEffect(() => { if (hasPurchaseReturn()) panels.setPanel('store'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Adresse d'une fenêtre (https://www.gobaispace.com/galerie, /node) : ouverte dès l'arrivée.
   // Même liste que WINDOW_PAGES dans backend/src/services/data/body-pages.ts.
   // Effet exécuté une seule fois : ouvre la fenêtre demandée par l'adresse.
@@ -770,6 +777,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
         // Moniteur de performance : son état.
         performanceMonitorVisible={performanceMonitorVisible}
         // Galerie : ouvre la fenêtre.
+        onStore={() => setStoreOpen(true)}
         onGallery={() => setGalleryOpen(true)}
         // Paramètres : ouvre la fenêtre.
         onSettings={() => setSettingsOpen(true)}
@@ -995,6 +1003,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
       {/* La galerie. */}
       <Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} />
+      <Boutique open={storeOpen} onClose={() => setStoreOpen(false)} />
       {/* Le plateau tournant (début de la balise). */}
       <Plateau
         // Ouvert ou non.

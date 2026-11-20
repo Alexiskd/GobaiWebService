@@ -1,5 +1,6 @@
 # https://www.gobaispace.com/
 # Résumé du site pour les assistants IA : https://www.gobaispace.com/llms.txt
+# Site entier en texte : https://www.gobaispace.com/llms-full.txt · une page en texte : ajouter .md (https://www.gobaispace.com/mars.md)
 User-agent: *
 # Tout le site est autorisé,
 Allow: /

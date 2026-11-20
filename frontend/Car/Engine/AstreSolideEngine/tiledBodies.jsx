@@ -126,7 +126,16 @@ export const TILED_BODIES = [
     concurrency: 12,
     // La sphère de fond prend l'éclairage des tuiles ; le modèle 3D remplace les tuiles au-delà de 2,2 rayons.
     surfaceMaterial: true, modelSwitchRadii: 2.2,
-    // Mode statique : aucun relais API de relief lunaire. Le relief reste simulé par le matériau local du moteur.
+    // Relief en volume, sur le modèle de la Terre (Mapterhorn) : altitudes LOLA (LRO, NASA Moon Trek, ≈ 118 m)
+    // réencodées en Terrarium par le serveur, dans le découpage géographique des images de la Lune. Altitudes signées :
+    // les mers et les bassins (jusqu'à −9,1 km) creusent la surface, les reliefs (jusqu'à +10,8 km) la soulèvent.
+    // Allumé et coupé par le même réglage que celui de la Terre (« relief en volume »).
+    relief: {
+      // Format Terrarium, niveaux 3 à 8 (au-delà, la tuile du niveau 8 est agrandie), sans exagération.
+      kind: 'terrarium', minZoom: 3, maxZoom: 8, exaggeration: 1, signed: true,
+      // Source unique : le relais du serveur (même origine que le site, comme le modèle de Phobos).
+      sources: [{ template: '/api/v1/tiles/moon-relief/{z}/{x}/{y}.png' }],
+    },
   // Fin de la Lune.
   },
   // Mars (début).

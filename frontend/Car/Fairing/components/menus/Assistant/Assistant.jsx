@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Box, ButtonBase, Chip, CircularProgress, InputBase, Paper, Popper, Stack, TextField, Typography } from '@mui/material';
 // Importe l'appel direct à l'API Mistral et la lecture de la clé enregistrée dans le navigateur.
 import { askMistral, isConnected } from '@/Engine/shared/lib/mistralAssistant';
+// Importe l'assistant du serveur : sa configuration (clé ANTHROPIC_API_KEY présente ou non) et l'envoi d'un message.
+import { askAssistant, fetchAssistantConfig } from '@/Computing/api/scene';
 // Importe le relevé des éléments actionnables de la page.
 import { collectInventory } from '@/Engine/shared/lib/domInventory';
 // Importe useViewport, qui donne la catégorie d'écran.
@@ -36,7 +38,7 @@ const MAX_CHARS = 1000;
 
 /** Réponse fixe tant qu'aucune clé d'API Mistral n'est enregistrée dans le navigateur : rien n'est envoyé. */
 // Réponse affichée tant que l'assistant n'est pas branché.
-const NOT_CONNECTED = 'L’assistant n’est pas branché : aucune clé d’API Claude n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part. Pour brancher l’assistant, enregistrez une clé dans Paramètres → Claude.';
+const NOT_CONNECTED = 'L’assistant n’est pas branché : le serveur n’a pas de clé d’API Claude et aucune clé n’est enregistrée dans ce navigateur. Votre message n’a été envoyé nulle part. Pour brancher l’assistant, enregistrez une clé dans Paramètres → Claude.';
 
 /**
  * Couleurs et polices du menu, les mêmes de jour comme de nuit (le reste de l'interface suit le thème de l'application) :
@@ -255,6 +257,8 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
   const { compact } = useViewport();
   // État : assistant configuré sur le serveur (null tant qu'on ne le sait pas).
   const [enabled, setEnabled] = useState(null); // null = pas encore su
+  // Vrai quand les messages passent par l'assistant du serveur ; faux : appel direct avec la clé du navigateur.
+  const viaServer = useRef(false);
   // État : les messages de la conversation.
   const [messages, setMessages] = useState([]);
   // État : le texte en cours de saisie.
@@ -303,10 +307,13 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
   useEffect(() => {
     // Menu fermé : rien à faire.
     if (!open) return undefined;
-    // Lecture synchrone du localStorage : vrai seulement si une clé est enregistrée.
-    setEnabled(isConnected());
-    // Rien à nettoyer : la lecture est synchrone.
-    return undefined;
+    // D'abord l'assistant du serveur (Claude, clé gardée côté backend) ; sinon la clé enregistrée dans ce navigateur.
+    const ctrl = new AbortController();
+    fetchAssistantConfig(ctrl.signal)
+      .then((c) => { viaServer.current = Boolean(c?.enabled); setEnabled(viaServer.current || isConnected()); })
+      .catch((e) => { if (e.name !== 'AbortError') { viaServer.current = false; setEnabled(isConnected()); } });
+    // À la fermeture : annule la lecture en cours.
+    return () => ctrl.abort();
   // Fin de l'effet ; dépendance : l'ouverture.
   }, [open]);
 
@@ -358,7 +365,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       // Garde la table du relevé, pour retrouver un élément que le modèle désignerait.
       inventory.current = byId;
       // Envoie la conversation et l'inventaire à l'API Mistral, et attend la réponse et les actions.
-      const { reply, actions = [] } = await askMistral(payload, elements);
+      const { reply, actions = [] } = await (viaServer.current ? askAssistant(payload, elements) : askMistral(payload, elements));
       // Composant démonté entre-temps : on s'arrête.
       if (!alive.current) return;
       // Actions demandées par le modèle : exécutées dans l'ordre, celles qui sont refusées sont ignorées.
@@ -506,7 +513,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
           // Encadré d'avertissement (début de la balise).
           <Typography role="status" sx={{ flex: 'none', px: 1.25, py: 1, lineHeight: 1.45, borderRadius: '10px', bgcolor: C.field, border: `1px solid ${C.border}`, color: C.muted, fontFamily: SANS, fontSize: 13 }}>
             {/* Son texte. */}
-            Fenêtre de démonstration : aucune clé d’API Claude n’est enregistrée, aucune réponse n’est générée. Enregistrez une clé dans Paramètres → Claude.
+            Fenêtre de démonstration : l’assistant du serveur n’est pas branché et aucune clé n’est enregistrée dans ce navigateur, aucune réponse n’est générée. Enregistrez une clé dans Paramètres → Claude.
           {/* Fin de l'encadré. */}
           </Typography>
         // Fin du cas.

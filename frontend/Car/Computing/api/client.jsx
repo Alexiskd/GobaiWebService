@@ -1,19 +1,26 @@
-// Client HTTP de l'API NestJS de Computing : les routes sont servies par `npm start` dans ce dossier,
-// avec repli local sur les données embarquées quand l'API ne répond pas (mode frontend statique).
-// Base d'origine de l'API : réglée à la construction par VITE_API_BASE (ex. https://gobai-api.onrender.com),
-// vide par défaut pour garder le mode même origine du site statique. Ce n'est jamais un secret.
-export const API_BASE = String(import.meta.env?.VITE_API_BASE ?? '').replace(/\/+$/, '');
-export const API_ROOT = API_BASE;
-export const PUBLIC_SITE_URL = '';
-export const PUBLIC_API_BASE = API_BASE;
-export const PUBLIC_DOCS_URL = '';
+// Client HTTP de l'API NestJS (dossier backend/ du dépôt) pour le frontend statique Car.
+// Base : VITE_API_URL (ex. https://api.exemple.fr/api) sinon « /api » : en ligne, le site et l'API forment un seul
+// service web (même origine) ; en développement, le proxy Vite relaie /api vers le backend.
+// Sans API joignable (site publié seul, en Static Site), les lectures replient sur les contrats embarqués plus bas.
+// Racine de l'API, sans barre finale. Ce n'est jamais un secret.
+const ROOT = String(import.meta.env?.VITE_API_URL || '/api').replace(/\/+$/, '');
+// L'exporte sous le nom API_ROOT.
+export { ROOT as API_ROOT };
+// Base des routes : la racine suivie de « /v1 ».
+export const API_BASE = `${ROOT}/v1`;
+// Adresse publique du site, sans barre finale : celle qu'un client extérieur emploie (boutique, exemples de code).
+export const PUBLIC_SITE_URL = String(import.meta.env?.VITE_PUBLIC_SITE_URL || 'https://www.gobaispace.com').replace(/\/+$/, '');
+// Base publique de l'API.
+export const PUBLIC_API_BASE = `${PUBLIC_SITE_URL}/api/v1`;
+// Documentation interactive de l'API (Swagger).
+export const PUBLIC_DOCS_URL = `${PUBLIC_SITE_URL}/api/docs`;
 
+/** URL absolue d'un chemin renvoyé par l'API (« /api/v1/… »), même si l'API est sur un autre domaine. */
 export function resolveApiUrl(path) {
-  if (!path || typeof path !== 'string') return path;
-  // Une adresse déjà absolue (http/https, protocole relatif) reste telle quelle.
-  if (/^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith('//')) return path;
-  // Les chemins relatifs sont complétés par l'origine de l'API, quand elle est réglée.
-  return API_BASE ? `${API_BASE}${path}` : path;
+  // Entrée vide ou non textuelle, chemin non absolu, adresse sans protocole : rendue telle quelle.
+  if (!path || typeof path !== 'string' || !path.startsWith('/') || path.startsWith('//')) return path;
+  // Si la racine est une adresse complète, ajoute son origine devant le chemin ; sinon le chemin tel quel.
+  return /^https?:\/\//.test(ROOT) ? new URL(ROOT).origin + path : path;
 }
 
 export class ApiError extends Error {
@@ -65,23 +72,48 @@ function staticResponse(path) {
   return { available: false, items: [] };
 }
 
-// GET appelle l'API NestJS (main.ts) ; sans API joignable, il renvoie les données locales de repli.
+// Lit le message d'erreur de l'API : une liste (validation) est jointe en une phrase.
+async function apiError(res, path) {
+  const body = await res.json().catch(() => null);
+  const message = Array.isArray(body?.message) ? body.message.join(', ') : body?.message;
+  return new ApiError(res.status, message || `HTTP ${res.status}`, path);
+}
+
+// Vrai si la réponse vient bien de l'API (du JSON) et non du repli SPA d'un site statique (une page HTML).
+const isApiAnswer = (res) => (res.headers.get('content-type') || '').includes('json');
+
+// GET appelle l'API ; sans API joignable, il renvoie les données locales de repli (le site reste utilisable seul).
+// Une vraie erreur de l'API (JSON, code 4xx/5xx) remonte en ApiError : c'est une réponse, pas une absence.
 export async function get(path, { signal, query } = {}) {
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-  const url = `${API_BASE}${resolveApiUrl(path)}${queryString(query)}`;
+  let res;
   try {
-    const response = await fetch(url, { signal, headers: { accept: 'application/json' } });
-    // Une page HTML (le repli SPA) n'est pas un contrat : on garde le repli local.
-    const type = response.headers.get('content-type') || '';
-    if (response.ok && type.includes('json')) return await response.json();
+    res = await fetch(`${API_BASE}${path}${queryString(query)}`, { signal, headers: { Accept: 'application/json' } });
   } catch (error) {
     // Une interruption remonte ; une API injoignable bascule sur le repli.
     if (error?.name === 'AbortError') throw error;
+    return staticResponse(path);
   }
-  return staticResponse(path);
+  // Une page HTML (le repli SPA) ou une réponse vide n'est pas un contrat : repli local.
+  if (!isApiAnswer(res)) return staticResponse(path);
+  if (!res.ok) throw await apiError(res, path);
+  return res.json();
 }
 
-// Les opérations serveur (écriture, paiement, assistant distant) restent désactivées côté client.
-export async function post(path) {
-  throw new ApiError(503, 'Fonction indisponible en mode statique', path);
+// POST appelle l'API (paiement Stripe, assistant, écritures). Sans API joignable : erreur 503, rien n'est simulé.
+export async function post(path, body, { signal } = {}) {
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      method: 'POST',
+      signal,
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') throw error;
+    throw new ApiError(503, 'API injoignable : fonction indisponible sans serveur', path);
+  }
+  if (!res.ok) throw isApiAnswer(res) ? await apiError(res, path) : new ApiError(503, 'API injoignable : fonction indisponible sans serveur', path);
+  return res.json();
 }

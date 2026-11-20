@@ -53,5 +53,14 @@ export default defineConfig({
     },
   // Fin de la résolution.
   },
-
+  // Serveur de développement (début).
+  server: {
+    // Port 5173.
+    port: 5173,
+    // Relais vers l'API NestJS du dossier backend/ (même adresse « /api » qu'en ligne, où l'API sert le site).
+    proxy: {
+      '/api': { target: process.env.API_URL || 'http://localhost:3001', changeOrigin: true, ws: true },
+    },
+  // Fin du serveur de développement.
+  },
 });

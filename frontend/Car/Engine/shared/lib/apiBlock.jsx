@@ -169,9 +169,30 @@ export function installFetchGuard() {
 // Fin de installFetchGuard.
 }
 
-/** En mode statique, aucun état serveur n'est consulté. */
-export async function refreshServerBlocked() {
-  setState({ server: [], permanent: [], editable: false, loaded: true });
+// apiBase : adresse de base de l'API du site (même règle que moteur/api/client).
+const apiBase = () => `${(import.meta.env?.VITE_API_URL || '/api').replace(/\/$/, '')}/v1`;
+
+// applyServer : range dans l'état la réponse du serveur.
+function applyServer(body) {
+  // Liste permanente.
+  const permanent = cleanHosts(body?.permanent);
+  // Met à jour l'état.
+  setState({ server: cleanHosts(body?.runtime), permanent, editable: Boolean(body?.editable), loaded: true });
+// Fin de applyServer.
+}
+
+/** Relit l'état du serveur. Sans réponse, l'état local reste seul en vigueur. */
+// refreshServerBlocked : GET /apis/blocked.
+export async function refreshServerBlocked(signal) {
+  // Essaie de lire.
+  try {
+    // Demande l'état, sans cache.
+    const res = await fetch(`${apiBase()}/apis/blocked`, { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+    // Réponse correcte : la range.
+    if (res.ok) applyServer(await res.json());
+  // Serveur injoignable ou demande annulée : on garde l'état connu.
+  } catch { /* rien */ }
+// Fin de refreshServerBlocked.
 }
 
 /** Clé d'administration saisie dans cet onglet ('' si aucune). */
@@ -209,7 +230,31 @@ export async function setApiBlocked(api, blocked) {
   try { globalThis.localStorage?.setItem(KEY, JSON.stringify(local)); } catch { /* stockage refusé : valable jusqu'au rechargement */ }
   // L'applique aussitôt.
   setState({ local });
-  // Mode statique : le réglage est conservé uniquement sur cet appareil.
-  return { server: 'skipped', message: 'Réglage local uniquement : aucun serveur API.' };
+  // Clé d'administration.
+  const token = getAdminToken();
+  // Pas de clé, ou serveur non modifiable : le serveur n'est pas touché.
+  if (!token || !state.editable) return { server: 'skipped' };
+  // Essaie de modifier la liste du serveur.
+  try {
+    // Envoie la nouvelle liste d'exécution complète.
+    const res = await fetch(`${apiBase()}/apis/blocked`, {
+      method: 'PUT',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'x-admin-token': token },
+      body: JSON.stringify({ hosts: toggleHosts(state.server, hosts, blocked) }),
+    });
+    // Clé refusée.
+    if (res.status === 403) return { server: 'refused', message: 'Clé d’administration refusée.' };
+    // Autre échec.
+    if (!res.ok) return { server: 'error', message: `Le serveur a répondu ${res.status}.` };
+    // Succès : range le nouvel état.
+    applyServer(await res.json());
+    // Fait.
+    return { server: 'ok' };
+  // Serveur injoignable.
+  } catch {
+    // Signale l'échec.
+    return { server: 'error', message: 'Serveur injoignable.' };
+  // Fin de l'essai.
+  }
 // Fin de setApiBlocked.
 }
