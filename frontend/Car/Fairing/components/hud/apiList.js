@@ -5,7 +5,7 @@
  *
  * Vérification du 20 nov. 2026, hôte par hôte, contre le code de frontend/Car :
  *  - retiré : JPL Horizons (ssd.jpl.nasa.gov) — plus aucun appel, les orbites sont calculées par Kepler dans le navigateur ;
- *  - ajoutés : Mistral AI (assistant), ipify (verrou d'accès), NASA SVS (vidéo de l'écran de chargement), Google Fonts (fichiers).
+ *  - ajoutés : Mistral AI (assistant), NASA SVS (vidéo de l'écran de chargement), Google Fonts (fichiers).
  * `key: true` : le service n'est appelé que si l'utilisateur a saisi sa clé. `requis: true` : l'application ne
  * s'ouvre pas sans lui, son interrupteur est donc verrouillé dans l'onglet « API ».
  */
@@ -43,7 +43,6 @@ export const API_GROUPS = [
     group: 'Assistant et accès',
     items: [
       { name: 'Mistral AI', host: 'api.mistral.ai', use: 'Assistant : la question part directement du navigateur, avec la clé saisie dans Paramètres.', kind: 'api', key: true },
-      { name: 'ipify', host: 'api.ipify.org', use: 'Lecture de l’adresse IP publique, pour le verrou d’accès à l’ouverture de l’application.', kind: 'api', requis: true },
     ],
   },
 ];

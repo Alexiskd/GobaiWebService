@@ -32,16 +32,18 @@ test('aucune API en double, et le total correspond', () => {
 
 // Vérification contre le code : un service retiré du projet ne doit pas revenir dans la liste, et ceux réellement
 // appelés doivent y figurer.
-test('la liste suit le code : plus de JPL Horizons, Mistral et ipify déclarés', () => {
+test('la liste suit le code : plus de JPL Horizons ni d’ipify, Mistral déclaré', () => {
   const hosts = items.flatMap((api) => api.host.split(', '));
   assert.ok(!hosts.includes('ssd.jpl.nasa.gov'));
-  for (const h of ['api.mistral.ai', 'api.ipify.org', 'svs.gsfc.nasa.gov', 'gea.esac.esa.int']) assert.ok(hosts.includes(h), h);
+  // Le verrou d'accès par adresse IP est retiré : ipify n'est plus appelé.
+  assert.ok(!hosts.includes('api.ipify.org'));
+  for (const h of ['api.mistral.ai', 'svs.gsfc.nasa.gov', 'gea.esac.esa.int']) assert.ok(hosts.includes(h), h);
   assert.equal(new Set(hosts).size, hosts.length);
 });
 
-// Le verrou d'accès ne peut pas être déconnecté : l'application ne s'ouvrirait plus.
-test('ipify est marqué requis, Mistral dépend d’une clé', () => {
-  assert.equal(items.find((api) => api.host === 'api.ipify.org').requis, true);
+// Plus aucun service n'est requis à l'ouverture depuis le retrait du verrou d'accès.
+test('aucun service requis, Mistral dépend d’une clé', () => {
+  assert.ok(items.every((api) => !api.requis));
   assert.equal(items.find((api) => api.host === 'api.mistral.ai').key, true);
   for (const api of items) assert.ok(['api', 'tiles', 'static'].includes(api.kind), api.name);
 });

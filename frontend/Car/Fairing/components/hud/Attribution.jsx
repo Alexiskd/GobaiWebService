@@ -189,7 +189,7 @@ const API_STATE_NOTE = {
  * Onglet « API » : toutes les API externes appelées par l'application, avec leur adresse, leur usage et un
  * interrupteur pour déconnecter chacune sur cet appareil. L'édition statique n'a pas de serveur : la clé
  * d'administration et la déconnexion « pour tous les visiteurs » de l'ancienne version n'existent plus.
- * Un service marqué `requis` (le verrou d'accès) ne peut pas être déconnecté : l'application ne s'ouvrirait plus.
+ * Un service marqué `requis` ne pourrait pas être déconnecté ; plus aucun ne l'est depuis le retrait du verrou d'accès.
  */
 // Déclare le composant ApiList.
 function ApiList() {
