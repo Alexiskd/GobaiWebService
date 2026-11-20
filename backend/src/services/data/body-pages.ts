@@ -1,7 +1,7 @@
 // Fonction qui retire les accents et les majuscules d'un texte.
 import { normalize } from '../../common/text';
-// Chiffres des astres et fabrication des questions-réponses.
-import { BODY_FACTS, bodyQuestions } from './body-facts';
+// Chiffres des astres, fabrication des questions-réponses, et tournure « de »/« du »/« d’ » devant un nom.
+import { BODY_FACTS, bodyQuestions, ofLabel } from './body-facts';
 
 /**
  * Pages de référencement : une adresse par astre (https://www.gobaispace.com/mars, /titan…).
@@ -138,6 +138,35 @@ export const BODY_PAGES: BodyPage[] = [
 // Table adresse → page, qui réunit les astres et les fenêtres.
 const BY_SLUG = new Map([...BODY_PAGES, ...WINDOW_PAGES].map((p) => [p.slug, p]));
 
+/**
+ * Planète (ou planète naine) mère de chaque satellite, pour varier son mot-clé de référencement : absente pour
+ * le Soleil, les planètes et Pluton, qui n'ont pas de planète mère.
+ */
+const PARENT_OF = new Map<string, string>([
+  ['lune', 'la Terre'], ['phobos', 'Mars'], ['deimos', 'Mars'],
+  ['io', 'Jupiter'], ['europe', 'Jupiter'], ['ganymede', 'Jupiter'], ['callisto', 'Jupiter'],
+  ['mimas', 'Saturne'], ['encelade', 'Saturne'], ['tethys', 'Saturne'], ['dione', 'Saturne'], ['rhea', 'Saturne'], ['titan', 'Saturne'], ['japet', 'Saturne'],
+  ['miranda', 'Uranus'], ['ariel', 'Uranus'], ['umbriel', 'Uranus'], ['titania', 'Uranus'], ['oberon', 'Uranus'],
+  ['triton', 'Neptune'], ['charon', 'Pluton'],
+]);
+
+/**
+ * Mot-clé de référencement propre à un astre (balise meta "keywords", table seo_tags, tag_name=keywords) :
+ * sa planète mère pour un satellite (le distingue des autres lunes), sa position réelle pour les autres astres.
+ * Pour une fenêtre du site (galerie, dons…), le mot-clé général du site. Valeur par défaut, utilisée aussi bien
+ * pour amorcer la table que pour le repli si la base est absente ou sans cette page (voir renderBodyPage).
+ */
+// Fonction focusKeyword : le mot-clé de référencement d'une page.
+export function focusKeyword(body: BodyPage): string {
+  // Fenêtre : le mot-clé général du site.
+  if (body.kind === 'fenêtre') return SITE_KEYWORD;
+  // Planète mère, s'il y en a une (satellite).
+  const parent = PARENT_OF.get(body.slug);
+  // Satellite : son nom avec sa planète mère (élision correcte : « d’Uranus », « de Mars »…) ; sinon : sa position réelle.
+  return parent ? `${body.label} en 3D, lune ${ofLabel(parent)}` : `${body.label} en 3D, position réelle`;
+// Fin de focusKeyword.
+}
+
 /** Page de l'astre pour un chemin d'URL (« /mars », « /Mars/ ») ; undefined si ce n'est pas une page d'astre. */
 // Fonction bodyPageFor : la page qui correspond à un chemin d'adresse.
 export function bodyPageFor(path: string): BodyPage | undefined {
@@ -236,6 +265,8 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
   // Titre et description bruts (avant mise en forme HTML) : ceux de la table seo_tags s'ils sont renseignés, sinon ceux écrits dans le code.
   const titleText = tags?.get('title') || `${body.heading} · ${site}`;
   const descriptionText = tags?.get('description') || body.description;
+  // Mot-clé de référencement (balise meta "keywords") : celui de la table seo_tags, sinon celui calculé pour l'astre.
+  const keywordsText = tags?.get('keywords') || focusKeyword(body);
   // Titre complet, rendu inoffensif.
   const title = escapeHtml(titleText);
   // Description, rendue inoffensive.
@@ -256,6 +287,8 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
   html = html.replace(/(<link\s+rel="alternate"\s+type="text\/markdown"\s+href=")[^"]*(")/, (_m, a: string, b: string) => `${a}${url}.md${b}`);
   // Remplace la description.
   html = meta(html, 'description', description);
+  // Remplace le mot-clé de référencement, rendu inoffensif.
+  html = meta(html, 'keywords', escapeHtml(keywordsText));
   // Remplace l'adresse pour les réseaux sociaux.
   html = meta(html, 'og:url', url);
   // Remplace le titre pour les réseaux sociaux.
