@@ -69,12 +69,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <!-- Couleur de la barre du navigateur. -->
     <meta name="theme-color" content="#0d1a3a" />
-    <!-- Données de démarrage demandées dès la lecture de la page, sans attendre le chargement du code de l'app -->
-    <link rel="preload" as="fetch" href="/api/v1/bodies" crossorigin="anonymous" />
-    <!-- Précharge la liste des villes. -->
-    <link rel="preload" as="fetch" href="/api/v1/cities" crossorigin="anonymous" />
-    <!-- Précharge la disponibilité des cartes des astres. -->
-    <link rel="preload" as="fetch" href="/api/v1/tiles/bodies/availability" crossorigin="anonymous" />
+    <!-- Les données du noyau sont embarquées dans le bundle statique : aucun endpoint API ne doit être préchargé ici. -->
     <!-- Connexion ouverte d'avance vers Google Fonts. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <!-- Connexion ouverte d'avance vers les fichiers des polices. -->
@@ -328,6 +323,11 @@
           <a href="https://www.gobaispace.com/triton">Triton en 3D</a>
           <!-- Lien : Charon. -->
           <a href="https://www.gobaispace.com/charon">Charon en 3D</a>
+          <!-- Liens : les planètes naines Cérès, Hauméa, Makémaké et Éris. -->
+          <a href="https://www.gobaispace.com/ceres">Cérès en 3D</a>
+          <a href="https://www.gobaispace.com/haumea">Hauméa en 3D</a>
+          <a href="https://www.gobaispace.com/makemake">Makémaké en 3D</a>
+          <a href="https://www.gobaispace.com/eris">Éris en 3D</a>
           <!-- Lien : la galerie. -->
           <a href="https://www.gobaispace.com/galerie">Galerie</a>
           <!-- Lien : la fenêtre des sources. -->
@@ -377,7 +377,7 @@
     <!-- Fin du cas sans JavaScript. -->
     </noscript>
     <!-- Code de l'application. -->
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/Car/main.jsx"></script>
   <!-- Fin du corps. -->
   </body>
 <!-- Fin de la page. -->

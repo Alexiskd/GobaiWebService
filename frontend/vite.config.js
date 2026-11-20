@@ -17,12 +17,16 @@ export default defineConfig({
     chunkSizeWarningLimit: 2500,
     // Options de Rollup (début).
     rollupOptions: {
+      // Entrées : la page principale, puis la page d'embarquement (embed.html), servie dans une iframe transparente.
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        embed: fileURLToPath(new URL('./embed.html', import.meta.url)),
+      // Fin des entrées.
+      },
       // Sortie (début).
       output: {
         // manualChunks : range chaque module dans un fichier (début).
         manualChunks(id) {
-          // Séries VSOP87A : données scientifiques séparées du bundle applicatif pour le cache navigateur.
-          if (id.includes('/backend/src/services/ephemeris/vsop87a/')) return 'vsop87-data';
           // Hors des dépendances : choix automatique.
           if (!id.includes('/node_modules/')) return;
           // three.js : fichier « three-vendor ».
@@ -43,8 +47,8 @@ export default defineConfig({
   resolve: {
     // Alias (début).
     alias: {
-      // « @ » désigne le dossier src.
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // « @ » désigne le dossier Car.
+      '@': fileURLToPath(new URL('./Car', import.meta.url)),
     // Fin des alias.
     },
   // Fin de la résolution.
@@ -53,14 +57,10 @@ export default defineConfig({
   server: {
     // Port 5173.
     port: 5173,
-    // En développement, /api est relayé vers le backend NestJS.
-    // Relais (début).
+    // Relais vers l'API NestJS du dossier backend/ (même adresse « /api » qu'en ligne, où l'API sert le site).
     proxy: {
-      // /api vers le backend, sur le port 3001 par défaut, WebSocket compris.
       '/api': { target: process.env.API_URL || 'http://localhost:3001', changeOrigin: true, ws: true },
-    // Fin du relais.
     },
-  // Fin du serveur.
+  // Fin du serveur de développement.
   },
-// Fin de la configuration.
 });

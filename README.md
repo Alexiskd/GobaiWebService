@@ -2,6 +2,27 @@
 
 Go白ناन्टех is a browser-based solar-system scene with a NestJS API and a React/Three.js frontend.
 
+## Fusion avec l'édition statique (20 novembre 2026)
+
+Le dépôt réunit désormais deux historiques : GobaiWebService (API NestJS, `backend/`) et static-gobai (frontend
+React/Vite restructuré, `frontend/Car/`). L'ancien `frontend/src/` est remplacé par `frontend/Car/` (Engine, Fairing,
+Computing, Transmission — voir `ARCHITECTURE.md`).
+
+- **Frontend** : celui de l'édition statique. Les positions orbitales restent calculées dans le navigateur.
+- **API** : `frontend/Car/Computing/api/client.jsx` appelle `/api/v1` (ou `VITE_API_URL`). Sans API joignable, les
+  lectures replient sur les contrats embarqués : le site reste publiable seul en Static Site.
+- **Habillage des astres** rebranché sur le serveur : disponibilité des cartes Trek, villes, nuages Xweather, foudre,
+  radar, aérosols, relief et couleur de la Lune, blend de la Lune (BP), phases de la Lune, blocage d'API côté serveur.
+- **Exports** : la Boutique (`Fairing/components/menus/Boutique`) et le compte (`useCompte`, `CompteBox`) sont de
+  retour, avec les routes `/store` et `/export` et le paiement Stripe.
+- **Assistant** : d'abord celui du serveur (`/assistant`, clé `ANTHROPIC_API_KEY`) ; à défaut, la clé enregistrée dans
+  le navigateur (Paramètres).
+- **Dons (Stripe) et galerie (PostgreSQL)** : mêmes composantes, de nouveau servies par `/donations` et `/galerie`.
+- **Déploiement** : inchangé, un seul service web (`render.yaml`, `npm run build` puis `npm start`).
+
+`frontend/Car/Computing/api` (petite API NestJS de l'édition statique) reste dans le dépôt mais n'est pas déployée :
+le service en ligne est `backend/`. Les mentions `frontend/src/…` plus bas dans ce fichier datent d'avant la fusion.
+
 ## Natural satellites (Jupiter, Saturn)
 
 Io, Europa, Ganymede, Callisto, Mimas, Enceladus, Tethys, Dione, Rhea, Titan and Iapetus are shown like the Moon: synchronous rotation (longitude 0 facing the planet), tiled global mosaics, orbit lines, focus targets and markers.
