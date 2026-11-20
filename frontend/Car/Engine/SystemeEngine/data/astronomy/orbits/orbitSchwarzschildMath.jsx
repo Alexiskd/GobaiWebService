@@ -237,13 +237,31 @@ export function gridRadii(outerAu, rings, sunRadiusAu) {
 }
 
 /**
+ * Excentricité moyenne de l'orbite des satellites naturels, par identifiant (éléments orbitaux moyens du JPL,
+ * Solar System Dynamics). Le catalogue des satellites ne la porte pas : leurs positions sont calculées sur une
+ * orbite circulaire, et cette table ne sert qu'au tracé de leur rosette de Schwarzschild — sans excentricité, une
+ * rosette n'est qu'un cercle qui tourne sur lui-même, indiscernable du cercle.
+ */
+export const SATELLITE_ECCENTRICITY = Object.freeze({
+  phobos: 0.0151, deimos: 0.0002,
+  io: 0.0041, europa: 0.0094, ganymede: 0.0013, callisto: 0.0074, amalthea: 0.0032, thebe: 0.0175, himalia: 0.16,
+  mimas: 0.0196, enceladus: 0.0047, tethys: 0.0001, dione: 0.0022, rhea: 0.001, titan: 0.0288, hyperion: 0.1042,
+  iapetus: 0.0283, phoebe: 0.164, janus: 0.0068, epimetheus: 0.0098,
+  miranda: 0.0013, ariel: 0.0012, umbriel: 0.0039, titania: 0.0011, oberon: 0.0014, puck: 0.0001,
+  triton: 0.000016, nereid: 0.751, proteus: 0.0005,
+  charon: 0.0002, nix: 0.002, hydra: 0.0059, kerberos: 0.0033, styx: 0.0058,
+});
+
+/**
  * Rosette de Schwarzschild d'un satellite autour de sa planète, dans le plan de son orbite et en unités de son
  * demi-grand axe : même équation que pour les planètes (u'' = 1/p − u + 3/2 × rs × u²), intégrée en RK4.
  *  e          excentricité de l'orbite (0 : cercle — la rosette se confond alors avec lui) ;
  *  rsOverA    rayon de Schwarzschild de la planète, déjà exagéré, divisé par le demi-grand axe ;
  *  n          nombre de segments ; revolutions : nombre de tours tracés.
  * Le tracé part du périastre, sur l'axe x, et tourne dans le plan x-z, comme le cercle unité des anneaux d'orbite.
- * @returns {Float32Array} (n + 1) points x, y, z (y = 0), en unités du demi-grand axe.
+ * Il est ramené à un périastre de rayon 1 : l'anneau d'un satellite est agrandi à sa distance du moment et son
+ * premier point est le satellite lui-même, qui reste ainsi posé sur sa rosette.
+ * @returns {Float32Array} (n + 1) points x, y, z (y = 0) ; le rayon va de 1 (périastre) à (1 + e) / (1 − e).
  */
 export function schwarzschildSatelliteRosette({ e = 0, rsOverA = 0, n = 256, revolutions = 3 }) {
   const ecc = Math.min(0.95, Math.max(0, Number(e) || 0));
@@ -256,7 +274,8 @@ export function schwarzschildSatelliteRosette({ e = 0, rsOverA = 0, n = 256, rev
   // Départ au périastre : r = 1 − e, vitesse radiale nulle.
   let u = 1 / (1 - ecc), du = 0;
   for (let i = 0; i <= n; i++) {
-    const r = u > 0 ? 1 / u : p;
+    // Rayon en unités du demi-grand axe, puis ramené au périastre (divisé par 1 − e).
+    const r = (u > 0 ? 1 / u : p) / (1 - ecc);
     const phi = i * dPhi;
     out[3 * i] = r * Math.cos(phi); out[3 * i + 1] = 0; out[3 * i + 2] = r * Math.sin(phi);
     // Un pas de Runge-Kutta d'ordre 4 sur (u, du).

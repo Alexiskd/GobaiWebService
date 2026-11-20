@@ -7,7 +7,7 @@ import { OrbitRibbon } from './orbitRibbon.jsx';
 // Importe les opacités de la traînée d'une orbite fermée.
 import { loopTrailAlphas } from './orbitRibbonMath.jsx';
 // Importe la rosette de Schwarzschild d'un satellite et le mélange de deux tracés.
-import { mixPoints, schwarzschildSatelliteRosette } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
+import { SATELLITE_ECCENTRICITY, mixPoints, schwarzschildSatelliteRosette } from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
 import { SharedResourcePool } from '../SystemeEngine/core/SharedResourcePool.js';
 import { InstancedPickRegistry } from '../SystemeEngine/core/InstancedPickRegistry.js';
 import { acquireUnitSphereGeometry } from '../SystemeEngine/core/SharedGeometry.js';
@@ -235,7 +235,7 @@ export class SatelliteSystem {
       if (!s.rosette && a === 0) continue;
       if (!s.rosette) {
         s.rosette = schwarzschildSatelliteRosette({
-          e: s.def.eccentricity, rsOverA: rsOverA ? rsOverA(s) : 0, n: ORBIT_SEGMENTS, revolutions: SCHWARZSCHILD_REVOLUTIONS,
+          e: s.def.eccentricity ?? SATELLITE_ECCENTRICITY[s.def.id] ?? 0, rsOverA: rsOverA ? rsOverA(s) : 0, n: ORBIT_SEGMENTS, revolutions: SCHWARZSCHILD_REVOLUTIONS,
         });
       }
       // Mélange du cercle de référence vers la rosette, écrit dans les points de l'anneau.
