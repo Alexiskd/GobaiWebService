@@ -4,9 +4,10 @@ import { iconNode } from './iconNode.jsx';
 import { Box, Button, IconButton, ListItemIcon, ListItemText, MenuItem, Tooltip } from '@mui/material';
 
 // Déclare le composant Icon : reçoit le contenu et la taille (15 par défaut).
-const Icon = ({ children, size = 15 }) => (
-  // Balise span décorative, de largeur fixe, au contenu centré.
-  <Box component="span" aria-hidden="true" sx={{ fontSize: size, lineHeight: 1, width: '1.2em', textAlign: 'center' }}>{children}</Box>
+const Icon = ({ children, size = 15, wide = false }) => (
+  // Balise span décorative, de largeur fixe, au contenu centré. `wide` : l'icône est plus large qu'un carré (la
+  // formule « E = mc² ») ; la boîte prend alors sa largeur réelle au lieu de la laisser déborder.
+  <Box component="span" aria-hidden="true" sx={{ display: 'inline-flex', justifyContent: 'center', fontSize: size, lineHeight: 1, width: wide ? 'auto' : '1.2em', minWidth: '1.2em', textAlign: 'center' }}>{children}</Box>
 // Fin de Icon.
 );
 
@@ -44,7 +45,7 @@ export function ToolbarButton({ action, compact, inMenu = false, onPick }) {
       // Une bascule y est une case à cocher de menu (role menuitemcheckbox, état dans aria-checked).
       <MenuItem {...common} selected={Boolean(pressed)} title={action.title} role={pressed === undefined ? 'menuitem' : 'menuitemcheckbox'} aria-checked={pressed}>
         {/* L'icône de l'entrée. */}
-        <ListItemIcon><Icon>{iconNode(action.icon)}</Icon></ListItemIcon>
+        <ListItemIcon sx={action.wide ? { minWidth: 56 } : undefined}><Icon wide={action.wide}>{iconNode(action.icon)}</Icon></ListItemIcon>
         {/* Le libellé de l'entrée. */}
         <ListItemText primary={action.label} />
       {/* Fin de l'entrée de menu. */}
@@ -55,6 +56,31 @@ export function ToolbarButton({ action, compact, inMenu = false, onPick }) {
   }
 
   // Deuxième forme : icône seule, sur ordinateur.
+  // Bascule large (E = mc²) : une pastille à la hauteur des boutons icône, bordée au repos, pleine quand elle est
+  // enfoncée. Sa largeur suit la formule : plus de débordement sur les boutons voisins.
+  if (!compact && action.iconOnly && action.wide) {
+    return (
+      <Tooltip title={action.title || action.label}>
+        {/* Balise span : l'infobulle fonctionne même quand le bouton est désactivé. */}
+        <span style={{ display: 'inline-flex' }}>
+          <Button
+            {...common}
+            variant={pressed ? 'contained' : 'outlined'}
+            color={pressed ? 'primary' : 'inherit'}
+            sx={{
+              minWidth: 0, height: 28, px: 1.1, mx: 0.25, borderRadius: 999, lineHeight: 1, textTransform: 'none',
+              borderColor: 'divider', flex: 'none',
+              ...(pressed ? null : { color: 'text.primary', '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' } }),
+            }}
+          >
+            {/* La formule, à sa largeur réelle. */}
+            <Icon wide size={21}>{iconNode(action.icon, 21)}</Icon>
+          </Button>
+        </span>
+      </Tooltip>
+    );
+  }
+
   if (!compact && action.iconOnly) {
     // Début du rendu.
     return (

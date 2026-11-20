@@ -1,46 +1,53 @@
-// Importe de MUI Box, Paper, Stack et Typography.
-import { Box, Paper, Stack, Typography } from '@mui/material';
+// Importe les composants MUI utilisés ici.
+import { Box, Typography } from '@mui/material';
+// Importe le calcul des largeurs des tuiles (module sans JSX, testé à part).
+import { largeurs } from './factsLayout.js';
 
-/** Caractéristiques de l'astre : libellé à gauche, valeur (et note) alignée à droite. */
-// Déclare et exporte le composant Facts : reçoit les caractéristiques.
+/**
+ * Caractéristiques d'un astre, en tuiles : le terme en petites capitales au-dessus, la valeur en gras et en
+ * chiffres alignés, la note éventuelle en dessous. Deux tuiles par ligne quand la largeur le permet ; une
+ * caractéristique longue (phase de la Lune, libration…) prend la ligne entière, et une tuile qui resterait seule
+ * sur sa ligne s'étire pour ne pas laisser de trou.
+ * Liste de définitions (dl / dt / dd) pour les lecteurs d'écran, comme l'ancienne présentation en lignes.
+ */
 export function Facts({ items }) {
-  // Sans caractéristique, rien n'est affiché.
+  // Sans caractéristique : rien à afficher.
   if (!items?.length) return null;
-  // Début du rendu.
+  // La largeur de chaque tuile, calculée une fois pour la liste.
+  const large = largeurs(items);
   return (
-    // Carte à contour rendue en liste de définitions (dl), transparente.
-    <Paper variant="outlined" component="dl" sx={{ m: 0, bgcolor: 'transparent', backdropFilter: 'none' }}>
-      {/* Une ligne par caractéristique (début). */}
-      {items.map(({ term, value, note }, i) => (
-        // La ligne (début de la balise).
-        <Stack
-          // Clé unique : le libellé.
-          key={term}
-          // Disposition horizontale.
-          direction="row"
-          // Espacement.
-          spacing={2}
-          // Marges, et un filet en haut de chaque ligne sauf la première.
-          sx={{ justifyContent: 'space-between', alignItems: 'baseline', px: 1.5, py: 1, borderTop: i ? 1 : 0, borderColor: 'divider' }}
-        // Fin de la balise ouvrante.
+    <Box
+      component="dl"
+      sx={{ m: 0, display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 0.75 }}
+    >
+      {items.map((item, i) => (
+        <Box
+          key={item.term}
+          sx={{
+            minWidth: 0, px: 1.25, py: 1, borderRadius: 2,
+            border: 1, borderColor: 'divider', bgcolor: 'action.hover',
+            // Une caractéristique longue prend les deux colonnes ; une tuile seule sur sa ligne aussi.
+            gridColumn: large[i] ? '1 / -1' : undefined,
+          }}
         >
-          {/* Le libellé (dt), en couleur secondaire. */}
-          <Typography component="dt" variant="body2" color="text.secondary">{term}</Typography>
-          {/* La valeur (dd), alignée à droite. */}
-          <Box component="dd" sx={{ m: 0, textAlign: 'right' }}>
-            {/* Le texte de la valeur. */}
-            <Typography variant="body2">{value}</Typography>
-            {/* La note, si elle existe, en petit. */}
-            {note && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{note}</Typography>}
-          {/* Fin de la valeur. */}
+          {/* Le terme : petites capitales, couleur atténuée. */}
+          <Typography component="dt" sx={{ fontSize: 10.5, lineHeight: 1.3, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'text.secondary', overflowWrap: 'anywhere' }}>
+            {item.term}
+          </Typography>
+          <Box component="dd" sx={{ m: 0, mt: 0.4 }}>
+            {/* La valeur : en gras, chiffres de même largeur pour que les valeurs en direct ne tremblent pas. */}
+            <Typography sx={{ fontSize: 14.5, lineHeight: 1.3, fontWeight: 600, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}>
+              {item.value}
+            </Typography>
+            {/* La note éventuelle, sous la valeur. */}
+            {item.note && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.35, overflowWrap: 'anywhere' }}>
+                {item.note}
+              </Typography>
+            )}
           </Box>
-        {/* Fin de la ligne. */}
-        </Stack>
-      // Fin des lignes.
+        </Box>
       ))}
-    {/* Fin de la carte. */}
-    </Paper>
-  // Fin du rendu.
+    </Box>
   );
-// Fin de Facts.
 }

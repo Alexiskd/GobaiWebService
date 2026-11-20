@@ -40,6 +40,39 @@ function ZoomReadout({ hud }) {
 // Fin de ZoomReadout.
 }
 
+/**
+ * Petite pastille de l'en-tête (type de l'astre, diamètre) : une étiquette arrondie sur une seule ligne.
+ * `accent` : teintée de la couleur primaire, pour le type ; sinon neutre.
+ */
+function Pastille({ accent = false, children }) {
+  return (
+    <Box
+      component="span"
+      sx={{
+        display: 'inline-flex', alignItems: 'center', height: 20, px: 0.9, borderRadius: 999, whiteSpace: 'nowrap',
+        fontSize: 11, fontWeight: 600, lineHeight: 1, letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums',
+        border: 1, borderColor: accent ? 'primary.main' : 'divider',
+        color: accent ? 'primary.main' : 'text.secondary', bgcolor: accent ? 'transparent' : 'action.hover',
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+/**
+ * Style des titres de section du panneau (« Rechercher un lieu », « Caractéristiques », « Cartes et couches »…) :
+ * petites capitales en couleur de texte pleine, précédées d'un trait vertical de la couleur primaire.
+ * Posé sur le conteneur du contenu, il ne touche pas les mêmes composants Section employés dans les autres fenêtres.
+ */
+const TITRES_SX = {
+  '& h3.MuiTypography-overline': {
+    display: 'flex', alignItems: 'center', gap: 1, mb: 0.5,
+    color: 'text.primary', fontWeight: 700, letterSpacing: '0.09em', lineHeight: 2.2,
+    '&::before': { content: '""', flex: 'none', width: 3, height: 12, borderRadius: 2, bgcolor: 'primary.main' },
+  },
+};
+
 // Déclare le composant InformationsShell, la coquille du panneau : vue, HUD, informations ouvertes, fermeture, menu, Soleil, fermable et contenu.
 function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, closable, children }) {
   // Lit le mode compact.
@@ -132,7 +165,8 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
           // Ligne du type, du diamètre et du zoom (début).
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: 0, flexWrap: 'wrap' }}>
             {/* Type de l'astre, suivi de son diamètre s'il est connu. */}
-            {view && <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{view.type}{view.diameter ? ` · ${view.diameter}` : ''}</Typography>}
+            {view && <Pastille accent>{view.type}</Pastille>}
+            {view?.diameter && <Pastille>⌀ {view.diameter}</Pastille>}
             {/* Zoom, en mode compact. */}
             {compact && <ZoomReadout hud={hud} />}
           {/* Fin de la ligne. */}
@@ -168,18 +202,18 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
       {/* Zone repliable : démontée quand elle est repliée, défile sans entraîner la page. */}
       <Collapse in={open} timeout="auto" unmountOnExit sx={{ flex: '0 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain' }}>
         {/* Marges intérieures (sur téléphone, la navigation du dock porte la marge de sécurité du bas). */}
-        <Box sx={{ px: 2, pt: 1.5, pb: 1.5 }}>
+        <Box sx={{ px: 2, pt: 1.5, pb: 1.5, ...TITRES_SX }}>
           {/* Le contenu propre à l'astre. */}
           {children}
           {/* Cartes et couches de l'astre : plus de bouton dans la barre d'outils, la section est rendue ici, à la
               suite des caractéristiques, dès qu'un astre est visé (début). */}
           {!sun && view && (
             // Section des cartes, séparée des caractéristiques par un filet.
-            <Box component="section" aria-label="Cartes et couches" ref={layersRef} sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+            <Box component="section" aria-label="Cartes et couches" ref={layersRef} sx={{ mt: 0.5, pt: 1.25, borderTop: 1, borderColor: 'divider' }}>
               {/* Ligne du titre. */}
               <Stack direction="row" sx={{ alignItems: 'center', minHeight: 36 }}>
                 {/* Le titre (début de la balise). */}
-                <Typography component="h3" variant="subtitle2" color="text.secondary">
+                <Typography component="h3" variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2.2 }}>
                   {/* « Cartes et couches », suivi du nom de l'astre s'il est connu. */}
                   Cartes et couches{menu.bodyName ? ` · ${menu.bodyName}` : ''}
                 {/* Fin du titre. */}
