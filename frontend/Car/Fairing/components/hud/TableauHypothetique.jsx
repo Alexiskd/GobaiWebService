@@ -39,8 +39,8 @@ function GrilleSystemes() {
         // La case est-elle remarquable : rang 0 (Système solaire / Solarium) ou rang 1 (Alpha Centauri / Proximium).
         const solarium = s.rang === 0, proximium = s === ALPHA_CENTAURI;
         // Le fond et le texte de la case : surbrillance primaire pour le Solarium, secondaire pour le Proximium.
-        const fond = solarium ? (t) => t.palette.primary.main : proximium ? (t) => t.palette.secondary.main : 'action.hover';
-        const bord = solarium ? (t) => t.palette.primary.light : proximium ? (t) => t.palette.secondary.light : 'divider';
+        const fond = solarium ? (t) => t.palette.primary.main : proximium ? (t) => t.palette.secondary.main : (t) => t.palette.action.hover;
+        const bord = solarium ? (t) => t.palette.primary.light : proximium ? (t) => t.palette.secondary.light : (t) => t.palette.divider;
         const texte = solarium ? (t) => t.palette.primary.contrastText : proximium ? (t) => t.palette.secondary.contrastText : 'currentColor';
         // Le rendu de la case.
         return (
@@ -90,7 +90,7 @@ export function TableauHypothetique() {
       <SousTitre>Toutes les composantes</SousTitre>
       <Fiche
         label="Composantes des systèmes à moins de 16,3 années-lumière : type spectral, distance et masse"
-        colonnes={[{ titre: 'Rang' }, { titre: 'Système' }, { titre: 'Composante' }, { titre: 'Type spectral', cache: true }, { titre: 'Distance (a.l.)', align: 'right' }, { titre: 'Masse', align: 'right' }]}
+        colonnes={[{ titre: 'Rang', cache: true }, { titre: 'Système' }, { titre: 'Composante' }, { titre: 'Type spectral', cache: true }, { titre: 'Distance (a.l.)', align: 'right' }, { titre: 'Masse', align: 'right' }]}
         lignes={lignes}
       />
     </Box>

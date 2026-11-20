@@ -24,13 +24,13 @@ function PerformanceSetting({ visible, onChange }) {
   return (
     <Box sx={{ px: 1.5, py: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="body2" fontWeight={600}>Moniteur de performance</Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>Moniteur de performance</Typography>
         <Typography variant="caption" color="text.secondary">Mesure CPU, GPU et FPS</Typography>
       </Box>
       <FormControlLabel
         sx={{ m: 0 }}
         label=""
-        control={<Switch size="small" checked={Boolean(visible)} onChange={(event) => onChange?.(event.target.checked)} inputProps={{ 'aria-label': 'Afficher le moniteur de performance' }} />}
+        control={<Switch size="small" checked={Boolean(visible)} onChange={(event) => onChange?.(event.target.checked)} slotProps={{ input: { 'aria-label': 'Afficher le moniteur de performance' } }} />}
       />
     </Box>
   );
@@ -53,7 +53,7 @@ export function Parametres({
       maxWidth="md"
       fullWidth
       aria-label="Paramètres"
-      PaperProps={{ sx: { overflow: 'hidden', borderRadius: compact ? 0 : 3, minHeight: compact ? '100%' : 560, maxHeight: compact ? '100%' : 'min(82vh, 820px)' } }}
+      slotProps={{ paper: { sx: { overflow: 'hidden', borderRadius: compact ? 0 : 3, minHeight: compact ? '100%' : 560, maxHeight: compact ? '100%' : 'min(82vh, 820px)' } } }}
     >
       <PanelHeader kicker="GOBai SPACE" title="Paramètres" onClose={onClose} sx={{ px: 2.5, pt: 2, pb: 1.5 }} />
       <Tabs

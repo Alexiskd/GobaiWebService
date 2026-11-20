@@ -118,7 +118,7 @@ export function DesktopToolbar({ hud, actions }) {
       {/* Un bloc par groupe (début). */}
       {shown.map((list) => (
         // Ligne du groupe, au rôle de groupe, nommée par le groupe de sa première action.
-        <Stack key={list[0].group} direction="row" alignItems="center" spacing={0.25} role="group" aria-label={list[0].group}>
+        <Stack key={list[0].group} direction="row" spacing={0.25} role="group" aria-label={list[0].group} sx={{ alignItems: 'center' }}>
           {/* Filet vertical qui sépare du bloc précédent. */}
           <Divider orientation="vertical" flexItem sx={{ mx: 0.25, my: 0.5 }} />
           {/* Un bouton par action, en version ordinateur (en icône seule sur un écran de moins de 1 200 px). */}
@@ -130,7 +130,7 @@ export function DesktopToolbar({ hud, actions }) {
       {/* Le groupe replié : un bouton « Menu » et son menu déroulant (début). */}
       {folded.length > 0 && (
         // Ligne du menu, au rôle de groupe.
-        <Stack direction="row" alignItems="center" role="group" aria-label="menu">
+        <Stack direction="row" role="group" aria-label="menu" sx={{ alignItems: 'center' }}>
           {/* Filet vertical qui sépare du bloc précédent. */}
           <Divider orientation="vertical" flexItem sx={{ mx: 0.25, my: 0.5 }} />
           {/* Infobulle : ce que contient le menu. */}

@@ -72,7 +72,7 @@ function Case({ e, x, y, fond, texte }) {
     // Le groupe de la case.
     <g>
       {/* Le rectangle de la case. */}
-      <Box component="rect" x={x} y={y} width={CASE_L} height={CASE_H} rx={4} sx={fond ? { fill: fond, stroke: texte, strokeWidth: 1.5 } : { fill: 'action.hover', stroke: 'divider', strokeWidth: 1 }} />
+      <Box component="rect" x={x} y={y} width={CASE_L} height={CASE_H} rx={4} sx={fond ? { fill: fond, stroke: texte, strokeWidth: 1.5 } : { fill: (t) => t.palette.action.hover, stroke: (t) => t.palette.divider, strokeWidth: 1 }} />
       {/* Le numéro atomique, en haut à gauche, en petits caractères. */}
       <Box component="text" x={x + 4} y={y + 10} fontSize="7.5" sx={couleurTexte}>{e.z}</Box>
       {/* Le symbole, centré, en gras (« So » pour le Solarium). */}
@@ -303,7 +303,7 @@ function CouchesEtOrbites() {
       <Fiche
         label="Couches atomiques, orbites prédites en n² et orbites réelles des planètes"
         colonnes={[
-          { titre: 'Couche' }, { titre: 'Planète' }, { titre: 'a (UA)', align: 'right' }, { titre: 'Prédit n²', align: 'right' },
+          { titre: 'Couche' }, { titre: 'Planète' }, { titre: 'a (UA)', align: 'right', cache: true }, { titre: 'Prédit n²', align: 'right' },
           { titre: 'Réel', align: 'right' }, { titre: 'Écart', align: 'right' }, { titre: '2n²', align: 'right', cache: true },
         ]}
         lignes={ORBITES.map((o) => [`${o.couche} (n = ${o.n})`, o.planete, virgule(o.ua, 3), o.predit, virgule(o.reel), o.n === 1 ? 'référence' : signe(o.ecart), o.capacite])}
@@ -418,7 +418,7 @@ export function TheorieQuantique() {
       </Section>
 
       {/* Signature de la théorie. */}
-      <Typography variant="body2" color="text.secondary" fontStyle="italic" sx={{ mt: 4, textAlign: 'right' }}>
+      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 4, textAlign: 'right' }}>
         Théorie quantique Gobai Space — signée {AUTEUR}
       </Typography>
     </Box>

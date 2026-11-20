@@ -130,7 +130,7 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
         // Type et diamètre à côté du nom de l'astre, dans le même axe que le titre ; zoom en mode compact.
         titleAdornment={(
           // Ligne du type, du diamètre et du zoom (début).
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flexWrap: 'wrap' }}>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: 0, flexWrap: 'wrap' }}>
             {/* Type de l'astre, suivi de son diamètre s'il est connu. */}
             {view && <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>{view.type}{view.diameter ? ` · ${view.diameter}` : ''}</Typography>}
             {/* Zoom, en mode compact. */}
@@ -177,7 +177,7 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
             // Section des cartes, séparée des caractéristiques par un filet.
             <Box component="section" aria-label="Cartes et couches" ref={layersRef} sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
               {/* Ligne du titre. */}
-              <Stack direction="row" alignItems="center" sx={{ minHeight: 36 }}>
+              <Stack direction="row" sx={{ alignItems: 'center', minHeight: 36 }}>
                 {/* Le titre (début de la balise). */}
                 <Typography component="h3" variant="subtitle2" color="text.secondary">
                   {/* « Cartes et couches », suivi du nom de l'astre s'il est connu. */}

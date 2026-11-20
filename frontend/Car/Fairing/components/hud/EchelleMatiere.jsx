@@ -34,7 +34,7 @@ function Regle({ taille, couleur }) {
       {/* La partie parcourue depuis le proton. */}
       <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${place}%`, borderRadius: 3, bgcolor: couleur, opacity: 0.35 }} />
       {/* Le repère de l'objet. */}
-      <Box sx={{ position: 'absolute', top: -3, left: `calc(${place}% - 6px)`, width: 12, height: 12, borderRadius: '50%', bgcolor: couleur, border: 2, borderColor: 'background.paper' }} />
+      <Box sx={{ position: 'absolute', top: -3, left: `clamp(0px, calc(${place}% - 6px), calc(100% - 12px))`, width: 12, height: 12, borderRadius: '50%', bgcolor: couleur, border: 2, borderColor: 'background.paper' }} />
     </Box>
   );
 // Fin de Regle.

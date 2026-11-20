@@ -19,8 +19,6 @@ export function PanelHeader({ kicker, title, titleAdornment, onClose, closeLabel
       component="header"
       // Disposition horizontale.
       direction="row"
-      // Éléments centrés verticalement.
-      alignItems="center"
       // Espacement entre les éléments.
       spacing={1}
       // Pose les propriétés de déplacement sur tout l'en-tête.
@@ -28,7 +26,7 @@ export function PanelHeader({ kicker, title, titleAdornment, onClose, closeLabel
       // Gestionnaire de clic éventuel.
       onClick={onClick}
       // Début du style.
-      sx={{
+      sx={{ alignItems: 'center',
         // Position relative, marges intérieures (plus de place en haut en mode feuille), taille fixe.
         position: 'relative', px: 2, pt: sheet ? 2 : 1.5, pb: 1, flex: 'none',
         // Filet de séparation en bas.
@@ -54,7 +52,7 @@ export function PanelHeader({ kicker, title, titleAdornment, onClose, closeLabel
         {/* Si un surtitre est donné : au style overline, couleur primaire. */}
         {kicker && <Typography variant="overline" color="primary" sx={{ display: 'block', lineHeight: 1.6 }}>{kicker}</Typography>}
         {/* Ligne du titre, qui passe à la ligne si elle manque de place. */}
-        <Stack direction="row" alignItems="center" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+        <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
           {/* Le titre, de niveau 2, en demi-gras, coupé n'importe où s'il est trop long. */}
           <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{title}</Typography>
           {/* L'ornement du titre. */}

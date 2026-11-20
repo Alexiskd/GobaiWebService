@@ -15,8 +15,8 @@ export const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 export function Section({ numero, titre, sousTitre, action, children, sx }) {
   // Début du rendu.
   return (
-    // La section, séparée de la précédente par une marge ; la première n'en a pas.
-    <Box component="section" aria-label={titre} sx={{ mt: 4, '&:first-of-type': { mt: 0.5 }, minWidth: 0, ...sx }}>
+    // La section, séparée de ce qui précède par une marge ; seule une section placée en tête d'onglet n'en a pas.
+    <Box component="section" aria-label={titre} sx={{ mt: 4, '&:first-child': { mt: 0.5 }, minWidth: 0, ...sx }}>
       {/* En-tête : numéro, titre et action, soulignés d'un trait fin. */}
       <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.25, pb: 0.75, mb: 1.5, borderBottom: 1, borderColor: 'divider' }}>
         {/* Le numéro d'ordre, s'il y en a un. */}
@@ -137,7 +137,7 @@ export const Alerte = ({ titre, couleur = 'warning.main', children, sx }) => (
 // Style commun des tableaux : pleine largeur, chiffres alignés, bords des cellules extérieures supprimés.
 const FICHE_SX = {
   width: '100%',
-  '& td, & th': { fontVariantNumeric: 'tabular-nums', verticalAlign: 'top', py: 0.9 },
+  '& td, & th': { fontVariantNumeric: 'tabular-nums', verticalAlign: 'top', py: 0.9, px: { xs: 0.75, sm: 2 } },
   '& td:first-of-type, & th:first-of-type': { pl: 0 },
   '& td:last-of-type, & th:last-of-type': { pr: 0 },
   '& tbody tr:last-of-type td, & tbody tr:last-of-type th': { borderBottom: 0 },
@@ -165,7 +165,7 @@ export function Fiche({ colonnes, lignes, fixe = false, label, sx }) {
           <TableHead>
             <TableRow>
               {colonnes.map((c, i) => (
-                <TableCell key={i} align={c.align} sx={{ width: c.largeur, whiteSpace: fixe ? 'normal' : 'nowrap', ...masque(c) }}>{c.titre}</TableCell>
+                <TableCell key={i} align={c.align} sx={{ width: c.largeur, lineHeight: 1.3, verticalAlign: 'bottom', ...masque(c) }}>{c.titre}</TableCell>
               ))}
             </TableRow>
           </TableHead>

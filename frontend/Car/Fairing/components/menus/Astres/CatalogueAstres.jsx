@@ -110,7 +110,7 @@ export function CatalogueAstres({
     // Début du rendu de la ligne.
     return (
       // Une ligne en pile horizontale, avec un retrait pour un satellite.
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, py: 1, pl: indent ? 4 : 1.5 }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1.5, py: 1, pl: indent ? 4 : 1.5 }}>
         {/* La pastille de la couleur de l'astre, si le listing en donne une. */}
         <Box aria-hidden="true" sx={{ width: 10, height: 10, borderRadius: '50%', flex: 'none', bgcolor: color || 'text.disabled' }} />
         {/* Le nom, cliquable s'il correspond à un astre de la scène : il y emmène la caméra. */}
@@ -137,7 +137,7 @@ export function CatalogueAstres({
             // Au changement : affiche ou enlève l'astre.
             onChange={(e) => onBodyShown?.(body.index, e.target.checked)}
             // Nom pour les lecteurs d'écran.
-            inputProps={{ 'aria-label': `Afficher ${name}` }}
+            slotProps={{ input: { 'aria-label': `Afficher ${name}` } }}
           // Fin de la case.
           />
         )}
@@ -162,7 +162,7 @@ export function CatalogueAstres({
       {/* Tant que le listing n'est pas arrivé et qu'il n'y a pas d'erreur : la roue de chargement (début). */}
       {!listing && !error && (
         // Ligne centrée.
-        <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ py: 2 }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center', py: 2 }}>
           {/* La roue. */}
           <CircularProgress size={16} />
           {/* Le texte d'attente. */}
@@ -173,7 +173,7 @@ export function CatalogueAstres({
       {/* En cas d'échec : le message et un bouton de relecture (début). */}
       {error && (
         // Ligne du message.
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, py: 1.5 }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1.5, py: 1.5 }}>
           {/* Le message, qui cite la cause. */}
           <Typography sx={{ flex: 1, fontSize: 13, color: 'text.secondary' }}>Listing des astres indisponible : {error}</Typography>
           {/* La pastille de relecture : incrémente le compteur, ce qui redemande le listing. */}
@@ -201,7 +201,7 @@ export function CatalogueAstres({
             onChange={(event) => setInterstellarQuery(event.target.value)}
             onKeyDown={(event) => { if (event.key === 'Enter' && !interstellarBusy) loadInterstellar(); }}
             placeholder="Nom d'une étoile (ex. Tau Ceti)"
-            inputProps={{ 'aria-label': 'Rechercher un système extrasolaire' }}
+            slotProps={{ htmlInput: { 'aria-label': 'Rechercher un système extrasolaire' } }}
           />
           <Button size="small" variant="contained" disabled={interstellarBusy || !interstellarQuery.trim()} onClick={loadInterstellar}>
             {interstellarBusy ? <CircularProgress size={18} color="inherit" /> : 'Rechercher'}
@@ -209,7 +209,7 @@ export function CatalogueAstres({
         </Stack>
         {interstellarError && <Alert severity="warning" sx={{ mx: 1.5, mb: 1, fontSize: 12 }}>{interstellarError}</Alert>}
         {interstellarSystems.map((system) => (
-          <Stack key={system.id} direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, py: 0.75 }}>
+          <Stack key={system.id} direction="row" spacing={1} sx={{ alignItems: 'center', px: 1.5, py: 0.75 }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{system.name}</Typography>
               <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>

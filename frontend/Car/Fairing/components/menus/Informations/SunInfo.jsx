@@ -88,7 +88,7 @@ function Title({ children, adornment }) {
   // Début du rendu.
   return (
     // Ligne du titre ; le premier titre n'a pas de marge en haut.
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 2, mb: 0.5, '&:first-of-type': { mt: 0 } }}>
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 2, mb: 0.5, '&:first-of-type': { mt: 0 } }}>
       {/* Le titre de niveau 3, au style overline, couleur primaire. */}
       <Typography component="h3" variant="overline" color="primary" sx={{ lineHeight: 1.6 }}>{children}</Typography>
       {/* L'ornement. */}

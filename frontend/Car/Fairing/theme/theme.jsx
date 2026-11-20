@@ -158,12 +158,17 @@ export function makeTheme(dayNight = 'night', { oled = false } = {}) {
             fontWeight: 680,
             transition: 'transform 150ms ease, background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease',
             ...PRESS,
-          },
-          containedPrimary: {
-            color: '#08152C',
-            background: 'linear-gradient(135deg, #AFC5FF 0%, #82A7FF 58%, #8C9BFF 100%)',
-            boxShadow: '0 7px 22px rgba(98,132,215,0.22)',
-            '&:hover': { background: 'linear-gradient(135deg, #C1D1FF 0%, #93B3FF 58%, #A5B0FF 100%)', boxShadow: '0 10px 26px rgba(98,132,215,0.30)' },
+            // Bouton plein primaire : dégradé de la marque. La clé de classe « containedPrimary » n'existe plus dans
+            // MUI 9 ; le style passe par une variante de la racine (variant contained + color primary).
+            variants: [{
+              props: { variant: 'contained', color: 'primary' },
+              style: {
+                color: '#08152C',
+                background: 'linear-gradient(135deg, #AFC5FF 0%, #82A7FF 58%, #8C9BFF 100%)',
+                boxShadow: '0 7px 22px rgba(98,132,215,0.22)',
+                '&:hover': { background: 'linear-gradient(135deg, #C1D1FF 0%, #93B3FF 58%, #A5B0FF 100%)', boxShadow: '0 10px 26px rgba(98,132,215,0.30)' },
+              },
+            }],
           },
           outlined: { borderColor: s.edge, '&:hover': { borderColor: BRAND.blue, backgroundColor: hover } },
           text: { '&:hover': { backgroundColor: hover } },
@@ -179,7 +184,7 @@ export function makeTheme(dayNight = 'night', { oled = false } = {}) {
             borderRadius: '10px !important',
             textTransform: 'none',
             fontWeight: 650,
-            '&.Mui-selected': { color: 'primary.main', backgroundColor: hover },
+            '&.Mui-selected': { color: BRAND.blue, backgroundColor: hover },
             ...PRESS,
           },
         },
@@ -213,13 +218,19 @@ export function makeTheme(dayNight = 'night', { oled = false } = {}) {
       },
       MuiAlert: {
         styleOverrides: {
-          root: { borderRadius: 13, alignItems: 'flex-start', border: `1px solid ${s.edge}` },
+          root: {
+            borderRadius: 13, alignItems: 'flex-start', border: `1px solid ${s.edge}`,
+            // Fonds des alertes « standard » par gravité. Les clés « standardInfo », « standardSuccess »… n'existent
+            // plus dans MUI 9 : le style passe par des variantes de la racine.
+            variants: [
+              { props: { variant: 'standard', severity: 'info' }, style: { backgroundColor: dark ? 'rgba(112,220,235,0.09)' : 'rgba(42,158,178,0.08)' } },
+              { props: { variant: 'standard', severity: 'success' }, style: { backgroundColor: dark ? 'rgba(90,217,179,0.09)' : 'rgba(36,155,119,0.08)' } },
+              { props: { variant: 'standard', severity: 'warning' }, style: { backgroundColor: dark ? 'rgba(243,198,109,0.09)' : 'rgba(194,137,40,0.08)' } },
+              { props: { variant: 'standard', severity: 'error' }, style: { backgroundColor: dark ? 'rgba(255,130,148,0.09)' : 'rgba(200,65,87,0.07)' } },
+            ],
+          },
           icon: { paddingTop: 3 },
           message: { minWidth: 0, lineHeight: 1.5 },
-          standardInfo: { backgroundColor: dark ? 'rgba(112,220,235,0.09)' : 'rgba(42,158,178,0.08)' },
-          standardSuccess: { backgroundColor: dark ? 'rgba(90,217,179,0.09)' : 'rgba(36,155,119,0.08)' },
-          standardWarning: { backgroundColor: dark ? 'rgba(243,198,109,0.09)' : 'rgba(194,137,40,0.08)' },
-          standardError: { backgroundColor: dark ? 'rgba(255,130,148,0.09)' : 'rgba(200,65,87,0.07)' },
         },
       },
       MuiDialog: {

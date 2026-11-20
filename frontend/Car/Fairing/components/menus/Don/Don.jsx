@@ -157,7 +157,7 @@ export function Don({ open, onClose }) {
       {/* Contenu de la fenêtre (début). */}
       <DialogContent>
         {/* Roue d'attente, tant que la configuration n'est pas arrivée. */}
-        {!config && !loadError && <Stack alignItems="center" sx={{ py: 4 }}><CircularProgress /></Stack>}
+        {!config && !loadError && <Stack sx={{ alignItems: 'center', py: 4 }}><CircularProgress /></Stack>}
         {/* Erreur de chargement. */}
         {loadError && <Alert severity="error">Impossible de charger les dons : {loadError}</Alert>}
 
