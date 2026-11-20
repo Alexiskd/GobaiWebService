@@ -116,18 +116,13 @@ export class PerivolumeSphereEngine {
     group.name = `perivolume:${id}`;
     // Sphère de verre : frontière ACTIVE du périverolume.
     const activeGeometry = new T.SphereGeometry(radius, this.segments, Math.max(6, Math.round(this.segments / 2)));
-    // Matériau verre : transmission, faible rugosité, vernis, sans écriture de profondeur.
-    const glassMaterial = new T.MeshPhysicalMaterial({
+    // Voile translucide de la bulle : un matériau simple, sans éclairage ni transmission. Le verre physique
+    // d'origine (transmission) obligeait le moteur de rendu à redessiner toute la scène une seconde fois à chaque
+    // image tant qu'une bulle était visible ; à 4 à 12 % d'opacité, la différence ne se voit pas.
+    const glassMaterial = new T.MeshBasicMaterial({
       color: APPEARANCE_BY_STATE.ACTIVE.color,
       transparent: true,
       opacity: this.opacity,
-      roughness: 0.05,
-      metalness: 0,
-      transmission: 0.9,
-      thickness: radius * 0.25,
-      ior: 1.45,
-      clearcoat: 1,
-      clearcoatRoughness: 0.08,
       side: T.DoubleSide,
       depthWrite: false,
     });
@@ -176,6 +171,9 @@ export class PerivolumeSphereEngine {
   setState(id, state) {
     const entry = this.#entries.get(id);
     if (!entry) return false;
+    // État inchangé : rien à refaire. Les décisions arrivent à chaque image pour chaque périvolume ; sans ce garde,
+    // l'apparence de toutes les sphères était réécrite à chaque image, même masquées.
+    if (entry.state === state && entry.applied) return true;
     entry.state = state;
     entry.group.userData.perivolumeState = state;
     this.#apply(entry);
@@ -187,6 +185,7 @@ export class PerivolumeSphereEngine {
     const known = APPEARANCE_BY_STATE[entry.state] ?? APPEARANCE_BY_STATE.UNLOADED;
     const look = !known.visible && this.revealUnloaded ? REVEALED_UNLOADED : known;
     const alpha = this.displayAlpha;
+    entry.applied = true;
     entry.group.visible = look.visible && alpha > DISPLAY_EPSILON;
     entry.wire.material.opacity = look.wireOpacity * alpha;
     if (entry.glass) {
