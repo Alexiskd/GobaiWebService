@@ -1,10 +1,10 @@
 // Onglet « Théorie quantique » de la fenêtre Node : la théorie Gobai Space (le système solaire serait un atome d'une
 // masse très grande), la correspondance couches atomiques / orbites des planètes, le tableau périodique dessiné
 // avec la répartition des électrons par couche atomique (K, L, M…) et l'élément hypothétique « Solarium » (119),
-// la molécule « SoaCen » (Solarium–Alpha Centauri), et le « tableau hypothétique » des systèmes stellaires proches.
+// l'assemblage « SoaCen » (Solarium–Alpha Centauri), et le « tableau hypothétique » des systèmes stellaires proches.
 // Composants MUI.
 import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-// Données de l'onglet : éléments, Solarium, molécule SoaCen, couches et masse du Soleil.
+// Données de l'onglet : éléments, Solarium, assemblage SoaCen, couches et masse du Soleil.
 import { ELEMENTS, SOLARIUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
 // Le tableau hypothétique des systèmes stellaires proches.
 import { TableauHypothetique } from './TableauHypothetique.jsx';
@@ -20,7 +20,7 @@ const SectionTitle = ({ children }) => (
 );
 
 // Tableau périodique : largeur et hauteur d'une case, écarts, pas et marge du dessin (unités du viewBox).
-const CASE_L = 34, CASE_H = 40, ECART = 3, PAS_X = CASE_L + ECART, PAS_Y = CASE_H + ECART, MARGE = 8;
+const CASE_L = 34, CASE_H = 48, ECART = 3, PAS_X = CASE_L + ECART, PAS_Y = CASE_H + ECART, MARGE = 8;
 // Largeur du dessin : marge, 18 groupes, moins le dernier écart, marge.
 const LARG_TABLE = MARGE * 2 + 18 * PAS_X - ECART;
 // Hauteur du dessin : marge, 10 lignes (7 périodes + Solarium + 2 lignes du bloc f), moins le dernier écart, marge.
@@ -64,16 +64,18 @@ function Case({ e, x, y, fond, texte }) {
       <Box component="rect" x={x} y={y} width={CASE_L} height={CASE_H} rx={4} sx={fond ? { fill: fond, stroke: texte, strokeWidth: 1.5 } : { fill: 'action.hover', stroke: 'divider', strokeWidth: 1 }} />
       {/* Le numéro atomique, en haut à gauche, en petits caractères. */}
       <Box component="text" x={x + 4} y={y + 10} fontSize="7.5" sx={couleurTexte}>{e.z}</Box>
-      {/* Le symbole, centré, en gras. */}
-      <Box component="text" x={x + CASE_L / 2} y={y + 21} fontSize="11" fontWeight="700" textAnchor="middle" sx={couleurTexte}>{e.symbole}</Box>
+      {/* Le symbole, centré, en gras (« So » pour le Solarium). */}
+      <Box component="text" x={x + CASE_L / 2} y={y + 22} fontSize="11" fontWeight="700" textAnchor="middle" sx={couleurTexte}>{e.symbole}</Box>
+      {/* Le nom de l'élément, quand il en a un (ex. « Solarium »), sous le symbole. */}
+      {e.nom && <Box component="text" x={x + CASE_L / 2} y={y + 31} fontSize="6.5" textAnchor="middle" sx={couleurTexte}>{e.nom}</Box>}
       {/* La répartition par couches, en bas de case, sur une ou deux lignes. */}
       {lignes.map((ligne, i) => (
         // Une ligne de la répartition.
-        <Box key={i} component="text" x={x + CASE_L / 2} y={y + CASE_H - 11 + i * 8} fontSize="6" textAnchor="middle" sx={couleurTexte}>{ligne}</Box>
+        <Box key={i} component="text" x={x + CASE_L / 2} y={y + CASE_H - 9 + i * 8} fontSize="6" textAnchor="middle" sx={couleurTexte}>{ligne}</Box>
       // Fin des lignes.
       ))}
-      {/* Infobulle : la répartition complète, pour les lecteurs d'écran et le survol. */}
-      <title>{`${e.z} ${e.symbole} : couches K, L, M… = ${e.couches.join(', ')}`}</title>
+      {/* Infobulle : nom, symbole et répartition complète, pour les lecteurs d'écran et le survol. */}
+      <title>{`${e.z} ${e.symbole}${e.nom ? ` (${e.nom})` : ''} : couches K, L, M… = ${e.couches.join(', ')}`}</title>
     {/* Fin du groupe. */}
     </g>
   // Fin du rendu.
@@ -119,10 +121,10 @@ function TableauPeriodique() {
 // Fin de TableauPeriodique.
 }
 
-/** La molécule SoaCen en SVG : les deux noyaux (Soleil = Solarium « So », Alpha Centauri « aCen ») reliés par une liaison. */
-// MoleculeSoaCen : dessine la molécule diatomique So–aCen, avec la paire d'électrons partagée au milieu de la liaison.
+/** L'assemblage SoaCen en SVG : les deux noyaux (Soleil = Solarium « So », Alpha Centauri « aCen ») reliés par une liaison. */
+// MoleculeSoaCen : dessine l'assemblage diatomique So–aCen, avec la paire d'électrons partagée au milieu de la liaison.
 function MoleculeSoaCen() {
-  // Les deux atomes de la molécule, avec leur position dans le dessin.
+  // Les deux atomes de l'assemblage, avec leur position dans le dessin.
   const atomes = [
     { e: MOLECULE.atomes[0], x: 150, y: 140, label: 'Soleil' },
     { e: MOLECULE.atomes[1], x: 410, y: 140, label: 'Alpha Centauri' },
@@ -135,8 +137,8 @@ function MoleculeSoaCen() {
     <Box
       // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
       component="svg" viewBox="0 0 560 300" role="img"
-      // Description pour les lecteurs d'écran : la molécule SoaCen et ses deux atomes.
-      aria-label={`Molécule SoaCen : Solarium (Soleil, So, 119) et aCen (Alpha Centauri / Proxima Centauri, 120) reliés par une liaison simple avec une paire d'électrons partagée`}
+      // Description pour les lecteurs d'écran : l'assemblage SoaCen et ses deux atomes.
+      aria-label={`Assemblage SoaCen : Solarium (Soleil, So, 119) et aCen (Alpha Centauri / Proxima Centauri, 120) reliés par une liaison simple avec une paire d'électrons partagée`}
       // Toute la largeur, hauteur proportionnelle, couleur secondaire.
       sx={{ display: 'block', width: '100%', maxWidth: 520, height: 'auto', mx: 'auto', color: 'text.secondary', mt: 1 }}
     // Fin de la balise ouvrante.
@@ -304,18 +306,29 @@ export function TheorieQuantique() {
       </Typography>
 
       {/* Quatrième titre. */}
-      <SectionTitle>La molécule {MOLECULE.nom} ({MOLECULE.formule})</SectionTitle>
-      {/* Le schéma de la molécule. */}
+      <SectionTitle>L’assemblage {MOLECULE.nom} ({MOLECULE.formule})</SectionTitle>
+      {/* Le schéma de l'assemblage. */}
       <MoleculeSoaCen />
-      {/* La légende de la molécule. */}
+      {/* La légende de l'assemblage. */}
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : la molécule SoaCen, deux noyaux liés. */}
-        La molécule <strong>{MOLECULE.nom}</strong> ({MOLECULE.formule}) réunit les deux astres de la théorie :
+        {/* Son texte : l'assemblage SoaCen, deux noyaux liés. */}
+        L’assemblage <strong>{MOLECULE.nom}</strong> ({MOLECULE.formule}) réunit les deux astres de la théorie :
         le <strong>Solarium</strong> (So, 119 — le Soleil) et <strong>aCen</strong> (Alpha Centauri, qui contient Proxima
         Centauri — le Proximium du tableau hypothétique), reliés par une liaison simple avec une paire d’électrons
         partagée. Dans l’analogie, cette « liaison » serait la gravitation entre les deux étoiles les plus proches l’une
         de l’autre (≈ 4,24 années-lumière) — toujours une analogie spéculative, pas un modèle scientifique établi.
       {/* Fin de la légende. */}
+      </Typography>
+      {/* Le paragraphe sur l'analogie quark / interaction forte. */}
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        {/* Son texte : aCen, un « quark » lié par l'interaction forte. */}
+        <strong>Analogie avec le quark et l’interaction forte :</strong> dans un hadron, les quarks sont maintenus
+        ensemble par l’interaction forte (les gluons) et ne peuvent pas être isolés — c’est le confinement. Sur la même
+        optique, <strong>aCen</strong> (Alpha Centauri) serait le « quark » voisin du Soleil-atome : à l’échelle
+        stellaire, la gravitation jouerait le rôle de l’interaction forte, liant les deux « atomes » en un assemblage
+        plus grand. Encore une analogie spéculative : aucune mesure ne confirme un « confinement » gravitationnel entre
+        étoiles.
+      {/* Fin du paragraphe. */}
       </Typography>
       {/* Le paragraphe sur le problème à trois corps. */}
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -323,7 +336,7 @@ export function TheorieQuantique() {
         <strong>Le problème à trois corps :</strong> Alpha Centauri est un système triple (A, B et Proxima). Poincaré a
         montré qu’il n’existe pas de solution analytique générale pour trois corps en interaction gravitationnelle :
         leurs orbites ne sont pas des ellipses parfaites et deviennent chaotiques à long terme — on les calcule par
-        intégration numérique. Dans l’analogie Gobai, la « molécule » Soleil–aCen est donc en réalité un problème à
+        intégration numérique. Dans l’analogie Gobai, l’« assemblage » Soleil–aCen est donc en réalité un problème à
         trois corps, ce qui illustre la limite de l’analogie.
       {/* Fin du paragraphe. */}
       </Typography>

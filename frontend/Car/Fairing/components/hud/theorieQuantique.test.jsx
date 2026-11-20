@@ -47,10 +47,12 @@ test('positions : H en (1,1), He en (1,18), Og en (7,18), lanthanides et actinid
 
 // Test : le Solarium est l'élément hypothétique n° 119, symbole « So », période 8, groupe 1.
 test('le Solarium ajouté au tableau : So, 119, période 8, groupe 1', () => {
-  // Ses propriétés.
+  // Ses propriétés : bien « So » / « Solarium ».
   assert.equal(SOLARIUM.z, 119);
   assert.equal(SOLARIUM.symbole, 'So');
   assert.equal(SOLARIUM.nom, 'Solarium');
+  // Le nom est affiché dans la case du tableau théorique.
+  assert.ok(SOLARIUM.nom.length > 0);
   assert.equal(SOLARIUM.periode, 8);
   assert.equal(SOLARIUM.groupe, 1);
   // Son symbole ne collisionne avec aucun des 118 symboles connus.
@@ -112,13 +114,13 @@ test('le Proximium : Pr, 120, Proxima Centauri du tableau hypothétique', () => 
 // Fin du test.
 });
 
-// Test : la molécule SoaCen (So–aCen) réunit le Solarium et le Proximium ; « Pr » est remplacé par « aCen ».
-test('la molécule SoaCen = Solarium (119) + aCen (120), symboles So et aCen', () => {
+// Test : l'assemblage SoaCen (So–aCen) réunit le Solarium et le Proximium ; « Pr » est remplacé par « aCen ».
+test('l’assemblage SoaCen = Solarium (119) + aCen (120), symboles So et aCen', () => {
   // Son nom, sa formule et ses symboles affichés.
   assert.equal(MOLECULE.nom, 'SoaCen');
   assert.equal(MOLECULE.formule, 'So–aCen');
   assert.deepEqual(MOLECULE.symboles, ['So', 'aCen']);
-  // Aucun « Pr » dans la molécule.
+  // Aucun « Pr » dans l'assemblage.
   assert.ok(!MOLECULE.nom.includes('Pr') && !MOLECULE.formule.includes('Pr'));
   // Ses deux atomes, dans l'ordre : Solarium puis Proximium.
   assert.deepEqual(MOLECULE.atomes.map((a) => a.z), [SOLARIUM.z, PROXIMUM.z]);
