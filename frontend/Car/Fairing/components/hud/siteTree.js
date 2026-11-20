@@ -66,6 +66,12 @@ export const SITE_TREE = node('Accueil', '/', [
     node('Neptune', '/neptune', [node('Triton', '/triton')]),
     // La page de Pluton (/pluton), avec son satellite : Charon (/charon).
     node('Pluton', '/pluton', [node('Charon', '/charon')]),
+    // Les quatre autres planètes naines du catalogue statique (dwarf-planets.data.ts), absentes de l'arborescence
+    // alors que le moteur les affiche et que leur adresse ouvre bien l'astre : Cérès, Hauméa, Makémaké et Éris.
+    node('Cérès', '/ceres'),
+    node('Hauméa', '/haumea'),
+    node('Makémaké', '/makemake'),
+    node('Éris', '/eris'),
   // Fin de la liste des enfants.
   ]),
   // La page « Données » : /donnees.

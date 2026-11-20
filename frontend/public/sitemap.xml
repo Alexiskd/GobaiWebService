@@ -583,6 +583,34 @@
     </image:image>
   <!-- Fin de la page. -->
   </url>
+  <!-- Page /ceres (Cérès, planète naine du catalogue statique). -->
+  <url>
+    <loc>https://www.gobaispace.com/ceres</loc>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- Page /haumea (Hauméa, planète naine du catalogue statique). -->
+  <url>
+    <loc>https://www.gobaispace.com/haumea</loc>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- Page /makemake (Makémaké, planète naine du catalogue statique). -->
+  <url>
+    <loc>https://www.gobaispace.com/makemake</loc>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- Page /eris (Éris, planète naine du catalogue statique). -->
+  <url>
+    <loc>https://www.gobaispace.com/eris</loc>
+    <lastmod>2026-11-20</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
   <!-- Page /galerie (début). -->
   <url>
     <!-- Son adresse. -->

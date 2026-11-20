@@ -1,7 +1,12 @@
+// Fenêtre « Node » (Anthropic Node Open Source) : tout ce sur quoi l'application repose — dépôts et dépendances,
+// sources des données, API externes, arborescence du site, documentation de l'API — et les deux pages de recherche
+// de l'auteur (flux cognitif, théorie quantique). Refonte : une navigation latérale sur ordinateur (onglets
+// horizontaux sur téléphone), les mêmes briques de style dans chaque onglet (nodeUi.jsx), et un contenu revérifié
+// contre le projet (édition statique : plus de serveur, donc plus de clé d'administration ni de backend documenté).
 // Importe de React les crochets useEffect, useState et useSyncExternalStore.
 import { useEffect, useState, useSyncExternalStore } from 'react';
-// Importe de MUI Box, la boîte de dialogue, Link, les onglets, les éléments de tableau et Typography.
-import { Box, Button, Dialog, DialogContent, Link, Switch as MuiSwitch, Tab, Table, TableBody, TableCell, TableRow, Tabs, TextField, Typography } from '@mui/material';
+// Importe de MUI Box, la boîte de dialogue, Link, l'interrupteur et les onglets.
+import { Box, Dialog, DialogContent, Link, Switch as MuiSwitch, Tab, Tabs } from '@mui/material';
 // Importe tilesApi, le client de l'API des tuiles.
 import { tilesApi } from '@/Computing/api';
 // Importe useHud, qui lit une valeur du magasin du HUD.
@@ -14,20 +19,22 @@ import { TILED_BODIES } from '@/Engine/AstreSolideEngine/tiledBodies';
 import { PanelHeader } from '../ui/PanelHeader.jsx';
 // Importe l'arborescence du site et son compteur de pages.
 import { SITE_TREE, countPages } from './siteTree.js';
-// Importe la mise en forme des dates et les crédits affichés.
-import { formatRepoDate, visibleCredits } from './openSourceCredits.js';
+// Importe les crédits affichés et les organisations des services.
+import { SERVICE_ORGS, visibleCredits } from './openSourceCredits.js';
 // Importe la liste des API et son compteur.
 import { API_GROUPS, countApis } from './apiList.js';
-// Importe le blocage des API externes : état, abonnement, bascule et clé d'administration.
-import { apiState, getAdminToken, getApiBlockState, refreshServerBlocked, setAdminToken, setApiBlocked, subscribe } from '@/Engine/shared/lib/apiBlock';
+// Importe le blocage des API externes : état, abonnement, relecture et bascule.
+import { apiState, getApiBlockState, refreshServerBlocked, setApiBlocked, subscribe } from '@/Engine/shared/lib/apiBlock';
 // Importe l'onglet du flux cognitif.
 import { FluxCognitif } from './FluxCognitif.jsx';
 // Importe l'onglet de la théorie quantique.
 import { TheorieQuantique } from './TheorieQuantique.jsx';
-// Onglet « Documentation API » : documentation de l'API gratuite.
+// Importe l'onglet « Documentation API ».
 import { ApiDocs } from './ApiDocs.jsx';
+// Importe les briques de style communes de la fenêtre.
+import { Carte, Chiffre, Etiquette, Fiche, GrilleChiffres, MONO, Note, Precision, Section } from './nodeUi.jsx';
 
-// Calculé à chaque lecture : des satellites peuvent être ajoutés après le test Horizons + Trek.
+// Calculé à chaque lecture : des satellites peuvent être ajoutés après le chargement.
 // satelliteTiles : les astres tuilés qui sont des satellites ou des géantes gazeuses.
 const satelliteTiles = () => TILED_BODIES.filter((b) => b.satellite || b.gas);
 
@@ -46,244 +53,122 @@ const splitLabel = (text, fallback) => {
 
 // Crédits affichés, calculés une seule fois au chargement.
 const CREDITS = visibleCredits();
+// Toutes les API de la liste, à plat.
+const TOUTES_API = API_GROUPS.flatMap((g) => g.items);
 
 /**
- * Tableau qui tient toujours dans la largeur de la fenêtre : colonnes de largeur fixe, textes longs coupés à la ligne.
- * Évite tout défilement horizontal, y compris sur téléphone.
+ * Les sept onglets de la fenêtre, dans l'ordre : identifiant, libellé et ligne d'aide affichée sous le libellé dans
+ * la navigation latérale. Les quatre premiers décrivent le projet, le cinquième son API, les deux derniers sont les
+ * pages de recherche de l'auteur.
  */
-// Style des tableaux qui tiennent dans la largeur : colonnes fixes et textes coupés au besoin.
-const FIT_TABLE = { width: '100%', tableLayout: 'fixed', '& td': { overflowWrap: 'anywhere', wordBreak: 'break-word' } };
+// Déclare la liste des onglets.
+const ONGLETS = [
+  { id: 'credits', label: 'Générique', aide: 'Dépôts et dépendances' },
+  { id: 'sources', label: 'Sources et Entreprises', aide: 'Origine des données affichées' },
+  { id: 'apis', label: 'API', aide: 'Services externes appelés' },
+  { id: 'tree', label: 'Arborescence', aide: 'Les pages du site' },
+  { id: 'docs', label: 'Documentation API', aide: 'L’API NestJS du dépôt' },
+  { id: 'flux', label: 'Flux cognitif', aide: 'F(t) = P(t) × p' },
+  { id: 'theorie', label: 'Théorie quantique', aide: 'L’échelle de la matière' },
+];
 
 /** Les services déclarés, découpés en familles : véritables API, serveurs de tuiles, puis stockage et diffusion de fichiers. */
-// Déclare les familles : leur catégorie dans la liste des API (`kind`), leur titre de section, puis la note affichée sous le tableau.
+// Déclare les familles : leur catégorie dans la liste des API (`kind`), leur titre de section, puis leur définition.
 const KIND_SECTIONS = [
   { kind: 'api', title: 'API et web services', note: 'Services qui reçoivent des paramètres (coordonnées, requêtes textuelles, SQL/TAP), calculent, et renvoient des données structurées (JSON, XML, tables).' },
   { kind: 'tiles', title: 'Services de tuiles cartographiques', note: 'Serveurs spécialisés qui découpent et délivrent des portions de cartes ou de données géographiques, raster ou vectorielles ; ils ne calculent rien à la demande.' },
-  { kind: 'static', title: 'CDN, stockage cloud et fichiers statiques', note: 'Espaces de stockage et réseaux de diffusion : aucun calcul ni requête complexe, seulement des fichiers bruts hébergés (images, polices, scripts, archives de tuiles).' },
+  { kind: 'static', title: 'CDN, stockage cloud et fichiers statiques', note: 'Espaces de stockage et réseaux de diffusion : aucun calcul ni requête complexe, seulement des fichiers bruts hébergés (images, polices, scripts, vidéos, archives de tuiles).' },
 // Fin de la liste des familles.
 ];
 
-/** Étiquette à bordure, comme dans la table des sources. */
-// Déclare le composant Tag : reçoit un contenu.
-const Tag = ({ children }) => (
-  // Balise span à bordure fine et fond léger, un peu plus petite, coupée au besoin.
-  <Box component="span" sx={{ display: 'inline-block', maxWidth: '100%', overflowWrap: 'anywhere', font: 'inherit', fontSize: '0.85em', px: 0.75, py: 0.25, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'action.hover' }}>
-    {/* Le contenu. */}
-    {children}
-  {/* Fin de la balise. */}
+/** Nom d'un projet : un lien vers son dépôt GitHub, avec l'adresse écrite en dessous. */
+// Déclare le composant Depot : reçoit une entrée des crédits.
+const Depot = ({ item }) => (
+  // Le nom en lien, puis l'adresse en petit.
+  <Box>
+    <Link href={`https://github.com/${item.repo}`} target="_blank" rel="noopener noreferrer" underline="hover" sx={{ fontWeight: 600 }}>{item.name}</Link>
+    <Precision brut>github.com/{item.repo}</Precision>
   </Box>
-// Fin de Tag.
+// Fin de Depot.
 );
 
-// Déclare le composant SectionTitle : reçoit un contenu.
-const SectionTitle = ({ children }) => (
-  // Titre de niveau 3 au style overline, couleur secondaire, avec ses marges.
-  <Typography component="h3" variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2, mt: 2.5, mb: 0.5 }}>
-    {/* Le contenu. */}
-    {children}
-  {/* Fin du titre. */}
-  </Typography>
-// Fin de SectionTitle.
-);
-
-// Déclare le composant RepoLink : sans dépôt, le nom seul ; sinon (début).
-const RepoLink = ({ item }) => (!item.repo ? item.name : (
-  // Lien vers le dépôt GitHub, ouvert dans un nouvel onglet, avec l'adresse en infobulle.
-  <Link href={`https://github.com/${item.repo}`} target="_blank" rel="noopener noreferrer" underline="hover" title={`github.com/${item.repo}`}>
-    {/* Le nom du projet. */}
-    {item.name}
-  {/* Fin du lien. */}
-  </Link>
-// Fin de RepoLink.
-));
-
-/**
- * Ligne de tableau : projet, lien vers son dépôt et date de dernière mise à jour à gauche, créateurs à droite.
- */
-// Déclare le composant NameRow : reçoit une entrée des crédits.
-const NameRow = ({ item }) => {
-  // Date de dernière mise à jour, écrite en français.
-  const date = formatRepoDate(item.updated);
-  // Adresse du dépôt, s'il y en a un.
-  const url = item.repo && `https://github.com/${item.repo}`;
-  // Début du rendu.
-  return (
-    // Ligne du tableau.
-    <TableRow>
-      {/* Cellule de gauche, alignée en haut, sur la moitié de la largeur. */}
-      <TableCell sx={{ pl: 0, verticalAlign: 'top', width: '50%' }}>
-        {/* Le nom du projet, avec son lien. */}
-        <RepoLink item={item} />
-        {/* Sous le nom, en petit, couleur secondaire. */}
-        <Box component="span" sx={{ display: 'block', fontSize: '0.78em', color: 'text.secondary', wordBreak: 'break-all' }}>
-          {/* Le lien écrit en toutes lettres s'il y a un dépôt, la source publiée sinon. */}
-          {url ? <Link href={url} target="_blank" rel="noopener noreferrer" underline="hover" color="inherit">{`github.com/${item.repo}`}</Link> : item.source}
-        {/* Fin de cette ligne. */}
-        </Box>
-        {/* S'il y a une date (début). */}
-        {date && (
-          // Ligne de la date, en petit.
-          <Box component="span" sx={{ display: 'block', fontSize: '0.78em', color: 'text.secondary', mt: 0.25 }}>
-            {/* « Mis à jour le », suivi de la date. */}
-            Mis à jour le {date}
-          {/* Fin de la ligne de la date. */}
-          </Box>
-        // Fin du cas.
-        )}
-        {/* Si des fichiers sont importés dans le projet (début). */}
-        {item.local && (
-          // Ligne qui dit ce qui est importé.
-          <Box component="span" sx={{ display: 'block', fontSize: '0.78em', color: 'text.secondary' }}>Importé dans le projet : {item.local}</Box>
-        // Fin du cas.
-        )}
-      {/* Fin de la cellule de gauche. */}
-      </TableCell>
-      {/* Cellule de droite : les créateurs séparés par des virgules, l'organisation à défaut. */}
-      <TableCell sx={{ pr: 0, verticalAlign: 'top' }}>{item.people.join(', ') || item.org}</TableCell>
-    {/* Fin de la ligne du tableau. */}
-    </TableRow>
-  // Fin du rendu.
-  );
-// Fin de NameRow.
-};
-
-/** Dates des dépôts chargés en direct, demandées une seule fois par visite (le serveur les garde six heures). */
-/** Onglet « Générique » : chaque dépôt utilisé, son lien, sa dernière mise à jour et ses créateurs. */
-// Déclare le composant Credits, l'onglet « Générique ».
+/** Onglet « Générique » : chaque dépôt déclaré dans les manifestes du projet, puis les organisations des services. */
+// Déclare le composant Credits.
 function Credits() {
+  // Nombre de paquets crédités et de dépôts distincts.
+  const paquets = CREDITS.flatMap((g) => g.items);
+  const depots = new Set(paquets.map((p) => p.repo)).size;
   // Début du rendu.
   return (
-    // Conteneur de l'onglet.
     <Box>
-      {/* Un bloc par groupe de crédits (début). */}
-      {CREDITS.map(({ group, items }) => {
-        // Un dépôt sans créateur nommé est crédité à son organisation.
-        // Ne garde que les entrées qui ont des créateurs ou une organisation.
-        const withPeople = items.filter((item) => item.people.length || item.org);
-        // Groupe vide : rien n'est affiché.
-        if (!withPeople.length) return null;
-        // Début du rendu du groupe.
-        return (
-          // Section nommée par le groupe.
-          <Box key={group} component="section" aria-label={group}>
-            {/* Le titre du groupe. */}
-            <SectionTitle>{group}</SectionTitle>
-            {/* Petit tableau. */}
-            <Table size="small">
-              {/* Corps du tableau. */}
-              <TableBody>
-                {/* Une ligne par entrée (début). */}
-                {withPeople.map((item) => (
-                  // La ligne de l'entrée.
-                  <NameRow key={item.name} item={item} />
-                // Fin des lignes.
-                ))}
-              {/* Fin du corps du tableau. */}
-              </TableBody>
-            {/* Fin du tableau. */}
-            </Table>
-          {/* Fin de la section. */}
-          </Box>
-        // Fin du rendu du groupe.
-        );
-      // Fin des blocs.
-      })}
-    {/* Fin du conteneur. */}
+      {/* Chiffres clés. */}
+      <GrilleChiffres>
+        <Chiffre libelle="Paquets déclarés" valeur={paquets.length} detail="dans les manifestes package.json du dépôt" />
+        <Chiffre libelle="Dépôts GitHub" valeur={depots} detail="plusieurs paquets partagent un même dépôt" />
+        <Chiffre libelle="Organisations et services" valeur={SERVICE_ORGS.length} detail="dont l’application utilise le travail" />
+      </GrilleChiffres>
+      {/* Un bloc par groupe de crédits. */}
+      {CREDITS.map(({ group, items }, i) => (
+        <Section key={group} numero={i + 1} titre={group}>
+          <Fiche
+            fixe label={group}
+            colonnes={[{ largeur: '62%' }, { align: 'right' }]}
+            lignes={items.map((item) => [<Depot key={item.name} item={item} />, item.people.join(', ') || item.org || '—'])}
+          />
+        </Section>
+      ))}
+      {/* Les organisations dont un service est utilisé, et pourquoi. */}
+      <Section numero={CREDITS.length + 1} titre="Organisations et services" sousTitre="Chaque ligne correspond à un usage relevé dans le code.">
+        <Fiche
+          fixe label="Organisations et services utilisés"
+          colonnes={[{ largeur: '34%' }, {}]}
+          lignes={SERVICE_ORGS.slice().sort((a, b) => a.org.localeCompare(b.org, 'fr')).map((o) => [<Etiquette key={o.org}>{o.org}</Etiquette>, o.what.join(' · ')])}
+        />
+      </Section>
+      <Note>
+        Seuls les paquets présents dans <code>frontend/package.json</code> et <code>frontend/Car/Computing/api/package.json</code>{' '}
+        sont listés ; aucun auteur ni date n’est ajouté de mémoire.
+      </Note>
     </Box>
-  // Fin du rendu.
   );
 // Fin de Credits.
 }
 
-/** Onglet « Sources et Entreprises » : sources des données affichées, puis services déclarés, séparés en API, tuiles et fichiers statiques. */
+/** Onglet « Sources et Entreprises » : sources des données affichées, puis services déclarés, par famille. */
 // Déclare le composant SourcesAndCompanies : reçoit les lignes des sources.
 function SourcesAndCompanies({ rows }) {
   // Début du rendu.
   return (
-    // Conteneur sans débordement horizontal.
-    <Box sx={{ maxWidth: '100%', overflowX: 'hidden' }}>
-      {/* Premier titre. */}
-      <SectionTitle>Sources des données</SectionTitle>
-      {/* Tableau des sources, ajusté à la largeur. */}
-      <Table size="small" sx={FIT_TABLE}>
-        {/* Corps du tableau. */}
-        <TableBody>
-          {/* Une ligne par source (début). */}
-          {rows.map(([label, text]) => (
-            // La ligne, de clé unique.
-            <TableRow key={`${label}|${text}`}>
-              {/* Le libellé, en étiquette, sur 40 % de la largeur. */}
-              <TableCell sx={{ pl: 0, verticalAlign: 'top', width: '40%' }}><Tag>{label}</Tag></TableCell>
-              {/* La mention de la source. */}
-              <TableCell sx={{ pr: 0 }}>{text}</TableCell>
-            {/* Fin de la ligne. */}
-            </TableRow>
-          // Fin des lignes.
-          ))}
-        {/* Fin du corps du tableau. */}
-        </TableBody>
-      {/* Fin du tableau. */}
-      </Table>
-      {/* Note sous le tableau. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte. */}
-        Seules les sources des cartes actuellement chargées sont listées.
-      {/* Fin de la note. */}
-      </Typography>
-
-      {/* Une section par famille de services déclarés (début). */}
-      {KIND_SECTIONS.map(({ kind, title, note }) => {
+    <Box>
+      <Section numero={1} titre="Sources des données" sousTitre="Seules les sources des cartes actuellement chargées sont listées.">
+        <Fiche
+          fixe label="Sources des données affichées"
+          colonnes={[{ largeur: '34%' }, {}]}
+          lignes={rows.map(([label, text]) => [<Etiquette key={label}>{label}</Etiquette>, text])}
+        />
+      </Section>
+      {/* Une section par famille de services déclarés. */}
+      {KIND_SECTIONS.map(({ kind, title, note }, i) => {
         // Les services de la famille, pris dans la liste des API.
-        const list = API_GROUPS.flatMap((g) => g.items).filter((api) => api.kind === kind);
+        const list = TOUTES_API.filter((api) => api.kind === kind);
         // Famille vide : rien n'est affiché.
         if (!list.length) return null;
-        // Début du rendu de la famille.
+        // La section de la famille.
         return (
-          // Section nommée par son titre.
-          <Box key={kind} component="section" aria-label={title}>
-            {/* Le titre de la famille. */}
-            <SectionTitle>{title}</SectionTitle>
-            {/* Tableau des services, ajusté à la largeur. */}
-            <Table size="small" sx={FIT_TABLE}>
-              {/* Corps du tableau. */}
-              <TableBody>
-                {/* Une ligne par service (début). */}
-                {list.map((api) => (
-                  // La ligne, de clé unique.
-                  <TableRow key={api.name}>
-                    {/* Le nom du service et son adresse, sur 40 % de la largeur. */}
-                    <TableCell sx={{ pl: 0, verticalAlign: 'top', width: '40%' }}>
-                      {/* Le nom, en étiquette. */}
-                      <Tag>{api.name}</Tag>
-                      {/* Son adresse, en petit, jamais traduite. */}
-                      <Box component="span" translate="no" sx={{ display: 'block', fontSize: '0.78em', color: 'text.secondary', wordBreak: 'break-all' }}>{api.host}</Box>
-                    {/* Fin de la cellule de gauche. */}
-                    </TableCell>
-                    {/* L'usage du service. */}
-                    <TableCell sx={{ pr: 0 }}>{api.use}</TableCell>
-                  {/* Fin de la ligne. */}
-                  </TableRow>
-                // Fin des lignes.
-                ))}
-              {/* Fin du corps du tableau. */}
-              </TableBody>
-            {/* Fin du tableau. */}
-            </Table>
-            {/* Note sous le tableau. */}
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              {/* Son texte. */}
-              {note}
-            {/* Fin de la note. */}
-            </Typography>
-          {/* Fin de la section. */}
-          </Box>
-        // Fin du rendu de la famille.
+          <Section key={kind} numero={i + 2} titre={title} sousTitre={note}>
+            <Fiche
+              fixe label={title}
+              colonnes={[{ largeur: '40%' }, {}]}
+              lignes={list.map((api) => [
+                <Box key={api.name}><Etiquette>{api.name}</Etiquette><Precision brut sx={{ mt: 0.25 }}>{api.host}</Precision></Box>,
+                api.use,
+              ])}
+            />
+          </Section>
         );
       // Fin des familles.
       })}
-    {/* Fin du conteneur. */}
     </Box>
-  // Fin du rendu.
   );
 // Fin de SourcesAndCompanies.
 }
@@ -293,240 +178,130 @@ function SourcesAndCompanies({ rows }) {
 const API_STATE_NOTE = {
   // Déconnectée dans ce navigateur seulement.
   local: 'Déconnectée sur cet appareil',
-  // Déconnectée sur le serveur, pour tous les visiteurs.
+  // Déconnectée sur un serveur (sans objet dans l'édition statique, gardé pour une API branchée).
   server: 'Déconnectée sur le serveur',
-  // Déconnectée par le réglage permanent du serveur.
+  // Déconnectée par un réglage permanent du serveur.
   permanent: 'Déconnectée sur le serveur (réglage permanent)',
 // Fin des mentions.
 };
 
 /**
  * Onglet « API » : toutes les API externes appelées par l'application, avec leur adresse, leur usage et un
- * interrupteur pour déconnecter chacune. Sans clé d'administration, la déconnexion vaut pour cet appareil ;
- * avec la clé, elle vaut aussi pour le serveur, donc pour tous les visiteurs.
+ * interrupteur pour déconnecter chacune sur cet appareil. L'édition statique n'a pas de serveur : la clé
+ * d'administration et la déconnexion « pour tous les visiteurs » de l'ancienne version n'existent plus.
+ * Un service marqué `requis` (le verrou d'accès) ne peut pas être déconnecté : l'application ne s'ouvrirait plus.
  */
-// Déclare le composant ApiList, l'onglet « API ».
+// Déclare le composant ApiList.
 function ApiList() {
   // État du blocage, relu à chaque changement.
   const block = useSyncExternalStore(subscribe, getApiBlockState);
-  // Clé d'administration en cours de saisie.
-  const [token, setToken] = useState(getAdminToken);
-  // Message du dernier essai sur le serveur ('' si aucun).
-  const [message, setMessage] = useState('');
-  // À l'ouverture de l'onglet : relit l'état du serveur.
-  useEffect(() => {
-    // Contrôleur d'annulation.
-    const ctrl = new AbortController();
-    // Lance la lecture.
-    refreshServerBlocked(ctrl.signal);
-    // À la fermeture : annule.
-    return () => ctrl.abort();
-  // Une seule fois.
-  }, []);
-  // toggle : connecte ou déconnecte une API.
-  const toggle = async (api, connected) => {
-    // Efface l'ancien message.
-    setMessage('');
-    // Applique le choix (appareil, et serveur si la clé est saisie).
-    const result = await setApiBlocked(api, !connected);
-    // Le serveur a refusé ou n'a pas répondu : le dit.
-    if (result.message) setMessage(`${api.name} : ${result.message} Le réglage vaut pour cet appareil seulement.`);
-  // Fin de toggle.
-  };
-  // saveToken : garde la clé saisie pour la durée de l'onglet.
-  const saveToken = () => {
-    // Garde la clé, sans espaces autour.
-    setAdminToken(token.trim());
-    // Confirme.
-    setMessage(token.trim() ? 'Clé gardée pour cet onglet du navigateur.' : 'Clé effacée.');
-  // Fin de saveToken.
-  };
+  // À l'ouverture de l'onglet : marque l'état comme lu (aucun serveur n'est consulté en mode statique).
+  useEffect(() => { refreshServerBlocked(); }, []);
   // Nombre d'API déconnectées, tous groupes confondus.
-  const off = API_GROUPS.reduce((n, g) => n + g.items.filter((api) => apiState(api, block) !== 'on').length, 0);
+  const off = TOUTES_API.filter((api) => apiState(api, block) !== 'on').length;
+  // Nombre d'API qui ne sont appelées que si une clé est saisie.
+  const aCle = TOUTES_API.filter((api) => api.key).length;
   // Début du rendu.
   return (
-    // Conteneur de l'onglet.
     <Box>
-      {/* Explication de l'interrupteur. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        {/* Le texte. */}
-        Chaque API peut être déconnectée : elle n’est alors plus appelée. Ce qui est déjà affiché reste à l’écran jusqu’au rechargement de la page.
-      {/* Fin de l'explication. */}
-      </Typography>
-      {/* Un bloc par groupe d'API (début). */}
-      {API_GROUPS.map(({ group, items }) => (
-        // Section nommée par le groupe.
-        <Box key={group} component="section" aria-label={group}>
-          {/* Le titre du groupe. */}
-          <SectionTitle>{group}</SectionTitle>
-          {/* Petit tableau. */}
-          <Table size="small">
-            {/* Corps du tableau. */}
-            <TableBody>
-              {/* Une ligne par API (début). */}
-              {items.map((api) => {
-                // État de l'API : connectée, ou déconnectée (appareil, serveur, réglage permanent).
-                const st = apiState(api, block);
-                // La ligne.
-                return (
-                  // Ligne atténuée quand l'API est déconnectée.
-                  <TableRow key={api.name} sx={st === 'on' ? undefined : { '& td': { color: 'text.disabled' } }}>
-                    {/* Cellule de gauche. */}
-                    <TableCell sx={{ pl: 0, verticalAlign: 'top', width: '44%' }}>
-                      {/* Le nom de l'API. */}
-                      {api.name}
-                      {/* Son adresse, en petit, jamais traduite. */}
-                      <Box component="span" translate="no" sx={{ display: 'block', fontSize: '0.78em', color: 'text.secondary', wordBreak: 'break-all' }}>{api.host}</Box>
-                    {/* Fin de la cellule de gauche. */}
-                    </TableCell>
-                    {/* Cellule du milieu. */}
-                    <TableCell sx={{ verticalAlign: 'top' }}>
-                      {/* L'usage de l'API. */}
-                      {api.use}
-                      {/* Si l'API dépend d'une clé : la mention « Si la clé est configurée ». */}
-                      {api.key && <Box component="span" sx={{ display: 'block', fontSize: '0.78em', color: 'text.secondary' }}>Si la clé est configurée</Box>}
-                      {/* Si l'API est déconnectée : où elle l'est. */}
-                      {st !== 'on' && <Box component="span" sx={{ display: 'block', fontSize: '0.78em', color: 'warning.main' }}>{API_STATE_NOTE[st]}</Box>}
-                    {/* Fin de la cellule du milieu. */}
-                    </TableCell>
-                    {/* Cellule de droite : l'interrupteur. */}
-                    <TableCell sx={{ pr: 0, pl: 0, verticalAlign: 'top', width: 46 }} align="right">
-                      {/* Allumé : API connectée. Le réglage permanent du serveur ne se change pas d'ici. */}
-                      <MuiSwitch
-                        size="small"
-                        checked={st === 'on'}
-                        disabled={st === 'permanent'}
-                        onChange={(e) => toggle(api, e.target.checked)}
-                        slotProps={{ input: { role: 'switch', 'aria-label': `${api.name} : API connectée` } }}
-                      />
-                    {/* Fin de la cellule de droite. */}
-                    </TableCell>
-                  {/* Fin de la ligne. */}
-                  </TableRow>
-                // Fin du rendu de la ligne.
-                );
-              // Fin des lignes.
-              })}
-            {/* Fin du corps du tableau. */}
-            </TableBody>
-          {/* Fin du tableau. */}
-          </Table>
-        {/* Fin de la section. */}
-        </Box>
-      // Fin des blocs.
+      {/* Chiffres clés. */}
+      <GrilleChiffres>
+        <Chiffre libelle="Services externes" valeur={countApis()} detail="relevés dans le code de l’application" />
+        <Chiffre libelle="Déconnectés sur cet appareil" valeur={off} couleur={off ? 'warning.main' : 'text.primary'} detail={off ? 'plus aucun appel ne part vers eux' : 'tous les services sont connectés'} />
+        <Chiffre libelle="Appelés avec une clé" valeur={aCle} detail="seulement si l’utilisateur a saisi la sienne" />
+      </GrilleChiffres>
+      <Note>
+        Chaque service peut être déconnecté : le navigateur ne l’appelle alors plus. Le réglage est gardé sur cet appareil ;
+        ce qui est déjà affiché reste à l’écran jusqu’au rechargement de la page.
+      </Note>
+      {/* Un bloc par groupe d'API. */}
+      {API_GROUPS.map(({ group, items }, i) => (
+        <Section key={group} numero={i + 1} titre={group}>
+          <Fiche
+            fixe label={group}
+            colonnes={[{ largeur: '38%' }, {}, { largeur: 58, align: 'right' }]}
+            lignes={items.map((api) => {
+              // État de l'API : connectée, ou déconnectée (appareil, serveur, réglage permanent).
+              const st = apiState(api, block);
+              // Les trois cellules : nom et adresse, usage et mentions, interrupteur.
+              return [
+                <Box key="nom" sx={{ color: st === 'on' ? 'text.primary' : 'text.disabled' }}>
+                  <Box component="span" sx={{ fontWeight: 600 }}>{api.name}</Box>
+                  <Precision brut>{api.host}</Precision>
+                </Box>,
+                <Box key="usage" sx={{ color: st === 'on' ? 'text.primary' : 'text.disabled' }}>
+                  {api.use}
+                  {api.key && <Precision>Seulement si la clé est saisie</Precision>}
+                  {api.requis && <Precision couleur="info.main">Nécessaire à l’ouverture de l’application</Precision>}
+                  {st !== 'on' && <Precision couleur="warning.main">{API_STATE_NOTE[st]}</Precision>}
+                </Box>,
+                // Allumé : API connectée. Un service requis ou un réglage permanent ne se change pas d'ici.
+                <MuiSwitch
+                  key="etat" size="small" checked={st === 'on'} disabled={st === 'permanent' || Boolean(api.requis)}
+                  onChange={(e) => setApiBlocked(api, !e.target.checked)}
+                  slotProps={{ input: { role: 'switch', 'aria-label': `${api.name} : API connectée` } }}
+                />,
+              ];
+            })}
+          />
+        </Section>
       ))}
-      {/* Note de bas d'onglet. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Le nombre total d'API, et le nombre d'API déconnectées. */}
-        {countApis()} API externes, relevées dans le code de l’application{off ? ` ; ${off} déconnectée${off > 1 ? 's' : ''}` : ''}.
-      {/* Fin de la note. */}
-      </Typography>
-      {/* Section de la clé d'administration. */}
-      <Box component="section" aria-label="Administration">
-        {/* Le titre. */}
-        <SectionTitle>Administration</SectionTitle>
-        {/* L'explication. */}
-        <Typography variant="body2" color="text.secondary">
-          {/* Le texte, selon que le serveur accepte ou non une clé. */}
-          {block.editable
-            ? 'Sans clé, une API est déconnectée sur cet appareil : le navigateur ne l’appelle plus. Avec la clé d’administration, elle l’est aussi sur le serveur, pour tous les visiteurs, jusqu’au redémarrage du serveur.'
-            : 'Une API est déconnectée sur cet appareil : le navigateur ne l’appelle plus. Pour la déconnecter aussi sur le serveur, renseignez BLOCKED_API_HOSTS (permanent) ou API_ADMIN_TOKEN (clé pour cet onglet) dans le tableau de bord de l’hébergeur.'}
-        {/* Fin de l'explication. */}
-        </Typography>
-        {/* Si le serveur accepte une clé : le champ et son bouton. */}
-        {block.editable && (
-          // Champ et bouton côte à côte.
-          <Box sx={{ display: 'flex', gap: 1, mt: 1, alignItems: 'center' }}>
-            {/* Champ de la clé, masqué comme un mot de passe. */}
-            <TextField
-              size="small"
-              type="password"
-              autoComplete="off"
-              label="Clé d’administration"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              sx={{ flex: 1 }}
-            />
-            {/* Bouton qui garde la clé. */}
-            <Button variant="outlined" size="small" onClick={saveToken}>Valider</Button>
-          {/* Fin du champ et du bouton. */}
-          </Box>
-        )}
-        {/* Message du dernier essai. */}
-        {message && <Typography variant="body2" role="status" sx={{ mt: 1 }}>{message}</Typography>}
-      {/* Fin de la section. */}
-      </Box>
-    {/* Fin du conteneur. */}
     </Box>
-  // Fin du rendu.
   );
 // Fin de ApiList.
 }
 
-/** Branche de l'arborescence : le nom (lien si la page a une adresse), puis ses enfants reliés par un trait vertical. */
+/** Branche de l'arborescence : le nom (lien si la page a une adresse), son adresse, puis ses enfants reliés par un trait. */
 // Déclare le composant TreeNode : un nœud de l'arborescence et l'indicateur de racine.
 function TreeNode({ item, root = false }) {
   // Début du rendu.
   return (
     // Élément de liste sans puce.
-    <Box component="li" sx={{ listStyle: 'none', py: 0.35 }}>
-      {/* Si le nœud a une adresse (début). */}
+    <Box component="li" sx={{ listStyle: 'none', py: 0.4 }}>
+      {/* Le nom : en lien si le nœud a une adresse, en demi-gras s'il est la racine ou s'il a des enfants. */}
       {item.path ? (
-        // Son nom en lien ; en demi-gras pour la racine et les nœuds qui ont des enfants.
-        <Link href={item.path} underline="hover" sx={{ fontWeight: root || item.children.length ? 600 : 400 }}>{item.name}</Link>
-      // Sinon (début).
+        <Link href={item.path} underline="hover" sx={{ fontWeight: root || item.children.length ? 700 : 400 }}>{item.name}</Link>
       ) : (
-        // Son nom seul, en demi-gras.
-        <Box component="span" sx={{ fontWeight: 600 }}>{item.name}</Box>
-      // Fin du choix.
+        <Box component="span" sx={{ fontWeight: 700 }}>{item.name}</Box>
       )}
-      {/* Si le nœud a une adresse (début). */}
-      {item.path && (
-        // L'adresse, en petit, à côté du nom.
-        <Box component="span" sx={{ ml: 1, fontSize: '0.8em', color: 'text.secondary', wordBreak: 'break-all' }}>{item.path}</Box>
-      // Fin du cas.
-      )}
-      {/* S'il a des enfants (début). */}
+      {/* L'adresse, à chasse fixe, à côté du nom. */}
+      {item.path && <Box component="span" translate="no" sx={{ ml: 1, fontFamily: MONO, fontSize: '0.75em', color: 'text.secondary', overflowWrap: 'anywhere' }}>{item.path}</Box>}
+      {/* Les enfants, dans une liste imbriquée bordée à gauche d'un trait vertical. */}
       {item.children.length > 0 && (
-        // Liste imbriquée, bordée à gauche d'un trait vertical.
-        <Box component="ul" sx={{ m: 0, mt: 0.35, ml: 0.75, pl: 1.75, borderLeft: 1, borderColor: 'divider' }}>
-          {/* Un nœud par enfant (appel récursif). */}
+        <Box component="ul" sx={{ m: 0, mt: 0.4, ml: 0.75, pl: 1.75, borderLeft: 1, borderColor: 'divider' }}>
           {item.children.map((child) => <TreeNode key={child.name} item={child} />)}
-        {/* Fin de la liste imbriquée. */}
         </Box>
-      // Fin du cas.
       )}
-    {/* Fin de l'élément de liste. */}
     </Box>
-  // Fin du rendu.
   );
 // Fin de TreeNode.
 }
 
-/** Onglet « Arborescence » : toutes les pages du site, de l'accueil aux satellites. */
-// Déclare le composant SiteTree, l'onglet « Arborescence ».
+/** Onglet « Arborescence » : toutes les pages du site, de l'accueil aux satellites et aux planètes naines. */
+// Déclare le composant SiteTree.
 function SiteTree() {
+  // Les astres de l'arborescence : le premier groupe de la racine.
+  const astres = countPages(SITE_TREE.children[0]);
   // Début du rendu.
   return (
-    // Conteneur de l'onglet.
     <Box>
-      {/* Le titre. */}
-      <SectionTitle>Arborescence du site</SectionTitle>
-      {/* Liste racine, sans marge. */}
-      <Box component="ul" sx={{ m: 0, p: 0 }}>
-        {/* Le nœud racine de l'arborescence. */}
-        <TreeNode item={SITE_TREE} root />
-      {/* Fin de la liste racine. */}
-      </Box>
-      {/* Note de bas d'onglet. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Le nombre de pages et l'explication des liens. */}
-        {countPages()} pages. Chaque lien ouvre le site directement sur l’astre ou la fenêtre.
-      {/* Fin de la note. */}
-      </Typography>
-    {/* Fin du conteneur. */}
+      {/* Chiffres clés. */}
+      <GrilleChiffres>
+        <Chiffre libelle="Pages" valeur={countPages()} detail="chacune a sa propre adresse" />
+        <Chiffre libelle="Astres" valeur={astres} detail="étoile, planètes, planètes naines et satellites" />
+        <Chiffre libelle="Fenêtres" valeur={countPages() - astres - 1} detail="Données, Node et Dons" />
+      </GrilleChiffres>
+      <Section numero={1} titre="Arborescence du site" sousTitre="Chaque lien ouvre le site directement sur l’astre ou la fenêtre.">
+        <Carte sx={{ bgcolor: 'transparent' }}>
+          <Box component="ul" sx={{ m: 0, p: 0 }}><TreeNode item={SITE_TREE} root /></Box>
+        </Carte>
+      </Section>
+      <Note>
+        Le site est une application à page unique : chaque adresse est servie par le même fichier, puis l’application se
+        place sur l’astre nommé. Les adresses des astres sont celles du sitemap ; <code>/galerie</code> y désigne la fenêtre
+        Données, ouverte aussi par <code>/donnees</code>.
+      </Note>
     </Box>
-  // Fin du rendu.
   );
 // Fin de SiteTree.
 }
@@ -613,7 +388,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
     // Une ligne par mention supplémentaire (« Données » à défaut).
     ...(extra ? extra.split(' · ').map((t) => splitLabel(t, 'Données')) : []),
     // Les éphémérides.
-    ['Éphémérides', 'Orbites de Kepler (calcul local) · USNO'],
+    ['Éphémérides', 'Orbites de Kepler calculées dans le navigateur · éléments moyens JPL SSD'],
     // La galerie.
     ['Galerie', 'NASA Image and Video Library (images-api.nasa.gov)'],
     // Les modèles 3D de Phobos et de Deimos.
@@ -623,62 +398,60 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
   // Fin des lignes ; les entrées absentes sont retirées.
   ].filter(Boolean);
 
+  // Le contenu de l'onglet affiché.
+  const contenu = tab === 'theorie' ? <TheorieQuantique /> : tab === 'docs' ? <ApiDocs /> : tab === 'flux' ? <FluxCognitif />
+    : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />;
+
   // Début du rendu.
   return (
-    // Boîte de dialogue : plein écran en mode compact, petite largeur sinon.
-    <Dialog open={open} onClose={onClose} fullScreen={compact} maxWidth="lg" fullWidth aria-label="Anthropic Node Open Source" PaperProps={{ sx: { overflow: 'hidden', borderRadius: compact ? 0 : 3, minHeight: compact ? '100%' : 600, maxHeight: compact ? '100%' : 'min(88vh, 900px)' } }}>
-      {/* L'en-tête, avec le titre et la fermeture. */}
-      <PanelHeader kicker="GOBai SPACE · RESSOURCES" title="Node — Sources & outils" onClose={onClose} sx={{ px: 2.5, pt: 2, pb: 1.5 }} />
-      {/* La barre d'onglets (début de la balise). */}
-      <Tabs
-        // Onglet affiché.
-        value={tab}
-        // Au changement : affiche l'onglet choisi.
-        onChange={(e, v) => setTab(v)}
-        // Sept onglets : défilement horizontal.
-        // Défilement horizontal.
-        variant="scrollable"
-        // Boutons de défilement affichés au besoin.
-        scrollButtons="auto"
-        // Nom pour les lecteurs d'écran.
-        aria-label="Sections de la fenêtre Anthropic Node Open Source"
-        // Hauteur de 40 px, filet en bas.
-        sx={{ flex: 'none', px: 1.5, minHeight: 48, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', '& .MuiTab-root': { minHeight: 48, textTransform: 'none', fontWeight: 600, minWidth: 104 } }}
-      // Fin de la balise ouvrante.
-      >
-        {/* Onglet « Générique ». */}
-        <Tab value="credits" label="Générique" id="node-tab-credits" aria-controls="node-panel-credits" />
-        {/* Onglet « Sources et Entreprises ». */}
-        <Tab value="sources" label="Sources et Entreprises" id="node-tab-sources" aria-controls="node-panel-sources" />
-        {/* Onglet « API ». */}
-        <Tab value="apis" label="API" id="node-tab-apis" aria-controls="node-panel-apis" />
-        {/* Onglet « Arborescence ». */}
-        <Tab value="tree" label="Arborescence" id="node-tab-tree" aria-controls="node-panel-tree" />
-        {/* Onglet « Documentation API ». */}
-        <Tab value="docs" label="Documentation API" id="node-tab-docs" aria-controls="node-panel-docs" />
-        {/* Onglet « Flux cognitif ». */}
-        <Tab value="flux" label="Flux cognitif" id="node-tab-flux" aria-controls="node-panel-flux" />
-        {/* Onglet « Théorie quantique ». */}
-        <Tab value="theorie" label="Théorie quantique" id="node-tab-theorie" aria-controls="node-panel-theorie" />
-      {/* Fin de la barre d'onglets. */}
-      </Tabs>
-      {/* Contenu de la boîte de dialogue. */}
-      <DialogContent sx={{ p: { xs: 1.5, sm: 2.5 }, bgcolor: 'background.default' }}>
-        {/* Panneau de l'onglet, relié à son onglet pour les lecteurs d'écran. */}
-        <Box role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`} sx={{ maxWidth: 1120, mx: 'auto', minWidth: 0 }}>
-          {/* Le contenu de l'onglet affiché ; « Sources et Entreprises » par défaut. */}
-          {tab === 'theorie' ? <TheorieQuantique /> : tab === 'docs' ? <ApiDocs /> : tab === 'flux' ? <FluxCognitif /> : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />}
-        {/* Fin du panneau. */}
-        </Box>
-        {/* Note de bas de fenêtre. */}
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2.5 }}>
-          {/* Le raccourci clavier. */}
-          Touche S pour ouvrir ou fermer cette fenêtre. Les sources et outils sont regroupés par onglet.
-        {/* Fin de la note. */}
-        </Typography>
-      {/* Fin du contenu. */}
-      </DialogContent>
-    {/* Fin de la boîte de dialogue. */}
+    // Fenêtre large ; plein écran en mode compact. La hauteur est fixe sur ordinateur : changer d'onglet ne la fait pas sauter.
+    <Dialog
+      open={open} onClose={onClose} fullScreen={compact} maxWidth="lg" fullWidth aria-label="Anthropic Node Open Source"
+      slotProps={{ paper: { sx: { overflow: 'hidden', height: compact ? '100%' : 'min(88vh, 900px)' } } }}
+    >
+      {/* En-tête : surtitre, titre et bouton de fermeture. */}
+      <PanelHeader kicker="Go白ناन्टех · Anthropic Node Open Source" title="Node — sources, outils et recherche" onClose={onClose} sx={{ px: 2.5, pt: 2, pb: 1.5 }} />
+      {/* Corps : navigation à gauche et contenu à droite sur ordinateur ; navigation au-dessus sur téléphone. */}
+      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: compact ? 'column' : 'row' }}>
+        {/* Les onglets : verticaux avec une ligne d'aide sur ordinateur, horizontaux et défilants sur téléphone. */}
+        <Tabs
+          value={tab}
+          onChange={(e, v) => setTab(v)}
+          orientation={compact ? 'horizontal' : 'vertical'}
+          variant="scrollable"
+          scrollButtons={compact ? 'auto' : false}
+          aria-label="Sections de la fenêtre Anthropic Node Open Source"
+          sx={compact
+            ? { flex: 'none', px: 1, borderBottom: 1, borderColor: 'divider' }
+            : { flex: 'none', width: 232, py: 1, borderRight: 1, borderColor: 'divider', '& .MuiTabs-indicator': { left: 0, right: 'auto', width: 3 } }}
+        >
+          {ONGLETS.map((o, i) => (
+            <Tab
+              key={o.id} value={o.id} id={`node-tab-${o.id}`} aria-controls={`node-panel-${o.id}`}
+              // Sur téléphone, le libellé seul ; sur ordinateur, le numéro, le libellé et la ligne d'aide.
+              label={compact ? o.label : (
+                <Box sx={{ display: 'grid', gridTemplateColumns: '22px minmax(0, 1fr)', columnGap: 1, textAlign: 'left', width: '100%' }}>
+                  <Box component="span" aria-hidden="true" sx={{ fontFamily: MONO, fontSize: '0.7rem', color: 'primary.main', pt: '3px' }}>{String(i + 1).padStart(2, '0')}</Box>
+                  <Box component="span" sx={{ minWidth: 0 }}>
+                    <Box component="span" sx={{ display: 'block', lineHeight: 1.3 }}>{o.label}</Box>
+                    <Box component="span" sx={{ display: 'block', fontSize: '0.72rem', fontWeight: 400, color: 'text.secondary', lineHeight: 1.35, mt: 0.25 }}>{o.aide}</Box>
+                  </Box>
+                </Box>
+              )}
+              sx={compact ? { minWidth: 96 } : { alignItems: 'flex-start', px: 2, py: 1.1, maxWidth: 'none', '&.Mui-selected': { bgcolor: 'action.hover' } }}
+            />
+          ))}
+        </Tabs>
+        {/* Contenu de l'onglet : seul élément qui défile. */}
+        <DialogContent sx={{ flex: 1, minWidth: 0, p: { xs: 1.5, sm: 3 } }}>
+          {/* Panneau de l'onglet, relié à son onglet pour l'accessibilité, limité en largeur pour la lecture. */}
+          <Box role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`} sx={{ maxWidth: 880, mx: 'auto', minWidth: 0 }}>
+            {contenu}
+            {/* Rappel du raccourci clavier, sur ordinateur seulement. */}
+            {!compact && <Note sx={{ mt: 4, fontSize: '0.78rem' }}>Touche S pour ouvrir ou fermer cette fenêtre.</Note>}
+          </Box>
+        </DialogContent>
+      </Box>
     </Dialog>
   // Fin du rendu.
   );

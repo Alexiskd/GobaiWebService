@@ -1,49 +1,49 @@
-// Importe test, le lanceur de tests intégré à Node.
+// Tests des calculs de la charge électrique du Soleil (chargeSoleil.js).
 import { test } from 'node:test';
-// Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
-// Importe les calculs de la charge électrique du Soleil.
-import { CONSTANTES, qNette, qCouronne, tauxIonisation, qIonisee, LIGNES_SYNTHESE } from './chargeSoleil.js';
+import { CONSTANTES, LIGNES_SYNTHESE, SEUIL_IONISATION, facteurBoltzmann, qCouronne, qIonisee, qNette, rapportVitesses, tauxIonisation } from './chargeSoleil.js';
 
-// Test : la charge nette statique (Pannekoek-Rosseland) vaut environ +77 C, indépendamment de T.
-test('Q_nette = 2π ε₀ G m_p M☉ / e ≈ +77 C', () => {
-  // Entre 70 et 85 C, et strictement positive.
-  assert.ok(qNette() > 70 && qNette() < 85, qNette());
-  assert.ok(qNette() > 0);
-// Fin du test.
+test('Q_nette = 2π ε₀ G (m_p − m_e) M☉ / e ≈ +77 C', () => {
+  assert.ok(qNette() > 76.5 && qNette() < 77.5, qNette());
 });
 
-// Test : la charge coronale vaut ≈ +10 C à T = 1,5 × 10⁶ K, et croît linéairement avec T.
 test('Q_couronne = 4π ε₀ R☉ k_B T / e ≈ +10 C à 1,5 × 10⁶ K, linéaire en T', () => {
-  // À la température de la couronne : entre 9 et 11 C.
-  assert.ok(qCouronne(CONSTANTES.T_COURONNE) > 9 && qCouronne(CONSTANTES.T_COURONNE) < 11, qCouronne(CONSTANTES.T_COURONNE));
-  // Linéarité : doubler T double Q.
+  assert.ok(qCouronne(CONSTANTES.T_COURONNE) > 9.5 && qCouronne(CONSTANTES.T_COURONNE) < 10.5, qCouronne(CONSTANTES.T_COURONNE));
   assert.ok(Math.abs(qCouronne(2 * CONSTANTES.T_COURONNE) - 2 * qCouronne(CONSTANTES.T_COURONNE)) < 1e-6);
-// Fin du test.
 });
 
-// Test : le taux d'ionisation Saha démarre vers 10 000 K et vaut ≈ 0,99 au cœur (1,57 × 10⁷ K).
-test('x(T) = exp(−χ_H / k_B T) : faible à 10 000 K, ≈ 0,99 au cœur', () => {
-  // À 10 000 K : très faible (ionisation qui démarre).
-  assert.ok(tauxIonisation(1e4) < 1e-6, tauxIonisation(1e4));
-  // Au cœur : entre 0,98 et 1.
-  assert.ok(tauxIonisation(CONSTANTES.T_COEUR) > 0.98 && tauxIonisation(CONSTANTES.T_COEUR) <= 1);
-// Fin du test.
+test('les électrons sont 1 836 fois plus légers, donc ≈ 43 fois plus rapides (et non « 43 fois plus légers »)', () => {
+  assert.ok(Math.abs(CONSTANTES.mP / CONSTANTES.mE - 1836.15) < 0.01);
+  assert.ok(Math.abs(rapportVitesses() - 42.85) < 0.01, rapportVitesses());
 });
 
-// Test : la charge ionisée totale au cœur vaut ≈ +1,63 × 10³⁸ C.
-test('Q₊ au cœur ≈ +1,63 × 10³⁸ C', () => {
-  // Entre 1,5 × 10³⁸ et 1,8 × 10³⁸ C.
-  const q = qIonisee(CONSTANTES.T_COEUR);
-  assert.ok(q > 1.5e38 && q < 1.8e38, q);
-// Fin du test.
+test('facteur de Boltzmann : infime à 10 000 K, proche de 1 au cœur', () => {
+  assert.ok(facteurBoltzmann(1e4) < 1e-6);
+  assert.ok(facteurBoltzmann(CONSTANTES.T_COEUR) > 0.98 && facteurBoltzmann(CONSTANTES.T_COEUR) < 1);
 });
 
-// Test : le tableau de synthèse a trois lignes, avec grandeur, formule et valeur finie.
+test('Saha : x ≈ 10⁻⁴ dans la photosphère, croissant avec T, toujours entre 0 et 1', () => {
+  const x = tauxIonisation(CONSTANTES.T_PHOTOSPHERE);
+  assert.ok(x > 5e-5 && x < 5e-4, x);
+  for (let i = 1; i < SEUIL_IONISATION.length; i += 1) assert.ok(SEUIL_IONISATION[i][1] > SEUIL_IONISATION[i - 1][1]);
+  assert.ok(tauxIonisation(20000) > 0.9 && tauxIonisation(20000) < 1);
+  assert.ok(tauxIonisation(1e8) <= 1 && tauxIonisation(100) >= 0);
+});
+
+test('Saha : x vérifie bien x² / (1 − x) = S / n, et diminue quand la densité augmente', () => {
+  const T = 10000, n = 1e23, x = tauxIonisation(T, n);
+  const s = ((2 * Math.PI * CONSTANTES.mE * CONSTANTES.kB * T) / (6.62607015e-34 ** 2)) ** 1.5 * facteurBoltzmann(T) / n;
+  assert.ok(Math.abs((x * x) / (1 - x) / s - 1) < 1e-9);
+  assert.ok(tauxIonisation(T, 1e25) < x);
+});
+
+test('Q₊ du Soleil totalement ionisé ≈ 1,65 × 10³⁸ C, proportionnelle à x', () => {
+  assert.ok(qIonisee() > 1.6e38 && qIonisee() < 1.7e38, qIonisee());
+  assert.ok(Math.abs(qIonisee(0.5) / qIonisee() - 0.5) < 1e-12);
+  assert.ok(Math.abs(CONSTANTES.X + CONSTANTES.Y + CONSTANTES.Z - 1) < 1e-12);
+});
+
 test('tableau de synthèse : 3 lignes complètes', () => {
-  // Trois lignes.
   assert.equal(LIGNES_SYNTHESE.length, 3);
-  // Chacune a une grandeur, une formule et une valeur finie strictement positive.
-  for (const l of LIGNES_SYNTHESE) assert.ok(l.grandeur && l.formule && Number.isFinite(l.valeur) && l.valeur > 0, l.grandeur);
-// Fin du test.
+  for (const l of LIGNES_SYNTHESE) assert.ok(l.grandeur && l.formule && l.note && Number.isFinite(l.valeur) && l.valeur > 0, l.grandeur);
 });

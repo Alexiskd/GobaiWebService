@@ -29,3 +29,19 @@ test('aucune API en double, et le total correspond', () => {
   assert.equal(countApis(), items.length);
 // Fin du test.
 });
+
+// Vérification contre le code : un service retiré du projet ne doit pas revenir dans la liste, et ceux réellement
+// appelés doivent y figurer.
+test('la liste suit le code : plus de JPL Horizons, Mistral et ipify déclarés', () => {
+  const hosts = items.flatMap((api) => api.host.split(', '));
+  assert.ok(!hosts.includes('ssd.jpl.nasa.gov'));
+  for (const h of ['api.mistral.ai', 'api.ipify.org', 'svs.gsfc.nasa.gov', 'gea.esac.esa.int']) assert.ok(hosts.includes(h), h);
+  assert.equal(new Set(hosts).size, hosts.length);
+});
+
+// Le verrou d'accès ne peut pas être déconnecté : l'application ne s'ouvrirait plus.
+test('ipify est marqué requis, Mistral dépend d’une clé', () => {
+  assert.equal(items.find((api) => api.host === 'api.ipify.org').requis, true);
+  assert.equal(items.find((api) => api.host === 'api.mistral.ai').key, true);
+  for (const api of items) assert.ok(['api', 'tiles', 'static'].includes(api.kind), api.name);
+});

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les calculs des caractéristiques d'un élément.
-import { E_CHARGE, U_KG, NA, chargeNoyau, masseAtomiqueChlore, masseMolaireChlore } from './caracteristiquesElement.js';
+import { E_CHARGE, U_KG, NA, chargeNoyau, masseAtomiqueChlore, masseMolaireChlore, defautMasseHelium, energieLiaisonHelium } from './caracteristiquesElement.js';
 // Importe les systèmes du tableau hypothétique, pour compter ceux à une seule étoile.
 import { SYSTEMES } from './tableauHypothetique.js';
 
@@ -43,4 +43,11 @@ test('comparaison : 34 systèmes à une seule étoile (pas de problème à 3 cor
   assert.equal(mono, 34);
   assert.equal(SYSTEMES.length, 49);
 // Fin du test.
+});
+
+// Défaut de masse de l'hélium 4 et énergie de liaison correspondante.
+test('hélium 4 : Δm ≈ 0,0304 u, E = Δm·c² ≈ 28,3 MeV (≈ 7,07 MeV par nucléon)', () => {
+  assert.ok(Math.abs(defautMasseHelium() - 0.03038) < 1e-4, defautMasseHelium());
+  assert.ok(Math.abs(energieLiaisonHelium() - 28.30) < 0.02, energieLiaisonHelium());
+  assert.ok(Math.abs(energieLiaisonHelium() / 4 - 7.07) < 0.01);
 });

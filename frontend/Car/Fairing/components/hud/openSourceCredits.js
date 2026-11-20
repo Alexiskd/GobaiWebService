@@ -1,5 +1,5 @@
 /**
- * Dépendances réellement déclarées dans frontend/package.json.
+ * Dépendances réellement déclarées dans frontend/package.json et frontend/Car/Computing/api/package.json.
  * Les liens GitHub ne sont affichés que pour ces paquets présents dans le manifeste.
  * Aucun dépôt, auteur, date de mise à jour ou backend supposé n'est ajouté ici.
  */
@@ -27,6 +27,17 @@ export const OPEN_SOURCE_CREDITS = [
       { name: '@types/three', repo: 'DefinitelyTyped/DefinitelyTyped', people: [] },
     ],
   },
+  {
+    // Dépendances déclarées dans frontend/Car/Computing/api/package.json (API NestJS facultative, hors site statique).
+    group: 'API NestJS (Computing/api)',
+    items: [
+      { name: 'NestJS', repo: 'nestjs/nest', people: [] },
+      { name: 'node-postgres (pg)', repo: 'brianc/node-postgres', people: [] },
+      { name: 'reflect-metadata', repo: 'microsoft/reflect-metadata', org: 'Microsoft', people: [] },
+      { name: 'RxJS', repo: 'ReactiveX/rxjs', people: [] },
+      { name: 'ts-node', repo: 'TypeStrong/ts-node', people: [] },
+    ],
+  },
 ];
 
 /** Organisations liées aux dépôts effectivement référencés ci-dessus. */
@@ -36,12 +47,13 @@ export const SERVICE_ORGS = [
   { org: 'David Lorenz', what: ['Tuiles du Light Pollution Atlas référencées par le moteur cartographique'] },
   { org: 'ESA', what: ['Gaia DR3 référencé par le service de catalogue astronomique'] },
   { org: 'Google', what: ['Google Fonts et décodeur Draco chargés par le frontend'] },
-  { org: 'JPL / NASA', what: ['API Horizons appelée par le client d’éphémérides'] },
   { org: 'Mapterhorn', what: ['Métadonnées et tuiles d’altitude référencées par le moteur de relief'] },
   { org: 'Meta', what: ['React et React DOM, dépendances de production'] },
   { org: 'MUI', what: ['Material UI et Material Icons, dépendances de production'] },
   { org: 'MyMemory', what: ['API de traduction appelée par les modules de traduction'] },
-  { org: 'NASA', what: ['Image and Video Library appelée par la galerie'] },
+  { org: 'Mistral AI', what: ['API de l’assistant, appelée avec la clé saisie par l’utilisateur'] },
+  { org: 'NASA', what: ['Image and Video Library appelée par la galerie', 'Vidéo du Scientific Visualization Studio sur l’écran de chargement'] },
+  { org: 'ipify', what: ['Lecture de l’adresse IP publique par le verrou d’accès'] },
   { org: 'Open-Meteo', what: ['API météo appelée par le moteur des villes'] },
   { org: 'OpenFreeMap', what: ['Tuiles cartographiques référencées par le moteur de routes'] },
   { org: 'Three.js', what: ['Bibliothèque 3D déclarée comme dépendance de production'] },

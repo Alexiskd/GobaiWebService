@@ -2,10 +2,10 @@
 // 16,3 années-lumière, dessinés comme un tableau périodique (une case par système, rang 0 = le Système solaire /
 // Solarium, rang 1 = Alpha Centauri qui contient Proxima Centauri / le Proximium), avec en dessous la liste complète
 // des composantes individuelles (type spectral, distance, masse).
-// Fragment de React, pour grouper les lignes d'un système.
-import { Fragment } from 'react';
 // Composants MUI.
-import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
+import { Box } from '@mui/material';
+// Briques de style communes de la fenêtre Node.
+import { Carte, Chiffre, Fiche, GrilleChiffres, SousTitre } from './nodeUi.jsx';
 // Données : les systèmes, leurs composantes et les compteurs simple/multiple.
 import { SYSTEMES, ALPHA_CENTAURI, countMonoEtoiles, countMultiples } from './tableauHypothetique.js';
 
@@ -68,66 +68,32 @@ function GrilleSystemes() {
 // Fin de GrilleSystemes.
 }
 
-// Déclare et exporte le composant TableauHypothetique : la grille des systèmes, puis la liste de leurs composantes.
+/** Section complète : chiffres clés, la grille des systèmes, puis toutes les composantes en tableau. */
+// Déclare et exporte TableauHypothetique.
 export function TableauHypothetique() {
+  // Nombre total de composantes (étoiles et naines brunes), tous systèmes confondus.
+  const composantes = SYSTEMES.reduce((n, s) => n + s.composantes.length, 0);
+  // Les lignes du tableau : le rang et le nom du système ne sont écrits que sur sa première composante.
+  const lignes = SYSTEMES.flatMap((s) => s.composantes.map((c, i) => [i === 0 ? s.rang : '', i === 0 ? s.nom : '', c.nom, c.type, c.distance, c.masse]));
   // Début du rendu.
   return (
-    // Le conteneur.
     <Box>
+      {/* Chiffres clés du voisinage. */}
+      <GrilleChiffres>
+        <Chiffre libelle="Systèmes, Système solaire compris" valeur={SYSTEMES.length} detail={`${composantes} étoiles et naines brunes`} />
+        <Chiffre libelle="Systèmes à une seule étoile" valeur={countMonoEtoiles()} detail="aucun problème à trois corps" />
+        <Chiffre libelle="Systèmes multiples" valeur={countMultiples()} detail="2 ou 3 composantes : problème à N corps" />
+      </GrilleChiffres>
       {/* La grille des systèmes. */}
-      <GrilleSystemes />
-      {/* Le paragraphe de comparaison : systèmes simples (une seule étoile) et systèmes multiples. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : 34 systèmes à une seule étoile (pas de problème à 3 corps) contre 15 systèmes multiples. */}
-        Sur les {SYSTEMES.length} systèmes découverts à moins de 16,3 a.l., <strong>{countMonoEtoiles()}</strong> n’ont
-        qu’une seule étoile — une seule composante, donc aucun problème à trois corps — et{' '}
-        <strong>{countMultiples()}</strong> sont des systèmes multiples (2 à 3 composantes, comme Alpha Centauri),
-        qui relèvent du problème à N corps.
-      {/* Fin du paragraphe. */}
-      </Typography>
-      {/* Le titre de la liste détaillée. */}
-      <Typography component="h4" variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2, mt: 2, mb: 0.5 }}>
-        {/* Son texte. */}
-        Toutes les composantes (type spectral, distance, masse)
-      {/* Fin du titre. */}
-      </Typography>
-      {/* Le tableau détaillé, en chiffres de largeur fixe. */}
-      <Table size="small" sx={{ mt: 0.5, '& td': { fontVariantNumeric: 'tabular-nums' } }}>
-        {/* Corps du tableau. */}
-        <TableBody>
-          {/* Un système par groupe de lignes (début). */}
-          {SYSTEMES.map((s) => (
-            // Les lignes du système, une par composante.
-            <Fragment key={s.rang}>
-              {s.composantes.map((c, i) => (
-                // La ligne de la composante.
-                <TableRow key={`${s.rang}-${i}`}>
-                  {/* Le rang, affiché seulement sur la première composante du système. */}
-                  <TableCell sx={{ pl: 0, color: 'text.secondary', whiteSpace: 'nowrap' }}>{i === 0 ? s.rang : ''}</TableCell>
-                  {/* Le nom du système, seulement sur la première composante. */}
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{i === 0 ? s.nom : ''}</TableCell>
-                  {/* La composante. */}
-                  <TableCell>{c.nom}</TableCell>
-                  {/* Le type spectral. */}
-                  <TableCell sx={{ color: 'text.secondary' }}>{c.type}</TableCell>
-                  {/* La distance, alignée à droite. */}
-                  <TableCell align="right">{c.distance}</TableCell>
-                  {/* La masse, alignée à droite. */}
-                  <TableCell align="right" sx={{ pr: 0 }}>{c.masse}</TableCell>
-                {/* Fin de la ligne. */}
-                </TableRow>
-              ))}
-            {/* Fin des composantes. */}
-            </Fragment>
-          // Fin des systèmes.
-          ))}
-        {/* Fin du corps. */}
-        </TableBody>
-      {/* Fin du tableau. */}
-      </Table>
-    {/* Fin du conteneur. */}
+      <Carte sx={{ mt: 1.5, bgcolor: 'transparent', p: { xs: 0.5, sm: 1 } }}><GrilleSystemes /></Carte>
+      {/* Toutes les composantes. */}
+      <SousTitre>Toutes les composantes</SousTitre>
+      <Fiche
+        label="Composantes des systèmes à moins de 16,3 années-lumière : type spectral, distance et masse"
+        colonnes={[{ titre: 'Rang' }, { titre: 'Système' }, { titre: 'Composante' }, { titre: 'Type spectral', cache: true }, { titre: 'Distance (a.l.)', align: 'right' }, { titre: 'Masse', align: 'right' }]}
+        lignes={lignes}
+      />
     </Box>
-  // Fin du rendu.
   );
 // Fin de TableauHypothetique.
 }

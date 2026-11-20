@@ -7,6 +7,13 @@
  * La théorie est une analogie spéculative, présentée comme telle dans l'interface.
  */
 
+// Constantes physiques communes (CODATA 2018, UAI 2015).
+import { E, EPS0, G, H, HBAR, M_E, M_P, M_SOLEIL, R_PROTON, R_SOLEIL, UA, ANNEE_LUMIERE, EV } from './constantesPhysiques.js';
+// Éléments képlériens du moteur : le demi-grand axe de chaque planète vient du catalogue, il n'est pas recopié ici.
+import { ASTRE_BY_ID } from '../../../Engine/SystemeEngine/data/astronomy/data/kepler-elements.ts';
+// Masses des astres du moteur, en kilogrammes.
+import { BODY_MASS_KG } from '../../../Engine/AstreSolideEngine/gravityMath.jsx';
+
 // Les 118 symboles chimiques connus, dans l'ordre des numéros atomiques (1 = hydrogène … 118 = oganesson).
 export const SYMBOLES = [
   'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne',
@@ -74,8 +81,33 @@ const SOUS_COUCHES = [
  * de K (n = 1) à la dernière couche occupée. Ex. fer (26) → [2, 8, 14, 2]. Pour le Solarium (119), le dernier électron
  * partirait sur la couche R (n = 8).
  */
+/**
+ * Exceptions à la règle de Klechkowski : vingt éléments dont la configuration mesurée à l'état fondamental diffère du
+ * remplissage régulier (un électron s passe en d, ou un électron f en d). Sans cette table, le chrome sortait en
+ * [2, 8, 12, 2] au lieu de [2, 8, 13, 1], le cuivre en [2, 8, 17, 2] au lieu de [2, 8, 18, 1], etc.
+ * Source : configurations électroniques de référence du NIST (Atomic Spectra Database).
+ */
+// EXCEPTIONS_COUCHES : numéro atomique → électrons par couche mesurés.
+export const EXCEPTIONS_COUCHES = {
+  // Chrome et cuivre (4s¹ au lieu de 4s²).
+  24: [2, 8, 13, 1], 29: [2, 8, 18, 1],
+  // Niobium, molybdène, ruthénium, rhodium, palladium (4d¹⁰, 5s vide) et argent.
+  41: [2, 8, 18, 12, 1], 42: [2, 8, 18, 13, 1], 44: [2, 8, 18, 15, 1], 45: [2, 8, 18, 16, 1], 46: [2, 8, 18, 18], 47: [2, 8, 18, 18, 1],
+  // Lanthane, cérium et gadolinium (un électron en 5d).
+  57: [2, 8, 18, 18, 9, 2], 58: [2, 8, 18, 19, 9, 2], 64: [2, 8, 18, 25, 9, 2],
+  // Platine et or (6s¹).
+  78: [2, 8, 18, 32, 17, 1], 79: [2, 8, 18, 32, 18, 1],
+  // Actinium, thorium, protactinium, uranium, neptunium et curium (électrons en 6d).
+  89: [2, 8, 18, 32, 18, 9, 2], 90: [2, 8, 18, 32, 18, 10, 2], 91: [2, 8, 18, 32, 20, 9, 2], 92: [2, 8, 18, 32, 21, 9, 2],
+  93: [2, 8, 18, 32, 22, 9, 2], 96: [2, 8, 18, 32, 25, 9, 2],
+  // Lawrencium (7p¹ au lieu de 6d¹).
+  103: [2, 8, 18, 32, 32, 8, 3],
+};
+
 // couchesElectroniques : calcule les électrons par couche du numéro atomique z.
 export function couchesElectroniques(z) {
+  // Élément à configuration irrégulière : la répartition mesurée, copiée pour ne pas exposer la table.
+  if (EXCEPTIONS_COUCHES[z]) return EXCEPTIONS_COUCHES[z].slice();
   // Huit couches, de K (n = 1) à R (n = 8), à zéro au départ.
   const couches = [0, 0, 0, 0, 0, 0, 0, 0];
   // Électrons restant à placer.
@@ -161,21 +193,140 @@ export const MOLECULE = {
 export const AUTEUR = 'Alexis Bouvet-Mallet';
 
 /** Masse du Soleil, en kilogrammes (≈ 99,86 % de la masse du système solaire). */
-export const MASSE_SOLEIL_KG = 1.989e30;
+// La valeur vient de la table commune des constantes.
+export const MASSE_SOLEIL_KG = M_SOLEIL;
 
 /**
  * Correspondance de la théorie entre les couches atomiques et les orbites des planètes : la couche K (n = 1) serait
  * l'orbite de Mercure, la L celle de Vénus, et ainsi de suite jusqu'à la couche R (n = 8) pour Neptune. La capacité
  * maximale d'une couche est 2n² électrons (au-delà de n = 4, cette valeur est théorique).
  */
-// COUCHES : les huit couches K à R, avec leur planète selon la théorie.
+// COUCHES : les huit couches K à R, avec leur planète selon la théorie et son identifiant dans le moteur.
 export const COUCHES = [
-  { couche: 'K', n: 1, planete: 'Mercure' },
-  { couche: 'L', n: 2, planete: 'Vénus' },
-  { couche: 'M', n: 3, planete: 'Terre' },
-  { couche: 'N', n: 4, planete: 'Mars' },
-  { couche: 'O', n: 5, planete: 'Jupiter' },
-  { couche: 'P', n: 6, planete: 'Saturne' },
-  { couche: 'Q', n: 7, planete: 'Uranus' },
-  { couche: 'R', n: 8, planete: 'Neptune' },
-].map((c) => ({ ...c, capacite: 2 * c.n * c.n }));
+  { couche: 'K', n: 1, planete: 'Mercure', id: 'mercury' },
+  { couche: 'L', n: 2, planete: 'Vénus', id: 'venus' },
+  { couche: 'M', n: 3, planete: 'Terre', id: 'earth' },
+  { couche: 'N', n: 4, planete: 'Mars', id: 'mars' },
+  { couche: 'O', n: 5, planete: 'Jupiter', id: 'jupiter' },
+  { couche: 'P', n: 6, planete: 'Saturne', id: 'saturn' },
+  { couche: 'Q', n: 7, planete: 'Uranus', id: 'uranus' },
+  { couche: 'R', n: 8, planete: 'Neptune', id: 'neptune' },
+// Chaque couche reçoit sa capacité 2n², le demi-grand axe de sa planète (en mètres) et la masse de la planète (en kg).
+].map((c) => ({ ...c, capacite: 2 * c.n * c.n, a: ASTRE_BY_ID.get(c.id).kepler.a * UA, masse: BODY_MASS_KG[c.id] }));
+
+/* ------------------------------------------------------------------------------------------------------------------
+ * Calculs de la théorie : l'analogie « atome ↔ système solaire » mise en nombres.
+ * Chaque valeur affichée dans l'onglet est calculée ici à partir des constantes ; rien n'est recopié à la main.
+ * ---------------------------------------------------------------------------------------------------------------- */
+
+/**
+ * Rayon de Bohr : rayon de l'orbite fondamentale de l'électron dans l'atome d'hydrogène,
+ * a₀ = 4π ε₀ ħ² / (m_e e²) ≈ 5,29 × 10⁻¹¹ m. C'est l'unité de taille d'un atome.
+ */
+// rayonBohr : calcule a₀, en mètres.
+export const rayonBohr = () => (4 * Math.PI * EPS0 * HBAR * HBAR) / (M_E * E * E);
+
+/**
+ * Énergie du niveau n de l'hydrogène dans le modèle de Bohr : E_n = −m_e e⁴ / (8 ε₀² h² n²) = −13,6 eV / n².
+ * Le signe moins dit que l'électron est lié : il faut fournir 13,6 eV pour l'arracher du niveau fondamental.
+ */
+// energieNiveau : calcule E_n, en électronvolts.
+export const energieNiveau = (n) => -(M_E * E ** 4) / (8 * EPS0 * EPS0 * H * H * n * n) / EV;
+
+/** Rayon de l'orbite n du modèle de Bohr : r_n = n² a₀ (les couches s'écartent comme le carré de leur numéro). */
+// rayonCouche : calcule r_n, en mètres.
+export const rayonCouche = (n) => n * n * rayonBohr();
+
+/**
+ * Rapport des forces entre un proton et un électron : attraction électrique / attraction gravitationnelle,
+ * e² / (4π ε₀ G m_p m_e) ≈ 2,3 × 10³⁹. Il ne dépend pas de la distance (les deux forces décroissent en 1/r²).
+ * C'est la raison pour laquelle l'atome est tenu par l'électricité et le système solaire par la gravité.
+ */
+// rapportForces : calcule ce rapport, sans unité.
+export const rapportForces = () => (E * E) / (4 * Math.PI * EPS0 * G * M_P * M_E);
+
+/** Vitesse d'une orbite circulaire de rayon a autour du Soleil : v = √(G M☉ / a), en mètres par seconde. */
+// vitesseOrbitale : calcule v pour un demi-grand axe a (en mètres).
+export const vitesseOrbitale = (a) => Math.sqrt((G * M_SOLEIL) / a);
+
+/**
+ * Longueur d'onde de De Broglie d'une planète : λ = h / (m v). Un objet se comporte comme une onde quand λ est
+ * comparable à la taille de son orbite ; pour une planète, λ vaut ~10⁻⁶³ m : aucun effet quantique n'est observable.
+ */
+// longueurOnde : calcule λ pour une masse m (kg) sur une orbite de demi-grand axe a (m).
+export const longueurOnde = (m, a) => H / (m * vitesseOrbitale(a));
+
+/**
+ * « Nombre quantique » d'une planète : la règle de Bohr L = n ħ appliquée à son moment cinétique orbital
+ * L = m √(G M☉ a). Pour la Terre, n ≈ 2,5 × 10⁷⁴ : les niveaux voisins sont si serrés que l'orbite paraît continue
+ * (principe de correspondance de Bohr : aux grands n, la mécanique quantique rejoint la mécanique classique).
+ */
+// nombreQuantique : calcule n = L / ħ pour une masse m (kg) et un demi-grand axe a (m).
+export const nombreQuantique = (m, a) => (m * Math.sqrt(G * M_SOLEIL * a)) / HBAR;
+
+/**
+ * Rayon de Bohr gravitationnel d'une planète : ce que vaudrait son orbite fondamentale (n = 1) si la gravité
+ * remplaçait l'électricité dans la formule de Bohr, a_g = ħ² / (G M☉ m²). Pour la Terre : ~10⁻¹³⁸ m.
+ */
+// rayonBohrGravitationnel : calcule a_g pour une masse m (kg), en mètres.
+export const rayonBohrGravitationnel = (m) => (HBAR * HBAR) / (G * M_SOLEIL * m * m);
+
+/**
+ * La correspondance couches ↔ planètes mise à l'épreuve : dans le modèle de Bohr le rayon croît en n², donc la
+ * planète de la couche n devrait être n² fois plus loin que Mercure (couche K). On compare cette prédiction au
+ * demi-grand axe réel. L'écart est donné en pourcentage du rayon prédit : positif si la planète est plus loin.
+ */
+// ORBITES : pour chaque couche, la distance prédite (n²), la distance réelle et les grandeurs quantiques de la planète.
+export const ORBITES = COUCHES.map((c) => {
+  // Distance réelle, en multiples du demi-grand axe de Mercure.
+  const reel = c.a / COUCHES[0].a;
+  // Distance prédite par la loi en n² de Bohr.
+  const predit = c.n * c.n;
+  // La ligne de la planète.
+  return {
+    ...c,
+    // Demi-grand axe en unités astronomiques.
+    ua: c.a / UA,
+    // Distance prédite et distance réelle, en multiples de l'orbite de Mercure.
+    predit, reel,
+    // Écart relatif entre le réel et la prédiction, en pourcentage.
+    ecart: ((reel - predit) / predit) * 100,
+    // Vitesse orbitale, longueur d'onde de De Broglie et nombre quantique orbital de la planète.
+    vitesse: vitesseOrbitale(c.a), lambda: longueurOnde(c.masse, c.a), nQuantique: nombreQuantique(c.masse, c.a),
+  };
+// Fin du calcul des orbites.
+});
+
+/** Écart moyen (en valeur absolue) entre la loi en n² et les orbites réelles, en pourcentage. */
+// ecartMoyenOrbites : la moyenne des écarts absolus, Mercure exclu (il sert de référence, son écart est nul).
+export const ecartMoyenOrbites = () => ORBITES.slice(1).reduce((s, o) => s + Math.abs(o.ecart), 0) / (ORBITES.length - 1);
+
+// Distance du Soleil à Proxima Centauri, l'étoile la plus proche, en années-lumière (parallaxe Gaia DR3 : 768,07 mas).
+export const DISTANCE_PROXIMA_AL = 4.2465;
+// Longueur de la liaison H–H de la molécule de dihydrogène, en mètres (74,14 pm).
+export const LIAISON_H2 = 74.14e-12;
+
+/**
+ * La comparaison chiffrée entre l'atome d'hydrogène et le système solaire, grandeur par grandeur. Chaque ligne
+ * donne la valeur côté atome, la valeur côté système solaire et leur rapport (système solaire / atome).
+ */
+// comparaisonAtomeSysteme : calcule les lignes de la comparaison.
+export function comparaisonAtomeSysteme() {
+  // Rayon de Bohr et demi-grand axe de Neptune (la dernière couche de la théorie).
+  const a0 = rayonBohr(), aNeptune = COUCHES[7].a;
+  // Masse totale des huit planètes.
+  const planetes = COUCHES.reduce((s, c) => s + c.masse, 0);
+  // Les lignes : identifiant, libellé, valeur atome, valeur système solaire.
+  return [
+    // Taille du centre rapportée à la taille de l'ensemble : le proton dans l'atome, le Soleil dans l'orbite de Neptune.
+    { id: 'vide', libelle: 'Taille du noyau / taille de l’ensemble', atome: R_PROTON / a0, systeme: R_SOLEIL / aNeptune },
+    // Part de la masse totale portée par le centre.
+    { id: 'masse', libelle: 'Part de la masse dans le noyau', atome: M_P / (M_P + M_E), systeme: M_SOLEIL / (M_SOLEIL + planetes) },
+    // Taille de la première couche : a₀ pour l'atome, l'orbite de Mercure pour le système solaire.
+    { id: 'taille', libelle: 'Rayon de la couche K (m)', atome: a0, systeme: COUCHES[0].a },
+    // Distance au voisin rapportée à la taille de l'ensemble : la liaison H–H, puis Soleil–Proxima sur l'orbite de Neptune.
+    { id: 'voisin', libelle: 'Distance au voisin / taille de l’ensemble', atome: LIAISON_H2 / a0, systeme: (DISTANCE_PROXIMA_AL * ANNEE_LUMIERE) / aNeptune },
+  // Chaque ligne reçoit son rapport système solaire / atome.
+  ].map((l) => ({ ...l, rapport: l.systeme / l.atome }));
+// Fin de comparaisonAtomeSysteme.
+}

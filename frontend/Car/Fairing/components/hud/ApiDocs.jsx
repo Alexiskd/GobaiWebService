@@ -1,136 +1,139 @@
-// Onglet « Documentation API » de la fenêtre Node : documentation de l'API gratuite de Go白ناन्टех.
-// Hook d'état de React.
+// Onglet « Documentation API » de la fenêtre Node : l'API NestJS de ce dépôt (frontend/Car/Computing/api), son rôle,
+// la façon de la lancer et la référence de ses routes, relevée dans les contrôleurs.
+// Crochet d'état de React.
 import { useState } from 'react';
 // Composants MUI.
-import { Box, Button, Chip, Link, Stack, TextField, Typography } from '@mui/material';
-// Contenu de la documentation.
-import { API_DOC_BASE, API_DOC_EXAMPLES, API_DOC_GROUPS, API_DOC_OPENAPI, API_DOC_RULES, API_DOC_SWAGGER, countDocRoutes } from './apiDocs.js';
-
-// Titre de section, au même style que les autres onglets de Node.
-const SectionTitle = ({ children }) => (
-  // Titre de niveau 3, style overline, couleur secondaire.
-  <Typography component="h3" variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2, mt: 2.5, mb: 0.5 }}>
-    {children}
-  </Typography>
-);
-
-// Style des blocs de code : police à chasse fixe, coupure à la ligne, fond léger.
-const CODE_SX = {
-  m: 0, p: 1.25, borderRadius: 1, border: 1, borderColor: 'divider', bgcolor: 'action.hover',
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace', fontSize: '0.8rem',
-  whiteSpace: 'pre-wrap', overflowWrap: 'anywhere',
-};
+import { Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
+// Données de la documentation.
+import { API_DOC_BASE, API_DOC_DIR, API_DOC_ENV, API_DOC_EXAMPLES, API_DOC_GROUPS, API_DOC_RULES, countDocRoutes } from './apiDocs.js';
+// Adresse de l'API branchée à la construction du site ('' sans API).
+import { API_BASE } from '@/Computing/api';
+// Briques de style communes de la fenêtre Node.
+import { Alerte, Chiffre, Formule, GrilleChiffres, MONO, Note, Precision, Section } from './nodeUi.jsx';
 
 /** Copie un texte dans le presse-papiers ; un échec est ignoré (navigateur sans permission). */
+// copy : écrit le texte dans le presse-papiers.
 const copy = (text) => navigator.clipboard?.writeText(text).catch(() => {});
 
 /** Bloc de code avec un bouton « Copier ». */
+// Déclare CodeBlock : reçoit le code.
 function CodeBlock({ code }) {
-  // Vrai juste après une copie, pour afficher « Copié ».
+  // État : le code vient-il d'être copié ?
   const [done, setDone] = useState(false);
-  // Rendu.
+  // Début du rendu.
   return (
+    // Conteneur qui place le bouton dans le coin du bloc.
     <Box sx={{ position: 'relative' }}>
-      {/* Le code. */}
-      <Box component="pre" sx={CODE_SX}>{code}</Box>
-      {/* Le bouton de copie, en haut à droite. */}
+      {/* Le code, avec la place du bouton réservée à droite. */}
+      <Formule sx={{ pr: 9 }}>{code}</Formule>
+      {/* Le bouton : copie, puis affiche « Copié » une seconde et demie. */}
       <Button
         size="small"
         onClick={() => { copy(code); setDone(true); setTimeout(() => setDone(false), 1500); }}
-        sx={{ position: 'absolute', top: 4, right: 4, minWidth: 0, px: 1, py: 0, fontSize: '0.7rem' }}
+        sx={{ position: 'absolute', top: 6, right: 6, minWidth: 0, px: 1, py: 0.25, fontSize: '0.72rem' }}
       >
         {done ? 'Copié' : 'Copier'}
       </Button>
     </Box>
   );
+// Fin de CodeBlock.
 }
 
-/** Une route : méthode, chemin à chasse fixe, description. */
+/** Une route : méthode, chemin à chasse fixe, description. Les envois (POST) sont teintés autrement que les lectures. */
+// Déclare RouteRow : méthode, chemin et texte.
 function RouteRow({ method, path, text }) {
-  // Rendu.
+  // Début du rendu.
   return (
-    <Box sx={{ py: 0.75, borderBottom: 1, borderColor: 'divider' }}>
-      {/* Méthode et chemin sur une ligne. */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-        {/* La méthode HTTP. */}
-        <Chip label={method} size="small" color="primary" variant="outlined" sx={{ height: 20, fontSize: '0.7rem', fontWeight: 600, flex: 'none' }} />
-        {/* Le chemin. */}
-        <Box component="code" sx={{ fontFamily: CODE_SX.fontFamily, fontSize: '0.8rem', overflowWrap: 'anywhere', minWidth: 0 }}>{path}</Box>
-      </Stack>
-      {/* La description. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{text}</Typography>
+    // Ligne séparée de la suivante par un trait fin.
+    <Box sx={{ display: 'grid', gridTemplateColumns: '52px minmax(0, 1fr)', columnGap: 1, py: 0.9, borderBottom: 1, borderColor: 'divider', '&:last-of-type': { borderBottom: 0 } }}>
+      {/* La méthode HTTP. */}
+      <Box component="span" sx={{ fontFamily: MONO, fontSize: '0.72rem', fontWeight: 700, color: method === 'GET' ? 'info.main' : 'warning.main', pt: 0.25 }}>{method}</Box>
+      {/* Le chemin, puis sa description. */}
+      <Box sx={{ minWidth: 0 }}>
+        <Box component="code" translate="no" sx={{ fontFamily: MONO, fontSize: '0.82rem', overflowWrap: 'anywhere' }}>{path}</Box>
+        <Precision sx={{ mt: 0.25, fontSize: '0.8rem' }}>{text}</Precision>
+      </Box>
     </Box>
   );
+// Fin de RouteRow.
 }
 
 /** Onglet « Documentation API ». */
+// Déclare et exporte ApiDocs.
 export function ApiDocs() {
-  // Filtre de recherche dans les routes.
+  // État : le texte du filtre et l'exemple affiché.
   const [filter, setFilter] = useState('');
-  // Exemple de code affiché (index dans API_DOC_EXAMPLES).
   const [example, setExample] = useState(0);
-  // Filtre normalisé, en minuscules.
+  // Le filtre, sans espaces autour et en minuscules.
   const f = filter.trim().toLowerCase();
-  // Groupes filtrés : seules les routes dont le chemin ou la description contient le filtre.
+  // Les groupes, réduits aux routes qui contiennent le filtre.
   const groups = API_DOC_GROUPS
-    .map(({ group, routes }) => ({ group, routes: f ? routes.filter(([, p, t]) => `${p} ${t} ${group}`.toLowerCase().includes(f)) : routes }))
+    .map((g) => ({ ...g, routes: f ? g.routes.filter(([m, p, t]) => `${m} ${p} ${t} ${g.group}`.toLowerCase().includes(f)) : g.routes }))
     .filter((g) => g.routes.length);
-  // Rendu.
+  // Nombre de routes de lecture (GET) et d'envoi (POST).
+  const lectures = API_DOC_GROUPS.flatMap((g) => g.routes).filter(([m]) => m === 'GET').length;
+  // Début du rendu.
   return (
     <Box>
-      {/* Présentation. */}
-      <Typography variant="h6" component="h2" sx={{ mt: 1 }}>API gratuite</Typography>
-      <Typography variant="body2" color="text.secondary">
-        Toutes les données de l’app (astres, orbites, Soleil en direct, tuiles, LiDAR, lieux) sont ouvertes à tous.
-        Aucune clé, aucun compte : {countDocRoutes()} routes prêtes à l’emploi.
-      </Typography>
+      {/* Chiffres clés de l'API. */}
+      <GrilleChiffres>
+        <Chiffre libelle="Routes" valeur={countDocRoutes()} detail={`${lectures} lectures (GET) · ${countDocRoutes() - lectures} envois (POST)`} />
+        <Chiffre libelle="Contrôleurs NestJS" valeur={API_DOC_GROUPS.length} detail={API_DOC_GROUPS.map((g) => g.group.toLowerCase()).join(', ')} />
+        <Chiffre libelle="API branchée sur ce site" valeur={API_BASE ? 'Oui' : 'Non'} detail={API_BASE || 'mode statique : contrats embarqués'} couleur={API_BASE ? 'success.main' : 'text.primary'} />
+      </GrilleChiffres>
+      <Alerte titre="Une API facultative" couleur="info.main">
+        Le site est publié en statique et fonctionne sans serveur. L’API de <Box component="code" translate="no" sx={{ fontFamily: MONO, fontSize: '0.85em' }}>{API_DOC_DIR}</Box>{' '}
+        sert les mêmes contrats que ceux embarqués dans le navigateur ; seule la galerie y gagne des données en plus, lues
+        dans PostgreSQL. Elle n’a pas d’adresse publique fixe ni de documentation Swagger.
+      </Alerte>
 
-      {/* Adresse de base. */}
-      <SectionTitle>Adresse de base</SectionTitle>
-      <CodeBlock code={API_DOC_BASE} />
-
-      {/* Règles d'usage. */}
-      <SectionTitle>Règles</SectionTitle>
-      <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: 'minmax(70px, 25%) 1fr', columnGap: 1.5, rowGap: 0.5 }}>
-        {API_DOC_RULES.map(([label, text]) => [
-          <Typography key={`${label}-t`} component="dt" variant="body2" sx={{ fontWeight: 600 }}>{label}</Typography>,
-          <Typography key={`${label}-d`} component="dd" variant="body2" color="text.secondary" sx={{ m: 0 }}>{text}</Typography>,
-        ])}
-      </Box>
-
-      {/* Démarrage rapide. */}
-      <SectionTitle>Démarrage rapide</SectionTitle>
-      <Stack direction="row" spacing={0.75} sx={{ mb: 1 }}>
-        {API_DOC_EXAMPLES.map((ex, i) => (
-          <Chip key={ex.label} label={ex.label} size="small" clickable color={i === example ? 'primary' : 'default'} onClick={() => setExample(i)} />
-        ))}
-      </Stack>
-      <CodeBlock code={API_DOC_EXAMPLES[example].code} />
-
-      {/* Référence des routes. */}
-      <SectionTitle>Référence des routes</SectionTitle>
-      <TextField
-        size="small" fullWidth placeholder="Filtrer : soleil, tuiles, lidar…" value={filter}
-        onChange={(e) => setFilter(e.target.value)} inputProps={{ 'aria-label': 'Filtrer les routes' }} sx={{ mb: 1 }}
-      />
-      {groups.map(({ group, routes }) => (
-        <Box key={group} component="section" aria-label={group}>
-          <Typography variant="subtitle2" sx={{ mt: 1.5 }}>{group}</Typography>
-          {routes.map(([method, path, text]) => <RouteRow key={path} method={method} path={path} text={text} />)}
+      <Section numero={1} titre="Règles">
+        {/* Liste de définitions : le libellé à gauche, la règle à droite. */}
+        <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'minmax(90px, 18%) 1fr' }, columnGap: 2, rowGap: { xs: 0, sm: 0.75 } }}>
+          {API_DOC_RULES.map(([label, text]) => [
+            <Typography key={`${label}-t`} component="dt" variant="body2" sx={{ fontWeight: 700, mt: { xs: 1, sm: 0 } }}>{label}</Typography>,
+            <Typography key={`${label}-d`} component="dd" variant="body2" color="text.secondary" sx={{ m: 0, overflowWrap: 'anywhere' }}>{text}</Typography>,
+          ])}
         </Box>
-      ))}
-      {!groups.length && <Typography variant="body2" color="text.secondary">Aucune route ne correspond.</Typography>}
+      </Section>
 
-      {/* Documentation complète. */}
-      <SectionTitle>Documentation complète</SectionTitle>
-      <Typography variant="body2" color="text.secondary">
-        Paramètres, schémas de réponse et essais en direct : <Link href={API_DOC_SWAGGER} target="_blank" rel="noopener">Swagger</Link>
-        {' · '}document OpenAPI pour générer un client : <Link href={API_DOC_OPENAPI} target="_blank" rel="noopener">docs-json</Link>.
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        Les données viennent de sources tierces (NASA, IGN, NOAA, OpenStreetMap…) : affichez leur mention, donnée par
-        /tiles/layers/{'{layerId}'}/attribution et listée dans l’onglet « Sources et Entreprises ».
-      </Typography>
+      <Section numero={2} titre="Démarrage" sousTitre={`Adresse par défaut : ${API_DOC_BASE} (port réglable par API_PORT).`}>
+        {/* Le choix de l'exemple. */}
+        <Stack direction="row" spacing={0.75} useFlexGap sx={{ mb: 1, flexWrap: 'wrap' }}>
+          {API_DOC_EXAMPLES.map((ex, i) => (
+            <Chip key={ex.label} label={ex.label} size="small" clickable color={i === example ? 'primary' : 'default'} onClick={() => setExample(i)} />
+          ))}
+        </Stack>
+        <CodeBlock code={API_DOC_EXAMPLES[example].code} />
+        <Note>
+          Pour brancher le site sur une API en ligne, donnez son adresse à <code>{API_DOC_ENV}</code> au moment de la
+          construction. Cette valeur est écrite dans le JavaScript livré : n’y mettez jamais de secret.
+        </Note>
+      </Section>
+
+      <Section numero={3} titre="Référence des routes" sousTitre="Relevée dans les contrôleurs ; un test vérifie qu’elle reste à jour.">
+        {/* Le filtre. */}
+        <TextField
+          size="small" fullWidth placeholder="Filtrer : tuiles, soleil, post…" value={filter}
+          onChange={(e) => setFilter(e.target.value)} slotProps={{ htmlInput: { 'aria-label': 'Filtrer les routes' } }} sx={{ mb: 1 }}
+        />
+        {/* Un bloc par contrôleur. */}
+        {groups.map(({ group, controller, routes }) => (
+          <Box key={group} component="section" aria-label={group} sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{group}</Typography>
+            <Precision brut>{controller}</Precision>
+            {routes.map(([method, path, text]) => <RouteRow key={`${method} ${path}`} method={method} path={path} text={text} />)}
+          </Box>
+        ))}
+        {/* Aucun résultat. */}
+        {!groups.length && <Note>Aucune route ne correspond.</Note>}
+        <Note>
+          Sans API joignable, les lectures rendent le contrat embarqué (listes vides, services « indisponibles ») et les
+          envois sont refusés. Les données affichées par l’application viennent alors des calculs locaux et des services
+          de l’onglet « API ».
+        </Note>
+      </Section>
     </Box>
   );
+// Fin de ApiDocs.
 }
