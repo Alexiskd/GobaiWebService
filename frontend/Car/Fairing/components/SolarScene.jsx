@@ -65,6 +65,8 @@ import { Don } from './menus/Don/Don.jsx';
 import { hasDonationReturn } from './menus/Don/donationReturn.jsx';
 // Importe le menu de l'assistant.
 import { Assistant } from './menus/Assistant/Assistant.jsx';
+// Importe le rappel des dons (à l'ouverture, puis toutes les deux minutes).
+import { useDonationPrompt } from './menus/Don/useDonationPrompt.jsx';
 // Importe la fenêtre de la langue.
 import { Langue } from './menus/Langue.jsx';
 // Importe la fenêtre du plateau tournant.
@@ -424,6 +426,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const lidarPoints = useLidarPoints(engine);
   // Retour de Stripe : rouvre la fenêtre pour confirmer le don ou signaler son annulation.
   useEffect(() => { if (hasDonationReturn()) panels.setPanel('donate'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Rappel des dons : la fenêtre « Dons » s'ouvre à l'ouverture de l'application (une fois l'écran de chargement
+  // levé), puis toutes les deux minutes ; jamais par-dessus une autre fenêtre, en pause quand l'onglet est caché
+  // (voir menus/Don/donationPrompt.js).
+  useDonationPrompt({ ready: Boolean(engine) && !covered, panel: panels.panel, openDonate: () => panels.setPanel('donate') });
   // Au retour de Stripe après un achat d'export : rouvre la boutique, qui délivre la clé.
   useEffect(() => { if (hasPurchaseReturn()) panels.setPanel('store'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Adresse d'une fenêtre (https://www.gobaispace.com/galerie, /node) : ouverte dès l'arrivée.
