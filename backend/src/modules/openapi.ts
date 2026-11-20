@@ -70,7 +70,9 @@ export function buildOpenApiDocument(app: INestApplication, serverUrl: string = 
         '',
         '**Authentification** : les contributions, l’administration des API externes et les exports payants en',
         'demandent une ; tout le reste est ouvert en lecture. Les exports se paient sur `/store` et s’ouvrent avec',
-        'le jeton JWT obtenu, présenté dans l’en-tête `Authorization: Bearer`.',
+        'le jeton JWT obtenu, présenté dans l’en-tête `Authorization: Bearer`. Cette documentation elle-même est',
+        'payante : elle demande le jeton de l’article « all » (« Tout le catalogue »), présenté de la même façon,',
+        'ou en paramètre d’adresse `?key=` pour l’ouvrir directement dans un navigateur.',
       ].join('\n'),
     )
     .setVersion('2.1')

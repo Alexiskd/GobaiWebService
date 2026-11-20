@@ -28,10 +28,14 @@ import { androidAssetLinks } from './common/android-asset-links';
 import { publicUrl } from './common/public-url';
 // Branche la documentation Swagger sur /api/docs.
 import { setupOpenApi } from './modules/openapi';
+// Verrou payant devant la documentation (/api/docs, /api/docs-json) : même clé que les exports.
+import { docsPaywall } from './common/docs-paywall';
 // Pages des astres pour le référencement : recherche d'une page d'après l'adresse, et rendus HTML, Markdown et llms-full.txt.
 import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderLlmsFull } from './services/data/body-pages';
 // Service du balisage SEO (table seo_tags) : titre et description de chaque page, lus en base s'ils y sont rangés.
 import { SeoTagsService } from './services/seo/seo-tags.service';
+// Liste payante des sites externes autorisés en CORS (table allowed_origins).
+import { AllowedOriginsService } from './services/store/allowed-origins.service';
 
 /**
  * Service web unique : l'API sert aussi le site compilé (frontend/dist), sur la même origine.
@@ -158,13 +162,17 @@ async function bootstrap() {
   });
   // Service du balisage SEO (table seo_tags) : déjà chargé en mémoire, puisque NestFactory.create a attendu onModuleInit.
   const seoTags = app.get(SeoTagsService);
+  // Liste des sites externes autorisés en CORS (table allowed_origins) : déjà chargée en mémoire, pour la même raison.
+  const allowedOrigins = app.get(AllowedOriginsService);
   // Branche le site compilé ; site vaut le dossier servi, ou null s'il est absent.
   const site = serveFrontend(app, seoTags);
-  // Applique les réglages communs : préfixe /api, version v1, CORS, filtre d'erreurs, validation des entrées.
-  configureApp(app, config);
+  // Applique les réglages communs : préfixe /api, version v1, CORS (origines connues + liste payante), filtre d'erreurs, validation.
+  configureApp(app, config, (origin) => allowedOrigins.isAllowed(origin));
   // Adresse publique : https://www.gobaispace.com en ligne, localhost en développement.
   // Adresse publique du service d'après le port configuré.
   const url = publicUrl(config.port);
+  // Verrou payant devant la documentation : posé avant de la monter, pour qu'aucune requête ne l'atteigne sans jeton.
+  app.use(docsPaywall);
   // Monte la documentation Swagger, avec cette adresse comme serveur proposé pour essayer les requêtes.
   setupOpenApi(app, url);
   // Ouvre le port et attend que le serveur écoute.

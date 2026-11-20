@@ -1,5 +1,7 @@
-// Outils NestJS : contrôleur, routes, corps, paramètres, en-têtes et code de réponse.
-import { Body, Controller, Get, Header, Headers, HttpCode, Param, Post } from '@nestjs/common';
+// Outils NestJS : contrôleur, routes, corps, paramètres, en-têtes, requête, code de réponse et garde.
+import { Body, Controller, Get, Header, Headers, HttpCode, Param, Post, Req, UseGuards } from '@nestjs/common';
+// Requête Express, pour lire les droits posés par ScopeGuard.
+import type { Request } from 'express';
 // Limitation de débit.
 import { Throttle } from '@nestjs/throttler';
 // Documentation OpenAPI.
@@ -7,9 +9,14 @@ import { ApiBearerAuth, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenRes
 // Forme des erreurs de l'API.
 import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes des données échangées.
-import { CatalogueDto, CreateOrderDto, LicenceDto, LicencesDto, OrderDto, OrderParamsDto } from '../dto/store.dto';
+import { CatalogueDto, CorsSiteDto, CreateOrderDto, LicenceDto, LicencesDto, OrderDto, OrderParamsDto, RegisterCorsSiteDto } from '../dto/store.dto';
 // Service de la boutique.
 import { StoreService } from '../services/store/store.service';
+// Garde et déclaration du droit exigé (ici : avoir acheté l'article « cors-site »).
+import { RequiresScope, ScopeGuard } from '../common/jwt.guard';
+// Liste des sites externes autorisés en CORS, et droit associé.
+import { AllowedOriginsService } from '../services/store/allowed-origins.service';
+import { SCOPE_CORS } from '../services/store/catalogue';
 // Service des comptes : le compte connecté est celui des contributions, le même pour tout le site.
 import { ContributionsService } from '../services/contributions/contributions.service';
 // Lecture du jeton porté par l'en-tête Authorization.
@@ -46,11 +53,12 @@ import { Inject } from '@nestjs/common';
 @Controller('store')
 // Classe du contrôleur de la boutique.
 export class StoreController {
-  // Constructeur : NestJS y injecte la boutique, les comptes et la configuration.
+  // Constructeur : NestJS y injecte la boutique, les comptes, la configuration et la liste CORS.
   constructor(
     private readonly store: StoreService,
     private readonly accounts: ContributionsService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly origins: AllowedOriginsService,
   ) {}
 
   /** Ce qui est vendu, à quel prix, et si le paiement est ouvert. */
@@ -146,6 +154,39 @@ export class StoreController {
     // La liste, et la durabilité du stockage.
     return { items, persistent: this.store.persistent };
   // Fin de licences.
+  }
+
+  /**
+   * Ajoute le site de l'acheteur à la liste CORS, avec le jeton obtenu pour l'article « cors-site ». Après cet
+   * appel, le site appelle l'API directement depuis un navigateur, sans plus présenter aucun jeton : c'est la
+   * seule protection de l'API pour un usage externe (voir common/cors.ts). Un même jeton ne peut ajouter qu'un
+   * site à la fois ; acheter un deuxième article « cors-site » permet d'en ajouter un second.
+   */
+  @Post('cors-sites')
+  @HttpCode(201)
+  @UseGuards(ScopeGuard)
+  @RequiresScope(SCOPE_CORS)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiBearerAuth('cle-api')
+  @ApiOperation({
+    summary: 'Autoriser un site externe (CORS)',
+    description: 'Ajoute l’adresse donnée à la liste CORS du serveur (table `allowed_origins`) : ce site pourra '
+      + 'ensuite appeler l’API comme gobaispace.com lui-même, sans en-tête `Authorization`. Exige le jeton de '
+      + 'l’article « cors-site », acheté sur `/store/orders`.',
+  })
+  @ApiCreatedResponse({ type: CorsSiteDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto, description: 'Jeton absent, expiré ou refusé.' })
+  @ApiForbiddenResponse({ type: ApiErrorDto, description: 'Ce jeton ne donne pas le droit d’ajouter un site (achetez l’article « cors-site »).' })
+  // Méthode registerCorsSite.
+  async registerCorsSite(@Body() body: RegisterCorsSiteDto, @Req() req: Request): Promise<CorsSiteDto> {
+    // Le compte porté par le jeton (posé sur la requête par ScopeGuard) ; « ? » car un site partenaire libre n'a pas de sujet.
+    const accountId = String((req as Request & { jwt?: { sub?: unknown } }).jwt?.sub ?? 'inconnu');
+    // Enregistre l'origine ; en mémoire aussitôt, en base si elle est configurée.
+    const origin = await this.origins.add(body.origin, accountId);
+    // Confirmation.
+    return { origin, added: true };
+  // Fin de registerCorsSite.
   }
 
   // Site de retour : celui de l'en-tête Origin s'il fait partie des sites autorisés, sinon le premier d'entre eux.
