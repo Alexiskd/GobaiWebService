@@ -1,27 +1,34 @@
-// Onglet « Théorie quantique » de la fenêtre Node : la théorie Gobai Space (le système solaire serait un atome d'une
-// masse très grande), la correspondance couches atomiques / orbites des planètes, le tableau périodique dessiné
-// avec la répartition des électrons par couche atomique (K, L, M…) et l'élément hypothétique « Solarium » (119),
-// l'assemblage « SoaCen » (Solarium–Alpha Centauri), et le « tableau hypothétique » des systèmes stellaires proches.
+// Onglet « Théorie quantique » de la fenêtre Node : la théorie Gobai Space, selon laquelle la matière se répète
+// d'échelle en échelle (la particule serait un astre, l'atome un système solaire, la molécule une constellation).
+// L'onglet déroule : l'échelle complète des neuf niveaux, l'analogie atome ↔ système solaire mise en nombres, la loi
+// en n² des couches confrontée aux orbites réelles, le tableau périodique avec le « Solarium » (119), l'assemblage
+// « SoaCen », le tableau hypothétique des systèmes proches, la charge du Soleil et les caractéristiques d'un élément.
 // Composants MUI.
-import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-// Données de l'onglet : éléments, Solarium, assemblage SoaCen, couches, masse du Soleil et auteur (signature).
-import { ELEMENTS, SOLARIUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG, AUTEUR } from './theorieQuantique.js';
+import { Box, Typography } from '@mui/material';
+// Données et calculs de la théorie.
+import {
+  ELEMENTS, SOLARIUM, MOLECULE, COUCHES, ORBITES, MASSE_SOLEIL_KG, AUTEUR, DISTANCE_PROXIMA_AL, EXCEPTIONS_COUCHES,
+  comparaisonAtomeSysteme, ecartMoyenOrbites, energieNiveau, rapportForces, rayonBohr, rayonBohrGravitationnel,
+} from './theorieQuantique.js';
+// La section de l'échelle complète de la matière.
+import { EchelleMatiere } from './EchelleMatiere.jsx';
 // Le tableau hypothétique des systèmes stellaires proches.
 import { TableauHypothetique } from './TableauHypothetique.jsx';
-// La section « charge électrique du Soleil selon T » (description des calculs).
+// La section « charge électrique du Soleil selon T ».
 import { ChargeSoleil } from './ChargeSoleil.jsx';
 // La section « caractéristiques d'un élément du tableau périodique ».
 import { CaracteristiquesElement } from './CaracteristiquesElement.jsx';
+// Briques de style communes de la fenêtre Node.
+import { Alerte, Carte, Chiffre, Fiche, Formule, GrilleChiffres, Note, Section, SousTitre } from './nodeUi.jsx';
 // Importe scientific, qui écrit un nombre en notation scientifique française.
 import { scientific } from '@/Engine/AstreSolideEngine/planetData';
 
-// Titre de section, au même style que les autres onglets de Node.
-const SectionTitle = ({ children }) => (
-  // Titre de niveau 3, style overline, couleur secondaire.
-  <Typography component="h3" variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2, mt: 2.5, mb: 0.5 }}>
-    {children}
-  </Typography>
-);
+// virgule : écrit un nombre avec une virgule décimale et d chiffres après elle.
+const virgule = (n, d = 2) => n.toFixed(d).replace('.', ',');
+// pourcent : écrit une fraction en pourcentage, avec d décimales.
+const pourcent = (f, d = 2) => `${virgule(f * 100, d)} %`;
+// signe : écrit un écart avec son signe (« +21 % », « −53 % »).
+const signe = (n) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toFixed(0)} %`;
 
 // Tableau périodique : largeur et hauteur d'une case, écarts, pas et marge du dessin (unités du viewBox).
 const CASE_L = 34, CASE_H = 56, ECART = 3, PAS_X = CASE_L + ECART, PAS_Y = CASE_H + ECART, MARGE = 8;
@@ -152,8 +159,8 @@ function MoleculeSoaCen() {
       {/* La liaison, avec la paire d'électrons partagée au milieu (début). */}
       <line x1={atomes[0].x + 26} y1={my} x2={atomes[1].x - 26} y2={my} stroke="currentColor" strokeWidth="2" />
       {/* Les deux électrons partagés, au milieu de la liaison. */}
-      <circle cx={mx} cy={my - 7} r="4" sx={{ fill: (t) => t.palette.primary.main }} />
-      <circle cx={mx} cy={my + 7} r="4" sx={{ fill: (t) => t.palette.primary.main }} />
+      <Box component="circle" cx={mx} cy={my - 7} r="4" sx={{ fill: (t) => t.palette.primary.main }} />
+      <Box component="circle" cx={mx} cy={my + 7} r="4" sx={{ fill: (t) => t.palette.primary.main }} />
       {/* La formule, au-dessus de la liaison. */}
       <text x={mx} y={my - 46} fontSize="15" fontWeight="700" textAnchor="middle" fill="currentColor">{MOLECULE.nom}</text>
       {/* Un atome par noyau (début). */}
@@ -164,7 +171,7 @@ function MoleculeSoaCen() {
           <circle cx={x} cy={y} r="38" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.2" />
           <circle cx={x} cy={y} r="52" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="1" strokeDasharray="3 4" />
           {/* Le noyau, en surbrillance : primaire pour le Solarium, secondaire pour le Proximium. */}
-          <circle cx={x} cy={y} r="26" sx={{ fill: (t) => (i === 0 ? t.palette.primary.main : t.palette.secondary.main) }} />
+          <Box component="circle" cx={x} cy={y} r="26" sx={{ fill: (t) => (i === 0 ? t.palette.primary.main : t.palette.secondary.main) }} />
           {/* Le symbole de l'atome (So, aCen), au centre du noyau. */}
           <Box component="text" x={x} y={y - 1} fontSize="12" fontWeight="700" textAnchor="middle" sx={{ fill: (t) => (i === 0 ? t.palette.primary.contrastText : t.palette.secondary.contrastText) }}>{MOLECULE.symboles[i]}</Box>
           {/* Le numéro atomique, sous le symbole. */}
@@ -213,7 +220,7 @@ function AtomeSolaire() {
             {/* Le cercle de l'orbite, en trait fin. */}
             <circle cx={CX} cy={CY} r={r} fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.2" />
             {/* La planète, un point sur l'orbite, en couleur primaire. */}
-            <circle cx={CX + r * Math.cos(a)} cy={CY + r * Math.sin(a)} r="4.5" sx={{ fill: (t) => t.palette.primary.main }} />
+            <Box component="circle" cx={CX + r * Math.cos(a)} cy={CY + r * Math.sin(a)} r="4.5" sx={{ fill: (t) => t.palette.primary.main }} />
             {/* L'étiquette de la couche et de la planète, en haut de l'orbite. */}
             <text x={CX} y={CY - r - 4} fontSize="11" fontWeight="600" textAnchor="middle" fill="currentColor">{`${c.couche} · ${c.planete}`}</text>
           {/* Fin du groupe. */}
@@ -224,9 +231,9 @@ function AtomeSolaire() {
       {/* Le noyau : le Soleil (début). */}
       <g>
         {/* Le disque du noyau, en couleur primaire. */}
-        <circle cx={CX} cy={CY} r="20" sx={{ fill: (t) => t.palette.primary.main }} />
+        <Box component="circle" cx={CX} cy={CY} r="20" sx={{ fill: (t) => t.palette.primary.main }} />
         {/* Le nom du Soleil, au centre du noyau. */}
-        <text x={CX} y={CY + 3.5} fontSize="9.5" fontWeight="700" textAnchor="middle" fill={(t) => t.palette.primary.contrastText}>Soleil</text>
+        <Box component="text" x={CX} y={CY + 3.5} fontSize="9.5" fontWeight="700" textAnchor="middle" sx={{ fill: (t) => t.palette.primary.contrastText }}>Soleil</Box>
       {/* Fin du noyau. */}
       </g>
     {/* Fin du dessin. */}
@@ -236,155 +243,185 @@ function AtomeSolaire() {
 // Fin de AtomeSolaire.
 }
 
-// Déclare et exporte le composant TheorieQuantique, l'onglet « Théorie quantique » de la fenêtre Node.
-export function TheorieQuantique() {
+/** Valeur d'une ligne de la comparaison atome / système solaire, écrite selon sa nature (part, rapport ou longueur). */
+// ecrit : choisit l'écriture de la valeur.
+const ecrit = (id, v) => (id === 'masse' ? pourcent(v, 3) : id === 'voisin' && v < 100 ? virgule(v) : scientific(v, 2));
+
+/** Section « L'atome et le système solaire en nombres » : les grandeurs de Bohr, puis la comparaison chiffrée. */
+// Déclare AnalogieChiffree.
+function AnalogieChiffree() {
+  // Les lignes de la comparaison.
+  const lignes = comparaisonAtomeSysteme();
   // Début du rendu.
   return (
-    // Le conteneur de l'onglet.
     <Box>
-      {/* Premier titre. */}
-      <SectionTitle>Le système solaire, un atome géant ?</SectionTitle>
-      {/* Le texte de la théorie (début). */}
-      <Typography variant="body1">
-        {/* Son contenu : la théorie Gobai Space. */}
-        Selon la théorie Gobai Space, le système solaire serait un atome d’une masse très grande : le Soleil jouerait le
-        rôle du noyau — il concentre 99,86 % de la masse du système, soit {scientific(MASSE_SOLEIL_KG, 3)} kg — et les
-        huit planètes celui des électrons, chacune tournant sur son orbite comme sur une couche atomique.
-      {/* Fin du texte. */}
-      </Typography>
-      {/* La mise en garde, en petits caractères. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : analogie spéculative, pas un modèle scientifique établi. */}
-        Mise en garde : c’est une analogie spéculative, présentée pour le plaisir de la comparaison — ce n’est pas un
-        modèle scientifique établi. Les planètes ne sont pas des électrons, et les échelles de masse et de distance ne
-        se correspondent pas.
-      {/* Fin de la mise en garde. */}
-      </Typography>
+      {/* Chiffres clés de l'atome d'hydrogène. */}
+      <GrilleChiffres>
+        <Chiffre libelle="Rayon de Bohr a₀" valeur={`${scientific(rayonBohr(), 3)} m`} detail="a₀ = 4π ε₀ ħ² / (m_e e²)" />
+        <Chiffre libelle="Niveau fondamental E₁" valeur={`${virgule(energieNiveau(1))} eV`} detail="E_n = −m_e e⁴ / (8 ε₀² h² n²)" />
+        <Chiffre libelle="Force électrique / gravité" valeur={scientific(rapportForces(), 2)} detail="e² / (4π ε₀ G m_p m_e), entre proton et électron" />
+        <Chiffre libelle="Masse du Soleil" valeur={`${scientific(MASSE_SOLEIL_KG, 3)} kg`} detail={`${pourcent(lignes[1].systeme)} de la masse du système`} />
+      </GrilleChiffres>
+      <Formule sx={{ mt: 1.5 }}>{'r_n = n² · a₀        E_n = −13,6 eV / n²        L = n · ħ'}</Formule>
+      <Note>
+        Le modèle de Bohr (1913) donne à l’électron des orbites de rayon n² a₀ et d’énergie −13,6 eV / n² : c’est lui qui
+        fonde l’image « atome = système solaire ». Il est tenu par la force électrique, {scientific(rapportForces(), 1)} fois
+        plus intense que la gravité entre un proton et un électron — le système solaire, lui, n’est tenu que par la gravité.
+      </Note>
 
-      {/* Deuxième titre. */}
-      <SectionTitle>Couches atomiques et orbites des planètes</SectionTitle>
-      {/* Le schéma de l'atome. */}
-      <AtomeSolaire />
-      {/* Le tableau de la correspondance, en chiffres de largeur fixe. */}
-      <Table size="small" sx={{ mt: 1, maxWidth: 520, '& td': { fontVariantNumeric: 'tabular-nums' } }}>
-        {/* Corps du tableau. */}
-        <TableBody>
-          {/* Une ligne par couche, de K à R (début). */}
-          {COUCHES.map((c) => (
-            // La ligne.
-            <TableRow key={c.couche}>
-              {/* La lettre de la couche, en en-tête de ligne. */}
-              <TableCell component="th" scope="row" sx={{ color: 'text.secondary', pl: 0 }}>Couche {c.couche} (n = {c.n})</TableCell>
-              {/* La planète de l'orbite. */}
-              <TableCell>{c.planete}</TableCell>
-              {/* La capacité maximale de la couche : 2n². */}
-              <TableCell align="right" sx={{ pr: 0 }}>2n² = {c.capacite}</TableCell>
-            {/* Fin de la ligne. */}
-            </TableRow>
-          // Fin des lignes.
-          ))}
-        {/* Fin du corps. */}
-        </TableBody>
-      {/* Fin du tableau. */}
-      </Table>
-      {/* La note sur les capacités, en petits caractères. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : au-delà de n = 4, 2n² est une valeur théorique. */}
-        La capacité 2n² est le nombre maximal d’électrons d’une couche ; au-delà de n = 4, elle n’est qu’une valeur théorique.
-      {/* Fin de la note. */}
-      </Typography>
-
-      {/* Troisième titre. */}
-      <SectionTitle>Tableau périodique théorique, couches atomiques et Solarium</SectionTitle>
-      {/* Le tableau périodique dessiné. */}
-      <TableauPeriodique />
-      {/* La légende du dessin. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : les 118 éléments, les couches en bas de case, le bloc f, et les deux hypothétiques. */}
-        Les 118 éléments connus (numéros 1 à 118) ; les deux lignes du bas sont le bloc f (lanthanides et actinides).
-        En bas de chaque case, les chiffres sont la répartition des électrons par couche atomique (K, L, M…),
-        par exemple le fer (26) : 2, 8, 14, 2. La case en surbrillance est ajoutée par la théorie : le{' '}
-        <strong>Solarium</strong> — n° atomique {SOLARIUM.z}, symbole <strong>So</strong>, nom <strong>Solarium</strong>,
-        masse atomique {SOLARIUM.masse} ({SOLARIUM.masseDetail}), période 8, groupe 1 — dont le Soleil serait le noyau.
-        Dans la réalité, le plus lourd élément connu est l’oganesson (118) ; le 119 n’existe pas encore.
-        Le <strong>Proximium</strong> (Pr, Proxima Centauri) a été retiré de ce tableau : il figure dans le tableau
-        hypothétique ci-dessous.
-      {/* Fin de la légende. */}
-      </Typography>
-
-      {/* Quatrième titre. */}
-      <SectionTitle>L’assemblage {MOLECULE.nom} ({MOLECULE.formule})</SectionTitle>
-      {/* Le schéma de l'assemblage. */}
-      <MoleculeSoaCen />
-      {/* La légende de l'assemblage. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : l'assemblage SoaCen, deux noyaux liés. */}
-        L’assemblage <strong>{MOLECULE.nom}</strong> ({MOLECULE.formule}) réunit les deux astres de la théorie :
-        le <strong>Solarium</strong> (So, 119 — le Soleil) et <strong>aCen</strong> (Alpha Centauri, qui contient Proxima
-        Centauri — le Proximium du tableau hypothétique), reliés par une liaison simple avec une paire d’électrons
-        partagée. Dans l’analogie, cette « liaison » serait la gravitation entre les deux étoiles les plus proches l’une
-        de l’autre (≈ 4,24 années-lumière) — toujours une analogie spéculative, pas un modèle scientifique établi.
-      {/* Fin de la légende. */}
-      </Typography>
-      {/* Le paragraphe sur l'analogie quark / interaction forte. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : aCen, un « quark » lié par l'interaction forte. */}
-        <strong>Analogie avec le quark et l’interaction forte :</strong> dans un hadron, les quarks sont maintenus
-        ensemble par l’interaction forte (les gluons) et ne peuvent pas être isolés — c’est le confinement. Sur la même
-        optique, <strong>aCen</strong> (Alpha Centauri) serait le « quark » voisin du Soleil-atome : à l’échelle
-        stellaire, la gravitation jouerait le rôle de l’interaction forte, liant les deux « atomes » en un assemblage
-        plus grand. Encore une analogie spéculative : aucune mesure ne confirme un « confinement » gravitationnel entre
-        étoiles.
-      {/* Fin du paragraphe. */}
-      </Typography>
-      {/* Le paragraphe sur le problème à trois corps. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : Alpha Centauri est un système triple, sans solution analytique générale. */}
-        <strong>Le problème à trois corps :</strong> Alpha Centauri est un système triple (A, B et Proxima). Poincaré a
-        montré qu’il n’existe pas de solution analytique générale pour trois corps en interaction gravitationnelle :
-        leurs orbites ne sont pas des ellipses parfaites et deviennent chaotiques à long terme — on les calcule par
-        intégration numérique. Dans l’analogie Gobai, l’« assemblage » Soleil–aCen est donc en réalité un problème à
-        trois corps, ce qui illustre la limite de l’analogie.
-      {/* Fin du paragraphe. */}
-      </Typography>
-
-      {/* Cinquième titre. */}
-      <SectionTitle>Tableau hypothétique : les 48 systèmes à moins de 16,3 a.l.</SectionTitle>
-      {/* Le tableau hypothétique dessiné. */}
-      <TableauHypothetique />
-      {/* La légende du tableau hypothétique. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : les systèmes proches, avec Proxima Centauri (Proximium) dans Alpha Centauri. */}
-        Chaque case est un système stellaire ou substellaire situé à moins de 16,3 années-lumière : le rang 0 est le
-        Système solaire (le <strong>Solarium</strong>, en surbrillance primaire) et le rang 1, Alpha Centauri (en
-        surbrillance secondaire), contient <strong>Proxima Centauri</strong> — le <strong>Proximium</strong> (Pr) de la
-        théorie, retiré du tableau théorique ci-dessus. La masse de chaque composante est exprimée en masses solaires
-        (M☉) pour les étoiles, en masses joviennes (M_J) pour les naines brunes les plus légères
-        (1 M☉ ≈ 1,989 × 10³⁰ kg ≈ 333 000 masses terrestres ; 1 M_J ≈ 1,898 × 10²⁷ kg ≈ 318 masses terrestres).
-        La plus lourde du voisinage est Sirius A (2,063 M☉) ; la limite de fusion de l’hydrogène est ≈ 0,075–0,080 M☉
-        (~80 M_J), frontière entre naine rouge et naine brune.
-      {/* Fin de la légende. */}
-      </Typography>
-
-      {/* Sixième titre. */}
-      <SectionTitle>Charge électrique du Soleil selon T — description des calculs</SectionTitle>
-      {/* La section des calculs. */}
-      <ChargeSoleil />
-
-      {/* Septième titre. */}
-      <SectionTitle>Caractéristiques d’un élément du tableau périodique</SectionTitle>
-      {/* La section Z et masse atomique. */}
-      <CaracteristiquesElement />
-
-      {/* La signature de la théorie. */}
-      <Typography variant="body2" color="text.secondary" fontStyle="italic" sx={{ mt: 3, textAlign: 'right' }}>
-        {/* Son texte : la théorie Gobai Space signée par son auteur. */}
-        Théorie quantique Gobai Space — signée {AUTEUR}
-      {/* Fin de la signature. */}
-      </Typography>
-    {/* Fin du conteneur. */}
+      {/* La comparaison, grandeur par grandeur. */}
+      <SousTitre>Atome d’hydrogène et système solaire, côte à côte</SousTitre>
+      <Fiche
+        label="Comparaison chiffrée de l’atome d’hydrogène et du système solaire"
+        colonnes={[{ titre: 'Grandeur' }, { titre: 'Atome', align: 'right' }, { titre: 'Système solaire', align: 'right' }, { titre: 'Rapport', align: 'right', cache: true }]}
+        lignes={lignes.map((l) => [l.libelle, ecrit(l.id, l.atome), ecrit(l.id, l.systeme), `× ${l.rapport < 100 ? virgule(l.rapport, l.rapport < 2 ? 4 : 1) : scientific(l.rapport, 1)}`])}
+      />
+      <Note>
+        Deux ressemblances réelles : les deux sont presque vides (le centre occupe moins d’un millième du rayon) et presque
+        toute la masse est au centre ({pourcent(lignes[1].atome, 3)} dans le proton, {pourcent(lignes[1].systeme, 3)} dans le
+        Soleil). Deux différences : le système solaire est {virgule(lignes[0].rapport, 1)} fois plus « rempli » par son
+        centre, et son voisin le plus proche (Proxima, à {virgule(DISTANCE_PROXIMA_AL)} années-lumière) est{' '}
+        {Math.round(lignes[3].rapport).toLocaleString('fr-FR')} fois plus éloigné, à l’échelle, que deux atomes liés.
+      </Note>
     </Box>
-  // Fin du rendu.
+  );
+// Fin de AnalogieChiffree.
+}
+
+/** Section « Couches et orbites » : le dessin, puis la loi en n² confrontée aux demi-grands axes réels. */
+// Déclare CouchesEtOrbites.
+function CouchesEtOrbites() {
+  // La Terre, pour les exemples chiffrés.
+  const terre = ORBITES[2];
+  // Début du rendu.
+  return (
+    <Box>
+      {/* Le dessin de l'analogie. */}
+      <Carte sx={{ bgcolor: 'transparent' }}><AtomeSolaire /></Carte>
+      {/* La loi en n² face aux orbites réelles. */}
+      <SousTitre>La loi en n² de Bohr face aux orbites réelles</SousTitre>
+      <Fiche
+        label="Couches atomiques, orbites prédites en n² et orbites réelles des planètes"
+        colonnes={[
+          { titre: 'Couche' }, { titre: 'Planète' }, { titre: 'a (UA)', align: 'right' }, { titre: 'Prédit n²', align: 'right' },
+          { titre: 'Réel', align: 'right' }, { titre: 'Écart', align: 'right' }, { titre: '2n²', align: 'right', cache: true },
+        ]}
+        lignes={ORBITES.map((o) => [`${o.couche} (n = ${o.n})`, o.planete, virgule(o.ua, 3), o.predit, virgule(o.reel), o.n === 1 ? 'référence' : signe(o.ecart), o.capacite])}
+      />
+      <Note>
+        « Prédit » et « réel » sont en multiples de l’orbite de Mercure (couche K). Si les planètes suivaient la loi de
+        Bohr, elles seraient à 1, 4, 9, 16… fois cette distance. L’écart moyen est de {ecartMoyenOrbites().toFixed(0)} % :
+        seul Uranus tombe juste ({signe(ORBITES[6].ecart)}), par coïncidence. La colonne 2n² est le nombre maximal
+        d’électrons d’une couche ; au-delà de n = 4, c’est une valeur théorique.
+      </Note>
+
+      {/* Les grandeurs quantiques des planètes. */}
+      <SousTitre>Une planète est-elle quantique ?</SousTitre>
+      <Fiche
+        label="Vitesse orbitale, longueur d’onde de De Broglie et nombre quantique orbital de chaque planète"
+        colonnes={[{ titre: 'Planète' }, { titre: 'Vitesse (km/s)', align: 'right', cache: true }, { titre: 'λ = h / mv (m)', align: 'right' }, { titre: 'n = L / ħ', align: 'right' }]}
+        lignes={ORBITES.map((o) => [o.planete, virgule(o.vitesse / 1000, 1), scientific(o.lambda, 1), scientific(o.nQuantique, 1)])}
+      />
+      <Formule sx={{ mt: 1.5 }}>{'v = √(G M☉ / a)     λ = h / (m v)     n = m √(G M☉ a) / ħ     a_g = ħ² / (G M☉ m²)'}</Formule>
+      <Note>
+        En appliquant la règle de Bohr L = n ħ à la Terre, on trouve n ≈ {scientific(terre.nQuantique, 1)} : les niveaux
+        voisins sont si serrés que l’orbite paraît parfaitement continue (principe de correspondance). Sa longueur d’onde
+        de De Broglie vaut {scientific(terre.lambda, 1)} m, et son orbite fondamentale « gravitationnelle » aurait un rayon
+        a_g ≈ {scientific(rayonBohrGravitationnel(terre.masse), 1)} m — bien plus petit que tout ce qui est mesurable.
+        Une planète est donc un objet classique : c’est la limite quantitative de l’analogie.
+      </Note>
+    </Box>
+  );
+// Fin de CouchesEtOrbites.
+}
+
+/** Onglet complet : introduction, puis huit sections numérotées et la signature. */
+// Déclare et exporte le composant TheorieQuantique.
+export function TheorieQuantique() {
+  // Nombre d'éléments dont la répartition par couches s'écarte de la règle de Klechkowski.
+  const exceptions = Object.keys(EXCEPTIONS_COUCHES).length;
+  // Début du rendu.
+  return (
+    <Box>
+      {/* Introduction : l'idée de la théorie, et sa mise en garde. */}
+      <Typography component="h2" variant="h4" sx={{ mt: 0.5 }}>La matière, d’échelle en échelle</Typography>
+      <Typography variant="body1" sx={{ mt: 1, maxWidth: '78ch', lineHeight: 1.65 }}>
+        Selon la théorie Gobai Space, la matière se répète de l’infiniment petit à l’infiniment grand : les particules
+        seraient des astres, l’atome un système solaire — le Soleil pour noyau, les planètes pour électrons — et la
+        molécule une constellation. Cette page pose l’échelle complète, puis met chaque étage de l’analogie en nombres.
+      </Typography>
+      <Alerte titre="Analogie spéculative">
+        Ce n’est pas un modèle scientifique établi. Tous les calculs ci-dessous sont exacts et vérifiables ; ils servent
+        justement à mesurer où l’analogie tient et où elle casse. Les planètes ne sont pas des électrons.
+      </Alerte>
+
+      <Section numero={1} titre="L’échelle complète, de l’infiniment petit à l’infiniment grand" sousTitre="Neuf niveaux en trois groupes : atomique, matière inerte et vivante, cosmique.">
+        <EchelleMatiere />
+      </Section>
+
+      <Section numero={2} titre="L’atome et le système solaire en nombres" sousTitre="Niveau 2 de l’échelle : le noyau comme un soleil, les électrons comme des planètes.">
+        <AnalogieChiffree />
+      </Section>
+
+      <Section numero={3} titre="Couches atomiques et orbites des planètes" sousTitre="K à R pour Mercure à Neptune : la correspondance, puis sa vérification.">
+        <CouchesEtOrbites />
+      </Section>
+
+      <Section numero={4} titre="Tableau périodique théorique et Solarium" sousTitre="Les 118 éléments, leurs électrons par couche, et l’élément 119 de la théorie.">
+        <Carte sx={{ bgcolor: 'transparent', p: { xs: 0.5, sm: 1 } }}><TableauPeriodique /></Carte>
+        <Note>
+          Les deux lignes du bas sont le bloc f (lanthanides et actinides). En bas de chaque case : les électrons par
+          couche (K, L, M…), par exemple le fer (26) : 2, 8, 14, 2. Les {exceptions} éléments qui dérogent à la règle de
+          Klechkowski (chrome, cuivre, or, uranium…) portent leur répartition mesurée. La case en surbrillance est ajoutée
+          par la théorie : le <strong>Solarium</strong> — n° {SOLARIUM.z}, symbole <strong>So</strong>, masse{' '}
+          {SOLARIUM.masse} ({SOLARIUM.masseDetail}), période 8, groupe 1 — dont le Soleil serait le noyau. Dans la réalité,
+          le plus lourd élément connu est l’oganesson (118) ; le 119 n’a pas encore été synthétisé. Le{' '}
+          <strong>Proximium</strong> (Pr, Proxima Centauri) figure dans le tableau hypothétique de la section 6.
+        </Note>
+      </Section>
+
+      <Section numero={5} titre={`L’assemblage ${MOLECULE.nom} (${MOLECULE.formule})`} sousTitre="Niveau 3 de l’échelle : des atomes-systèmes reliés, comme les étoiles d’une constellation.">
+        <Carte sx={{ bgcolor: 'transparent' }}><MoleculeSoaCen /></Carte>
+        <Note>
+          <strong>{MOLECULE.nom}</strong> réunit le <strong>Solarium</strong> (So, 119 — le Soleil) et <strong>aCen</strong>{' '}
+          (Alpha Centauri, qui contient Proxima Centauri), reliés par une liaison simple. Dans l’analogie, la « liaison »
+          est la gravitation entre les deux systèmes les plus proches l’un de l’autre ({virgule(DISTANCE_PROXIMA_AL)} années-lumière).
+        </Note>
+        <Note>
+          <strong>Quark et interaction forte :</strong> dans un hadron, les quarks sont liés par l’interaction forte et ne
+          peuvent pas être isolés (confinement). Sur la même optique, aCen serait le « quark » voisin du Soleil-atome.
+          Aucune mesure ne montre de confinement gravitationnel entre étoiles : le Soleil et Alpha Centauri ne sont pas liés.
+        </Note>
+        <Note>
+          <strong>Le problème à trois corps :</strong> Alpha Centauri est un système triple (A, B et Proxima). Il n’existe
+          pas de solution analytique générale pour trois corps en interaction gravitationnelle (Poincaré) : leurs orbites
+          se calculent par intégration numérique. L’« assemblage » est donc en réalité un problème à quatre corps au moins.
+        </Note>
+      </Section>
+
+      <Section numero={6} titre="Tableau hypothétique : les systèmes à moins de 16,3 années-lumière" sousTitre="Le voisinage du Soleil, rangé comme un tableau périodique.">
+        <TableauHypothetique />
+        <Note>
+          Le rang 0 est le Système solaire (le <strong>Solarium</strong>) et le rang 1, Alpha Centauri, contient{' '}
+          <strong>Proxima Centauri</strong> — le <strong>Proximium</strong> de la théorie. Les masses sont en masses solaires
+          (1 M☉ ≈ 1,989 × 10³⁰ kg) pour les étoiles, en masses joviennes (1 M_J ≈ 1,898 × 10²⁷ kg) pour les naines brunes les
+          plus légères. La limite de fusion de l’hydrogène, ≈ 0,075 M☉ (~80 M_J), sépare naine rouge et naine brune.
+        </Note>
+      </Section>
+
+      <Section numero={7} titre="Charge électrique du Soleil selon sa température" sousTitre="Le « noyau » de la théorie est-il chargé, comme un noyau d’atome ?">
+        <ChargeSoleil />
+      </Section>
+
+      <Section numero={8} titre="Caractéristiques d’un élément" sousTitre="Numéro atomique Z, masse atomique A_r et défaut de masse.">
+        <CaracteristiquesElement />
+      </Section>
+
+      {/* Signature de la théorie. */}
+      <Typography variant="body2" color="text.secondary" fontStyle="italic" sx={{ mt: 4, textAlign: 'right' }}>
+        Théorie quantique Gobai Space — signée {AUTEUR}
+      </Typography>
+    </Box>
   );
 // Fin de TheorieQuantique.
 }

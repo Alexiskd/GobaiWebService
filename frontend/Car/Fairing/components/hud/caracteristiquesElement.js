@@ -6,9 +6,12 @@
  */
 
 // Constantes.
-export const E_CHARGE = 1.602e-19; // charge élémentaire (C)
-export const U_KG = 1.6605e-27; // 1 u = 1/12 de la masse du carbone 12 (kg)
-export const NA = 6.022e23; // nombre d'Avogadro (mol⁻¹)
+// Constantes physiques communes (CODATA 2018) : avant, ce fichier recopiait ses propres valeurs arrondies.
+import { C, E, M_E, M_N, M_P, N_A, U } from './constantesPhysiques.js';
+
+export const E_CHARGE = E; // charge élémentaire (C)
+export const U_KG = U; // 1 u = 1/12 de la masse du carbone 12 (kg)
+export const NA = N_A; // nombre d'Avogadro (mol⁻¹)
 
 /**
  * Charge électrique du noyau d'un élément de numéro atomique Z : chaque proton porte +e, les neutrons sont neutres,
@@ -35,3 +38,17 @@ export const masseAtomiqueChlore = () => CHLORE.m35 * CHLORE.p35 + CHLORE.m37 * 
  */
 // masseMolaireChlore : la masse molaire du chlore, en g/mol (numériquement égale à A_r en u).
 export const masseMolaireChlore = () => masseAtomiqueChlore();
+
+// Masse d'un atome d'hélium 4, en unités de masse atomique (mesure : 4,002 603 254 u).
+export const MASSE_HELIUM4_U = 4.002603254;
+
+/**
+ * Défaut de masse de l'hélium 4 : la somme de ses constituants séparés (2 protons, 2 neutrons, 2 électrons) moins la
+ * masse mesurée de l'atome, Δm = 2 m_p + 2 m_n + 2 m_e − m(⁴He) ≈ 0,0304 u (0,76 % de la masse).
+ */
+// defautMasseHelium : calcule Δm, en unités de masse atomique.
+export const defautMasseHelium = () => (2 * M_P + 2 * M_N + 2 * M_E) / U - MASSE_HELIUM4_U;
+
+/** Énergie de liaison de l'hélium 4 : E = Δm · c² ≈ 28,3 MeV, soit ≈ 7,07 MeV par nucléon. */
+// energieLiaisonHelium : calcule E, en mégaélectronvolts.
+export const energieLiaisonHelium = () => (defautMasseHelium() * U * C * C) / E / 1e6;

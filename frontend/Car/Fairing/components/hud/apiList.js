@@ -2,12 +2,17 @@
  * Endpoints externes effectivement déclarés dans le code exécutable du frontend.
  * Les services optionnels/inactifs par défaut sont signalés explicitement.
  * Ne pas ajouter une source sur la seule base d'un ancien crédit ou d'un commentaire.
+ *
+ * Vérification du 20 nov. 2026, hôte par hôte, contre le code de frontend/Car :
+ *  - retiré : JPL Horizons (ssd.jpl.nasa.gov) — plus aucun appel, les orbites sont calculées par Kepler dans le navigateur ;
+ *  - ajoutés : Mistral AI (assistant), ipify (verrou d'accès), NASA SVS (vidéo de l'écran de chargement), Google Fonts (fichiers).
+ * `key: true` : le service n'est appelé que si l'utilisateur a saisi sa clé. `requis: true` : l'application ne
+ * s'ouvre pas sans lui, son interrupteur est donc verrouillé dans l'onglet « API ».
  */
 export const API_GROUPS = [
   {
     group: 'Astronomie et éphémérides',
     items: [
-      { name: 'JPL Horizons', host: 'ssd.jpl.nasa.gov', use: 'Vecteurs d’état des corps du Système solaire, demandés par le client Horizons.', kind: 'api' },
       { name: 'ESA Gaia DR3', host: 'gea.esac.esa.int', use: 'Catalogue astrométrique Gaia DR3 (requêtes TAP).', kind: 'api' },
       { name: 'CDS SIMBAD', host: 'simbad.cds.unistra.fr, simbad.cfa.harvard.edu, simbad.idia.ac.za', use: 'Résolution de noms et recherche d’objets ; endpoints déclarés mais désactivés par défaut sans proxy.', kind: 'api' },
       { name: 'NASA Exoplanet Archive', host: 'exoplanetarchive.ipac.caltech.edu', use: 'Catalogue des exoplanètes ; endpoint déclaré mais désactivé par défaut sans proxy.', kind: 'api' },
@@ -30,6 +35,15 @@ export const API_GROUPS = [
       { name: 'NASA Image and Video Library', host: 'images-api.nasa.gov', use: 'Recherche des images affichées dans la galerie.', kind: 'api' },
       { name: 'Google Fonts', host: 'fonts.googleapis.com', use: 'Feuilles de style des polices utilisées par l’interface.', kind: 'static' },
       { name: 'Google Draco CDN', host: 'www.gstatic.com', use: 'Chargement du décodeur Draco des modèles 3D.', kind: 'static' },
+      { name: 'Polices Google', host: 'fonts.gstatic.com', use: 'Fichiers des polices (Google Sans) désignés par les feuilles de style.', kind: 'static' },
+      { name: 'NASA Scientific Visualization Studio', host: 'svs.gsfc.nasa.gov', use: 'Vidéo du survol de la Lune affichée par l’écran de chargement.', kind: 'static' },
+    ],
+  },
+  {
+    group: 'Assistant et accès',
+    items: [
+      { name: 'Mistral AI', host: 'api.mistral.ai', use: 'Assistant : la question part directement du navigateur, avec la clé saisie dans Paramètres.', kind: 'api', key: true },
+      { name: 'ipify', host: 'api.ipify.org', use: 'Lecture de l’adresse IP publique, pour le verrou d’accès à l’ouverture de l’application.', kind: 'api', requis: true },
     ],
   },
 ];

@@ -430,7 +430,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
     // Lit le chemin de l'adresse, sans barres obliques, en minuscules.
     const slug = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
     // Adresse /donnees : ouvre la fenêtre Données.
-    if (slug === 'donnees') setGalleryOpen(true);
+    if (slug === 'donnees' || slug === 'galerie') setGalleryOpen(true); // « /galerie » : l'adresse du sitemap et de index.html
     // Adresse /node : ouvre la fenêtre des sources.
     else if (slug === 'node') panels.setPanel('sources');
     // Adresse /faire-un-don : ouvre la fenêtre de don.

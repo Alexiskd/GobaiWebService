@@ -3,7 +3,11 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe le module de données de l'onglet « Théorie quantique ».
-import { SYMBOLES, ELEMENTS, SOLARIUM, PROXIMUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG, AUTEUR, NOMBRE_ELEMENTS, position, couchesElectroniques } from './theorieQuantique.js';
+import {
+  SYMBOLES, ELEMENTS, SOLARIUM, PROXIMUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG, AUTEUR, NOMBRE_ELEMENTS, position, couchesElectroniques,
+  EXCEPTIONS_COUCHES, ORBITES, comparaisonAtomeSysteme, ecartMoyenOrbites, energieNiveau, longueurOnde, nombreQuantique,
+  rapportForces, rayonBohr, rayonBohrGravitationnel, rayonCouche, vitesseOrbitale,
+} from './theorieQuantique.js';
 
 // Test : le tableau périodique contient bien les 118 éléments connus.
 test('118 symboles, du hydrogène (1) à l’oganesson (118)', () => {
@@ -137,4 +141,68 @@ test('l’assemblage SoaCen = Solarium (119) + aCen (120), symboles So et aCen',
   assert.equal(MOLECULE.atomes[0], SOLARIUM);
   assert.equal(MOLECULE.atomes[1], PROXIMUM);
 // Fin du test.
+});
+
+// Les éléments à configuration irrégulière portent leur répartition mesurée, et gardent le bon nombre d'électrons.
+test('exceptions à Klechkowski : Cr [2, 8, 13, 1], Cu [2, 8, 18, 1], Au [2, 8, 18, 32, 18, 1], 20 éléments en tout', () => {
+  assert.deepEqual(couchesElectroniques(24), [2, 8, 13, 1]);
+  assert.deepEqual(couchesElectroniques(29), [2, 8, 18, 1]);
+  assert.deepEqual(couchesElectroniques(46), [2, 8, 18, 18]);
+  assert.deepEqual(couchesElectroniques(79), [2, 8, 18, 32, 18, 1]);
+  assert.deepEqual(couchesElectroniques(92), [2, 8, 18, 32, 21, 9, 2]);
+  assert.equal(Object.keys(EXCEPTIONS_COUCHES).length, 20);
+  for (const [z, couches] of Object.entries(EXCEPTIONS_COUCHES)) assert.equal(couches.reduce((s, n) => s + n, 0), Number(z), z);
+  // La table n'est pas exposée : modifier le résultat ne la change pas.
+  couchesElectroniques(24).push(99);
+  assert.deepEqual(couchesElectroniques(24), [2, 8, 13, 1]);
+});
+
+// Les grandeurs du modèle de Bohr, calculées à partir des constantes.
+test('Bohr : a₀ ≈ 5,2918 × 10⁻¹¹ m, E₁ ≈ −13,606 eV, r_n = n² a₀, E_n = E₁ / n²', () => {
+  assert.ok(Math.abs(rayonBohr() / 5.29177e-11 - 1) < 1e-5, rayonBohr());
+  assert.ok(Math.abs(energieNiveau(1) + 13.6057) < 1e-3, energieNiveau(1));
+  assert.ok(Math.abs(rayonCouche(3) / rayonBohr() - 9) < 1e-12);
+  assert.ok(Math.abs(energieNiveau(2) / energieNiveau(1) - 0.25) < 1e-12);
+});
+
+// La force électrique domine la gravité de 39 ordres de grandeur entre un proton et un électron.
+test('rapport force électrique / gravité ≈ 2,27 × 10³⁹', () => {
+  assert.ok(rapportForces() > 2.26e39 && rapportForces() < 2.28e39, rapportForces());
+});
+
+// Les demi-grands axes viennent du catalogue du moteur ; la loi en n² est comparée au réel.
+test('orbites : demi-grands axes du catalogue, loi en n² confrontée au réel', () => {
+  assert.equal(ORBITES.length, 8);
+  assert.ok(Math.abs(ORBITES[2].ua - 1) < 0.001, ORBITES[2].ua);
+  assert.ok(Math.abs(ORBITES[7].ua - 30.07) < 0.01, ORBITES[7].ua);
+  assert.deepEqual(ORBITES.map((o) => o.predit), [1, 4, 9, 16, 25, 36, 49, 64]);
+  assert.equal(ORBITES[0].ecart, 0);
+  // Uranus tombe juste (≈ +1 %), la Terre est à −71 % de la prédiction.
+  assert.ok(Math.abs(ORBITES[6].ecart) < 3, ORBITES[6].ecart);
+  assert.ok(ORBITES[2].ecart < -65 && ORBITES[2].ecart > -75, ORBITES[2].ecart);
+  assert.ok(ecartMoyenOrbites() > 35 && ecartMoyenOrbites() < 50, ecartMoyenOrbites());
+  for (let i = 1; i < 8; i += 1) assert.ok(ORBITES[i].a > ORBITES[i - 1].a && ORBITES[i].vitesse < ORBITES[i - 1].vitesse);
+});
+
+// La Terre : 29,8 km/s, longueur d'onde ~10⁻⁶³ m, nombre quantique ~10⁷⁴ — un objet classique.
+test('la Terre est classique : v ≈ 29,8 km/s, λ ≈ 3,7 × 10⁻⁶³ m, n ≈ 2,5 × 10⁷⁴', () => {
+  const terre = ORBITES[2];
+  assert.ok(Math.abs(vitesseOrbitale(terre.a) - 29785) < 30, terre.vitesse);
+  assert.ok(terre.lambda > 3.6e-63 && terre.lambda < 3.8e-63, terre.lambda);
+  assert.ok(terre.nQuantique > 2.4e74 && terre.nQuantique < 2.6e74, terre.nQuantique);
+  assert.equal(longueurOnde(terre.masse, terre.a), terre.lambda);
+  // Cohérence : l'orbite réelle vaut n² fois le rayon de Bohr gravitationnel.
+  assert.ok(Math.abs((nombreQuantique(terre.masse, terre.a) ** 2 * rayonBohrGravitationnel(terre.masse)) / terre.a - 1) < 1e-9);
+});
+
+// La comparaison atome / système solaire : presque vides, presque toute la masse au centre.
+test('comparaison : noyau ≈ 1,6 × 10⁻⁵ de l’atome, Soleil ≈ 1,5 × 10⁻⁴ du système, masse centrale > 99,8 %', () => {
+  const [vide, masse, taille, voisin] = comparaisonAtomeSysteme();
+  assert.ok(vide.atome > 1.5e-5 && vide.atome < 1.7e-5, vide.atome);
+  assert.ok(vide.systeme > 1.5e-4 && vide.systeme < 1.6e-4, vide.systeme);
+  assert.ok(masse.atome > 0.9994 && masse.atome < 0.9995);
+  assert.ok(masse.systeme > 0.9986 && masse.systeme < 0.9987, masse.systeme);
+  assert.ok(taille.rapport > 1e21 && taille.rapport < 1.2e21);
+  assert.ok(voisin.atome > 1.3 && voisin.atome < 1.5 && voisin.systeme > 8000 && voisin.systeme < 10000);
+  for (const l of [vide, masse, taille, voisin]) assert.ok(Math.abs(l.rapport - l.systeme / l.atome) < 1e-9 * l.rapport);
 });

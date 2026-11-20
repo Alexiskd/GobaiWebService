@@ -1,7 +1,9 @@
 // Importe de React les crochets useEffect et useState.
 import { useEffect, useState } from 'react';
-// Importe de MUI Box, les éléments de tableau et Typography.
-import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
+// Importe de MUI Box et Typography.
+import { Box, Typography } from '@mui/material';
+// Briques de style communes de la fenêtre Node.
+import { Carte, Chiffre, Formule, GrilleChiffres, Note, Section } from './nodeUi.jsx';
 // Importe plusieurs éléments du module fluxCognitif (début de la liste).
 import {
   // Le nombre de pensées par jour, l'année décimale, le flux en direct, la courbe du flux et la croissance de la population par seconde.
@@ -89,117 +91,57 @@ function Courbe({ now, nowValue }) {
 // Fin de Courbe.
 }
 
+/** Onglet « Flux cognitif » : la population en direct, la relation F(t) = P(t) × p, ses valeurs et sa courbe. */
 // Déclare et exporte le composant FluxCognitif.
 export function FluxCognitif() {
-  // Une lecture par seconde tant que l'onglet est affiché.
-  // État : l'instant présent, en millisecondes.
+  // État : l'instant courant en millisecondes, relu chaque seconde.
   const [ms, setMs] = useState(() => Date.now());
-  // Effet exécuté une seule fois : l'horloge.
+  // Effet : met l'instant à jour toutes les secondes, et arrête le minuteur à la fermeture de l'onglet.
   useEffect(() => {
-    // Met l'instant à jour toutes les secondes.
     const timer = setInterval(() => setMs(Date.now()), 1000);
-    // Nettoyage : arrête l'horloge.
     return () => clearInterval(timer);
-  // Fin de l'effet ; aucune dépendance.
   }, []);
-  // Calcule le flux cognitif à cet instant.
+  // Le flux cognitif et la population à cet instant.
   const flux = fluxCognitifEnDirect(ms);
-  // Calcule la croissance de la population par seconde.
+  // La croissance de la population, en personnes par seconde.
   const growth = populationGrowthPerSecond(ms);
-  // Lignes du tableau (début).
-  const rows = [
-    // Flux par seconde.
-    ['Par seconde', flux.parSeconde],
-    // Flux par jour.
-    ['Par jour', flux.parJour],
-    // Flux par an.
-    ['Par an', flux.parAn],
-  // Fin des lignes.
-  ];
   // Début du rendu.
   return (
-    // Conteneur de l'onglet.
     <Box>
-      {/* Premier titre, au style overline. */}
-      <Typography variant="overline" color="text.secondary" component="h3" sx={{ display: 'block', lineHeight: 2, mt: 1 }}>
-        {/* Son texte. */}
-        Population mondiale en direct
-      {/* Fin du premier titre. */}
-      </Typography>
-      {/* Le compteur de population, en grand, non annoncé à chaque seconde. */}
-      <Typography component="p" aria-live="off" sx={{ fontSize: { xs: 28, sm: 34 }, fontWeight: 600, fontVariantNumeric: 'tabular-nums', lineHeight: 1.15 }}>
-        {/* La population, en nombre entier. */}
-        {entier(flux.population)}
-      {/* Fin du compteur. */}
-      </Typography>
-      {/* Paragraphe d'explication. */}
-      <Typography variant="body2" color="text.secondary">
-        {/* La croissance par seconde (au pluriel à partir de 2) et la source des projections (texte sur deux lignes). */}
-        Estimation : + {growth.toFixed(1).replace('.', ',')} personne{growth >= 2 ? 's' : ''} par seconde, par interpolation des
-        projections des Nations unies (World Population Prospects 2024). Personne ne compte les habitants en temps réel.
-      {/* Fin du paragraphe. */}
-      </Typography>
+      {/* Le compteur de population, en grand. */}
+      <Carte accent="primary.main" sx={{ mt: 0.5 }}>
+        <Typography variant="overline" color="text.secondary" component="h3" sx={{ display: 'block', lineHeight: 1.6 }}>Population mondiale en direct</Typography>
+        <Typography component="p" aria-live="off" sx={{ fontSize: { xs: 30, sm: 40 }, fontWeight: 700, fontVariantNumeric: 'tabular-nums', lineHeight: 1.15, letterSpacing: '-0.02em' }}>
+          {entier(flux.population)}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: '78ch' }}>
+          Estimation : + {growth.toFixed(1).replace('.', ',')} personne{growth >= 2 ? 's' : ''} par seconde, par interpolation des
+          projections des Nations unies (World Population Prospects 2024). Personne ne compte les habitants en temps réel.
+        </Typography>
+      </Carte>
 
-      {/* Deuxième titre. */}
-      <Typography variant="overline" color="text.secondary" component="h3" sx={{ display: 'block', lineHeight: 2, mt: 2.5 }}>
-        {/* Son texte. */}
-        Relation
-      {/* Fin du deuxième titre. */}
-      </Typography>
-      {/* La formule, en police à chasse fixe. */}
-      <Typography component="p" sx={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 17 }}>
-        {/* Son texte. */}
-        F(t) = P(t) × p
-      {/* Fin de la formule. */}
-      </Typography>
-      {/* Paragraphe de légende. */}
-      <Typography variant="body2" color="text.secondary">
-        {/* Le sens de F, de P(t) et de p, avec la valeur de p et sa source (texte sur deux lignes). */}
-        F : pensées humaines produites dans le monde · P(t) : population mondiale à l’instant t · p = {entier(PENSEES_PAR_JOUR)} pensées
-        par jour et par personne (Tseng et Poppenk, Université Queen’s, 2020).
-      {/* Fin du paragraphe. */}
-      </Typography>
-      {/* Le tableau des valeurs, en chiffres de largeur fixe. */}
-      <Table size="small" sx={{ mt: 1, '& td': { fontVariantNumeric: 'tabular-nums' } }}>
-        {/* Corps du tableau. */}
-        <TableBody>
-          {/* Une ligne par période (début). */}
-          {rows.map(([label, value]) => (
-            // La ligne.
-            <TableRow key={label}>
-              {/* Le libellé, en en-tête de ligne. */}
-              <TableCell component="th" scope="row" sx={{ color: 'text.secondary', pl: 0 }}>{label}</TableCell>
-              {/* La valeur en notation scientifique, à trois chiffres. */}
-              <TableCell align="right">{scientific(value, 3)}</TableCell>
-              {/* La valeur entière, masquée sur les très petits écrans. */}
-              <TableCell align="right" sx={{ pr: 0, display: { xs: 'none', sm: 'table-cell' } }}>{entier(value)}</TableCell>
-            {/* Fin de la ligne. */}
-            </TableRow>
-          // Fin des lignes.
-          ))}
-        {/* Fin du corps du tableau. */}
-        </TableBody>
-      {/* Fin du tableau. */}
-      </Table>
+      <Section numero={1} titre="La relation" sousTitre="Ce n’est pas une constante : le flux suit la population.">
+        <Formule>{'F(t) = P(t) × p'}</Formule>
+        <Note>
+          F : pensées humaines produites dans le monde · P(t) : population mondiale à l’instant t · p = {entier(PENSEES_PAR_JOUR)} pensées
+          par jour et par personne (Tseng et Poppenk, Université Queen’s, 2020).
+        </Note>
+        {/* Les trois valeurs du flux. */}
+        <GrilleChiffres sx={{ mt: 1.5 }}>
+          <Chiffre libelle="Pensées par seconde" valeur={scientific(flux.parSeconde, 3)} detail={entier(flux.parSeconde)} />
+          <Chiffre libelle="Pensées par jour" valeur={scientific(flux.parJour, 3)} detail={entier(flux.parJour)} />
+          <Chiffre libelle="Pensées par an" valeur={scientific(flux.parAn, 3)} detail={entier(flux.parAn)} />
+        </GrilleChiffres>
+      </Section>
 
-      {/* Troisième titre. */}
-      <Typography variant="overline" color="text.secondary" component="h3" sx={{ display: 'block', lineHeight: 2, mt: 2.5 }}>
-        {/* Son texte. */}
-        Courbe de F(t) · pensées par jour, × 10¹³
-      {/* Fin du troisième titre. */}
-      </Typography>
-      {/* La courbe, avec l'année et la valeur du moment. */}
-      <Courbe now={decimalYear(ms)} nowValue={flux.parJour} />
-      {/* Paragraphe de mise en garde. */}
-      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* La limite de l'estimation (texte sur deux lignes). */}
-        Ordre de grandeur : la mesure de 6 200 transitions de pensée par jour porte sur des adultes éveillés et elle est appliquée
-        ici à toute la population.
-      {/* Fin du paragraphe. */}
-      </Typography>
-    {/* Fin du conteneur. */}
+      <Section numero={2} titre="La courbe de F(t)" sousTitre="Pensées par jour, × 10¹³, de 2024 à 2046.">
+        <Carte sx={{ bgcolor: 'transparent' }}><Courbe now={decimalYear(ms)} nowValue={flux.parJour} /></Carte>
+        <Note>
+          Ordre de grandeur : la mesure de 6 200 transitions de pensée par jour porte sur des adultes éveillés, et elle est
+          appliquée ici à toute la population.
+        </Note>
+      </Section>
     </Box>
-  // Fin du rendu.
   );
 // Fin de FluxCognitif.
 }
