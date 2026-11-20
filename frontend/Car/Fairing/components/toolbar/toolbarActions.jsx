@@ -65,7 +65,7 @@ export function toolbarActions({
     // Schwarzschild (rosette précessée et grille filaire de courbure), fondu lent depuis les orbites de Kepler.
     // L'icône est le composant EmcIcon (formule composée) ; `wide` : sur ordinateur, une pastille assez large pour la
     // formule entière, au lieu du carré de 32 px où elle débordait sur les boutons voisins.
-    onToggleSchwarzschild && { id: 'schwarzschild', group: 'camera', icon: EmcIcon, label: 'E = mc²', short: 'E = mc²', iconOnly: true, wide: true, pressed: Boolean(schwarzschild), onClick: onToggleSchwarzschild, title: schwarzschild ? 'E = mc² activé : orbites de Schwarzschild (rosette) et grille de courbure' : 'E = mc² : orbites de Schwarzschild et grille de courbure (fondu depuis Kepler)' },
+    onToggleSchwarzschild && { id: 'schwarzschild', group: 'camera', icon: EmcIcon, label: 'E = mc²', short: 'E = mc²', iconOnly: true, wide: true, pressed: Boolean(schwarzschild), onClick: onToggleSchwarzschild, title: schwarzschild ? 'E = mc² activé : orbites de Schwarzschild (rosette), grille de courbure et périvolumes des astres et des systèmes' : 'E = mc² : orbites de Schwarzschild, grille de courbure et périvolumes (fondu depuis Kepler)' },
     // Rotation automatique : bascule.
     { id: 'auto', group: 'camera', icon: AutorenewIcon, label: 'Rotation', iconOnly: true, pressed: auto, onClick: onToggleAuto, title: 'Rotation automatique' },
     // Vue 3/4 automatique : bascule.

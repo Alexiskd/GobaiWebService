@@ -118,3 +118,49 @@ test('stats et clear : comptage par état puis vidage complet', () => {
 });
 
 // Fin du test du moteur de rendu des périverolumes.
+
+// Test : l'opacité d'ensemble masque tout à 0 et module les opacités ensuite (fondu du mode Schwarzschild).
+test('setDisplay : masque tous les périvolumes à 0, puis suit le fondu', () => {
+  const { engine, scene } = setup();
+  engine.register({ id: 'system:solar', radius: 10, backgroundRadius: 30 });
+  engine.setState('system:solar', LOAD_STATE.ACTIVE);
+  const group = scene.children[0];
+  const full = group.children[1].material.opacity;
+  // À 0 : plus rien à dessiner.
+  engine.setDisplay(0);
+  assert.equal(group.visible, false);
+  // À mi-fondu : visible, à la moitié de son opacité normale.
+  engine.setDisplay(0.5);
+  assert.equal(group.visible, true);
+  assert.ok(Math.abs(group.children[1].material.opacity - full / 2) < 1e-9);
+  // Les bornes sont respectées, et une valeur non finie est refusée.
+  assert.equal(engine.setDisplay(4), 1);
+  assert.throws(() => engine.setDisplay(Number.NaN), TypeError);
+});
+
+// Test : en mode « tout révéler », un périvolume hors de portée reste visible, estompé.
+test('setDisplay : révèle les périvolumes hors de portée quand on le demande', () => {
+  const { engine, scene } = setup();
+  engine.register({ id: 'mars', radius: 2, backgroundRadius: 6, variant: 'body' });
+  const group = scene.children[0];
+  // Par défaut, hors de portée = invisible.
+  assert.equal(group.visible, false);
+  engine.setDisplay(1, { revealUnloaded: true });
+  assert.equal(group.visible, true);
+  assert.ok(group.children[0].material.opacity > 0 && group.children[0].material.opacity < 0.1);
+  // Un périvolume enregistré ensuite prend aussitôt le réglage en cours.
+  engine.register({ id: 'venus', radius: 2, backgroundRadius: 6, variant: 'body' });
+  assert.equal(engine.get('venus').visible, true);
+});
+
+// Test : le périvolume d'un astre est une simple sphère en fil de fer, retirée proprement.
+test('register variant « body » : une seule sphère en fil de fer', () => {
+  const { engine, scene } = setup();
+  engine.register({ id: 'earth', center: [1, 2, 3], radius: 5, backgroundRadius: 15, variant: 'body' });
+  const group = scene.children[0];
+  assert.equal(group.children.length, 1);
+  assert.equal(group.children[0].material.wireframe, true);
+  assert.equal(engine.get('earth').variant, 'body');
+  assert.equal(engine.unregister('earth'), true);
+  assert.equal(scene.children.length, 0);
+});

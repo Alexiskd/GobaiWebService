@@ -1164,6 +1164,9 @@ export class SolarEngine {
     this.perivolumeRendering = new PerivolumeRenderingEngine({ THREE });
     // Rattache la scène : les bulles suivent les volumes de systèmes.
     this.perivolumeRendering.attachScene(this.scene);
+    // Les périvolumes appartiennent à l'affichage Schwarzschild (bouton E = mc²) : masqués au départ, ils suivent
+    // ensuite son fondu (voir updateSchwarzschildFade). Allumés, ils se montrent tous, même hors de portée.
+    this.perivolumeRendering.setDisplay(this.schwarzschild ? easeInOutCubic(this.schwarzschild.progress) : 0, { revealUnloaded: true });
     this.coreGpuMemoryBudget = new SatelliteGpuBudgetOrchestrator({
       globalBudgetBytes: 512 * 1024 * 1024,
       defaultBodyBudgetBytes: 256 * 1024 * 1024,
@@ -1204,6 +1207,11 @@ export class SolarEngine {
         center,
         radius: radius * 12,
         backgroundRadius: radius * 40,
+        metadata: { focusIndex: index, kind: descriptor.kind, level: 'body' },
+      });
+      // Le même périvolume, dessiné : une sphère en fil de fer autour de chaque astre (Soleil, planètes, satellites).
+      this.perivolumeRendering.register({
+        id, center, radius: radius * 12, backgroundRadius: radius * 40, variant: 'body',
         metadata: { focusIndex: index, kind: descriptor.kind, level: 'body' },
       });
       return { id, target, focusIndex: index };
@@ -1731,6 +1739,8 @@ export class SolarEngine {
     for (const { id, target } of this.coreTargets) {
       const position = target.get();
       if (position) this.corePerivolumes.updateCenter(id, position.toArray());
+      // Le périvolume dessiné de l'astre suit sa position, seulement quand l'affichage Schwarzschild le montre.
+      if (position && this.perivolumeRendering?.displayAlpha > 0) this.perivolumeRendering.updateCenter(id, position.toArray());
     }
     for (const { id, target } of this.coreSystemVolumes || []) {
       const position = target.get();
@@ -3005,6 +3015,8 @@ export class SolarEngine {
     grid.material.opacity = 0.5 * eased;
     // Visible dès que le fondu commence, cachée et hors rendu une fois effacée.
     grid.visible = eased > 0.002;
+    // Les périvolumes (chaque astre, chaque système) font partie de cet affichage : même fondu que la grille.
+    this.perivolumeRendering?.setDisplay(eased);
     // Si elle est visible, elle suit le Soleil, exactement au centre du puits de courbure (représentation de la
     // métrique de Schwarzschild) — et pas seulement pendant le fondu.
     if (grid.visible) grid.position.copy(this.sunMesh.position);
