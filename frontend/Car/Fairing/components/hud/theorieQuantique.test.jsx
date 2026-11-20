@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe le module de données de l'onglet « Théorie quantique ».
-import { SYMBOLES, ELEMENTS, SOLARIUM, COUCHES, MASSE_SOLEIL_KG, NOMBRE_ELEMENTS, position } from './theorieQuantique.js';
+import { SYMBOLES, ELEMENTS, SOLARIUM, PROXIMUM, COUCHES, MASSE_SOLEIL_KG, NOMBRE_ELEMENTS, position, couchesElectroniques } from './theorieQuantique.js';
 
 // Test : le tableau périodique contient bien les 118 éléments connus.
 test('118 symboles, du hydrogène (1) à l’oganesson (118)', () => {
@@ -76,5 +76,37 @@ test('couches atomiques K à R = orbites de Mercure à Neptune, capacité 2n²',
 test('la masse du Soleil est d’environ 2 × 10^30 kg', () => {
   // Entre 1 et 3 × 10^30 kg.
   assert.ok(MASSE_SOLEIL_KG >= 1e30 && MASSE_SOLEIL_KG < 3e30);
+// Fin du test.
+});
+
+// Test : la répartition des électrons par couche atomique (K, L, M…) suit l'ordre de remplissage.
+test('couches électroniques : H [1], Fe [2, 8, 14, 2], Og [2, 8, 18, 32, 32, 18, 8]', () => {
+  // Hydrogène : un électron sur K.
+  assert.deepEqual(couchesElectroniques(1), [1]);
+  // Hélium : K pleine.
+  assert.deepEqual(couchesElectroniques(2), [2]);
+  // Fer (26) : 2, 8, 14, 2 (le 4s se remplit avant le 3d).
+  assert.deepEqual(couchesElectroniques(26), [2, 8, 14, 2]);
+  // Oganesson (118) : les sept couches complètes.
+  assert.deepEqual(couchesElectroniques(118), [2, 8, 18, 32, 32, 18, 8]);
+  // Chaque élément du tableau porte sa répartition, dont la somme fait z.
+  for (const e of ELEMENTS) assert.equal(e.couches.reduce((s, n) => s + n, 0), e.z);
+// Fin du test.
+});
+
+// Test : le Proximium est l'élément hypothétique n° 120, symbole « Px », placé en n = 3 (période 3, groupe 3).
+test('le Proximium ajouté au tableau : Px, 120, n = 3 (période 3, groupe 3)', () => {
+  // Ses propriétés.
+  assert.equal(PROXIMUM.z, 120);
+  assert.equal(PROXIMUM.symbole, 'Px');
+  assert.equal(PROXIMUM.nom, 'Proximium');
+  assert.equal(PROXIMUM.periode, 3);
+  assert.equal(PROXIMUM.groupe, 3);
+  // Sa répartition : 119 complété d'un électron sur la couche R (n = 8) → [2, 8, 18, 32, 32, 18, 8, 2].
+  assert.deepEqual(PROXIMUM.couches, [2, 8, 18, 32, 32, 18, 8, 2]);
+  // Son symbole ne collisionne avec aucun des 118 symboles connus ni avec le Solarium.
+  assert.ok(!SYMBOLES.includes(PROXIMUM.symbole) && PROXIMUM.symbole !== SOLARIUM.symbole);
+  // Le Solarium (119) a lui [2, 8, 18, 32, 32, 18, 8, 1].
+  assert.deepEqual(SOLARIUM.couches, [2, 8, 18, 32, 32, 18, 8, 1]);
 // Fin du test.
 });

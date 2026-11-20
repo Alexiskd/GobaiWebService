@@ -1,10 +1,11 @@
 // Onglet « Théorie quantique » de la fenêtre Node : la théorie Gobai Space (le système solaire serait un atome d'une
 // masse très grande), la correspondance couches atomiques / orbites des planètes, et le tableau périodique dessiné
-// avec l'élément hypothétique « Solarium » (119) ajouté.
+// avec la répartition des électrons par couche atomique (K, L, M…) et les éléments hypothétiques « Solarium » (119)
+// et « Proximium » (120, n = 3) ajoutés.
 // Composants MUI.
 import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-// Données de l'onglet : éléments, Solarium, couches et masse du Soleil.
-import { ELEMENTS, SOLARIUM, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
+// Données de l'onglet : éléments, Solarium, Proximium, couches et masse du Soleil.
+import { ELEMENTS, SOLARIUM, PROXIMUM, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
 // Importe scientific, qui écrit un nombre en notation scientifique française.
 import { scientific } from '@/Engine/AstreSolideEngine/planetData';
 
@@ -16,67 +17,103 @@ const SectionTitle = ({ children }) => (
   </Typography>
 );
 
-// Tableau périodique : taille d'une case, écart, pas et marge du dessin (unités du viewBox).
-const CASE = 34, ECART = 3, PAS = CASE + ECART, MARGE = 8;
+// Tableau périodique : largeur et hauteur d'une case, écarts, pas et marge du dessin (unités du viewBox).
+const CASE_L = 34, CASE_H = 40, ECART = 3, PAS_X = CASE_L + ECART, PAS_Y = CASE_H + ECART, MARGE = 8;
 // Largeur du dessin : marge, 18 groupes, moins le dernier écart, marge.
-const LARG_TABLE = MARGE * 2 + 18 * PAS - ECART;
+const LARG_TABLE = MARGE * 2 + 18 * PAS_X - ECART;
 // Hauteur du dessin : marge, 10 lignes (7 périodes + Solarium + 2 lignes du bloc f), moins le dernier écart, marge.
-const HAUT_TABLE = MARGE * 2 + 10 * PAS - ECART;
+const HAUT_TABLE = MARGE * 2 + 10 * PAS_Y - ECART;
 
 /** Abscisse et ordonnée d'une case du tableau, selon le groupe/période ou la colonne du bloc f. */
 // caseXY : position de la case d'un élément du dessin.
 const caseXY = (e) => (e.blocF
   // Bloc f : colonne affichée à partir du groupe 3.
-  ? { x: MARGE + (e.colonneF + 2) * PAS, y: MARGE + (e.blocF - 1) * PAS }
+  ? { x: MARGE + (e.colonneF + 2) * PAS_X, y: MARGE + (e.blocF - 1) * PAS_Y }
   // Bloc principal : groupe et période.
-  : { x: MARGE + (e.groupe - 1) * PAS, y: MARGE + (e.periode - 1) * PAS });
+  : { x: MARGE + (e.groupe - 1) * PAS_X, y: MARGE + (e.periode - 1) * PAS_Y });
 
-/** Le tableau périodique en SVG : les 118 cases, plus le Solarium en période 8, groupe 1, en surbrillance. */
+/** Les lignes de la répartition par couches, découpée par quatre nombres (deux lignes au plus). */
+// lignesCouches : découpe la répartition [2, 8, 14, 2] en lignes de « 2, 8, 14, 2 ».
+const lignesCouches = (couches) => {
+  // Les lignes, par paquets de quatre nombres.
+  const lignes = [];
+  // Tant qu'il reste des nombres : un paquet de quatre.
+  for (let i = 0; i < couches.length; i += 4) lignes.push(couches.slice(i, i + 4).join(', '));
+  // Les lignes.
+  return lignes;
+// Fin de lignesCouches.
+};
+
+/**
+ * Une case du tableau : rectangle, numéro atomique, symbole et répartition des électrons par couche (K, L, M…).
+ * `fond` et `texte` colorent la case des éléments hypothétiques (surbrillance) ; sans elles, la case est neutre.
+ */
+// Case : dessine une case à la position x, y, pour l'élément e.
+function Case({ e, x, y, fond, texte }) {
+  // Les lignes de la répartition par couches.
+  const lignes = lignesCouches(e.couches);
+  // Couleur des textes : celle de la surbrillance, ou la couleur courante sinon.
+  const couleurTexte = texte ? { fill: texte } : { fill: 'currentColor' };
+  // Début du rendu.
+  return (
+    // Le groupe de la case.
+    <g>
+      {/* Le rectangle de la case. */}
+      <Box component="rect" x={x} y={y} width={CASE_L} height={CASE_H} rx={4} sx={fond ? { fill: fond, stroke: texte, strokeWidth: 1.5 } : { fill: 'action.hover', stroke: 'divider', strokeWidth: 1 }} />
+      {/* Le numéro atomique, en haut à gauche, en petits caractères. */}
+      <Box component="text" x={x + 4} y={y + 10} fontSize="7.5" sx={couleurTexte}>{e.z}</Box>
+      {/* Le symbole, centré, en gras. */}
+      <Box component="text" x={x + CASE_L / 2} y={y + 21} fontSize="11" fontWeight="700" textAnchor="middle" sx={couleurTexte}>{e.symbole}</Box>
+      {/* La répartition par couches, en bas de case, sur une ou deux lignes. */}
+      {lignes.map((ligne, i) => (
+        // Une ligne de la répartition.
+        <Box key={i} component="text" x={x + CASE_L / 2} y={y + CASE_H - 11 + i * 8} fontSize="6" textAnchor="middle" sx={couleurTexte}>{ligne}</Box>
+      // Fin des lignes.
+      ))}
+      {/* Infobulle : la répartition complète, pour les lecteurs d'écran et le survol. */}
+      <title>{`${e.z} ${e.symbole} : couches K, L, M… = ${e.couches.join(', ')}`}</title>
+    {/* Fin du groupe. */}
+    </g>
+  // Fin du rendu.
+  );
+// Fin de Case.
+}
+
+/**
+ * Le tableau périodique en SVG : les 118 cases avec leur répartition par couches atomiques, plus les deux éléments
+ * hypothétiques de la théorie en surbrillance : le Solarium (119) en période 8, groupe 1, et le Proximium (120) en
+ * n = 3 (période 3, groupe 3).
+ */
 // TableauPeriodique : dessine le tableau périodique des éléments.
 function TableauPeriodique() {
-  // La case du Solarium : période 8, groupe 1.
-  const so = { x: MARGE, y: MARGE + (SOLARIUM.periode - 1) * PAS };
+  // La position de la case du Solarium : période 8, groupe 1.
+  const so = caseXY(SOLARIUM);
+  // La position de la case du Proximium : période 3, groupe 3 (n = 3).
+  const px = caseXY(PROXIMUM);
   // Début du rendu.
   return (
     // Le dessin (début de la balise).
     <Box
       // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
       component="svg" viewBox={`0 0 ${LARG_TABLE} ${HAUT_TABLE}`} role="img"
-      // Description pour les lecteurs d'écran : le nombre d'éléments et la place du Solarium.
-      aria-label={`Tableau périodique des 118 éléments connus, plus le Solarium, élément hypothétique numéro 119, en période 8, groupe 1`}
+      // Description pour les lecteurs d'écran : les 118 éléments, les couches par case, et les deux hypothétiques.
+      aria-label={`Tableau périodique des 118 éléments connus, avec la répartition des électrons par couche atomique en bas de chaque case, plus le Solarium (119, période 8, groupe 1) et le Proximium (120, n = 3)`}
       // Toute la largeur, hauteur proportionnelle, couleur secondaire pour les textes.
       sx={{ display: 'block', width: '100%', height: 'auto', color: 'text.secondary', mt: 1 }}
     // Fin de la balise ouvrante.
     >
-      {/* Une case par élément connu (début). */}
+      {/* Une case par élément connu, avec ses couches atomiques (début). */}
       {ELEMENTS.map((e) => {
         // La position de la case.
         const { x, y } = caseXY(e);
-        // Le rendu de la case.
-        return (
-          // Le groupe de la case : rectangle, numéro atomique et symbole.
-          <g key={e.z}>
-            {/* Le rectangle de la case. */}
-            <Box component="rect" x={x} y={y} width={CASE} height={CASE} rx={4} sx={{ fill: 'action.hover', stroke: 'divider', strokeWidth: 1 }} />
-            {/* Le numéro atomique, en haut à gauche, en petits caractères. */}
-            <text x={x + 4} y={y + 10} fontSize="7.5" fill="currentColor">{e.z}</text>
-            {/* Le symbole, centré, en gras. */}
-            <text x={x + CASE / 2} y={y + 23} fontSize="11" fontWeight="700" textAnchor="middle" fill="currentColor">{e.symbole}</text>
-          {/* Fin du groupe. */}
-          </g>
-        );
+        // La case.
+        return <Case key={e.z} e={e} x={x} y={y} />;
       // Fin des cases.
       })}
-      {/* La case du Solarium, en surbrillance (début). */}
-      <g>
-        {/* Le rectangle, rempli de la couleur primaire. */}
-        <Box component="rect" x={so.x} y={so.y} width={CASE} height={CASE} rx={4} sx={{ fill: (t) => t.palette.primary.main, stroke: (t) => t.palette.primary.light, strokeWidth: 1.5 }} />
-        {/* Le numéro 119, en haut à gauche, en petits caractères clairs. */}
-        <text x={so.x + 4} y={so.y + 10} fontSize="7.5" fill={(t) => t.palette.primary.contrastText}>{SOLARIUM.z}</text>
-        {/* Le symbole « So », centré, en gras. */}
-        <text x={so.x + CASE / 2} y={so.y + 23} fontSize="11" fontWeight="700" textAnchor="middle" fill={(t) => t.palette.primary.contrastText}>{SOLARIUM.symbole}</text>
-      {/* Fin de la case du Solarium. */}
-      </g>
+      {/* La case du Solarium, en surbrillance primaire. */}
+      <Case e={SOLARIUM} x={so.x} y={so.y} fond={(t) => t.palette.primary.main} texte={(t) => t.palette.primary.contrastText} />
+      {/* La case du Proximium, en surbrillance secondaire. */}
+      <Case e={PROXIMUM} x={px.x} y={px.y} fond={(t) => t.palette.secondary.main} texte={(t) => t.palette.secondary.contrastText} />
     {/* Fin du dessin. */}
     </Box>
   // Fin du rendu.
@@ -197,16 +234,19 @@ export function TheorieQuantique() {
       </Typography>
 
       {/* Troisième titre. */}
-      <SectionTitle>Tableau périodique, avec le Solarium</SectionTitle>
+      <SectionTitle>Tableau périodique, couches atomiques, Solarium et Proximium</SectionTitle>
       {/* Le tableau périodique dessiné. */}
       <TableauPeriodique />
       {/* La légende du dessin. */}
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        {/* Son texte : les 118 éléments connus, le bloc f en bas, et le Solarium ajouté. */}
+        {/* Son texte : les 118 éléments, les couches en bas de case, le bloc f, et les deux hypothétiques. */}
         Les 118 éléments connus (numéros 1 à 118) ; les deux lignes du bas sont le bloc f (lanthanides et actinides).
-        La case en surbrillance est le <strong>Solarium</strong> (So, n° {SOLARIUM.z}), élément hypothétique ajouté par la
-        théorie en période 8, groupe 1 : dans cette analogie, le Soleil en serait le noyau. Dans la réalité, le plus
-        lourd élément connu est l’oganesson (118) ; le 119 n’existe pas encore.
+        En bas de chaque case, les chiffres sont la répartition des électrons par couche atomique (K, L, M…),
+        par exemple le fer (26) : 2, 8, 14, 2. Les deux cases en surbrillance sont ajoutées par la théorie : le{' '}
+        <strong>Solarium</strong> (So, n° {SOLARIUM.z}, période 8, groupe 1), dont le Soleil serait le noyau, et le{' '}
+        <strong>Proximium</strong> (Px, n° {PROXIMUM.z}, placé en n = 3), dont Proxima Centauri — l’étoile la plus proche
+        du Soleil, ≈ 4,24 années-lumière — serait le noyau. Dans la réalité, le plus lourd élément connu est
+        l’oganesson (118) ; le 119 et le 120 n’existent pas encore.
       {/* Fin de la légende. */}
       </Typography>
     {/* Fin du conteneur. */}

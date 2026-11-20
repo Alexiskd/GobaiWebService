@@ -59,9 +59,51 @@ export function position(z) {
 // Fin de position.
 }
 
-/** Les 118 éléments avec leur position dans le dessin : z, symbole, periode/groupe ou blocF/colonneF. */
+/**
+ * Sous-couches remplies dans l'ordre de Klechkowski (1s, 2s, 2p, 3s, 3p, 4s, 3d…) : chacune avec sa couche (n de 1
+ * à 7) et sa capacité maximale en électrons.
+ */
+// SOUS_COUCHES : [couche n, capacité], dans l'ordre de remplissage.
+const SOUS_COUCHES = [
+  [1, 2], [2, 2], [2, 6], [3, 2], [3, 6], [4, 2], [3, 10], [4, 6],
+  [5, 2], [4, 10], [5, 6], [6, 2], [4, 14], [5, 10], [6, 6], [7, 2], [5, 14], [6, 10], [7, 6],
+];
+
+/**
+ * Répartition des électrons d'un élément par couche atomique (K, L, M, N…) : le tableau des électrons par couche,
+ * de K (n = 1) à la dernière couche occupée. Ex. fer (26) → [2, 8, 14, 2]. Pour le Solarium (119), le dernier électron
+ * partirait sur la couche R (n = 8).
+ */
+// couchesElectroniques : calcule les électrons par couche du numéro atomique z.
+export function couchesElectroniques(z) {
+  // Huit couches, de K (n = 1) à R (n = 8), à zéro au départ.
+  const couches = [0, 0, 0, 0, 0, 0, 0, 0];
+  // Électrons restant à placer.
+  let reste = z;
+  // Chaque sous-couche, dans l'ordre de remplissage : on y place le maximum, ou ce qui reste.
+  for (const [n, cap] of SOUS_COUCHES) {
+    // Les électrons placés dans cette sous-couche.
+    const pris = Math.min(reste, cap);
+    // Ajoutés à la couche.
+    couches[n - 1] += pris;
+    // Retirés du reste.
+    reste -= pris;
+    // Tout est placé : on s'arrête.
+    if (reste === 0) break;
+  // Fin du parcours.
+  }
+  // Au-delà de 118 (Solarium) : le surplus part sur la couche R (n = 8).
+  if (reste > 0) couches[7] = reste;
+  // Les couches vides de la fin sont retirées (au moins la couche K reste).
+  while (couches.length > 1 && couches[couches.length - 1] === 0) couches.pop();
+  // La répartition, de K à la dernière couche occupée.
+  return couches;
+// Fin de couchesElectroniques.
+}
+
+/** Les 118 éléments avec leur position dans le dessin et leurs couches atomiques : z, symbole, periodes/groupes, couches. */
 // ELEMENTS : le tableau périodique complet, calculé une fois.
-export const ELEMENTS = SYMBOLES.map((symbole, index) => ({ z: index + 1, symbole, ...position(index + 1) }));
+export const ELEMENTS = SYMBOLES.map((symbole, index) => ({ z: index + 1, symbole, ...position(index + 1), couches: couchesElectroniques(index + 1) }));
 
 /**
  * L'élément ajouté par la théorie Gobai Space : le « Solarium », numéro atomique 119, symbole « So », première case
@@ -75,7 +117,24 @@ export const SOLARIUM = {
   nom: 'Solarium',
   periode: 8,
   groupe: 1,
+  couches: couchesElectroniques(119),
   note: 'Élément hypothétique de la théorie Gobai Space : le Soleil en serait le noyau.',
+};
+
+/**
+ * Le deuxième élément ajouté par la théorie, sur la même optique : le « Proximium », placé en n = 3 (période 3, groupe 3,
+ * dans le vide du bloc d de la troisième ligne). Son noyau serait Proxima Centauri, l'étoile la plus proche du Soleil
+ * (≈ 4,24 années-lumière) : dans l'analogie, chaque étoile serait le noyau d'un atome géant.
+ */
+// PROXIMUM : l'élément hypothétique n° 120, placé en n = 3.
+export const PROXIMUM = {
+  z: 120,
+  symbole: 'Px',
+  nom: 'Proximium',
+  periode: 3,
+  groupe: 3,
+  couches: couchesElectroniques(120),
+  note: 'Élément hypothétique de la théorie Gobai Space : Proxima Centauri en serait le noyau (étoile la plus proche, ≈ 4,24 a.l.).',
 };
 
 /** Masse du Soleil, en kilogrammes (≈ 99,86 % de la masse du système solaire). */
