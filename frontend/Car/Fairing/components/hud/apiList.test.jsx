@@ -32,18 +32,19 @@ test('aucune API en double, et le total correspond', () => {
 
 // Vérification contre le code : un service retiré du projet ne doit pas revenir dans la liste, et ceux réellement
 // appelés doivent y figurer.
-test('la liste suit le code : plus de JPL Horizons ni d’ipify, Mistral déclaré', () => {
+test('la liste suit le code : plus de JPL Horizons ni d’ipify, Claude et Mistral déclarés', () => {
   const hosts = items.flatMap((api) => api.host.split(', '));
   assert.ok(!hosts.includes('ssd.jpl.nasa.gov'));
   // Le verrou d'accès par adresse IP est retiré : ipify n'est plus appelé.
   assert.ok(!hosts.includes('api.ipify.org'));
-  for (const h of ['api.mistral.ai', 'svs.gsfc.nasa.gov', 'gea.esac.esa.int']) assert.ok(hosts.includes(h), h);
+  for (const h of ['api.anthropic.com', 'api.mistral.ai', 'svs.gsfc.nasa.gov', 'gea.esac.esa.int']) assert.ok(hosts.includes(h), h);
   assert.equal(new Set(hosts).size, hosts.length);
 });
 
 // Plus aucun service n'est requis à l'ouverture depuis le retrait du verrou d'accès.
-test('aucun service requis, Mistral dépend d’une clé', () => {
+test('aucun service requis, Claude et Mistral dépendent de la clé de l’utilisateur', () => {
   assert.ok(items.every((api) => !api.requis));
   assert.equal(items.find((api) => api.host === 'api.mistral.ai').key, true);
+  assert.equal(items.find((api) => api.host === 'api.anthropic.com').key, true);
   for (const api of items) assert.ok(['api', 'tiles', 'static'].includes(api.kind), api.name);
 });

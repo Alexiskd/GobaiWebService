@@ -15,8 +15,8 @@ Computing, Transmission — voir `ARCHITECTURE.md`).
   relief et couleur de la Lune, blend de la Lune (BP), phases de la Lune, blocage d'API côté serveur.
 - **Exports** : la Boutique (`Fairing/components/menus/Boutique`) et le compte (`useCompte`, `CompteBox`) sont de
   retour, avec les routes `/store` et `/export` et le paiement Stripe.
-- **Assistant** : d'abord celui du serveur (`/assistant`, clé `ANTHROPIC_API_KEY`) ; à défaut, la clé enregistrée dans
-  le navigateur (Paramètres).
+- **Assistant** : connexion obligatoire avec la clé d'API de l'utilisateur, chez Claude ou chez Mistral, gardée dans
+  son navigateur ; le serveur relaie (`/assistant`) sans jamais garder la clé, par une interface commune aux deux.
 - **Dons (Stripe) et galerie (PostgreSQL)** : mêmes composantes, de nouveau servies par `/donations` et `/galerie`.
 - **Déploiement** : inchangé, un seul service web (`render.yaml`, `npm run build` puis `npm start`).
 

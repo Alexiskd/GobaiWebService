@@ -1,5 +1,5 @@
 // ApiProperty : décrit un champ dans la documentation Swagger (exemple, description, type).
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /** Format d'erreur unique de toute l'API (documenté dans Swagger pour chaque route). */
 // Classe qui décrit la forme de toute réponse d'erreur de l'API.
@@ -28,6 +28,15 @@ export class ApiErrorDto {
   message: string | string[];
 
   // Documente le champ suivant : exemple d'adresse appelée.
+  @ApiPropertyOptional({ example: 'billing', description: 'Nature du refus, quand la route en précise une (assistant : invalid_key, billing, rate_limited, model_unavailable, unavailable).' })
+  code?: string;
+
+  @ApiPropertyOptional({ example: 'claude', description: 'Fournisseur concerné (assistant).' })
+  provider?: string;
+
+  @ApiPropertyOptional({ example: 'https://platform.claude.com/settings/billing', description: 'Page d’ajout d’un moyen de paiement chez le fournisseur (assistant, code billing).' })
+  billingUrl?: string;
+
   @ApiProperty({ example: '/api/v1/tiles/locate?lat=48.86&lon=2.35&zoom=99', description: 'Requête concernée.' })
   // path : l'adresse de la requête qui a échoué.
   path: string;

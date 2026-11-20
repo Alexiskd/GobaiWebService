@@ -53,10 +53,6 @@ export const cancelDonation = (orderId) => post(`/donations/orders/${encodeURICo
 /** Frontières et littoraux : { source, attribution, count, lines, coastlines } (polylignes [lon, lat, …]). */
 // fetchBorders : les frontières et les littoraux.
 export const fetchBorders = (signal) => get('/borders', { signal });
-/** Assistant du serveur (Claude, clé ANTHROPIC_API_KEY côté backend) : { enabled, model }. */
-export const fetchAssistantConfig = (signal) => get('/assistant/config', { signal });
-/** Envoie la conversation et l'inventaire des éléments actionnables : { reply, actions }. */
-export const askAssistant = (messages, elements, signal) => post('/assistant/messages', { messages, elements }, { signal });
 /** Réponse paginée { total, items } ; sans paramètre, toutes les villes. */
 // fetchCities : les villes.
 export const fetchCities = (params, signal) => get('/cities', { signal, query: params });

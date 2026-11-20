@@ -251,11 +251,11 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const [performanceMonitorVisible, setPerformanceMonitorVisible] = useState(false);
   // Affichage relativiste : les orbites suivent la métrique de Schwarzschild (rosette précessée, grille filaire).
   const [schwarzschild, setSchwarzschild] = useState(false);
-  // Mistral : posé dans le HUD à la place de la navigation, indépendant des autres fenêtres (il reste ouvert quand il
+  // Assistant : posé dans le HUD à la place de la navigation, indépendant des autres fenêtres (il reste ouvert quand il
   // en ouvre une) et jamais modal — la scène et le moteur restent utilisables pendant tout l'échange.
-  // État : panneau de Mistral affiché ou non ; affiché au départ, puisqu'il tient la place de la navigation.
+  // État : panneau de l'assistant affiché ou non ; affiché au départ, puisqu'il tient la place de la navigation.
   const [assistantOpen, setAssistantOpen] = useState(true);
-  // Navigation : Mistral tient sa place dans le HUD, l'arborescence des astres s'ouvre à la demande, par son bouton.
+  // Navigation : l'assistant tient sa place dans le HUD, l'arborescence des astres s'ouvre à la demande, par son bouton.
   // État : arborescence de navigation ouverte ou non, fermée au départ.
   const [navigatorOpen, setNavigatorOpen] = useState(false);
   // Plateau tournant : ouvert ou non, et son ouverture.
@@ -681,11 +681,11 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
   // Fin de la constante.
   );
-  // Mistral à la place de la navigation : on lui demande d'aller sur un astre, et il agit sur la scène pendant que
+  // L'assistant à la place de la navigation : on lui demande d'aller sur un astre, et il agit sur la scène pendant que
   // l'utilisateur continue de la manipuler (le panneau n'est jamais modal).
   const assistantEl = (
       <Assistant
-        // Affiché ou non : le bouton « Mistral » de la barre d'outils le montre et le masque.
+        // Affiché ou non : le bouton « Assistant » de la barre d'outils le montre et le masque.
         open={assistantOpen}
         // Aucun ancrage : le panneau est posé dans le HUD, pas déroulé sous un bouton.
         anchorEl={null}
@@ -699,7 +699,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
         shifted={navigatorOpen}
         // Exécution des actions demandées.
         onAction={runAssistantAction}
-      // Fin du panneau de Mistral.
+      // Fin du panneau de l'assistant.
       />
   // Fin de la constante.
   );
@@ -721,7 +721,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
         tilt={camera.tilt}
         // Rechercher : ouvre la fenêtre de recherche.
         onSearch={() => panels.setPanel('search')}
-        // Mistral : mémorise le bouton comme point d'ancrage, puis ouvre ou ferme le menu.
+        // Assistant : ouvre ou ferme le menu (connexion d'abord, si aucune clé n'est validée).
         onAssistant={() => setAssistantOpen((v) => !v)}
         // Menu de l'assistant ouvert ou non.
         assistantOpen={assistantOpen}
@@ -811,7 +811,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       {!compact && hudTopEl}
       {/* Le panneau d'informations (ordinateur ; sur téléphone, dans le dock). */}
       {!compact && informationsEl}
-      {/* Mistral (ordinateur ; sur téléphone, dans le dock). */}
+      {/* Assistant (ordinateur ; sur téléphone, dans le dock). */}
       {!compact && assistantEl}
       {/* L'arborescence des astres (ordinateur ; sur téléphone, bande du dock). */}
       {!compact && navigatorEl}
@@ -867,7 +867,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
             {hudTopEl}
           {/* Fin de la zone du titre. */}
           </MobileTopBar>
-          {/* Dock du bas : tiroir Informations et Mistral, puis bande des astres et navigation. */}
+          {/* Dock du bas : tiroir Informations et assistant, puis bande des astres et navigation. */}
           <MobileDock surfaces={<>{informationsEl}{assistantEl}</>} base={<>{navigatorEl}{toolbarEl}</>} />
         {/* Fin du fragment. */}
         </>

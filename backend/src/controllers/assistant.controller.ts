@@ -1,80 +1,80 @@
-// Outils NestJS : BadRequestException (erreur 400), Body (corps de la requête), Controller, Get et Post (routes), Header (en-tête de réponse), HttpCode (code de réponse).
-import { BadRequestException, Body, Controller, Get, Header, HttpCode, Post } from '@nestjs/common';
-// Throttle : règle une limite de débit propre à une route, à la place de la limite générale.
+// Outils NestJS : erreur 400, corps et en-tête de la requête, contrôleur, routes, en-tête de réponse, code de réponse.
+import { BadRequestException, Body, Controller, Get, Header, Headers, HttpCode, Post } from '@nestjs/common';
+// Limite de débit propre à une route.
 import { Throttle } from '@nestjs/throttler';
-// Décorateurs Swagger : ils décrivent la route et chacune de ses réponses possibles dans la documentation.
-import { ApiBadGatewayResponse, ApiBadRequestResponse, ApiOkResponse, ApiOperation, ApiServiceUnavailableResponse, ApiTags, ApiTooManyRequestsResponse } from '@nestjs/swagger';
-// Forme commune de toutes les réponses d'erreur.
+// Documentation Swagger.
+import {
+  ApiBadGatewayResponse, ApiBadRequestResponse, ApiHeader, ApiOkResponse, ApiOperation, ApiResponse, ApiTags,
+  ApiTooManyRequestsResponse, ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+// Forme commune des erreurs.
 import { ApiErrorDto } from '../dto/api-error.dto';
-// Formes de la réponse de l'assistant, de la requête reçue et de l'état de configuration.
-import { AssistantReplyDto, AssistantRequestDto, AssistantStatusDto } from '../dto/assistant.dto';
-// Service qui appelle l'API Claude.
+// Formes échangées.
+import { AssistantCatalogDto, AssistantReplyDto, AssistantRequestDto, AssistantSessionDto, AssistantSessionRequestDto } from '../dto/assistant.dto';
+// Service de l'assistant (deux fournisseurs derrière une interface commune).
 import { AssistantService } from '../services/assistant/assistant.service';
 
+/** En-tête qui porte la clé d'API de l'utilisateur : jamais dans l'adresse ni dans le corps, jamais journalisé. */
+const KEY_HEADER = 'x-assistant-key';
+const KEY_DOC = { name: KEY_HEADER, required: true, description: 'Clé d’API de l’utilisateur chez le fournisseur choisi (Claude Platform ou Mistral). Gardée dans son navigateur, jamais sur le serveur.' };
+
 /**
- * Assistant de la fenêtre « Claude » :
- *   1. `GET  assistant/config`   → assistant configuré ou non (sans clé : fenêtre de démonstration) ;
- *   2. `POST assistant/messages` → envoie la conversation, renvoie la réponse. La clé reste sur le serveur.
+ * Assistant : l'utilisateur se connecte avec SA clé, chez Claude ou chez Mistral.
+ *   1. `GET  assistant/config`   → fournisseurs proposés, modèle de chacun, pages de clé et de paiement ;
+ *   2. `POST assistant/session`  → appel de test : clé valide et compte en état de payer ;
+ *   3. `POST assistant/messages` → la conversation, avec la clé et le fournisseur de l'utilisateur.
+ * Clé fausse ou révoquée : 401 `invalid_key`. Pas de moyen de paiement ou plus de crédit : 402 `billing`, avec la
+ * page de paiement du fournisseur (`billingUrl`).
  */
-// Range ces routes sous la rubrique « Assistant » de la documentation.
 @ApiTags('Assistant')
-// Toutes les routes de cette classe commencent par /api/v1/assistant.
 @Controller('assistant')
-// Classe du contrôleur de l'assistant.
 export class AssistantController {
-  // NestJS injecte le service de l'assistant, gardé en propriété privée non modifiable ; le corps du constructeur est vide.
   constructor(private readonly assistant: AssistantService) {}
 
-  // Route GET /api/v1/assistant/config.
   @Get('config')
-  // no-store : la réponse n'est jamais mise en cache, l'état peut changer d'un déploiement à l'autre.
   @Header('Cache-Control', 'no-store')
-  // Titre et description de la route dans la documentation.
-  @ApiOperation({ summary: 'Configuration de l’assistant', description: 'Indique si l’API Claude est configurée sur le serveur.' })
-  // Réponse 200 documentée : un AssistantStatusDto.
-  @ApiOkResponse({ type: AssistantStatusDto })
-  // Méthode status : renvoie l'état de configuration.
-  status(): AssistantStatusDto {
-    // Délègue au service : il sait si la clé de l'API est présente.
-    return this.assistant.status();
-  // Fin de status.
+  @ApiOperation({ summary: 'Fournisseurs de l’assistant', description: 'Claude et Mistral : modèle utilisé (le plus performant de chacun), page de création d’une clé, page de paiement.' })
+  @ApiOkResponse({ type: AssistantCatalogDto })
+  config(): AssistantCatalogDto {
+    return this.assistant.catalog();
   }
 
-  // Route POST /api/v1/assistant/messages.
-  @Post('messages')
-  // Répond 200 au lieu du 201 que NestJS met par défaut sur un POST : rien n'est créé.
+  @Post('session')
   @HttpCode(200)
-  // Par visiteur : 8 messages par minute. Un plafond quotidien pour tout le site s'ajoute dans le service.
-  // Limite propre à cette route : 8 requêtes par fenêtre de 60 000 ms, par visiteur.
-  @Throttle({ default: { limit: 8, ttl: 60_000 } })
-  // Titre et description de la route dans la documentation.
-  @ApiOperation({ summary: 'Poser une question à l’assistant', description: 'Relaie la conversation à l’API Claude (modèle Haiku) et renvoie la réponse.' })
-  // Réponse 200 documentée : un AssistantReplyDto.
-  @ApiOkResponse({ type: AssistantReplyDto })
-  // Réponse 400 documentée : conversation invalide.
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 6, ttl: 60_000 } })
+  @ApiHeader(KEY_DOC)
+  @ApiOperation({ summary: 'Se connecter à l’assistant', description: 'Appel de test (une réponse d’un seul jeton) chez le fournisseur choisi : la clé est-elle valide, le compte peut-il payer ? Rien n’est enregistré.' })
+  @ApiOkResponse({ type: AssistantSessionDto })
   @ApiBadRequestResponse({ type: ApiErrorDto })
-  // Réponse 429 documentée : trop de messages.
-  @ApiTooManyRequestsResponse({ type: ApiErrorDto, description: 'Trop de messages, ou limite quotidienne du site atteinte.' })
-  // Réponse 502 documentée : l'API Claude a échoué.
+  @ApiUnauthorizedResponse({ type: ApiErrorDto, description: 'Clé invalide, révoquée ou expirée (`code` : invalid_key).' })
+  @ApiResponse({ status: 402, type: ApiErrorDto, description: 'Pas de moyen de paiement ou plus de crédit (`code` : billing, `billingUrl`).' })
+  @ApiTooManyRequestsResponse({ type: ApiErrorDto })
   @ApiBadGatewayResponse({ type: ApiErrorDto })
-  // Réponse 503 documentée : assistant non configuré ou surchargé.
-  @ApiServiceUnavailableResponse({ type: ApiErrorDto, description: 'Assistant non configuré ou surchargé.' })
-  // Méthode reply : reçoit le corps déjà validé contre AssistantRequestDto et renvoie une promesse de réponse.
-  reply(@Body() body: AssistantRequestDto): Promise<AssistantReplyDto> {
-    // Garde de chaque message son rôle et son texte sans espaces autour, puis retire les messages devenus vides.
-    const messages = body.messages.map((m) => ({ role: m.role, content: m.content.trim() })).filter((m) => m.content);
-    // Si la liste est vide, ou si le dernier message ne vient pas du visiteur (rôle « user ») :
-    if (!messages.length || messages[messages.length - 1].role !== 'user') {
-      // erreur 400 avec ce message.
-      throw new BadRequestException('Le dernier message doit venir du visiteur.');
-    // Fin de la vérification.
-    }
-    // L'API attend une conversation qui commence par le visiteur.
-    // Retire les premiers messages tant que la conversation ne commence pas par le visiteur.
-    while (messages.length && messages[0].role !== 'user') messages.shift();
-    // Transmet la conversation nettoyée et l'inventaire de l'écran au service, et renvoie sa promesse.
-    return this.assistant.reply(messages, body.elements ?? []);
-  // Fin de reply.
+  session(@Body() body: AssistantSessionRequestDto, @Headers(KEY_HEADER) key: string): Promise<AssistantSessionDto> {
+    return this.assistant.verify(body.provider, key);
   }
-// Fin du contrôleur.
+
+  @Post('messages')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiHeader(KEY_DOC)
+  @ApiOperation({ summary: 'Poser une question à l’assistant', description: 'Relaie la conversation chez le fournisseur choisi, avec la clé de l’utilisateur ; renvoie la réponse et les actions sur l’interface.' })
+  @ApiOkResponse({ type: AssistantReplyDto })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiUnauthorizedResponse({ type: ApiErrorDto, description: 'Clé invalide, révoquée ou expirée (`code` : invalid_key).' })
+  @ApiResponse({ status: 402, type: ApiErrorDto, description: 'Pas de moyen de paiement ou plus de crédit (`code` : billing, `billingUrl`).' })
+  @ApiTooManyRequestsResponse({ type: ApiErrorDto })
+  @ApiBadGatewayResponse({ type: ApiErrorDto })
+  reply(@Body() body: AssistantRequestDto, @Headers(KEY_HEADER) key: string): Promise<AssistantReplyDto> {
+    // Messages nettoyés : texte sans espaces autour, messages vides retirés.
+    const messages = body.messages.map((m) => ({ role: m.role, content: m.content.trim() })).filter((m) => m.content);
+    if (!messages.length || messages[messages.length - 1].role !== 'user') {
+      throw new BadRequestException('Le dernier message doit venir du visiteur.');
+    }
+    // Les deux API attendent une conversation qui commence par le visiteur.
+    while (messages.length && messages[0].role !== 'user') messages.shift();
+    return this.assistant.reply(body.provider, key, messages, body.elements ?? []);
+  }
 }

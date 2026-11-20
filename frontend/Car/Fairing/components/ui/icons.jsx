@@ -79,6 +79,10 @@ export { default as StopIcon } from '@mui/icons-material/Stop';
 // Téléchargement, et ouverture dans un nouvel onglet.
 export { default as DownloadIcon } from '@mui/icons-material/Download';
 export { default as OpenInNewIcon } from '@mui/icons-material/OpenInNew';
+// Assistant : déconnexion, clé d'API, retour à l'étape précédente.
+export { default as LogoutIcon } from '@mui/icons-material/Logout';
+export { default as KeyIcon } from '@mui/icons-material/Key';
+export { default as ArrowBackIcon } from '@mui/icons-material/ArrowBack';
 // Ville d'un résultat de recherche.
 export { default as LocationCityIcon } from '@mui/icons-material/LocationCity';
 // Lieu enregistré, et accueil.

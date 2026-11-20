@@ -8,6 +8,8 @@ import { DesktopToolbar } from './DesktopToolbar.jsx';
 import { toolbarActions } from './toolbarActions.jsx';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
+// Importe la session de l'assistant : le bouton porte le logo du fournisseur connecté.
+import { useAssistantSession } from '@/Fairing/hooks/useAssistantSession';
 
 // Actions de l'interface : barre d’outils du bas sur grand écran, navigation en quatre espaces sur petit écran.
 // « Ma position » est passée sous la navball et le bouton Informations dans le panneau des caractéristiques : la barre
@@ -37,6 +39,8 @@ export function Toolbar({
   const lockOn = useHud(hud, (s) => Boolean(s.viewLock?.on));
   // Objet du verrouillage, seulement s'il y a un astre à verrouiller et un rappel pour le faire.
   const lock = lockName && onToggleLock ? { name: lockName, focusName: lockFocus, on: lockOn } : null;
+  // Fournisseur de l'assistant connecté (claude, mistral), null si personne n'est connecté.
+  const assistantProvider = useAssistantSession()?.provider ?? null;
   // Construit la liste des actions (début de l'appel).
   const actions = toolbarActions({
     // Le verrouillage et son rappel.
@@ -46,7 +50,7 @@ export function Toolbar({
     // Tous les autres rappels et libellés.
     // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre) ; le moniteur de
     // performance n'a de bouton que sur ordinateur (sur téléphone, la feuille « Données » affiche les mesures).
-    onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onContribute,
+    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onContribute,
     // Affichage Schwarzschild : l'état et le rappel passés à la liste.
     schwarzschild, onToggleSchwarzschild,
     // L'arborescence des astres, et le moniteur de performance hors téléphone.
