@@ -5,11 +5,28 @@ import { useState } from 'react';
 // Composants MUI.
 import { Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 // Données de la documentation.
-import { API_DOC_BASE, API_DOC_DIR, API_DOC_ENV, API_DOC_EXAMPLES, API_DOC_GROUPS, API_DOC_RULES, countDocRoutes } from './apiDocs.js';
+import {
+  API_DOC_BASE, API_DOC_DIR, API_DOC_ENV, API_DOC_EXAMPLES, API_DOC_GROUPS, API_DOC_RESISTANCE_LEVELS, API_DOC_RULES,
+  API_DOC_SOURCES, countDocRoutes, resistanceDuGroupe,
+} from './apiDocs.js';
 // Adresse de l'API branchée à la construction du site ('' sans API).
 import { API_BASE } from '@/Computing/api';
 // Briques de style communes de la fenêtre Node.
-import { Alerte, Chiffre, Formule, GrilleChiffres, MONO, Note, Precision, Section } from './nodeUi.jsx';
+import { Alerte, Chiffre, Etiquette, Fiche, Formule, GrilleChiffres, MONO, Note, Precision, Section } from './nodeUi.jsx';
+
+/** « 24 000 » plutôt que « 24000 » : plus facile à lire dans un tableau de chiffres journaliers. */
+// formateNombre : regroupe les milliers avec une espace fine.
+const formateNombre = (n) => (n == null ? '—' : n.toLocaleString('fr-FR'));
+
+/** Étiquette de résistance : couleur et libellé du niveau, posés sur Etiquette. */
+// Déclare ResistanceBadge : le niveau (clé de API_DOC_RESISTANCE_LEVELS).
+function ResistanceBadge({ niveau }) {
+  // Son libellé et sa couleur.
+  const { libelle, couleur } = API_DOC_RESISTANCE_LEVELS[niveau];
+  // Début du rendu.
+  return <Etiquette couleur={couleur}>{libelle}</Etiquette>;
+// Fin de ResistanceBadge.
+}
 
 /** Copie un texte dans le presse-papiers ; un échec est ignoré (navigateur sans permission). */
 // copy : écrit le texte dans le presse-papiers.
@@ -111,20 +128,59 @@ export function ApiDocs() {
         </Note>
       </Section>
 
-      <Section numero={3} titre="Référence des routes" sousTitre="Relevée dans les contrôleurs ; un test vérifie qu’elle reste à jour.">
+      <Section
+        numero={3} titre="Résistance des sources connectées"
+        sousTitre="Pour chaque source externe réellement interrogée par ce backend, le nombre de requêtes possibles par jour à l’échelle globale du site (tous les visiteurs confondus) et la résistance qui en découle."
+      >
+        <Fiche
+          label="Résistance des sources externes"
+          colonnes={[{ titre: 'Source' }, { titre: 'Requêtes / jour (global)', align: 'right' }, { titre: 'Résistance', align: 'right' }]}
+          lignes={API_DOC_SOURCES.filter((s) => s.id !== 'interne').map((s) => [
+            <Box key="nom">
+              <Box component="span">{s.nom}</Box>
+              <Precision brut>{s.hotes}</Precision>
+              <Precision sx={{ mt: 0.5 }}>{s.base}</Precision>
+            </Box>,
+            formateNombre(s.parJour),
+            <ResistanceBadge key="r" niveau={s.resistance} />,
+          ])}
+        />
+        <Note>
+          Chiffres et politiques publiés par chaque fournisseur (relevés le 20 novembre 2026), pas une mesure sur ce
+          dépôt. Sans chiffre publié (« — »), la résistance se juge sur la politique connue : clé exigée, garantie de
+          service, ou fragilité d’une page lue plutôt qu’appelée (Smithsonian GVP). Les routes qui ne dépendent que de
+          ce dépôt (base interne, calculs locaux) n’apparaissent pas ici : leur résistance est « Interne ».
+        </Note>
+      </Section>
+
+      <Section numero={4} titre="Référence des routes" sousTitre="Relevée dans les contrôleurs ; un test vérifie qu’elle reste à jour.">
         {/* Le filtre. */}
         <TextField
           size="small" fullWidth placeholder="Filtrer : tuiles, soleil, post…" value={filter}
           onChange={(e) => setFilter(e.target.value)} slotProps={{ htmlInput: { 'aria-label': 'Filtrer les routes' } }} sx={{ mb: 1 }}
         />
-        {/* Un bloc par contrôleur. */}
-        {groups.map(({ group, controller, routes }) => (
-          <Box key={group} component="section" aria-label={group} sx={{ mt: 2 }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{group}</Typography>
-            <Precision brut>{controller}</Precision>
-            {routes.map(([method, path, text]) => <RouteRow key={`${method} ${path}`} method={method} path={path} text={text} />)}
-          </Box>
-        ))}
+        {/* Un bloc par contrôleur, avec la résistance de sa plus fragile source externe. */}
+        {groups.map(({ group, controller, routes, sources }) => {
+          // Résistance du groupe : celle de sa source externe la plus fragile (ou « interne » si aucune).
+          const { resistance, source, parJour } = resistanceDuGroupe(sources);
+          // Début du rendu.
+          return (
+            <Box key={group} component="section" aria-label={group} sx={{ mt: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, flexWrap: 'wrap' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{group}</Typography>
+                <ResistanceBadge niveau={resistance} />
+              </Box>
+              <Precision brut>{controller}</Precision>
+              {resistance !== 'interne' && (
+                <Precision sx={{ mt: 0.25 }}>
+                  Maillon le plus fragile : {source.nom} ({formateNombre(parJour)} requêtes/jour au niveau global).
+                </Precision>
+              )}
+              {routes.map(([method, path, text]) => <RouteRow key={`${method} ${path}`} method={method} path={path} text={text} />)}
+            </Box>
+          );
+        // Fin du rendu d'un groupe.
+        })}
         {/* Aucun résultat. */}
         {!groups.length && <Note>Aucune route ne correspond.</Note>}
         <Note>
