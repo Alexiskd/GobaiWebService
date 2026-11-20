@@ -57,3 +57,25 @@ test('leadingNumber : nombres français avec espaces', () => {
   assert.equal(leadingNumber('129 000 km (1,806 rayon de Jupiter)'), 129000);
   assert.ok(Number.isNaN(leadingNumber('inconnu')));
 });
+
+test('arborescence : Soleil → Planètes / Planètes naines → chaque planète → ses satellites', async () => {
+  const { bodyTree } = await import('./bodyCatalog.js');
+  const withDocs = buildBodyCatalog({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES, documents: DOCUMENTS });
+  const { root } = bodyTree(withDocs);
+  assert.equal(root.name, 'Soleil');
+  assert.deepEqual(root.children.map((b) => b.name), ['Planètes', 'Planètes naines']);
+  const [planets, dwarfs] = root.children;
+  assert.equal(planets.children.length, PLANETS.filter((p) => !p.dwarf).length);
+  assert.equal(dwarfs.children.length, PLANETS.filter((p) => p.dwarf).length);
+  const earth = planets.children.find((n) => n.name === 'Terre');
+  assert.deepEqual(earth.children.map((n) => n.name), ['Lune']);
+  const jupiter = planets.children.find((n) => n.name === 'Jupiter');
+  assert.equal(jupiter.children.length, withDocs.groups.find((g) => g.id === 'satellites-jupiter').entries.length);
+  const pluto = dwarfs.children.find((n) => n.name === 'Pluton');
+  assert.ok(pluto.children.some((n) => n.name === 'Charon'));
+  // Chaque astre apparaît une fois dans l'arbre.
+  const seen = [];
+  const walk = (n) => { if (n.entry) seen.push(n.entry.id); n.children.forEach(walk); };
+  walk(root);
+  assert.equal(seen.length, withDocs.entries.length);
+});

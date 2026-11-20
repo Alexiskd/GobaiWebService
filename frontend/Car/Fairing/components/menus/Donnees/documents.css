@@ -184,3 +184,34 @@
   background: #e0b25a; color: #1a1408; font: 700 13px var(--sans);
 }
 .gobai-docs .doc-text-after { margin-top: 12px; }
+
+/* ── Arborescence des astres : Soleil → Planètes / Planètes naines → planète → satellites ── */
+.gobai-docs .doc-tree, .gobai-docs .doc-tree-children { list-style: none; margin: 0; padding: 0; }
+.gobai-docs .doc-tree { max-width: 760px; }
+/* Enfants : décalés, reliés par un trait vertical. */
+.gobai-docs .doc-tree-children { margin: 2px 0 6px 18px; padding-left: 14px; border-left: 1px solid var(--line); }
+.gobai-docs .doc-tree-item { min-width: 0; }
+.gobai-docs .doc-tree-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.gobai-docs .doc-tree-main {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px;
+  min-height: 44px; padding: 6px 12px 6px 6px; border: 1px solid transparent; border-radius: 12px;
+  background: transparent; color: var(--ink); font: 500 15px var(--sans); text-align: left; cursor: pointer;
+}
+.gobai-docs .doc-tree-main:hover { background: var(--panel); border-color: var(--line); }
+.gobai-docs .doc-tree-main:focus-visible, .gobai-docs .doc-tree-sheet:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.gobai-docs .doc-tree-row.is-branch .doc-tree-main { font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-size: 12.5px; }
+.gobai-docs > .docs-wrap > nav > .doc-tree > .doc-tree-item > .doc-tree-row .doc-tree-main { font-size: 18px; font-weight: 600; }
+.gobai-docs .doc-tree-chevron {
+  flex: none; display: inline-grid; place-items: center; width: 18px; color: var(--muted); font-size: 20px; line-height: 1;
+  transition: transform .18s ease;
+}
+.gobai-docs .doc-tree-chevron.is-open { transform: rotate(90deg); }
+.gobai-docs .doc-tree-name { min-width: 0; overflow-wrap: anywhere; }
+.gobai-docs .doc-tree-meta { font: 12px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.gobai-docs .doc-tree-sheet {
+  flex: none; min-height: 36px; padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--panel); color: var(--ink); font: 500 13px var(--sans); cursor: pointer;
+}
+.gobai-docs .doc-tree-sheet:hover { border-color: var(--muted); }
+@media (pointer: coarse) { .gobai-docs .doc-tree-sheet { min-height: 44px; } }
+@media (prefers-reduced-motion: reduce) { .gobai-docs .doc-tree-chevron { transition: none; } }

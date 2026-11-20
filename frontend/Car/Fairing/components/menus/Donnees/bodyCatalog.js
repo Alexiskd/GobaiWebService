@@ -139,3 +139,25 @@ export function filterCatalog(catalog, { query = '', group = 'tous' } = {}) {
     .map((g) => ({ ...g, entries: q ? g.entries.filter((e) => fold(`${e.name} ${e.kindLabel} ${e.parentName || ''} ${e.doc?.designation || ''}`).includes(q)) : g.entries }))
     .filter((g) => g.entries.length);
 }
+
+/**
+ * Arborescence de la Documentation : le Soleil à la racine ; en dessous, deux branches, « Planètes » et
+ * « Planètes naines » ; sous chaque planète, ses satellites (dans l'ordre du catalogue : du plus proche au plus
+ * lointain). Renvoie { root } ; un nœud : { id, entry?, name, count?, children: [nœuds] }.
+ */
+export function bodyTree(catalog) {
+  const satellitesOf = new Map();
+  for (const e of catalog.entries) {
+    if (e.kind !== 'satellite' || !e.parentName) continue;
+    if (!satellitesOf.has(e.parentName)) satellitesOf.set(e.parentName, []);
+    satellitesOf.get(e.parentName).push({ id: e.id, entry: e, name: e.name, children: [] });
+  }
+  const planetNode = (e) => ({ id: e.id, entry: e, name: e.name, children: satellitesOf.get(e.name) ?? [] });
+  const branch = (id, name, kind) => {
+    const children = catalog.entries.filter((e) => e.kind === kind).map(planetNode);
+    return { id: `branche-${id}`, name, count: children.length, children };
+  };
+  const sun = catalog.entries.find((e) => e.kind === 'etoile');
+  const branches = [branch('planetes', 'Planètes', 'planete'), branch('naines', 'Planètes naines', 'naine')].filter((b) => b.children.length);
+  return { root: { id: sun?.id ?? 'soleil', entry: sun ?? null, name: sun?.name ?? 'Soleil', children: branches } };
+}
