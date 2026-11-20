@@ -10,6 +10,8 @@ import { ELEMENTS, SOLARIUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG } from './theori
 import { TableauHypothetique } from './TableauHypothetique.jsx';
 // La section « charge électrique du Soleil selon T » (description des calculs).
 import { ChargeSoleil } from './ChargeSoleil.jsx';
+// La section « caractéristiques d'un élément du tableau périodique ».
+import { CaracteristiquesElement } from './CaracteristiquesElement.jsx';
 // Importe scientific, qui écrit un nombre en notation scientifique française.
 import { scientific } from '@/Engine/AstreSolideEngine/planetData';
 
@@ -368,6 +370,11 @@ export function TheorieQuantique() {
       <SectionTitle>Charge électrique du Soleil selon T — description des calculs</SectionTitle>
       {/* La section des calculs. */}
       <ChargeSoleil />
+
+      {/* Septième titre. */}
+      <SectionTitle>Caractéristiques d’un élément du tableau périodique</SectionTitle>
+      {/* La section Z et masse atomique. */}
+      <CaracteristiquesElement />
     {/* Fin du conteneur. */}
     </Box>
   // Fin du rendu.
