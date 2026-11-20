@@ -10,7 +10,7 @@ const TheorieQuantique = lazy(() => import('../../hud/TheorieQuantique.jsx').the
 
 /** Les onglets de la fenêtre, dans l'ordre de la barre : nom, nom court (téléphone), description et icône. */
 export const DONNEES_TABS = [
-  { id: 'documentation', name: 'Documentation', short: 'Docs', hint: 'Une fiche et une galerie par astre de l’application : Soleil, planètes, satellites', Icon: DescriptionIcon },
+  { id: 'documentation', name: 'Documentation', short: 'Docs', hint: 'Une fiche par astre de l’application, avec ses photos : Soleil, planètes, satellites', Icon: DescriptionIcon },
   { id: 'flux', name: 'Flux cognitif', short: 'Flux', hint: 'Page de recherche de l’auteur', Icon: PsychologyIcon },
   { id: 'theorie', name: 'Théorie quantique', short: 'Théorie', hint: 'Page de recherche de l’auteur', Icon: ScienceIcon },
 ];
@@ -91,8 +91,8 @@ function DonneesNav({ tab, onChange }) {
 }
 
 /**
- * Fenêtre plein écran « Données » : Documentation (une fiche par astre, avec sa galerie d'images NASA ; la galerie
- * complète et Ma collection y sont aussi), et les deux pages de recherche de l'auteur : Flux cognitif et Théorie
+ * Fenêtre plein écran « Données » : Documentation (une fiche par astre, avec les photos de Ma collection
+ * directement dans la fiche), et les deux pages de recherche de l'auteur : Flux cognitif et Théorie
  * quantique.
  *
  * L'en-tête et la barre de navigation restent fixes en haut ; seul le contenu défile. Les marges de sécurité de

@@ -31,7 +31,6 @@ export const API_GROUPS = [
     group: 'Traduction et contenus',
     items: [
       { name: 'MyMemory', host: 'api.mymemory.translated.net', use: 'Traduction des noms de villes et des textes de l’interface.', kind: 'api' },
-      { name: 'NASA Image and Video Library', host: 'images-api.nasa.gov', use: 'Recherche des images affichées dans la galerie.', kind: 'api' },
       { name: 'Google Fonts', host: 'fonts.googleapis.com', use: 'Feuilles de style des polices utilisées par l’interface.', kind: 'static' },
       { name: 'Google Draco CDN', host: 'www.gstatic.com', use: 'Chargement du décodeur Draco des modèles 3D.', kind: 'static' },
       { name: 'Polices Google', host: 'fonts.gstatic.com', use: 'Fichiers des polices (Google Sans) désignés par les feuilles de style.', kind: 'static' },
