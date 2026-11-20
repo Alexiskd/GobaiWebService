@@ -129,7 +129,7 @@ export const SOLARIUM = {
 // PROXIMUM : l'élément hypothétique n° 120, placé en n = 3.
 export const PROXIMUM = {
   z: 120,
-  symbole: 'Px',
+  symbole: 'Pr',
   nom: 'Proximium',
   periode: 3,
   groupe: 3,
@@ -139,14 +139,14 @@ export const PROXIMUM = {
 
 /**
  * La molécule ajoutée par la théorie, sur la même optique que le Solarium et le Proximium : « SoPr », molécule
- * diatomique formée du Solarium (So, noyau = le Soleil) et du Proximium (Px, noyau = Proxima Centauri), liés par une
+ * diatomique formée du Solarium (So, noyau = le Soleil) et du Proximium (Pr, noyau = Proxima Centauri), liés par une
  * liaison simple (paire d'électrons partagée) — dans l'analogie, la « liaison » serait la gravitation entre les deux
  * étoiles les plus proches l'une de l'autre.
  */
 // MOLECULE : la molécule hypothétique SoPr.
 export const MOLECULE = {
   nom: 'SoPr',
-  formule: 'So–Px',
+  formule: 'So–Pr',
   atomes: [SOLARIUM, PROXIMUM],
   liaison: 'Liaison simple (paire d’électrons partagée) ; dans l’analogie, la gravitation entre le Soleil et Proxima Centauri.',
 };

@@ -94,18 +94,19 @@ test('couches électroniques : H [1], Fe [2, 8, 14, 2], Og [2, 8, 18, 32, 32, 18
 // Fin du test.
 });
 
-// Test : le Proximium est l'élément hypothétique n° 120, symbole « Px », placé en n = 3 (période 3, groupe 3).
-test('le Proximium ajouté au tableau : Px, 120, n = 3 (période 3, groupe 3)', () => {
+// Test : le Proximium est l'élément hypothétique n° 120, symbole « Pr » — retiré du tableau théorique (qui garde le
+// Solarium) et présent dans le tableau hypothétique, au rang 1 (Alpha Centauri, Proxima Centauri).
+test('le Proximium : Pr, 120, Proxima Centauri du tableau hypothétique', () => {
   // Ses propriétés.
   assert.equal(PROXIMUM.z, 120);
-  assert.equal(PROXIMUM.symbole, 'Px');
+  assert.equal(PROXIMUM.symbole, 'Pr');
   assert.equal(PROXIMUM.nom, 'Proximium');
   assert.equal(PROXIMUM.periode, 3);
   assert.equal(PROXIMUM.groupe, 3);
   // Sa répartition : 119 complété d'un électron sur la couche R (n = 8) → [2, 8, 18, 32, 32, 18, 8, 2].
   assert.deepEqual(PROXIMUM.couches, [2, 8, 18, 32, 32, 18, 8, 2]);
-  // Son symbole ne collisionne avec aucun des 118 symboles connus ni avec le Solarium.
-  assert.ok(!SYMBOLES.includes(PROXIMUM.symbole) && PROXIMUM.symbole !== SOLARIUM.symbole);
+  // Son symbole « Pr » est celui demandé (il reprend celui du praséodyme, 59, dans le tableau réel) et diffère du Solarium.
+  assert.notEqual(PROXIMUM.symbole, SOLARIUM.symbole);
   // Le Solarium (119) a lui [2, 8, 18, 32, 32, 18, 8, 1].
   assert.deepEqual(SOLARIUM.couches, [2, 8, 18, 32, 32, 18, 8, 1]);
 // Fin du test.
@@ -115,7 +116,7 @@ test('le Proximium ajouté au tableau : Px, 120, n = 3 (période 3, groupe 3)', 
 test('la molécule SoPr = Solarium (119) + Proximium (120)', () => {
   // Son nom et sa formule.
   assert.equal(MOLECULE.nom, 'SoPr');
-  assert.equal(MOLECULE.formule, 'So–Px');
+  assert.equal(MOLECULE.formule, 'So–Pr');
   // Ses deux atomes, dans l'ordre : Solarium puis Proximium.
   assert.deepEqual(MOLECULE.atomes.map((a) => a.z), [SOLARIUM.z, PROXIMUM.z]);
   assert.equal(MOLECULE.atomes[0], SOLARIUM);

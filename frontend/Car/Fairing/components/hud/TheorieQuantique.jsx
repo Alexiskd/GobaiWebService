@@ -1,11 +1,13 @@
 // Onglet « Théorie quantique » de la fenêtre Node : la théorie Gobai Space (le système solaire serait un atome d'une
-// masse très grande), la correspondance couches atomiques / orbites des planètes, et le tableau périodique dessiné
-// avec la répartition des électrons par couche atomique (K, L, M…), les éléments hypothétiques « Solarium » (119)
-// et « Proximium » (120, n = 3) ajoutés, et la molécule « SoPr » (Solarium–Proximium) dessinée.
+// masse très grande), la correspondance couches atomiques / orbites des planètes, le tableau périodique dessiné
+// avec la répartition des électrons par couche atomique (K, L, M…) et l'élément hypothétique « Solarium » (119),
+// la molécule « SoPr » (Solarium–Proximium), et le « tableau hypothétique » des systèmes stellaires proches.
 // Composants MUI.
 import { Box, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
-// Données de l'onglet : éléments, Solarium, Proximium, molécule SoPr, couches et masse du Soleil.
-import { ELEMENTS, SOLARIUM, PROXIMUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
+// Données de l'onglet : éléments, Solarium, molécule SoPr, couches et masse du Soleil.
+import { ELEMENTS, SOLARIUM, MOLECULE, COUCHES, MASSE_SOLEIL_KG } from './theorieQuantique.js';
+// Le tableau hypothétique des systèmes stellaires proches.
+import { TableauHypothetique } from './TableauHypothetique.jsx';
 // Importe scientific, qui écrit un nombre en notation scientifique française.
 import { scientific } from '@/Engine/AstreSolideEngine/planetData';
 
@@ -80,24 +82,22 @@ function Case({ e, x, y, fond, texte }) {
 }
 
 /**
- * Le tableau périodique en SVG : les 118 cases avec leur répartition par couches atomiques, plus les deux éléments
- * hypothétiques de la théorie en surbrillance : le Solarium (119) en période 8, groupe 1, et le Proximium (120) en
- * n = 3 (période 3, groupe 3).
+ * Le tableau périodique (théorique) en SVG : les 118 cases avec leur répartition par couches atomiques, plus
+ * l'élément hypothétique de la théorie en surbrillance : le Solarium (119) en période 8, groupe 1. Le Proximium
+ * (Proxima Centauri) a été retiré de ce tableau : il figure dans le « tableau hypothétique » des systèmes proches.
  */
 // TableauPeriodique : dessine le tableau périodique des éléments.
 function TableauPeriodique() {
   // La position de la case du Solarium : période 8, groupe 1.
   const so = caseXY(SOLARIUM);
-  // La position de la case du Proximium : période 3, groupe 3 (n = 3).
-  const px = caseXY(PROXIMUM);
   // Début du rendu.
   return (
     // Le dessin (début de la balise).
     <Box
       // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
       component="svg" viewBox={`0 0 ${LARG_TABLE} ${HAUT_TABLE}`} role="img"
-      // Description pour les lecteurs d'écran : les 118 éléments, les couches par case, et les deux hypothétiques.
-      aria-label={`Tableau périodique des 118 éléments connus, avec la répartition des électrons par couche atomique en bas de chaque case, plus le Solarium (119, période 8, groupe 1) et le Proximium (120, n = 3)`}
+      // Description pour les lecteurs d'écran : les 118 éléments, les couches par case, et le Solarium.
+      aria-label={`Tableau périodique des 118 éléments connus, avec la répartition des électrons par couche atomique en bas de chaque case, plus le Solarium (119, période 8, groupe 1)`}
       // Toute la largeur, hauteur proportionnelle, couleur secondaire pour les textes.
       sx={{ display: 'block', width: '100%', height: 'auto', color: 'text.secondary', mt: 1 }}
     // Fin de la balise ouvrante.
@@ -112,8 +112,6 @@ function TableauPeriodique() {
       })}
       {/* La case du Solarium, en surbrillance primaire. */}
       <Case e={SOLARIUM} x={so.x} y={so.y} fond={(t) => t.palette.primary.main} texte={(t) => t.palette.primary.contrastText} />
-      {/* La case du Proximium, en surbrillance secondaire. */}
-      <Case e={PROXIMUM} x={px.x} y={px.y} fond={(t) => t.palette.secondary.main} texte={(t) => t.palette.secondary.contrastText} />
     {/* Fin du dessin. */}
     </Box>
   // Fin du rendu.
@@ -122,7 +120,7 @@ function TableauPeriodique() {
 }
 
 /** La molécule SoPr en SVG : les deux noyaux (Soleil = Solarium, Proxima Centauri = Proximium) reliés par une liaison. */
-// MoleculeSoPr : dessine la molécule diatomique So–Px, avec la paire d'électrons partagée au milieu de la liaison.
+// MoleculeSoPr : dessine la molécule diatomique So–Pr, avec la paire d'électrons partagée au milieu de la liaison.
 function MoleculeSoPr() {
   // Les deux atomes de la molécule, avec leur position dans le dessin.
   const atomes = [
@@ -138,7 +136,7 @@ function MoleculeSoPr() {
       // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
       component="svg" viewBox="0 0 560 300" role="img"
       // Description pour les lecteurs d'écran : la molécule SoPr et ses deux atomes.
-      aria-label={`Molécule SoPr : Solarium (Soleil, So, 119) et Proximium (Proxima Centauri, Px, 120) reliés par une liaison simple avec une paire d'électrons partagée`}
+      aria-label={`Molécule SoPr : Solarium (Soleil, So, 119) et Proximium (Proxima Centauri, Pr, 120) reliés par une liaison simple avec une paire d'électrons partagée`}
       // Toute la largeur, hauteur proportionnelle, couleur secondaire.
       sx={{ display: 'block', width: '100%', maxWidth: 520, height: 'auto', mx: 'auto', color: 'text.secondary', mt: 1 }}
     // Fin de la balise ouvrante.
@@ -289,7 +287,7 @@ export function TheorieQuantique() {
       </Typography>
 
       {/* Troisième titre. */}
-      <SectionTitle>Tableau périodique, couches atomiques, Solarium et Proximium</SectionTitle>
+      <SectionTitle>Tableau périodique théorique, couches atomiques et Solarium</SectionTitle>
       {/* Le tableau périodique dessiné. */}
       <TableauPeriodique />
       {/* La légende du dessin. */}
@@ -297,11 +295,11 @@ export function TheorieQuantique() {
         {/* Son texte : les 118 éléments, les couches en bas de case, le bloc f, et les deux hypothétiques. */}
         Les 118 éléments connus (numéros 1 à 118) ; les deux lignes du bas sont le bloc f (lanthanides et actinides).
         En bas de chaque case, les chiffres sont la répartition des électrons par couche atomique (K, L, M…),
-        par exemple le fer (26) : 2, 8, 14, 2. Les deux cases en surbrillance sont ajoutées par la théorie : le{' '}
-        <strong>Solarium</strong> (So, n° {SOLARIUM.z}, période 8, groupe 1), dont le Soleil serait le noyau, et le{' '}
-        <strong>Proximium</strong> (Px, n° {PROXIMUM.z}, placé en n = 3), dont Proxima Centauri — l’étoile la plus proche
-        du Soleil, ≈ 4,24 années-lumière — serait le noyau. Dans la réalité, le plus lourd élément connu est
-        l’oganesson (118) ; le 119 et le 120 n’existent pas encore.
+        par exemple le fer (26) : 2, 8, 14, 2. La case en surbrillance est ajoutée par la théorie : le{' '}
+        <strong>Solarium</strong> (So, n° {SOLARIUM.z}, période 8, groupe 1), dont le Soleil serait le noyau.
+        Dans la réalité, le plus lourd élément connu est l’oganesson (118) ; le 119 n’existe pas encore.
+        Le <strong>Proximium</strong> (Pr, Proxima Centauri) a été retiré de ce tableau : il figure dans le tableau
+        hypothétique ci-dessous.
       {/* Fin de la légende. */}
       </Typography>
 
@@ -313,10 +311,28 @@ export function TheorieQuantique() {
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         {/* Son texte : la molécule SoPr, deux noyaux liés. */}
         La molécule <strong>{MOLECULE.nom}</strong> ({MOLECULE.formule}) réunit les deux éléments de la théorie :
-        le <strong>Solarium</strong> (So, 119 — le Soleil) et le <strong>Proximium</strong> (Px, 120 — Proxima Centauri),
+        le <strong>Solarium</strong> (So, 119 — le Soleil) et le <strong>Proximium</strong> (Pr, 120 — Proxima Centauri),
         reliés par une liaison simple avec une paire d’électrons partagée. Dans l’analogie, cette « liaison » serait la
         gravitation entre les deux étoiles les plus proches l’une de l’autre (≈ 4,24 années-lumière) — toujours une
         analogie spéculative, pas un modèle scientifique établi.
+      {/* Fin de la légende. */}
+      </Typography>
+
+      {/* Cinquième titre. */}
+      <SectionTitle>Tableau hypothétique : les 48 systèmes à moins de 16,3 a.l.</SectionTitle>
+      {/* Le tableau hypothétique dessiné. */}
+      <TableauHypothetique />
+      {/* La légende du tableau hypothétique. */}
+      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        {/* Son texte : les systèmes proches, avec Proxima Centauri (Proximium) dans Alpha Centauri. */}
+        Chaque case est un système stellaire ou substellaire situé à moins de 16,3 années-lumière : le rang 0 est le
+        Système solaire (le <strong>Solarium</strong>, en surbrillance primaire) et le rang 1, Alpha Centauri (en
+        surbrillance secondaire), contient <strong>Proxima Centauri</strong> — le <strong>Proximium</strong> (Pr) de la
+        théorie, retiré du tableau théorique ci-dessus. La masse de chaque composante est exprimée en masses solaires
+        (M☉) pour les étoiles, en masses joviennes (M_J) pour les naines brunes les plus légères
+        (1 M☉ ≈ 1,989 × 10³⁰ kg ≈ 333 000 masses terrestres ; 1 M_J ≈ 1,898 × 10²⁷ kg ≈ 318 masses terrestres).
+        La plus lourde du voisinage est Sirius A (2,063 M☉) ; la limite de fusion de l’hydrogène est ≈ 0,075–0,080 M☉
+        (~80 M_J), frontière entre naine rouge et naine brune.
       {/* Fin de la légende. */}
       </Typography>
     {/* Fin du conteneur. */}
