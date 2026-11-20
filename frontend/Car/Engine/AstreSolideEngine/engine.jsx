@@ -130,6 +130,8 @@ import { createGobaiPerivolumeAxioms } from '../SystemeEngine/PerivolumeEngine/P
 import { PerivolumeSphereEngine } from '../SystemeEngine/PerivolumeEngine/PerivolumeSphereEngine.js';
 // Importe le champ gravitationnel : rayon de la sphère d'un astre (sphère de Hill) et toupie d'un système (puits de gravité).
 import { gravitySphereRadius, systemWellSegments } from '../SystemeEngine/PerivolumeEngine/GravityField.js';
+// Importe le choix du système visé par un clic (la plus petite sphère d'influence traversée).
+import { pickSystem } from '../SystemeEngine/PerivolumeEngine/systemPick.js';
 import { ResourceManager } from '../SystemeEngine/core/ResourceManager.js';
 import { InterstellarResourceLifecycleManager } from '../SystemeEngine/core/InterstellarResourceLifecycleManager.js';
 import { InterstellarLODManager } from '../SystemeEngine/core/InterstellarLODManager.js';
@@ -1347,7 +1349,7 @@ export class SolarEngine {
       well.visible = false;
       well.name = `schwarzschild-well:${id}`;
       this.perivolumeRoot.add(well);
-      this.systemWells.push({ id, target, well });
+      this.systemWells.push({ id, target, well, radius: outer, focusIndex: index });
     });
   }
 
@@ -3571,9 +3573,31 @@ export class SolarEngine {
     });
     // S'il y en a un : sa cible.
     if (best) { this.setFocus(best.index); return true; }
-    // Rien sous le clic : faux.
-    return false;
+    // Clic sur un système : dans l'affichage Schwarzschild, chaque astre est un système (sa sphère d'influence et sa
+    // toupie). Un clic qui n'a touché aucun astre mais traverse une de ces sphères vise l'astre principal du système.
+    // Sinon rien sous le clic : faux.
+    return this.selectSystemAt();
   // Fin de selectAt.
+  }
+
+  /**
+   * Vise l'astre principal du système sous le pointeur (le rayon de `this.raycaster`, déjà réglé par selectAt).
+   * Seulement quand les systèmes sont à l'écran (bouton E = mc² enfoncé). Les sphères sont exprimées dans le repère
+   * de la scène : position de l'astre moins la cible, comme tout ce qui est dessiné. Renvoie vrai si un astre est visé.
+   */
+  selectSystemAt() {
+    if (!this.schwarzschildOn || !this.systemWells?.length) return false;
+    const ray = this.raycaster.ray;
+    const systems = [];
+    for (const system of this.systemWells) {
+      if (this.isTargetHidden(system.target)) continue;
+      const p = system.target.get();
+      systems.push({ focusIndex: system.focusIndex, radius: system.radius, center: [p.x - this.target.x, p.y - this.target.y, p.z - this.target.z] });
+    }
+    const hit = pickSystem(ray.origin.toArray(), ray.direction.toArray(), systems);
+    if (!hit) return false;
+    this.setFocus(hit.focusIndex);
+    return true;
   }
 
   // ----------------------------------------------------------------- boucle
