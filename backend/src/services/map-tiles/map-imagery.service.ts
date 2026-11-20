@@ -143,7 +143,7 @@ export class TilesService {
     // Renvoie :
     return {
       // le fournisseur de la Terre (sa couche unique), sans repli, la taille des tuiles, et la recherche de lieux disponible ;
-      provider: this.earth.id, fallback: false, tileSize: TILE_SIZE, placeSearch: true, // Photon (OpenStreetMap, sans clé)
+      provider: this.earth.id, fallback: false, tileSize: TILE_SIZE, placeSearch: true, // moteur de recherche de lieux interne (GeoNames embarqué)
       // toutes les couches connues.
       layers: this.allLayers(),
     // Fin de l'objet.

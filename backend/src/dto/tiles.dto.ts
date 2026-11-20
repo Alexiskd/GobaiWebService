@@ -57,7 +57,7 @@ export class TileLayerListDto {
   // tileSize : le côté d'une tuile, en pixels.
   @ApiProperty({ example: 256 }) tileSize: number;
   // placeSearch : vrai si la recherche de lieux est disponible.
-  @ApiProperty({ description: 'Recherche de villes et lieux du monde entier disponible (Photon/OpenStreetMap).' }) placeSearch: boolean;
+  @ApiProperty({ description: 'Recherche de villes et lieux du monde entier disponible (moteur interne, GeoNames).' }) placeSearch: boolean;
   // layers : les couches disponibles.
   @ApiProperty({ type: [TileLayerDto] }) layers: TileLayerDto[];
 // Fin de TileLayerListDto.

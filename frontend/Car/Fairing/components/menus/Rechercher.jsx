@@ -37,7 +37,7 @@ const GPS_VIEW_M = 10; // un point GPS est survolé à l'échelle de 10 m (haute
 
 /**
  * Recherche rapide (Ctrl K ou /) : astres, villes de l’API, ≈ 7 300 villes du globe (Natural Earth : nom, nom français,
- * nom local, pays), puis toutes les localités et les adresses du monde (OpenStreetMap via Photon). Chaque résultat
+ * nom local, pays), puis ≈ 172 000 localités du monde (moteur de recherche interne du serveur, GeoNames). Chaque résultat
  * porte la vignette de son type (astre, ville, lieu, adresse, point GPS).
  * ↑ ↓ pour choisir, Entrée pour aller, Échap pour fermer. Plein écran sur téléphone.
  */
