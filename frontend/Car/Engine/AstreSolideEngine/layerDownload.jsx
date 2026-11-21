@@ -1,7 +1,7 @@
 // Importe buildGlobeCanvas, qui assemble la carte du globe.
 import { buildGlobeCanvas } from '../TextureEngine/globeTexture.jsx';
 // Importe TileSource, la source de tuiles.
-import { TileSource } from './MapEngine/tileSource.jsx';
+import { TileSource } from './MapEngine/tiles/tileSource.jsx';
 
 /** Nom du fichier téléchargé : « astre-couche.png », sans accent ni caractère spécial. */
 // Déclare et exporte layerFileName : le nom de l'astre et celui de la couche.

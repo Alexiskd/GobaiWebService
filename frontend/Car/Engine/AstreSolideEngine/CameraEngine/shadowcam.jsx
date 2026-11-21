@@ -1,7 +1,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe tileRadius, le rayon d'une tuile d'un niveau donné, depuis tiles/tileGeometry.
-import { tileRadius } from '../MapEngine/tileGeometry.jsx';
+import { tileRadius } from '../MapEngine/tiles/tileGeometry.jsx';
 // Importe lonLatToXYZ, la conversion d'une longitude et d'une latitude en point de la sphère, depuis tiles/mercator.
 import { lonLatToXYZ } from '../MapEngine/mercator.jsx';
 // Importe buildMosaicGrid, le maillage d'une mosaïque, depuis shadowcamMath.

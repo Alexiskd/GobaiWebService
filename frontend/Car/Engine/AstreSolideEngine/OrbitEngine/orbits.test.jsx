@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 // Importe l'unité astronomique en unités de scène, la position héliocentrique et le tracé d'orbite.
 import { AU_UNITS, heliocentric, orbitPositions } from './planetOrbits.jsx';
 // Importe le calcul de la tuile native en sur-zoom.
-import { nativeTile } from '../MapEngine/overzoom.jsx';
+import { nativeTile } from '../MapEngine/loading/overzoom.jsx';
 
 // Éléments de Mars (a, e, I, L, ϖ, Ω et leurs dérives par siècle), comme renvoyés par l'API.
 // Les douze éléments orbitaux de Mars.

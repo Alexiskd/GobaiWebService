@@ -5,11 +5,11 @@ frontend/
 └── Car/                                 Application (ex-dossier src)
     ├── Engine/                          Moteurs de calcul et rendu (modélisation 3D)
     │   ├── SystemeEngine/               Orchestration, système, ressources, données orbitales
-    │   │   ├── core/                    Scheduler, LOD, budgets GPU, ressources
+    │   │   ├── core/                    atlas/ · budget/ · galactic/ · render/ · system/ : atlas de satellites, budgets GPU, flux galactique, boucle de rendu, registres
     │   │   ├── PerivolumeEngine/        Périvolumes : gestionnaire, axiomes, géométrie, sphères dessinées (E = mc²)
     │   │   └── astronomy/               Catalogue, éléments orbitaux, éphémérides
     │   ├── AstreSolideEngine/
-    │   │   ├── MapEngine/               Cartes, projections, tuiles
+    │   │   ├── MapEngine/               Cartes et projections ; tiles/ · loading/ · earth/ · hex/
     │   │   ├── ReliefEngine/            Relief et géométrie d'élévation
     │   │   ├── LidarEngine/             Points, ancrage et drapage LiDAR (jeu d'essai dans fixtures/)
     │   │   ├── AtmosphereEngine/        Nuages et couches atmosphériques des astres solides
@@ -26,8 +26,8 @@ frontend/
     │   ├── StarEngine/                  Étoiles, systèmes stellaires, ciel
     │   ├── TextureEngine/               Textures et mosaïques de surface
     │   ├── EruptionEngine/              Volcanisme et surfaces actives
-    │   └── shared/                      Bibliothèques transverses et i18n
-    ├── Fairing/                         Interface React, HUD, menus, scène, thème, hooks
+    │   └── shared/                      Bibliothèques transverses (lib/app, lib/device) et i18n
+    ├── Fairing/                         Interface React, HUD (hud/node, hud/perf, hud/recherche), menus, scène, thème, hooks
     ├── Computing/                       Iframing et API
     │   ├── embed/                       Point d'entrée de la page d'embarquement (iframe)
     │   └── api/                         Client HTTP et adaptateurs de l'API (le serveur est dans backend/)

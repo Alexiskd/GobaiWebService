@@ -91,7 +91,7 @@ test('fichiers de la dalle de Paris : la racine se décode, ses points sont dans
   // C'est la racine.
   assert.equal(root.k, ROOT_KEY);
   // Son fichier, décompressé.
-  const raw = gunzipSync(readFileSync(new URL(`nodes/${root.k}.bin`, dir)));
+  const raw = gunzipSync(readFileSync(new URL(`${root.k}.bin`, dir)));
   // Ses positions et ses attributs décodés.
   const { position, attr } = decodeNode(raw, root.n);
   // Largeur de la dalle en pas.

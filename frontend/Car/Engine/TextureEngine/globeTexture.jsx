@@ -7,7 +7,7 @@ import { MAX_LATITUDE } from '../AstreSolideEngine/MapEngine/mercator.jsx';
  * ligne est étirée jusqu'au pôle. Plate carrée (NASA Trek) : mosaïque directe.
  * Les tuiles manquantes restent noires : la carte s'affiche même si une partie échoue.
  *
- * @param {import('../AstreSolideEngine/MapEngine/tileSource.jsx').TileSource} source  source prête (status 'ready')
+ * @param {import('../AstreSolideEngine/MapEngine/tiles/tileSource.jsx').TileSource} source  source prête (status 'ready')
  * @param {{ zoom?: number, signal?: AbortSignal }} opts    zoom visé (borné par la couche), 2 par défaut
  * @returns {Promise<HTMLCanvasElement>}
  */

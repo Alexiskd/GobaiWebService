@@ -8,9 +8,9 @@ import { OrbitRibbon } from '../OrbitEngine/orbitRibbon.jsx';
 import { loopTrailAlphas } from '../OrbitEngine/orbitRibbonMath.jsx';
 // Importe la rosette de Schwarzschild d'un satellite et le mélange de deux tracés.
 import { SATELLITE_ECCENTRICITY, flatRelative, mixPoints, schwarzschildSatelliteRosette } from '../../SystemeEngine/astronomy/orbits/orbitSchwarzschildMath.jsx';
-import { SharedResourcePool } from '../../SystemeEngine/core/SharedResourcePool.js';
-import { InstancedPickRegistry } from '../../SystemeEngine/core/InstancedPickRegistry.js';
-import { acquireUnitSphereGeometry } from '../../SystemeEngine/core/SharedGeometry.js';
+import { SharedResourcePool } from '../../SystemeEngine/core/system/SharedResourcePool.js';
+import { InstancedPickRegistry } from '../../SystemeEngine/core/render/InstancedPickRegistry.js';
+import { acquireUnitSphereGeometry } from '../../SystemeEngine/core/render/SharedGeometry.js';
 
 // Nombre de segments du cercle d'orbite : 256.
 const ORBIT_SEGMENTS = 256;

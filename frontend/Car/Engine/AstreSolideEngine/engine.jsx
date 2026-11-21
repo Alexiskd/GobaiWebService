@@ -28,7 +28,7 @@ import { bindInput } from './InputEngine/input.jsx';
 // Importe les calculs de la vue inclinée à l'approche du sol, depuis cameraTilt.
 import { TILT_MAX_ANGLE, approachAngle, approachTilt, tiltEngagement, tiltPose } from './CameraEngine/cameraTilt.jsx';
 // Importe RELIEF_KEY et TileManager, la clé du choix du relief et le gestionnaire des tuiles d'un astre.
-import { RELIEF_KEY, TileManager } from './MapEngine/tileManager.jsx';
+import { RELIEF_KEY, TileManager } from './MapEngine/tiles/tileManager.jsx';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude.
 import { xyzToLonLat } from './MapEngine/mercator.jsx';
 // Importe buildBorderSegments et borderLift, les segments des frontières et leur hauteur.
@@ -78,7 +78,7 @@ import { scaleLevel } from './CameraEngine/scaleLevels.jsx';
 // Importe le rayon de la Terre en mètres et les coordonnées des coins de l'écran, depuis gps.
 import { EARTH_RADIUS_M, insetCorners, screenGeo } from './InputEngine/gps.jsx';
 // Importe tileRadius, le rayon auquel un niveau de tuiles est posé.
-import { tileRadius } from './MapEngine/tileGeometry.jsx';
+import { tileRadius } from './MapEngine/tiles/tileGeometry.jsx';
 // Importe SkyLayer, le ciel lointain.
 import { SkyLayer } from '../StarEngine/SkyEngine/skyLayer.jsx';
 // Importe SatelliteSystem, les satellites des planètes.
@@ -117,26 +117,26 @@ import { dragRadPerPx, dragStep } from './InputEngine/touchMath.jsx';
 import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './PerfEngine/powerSaver.jsx';
 // Importe PerfProbe, la sonde de performance.
 import { FpsMeter, PerfProbe } from './PerfEngine/perfProbe.jsx';
-import { SystemRegistry } from '../SystemeEngine/core/SystemRegistry.js';
+import { SystemRegistry } from '../SystemeEngine/core/system/SystemRegistry.js';
 import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
-import { CoreActivityPolicy } from '../SystemeEngine/core/CoreActivityPolicy.js';
-import { TileMemoryPolicy } from '../SystemeEngine/core/TileMemoryPolicy.js';
-import { EngineActivityPolicy } from '../SystemeEngine/core/EngineActivityPolicy.js';
-import { SystemManager } from '../SystemeEngine/core/SystemManager.js';
-import { renderLoop } from '../SystemeEngine/core/RenderLoop.js';
+import { CoreActivityPolicy } from '../SystemeEngine/core/system/CoreActivityPolicy.js';
+import { TileMemoryPolicy } from '../SystemeEngine/core/budget/TileMemoryPolicy.js';
+import { EngineActivityPolicy } from '../SystemeEngine/core/system/EngineActivityPolicy.js';
+import { SystemManager } from '../SystemeEngine/core/system/SystemManager.js';
+import { renderLoop } from '../SystemeEngine/core/render/RenderLoop.js';
 import { createGobaiPerivolumeAxioms } from '../SystemeEngine/PerivolumeEngine/PerivolumeAxiomPolicy.js';
 import { PerivolumeSphereEngine } from '../SystemeEngine/PerivolumeEngine/PerivolumeSphereEngine.js';
 // Importe le champ gravitationnel : rayon de la sphère d'un astre (sphère de Hill) et toupie d'un système (puits de gravité).
 import { gravitySphereRadius, schwarzschildRadiusOfMass, systemWellProfile, systemWellSegments } from '../SystemeEngine/PerivolumeEngine/GravityField.js';
 // Importe le choix du système visé par un clic (la plus petite sphère d'influence traversée).
 import { pickSystem } from '../SystemeEngine/PerivolumeEngine/systemPick.js';
-import { ResourceManager } from '../SystemeEngine/core/ResourceManager.js';
-import { InterstellarResourceLifecycleManager } from '../SystemeEngine/core/InterstellarResourceLifecycleManager.js';
-import { InterstellarLODManager } from '../SystemeEngine/core/InterstellarLODManager.js';
-import { GalacticSpatialIndex } from '../SystemeEngine/core/GalacticSpatialIndex.js';
-import { GalacticSectorStreamingManager } from '../SystemeEngine/core/GalacticSectorStreamingManager.js';
-import { GalacticSectorScheduler } from '../SystemeEngine/core/GalacticSectorScheduler.js';
-import { GalacticCatalogResidencyManager } from '../SystemeEngine/core/GalacticCatalogResidencyManager.js';
+import { ResourceManager } from '../SystemeEngine/core/system/ResourceManager.js';
+import { InterstellarResourceLifecycleManager } from '../SystemeEngine/core/galactic/InterstellarResourceLifecycleManager.js';
+import { InterstellarLODManager } from '../SystemeEngine/core/galactic/InterstellarLODManager.js';
+import { GalacticSpatialIndex } from '../SystemeEngine/core/galactic/GalacticSpatialIndex.js';
+import { GalacticSectorStreamingManager } from '../SystemeEngine/core/galactic/GalacticSectorStreamingManager.js';
+import { GalacticSectorScheduler } from '../SystemeEngine/core/galactic/GalacticSectorScheduler.js';
+import { GalacticCatalogResidencyManager } from '../SystemeEngine/core/galactic/GalacticCatalogResidencyManager.js';
 import { createAstronomicalCatalogService } from '../SystemeEngine/astronomy/providers/AstronomicalCatalogService.js';
 import { GaiaDR3SectorStreamer } from '../SystemeEngine/astronomy/providers/GaiaDR3SectorStreamer.js';
 import { GaiaStarfieldLayer } from '../StarEngine/GaiaStarfieldLayer.js';
@@ -149,18 +149,18 @@ import {
   resolveInterstellarPerivolumeRadius,
   resolveInterstellarFocusDistance,
 } from '../StarEngine/InterstellarEngineIntegration.js';
-import { RenderScheduler } from '../SystemeEngine/core/RenderScheduler.js';
-import { RenderBudgetPolicy } from '../SystemeEngine/core/RenderBudgetPolicy.js';
-import { RenderDiagnosticsPolicy } from '../SystemeEngine/core/RenderDiagnosticsPolicy.js';
-import { SharedResourcePool } from '../SystemeEngine/core/SharedResourcePool.js';
-import { acquireUnitSphereGeometry } from '../SystemeEngine/core/SharedGeometry.js';
-import { SatelliteGpuBudgetOrchestrator } from '../SystemeEngine/core/SatelliteGpuBudgetOrchestrator.js';
-import { SatelliteMultiLayerTextureAtlasManager } from '../SystemeEngine/core/SatelliteMultiLayerTextureAtlas.js';
-import { SatelliteTileAtlasPipeline } from '../SystemeEngine/core/SatelliteTileAtlasPipeline.js';
-import { SatelliteAtlasGpuBudgetBridge } from '../SystemeEngine/core/SatelliteAtlasGpuBudgetBridge.js';
-import { createSatelliteCanvasAtlasChannel } from '../SystemeEngine/core/SatelliteCanvasAtlasChannel.js';
-import { SatelliteSurfaceAtlasDiagnostics } from '../SystemeEngine/core/SatelliteSurfaceAtlasDiagnostics.js';
-import { SatelliteAtlasBrowserValidationAdapter } from '../SystemeEngine/core/SatelliteAtlasBrowserValidation.js';
+import { RenderScheduler } from '../SystemeEngine/core/render/RenderScheduler.js';
+import { RenderBudgetPolicy } from '../SystemeEngine/core/budget/RenderBudgetPolicy.js';
+import { RenderDiagnosticsPolicy } from '../SystemeEngine/core/budget/RenderDiagnosticsPolicy.js';
+import { SharedResourcePool } from '../SystemeEngine/core/system/SharedResourcePool.js';
+import { acquireUnitSphereGeometry } from '../SystemeEngine/core/render/SharedGeometry.js';
+import { SatelliteGpuBudgetOrchestrator } from '../SystemeEngine/core/budget/SatelliteGpuBudgetOrchestrator.js';
+import { SatelliteMultiLayerTextureAtlasManager } from '../SystemeEngine/core/atlas/SatelliteMultiLayerTextureAtlas.js';
+import { SatelliteTileAtlasPipeline } from '../SystemeEngine/core/atlas/SatelliteTileAtlasPipeline.js';
+import { SatelliteAtlasGpuBudgetBridge } from '../SystemeEngine/core/atlas/SatelliteAtlasGpuBudgetBridge.js';
+import { createSatelliteCanvasAtlasChannel } from '../SystemeEngine/core/atlas/SatelliteCanvasAtlasChannel.js';
+import { SatelliteSurfaceAtlasDiagnostics } from '../SystemeEngine/core/atlas/SatelliteSurfaceAtlasDiagnostics.js';
+import { SatelliteAtlasBrowserValidationAdapter } from '../SystemeEngine/core/atlas/SatelliteAtlasBrowserValidation.js';
 
 // TAU : un tour complet, 2π arrondi.
 const TAU = 6.2832;

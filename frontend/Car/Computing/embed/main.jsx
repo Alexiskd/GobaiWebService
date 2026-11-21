@@ -9,7 +9,7 @@ import { createHudStore } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe fetchSceneData et tilesApi, les mêmes sources que l'application principale.
 import { fetchSceneData, tilesApi } from '@/Computing/api';
 // Importe renderLoop, la boucle de rendu partagée : le moteur s'y enregistre à sa création, elle doit être démarrée.
-import { renderLoop } from '@/Engine/SystemeEngine/core/RenderLoop.js';
+import { renderLoop } from '@/Engine/SystemeEngine/core/render/RenderLoop.js';
 // Importe createEmbedBridge, le pont postMessage avec le site hôte.
 import { createEmbedBridge } from './bridge.js';
 

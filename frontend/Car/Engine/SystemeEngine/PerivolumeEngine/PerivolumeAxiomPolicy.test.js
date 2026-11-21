@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PerivolumeManager, LOAD_STATE } from './PerivolumeManager.js';
-import { SystemRegistry } from '../core/SystemRegistry.js';
-import { SystemManager } from '../core/SystemManager.js';
+import { SystemRegistry } from '../core/system/SystemRegistry.js';
+import { SystemManager } from '../core/system/SystemManager.js';
 import { createGobaiPerivolumeAxioms } from './PerivolumeAxiomPolicy.js';
 import { perivolumeCube, perivolumeBox, perivolumeSphere, perivolumeCylinder, verifyIsoperimetricInequality, containsPerivolumePoint } from './PerivolumeGeometry.js';
 

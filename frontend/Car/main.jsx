@@ -1,7 +1,7 @@
 // Point d'entrée de l'application Gobai en mode site statique.
 import { createRoot } from 'react-dom/client';
 import App from './Fairing/App.jsx';
-import { removeSeoShell, setAppRoot, unmountApp } from './Engine/shared/lib/appRoot.jsx';
+import { removeSeoShell, setAppRoot, unmountApp } from './Engine/shared/lib/app/appRoot.jsx';
 import { purgeStoredTiles } from './Engine/AstreSolideEngine/PerfEngine/storagePurge.jsx';
 
 // Nettoie les anciens caches incompatibles puis monte l'application côté navigateur.

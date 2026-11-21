@@ -1,7 +1,7 @@
 // Importe useSyncExternalStore de React.
 import { useSyncExternalStore } from 'react';
 // Importe le lecteur, le réglage et l'abonnement du mode économie d'énergie.
-import { getPowerSaving, setPowerSaving, subscribePowerSaving } from '@/Engine/shared/lib/powerSaving';
+import { getPowerSaving, setPowerSaving, subscribePowerSaving } from '@/Engine/shared/lib/device/powerSaving';
 // Importe Group, le groupe de réglages.
 import { Group } from '../../ui/Group.jsx';
 // Importe Switch, l'interrupteur.

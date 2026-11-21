@@ -9,7 +9,7 @@ import {
   // Le nom « Maison », l'altitude d'arrivée, le message d'erreur, le lecteur, la localisation, la conversion en lieu, le réglage et l'abonnement.
   HOME_NAME, FLY_ALTITUDE_MIN_M, geolocationMessage, getHome, locate, placeFromPosition, setHome, subscribeHome,
 // Fin de la liste ; module d'origine.
-} from '@/Engine/shared/lib/homePlace';
+} from '@/Engine/shared/lib/device/homePlace';
 // Importe Group, le groupe de réglages.
 import { Group } from '../../ui/Group.jsx';
 // Icônes du lieu et de la maison.

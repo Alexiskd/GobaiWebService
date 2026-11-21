@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react';
 // Importe de MUI Box, Paper et Typography.
 import { Box, Paper, Typography } from '@mui/material';
 // Importe la valeur « nuit », le lecteur et l'abonnement du réglage jour/nuit.
-import { NIGHT, getDayNight, subscribeDayNight } from '@/Engine/shared/lib/dayNight';
+import { NIGHT, getDayNight, subscribeDayNight } from '@/Engine/shared/lib/device/dayNight';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe le crochet de déplacement des panneaux.
@@ -15,9 +15,9 @@ import { PANEL_W, edge } from '@/Fairing/theme/layout';
 // Importe safe, la marge de sécurité d'un bord de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe le compteur d'images par seconde (forme en ligne, à la suite de la date).
-import { FpsCounter } from './FpsCounter.jsx';
+import { FpsCounter } from './perf/FpsCounter.jsx';
 // Importe le moniteur de performance (forme en ligne, sous la date).
-import { PerfMonitor } from './PerfMonitor.jsx';
+import { PerfMonitor } from './perf/PerfMonitor.jsx';
 // Importe le badge « En direct ».
 import { LiveBadge } from '../ui/LiveBadge.jsx';
 // Importe le menu déroulant générique.

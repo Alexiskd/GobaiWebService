@@ -4,8 +4,8 @@ import { Box, ButtonBase, CircularProgress, Dialog, IconButton, Tooltip, Typogra
 import { CloseIcon, PsychologyIcon, ScienceIcon } from '../../ui/icons.jsx';
 
 // Chargées à l'ouverture de leur onglet seulement : rien de tout cela n'alourdit le démarrage de la scène 3D.
-const FluxCognitif = lazy(() => import('../../hud/FluxCognitif.jsx').then((m) => ({ default: m.FluxCognitif })));
-const TheorieQuantique = lazy(() => import('../../hud/TheorieQuantique.jsx').then((m) => ({ default: m.TheorieQuantique })));
+const FluxCognitif = lazy(() => import('../../hud/recherche/FluxCognitif.jsx').then((m) => ({ default: m.FluxCognitif })));
+const TheorieQuantique = lazy(() => import('../../hud/recherche/TheorieQuantique.jsx').then((m) => ({ default: m.TheorieQuantique })));
 
 /** Les onglets de la fenêtre, dans l'ordre de la barre : nom, nom court (téléphone), description et icône. */
 export const DONNEES_TABS = [

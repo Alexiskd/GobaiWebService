@@ -2,12 +2,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Box, ButtonBase, Chip, CircularProgress, InputBase, Paper, Popper, Stack, TextField, Typography } from '@mui/material';
 // Session de l'assistant (fournisseur et clé, gardés dans ce navigateur seulement).
-import { PROVIDERS, clearSession, isVerified, markVerified } from '@/Engine/shared/lib/assistantSession';
+import { PROVIDERS, clearSession, isVerified, markVerified } from '@/Engine/shared/lib/app/assistantSession';
 import { useAssistantSession } from '@/Fairing/hooks/useAssistantSession';
 // Appels au backend : vérification de la clé et conversation.
 import { askAssistant, connectAssistant } from '@/Computing/api/assistant';
 // Relevé des éléments actionnables de la page.
-import { collectInventory } from '@/Engine/shared/lib/domInventory';
+import { collectInventory } from '@/Engine/shared/lib/app/domInventory';
 import { useViewport } from '@/Fairing/hooks/useViewport';
 import { RAIL_W, STRIP_H, TITLE_H, edge } from '@/Fairing/theme/layout';
 import { MQ, safe } from '@/Fairing/theme/mediaQueries';

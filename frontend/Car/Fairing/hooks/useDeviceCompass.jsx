@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useRef et useState.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe les lecteurs des deux sensibilités d'inclinaison (déplacement et zoom).
-import { getTiltSensitivity, getTiltZoomSensitivity } from '@/Engine/shared/lib/tiltSensitivity';
+import { getTiltSensitivity, getTiltZoomSensitivity } from '@/Engine/shared/lib/device/tiltSensitivity';
 // Importe les calculs purs du pilotage : inclinaison avant/arrière, bascule latérale, lissage, vitesse de déplacement, facteur de zoom.
 import { devicePitchDeg, deviceRollDeg, smoothValue, tiltPanRate, tiltZoomFactor } from '@/Engine/AstreSolideEngine/InputEngine/deviceCompassMath';
 

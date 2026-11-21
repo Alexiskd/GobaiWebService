@@ -1,7 +1,7 @@
 // Importe la distance minimale de la caméra quand des tuiles sont affichées, depuis tiles/tileManager.
-import { MIN_DISTANCE_WITH_TILES } from '../MapEngine/tileManager.jsx';
+import { MIN_DISTANCE_WITH_TILES } from '../MapEngine/tiles/tileManager.jsx';
 // Importe le réglage de la pollution lumineuse de la Terre (atlas 2025 de David Lorenz).
-import { EARTH_NIGHT_LIGHTS } from '../MapEngine/nightLights.jsx';
+import { EARTH_NIGHT_LIGHTS } from '../MapEngine/earth/nightLights.jsx';
 
 /**
  * Modèle commun des astres cartographiés en tuiles, construit sur le moteur lunaire.

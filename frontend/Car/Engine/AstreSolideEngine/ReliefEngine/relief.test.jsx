@@ -9,7 +9,7 @@ import {
 // Fin de la liste : le module relief.
 } from './relief.jsx';
 // Importe buildTileGrid, le maillage d'une tuile, depuis tileGeometry.
-import { buildTileGrid } from '../MapEngine/tileGeometry.jsx';
+import { buildTileGrid } from '../MapEngine/tiles/tileGeometry.jsx';
 
 // Test : le décodage d'une altitude au format Terrarium.
 test('altitude Terrarium : décodage, mer ramenée à 0, aller-retour', () => {

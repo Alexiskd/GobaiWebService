@@ -2,7 +2,7 @@
 import { Box } from '@mui/material';
 
 /** Silhouette du bouton de l'affichage relativiste (image fournie, fond retiré, dans le dossier public). */
-const EMC_IMAGE = '/einstein.png';
+const EMC_IMAGE = '/data/images/einstein.png';
 
 /**
  * Icône du bouton de l'affichage relativiste (anciennement « E = mc² ») : le profil d'Einstein, sans texte.

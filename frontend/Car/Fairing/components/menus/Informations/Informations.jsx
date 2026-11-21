@@ -1,6 +1,6 @@
 // Importe de React les crochets useEffect, useRef et useState.
 import { BodyDocumentation } from './BodyDocumentation.jsx';
-import { SUN_FACTS } from './sunFacts.js';
+import { SUN_FACTS } from './astres/sunFacts.js';
 import { useEffect, useRef, useState } from 'react';
 // Importe de MUI Box, Collapse (repli animé), IconButton, Paper, Stack et Typography.
 import { Box, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material';
@@ -19,11 +19,11 @@ import { ExpandLessIcon, ExpandMoreIcon } from '../../ui/icons.jsx';
 // Importe l'en-tête commun des fenêtres.
 import { PanelHeader } from '../../ui/PanelHeader.jsx';
 // Importe le menu des cartes de l'astre.
-import { BodyLayersMenu } from './BodyLayersMenu.jsx';
+import { BodyLayersMenu } from './couches/BodyLayersMenu.jsx';
 // Importe la recherche de lieux et la fiche de l'astre.
 import { BodyPlacesInfo } from './BodyPlacesInfo.jsx';
 // Importe la fiche du Soleil.
-import { SunInfo } from './SunInfo.jsx';
+import { SunInfo } from './astres/SunInfo.jsx';
 // Importe la hauteur maximale d'une surface du dock du téléphone.
 import { DOCK_SURFACE_MAX } from '../../ui/MobileZones.jsx';
 // Importe le crochet qui résout l'astre visé.
