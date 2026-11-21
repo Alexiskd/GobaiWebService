@@ -18,7 +18,7 @@ import {
   SearchIcon, PublicIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
   // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
-  ScienceIcon, StoreIcon, FavoriteIcon, SettingsIcon,
+  ScienceIcon, StoreIcon, SettingsIcon,
   // Arborescence des astres et icône de l'assistant.
   AccountTreeIcon, AutoAwesomeIcon, RouteIcon,
 // Fin de la liste ; module des icônes.
@@ -48,7 +48,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -128,8 +128,6 @@ export function toolbarActions({
     onShare && { id: 'share', group: 'info', icon: ShareIcon, label: 'Partager', iconOnly: true, onClick: onShare, title: 'Partager cette vue (lien de l’astre affiché)' },
     // Node Open Source (si le rappel existe) : icône seule — ce dont le site est fait.
     onSources && { id: 'sources', group: 'info', icon: CopyrightIcon, label: 'Node Open Source', short: 'Node', iconOnly: true, onClick: onSources, title: 'Node Open Source : dépendances, sources des données et services utilisés (S)' },
-    // Faire un don : accessible directement depuis la barre d'outils sur ordinateur.
-    onDonate && { id: 'donate', group: 'info', icon: FavoriteIcon, label: 'Faire un don', onClick: onDonate, title: 'Soutenir Gobai Space' },
   // Fin du tableau : retire les entrées absentes et les boutons masqués.
   ].filter((a) => a && !HIDDEN.has(a.id));
 // Fin de toolbarActions.

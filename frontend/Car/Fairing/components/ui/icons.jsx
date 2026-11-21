@@ -48,7 +48,6 @@ export { default as GalleryIcon } from '@mui/icons-material/Collections';
 // Moniteur de performance.
 export { default as SpeedIcon } from '@mui/icons-material/Speed';
 // Faire un don.
-export { default as FavoriteIcon } from '@mui/icons-material/Favorite';
 // Paramètres.
 export { default as SettingsIcon } from '@mui/icons-material/Settings';
 // Arborescence des astres : un arbre.

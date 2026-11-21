@@ -1,7 +1,7 @@
 // Réexporte l'erreur, les adresses de l'API et la résolution d'adresse.
 export { ApiError, API_BASE, API_ROOT, resolveApiUrl } from './client.jsx';
 // Réexporte les fonctions de données de la scène.
-export { fetchSceneData, fetchBodies, fetchBodyListing, fetchCities, fetchPointClouds, fetchBorders, searchPlaces, fetchCityLabels, fetchMoonEphemeris, fetchSatelliteEphemeris, fetchMoonPhases, fetchDonationConfig, createDonationOrder, captureDonation, cancelDonation } from './scene.jsx';
+export { fetchSceneData, fetchBodies, fetchBodyListing, fetchCities, fetchPointClouds, fetchBorders, searchPlaces, fetchCityLabels, fetchMoonEphemeris, fetchSatelliteEphemeris, fetchMoonPhases } from './scene.jsx';
 // Réexporte l'API des tuiles.
 export { tilesApi } from './tiles.jsx';
 // Réexporte l'API des contributions de placement.

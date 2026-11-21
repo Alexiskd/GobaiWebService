@@ -55,16 +55,10 @@ import { FullScreenMessage } from './SolarSystem.jsx';
 import { Toolbar } from './toolbar/Toolbar.jsx';
 // Importe la fenêtre d'aide.
 import { Aide } from './menus/Aide.jsx';
-// Importe la fenêtre de don.
-import { Don } from './menus/Don/Don.jsx';
 // La fenêtre de temps de trajet entre deux positions (Terre, Lune).
 import { Trajet } from './menus/Trajet/Trajet.jsx';
-// Importe hasDonationReturn, le test du retour de la page de paiement.
-import { hasDonationReturn } from './menus/Don/donationReturn.jsx';
 // Importe le menu de l'assistant.
 import { Assistant } from './menus/Assistant/Assistant.jsx';
-// Importe le rappel des dons (à l'ouverture, puis toutes les dix minutes).
-import { useDonationPrompt } from './menus/Don/useDonationPrompt.jsx';
 // Importe la fenêtre de la langue.
 import { Langue } from './menus/Langue.jsx';
 // Importe le plateau tournant en ligne, posé dans le panneau d'informations (plus de fenêtre séparée).
@@ -126,7 +120,6 @@ import { useStageResize } from './scene/useStageResize.jsx';
 // Importe le crochet des fonds de carte.
 import { useTileBases } from './scene/useTileBases.jsx';
 // Icône du bouton de don.
-import { FavoriteIcon } from './ui/icons.jsx';
 // Importe les deux zones de commandes du téléphone.
 import { MobileDock, MobileTopBar } from './ui/MobileZones.jsx';
 
@@ -417,12 +410,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const myPosition = useMyPosition({ showPosition: actions.showPosition, goPlace: actions.pickPlace, push });
   // Nuages LiDAR sur le globe.
   const lidarGlobe = useLidarGlobe(engine);
-  // Retour de Stripe : rouvre la fenêtre pour confirmer le don ou signaler son annulation.
-  useEffect(() => { if (hasDonationReturn()) panels.setPanel('donate'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  // Rappel des dons : la fenêtre « Dons » s'ouvre à l'ouverture de l'application (une fois l'écran de chargement
-  // levé), puis toutes les dix minutes ; jamais par-dessus une autre fenêtre, en pause quand l'onglet est caché
-  // (voir menus/Don/donationPrompt.js).
-  useDonationPrompt({ ready: Boolean(engine) && !covered, panel: panels.panel, openDonate: () => panels.setPanel('donate') });
   // Au retour de Stripe après un achat d'export : rouvre la boutique, qui délivre la clé.
   useEffect(() => { if (hasPurchaseReturn()) panels.setPanel('store'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Adresse d'une fenêtre (https://www.gobaispace.com/galerie, /node) : ouverte dès l'arrivée.
@@ -435,8 +422,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
     if (slug === 'donnees' || slug === 'galerie') setGalleryOpen(true); // « /galerie » : l'adresse du sitemap et de index.html
     // Adresse /node : ouvre la fenêtre des sources.
     else if (slug === 'node') panels.setPanel('sources');
-    // Adresse /faire-un-don : ouvre la fenêtre de don.
-    else if (slug === 'faire-un-don') panels.setPanel('donate');
   // Fin de l'effet ; aucune dépendance (règle ESLint désactivée sur cette ligne).
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Assistant : exécute une action demandée par le modèle, avec les mêmes fonctions que les boutons de l'interface.
@@ -724,7 +709,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         // Sources : ouvre la fenêtre.
         onSources={() => panels.setPanel('sources')}
         // Dons : ouvre la fenêtre.
-        onDonate={() => panels.setPanel('donate')}
         // Trajet : ouvre ou ferme la fenêtre de temps de trajet.
         onTrip={() => panels.toggle('trip')}
         tripOpen={panels.panel === 'trip'}
@@ -801,26 +785,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
       {compact && (
         // Fragment : zone du titre et dock.
         <>
-          {/* Zone du titre : bandeau, bouton de don à droite, indicateurs dessous. */}
+          {/* Zone du titre : bandeau et indicateurs dessous. */}
           <MobileTopBar
-            // Bouton de don : icône seule, cible tactile de 44 px ; aussi dans la feuille « Menu ».
-            actions={(
-              // Bouton (début de la balise).
-              <IconButton
-                // Au clic : ouvre la fenêtre de don.
-                onClick={() => panels.setPanel('donate')}
-                // Nom pour les lecteurs d'écran et infobulle.
-                aria-label="Faire un don à Gobai Space"
-                // Style : rond de 44 px, fond bleu sombre, bordure claire, cœur blanc.
-                sx={{ width: 44, height: 44, color: '#fff', bgcolor: 'rgba(26, 38, 61, .92)', border: '1px solid rgba(255,255,255,.22)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', '&:hover': { bgcolor: 'rgba(48, 65, 96, .98)' } }}
-              // Fin de la balise ouvrante.
-              >
-                {/* Le cœur. */}
-                <FavoriteIcon fontSize="small" />
-              {/* Fin du bouton. */}
-              </IconButton>
-            // Fin des boutons.
-            )}
             // Indicateur : aucun.
             status={null}
           // Fin de la balise ouvrante.
@@ -887,7 +853,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       {/* La fenêtre d'aide. */}
       <Aide open={panels.panel === 'help'} onClose={panels.closePanel} />
       {/* La fenêtre de don. */}
-      <Don open={panels.panel === 'donate'} onClose={panels.closePanel} />
       {/* La fenêtre de temps de trajet : se connecte à l'assistant (clé de l'utilisateur) pour les trajets hors Apollo. */}
       <Trajet open={panels.panel === 'trip'} onClose={panels.closePanel} onOpenAssistant={() => setAssistantOpen(true)} />
       {/* La fenêtre de la langue. */}
