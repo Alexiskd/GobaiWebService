@@ -53,8 +53,6 @@ import { ZoomPad } from './hud/ZoomPad.jsx';
 import { FullScreenMessage } from './SolarSystem.jsx';
 // Importe la barre d'outils.
 import { Toolbar } from './toolbar/Toolbar.jsx';
-// Importe la fenêtre du mème.
-import { MemeDialog } from './toolbar/MemeDialog.jsx';
 // Importe la fenêtre d'aide.
 import { Aide } from './menus/Aide.jsx';
 // Importe la fenêtre de don.
@@ -249,8 +247,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const settingsOpen = panels.panel === 'settings'; const setSettingsOpen = (on) => panels.show('settings', on);
   // Affichage relativiste : les orbites suivent la métrique de Schwarzschild (rosette précessée, grille filaire).
   const [schwarzschild, setSchwarzschild] = useState(false);
-  // État : fenêtre du mème ouverte ou non.
-  const [memeOpen, setMemeOpen] = useState(false);
   // Assistant : posé dans le HUD à la place de la navigation, indépendant des autres fenêtres (il reste ouvert quand il
   // en ouvre une) et jamais modal — la scène et le moteur restent utilisables pendant tout l'échange.
   // État : panneau de l'assistant affiché ou non ; affiché au départ, puisqu'il tient la place de la navigation.
@@ -707,8 +703,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
           const moteur = engineRef.current;
           setSchwarzschild(moteur ? Boolean(moteur.setSchwarzschild(!schwarzschild)) : false);
         }}
-        // Mème : ouvre sa fenêtre.
-        onMeme={() => setMemeOpen(true)}
         // Rotation : inverse l'état.
         onToggleAuto={() => camera.setAuto((v) => !v)}
         // Vue 3/4 : inverse l'état.
@@ -836,8 +830,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         </>
       // Fin du mode compact.
       )}
-      {/* Fenêtre du mème, montée seulement quand elle est ouverte : l'image n'est pas téléchargée avant. */}
-      {memeOpen && <MemeDialog open onClose={() => setMemeOpen(false)} />}
       {/* La fenêtre des sources (début de la balise). */}
       <Attribution
         // Le magasin du HUD.

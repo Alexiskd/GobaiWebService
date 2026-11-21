@@ -21,8 +21,6 @@ import {
   ScienceIcon, StoreIcon, FavoriteIcon, SettingsIcon,
   // Arborescence des astres et icône de l'assistant.
   AccountTreeIcon, AutoAwesomeIcon,
-  // Mème.
-  EmojiEmotionsIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons.jsx';
 // Importe EmcIcon, le profil d'Einstein (image PNG) du bouton de l'affichage relativiste.
@@ -53,8 +51,6 @@ export function toolbarActions({
   onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onShare, onContribute,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
-  // Mème : rappel d'ouverture de sa fenêtre.
-  onMeme,
   // L'arborescence des astres : son rappel et son état.
   onNavigator, navigatorOpen,
 // Fin de la liste des paramètres.
@@ -80,8 +76,6 @@ export function toolbarActions({
     // Schwarzschild (rosette précessée et grille filaire de courbure), fondu lent depuis les orbites de Kepler.
     // L'icône est le profil d'Einstein (EmcIcon, image PNG), dans un bouton icône carré comme ses voisins.
     onToggleSchwarzschild && { id: 'schwarzschild', group: 'display', icon: EmcIcon, label: 'Relativité (E = mc²)', short: 'Relativité', iconOnly: true, pressed: Boolean(schwarzschild), onClick: onToggleSchwarzschild, title: schwarzschild ? 'Relativité activée : orbites de Schwarzschild (rosette), grille de courbure et périvolumes des astres et des systèmes' : 'Relativité : orbites de Schwarzschild, grille de courbure et périvolumes (fondu depuis Kepler)' },
-    // Mème : à côté du bouton Relativité, ouvre la fenêtre de l'image.
-    onMeme && { id: 'meme', group: 'display', icon: EmojiEmotionsIcon, label: 'Mème', iconOnly: true, onClick: onMeme, title: 'Mème : Go白ناन्टех face à Google Earth et à la NASA' },
     // Rotation automatique : bascule.
     { id: 'auto', group: 'display', icon: AutorenewIcon, label: 'Rotation', iconOnly: true, pressed: auto, onClick: onToggleAuto, title: 'Rotation automatique' },
     // Vue 3/4 automatique : bascule.
