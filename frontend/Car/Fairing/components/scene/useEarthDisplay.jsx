@@ -35,44 +35,6 @@ function storedVolcanoes() {
 }
 // Délai entre deux lectures de la liste des volcans : 30 minutes.
 const VOLCANOES_REFRESH_MS = 30 * 60 * 1000;
-/** Altitude d'arrivée au-dessus d'une ville (m) si le serveur n'a pas répondu : la même que la sienne. */
-// Altitude d'arrivée de secours : 2 000 mètres.
-import { useCallback, useEffect, useState } from 'react';
-// Importe l'identifiant du calque des rues.
-import { ROADS_LAYER_ID } from '@/Engine/AstreSolideEngine/MapEngine/earth/roadSource';
-// Importe le chargement des volcans en éruption.
-import { fetchVolcanoes } from '@/Computing/api/scene';
-
-// Déclare remember : reçoit la clé et la valeur.
-function remember(key, value) {
-  // Début du bloc protégé.
-  try {
-    // S'il y a une valeur, l'enregistre.
-    if (value) globalThis.localStorage?.setItem(key, value);
-    // Sinon, efface l'entrée.
-    else globalThis.localStorage?.removeItem(key);
-  // Une erreur de stockage est ignorée.
-  } catch { /* stockage refusé */ }
-// Fin de remember.
-}
-// Clé du stockage local : calque des rues.
-const STREETS_KEY = 'gobai:rues'; // calque des rues (OpenStreetMap) : « 1 » quand il est affiché
-// Déclare storedStreets, qui lit l'affichage enregistré des rues.
-function storedStreets() {
-  // Vrai si la valeur enregistrée vaut « 1 » ; faux si le stockage est inaccessible.
-  try { return globalThis.localStorage?.getItem(STREETS_KEY) === '1'; } catch { return false; }
-// Fin de storedStreets.
-}
-// Clé du stockage local : volcans en éruption.
-const VOLCANOES_KEY = 'gobai:volcans'; // volcans en éruption : « 1 » quand ils sont affichés (masqués par défaut)
-// Déclare storedVolcanoes, qui lit l'affichage enregistré des volcans.
-function storedVolcanoes() {
-  // Vrai si la valeur enregistrée vaut « 1 » ; faux si le stockage est inaccessible.
-  try { return globalThis.localStorage?.getItem(VOLCANOES_KEY) === '1'; } catch { return false; }
-// Fin de storedVolcanoes.
-}
-// Délai entre deux lectures de la liste des volcans : 30 minutes.
-const VOLCANOES_REFRESH_MS = 30 * 60 * 1000;
 
 /** Affichage de la Terre (ombrage, frontières, littoraux, noms, rues) et son envoi au moteur. */
 // Déclare et exporte le crochet useEarthDisplay : moteur et fonction de messages.
