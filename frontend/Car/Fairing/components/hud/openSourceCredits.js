@@ -1,5 +1,5 @@
 /**
- * Dépendances réellement déclarées dans frontend/package.json et frontend/Car/Computing/api/package.json.
+ * Dépendances réellement déclarées dans frontend/package.json et backend/package.json, et stack GO- reprise dans le code.
  * Les liens GitHub ne sont affichés que pour ces paquets présents dans le manifeste.
  * Aucun dépôt, auteur, date de mise à jour ou backend supposé n'est ajouté ici.
  */
@@ -28,14 +28,19 @@ export const OPEN_SOURCE_CREDITS = [
     ],
   },
   {
-    // Dépendances déclarées dans frontend/Car/Computing/api/package.json (API NestJS facultative, hors site statique).
-    group: 'API NestJS (Computing/api)',
+    // Dépendances déclarées dans backend/package.json (API NestJS du backend).
+    group: 'API NestJS (backend)',
     items: [
       { name: 'NestJS', repo: 'nestjs/nest', people: [] },
       { name: 'node-postgres (pg)', repo: 'brianc/node-postgres', people: [] },
       { name: 'reflect-metadata', repo: 'microsoft/reflect-metadata', org: 'Microsoft', people: [] },
       { name: 'RxJS', repo: 'ReactiveX/rxjs', people: [] },
-      { name: 'ts-node', repo: 'TypeStrong/ts-node', people: [] },
+    ],
+  },
+  {
+    group: 'Stack GO-',
+    items: [
+      { name: '@go-/harmonie-3d', repo: 'Alexiskd/Go-', people: [] },
     ],
   },
 ];
