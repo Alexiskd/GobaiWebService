@@ -105,3 +105,5 @@ export { default as ExpandMoreIcon } from '@mui/icons-material/ExpandMore';
 export { default as DragIndicatorIcon } from '@mui/icons-material/DragIndicator';
 // Envoi d'une question à l'assistant.
 export { default as SendIcon } from '@mui/icons-material/ArrowUpward';
+// Mème : visage souriant.
+export { default as EmojiEmotionsIcon } from '@mui/icons-material/EmojiEmotions';
