@@ -18,6 +18,8 @@ import { TILED_BODIES } from '@/Engine/AstreSolideEngine/tiledBodies';
 import { PanelHeader } from '../ui/PanelHeader.jsx';
 // Importe l'arborescence du site et son compteur de pages.
 import { SITE_TREE, countPages } from './siteTree.js';
+// Importe l'arbre 3D des pages du site.
+import { SiteTree3D } from './SiteTree3D.jsx';
 // Importe les crédits affichés et les organisations des services.
 import { SERVICE_ORGS, visibleCredits } from './openSourceCredits.js';
 // Importe la liste des API et son compteur.
@@ -283,7 +285,12 @@ function SiteTree() {
         <Chiffre libelle="Astres" valeur={astres} detail="étoile, planètes, planètes naines et satellites" />
         <Chiffre libelle="Fenêtres" valeur={countPages() - astres - 1} detail="Données, Node et Dons" />
       </GrilleChiffres>
-      <Section numero={1} titre="Arborescence du site" sousTitre="Chaque lien ouvre le site directement sur l’astre ou la fenêtre.">
+      <Section numero={1} titre="Arborescence en 3D" sousTitre="Glisser pour tourner ; cliquer une page pour l’ouvrir. Disposition calculée par la stack @go-/harmonie-3d.">
+        <Carte sx={{ bgcolor: 'transparent', p: 0 }}>
+          <SiteTree3D />
+        </Carte>
+      </Section>
+      <Section numero={2} titre="Arborescence du site" sousTitre="Chaque lien ouvre le site directement sur l’astre ou la fenêtre.">
         <Carte sx={{ bgcolor: 'transparent' }}>
           <Box component="ul" sx={{ m: 0, p: 0 }}><TreeNode item={SITE_TREE} root /></Box>
         </Carte>
