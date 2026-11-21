@@ -63,7 +63,7 @@ export function toolbarActions({
     // Astres : ouvre ou ferme l'arborescence des astres (bande du dock sur téléphone, rail sur ordinateur), qui
     // n'avait de bouton que dans le panneau de l'assistant sur ordinateur, et aucun sur téléphone.
     onNavigator && { id: 'navigator', group: 'explore', icon: AccountTreeIcon, label: 'Astres', iconOnly: true, pressed: navigatorOpen, onClick: onNavigator, title: 'Arborescence des astres : planètes et satellites' },
-    // Trajet : fenêtre de temps de trajet entre deux positions de la Terre ou de la Lune (sans tracé).
+    // Trajet : barre de temps de trajet (en haut de l’écran) entre deux positions de la Terre ou de la Lune (sans tracé).
     onTrip && { id: 'trip', group: 'explore', icon: RouteIcon, label: 'Trajet', iconOnly: true, pressed: tripOpen, onClick: onTrip, title: 'Temps de trajet entre deux positions de la Terre ou de la Lune' },
     // Le bouton Informations n'existe plus : le menu des cartes est rendu dans le panneau des caractéristiques,
     // qui s'ouvre d'un appui sur son en-tête (et par la touche L).
