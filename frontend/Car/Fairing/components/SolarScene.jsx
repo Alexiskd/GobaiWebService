@@ -57,6 +57,8 @@ import { Toolbar } from './toolbar/Toolbar.jsx';
 import { Aide } from './menus/Aide.jsx';
 // Importe la fenêtre de don.
 import { Don } from './menus/Don/Don.jsx';
+// La fenêtre de temps de trajet entre deux positions (Terre, Lune).
+import { Trajet } from './menus/Trajet/Trajet.jsx';
 // Importe hasDonationReturn, le test du retour de la page de paiement.
 import { hasDonationReturn } from './menus/Don/donationReturn.jsx';
 // Importe le menu de l'assistant.
@@ -723,6 +725,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onSources={() => panels.setPanel('sources')}
         // Dons : ouvre la fenêtre.
         onDonate={() => panels.setPanel('donate')}
+        // Trajet : ouvre ou ferme la fenêtre de temps de trajet.
+        onTrip={() => panels.toggle('trip')}
+        tripOpen={panels.panel === 'trip'}
         // Galerie : ouvre la fenêtre.
         onStore={() => setStoreOpen(true)}
         onGallery={() => setGalleryOpen(true)}
@@ -883,6 +888,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
       <Aide open={panels.panel === 'help'} onClose={panels.closePanel} />
       {/* La fenêtre de don. */}
       <Don open={panels.panel === 'donate'} onClose={panels.closePanel} />
+      {/* La fenêtre de temps de trajet : se connecte à l'assistant (clé de l'utilisateur) pour les trajets hors Apollo. */}
+      <Trajet open={panels.panel === 'trip'} onClose={panels.closePanel} onOpenAssistant={() => setAssistantOpen(true)} />
       {/* La fenêtre de la langue. */}
       <Langue open={languageOpen} onClose={() => setLanguageOpen(false)} language={language} />
       {/* La fenêtre des paramètres (début de la balise). */}

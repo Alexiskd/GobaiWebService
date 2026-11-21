@@ -19,6 +19,8 @@ import { AssistantService } from '../services/content/assistant/assistant.servic
     { provide: AssistantService, inject: [APP_CONFIG], useFactory: (c: AppConfig) => new AssistantService(c.assistant) },
   // Fin de la liste des services.
   ],
+  // Exporte le service : le module de position s'en sert pour interroger le modèle de l'utilisateur.
+  exports: [AssistantService],
 // Fin de la déclaration.
 })
 // Classe du module de l'assistant, importée par le module racine.

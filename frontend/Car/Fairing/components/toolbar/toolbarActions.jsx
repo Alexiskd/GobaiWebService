@@ -20,7 +20,7 @@ import {
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
   ScienceIcon, StoreIcon, FavoriteIcon, SettingsIcon,
   // Arborescence des astres et icône de l'assistant.
-  AccountTreeIcon, AutoAwesomeIcon,
+  AccountTreeIcon, AutoAwesomeIcon, RouteIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons.jsx';
 // Importe EmcIcon, le profil d'Einstein (image PNG) du bouton de l'affichage relativiste.
@@ -48,7 +48,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onShare, onContribute,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -63,6 +63,8 @@ export function toolbarActions({
     // Astres : ouvre ou ferme l'arborescence des astres (bande du dock sur téléphone, rail sur ordinateur), qui
     // n'avait de bouton que dans le panneau de l'assistant sur ordinateur, et aucun sur téléphone.
     onNavigator && { id: 'navigator', group: 'explore', icon: AccountTreeIcon, label: 'Astres', iconOnly: true, pressed: navigatorOpen, onClick: onNavigator, title: 'Arborescence des astres : planètes et satellites' },
+    // Trajet : fenêtre de temps de trajet entre deux positions de la Terre ou de la Lune (sans tracé).
+    onTrip && { id: 'trip', group: 'explore', icon: RouteIcon, label: 'Trajet', iconOnly: true, pressed: tripOpen, onClick: onTrip, title: 'Temps de trajet entre deux positions de la Terre ou de la Lune' },
     // Le bouton Informations n'existe plus : le menu des cartes est rendu dans le panneau des caractéristiques,
     // qui s'ouvre d'un appui sur son en-tête (et par la touche L).
     // Vue globale : retour à la vue d'ensemble.

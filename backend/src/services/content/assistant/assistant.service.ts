@@ -189,6 +189,22 @@ export class AssistantService {
     return { reply: result.text, actions, provider: provider.info.id, model: result.model };
   }
 
+  /**
+   * Une réponse en texte seul, sans outils ni inventaire de l'écran : pour les modules du serveur qui interrogent le
+   * modèle de l'utilisateur avec SA clé (temps de trajet). Mêmes refus typés que l'assistant (401, 402, 429, 502).
+   */
+  async complete(providerId: string, key: string, system: string, messages: AssistantMessage[], maxTokens = 400):
+    Promise<{ text: string; provider: ProviderId; model: string }> {
+    const provider = this.providerOf(providerId);
+    const clean = this.keyOf(key);
+    try {
+      const { text, model } = await provider.chat(clean, { system, messages, tools: [], maxTokens });
+      return { text, provider: provider.info.id, model };
+    } catch (e) {
+      throw this.toHttp(e, provider);
+    }
+  }
+
   private providerOf(id: string): AssistantProvider {
     if (!(PROVIDER_IDS as readonly string[]).includes(id)) throw new BadRequestException('Fournisseur inconnu : « claude » ou « mistral » attendu.');
     return this.providers[id as ProviderId];

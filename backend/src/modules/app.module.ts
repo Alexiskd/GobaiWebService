@@ -25,6 +25,8 @@ import { BordersModule } from './borders.module';
 import { WorldAtlasModule } from './world-atlas.module';
 // Module de recherche de lieux et de noms de villes.
 import { PlacesModule } from './places.module';
+// Module de position GPS et de temps de trajet (Terre, Lune), avec le modèle de l'utilisateur.
+import { PositionModule } from './position.module';
 // Module des villes du globe.
 import { CitiesModule } from './cities.module';
 // Module des éphémérides : positions des planètes et des satellites.
@@ -98,6 +100,8 @@ import { SeoModule } from './seo.module';
     DonationsModule,
     // Routes de recherche de lieux.
     PlacesModule,
+    // Routes de position GPS et de temps de trajet : /api/v1/position.
+    PositionModule,
     // Assistant de la fenêtre « Claude » (API Claude, clé côté serveur) : /api/v1/assistant
     // Routes de l'assistant.
     AssistantModule,
