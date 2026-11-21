@@ -27,8 +27,8 @@ export const DISPLAY_SETTINGS = [
   'noms_villes', 'noms_pays', 'frontieres_et_littoraux', 'rues', 'volcans', 'coordonnees_gps',
   // cartographie en relief,
   'relief_3d',
-  // appareil.
-  'noir_pur', 'economie_energie', 'moniteur_performance',
+  // appareil (le noir pur est fusionné dans le thème, le moniteur de performance a été retiré).
+  'economie_energie',
 // Fin de la liste.
 ] as const;
 // Familles d'astres que l'assistant peut afficher ou enlever.

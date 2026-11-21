@@ -112,11 +112,12 @@ function PdfMoon({ entry }) {
 
 /**
  * Documentation de l'astre visé, dans le panneau Caractéristiques et informations : l'avertissement sur les
- * incertitudes, ses photos (Ma collection), les caractéristiques de sa fiche que le panneau n'affiche pas déjà
+ * incertitudes, le plateau tournant de l'astre (`plateau`, facultatif, juste au-dessus de la galerie), ses photos
+ * (Ma collection), les caractéristiques de sa fiche que le panneau n'affiche pas déjà
  * (`shownTerms` : les termes des caractéristiques en direct), et, pour Jupiter, les petits satellites documentés par
  * des PDF (absents de la scène 3D).
  */
-export function BodyDocumentation({ name, shownTerms = [], note = true }) {
+export function BodyDocumentation({ name, shownTerms = [], note = true, plateau = null }) {
   const entry = useMemo(() => catalog().entries.find((e) => fold(e.name) === fold(name)), [name]);
   const extra = useMemo(() => {
     const shown = new Set(shownTerms.map(fold));
@@ -129,6 +130,8 @@ export function BodyDocumentation({ name, shownTerms = [], note = true }) {
   return (
     <>
       {note && <UncertaintyNote />}
+      {/* Le plateau tournant de l'astre, posé juste au-dessus de la galerie de photos. */}
+      {plateau}
       <Photos name={name} />
       {extra.length > 0 && (
         <Section title="Documentation">

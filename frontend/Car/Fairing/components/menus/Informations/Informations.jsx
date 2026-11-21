@@ -240,7 +240,7 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
 }
 
 // Déclare et exporte le composant Informations ; les propriétés restantes forment le menu.
-export function Informations({ hud, data, worldCities, phases, handlers, layersOpen, onCloseLayers, sunFocused, ...menu }) {
+export function Informations({ hud, data, worldCities, phases, handlers, layersOpen, onCloseLayers, sunFocused, plateau = null, ...menu }) {
   // Résout l'astre visé et son contenu.
   const view = useBodyView({ hud, data, worldCities, phases, handlers });
   // Soleil ciblé : le panneau s'affiche tout seul, comme pour une planète (caractéristiques et grandeurs en direct).
@@ -270,8 +270,8 @@ export function Informations({ hud, data, worldCities, phases, handlers, layersO
   return (
     // La coquille, pour l'astre visé.
     <InformationsShell view={view} hud={hud} layersOpen={layersOpen} onCloseLayers={onCloseLayers} menu={menu}>
-      {/* La recherche de lieux et la fiche de l'astre, s'il y a une vue. */}
-      {view && <BodyPlacesInfo view={view} handlers={handlers} Search={PlaceSearch} />}
+      {/* La recherche de lieux et la fiche de l'astre, s'il y a une vue ; le plateau tournant de l'astre y est posé au-dessus de la galerie. */}
+      {view && <BodyPlacesInfo view={view} handlers={handlers} Search={PlaceSearch} plateau={plateau} />}
     {/* Fin de la coquille. */}
     </InformationsShell>
   // Fin du rendu.

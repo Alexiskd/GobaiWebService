@@ -4,8 +4,6 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { CssBaseline, GlobalStyles, ThemeProvider } from '@mui/material';
 // Importe le lecteur et l'abonnement du réglage jour/nuit.
 import { getDayNight, subscribeDayNight } from '@/Engine/shared/lib/device/dayNight';
-// Importe le lecteur et l'abonnement du réglage noir OLED.
-import { getOledBlack, subscribeOledBlack } from '@/Engine/shared/lib/device/oledBlack';
 // Importe la détection de l'appareil et le test de compatibilité.
 import { currentDevice, isDeviceSupported } from '@/Engine/shared/lib/device/deviceGate';
 // Importe SolarSystem, le composant principal de l'application.
@@ -37,17 +35,18 @@ const SUPPORTED = isDeviceSupported(currentDevice());
 export default function App() {
   // Lit le réglage jour/nuit et s'y abonne (même lecteur côté serveur).
   const dayNight = useSyncExternalStore(subscribeDayNight, getDayNight, getDayNight);
-  // Lit le réglage noir OLED et s'y abonne.
-  const oled = useSyncExternalStore(subscribeOledBlack, getOledBlack, getOledBlack);
-  // Construit le thème, recalculé seulement si l'un des deux réglages change.
-  const theme = useMemo(() => makeTheme(dayNight, { oled }), [dayNight, oled]);
+  // Le noir pur, autrefois un réglage de Paramètres, est fusionné dans le thème : toujours actif en mode nuit.
+  // Le bouton « Ombre » de la barre d'outils bascule jour/nuit comme avant (déjà implémenté).
+  const oled = true;
+  // Construit le thème, recalculé seulement si le réglage change.
+  const theme = useMemo(() => makeTheme(dayNight, { oled }), [dayNight]);
   // Barre d'état du téléphone et barre du navigateur : teintées à la couleur des panneaux du thème en cours.
   // Effet relancé quand l'un des deux réglages change.
   useEffect(() => {
     // Met la couleur du thème dans la balise meta theme-color, si elle existe.
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', statusBarColor(dayNight, { oled }));
-  // Fin de l'effet ; dépendances : les deux réglages.
-  }, [dayNight, oled]);
+  // Fin de l'effet ; dépendance : le réglage jour/nuit.
+  }, [dayNight]);
   // Début du rendu.
   return (
     // Fournit le thème à toute l'application.

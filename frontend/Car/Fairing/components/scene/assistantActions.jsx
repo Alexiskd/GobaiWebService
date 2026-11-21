@@ -26,8 +26,8 @@ const SETTINGS = {
   rues: 'Rues et routes', volcans: 'Volcans en éruption', coordonnees_gps: 'Coordonnées GPS',
   // Cartographie en relief : relief 3D.
   relief_3d: 'Relief 3D',
-  // Appareil : noir pur, économie d'énergie et moniteur de performance.
-  noir_pur: 'Noir pur', economie_energie: 'Économie d’énergie', moniteur_performance: 'Moniteur de performance',
+  // Appareil : économie d'énergie (le noir pur est fusionné dans le thème, le moniteur de performance a été retiré).
+  economie_energie: 'Économie d’énergie',
 // Fin de l'objet.
 };
 // Familles d'astres : identifiant → [type du moteur, nom affiché] (début de l'objet).

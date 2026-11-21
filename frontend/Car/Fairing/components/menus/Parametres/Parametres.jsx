@@ -1,7 +1,5 @@
 import { useState } from 'react';
-import {
-  Box, Dialog, DialogContent, FormControlLabel, Stack, Switch, Tab, Tabs, Typography,
-} from '@mui/material';
+import { Box, Dialog, DialogContent, Stack, Tab, Tabs } from '@mui/material';
 import { useViewport } from '@/Fairing/hooks/useViewport';
 import { PanelHeader } from '../../ui/PanelHeader.jsx';
 import { AstresAffiches } from './AstresAffiches.jsx';
@@ -9,8 +7,6 @@ import { Reperes } from './Reperes.jsx';
 import { PilotageTelephone } from './PilotageTelephone.jsx';
 import { AllerAUnAstre } from './AllerAUnAstre.jsx';
 import { CatalogueAstres } from '../Astres/CatalogueAstres.jsx';
-import { EconomieEnergie } from './EconomieEnergie.jsx';
-import { Apparence } from './Apparence.jsx';
 import { MaPosition } from './MaPosition.jsx';
 
 const tabs = [
@@ -19,26 +15,10 @@ const tabs = [
   { value: 'astres', label: 'Astres' },
 ];
 
-function PerformanceSetting({ visible, onChange }) {
-  return (
-    <Box sx={{ px: 1.5, py: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
-      <Box sx={{ minWidth: 0 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>Moniteur de performance</Typography>
-        <Typography variant="caption" color="text.secondary">Mesure CPU, GPU et FPS</Typography>
-      </Box>
-      <FormControlLabel
-        sx={{ m: 0 }}
-        label=""
-        control={<Switch size="small" checked={Boolean(visible)} onChange={(event) => onChange?.(event.target.checked)} slotProps={{ input: { 'aria-label': 'Afficher le moniteur de performance' } }} />}
-      />
-    </Box>
-  );
-}
-
 export function Parametres({
   open, onClose, bodies, onBodyShown, focus, onSelect, kinds, onKind,
   orbits, onOrbits, markers, onMarkers, satellites, onSatellites, sky, onSky,
-  onGoPlace, myPosition, performanceMonitorVisible = false, onPerformanceMonitorChange, engineRef,
+  onGoPlace, myPosition, engineRef,
 }) {
   const { compact } = useViewport();
   const [tab, setTab] = useState('general');
@@ -72,21 +52,21 @@ export function Parametres({
             <Stack spacing={1.5}>
               <MaPosition onGoPlace={onGoPlace} myPosition={myPosition} onDone={onClose} />
               <PilotageTelephone />
-              <Apparence />
-              <EconomieEnergie />
-              <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden', bgcolor: 'background.paper' }}>
-                <PerformanceSetting visible={performanceMonitorVisible} onChange={onPerformanceMonitorChange} />
-              </Box>
             </Stack>
           )}
           {tab === 'affichage' && (
             <Stack spacing={1.5}>
-              <Reperes orbits={orbits} onOrbits={onOrbits} markers={markers} onMarkers={onMarkers} satellites={satellites} onSatellites={onSatellites} sky={sky} onSky={onSky} />
-              <AstresAffiches kinds={kinds} onKind={onKind} />
+              {/* Repères et Univers : masqués à l'écran, mais toujours montés dans le DOM, */}
+              {/* pour que l'assistant puisse continuer à actionner ces réglages. */}
+              <Box sx={{ display: 'none' }} aria-hidden="true">
+                <Reperes orbits={orbits} onOrbits={onOrbits} markers={markers} onMarkers={onMarkers} satellites={satellites} onSatellites={onSatellites} sky={sky} onSky={onSky} />
+              </Box>
             </Stack>
           )}
           {tab === 'astres' && (
             <Stack spacing={1.5}>
+              {/* Familles d'astres : déplacées ici depuis l'onglet Affichage. */}
+              <AstresAffiches kinds={kinds} onKind={onKind} />
               <AllerAUnAstre bodies={bodies} focus={focus} onPick={pick} onShown={onBodyShown} />
               <CatalogueAstres bodies={bodies} onSelect={onSelect} onBodyShown={onBodyShown} onDone={onClose} engineRef={engineRef} />
             </Stack>

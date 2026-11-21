@@ -21,8 +21,6 @@ import { useInterfaceLanguage } from '@/Fairing/hooks/useInterfaceLanguage';
 import { useSolarEngine } from '@/Fairing/hooks/useSolarEngine';
 // Importe le lecteur et l'abonnement du mode économie d'énergie.
 import { getPowerSaving, setPowerSaving, subscribePowerSaving } from '@/Engine/shared/lib/device/powerSaving';
-// Réglage du noir pur, actionnable par l'assistant comme par l'interrupteur de Paramètres.
-import { setOledBlack } from '@/Engine/shared/lib/device/oledBlack';
 // Importe la préparation et l'exécution du partage de la vue.
 import { shareData, shareView } from '@/Engine/shared/lib/app/share';
 // Importe le crochet des couches de tuiles.
@@ -71,6 +69,8 @@ import { useDonationPrompt } from './menus/Don/useDonationPrompt.jsx';
 import { Langue } from './menus/Langue.jsx';
 // Importe la fenêtre du plateau tournant.
 import { Plateau } from './menus/Plateau/Plateau.jsx';
+// Importe le plateau tournant en ligne, posé dans le panneau d'informations.
+import { PlateauInline } from './menus/Plateau/PlateauInline.jsx';
 // Importe la fenêtre Données (flux cognitif et théorie quantique).
 import { Donnees } from './menus/Donnees/Donnees.jsx';
 // Importe la boutique des exports et le test du retour de la page de paiement Stripe.
@@ -249,8 +249,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const galleryOpen = panels.panel === 'gallery'; const setGalleryOpen = (on) => panels.show('gallery', on);
   // Paramètres : ouverts ou non, et leur ouverture.
   const settingsOpen = panels.panel === 'settings'; const setSettingsOpen = (on) => panels.show('settings', on);
-  // Moniteur de performance masqué par défaut ; activable depuis les paramètres.
-  const [performanceMonitorVisible, setPerformanceMonitorVisible] = useState(false);
   // Affichage relativiste : les orbites suivent la métrique de Schwarzschild (rosette précessée, grille filaire).
   const [schwarzschild, setSchwarzschild] = useState(false);
   // État : fenêtre du mème ouverte ou non.
@@ -522,12 +520,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
         coordonnees_gps: earth.setGps,
         // Le relief 3D du globe.
         relief_3d: camera.setRelief,
-        // Le noir pur de l'interface.
-        noir_pur: setOledBlack,
-        // L'économie d'énergie.
+        // L'économie d'énergie (plus d'interrupteur de Paramètres, mais l'assistant peut toujours la régler).
         economie_energie: setPowerSaving,
-        // Le moniteur de performance.
-        moniteur_performance: setPerformanceMonitorVisible,
       // Applique l'état demandé au réglage, s'il est dans la table.
       })[cmd.setting]?.(cmd.on); break;
       // kind : affiche ou enlève une famille d'astres.
@@ -558,8 +552,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
 
   // Éléments du HUD posés différemment selon l'écran : sur ordinateur, chacun à sa place fixe ; sur téléphone,
   // rangés dans les deux zones de l'écran (MobileTopBar, MobileDock), où rien ne se recouvre (voir theme/layout).
-  // Le bandeau du haut.
-  const hudTopEl = <HudTop hud={hud} perf={performanceMonitorVisible} />;
+  // Le bandeau du haut (le moniteur de performance a été retiré de l'interface).
+  const hudTopEl = <HudTop hud={hud} />;
   // Le panneau d'informations (début de la balise).
   const informationsEl = (
       <Informations
@@ -571,6 +565,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
         worldCities={worldCities}
         // Les phases de la Lune.
         phases={moonPhases}
+        // La recherche de lieux et le plateau tournant de l'astre visé sont intégrés au panneau d'informations.
+        plateau={engine ? <PlateauInline engine={engine} bodyId={currentBodyId} baseKey={bases.bases[currentBodyId || 'earth'] ?? null} /> : null}
         // Les rappels de navigation vers les lieux.
         handlers={actions.handlers}
         // Panneau ouvert ou non.
@@ -909,10 +905,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       <Parametres
         // Ouverte ou non.
         open={settingsOpen}
-        // Moniteur de performance, désactivé par défaut.
-        performanceMonitorVisible={performanceMonitorVisible}
-        // Moniteur de performance : son changement.
-        onPerformanceMonitorChange={setPerformanceMonitorVisible}
         // Fermeture.
         onClose={() => setSettingsOpen(false)}
         // Référence du moteur, utilisée par le catalogue extrasolaire.

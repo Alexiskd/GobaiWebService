@@ -12,8 +12,8 @@ import { MoonBlend } from './astres/MoonBlend.jsx';
 import { BodyDocumentation, UncertaintyNote } from './BodyDocumentation.jsx';
 
 /** Composante adaptative : recherche de lieux, fiche et sections du panneau « en direct ». */
-// Déclare et exporte le composant BodyPlacesInfo : la vue de l'astre, les rappels et le composant de recherche.
-export function BodyPlacesInfo({ view, handlers, Search }) {
+// Déclare et exporte le composant BodyPlacesInfo : la vue de l'astre, les rappels, le composant de recherche et le plateau tournant.
+export function BodyPlacesInfo({ view, handlers, Search, plateau = null }) {
   // Extrait de la vue tout ce qui sert à l'affichage.
   const { id, name, places, placeholder, remote, onPick, facts, moon, phases } = view;
 
@@ -67,8 +67,8 @@ export function BodyPlacesInfo({ view, handlers, Search }) {
       // Fin du cas.
       )}
 
-      {/* Photos (Ma collection) et documentation de l'astre : ce que sa fiche ajoute aux caractéristiques en direct. */}
-      <BodyDocumentation name={name} shownTerms={facts.map((f) => f.term)} note={false} />
+      {/* Photos (Ma collection) et documentation de l'astre : ce que sa fiche ajoute aux caractéristiques en direct. Le plateau tournant de l'astre y est posé au-dessus de la galerie. */}
+      <BodyDocumentation name={name} shownTerms={facts.map((f) => f.term)} note={false} plateau={plateau} />
 
       {/* Pour la Lune : ses sections propres. */}
       {moon && <MoonExtras moon={moon} phases={phases} handlers={handlers} />}

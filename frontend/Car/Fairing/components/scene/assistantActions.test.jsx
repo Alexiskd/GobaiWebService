@@ -51,8 +51,8 @@ test('assistant : tous les interrupteurs de Paramètres sont pilotables', () => 
   assert.equal(r({ name: 'regler_affichage', input: { reglage: 'atmospheres', actif: false } }, BODIES).setting, 'atmospheres');
   // L'économie d'énergie.
   assert.equal(r({ name: 'regler_affichage', input: { reglage: 'economie_energie', actif: true } }, BODIES).setting, 'economie_energie');
-  // Le noir pur.
-  assert.equal(r({ name: 'regler_affichage', input: { reglage: 'noir_pur', actif: true } }, BODIES).setting, 'noir_pur');
+  // Le noir pur, fusionné dans le thème, n'est plus un réglage de l'assistant.
+  assert.equal(r({ name: 'regler_affichage', input: { reglage: 'noir_pur', actif: true } }, BODIES), null);
   // Un réglage inventé reste refusé.
   assert.equal(r({ name: 'regler_affichage', input: { reglage: 'tout_casser', actif: true } }, BODIES), null);
 // Fin du test.

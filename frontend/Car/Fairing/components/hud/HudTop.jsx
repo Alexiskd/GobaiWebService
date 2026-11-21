@@ -16,8 +16,6 @@ import { PANEL_W, edge } from '@/Fairing/theme/layout';
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe le compteur d'images par seconde (forme en ligne, à la suite de la date).
 import { FpsCounter } from './perf/FpsCounter.jsx';
-// Importe le moniteur de performance (forme en ligne, sous la date).
-import { PerfMonitor } from './perf/PerfMonitor.jsx';
 // Importe le badge « En direct ».
 import { LiveBadge } from '../ui/LiveBadge.jsx';
 // Importe le menu déroulant générique.
@@ -28,8 +26,8 @@ import { MenuDeroulant } from '../ui/MenuDeroulant.jsx';
 // Mesures du logo dans l'image d'origine : largeur totale, puis position et taille de l'emblème.
 const LOGO = { fullW: 1379, x: 372, y: 90, w: 736, h: 594 };
 
-// Déclare et exporte le composant HudTop : reçoit le magasin du HUD et l'affichage du moniteur de performance.
-export function HudTop({ hud, perf = false }) {
+// Déclare et exporte le composant HudTop : reçoit le magasin du HUD.
+export function HudTop({ hud }) {
   // Lit le mode compact.
   const { compact } = useViewport();
   // Lit la date affichée.
@@ -142,8 +140,6 @@ export function HudTop({ hud, perf = false }) {
         </Typography>
         {/* Le texte de l'astre visé, s'il existe, hors mode compact. */}
         {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontVariantNumeric: 'tabular-nums' }}>{focusText}</Typography>}
-        {/* Le moniteur de performance, s'il est affiché, sous les textes (ordinateur ; rien sur téléphone). */}
-        {perf && <PerfMonitor hud={hud} />}
       {/* Fin de la zone des textes. */}
       </Box>
     {/* Fin du bandeau. */}
