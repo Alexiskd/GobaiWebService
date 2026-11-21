@@ -547,6 +547,74 @@ export function domeBudget(entries, budget) {
 // Déclare et exporte budgetForHeight : la hauteur de la caméra (m) et le budget maximal de l'appareil.
 export const budgetForHeight = (heightM, max = 3_000_000, min = 200_000) => (Number.isFinite(heightM) && heightM > 0 ? Math.min(max, Math.max(min, Math.round(6e8 / heightM / 50_000) * 50_000)) : max);
 
+/** Réglages du budget ajustable : bornes du facteur, pas de hausse et de baisse, rythme des décisions. */
+export const BUDGET_GOVERNOR = {
+  // Facteur minimal : la moitié du budget de l'appareil.
+  min: 0.5,
+  // Facteur maximal sur ordinateur et sur téléphone.
+  maxDesktop: 4, maxHandheld: 1.5,
+  // Hausse de 10 % quand le rythme tient, baisse de 20 % quand il fléchit.
+  up: 1.1, down: 0.8,
+  // Une décision par seconde ; après une baisse, aucune hausse pendant 4 secondes.
+  everyMs: 1000, holdMs: 4000,
+};
+
+/**
+ * Budget de points ajustable : le maximum que l'appareil affiche sans perdre d'images par seconde.
+ *
+ * Le facteur multiplie le budget de l'appareil. Une fois par seconde :
+ *  - le rythme fléchit (moyenne sous 90 % du rythme visé, ou image la plus lente sous la moitié) : −20 % ;
+ *  - le rythme tient (moyenne à 97 % au moins, image la plus lente aux trois quarts au moins) ET le budget est
+ *    réellement atteint (des points voulus n'ont pas pu être pris) : +10 %, sauf dans les 4 s qui suivent une baisse ;
+ *  - sinon : inchangé.
+ * Sans mesure, ou sans point affiché, rien ne change : une baisse de rythme ne vient alors pas des points.
+ */
+// Déclare et exporte la classe PointBudgetGovernor.
+export class PointBudgetGovernor {
+  // Constructeur : facteur 1, bornes selon l'appareil.
+  constructor({ min = BUDGET_GOVERNOR.min, max = BUDGET_GOVERNOR.maxDesktop } = {}) {
+    // Bornes du facteur.
+    this.min = min; this.max = max;
+    // Facteur courant.
+    this.scale = 1;
+    // Instant de la dernière décision, et fin de l'attente après une baisse.
+    this.checkedAt = -Infinity; this.heldUntil = -Infinity;
+  // Fin du constructeur.
+  }
+
+  /**
+   * Une décision. `m` : fps (moyenne), low (image la plus lente), target (rythme visé), shown (points affichés),
+   * binding (vrai si le budget a limité la sélection). Renvoie le facteur.
+   */
+  // step : ajuste le facteur (début).
+  step(now, m = {}) {
+    // Trop tôt depuis la dernière décision : inchangé.
+    if (now - this.checkedAt < BUDGET_GOVERNOR.everyMs) return this.scale;
+    // Retient l'instant.
+    this.checkedAt = now;
+    // Sans mesure ou sans point affiché : inchangé.
+    if (!(m.fps > 0) || !(m.target > 0) || !(m.shown > 0)) return this.scale;
+    // Rythme moyen et rythme de l'image la plus lente, rapportés au rythme visé.
+    const ratio = m.fps / m.target, lowRatio = (m.low > 0 ? m.low : m.fps) / m.target;
+    // Le rythme fléchit : baisse, puis attente.
+    if (ratio < 0.9 || lowRatio < 0.5) {
+      // Nouveau facteur, borné.
+      this.scale = Math.max(this.min, this.scale * BUDGET_GOVERNOR.down);
+      // Aucune hausse avant la fin de l'attente.
+      this.heldUntil = now + BUDGET_GOVERNOR.holdMs;
+    // Le rythme tient et le budget limite l'affichage : hausse.
+    } else if (ratio >= 0.97 && lowRatio >= 0.75 && m.binding && now >= this.heldUntil) {
+      // Nouveau facteur, borné.
+      this.scale = Math.min(this.max, this.scale * BUDGET_GOVERNOR.up);
+    // Fin des cas.
+    }
+    // Renvoie le facteur.
+    return this.scale;
+  // Fin de step.
+  }
+// Fin de la classe PointBudgetGovernor.
+}
+
 /** Distance approchée (m) entre deux points en degrés (projection locale, juste sur quelques kilomètres). */
 // Déclare et exporte lonLatDistanceM : longitude et latitude du premier point, puis du second.
 export function lonLatDistanceM(lon1, lat1, lon2, lat2) {

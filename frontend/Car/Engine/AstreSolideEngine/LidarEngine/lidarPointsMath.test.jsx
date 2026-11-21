@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 // Importe gunzipSync, la décompression gzip, depuis le module zlib de Node.
 import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
-import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, inDome, domeRadius, domeBudget, budgetForHeight, lonLatDistanceM, boxDistance2D, expandLonLatBox, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath.jsx';
+import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, inDome, domeRadius, domeBudget, budgetForHeight, lonLatDistanceM, boxDistance2D, expandLonLatBox, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame, BUDGET_GOVERNOR, PointBudgetGovernor, budgetForHeight as budgetCurve } from './lidarPointsMath.jsx';
 // Importe le rayon de la Terre en mètres, depuis gps.
 import { EARTH_RADIUS_M } from '../InputEngine/gps.jsx';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
@@ -540,4 +540,71 @@ test('budgetForHeight : budget de points fixé par la hauteur de la caméra', ()
   assert.equal(budgetForHeight(100, 1_200_000), 1_200_000);
   // Hauteur inconnue : le maximum.
   assert.equal(budgetForHeight(NaN), 3_000_000);
+});
+
+// Mesure type : rythme tenu, budget atteint.
+const tenu = { fps: 50, low: 48, target: 50, shown: 1_000_000, binding: true };
+
+// Test : hausse du budget.
+test('budget ajustable : +10 % par seconde tant que le rythme tient et que le budget limite l’affichage, jusqu’au maximum', () => {
+  // Régulateur d'ordinateur.
+  const g = new PointBudgetGovernor();
+  // Première décision : hausse.
+  assert.equal(g.step(0, tenu), 1.1);
+  // Moins d'une seconde plus tard : inchangé.
+  assert.equal(g.step(500, tenu), 1.1);
+  // Une seconde plus tard : nouvelle hausse.
+  assert.ok(Math.abs(g.step(1000, tenu) - 1.21) < 1e-9);
+  // Après de nombreuses secondes : plafonné au maximum.
+  for (let t = 2; t < 60; t++) g.step(t * 1000, tenu);
+  assert.equal(g.scale, BUDGET_GOVERNOR.maxDesktop);
+// Fin du test.
+});
+
+// Test : baisse et attente.
+test('budget ajustable : −20 % dès que le rythme fléchit, puis aucune hausse pendant 4 secondes', () => {
+  // Régulateur.
+  const g = new PointBudgetGovernor();
+  // Moyenne sous 90 % du rythme visé : baisse.
+  assert.equal(g.step(0, { ...tenu, fps: 40 }), 0.8);
+  // Le rythme est revenu, mais l'attente court encore : inchangé.
+  assert.equal(g.step(1000, tenu), 0.8);
+  assert.equal(g.step(3000, tenu), 0.8);
+  // Après l'attente : la hausse reprend.
+  assert.ok(Math.abs(g.step(4000, tenu) - 0.88) < 1e-9);
+  // Un à-coup seul (image la plus lente sous la moitié du rythme visé) suffit à baisser.
+  assert.ok(g.step(5000, { ...tenu, low: 20 }) < 0.88);
+  // Jamais sous le minimum.
+  for (let t = 6; t < 40; t++) g.step(t * 1000, { ...tenu, fps: 10 });
+  assert.equal(g.scale, BUDGET_GOVERNOR.min);
+// Fin du test.
+});
+
+// Test : cas sans effet.
+test('budget ajustable : inchangé sans mesure, sans point affiché, ou si le budget ne limite rien', () => {
+  // Régulateur.
+  const g = new PointBudgetGovernor();
+  // Aucune mesure d'images par seconde.
+  assert.equal(g.step(0, { ...tenu, fps: 0 }), 1);
+  // Aucun point affiché : une baisse de rythme ne vient pas des points.
+  assert.equal(g.step(1000, { ...tenu, fps: 20, shown: 0 }), 1);
+  // Rythme tenu mais budget non atteint : rien à gagner à monter.
+  assert.equal(g.step(2000, { ...tenu, binding: false }), 1);
+  // Téléphone : plafond plus bas.
+  const tel = new PointBudgetGovernor({ max: BUDGET_GOVERNOR.maxHandheld });
+  for (let t = 0; t < 30; t++) tel.step(t * 1000, tenu);
+  assert.equal(tel.scale, BUDGET_GOVERNOR.maxHandheld);
+// Fin du test.
+});
+
+// Test : le facteur appliqué à la courbe du budget.
+test('budget ajustable : le facteur multiplie la courbe selon la hauteur et son plafond', () => {
+  // Près du sol, facteur 2 : le plafond de 3 millions devient 6 millions.
+  assert.equal(budgetCurve(100 / 2, 3_000_000 * 2), 6_000_000);
+  // À 1 000 m, facteur 1 : 600 000 points ; facteur 2 : 1 200 000.
+  assert.equal(budgetCurve(1000, 3_000_000), 600_000);
+  assert.equal(budgetCurve(1000 / 2, 3_000_000 * 2), 1_200_000);
+  // Facteur 0,5 : la moitié.
+  assert.equal(budgetCurve(1000 / 0.5, 3_000_000 * 0.5), 300_000);
+// Fin du test.
 });
