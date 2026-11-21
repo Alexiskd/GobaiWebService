@@ -1,5 +1,5 @@
 /**
- * Rappel des dons : la fenêtre « Dons » s'ouvre d'elle-même à l'ouverture de l'application, puis toutes les deux
+ * Rappel des dons : la fenêtre « Dons » s'ouvre d'elle-même à l'ouverture de l'application, puis toutes les dix
  * minutes. Calcul pur, sans React ni minuterie : le crochet useDonationPrompt l'anime.
  *
  * Règles :
@@ -9,7 +9,7 @@
  *    ou que l'onglet est caché : la fenêtre des dons ne remplace jamais une autre fenêtre ;
  *  - au moins RESUME_MS après la reprise, pour ne pas surgir à la seconde où l'on ferme une fenêtre.
  */
-export const DONATION_PROMPT = { FIRST_MS: 2_500, EVERY_MS: 120_000, RESUME_MS: 3_000 };
+export const DONATION_PROMPT = { FIRST_MS: 2_500, EVERY_MS: 600_000, RESUME_MS: 3_000 };
 
 export class DonationPromptClock {
   constructor(now = 0, { FIRST_MS, EVERY_MS, RESUME_MS } = DONATION_PROMPT) {

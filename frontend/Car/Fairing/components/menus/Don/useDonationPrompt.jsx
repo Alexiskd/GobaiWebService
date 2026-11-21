@@ -1,4 +1,4 @@
-// Rappel des dons : ouvre la fenêtre « Dons » à l'ouverture de l'application, puis toutes les deux minutes.
+// Rappel des dons : ouvre la fenêtre « Dons » à l'ouverture de l'application, puis toutes les dix minutes.
 import { useEffect, useRef, useState } from 'react';
 import { DonationPromptClock } from './donationPrompt.js';
 

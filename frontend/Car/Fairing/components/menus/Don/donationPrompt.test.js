@@ -1,4 +1,4 @@
-// Tests du rappel des dons : à l'ouverture, puis toutes les deux minutes, jamais par-dessus une autre fenêtre.
+// Tests du rappel des dons : à l'ouverture, puis toutes les dix minutes, jamais par-dessus une autre fenêtre.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DonationPromptClock, DONATION_PROMPT } from './donationPrompt.js';
@@ -12,7 +12,7 @@ test('à l’ouverture : premier rappel peu après que la scène est prête', ()
   assert.equal(c.due(Math.max(FIRST_MS, RESUME_MS)), true);
 });
 
-test('ensuite toutes les deux minutes, comptées depuis la fermeture de la fenêtre des dons', () => {
+test('ensuite toutes les dix minutes, comptées depuis la fermeture de la fenêtre des dons', () => {
   const c = new DonationPromptClock(0);
   c.update(0);
   c.update(5_000, { donateOpen: true });
