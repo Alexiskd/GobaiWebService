@@ -232,7 +232,7 @@ export function rekeyToTile(key: string, cell: EptCell): string | null {
   // Illisible ou hors de la cellule : null.
   if (!k || !inCell(cell, k)) return null;
   // Le décalage de niveau entre l'octree EPT et la dalle.
-  const s = k.level - d;
+  const s = k.level - cell.d;
   // Renvoie la clé renumérotée.
   return `${s}-${k.x - (cell.x << s)}-${k.y - (cell.y << s)}-${k.z - (cell.z << s)}`;
 // Fin de rekeyToTile.
