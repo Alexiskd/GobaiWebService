@@ -24,10 +24,11 @@ export class AssistantError extends Error {
 
 const CODE_BY_STATUS = { 401: 'invalid_key', 402: 'billing', 429: 'rate_limited' };
 
-async function call(path, { provider, key, body = {}, signal }) {
+/** POST avec la clé de l'utilisateur dans l'en-tête, vers une route de l'API (`assistant/session`, `position/trajet`…). */
+export async function callWithKey(route, { provider, key, body = {}, signal }) {
   let res;
   try {
-    res = await fetch(`${API_BASE}/assistant/${path}`, {
+    res = await fetch(`${API_BASE}/${route}`, {
       method: 'POST',
       signal,
       cache: 'no-store',
@@ -50,7 +51,7 @@ async function call(path, { provider, key, body = {}, signal }) {
 }
 
 /** Appel de test : la clé est-elle valide et le compte peut-il payer ? Renvoie { provider, label, model }. */
-export const connectAssistant = (provider, key, signal) => call('session', { provider, key, signal });
+export const connectAssistant = (provider, key, signal) => callWithKey('assistant/session', { provider, key, signal });
 
 /** Une question : renvoie { reply, actions, provider, model }. */
-export const askAssistant = (provider, key, messages, elements, signal) => call('messages', { provider, key, body: { messages, elements }, signal });
+export const askAssistant = (provider, key, messages, elements, signal) => callWithKey('assistant/messages', { provider, key, body: { messages, elements }, signal });

@@ -6,3 +6,5 @@ export { fetchSceneData, fetchBodies, fetchBodyListing, fetchCities, fetchPointC
 export { tilesApi } from './tiles.jsx';
 // Réexporte l'API des contributions de placement.
 export { fetchContributions, fetchMe, getSession, loginContributor, publishContribution, removeContribution, setSession, signupContributor, voteContribution } from './contributions.jsx';
+// Réexporte l'API de position : sites Apollo et temps de trajet (clé de l'utilisateur dans l'en-tête).
+export { computeTrip, fetchMoonSites } from './position.jsx';
