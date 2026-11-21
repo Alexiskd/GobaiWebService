@@ -20,6 +20,8 @@ import { MAX_HEIGHT_M, OCEAN_SHADE_BOOST, RELIEF_SKIRT, metersPerTexel, pointInT
 import { nativeTile, OVERZOOM_LEVELS } from '../loading/overzoom.jsx';
 // Importe la basse résolution d'abord : premiers niveaux de l'astre entier et ancêtres des tuiles voulues.
 import { coarsePriority, isCoarseLevel, lowResTiles } from '../loading/lowRes.jsx';
+// Importe l'accord des couleurs entre les niveaux de zoom.
+import { LEVEL_PX, LevelColors, corrected } from './levelColors.jsx';
 // Importe le repli des lumières de la nuit (ancêtre déjà chargé), depuis nightLights.
 import { LIGHTS_PAD, NEIGHBOUR_DIRS, fillPad, lightsFallback, lightsPrefetchList, neighbourTile, padLightsImage, paddedRect } from '../earth/nightLights.jsx';
 // Importe les outils du préchargement prédictif, depuis prefetch.
@@ -279,6 +281,8 @@ export class TileLayer {
     this.lowKeys = new Set();
     // Clés des premiers niveaux de l'astre entier, chargés avant tout le reste.
     this.coarseKeys = new Set();
+    // Accord des couleurs entre les niveaux de zoom : chaque niveau prend les teintes du plus grossier de la couche.
+    this.levelColors = new LevelColors({ baseZoom: Math.max(0, source.minZoom ?? 0) });
     // Tuiles en échec : instant du prochain essai.
     this.failed = new Map();       // clé → date de nouvel essai
     // Niveau le plus fin affiché.
@@ -477,6 +481,8 @@ export class TileLayer {
       this.wantedKeys = wantedKeys;
       // Basse résolution d'abord : l'ancêtre de chaque tuile voulue pas encore affichable passe avant elle.
       this.requestLowRes(wanted, reselect, now);
+      // Accord des couleurs : les tuiles affichées pas encore mesurées le sont dès que leur référence est là.
+      for (const e of this.visibleEntries) this.sampleLevelColor(e);
     // Fin des demandes.
     }
 
@@ -988,6 +994,12 @@ export class TileLayer {
         colGain: { value: base.__color?.gain || COLOR_GAIN_NONE },
         // Décalage de couleur, ou neutre.
         colOff: { value: base.__color?.offset || COLOR_OFFSET_NONE },
+        // Accord des couleurs entre les niveaux de zoom : tableaux partagés par toutes les tuiles du niveau, mis à jour
+        // sur place quand la mesure s'affine. Une tuile au-delà du niveau natif prend la correction de son image.
+        // Gain de couleur du niveau.
+        lvGain: { value: this.levelColors.of(Math.min(coord.z, this.source.maxZoom)).gain },
+        // Décalage de couleur du niveau.
+        lvOff: { value: this.levelColors.of(Math.min(coord.z, this.source.maxZoom)).offset },
         // Image du calque, ou la texture d'attente.
         ovMap: { value: ovMap || this.placeholder },
         // Interrupteur du calque.
@@ -1146,7 +1158,54 @@ export class TileLayer {
     if (this.pinKeys.has(key)) this.pinned.set(key, entry);
     // Sinon : dans le cache.
     else this.cache.set(key, entry);
+    // Accord des couleurs : cette tuile sert de mesure à son niveau si sa référence est déjà là.
+    this.sampleLevelColor(entry);
   // Fin de install.
+  }
+
+  /**
+   * Accord des couleurs entre les niveaux : compare une tuile au même endroit vu par son ancêtre de référence (niveau
+   * le plus grossier dont les couleurs sont connues) et ajoute la mesure à son niveau. Les deux images sont réduites à
+   * 4 px de côté (tons d'ensemble) et corrigées de ce que le shader leur applique déjà. Chaque tuile ne compte qu'une
+   * fois ; une tuile au-delà du niveau natif (portion agrandie d'un ancêtre) ne compte pas. Mesure facultative.
+   */
+  // sampleLevelColor, asynchrone : la fiche de la tuile (début).
+  async sampleLevelColor(e) {
+    // Les corrections des niveaux, et la source.
+    const lc = this.levelColors, src = this.source;
+    // Déjà mesurée, au-delà du niveau natif, niveau qui n'attend rien, ou source sans lecture de pixels : rien.
+    if (e.lvSampled || e.z > src.maxZoom || !lc.wants(e.z) || typeof src.pixelsAsync !== 'function') return;
+    // Tuile de référence dont l'image est sur la carte graphique.
+    const ref = lc.reference(e, (key) => Boolean(this.ready(key)));
+    // Aucune pour l'instant : nouvel essai plus tard.
+    if (!ref) return;
+    // Fiche de la référence, et état du niveau.
+    const r = this.ready(ref.key), st = lc.of(e.z);
+    // La tuile ne sera pas mesurée deux fois ; une mesure est en cours pour ce niveau.
+    e.lvSampled = true; st.busy = true;
+    // Essai (début).
+    try {
+      // Image de la référence, et sa taille.
+      const img = r.baseImg, size = img.naturalWidth || img.width || 256;
+      // Pixels de la tuile, et du même endroit dans la référence.
+      const [a, b] = await Promise.all([src.pixelsAsync(e.baseImg, LEVEL_PX), src.pixelsAsync(img, LEVEL_PX, lc.crop(size, ref.depth, e))]);
+      // Couche libérée ou lecture refusée : rien.
+      if (this.disposed || !a || !b) return;
+      // Correction du niveau de la référence.
+      const rl = lc.of(ref.z);
+      // Pixels de la tuile, avec la correction de sa source.
+      const mine = corrected(a, e.baseImg.__color?.gain, e.baseImg.__color?.offset);
+      // Pixels de la référence, avec la correction de sa source puis celle de son niveau.
+      const theirs = corrected(corrected(b, img.__color?.gain, img.__color?.offset), rl.gain, rl.offset);
+      // Ajoute la mesure au niveau.
+      lc.add(e.z, mine, theirs);
+    // Mesure facultative : la tuile est déjà affichée.
+    } catch { /* lecture impossible : la tuile garde la correction en cours */ } finally {
+      // La mesure est finie.
+      st.busy = false;
+    // Fin de l'essai.
+    }
+  // Fin de sampleLevelColor.
   }
 
   /** Matrice de la tuile : échelle = rayon de son niveau, translation = centre · rayon (double précision côté JS). */

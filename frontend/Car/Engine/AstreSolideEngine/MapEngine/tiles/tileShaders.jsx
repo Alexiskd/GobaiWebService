@@ -130,6 +130,8 @@ export const tileFragmentShader = [
   // Accord des couleurs entre les couches : gain et décalage par canal de la source de l'image (1 et 0 sans correction).
   // Variables uniformes : gain et décalage des couleurs, pour l'image et pour l'ancêtre.
   'uniform vec3 colGain;uniform vec3 colOff;uniform vec3 parGain;uniform vec3 parOff;',
+  // Accord des couleurs entre les niveaux de zoom : gain et décalage par canal du niveau de l'image (1 et 0 sans correction).
+  'uniform vec3 lvGain;uniform vec3 lvOff;',
   // Ombrage du relief. Avec altitudes (hHas) : pente lue dans la tuile d'altitude, interpolée entre ses 4 pixels voisins
   // (hSlope = 1 / (2 × taille au sol d'un pixel), en 1/m). Sans altitudes (reliefImg > 0) : pente estimée d'après la
   // luminosité de l'image elle-même. Dans les deux cas un éclairage fixe venu du nord-ouest, comme sur une carte.
@@ -252,6 +254,8 @@ export const tileFragmentShader = [
   // (soleil de l'ombrage à 45°) → facteur 1 ; pentes éclairées plus claires, pentes à l'ombre plus sombres.
   // Lit l'image, corrige ses couleurs par le gain et le décalage, et lit le calque.
   'vec4 b=texture2D(map,baseRect.xy+vUv*baseRect.zw);vec3 col=clamp(b.rgb*colGain+colOff,0.,1.);vec4 o=texture2D(ovMap,ovRect.xy+vUv*ovRect.zw);',
+  // Puis accorde ses couleurs sur celles du niveau le plus grossier de la couche : même teinte à tous les niveaux de zoom.
+  'col=clamp(col*lvGain+lvOff,0.,1.);',
   // Fondu enchaîné (≈ 180 ms) : la tuile fine apparaît par-dessus la portion agrandie de son ancêtre.
   // Pendant le fondu : mélange avec la portion de l'image de l'ancêtre, corrigée de la même façon.
   'if(fade<.999){col=mix(clamp(texture2D(parentMap,parentRect.xy+vUv*parentRect.zw).rgb*parGain+parOff,0.,1.),col,fade);}',
