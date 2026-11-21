@@ -24,8 +24,9 @@ describe('table de priorité des sources de la Terre', () => {
     expect(ids.indexOf('ign')).toBeLessThan(ids.indexOf('sentinel2'));
     // Sentinel-2 avant GIBS.
     expect(ids.indexOf('sentinel2')).toBeLessThan(ids.indexOf('gibs'));
-    // Sentinel-2 et GIBS couvrent le monde : aucune emprise.
-    expect(plan.sources.find((s) => s.id === 'sentinel2')!.bboxes).toBeUndefined();
+    // GIBS couvre le monde sans emprise ; Sentinel-2 aussi, hormis le sud de −70° (le bord blanc de sa mosaïque).
+    expect(plan.sources.find((s) => s.id === 'gibs')!.bboxes).toBeUndefined();
+    expect(plan.sources.find((s) => s.id === 'sentinel2')!.bboxes).toEqual([[-180, -70, 180, 86]]);
     // L'IGN a une emprise : la France.
     expect(plan.sources.find((s) => s.id === 'ign')!.bboxes!.length).toBeGreaterThan(0);
   // Fin du test.

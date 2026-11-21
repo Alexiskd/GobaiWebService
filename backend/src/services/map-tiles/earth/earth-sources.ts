@@ -14,7 +14,8 @@
  *    requête GetMap par tuile, comme les mosaïques planétaires de l'USGS. Allemagne, Land par Land : Saxe (de-sn),
  *    Hesse (de-he), Rhénanie-du-Nord-Westphalie (de-nw), Bavière (de-by) ; Italie (it, orthophotos 2012) ; Australie,
  *    Nouvelle-Galles du Sud seulement (au-nsw, tuiles toutes faites) ;
- *  - sentinel2 Sentinel-2 cloudless 2016 (EOX, CC BY 4.0) : monde, ≈ 10 m, niveaux 0 à 14 ;
+ *  - sentinel2 Sentinel-2 cloudless 2016 (EOX, CC BY 4.0) : tout le globe au nord de −70°, embarqué comme emprise
+ *    (la mosaïque s'arrête vers −71,5° sud et, au-delà de ce bord, répond par une tuile blanche, pas par une erreur), ≈ 10 m, niveaux 0 à 14 ;
  *  - gibs      NASA GIBS, Blue Marble : monde, niveaux 0 à 8 (secours des petits niveaux).
  * Les emprises sont des rectangles : elles débordent sur les pays voisins et se chevauchent. L'ordre de la liste va du
  * plus petit pays au plus grand, et une source nationale qui répond par une tuile vide (blanche, noire ou transparente :
@@ -382,10 +383,14 @@ export const EARTH_SOURCES: EarthSource[] = [
   },
   // Sentinel-2,
   {
-    // niveaux 0 à 14, monde entier ;
+    // niveaux 0 à 14, tout le globe au nord de −70° ;
     id: 'sentinel2', label: 'Sentinel-2 cloudless (EOX)', minZoom: 0, maxZoom: 14,
     // sa mention ;
     attribution: 'Sentinel-2 cloudless — s2maps.eu par EOX IT Services GmbH (données Copernicus Sentinel modifiées 2016), CC BY 4.0',
+    // son emprise : la mosaïque s'arrête vers −71,5° de latitude sud et, au-delà, ses tuiles sont vides (blanches,
+    // code 200). La limite à −70° garde une marge : chaque tuile qui la touche reste entièrement dans la vraie
+    // couverture, sans moitié vide au bord. Le sud de cette limite (Antarctique et océan Austral) vient de GIBS.
+    bboxes: [[-180, -70, 180, 86]],
     // un modèle par nom de couche d'EOX (ligne avant colonne).
     ...xyz(EOX_LAYERS.map((layer) => `https://tiles.maps.eox.at/wmts/1.0.0/${layer}/default/g/{z}/{y}/{x}.jpg`)),
   // Fin de Sentinel-2.
@@ -462,6 +467,15 @@ export function tileTouches(bbox: Bbox, z: number, x: number, y: number): boolea
   return lon(x + 1, z) > w && lon(x, z) < e && lat(y + 1, z) < n && lat(y, z) > s;
 // Fin de tileTouches.
 }
+
+/** Source quasi mondiale ? Sans emprise, ou dont une emprise fait tout le tour du globe et presque jusqu'aux pôles. Une mosaïque mondiale peut avoir un vrai bord (Sentinel-2 : son emprise s'arrête au sud de −70°, parce que sa mosaïque elle-même s'arrête vers −71,5°) : elle garde le rôle d'une mosaïque mondiale, notamment de référence de l'accord des couleurs côté navigateur. */
+// Déclare et exporte worldwideSource : la source.
+export const worldwideSource = (s: EarthSource): boolean =>
+  // Sans emprise : mondiale.
+  !s.bboxes ||
+  // Ou emprise qui couvre au moins 340° de longitude, et presque jusqu'aux pôles en latitude.
+  s.bboxes.some(([w, so, e, n]) => e - w >= 340 && n >= 80 && so <= -60);
+// Fin de worldwideSource.
 
 /** Clé d'une source (chaîne vide = source sans clé ; null = clé requise mais absente). */
 // Fonction sourceKey.

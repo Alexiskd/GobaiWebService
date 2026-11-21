@@ -6,8 +6,8 @@ import { isUrlBlocked } from '../../../shared/lib/app/apiBlock.jsx';
 import {
   // les mémoires, la mesure des couleurs et les fonctions du chargement direct des images de la Terre,
   ColorStats, DirectBreaker, EmptyMemo, LevelGate, MissingMemo, THUMB, applyGain, blankRatio, blankZone, composeZoned, cropRect, farCandidatesAt,
-  // ainsi que le remplissage d'une adresse, le test d'image vide, le choix de la source suivante et la validation du plan,
-  fillDirect, isBlankPixels, nextAttempt, tileTouches, validPlan, worldOrigins,
+  // ainsi que le remplissage d'une adresse, le test d'image vide, le choix de la source suivante, la validation du plan et le test de source quasi mondiale,
+  fillDirect, isBlankPixels, nextAttempt, tileTouches, validPlan, worldwide, worldOrigins,
 // depuis earthDirect.
 } from '../earth/earthDirect.jsx';
 // Importe la lecture et l'enregistrement de la description d'une couche, depuis layerInfoCache.
@@ -808,17 +808,17 @@ export class TileSource {
       if (img === EMPTY) continue; // source hors de son territoire ici : notée, on passe à la suivante
       // Panne : rien.
       if (!img) return null;
-      // Source nationale : l'image porte sa correction de couleur, et sert de mesure tant qu'il en manque.
+      // Source nationale (pas quasi mondiale) : l'image porte sa correction de couleur, et sert de mesure tant qu'il en manque.
       // État de couleur, pour une source nationale avec l'accord actif.
-      const st = a.source.bboxes && this.colorMatch ? this.colorState(a.source.id) : null;
+      const st = !worldwide(a.source) && this.colorMatch ? this.colorState(a.source.id) : null;
       // Mesures incomplètes, au niveau natif : lance une mesure de couleur.
       if (st && !st.stats.full && !a.depth) this.sampleColor(plan, a.source, img, z, x, y);
       // Au-delà du niveau natif : découpe la tuile dans son ancêtre.
       const out = a.depth ? cropFromAncestor(img, a.depth, x, y) : img;
       // L'image porte sa correction de couleur.
       if (st) out.__color = st;
-      // Source nationale, tuile pas encore vue entièrement couverte (début).
-      if (a.source.bboxes && !this.directFull.isEmpty(a.source.id, a.z, a.x, a.y, a.source.minZoom)) {
+      // Source nationale (pas quasi mondiale), tuile pas encore vue entièrement couverte (début).
+      if (a.source.bboxes && !worldwide(a.source) && !this.directFull.isEmpty(a.source.id, a.z, a.x, a.y, a.source.minZoom)) {
         // Trou au bord de la couverture : comblé par la source suivante. Un échec ici laisse la tuile telle quelle.
         // Comble un trou éventuel ; une annulation est relancée, tout autre échec est ignoré.
         const patched = await this.patchHoles(plan, a, out, st, z, x, y, signal).catch((e) => { if (e.name === 'AbortError') throw e; return null; });
@@ -850,8 +850,8 @@ export class TileSource {
     try {
       // État de couleur de la source.
       const st = this.colorState(source.id);
-      // Sources mondiales du plan.
-      const world = plan.filter((s) => !s.bboxes);
+      // Sources mondiales du plan (une emprise qui fait le tour du globe compte encore : par ex. Sentinel-2, bordé au sud de −70°).
+      const world = plan.filter(worldwide);
       // Tentative pour l'image du monde au même endroit.
       const a = nextAttempt(world, z, x, y, { usable: (id) => this.directBreaker.usable(id) });
       // Si ce n'est pas un chargement direct : rien.

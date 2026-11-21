@@ -57,6 +57,10 @@ describe('sources de la couche unique de la Terre', () => {
     expect(ids(candidates(...tileAt(-104.99, 39.74, 15), noKeys))).toEqual(['usgs']);
     // Denver, niveau 14 : l'USGS puis Sentinel-2.
     expect(ids(candidates(...tileAt(-104.99, 39.74, 14), noKeys))).toEqual(['usgs', 'sentinel2']);
+    // Antarctique, niveau 6 : GIBS seul, la mosaïque Sentinel-2 s'arrête vers −71,5°.
+    expect(ids(candidates(...tileAt(0, -80, 6), noKeys))).toEqual(['gibs']);
+    // Antarctique, niveau 12 : plus aucune source native (GIBS jusqu'au niveau 8), la tuile est découpée dans son ancêtre.
+    expect(candidates(...tileAt(0, -80, 12), noKeys)).toEqual([]);
     // Tokyo, niveau 17 : photos aériennes du Japon.
     // Tokyo, niveau 17 : le Japon.
     expect(ids(candidates(...tileAt(139.69, 35.69, 17), noKeys))).toEqual(['jp']);
@@ -199,8 +203,8 @@ describe('plan de chargement direct (navigateur)', () => {
     for (const id of ['be', 'pl', 'it', 'de-sn', 'de-he', 'de-nw', 'de-by'] as const) expect(by.get(id)!.templates).toBe(undefined);
     // Les sources en tuiles toutes faites en ont au moins un.
     for (const id of ['ign', 'ch', 'nl', 'es', 'jp', 'usgs', 'sentinel2', 'gibs'] as const) expect(by.get(id)!.templates!.length).toBeGreaterThan(0);
-    // Sentinel-2 n'a pas d'emprise.
-    expect(by.get('sentinel2')!.bboxes).toBe(undefined);
+    // Sentinel-2 : tout le globe au nord de −70°, embarqué dans la table.
+    expect(by.get('sentinel2')!.bboxes).toEqual([[-180, -70, 180, 86]]);
     // L'IGN a celle de la France.
     expect(by.get('ign')!.bboxes).toEqual([FRANCE]);
   // Fin du test.

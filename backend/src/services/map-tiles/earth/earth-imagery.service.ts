@@ -7,7 +7,7 @@ import type { ResolvedTileLayer, TileLayerInfo, TileProvider } from '../provider
 // Ouvre l'import du module des sources de la Terre :
 import {
   // ses classes, sa table des sources et ses fonctions ;
-  CoverageMemo, NoCoverageError, SourceHealth, TileAbsentError, candidates, enabledSources, hedged, isAbsentStatus, isBlank, isOff,
+  CoverageMemo, NoCoverageError, SourceHealth, TileAbsentError, candidates, enabledSources, hedged, isAbsentStatus, isBlank, isOff, worldwideSource,
   // et deux types : une source et son identifiant.
   type EarthSource, type EarthSourceId,
 // Fin de l'import.
@@ -188,7 +188,7 @@ export class EarthImageryService implements TileProvider {
       // et, pour chaque source,
       sources: this.sources.map((s) => ({
         // son identifiant, son nom, ses niveaux, si elle est mondiale, si elle demande une clé ;
-        id: s.id, label: s.label, minZoom: s.minZoom, maxZoom: s.maxZoom, worldwide: !s.bboxes, requiresKey: Boolean(s.keyEnv),
+        id: s.id, label: s.label, minZoom: s.minZoom, maxZoom: s.maxZoom, worldwide: worldwideSource(s), requiresKey: Boolean(s.keyEnv),
         // si elle est utilisable, ses réussites, ses échecs et sa latence moyenne (0 par défaut).
         usable: this.health.usable(s.id), ok: stats.get(s.id)?.ok ?? 0, failed: stats.get(s.id)?.failed ?? 0, averageMs: stats.get(s.id)?.averageMs ?? 0,
       // Fin de la liste.

@@ -344,8 +344,8 @@ export function worldOrigins(plan, max = 4) {
   const origins = [];
   // Pour chaque source du plan (début).
   for (const source of Array.isArray(plan) ? plan : []) {
-    // Source nationale ou sans adresses : ignorée.
-    if (source?.bboxes || !Array.isArray(source?.templates)) continue;
+    // Source qui n'est pas quasi mondiale (orthophoto nationale) ou sans adresses : ignorée.
+    if (!source || !worldwide(source) || !Array.isArray(source?.templates)) continue;
     // Pour chacune de ses adresses (début).
     for (const template of source.templates) {
       // Origine : inconnue.
@@ -379,6 +379,14 @@ export function farCandidatesAt(sources, z, x, y) {
     && z >= s.lowZoom && z < s.minZoom && s.bboxes.some((b) => tileTouches(b, z, x, y)));
 // Fin de farCandidatesAt.
 }
+
+/** Source quasi mondiale ? Sans emprise, ou dont une emprise fait tout le tour du globe et s'étend presque d'un pôle à l'autre. Une mosaïque mondiale peut avoir un vrai bord (Sentinel-2 : sa mosaïque s'arrête au sud de −70°, embarquée comme emprise) : elle garde le rôle d'une mosaïque mondiale — référence de l'accord des couleurs, préchargée chez son fournisseur — et ses tuiles ne sont ni recadrées ni comblées comme celles d'une orthophoto nationale. */
+// Déclare et exporte worldwide : la source du plan.
+export const worldwide = (s) =>
+  // Sans emprise : mondiale.
+  !s.bboxes ||
+  // Ou emprise qui couvre au moins 340° de longitude, et presque jusqu'aux pôles en latitude.
+  s.bboxes.some(([w, so, e, n]) => e - w >= 340 && n >= 80 && so <= -60);
 
 /** Pixel sans image : transparent, ou presque blanc, ou presque noir (hors du territoire d'une source nationale). */
 // Déclare et exporte blankLike : vrai pour un pixel transparent, presque blanc ou presque noir.

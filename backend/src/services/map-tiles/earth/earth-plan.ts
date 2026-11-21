@@ -35,8 +35,8 @@ import {
 import { earthMarine, type EarthMarine } from './earth-seafloor';
 
 /** Version de la table : elle change quand les règles changent (le navigateur la garde avec la description de la couche). */
-// Déclare et exporte la version de la table : 3 (carte marine ajoutée ; 2 : paliers de zoom).
-export const EARTH_PLAN_VERSION = 3;
+// Déclare et exporte la version de la table : 4 (emprise réelle de Sentinel-2, le sud à −70° venait en blanc ; 3 : carte marine ajoutée ; 2 : paliers de zoom).
+export const EARTH_PLAN_VERSION = 4;
 
 /** En-tête de cache de la table : un jour, puis une semaine d'affichage immédiat avec vérification en arrière-plan. */
 // Déclare et exporte l'en-tête de cache de la table.
@@ -124,7 +124,7 @@ export interface EarthPlanSource {
   minZoom: number;
   // Niveau le plus fin.
   maxZoom: number;
-  // bboxes : ses emprises [ouest, sud, est, nord] ; absentes pour une source mondiale.
+  // bboxes : ses emprises [ouest, sud, est, nord] ; absentes pour une source mondiale totale (une mosaïque mondiale au vrai bord, comme Sentinel-2 au sud de −70°, embarque son emprise réelle).
   bboxes?: Bbox[];
   // templates : ses modèles d'adresse chargeables par le navigateur ; absents, la tuile passe par le relais.
   templates?: string[];

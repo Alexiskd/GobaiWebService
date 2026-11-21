@@ -7,7 +7,7 @@ import {
   // Les classes de mesure des couleurs, de coupe-circuit et de mémoire, la taille de la vignette, et les premières fonctions testées.
   ColorStats, DirectBreaker, EmptyMemo, LevelGate, MissingMemo, THUMB, applyGain, blankLike, blankNear, blankRatio, blankZone, candidatesAt, composeOver,
   // Les fonctions de mosaïque, de découpe, de choix des sources et de validation du plan.
-  composeZoned, cropRect, farCandidatesAt, fillDirect, isBlankPixels, nextAttempt, tileTouches, validPlan,
+  composeZoned, cropRect, farCandidatesAt, fillDirect, isBlankPixels, nextAttempt, tileTouches, validPlan, worldwide,
   // Le choix de la source par cellule hexagonale.
   cellCandidates, cellCenterLonLat, selectionFrequency,
 // Fin de la liste : le module earthDirect.
@@ -46,6 +46,24 @@ test('emprise et sources candidates, dans l’ordre du serveur', () => {
   assert.equal(tileTouches([-5.5, 41.2, 9.8, 51.2], ...tileAt(2.35, 48.85, 12)), true);
   // Berlin n'y est pas.
   assert.equal(tileTouches([-5.5, 41.2, 9.8, 51.2], ...tileAt(13.4, 52.5, 12)), false);
+  // Sans emprise : source mondiale.
+  assert.equal(worldwide({ id: 'world', minZoom: 0, maxZoom: 8 }), true);
+  // Emprise quasi mondiale (tout le tour, presque jusqu'aux pôles) : encore mondiale, comme Sentinel-2 au sud de −70°.
+  assert.equal(worldwide({ id: 's2', minZoom: 0, maxZoom: 14, bboxes: [[-180, -70, 180, 86]] }), true);
+  // Emprise nationale : pas mondiale.
+  assert.equal(worldwide({ id: 'ign', minZoom: 12, maxZoom: 19, bboxes: [[-5.5, 41.2, 9.8, 51.2]] }), false);
+  // Une source mondiale bordée (comme Sentinel-2, au sud de −70°) ne propose pas une tuile de l'Antarctique : GIBS la sert.
+  const BORDEES = [
+    // Sentinel-2 : niveaux 0 à 14, emprise quasi mondiale barrée au sud de −70°.
+    { id: 's2', minZoom: 0, maxZoom: 14, bboxes: [[-180, -70, 180, 86]], templates: ['https://s2/{z}/{x}/{y}.jpg'] },
+    // GIBS : niveaux 0 à 8, sans emprise.
+    { id: 'gibs', minZoom: 0, maxZoom: 8, templates: ['https://gibs/{z}/{x}/{y}.jpeg'] },
+  // Fin des sources d'essai.
+  ];
+  // Antarctique, niveau 6 : GIBS seul.
+  assert.deepEqual(ids(candidatesAt(BORDEES, ...tileAt(0, -80, 6))), ['gibs']);
+  // Paris, niveau 10 : Sentinel-2 (GIBS s'arrête au niveau 8).
+  assert.deepEqual(ids(candidatesAt(BORDEES, ...tileAt(2.35, 48.85, 10))), ['s2']);
   // À Paris au niveau 17 : l'IGN seul.
   assert.deepEqual(ids(candidatesAt(SOURCES, ...tileAt(2.35, 48.85, 17))), ['ign']);
   // À Paris au niveau 13 : l'IGN puis Sentinel-2.
