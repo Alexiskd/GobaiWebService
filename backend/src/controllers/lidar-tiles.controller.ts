@@ -48,9 +48,10 @@ export class LidarTilesController {
     // début de son texte ;
     description: 'Dalles du jeu IGNF_NUAGES-DE-POINTS-LIDAR-HD (Géoplateforme) autour du point, lues en direct : emprise, '
       // suite du texte (les chaînes sont collées par « + ») ;
-      + 'calage GPS, pas des coordonnées et nœuds de l’octree COPC (clé, nombre de points). `nodeUrl` est le modèle '
+      + 'calage GPS, pas des coordonnées et nœuds de l’octree (EPT, la méthodologie de la visionneuse officielle de l’IGN, '
       // fin du texte.
-      + 'd’adresse des fichiers ; `available` est faux si le décodeur LAZ manque sur le serveur.',
+      + 'ou COPC en repli ; clé, nombre de points). `nodeUrl` est le modèle d’adresse des fichiers ; `available` est faux si le'
+      + ' décodeur LAZ manque sur le serveur.',
   // Fin de la description.
   })
   // Réponse 200 documentée.
