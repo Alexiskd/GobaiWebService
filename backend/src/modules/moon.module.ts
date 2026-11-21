@@ -21,7 +21,7 @@ import {
   // le service des appels aux sources amont.
   MoonUpstreamService,
 // Fin de l'import : tous ces éléments viennent de moon.service.ts.
-} from '../services/moon/moon.service';
+} from '../services/celestial/moon/moon.service';
 
 // Ouvre la déclaration du module.
 @Module({

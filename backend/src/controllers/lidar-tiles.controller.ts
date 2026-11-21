@@ -9,7 +9,7 @@ import { Matches } from 'class-validator';
 // Forme commune des réponses d'erreur.
 import { ApiErrorDto } from '../dto/api-error.dto';
 // Service des dalles LiDAR.
-import { LidarTilesService } from '../services/lidar-tiles/lidar-tiles.service';
+import { LidarTilesService } from '../services/lidar/lidar-tiles/lidar-tiles.service';
 
 // Classe des paramètres d'adresse d'un nœud.
 class LidarNodeParamsDto {

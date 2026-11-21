@@ -1,19 +1,19 @@
 // Décorateur Module de NestJS.
 import { Module } from '@nestjs/common';
 // Service des capacités des sources de Mercure (ce que chaque source de tuiles sait servir).
-import { MercuryCapabilitiesService } from '../services/mercury/capabilities.service';
+import { MercuryCapabilitiesService } from '../services/celestial/mercury/capabilities.service';
 // Service de santé des sources amont de Mercure (joignables ou non).
-import { MercuryHealthService } from '../services/mercury/mercury-upstream-health.service';
+import { MercuryHealthService } from '../services/celestial/mercury/mercury-upstream-health.service';
 // Jeton d'injection de la configuration de Mercure et fonction qui la lit.
-import { MERCURY_CONFIG, loadMercuryConfig } from '../services/mercury/mercury.config';
+import { MERCURY_CONFIG, loadMercuryConfig } from '../services/celestial/mercury/mercury.config';
 // Service du catalogue des couches de Mercure.
-import { MercuryCatalogService } from '../services/mercury/mercury-catalog.service';
+import { MercuryCatalogService } from '../services/celestial/mercury/mercury-catalog.service';
 // Contrôleur de Mercure : les routes /api/v1/mercury.
 import { MercuryController } from '../controllers/mercury.controller';
 // Service des tuiles de surface de Mercure.
-import { MercuryTileService } from '../services/mercury/mercury-surface-tile.service';
+import { MercuryTileService } from '../services/celestial/mercury/mercury-surface-tile.service';
 // Service des appels aux sources amont de Mercure.
-import { MercuryUpstreamService } from '../services/mercury/upstream.service';
+import { MercuryUpstreamService } from '../services/celestial/mercury/upstream.service';
 
 // Ouvre la déclaration du module.
 @Module({

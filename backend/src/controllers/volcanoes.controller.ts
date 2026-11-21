@@ -1,7 +1,7 @@
 // Outils NestJS : décorateur de contrôleur, route GET et en-tête de réponse.
 import { Controller, Get, Header } from '@nestjs/common';
 // Service des volcans en éruption (NASA EONET).
-import { VolcanoesService } from '../services/volcanoes/volcanoes.service';
+import { VolcanoesService } from '../services/celestial/volcanoes/volcanoes.service';
 // Décorateurs de documentation OpenAPI : étiquette du groupe et description des routes.
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 

@@ -7,7 +7,7 @@ import type { AppConfig } from '../common/configuration';
 // Contrôleur World Atlas : les routes /api/v1/world-atlas.
 import { WorldAtlasController } from '../controllers/world-atlas.controller';
 // Service World Atlas : lit le TopoJSON des pays et sait le refabriquer.
-import { WorldAtlasService } from '../services/world-atlas/world-atlas.service';
+import { WorldAtlasService } from '../services/locations/world-atlas/world-atlas.service';
 
 /** World Atlas (pays en TopoJSON) : /api/v1/world-atlas. Le service est partagé avec les frontières. */
 // Ouvre la déclaration du module.

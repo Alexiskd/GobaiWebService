@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 // Contrôleur des dalles LiDAR : les routes /api/v1/lidar.
 import { LidarTilesController } from '../controllers/lidar-tiles.controller';
 // Service des dalles LiDAR : manifestes et fichiers de nœuds, servis depuis PostgreSQL ou depuis le disque.
-import { LidarTilesService } from '../services/lidar-tiles/lidar-tiles.service';
+import { LidarTilesService } from '../services/lidar/lidar-tiles/lidar-tiles.service';
 
 // Ouvre la déclaration du module.
 @Module({

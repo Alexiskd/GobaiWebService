@@ -5,7 +5,7 @@ import { IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class
 // Conversion des paramètres reçus.
 import { Type } from 'class-transformer';
 // Borne de la location à l'heure.
-import { MAX_ORBIT_HOURS } from '../services/store/catalogue';
+import { MAX_ORBIT_HOURS } from '../services/commerce/store/catalogue';
 
 /** Un article du catalogue. */
 export class ProductDto {

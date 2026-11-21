@@ -7,11 +7,11 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes des réponses (planètes, Lune, phases, satellites) et des paramètres de requête.
 import { EphemerisDto, EphemerisQueryDto, KeplerBodyStateDto, MoonEphemerisDto, MoonPhasesDto, SatellitesEphemerisDto } from '../dto/ephemeris.dto';
 // Service des phases de la Lune (U.S. Naval Observatory).
-import { UsnoService } from '../services/ephemeris/usno.service';
+import { UsnoService } from '../services/celestial/ephemeris/usno.service';
 // Service des orbites de Kepler (Lune et satellites).
-import { KeplerEphemerisService } from '../services/ephemeris/kepler-ephemeris.service';
+import { KeplerEphemerisService } from '../services/celestial/ephemeris/kepler-ephemeris.service';
 // Service des positions des planètes.
-import { EphemerisService } from '../services/ephemeris/planetary-positions.service';
+import { EphemerisService } from '../services/celestial/ephemeris/planetary-positions.service';
 
 // Rubrique « Éphémérides » de la documentation.
 @ApiTags('Éphémérides')

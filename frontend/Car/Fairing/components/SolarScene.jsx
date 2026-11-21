@@ -435,7 +435,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Au retour de Stripe après un achat d'export : rouvre la boutique, qui délivre la clé.
   useEffect(() => { if (hasPurchaseReturn()) panels.setPanel('store'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Adresse d'une fenêtre (https://www.gobaispace.com/galerie, /node) : ouverte dès l'arrivée.
-  // Même liste que WINDOW_PAGES dans backend/src/services/data/body-pages.ts.
+  // Même liste que WINDOW_PAGES dans backend/src/services/core/data/body-pages.ts.
   // Effet exécuté une seule fois : ouvre la fenêtre demandée par l'adresse.
   useEffect(() => {
     // Lit le chemin de l'adresse, sans barres obliques, en minuscules.

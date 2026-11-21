@@ -7,9 +7,9 @@ import type { AppConfig } from '../common/configuration';
 // Importe le contrôleur des dons.
 import { DonationsController } from '../controllers/donations.controller';
 // Importe le service des dons.
-import { DonationsService } from '../services/donations/donations.service';
+import { DonationsService } from '../services/commerce/donations/donations.service';
 // Importe le service de paiement Stripe.
-import { StripeCheckoutService } from '../services/donations/stripe-checkout.service';
+import { StripeCheckoutService } from '../services/commerce/donations/stripe-checkout.service';
 
 // Déclare le module (début).
 @Module({

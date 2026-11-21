@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 // Contrôleur de la galerie : les routes /api/v1/galerie.
 import { GalleryController } from '../controllers/gallery.controller';
 // Service de la galerie : la collection de photos et de vidéos, stockée dans PostgreSQL.
-import { GalleryService } from '../services/gallery/gallery.service';
+import { GalleryService } from '../services/content/gallery/gallery.service';
 
 // Ouvre la déclaration du module.
 @Module({

@@ -7,9 +7,9 @@ import type { AppConfig } from '../common/configuration';
 // Contrôleur des lieux : les routes de recherche et de noms de villes.
 import { PlacesController } from '../controllers/places.controller';
 // Service de recherche de villes et de lieux, interne (GeoNames embarqué, aucun service extérieur).
-import { PlacesService } from '../services/places/places.service';
+import { PlacesService } from '../services/locations/places/places.service';
 // Service des noms de villes du monde (Natural Earth), avec le nom dans l'écriture locale.
-import { CityLabelsService } from '../services/places/city-labels.service';
+import { CityLabelsService } from '../services/locations/places/city-labels.service';
 
 // Ouvre la déclaration du module.
 @Module({

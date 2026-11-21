@@ -3,7 +3,7 @@ import type { INestApplication } from '@nestjs/common';
 // Constructeur du document OpenAPI et module Swagger.
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 // Adresse publique du site.
-import { SITE_URL } from '../services/data/body-pages';
+import { SITE_URL } from '../services/core/data/body-pages';
 
 /**
  * Groupes de la documentation, dans l'ordre où Swagger UI les affiche.

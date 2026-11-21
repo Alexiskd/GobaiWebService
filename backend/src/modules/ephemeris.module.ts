@@ -5,13 +5,13 @@ import { APP_CONFIG } from './config.module';
 // Type (effacé à la compilation) de l'objet de configuration.
 import type { AppConfig } from '../common/configuration';
 // Service des orbites de la Lune et des satellites, calculées sur place par les lois de Kepler.
-import { KeplerEphemerisService } from '../services/ephemeris/kepler-ephemeris.service';
+import { KeplerEphemerisService } from '../services/celestial/ephemeris/kepler-ephemeris.service';
 // Service des prochaines phases de la Lune (U.S. Naval Observatory).
-import { UsnoService } from '../services/ephemeris/usno.service';
+import { UsnoService } from '../services/celestial/ephemeris/usno.service';
 // Contrôleur des éphémérides : les routes de positions.
 import { EphemerisController } from '../controllers/ephemeris.controller';
 // Service des positions des planètes à un instant donné.
-import { EphemerisService } from '../services/ephemeris/planetary-positions.service';
+import { EphemerisService } from '../services/celestial/ephemeris/planetary-positions.service';
 
 // Ouvre la déclaration du module.
 @Module({

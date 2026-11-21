@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Construit backend/data/vendor/geonames/places.tsv.gz, la base du moteur de recherche de lieux interne
- * (services/places/place-index.ts), à partir de :
+ * (services/locations/places/place-index.ts), à partir de :
  *   - GeoNames cities1000 (toutes les localités de plus de 1 000 habitants et les chefs-lieux), au format du paquet
  *     npm « cities.json » (https://github.com/lutangar/cities.json) : cities.json, admin1.json, admin2.json ;
  *   - Natural Earth (déjà dans le projet) : population et noms (français, écritures locales) des ~7 300 grandes

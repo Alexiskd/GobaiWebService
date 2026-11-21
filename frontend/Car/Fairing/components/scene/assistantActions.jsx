@@ -1,6 +1,6 @@
 // Actions d'interface que l'assistant peut demander : traduction d'une action { name, input } reçue du serveur en une
 // commande déjà offerte par l'interface (boutons et réglages React existants). Fonction pure : elle valide chaque valeur
-// et renvoie quoi faire, sans rien exécuter. Même liste de noms que backend/src/services/assistant/assistant-tools.ts.
+// et renvoie quoi faire, sans rien exécuter. Même liste de noms que backend/src/services/content/assistant/assistant-tools.ts.
 // Importe fold, qui normalise un texte (minuscules, sans accents).
 import { fold } from '../../../Engine/shared/lib/format.jsx';
 

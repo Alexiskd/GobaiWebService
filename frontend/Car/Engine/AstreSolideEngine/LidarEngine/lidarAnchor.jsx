@@ -1,6 +1,6 @@
 // Calage GPS d'un nuage LiDAR sur le globe (usage interne au moteur, aucune commande utilisateur).
 // Le calage vient du catalogue (GET /pointclouds/:nom → `anchor`) : la coordonnée GPS est posée au centre de l'emprise,
-// en bas du nuage (Z minimal). Même calcul que le serveur (backend/src/services/pointclouds/lidar-anchor.ts) :
+// en bas du nuage (Z minimal). Même calcul que le serveur (backend/src/services/lidar/pointclouds/lidar-anchor.ts) :
 // natif → Est-Nord-Haut autour de l'ancrage → WGS84 exact → sphère unité de la Terre (repère de lonLatToXYZ).
 // Importe la conversion d'une longitude et d'une latitude en point 3D.
 import { lonLatToXYZ } from '../MapEngine/mercator.jsx';

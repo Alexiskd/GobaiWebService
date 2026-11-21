@@ -11,10 +11,10 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "openapi:export": "nest build && node dist/modules/openapi-export.js",
-    "moon:prefetch": "nest build && node dist/services/scripts/moon-prefetch.js",
-    "world-atlas:build": "nest build && node dist/services/scripts/world-atlas-build.js",
-    "pointcloud:anchor": "nest build && node dist/services/scripts/pointcloud-anchor.js",
-    "dwarf:import": "nest build && node dist/services/scripts/dwarf-planets-import.js",
+    "moon:prefetch": "nest build && node dist/services/core/scripts/moon-prefetch.js",
+    "world-atlas:build": "nest build && node dist/services/core/scripts/world-atlas-build.js",
+    "pointcloud:anchor": "nest build && node dist/services/core/scripts/pointcloud-anchor.js",
+    "dwarf:import": "nest build && node dist/services/core/scripts/dwarf-planets-import.js",
     "test": "jest"
   },
   "dependencies": {

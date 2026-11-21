@@ -25,19 +25,19 @@ import {
 // Type Express (effacé à la compilation) de la réponse.
 import type { Response } from 'express';
 // Service qui assemble l'image mélangée de Mars (mosaïques Viking et CTX).
-import { MarsBlendService } from '../services/mars/mars-blend.service';
+import { MarsBlendService } from '../services/celestial/mars/mars-blend.service';
 // Service des capacités des sources de Mars (ce que chaque source de tuiles déclare servir).
-import { MarsCapabilitiesService } from '../services/mars/capabilities.service';
+import { MarsCapabilitiesService } from '../services/celestial/mars/capabilities.service';
 // Service de santé des sources amont de Mars.
-import { MarsHealthService } from '../services/mars/mars-upstream-health.service';
+import { MarsHealthService } from '../services/celestial/mars/mars-upstream-health.service';
 // Jeton d'injection de la configuration de Mars et son type.
-import { MARS_CONFIG, type MarsConfig } from '../services/mars/mars.config';
+import { MARS_CONFIG, type MarsConfig } from '../services/celestial/mars/mars.config';
 // Service du catalogue : sources et couches de Mars.
-import { MarsCatalogService } from '../services/mars/mars-catalog.service';
+import { MarsCatalogService } from '../services/celestial/mars/mars-catalog.service';
 // Types (effacés à la compilation) d'une emprise géographique et du résultat d'une lecture de tuile.
-import type { BBox, TileFetchResult } from '../services/mars/mars.types';
+import type { BBox, TileFetchResult } from '../services/celestial/mars/mars.types';
 // Service des tuiles de Mars.
-import { MarsTileService } from '../services/mars/mars-imagery-tile.service';
+import { MarsTileService } from '../services/celestial/mars/mars-imagery-tile.service';
 // Décorateurs de documentation OpenAPI : étiquette du groupe et description des routes.
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 

@@ -5,7 +5,7 @@ import { Transform, Type } from 'class-transformer';
 // Validateurs des champs reçus.
 import { IsBoolean, IsIn, IsInt, IsISO8601, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 // Borne du niveau de zoom assemblable.
-import { MAX_ZOOM } from '../services/export/mosaic.service';
+import { MAX_ZOOM } from '../services/commerce/export/mosaic.service';
 
 /** Un astre exportable. */
 export class ExportableBodyDto {

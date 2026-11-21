@@ -4,12 +4,12 @@ import { Module } from '@nestjs/common';
 import { StoreController } from '../controllers/store.controller';
 import { ExportController } from '../controllers/export.controller';
 // Services : boutique, achats enregistrés, exports, assemblage des tuiles.
-import { StoreService } from '../services/store/store.service';
-import { LicencesService } from '../services/store/licences.service';
-import { ExportService } from '../services/export/export.service';
-import { MosaicService } from '../services/export/mosaic.service';
+import { StoreService } from '../services/commerce/store/store.service';
+import { LicencesService } from '../services/commerce/store/licences.service';
+import { ExportService } from '../services/commerce/export/export.service';
+import { MosaicService } from '../services/commerce/export/mosaic.service';
 // Client Stripe, partagé avec les dons.
-import { StripeCheckoutService } from '../services/donations/stripe-checkout.service';
+import { StripeCheckoutService } from '../services/commerce/donations/stripe-checkout.service';
 // Module des tuiles, qui expose le service des couches.
 import { TilesModule } from './tiles.module';
 // Module des contributions, qui expose le service des comptes : un achat se fait depuis un compte connecté.

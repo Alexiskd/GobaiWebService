@@ -71,7 +71,7 @@ import {
   // type du résultat d'une lecture de tuile.
   type TileFetchResult,
 // Fin de l'import.
-} from '../services/moon/moon.service';
+} from '../services/celestial/moon/moon.service';
 
 // Interface minimale de la réponse HTTP, pour les routes qui ne font que poser des en-têtes :
 interface MinimalResponse {

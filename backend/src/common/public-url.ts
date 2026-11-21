@@ -1,5 +1,5 @@
 // Adresse du site en ligne.
-import { SITE_URL } from '../services/data/body-pages';
+import { SITE_URL } from '../services/core/data/body-pages';
 
 /**
  * Adresse publique du service, sans barre finale : celle affichée au démarrage et dans la documentation de l'API.

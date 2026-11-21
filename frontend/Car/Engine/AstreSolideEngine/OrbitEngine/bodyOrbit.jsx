@@ -6,8 +6,8 @@ import * as THREE from 'three';
  *
  * Un seul composant pour tous les astres : ce qui change d'un astre à l'autre (sa période, la fonction qui donne
  * sa position, l'unité de cette position, la couleur de la ligne) est passé en paramètre. Le calcul des positions
- * n'est pas refait ici : il vient du moteur képlérien du backend (services/ephemeris/kepler-orbits.ts), qui sait
- * déjà traiter chaque astre de la table d'éléments (services/data/kepler-elements.ts), y compris les satellites
+ * n'est pas refait ici : il vient du moteur képlérien du backend (services/celestial/ephemeris/kepler-orbits.ts), qui sait
+ * déjà traiter chaque astre de la table d'éléments (services/core/data/kepler-elements.ts), y compris les satellites
  * dont les éléments sont rapportés à l'équateur de leur planète ou à un plan de Laplace.
  *
  * Le tracé couvre une période orbitale complète centrée sur l'instant simulé : il passe donc exactement par

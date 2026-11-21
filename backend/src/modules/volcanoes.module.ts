@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 // Contrôleur des volcans : la route /api/v1/volcanoes.
 import { VolcanoesController } from '../controllers/volcanoes.controller';
 // Service des volcans en éruption (NASA EONET).
-import { VolcanoesService } from '../services/volcanoes/volcanoes.service';
+import { VolcanoesService } from '../services/celestial/volcanoes/volcanoes.service';
 
 // Ouvre la déclaration du module.
 @Module({

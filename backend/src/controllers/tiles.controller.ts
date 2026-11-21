@@ -47,29 +47,29 @@ import {
 // Service principal des tuiles : couches, modèles d'adresse, sources.
 import { TilesService } from '../services/map-tiles/map-imagery.service';
 // Service de la texture en couleurs naturelles de la Lune.
-import { MoonColorService } from '../services/map-tiles/moon-color.service';
+import { MoonColorService } from '../services/map-tiles/moon/moon-color.service';
 // Service du cache disque des tuiles de la Lune.
-import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
+import { MoonTileCacheService } from '../services/map-tiles/moon/moon-tile-cache.service';
 // Importe le relief de la Lune en tuiles Terrarium.
-import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
+import { MoonReliefService } from '../services/map-tiles/moon/moon-relief.service';
 // Importe le service du relief de Mars et de Mercure.
-import { BodyReliefService } from '../services/map-tiles/body-relief.service';
+import { BodyReliefService } from '../services/map-tiles/bodies/body-relief.service';
 // Importe le blend de la Lune.
-import { MoonBlendService } from '../services/map-tiles/moon-blend.service';
+import { MoonBlendService } from '../services/map-tiles/moon/moon-blend.service';
 // Service du modèle 3D de la Lune.
-import { MoonModelService } from '../services/map-tiles/moon-model.service';
+import { MoonModelService } from '../services/map-tiles/moon/moon-model.service';
 // Service des modèles 3D des autres astres.
-import { BodyModelService } from '../services/map-tiles/body-model.service';
+import { BodyModelService } from '../services/map-tiles/bodies/body-model.service';
 // Service des cartes des satellites naturels et des géantes gazeuses.
-import { SatelliteTilesService } from '../services/map-tiles/satellite-tiles.service';
+import { SatelliteTilesService } from '../services/map-tiles/bodies/satellite-tiles.service';
 // Service qui teste si un astre a une carte NASA Trek.
-import { BodyAvailabilityService } from '../services/map-tiles/body-availability.service';
+import { BodyAvailabilityService } from '../services/map-tiles/bodies/body-availability.service';
 // Service de l'imagerie de la Terre (couche unique, plusieurs sources).
-import { EarthImageryService } from '../services/map-tiles/earth-imagery.service';
+import { EarthImageryService } from '../services/map-tiles/earth/earth-imagery.service';
 // En-tête de cache de la table de priorité des sources de la Terre.
-import { EARTH_PLAN_CACHE } from '../services/map-tiles/earth-plan';
+import { EARTH_PLAN_CACHE } from '../services/map-tiles/earth/earth-plan';
 // Service de l'image mélangée de Mars et identifiant de sa couche.
-import { MarsBlendService, MARS_BLEND_LAYER_ID } from '../services/mars/mars-blend.service';
+import { MarsBlendService, MARS_BLEND_LAYER_ID } from '../services/celestial/mars/mars-blend.service';
 // Ouvre l'import de la fusion de Mars :
 import {
   // fonction qui retrouve un algorithme de fusion d'après son nom court dans l'adresse ;
@@ -77,7 +77,7 @@ import {
   // service qui calcule les tuiles de fusion.
   MarsFusionService,
 // Fin de l'import.
-} from '../services/mars/mars-fusion.service';
+} from '../services/celestial/mars/mars-fusion.service';
 
 /** Sous-ensemble de la réponse Express dont on a besoin (évite une dépendance de types). */
 // Interface minimale de la réponse pour une route qui envoie un contenu ou redirige :

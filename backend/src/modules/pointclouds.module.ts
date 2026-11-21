@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 // Contrôleur des nuages de points : liste des fichiers et lecture par plages d'octets (HTTP Range).
 import { PointCloudsController } from '../controllers/pointclouds.controller';
 // Service des nuages de points : lit les fichiers COPC/LAS du dossier configuré.
-import { PointCloudsService } from '../services/pointclouds/pointclouds.service';
+import { PointCloudsService } from '../services/lidar/pointclouds/pointclouds.service';
 
 // Ouvre la déclaration du module.
 @Module({

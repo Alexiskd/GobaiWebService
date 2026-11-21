@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnauthorizedRes
 import { ApiErrorDto } from '../dto/api-error.dto';
 import { accessSecret, JWT_AUDIENCE, JWT_ISSUER } from '../common/jwt.guard';
 import { JwtError, bearerToken, verifyJwt } from '../common/jwt';
-import { scopeAllows } from '../services/store/catalogue';
+import { scopeAllows } from '../services/commerce/store/catalogue';
 
 class VerifyAccessDto { valid: boolean; scopes: string[]; expiresAt: string | null; }
 

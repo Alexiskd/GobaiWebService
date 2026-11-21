@@ -5,11 +5,11 @@ import { Type } from 'class-transformer';
 // Validateurs des champs reçus.
 import { IsIn, IsInt, IsNumber, IsOptional, IsString, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 // Modes de tri acceptés par la liste.
-import { SORT_MODES } from '../services/contributions/ranking';
+import { SORT_MODES } from '../services/content/contributions/ranking';
 // Bornes du placement.
-import { MAX_POINTS } from '../services/contributions/placement';
+import { MAX_POINTS } from '../services/content/contributions/placement';
 // Bornes des identifiants.
-import { PASSWORD_MAX, PASSWORD_MIN, PSEUDONYM_MAX } from '../services/contributions/accounts';
+import { PASSWORD_MAX, PASSWORD_MIN, PSEUDONYM_MAX } from '../services/content/contributions/accounts';
 
 /** Emprise déclarée par l'en-tête d'un fichier LAS/LAZ, en coordonnées natives. */
 export class BoundsDto {

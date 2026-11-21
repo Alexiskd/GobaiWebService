@@ -7,9 +7,9 @@ import type { AppConfig } from '../common/configuration';
 // Contrôleur des frontières : la route /api/v1/borders.
 import { BordersController } from '../controllers/borders.controller';
 // Service des frontières : décode le TopoJSON en polylignes et calcule le milieu de chaque pays.
-import { BordersService } from '../services/borders/borders.service';
+import { BordersService } from '../services/locations/borders/borders.service';
 // Service World Atlas : fournit le TopoJSON des pays au service des frontières.
-import { WorldAtlasService } from '../services/world-atlas/world-atlas.service';
+import { WorldAtlasService } from '../services/locations/world-atlas/world-atlas.service';
 // Module World Atlas, qui exporte ce service.
 import { WorldAtlasModule } from './world-atlas.module';
 

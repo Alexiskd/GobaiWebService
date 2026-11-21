@@ -7,9 +7,9 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes des noms de villes, des paramètres de recherche et des résultats.
 import { CityLabelsDto, FindPlacesQueryDto, PlacesDto } from '../dto/places.dto';
 // Service des noms de villes (Natural Earth).
-import { CityLabelsService } from '../services/places/city-labels.service';
+import { CityLabelsService } from '../services/locations/places/city-labels.service';
 // Service de recherche de lieux (moteur interne, GeoNames embarqué).
-import { PlacesService } from '../services/places/places.service';
+import { PlacesService } from '../services/locations/places/places.service';
 
 // Rubrique « Lieux » de la documentation.
 @ApiTags('Lieux')

@@ -1,7 +1,7 @@
 /**
  * Verrou payant devant la documentation de l'API (/api/docs, Swagger UI, et /api/docs-json, son export JSON) :
  * elle détaille toutes les routes, y compris celles qu'on pourrait vouloir appeler sans payer. Même clé que les
- * exports (voir services/store/catalogue.ts) : le jeton JWT du produit « all » (« Tout le catalogue »), acheté sur
+ * exports (voir services/commerce/store/catalogue.ts) : le jeton JWT du produit « all » (« Tout le catalogue »), acheté sur
  * /api/v1/store. La consultation du site (gobaispace.com) n'est pas concernée : seule la documentation l'est.
  *
  * Swagger UI s'ouvre dans un navigateur, qui ne sait pas poser d'en-tête Authorization personnalisé sur une simple
@@ -16,7 +16,7 @@ import { accessSecret, JWT_AUDIENCE, JWT_ISSUER } from './jwt.guard';
 // Vérification du jeton, et lecture d'un en-tête Bearer.
 import { JwtError, bearerToken, verifyJwt } from './jwt';
 // Droit « tout le catalogue », et la règle qui dit si un jeton le porte.
-import { SCOPE_ALL, scopeAllows } from '../services/store/catalogue';
+import { SCOPE_ALL, scopeAllows } from '../services/commerce/store/catalogue';
 
 /** Jeton porté par la requête : en-tête Authorization, sinon le paramètre d'adresse « key ». */
 function tokenFrom(req: Request): string | null {

@@ -7,7 +7,7 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes de la liste des astres, du listing d'affichage et d'une planète.
 import { BodiesDto, BodyListingDto, PlanetDto } from '../dto/bodies.dto';
 // Service du catalogue des astres.
-import { BodiesService } from '../services/bodies/bodies.service';
+import { BodiesService } from '../services/celestial/bodies/bodies.service';
 
 // Rubrique « Astres » de la documentation.
 @ApiTags('Astres')

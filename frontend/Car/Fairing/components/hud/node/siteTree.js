@@ -1,5 +1,5 @@
 // Arborescence du site, affichée dans l'onglet « Arborescence » de la fenêtre Node.
-// Mêmes adresses que backend/src/services/data/body-pages.ts et public/sitemap.xml : une page ajoutée là-bas s'ajoute ici.
+// Mêmes adresses que backend/src/services/core/data/body-pages.ts et public/sitemap.xml : une page ajoutée là-bas s'ajoute ici.
 
 // node : fabrique un nœud de l'arborescence à partir d'un nom, d'une adresse et de ses enfants (aucun par défaut).
 const node = (name, path, children = []) => ({ name, path, children });

@@ -19,27 +19,27 @@ import { TilesController } from '../controllers/tiles.controller';
 // Jeton d'injection de la liste des fournisseurs, et service principal des tuiles.
 import { TILE_PROVIDERS, TilesService } from '../services/map-tiles/map-imagery.service';
 // Service de la texture en couleurs naturelles de la Lune, gardée sur le disque et relayée.
-import { MoonColorService } from '../services/map-tiles/moon-color.service';
+import { MoonColorService } from '../services/map-tiles/moon/moon-color.service';
 // Service du cache disque des tuiles de la Lune, avec préchargement et comblement des zones vides.
-import { MoonTileCacheService } from '../services/map-tiles/moon-tile-cache.service';
+import { MoonTileCacheService } from '../services/map-tiles/moon/moon-tile-cache.service';
 // Relief de la Lune en tuiles Terrarium (altitudes LOLA de Moon Trek).
-import { MoonReliefService } from '../services/map-tiles/moon-relief.service';
+import { MoonReliefService } from '../services/map-tiles/moon/moon-relief.service';
 // Importe le service du relief de Mars et de Mercure.
-import { BodyReliefService } from '../services/map-tiles/body-relief.service';
+import { BodyReliefService } from '../services/map-tiles/bodies/body-relief.service';
 // Blend de la Lune : modèle 3D complet (carte réelle + relief) enregistré dans BP.
-import { MoonBlendService } from '../services/map-tiles/moon-blend.service';
+import { MoonBlendService } from '../services/map-tiles/moon/moon-blend.service';
 // Service du modèle 3D de la Lune (GLB), téléchargé une fois et relayé.
-import { MoonModelService } from '../services/map-tiles/moon-model.service';
+import { MoonModelService } from '../services/map-tiles/moon/moon-model.service';
 // Service des modèles 3D des autres astres (GLB), sur le même principe.
-import { BodyModelService } from '../services/map-tiles/body-model.service';
+import { BodyModelService } from '../services/map-tiles/bodies/body-model.service';
 // Service qui expose les catalogues Lune, Mars et Mercure dans l'API de tuiles.
-import { SpaceLayersService } from '../services/map-tiles/space-layers.service';
+import { SpaceLayersService } from '../services/map-tiles/bodies/space-layers.service';
 // Service des cartes des satellites naturels (NASA Trek, puis USGS en dernier recours).
-import { SatelliteTilesService } from '../services/map-tiles/satellite-tiles.service';
+import { SatelliteTilesService } from '../services/map-tiles/bodies/satellite-tiles.service';
 // Service de l'imagerie de la Terre.
-import { EarthImageryService } from '../services/map-tiles/earth-imagery.service';
+import { EarthImageryService } from '../services/map-tiles/earth/earth-imagery.service';
 // Service qui teste si un astre a une carte NASA Trek avant de l'afficher.
-import { BodyAvailabilityService } from '../services/map-tiles/body-availability.service';
+import { BodyAvailabilityService } from '../services/map-tiles/bodies/body-availability.service';
 // Module des éphémérides : ses services de positions sont utilisés par les tuiles.
 import { EphemerisModule } from './ephemeris.module';
 
