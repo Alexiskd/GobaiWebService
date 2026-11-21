@@ -1,7 +1,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe EARTH_RADIUS_M, le rayon de la Terre en mètres, depuis gps.
-import { EARTH_RADIUS_M } from '../gps.jsx';
+import { EARTH_RADIUS_M } from '../InputEngine/gps.jsx';
 // Importe xyzToLonLat, la longitude et la latitude d'un point de la sphère, depuis mercator.
 import { xyzToLonLat } from '../MapEngine/mercator.jsx';
 // Importe LidarDrape, l'orthophoto drapée sur les points, depuis lidarDrape.

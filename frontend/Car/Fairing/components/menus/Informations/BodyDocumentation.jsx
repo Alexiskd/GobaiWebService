@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, ButtonBase, Collapse, Link, Stack, Typography } from '@mui/material';
 import { get, resolveApiUrl } from '@/Computing/api/client';
-import { ALL_SATELLITES, MOON, PLANETS, SUN } from '@/Engine/SystemeEngine/data/astronomy/data/bodies.data';
+import { ALL_SATELLITES, MOON, PLANETS, SUN } from '@/Engine/SystemeEngine/astronomy/data/bodies.data';
 import { DOCUMENTS } from '../Donnees/data/index.js';
 import { buildBodyCatalog, fold } from '../Donnees/bodyCatalog.js';
 import { photosOf } from '../Donnees/collectionPhotos.js';

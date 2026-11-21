@@ -21,7 +21,7 @@ import { CaracteristiquesElement } from './CaracteristiquesElement.jsx';
 // Briques de style communes de la fenêtre Node.
 import { Alerte, Carte, Chiffre, Fiche, Formule, GrilleChiffres, Note, Section, SousTitre } from './nodeUi.jsx';
 // Importe scientific, qui écrit un nombre en notation scientifique française.
-import { scientific } from '@/Engine/AstreSolideEngine/planetData';
+import { scientific } from '@/Engine/AstreSolideEngine/BodyEngine/planetData';
 
 // virgule : écrit un nombre avec une virgule décimale et d chiffres après elle.
 const virgule = (n, d = 2) => n.toFixed(d).replace('.', ',');

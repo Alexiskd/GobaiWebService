@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // Importe l'origine du calage d'un nuage et la conversion d'un point du nuage en point du globe, depuis lidarAnchor.
 import { lidarAnchorOrigin, lidarToGlobe } from './lidarAnchor.jsx';
 // Importe toLonLat, la conversion d'un vecteur en longitude et latitude, depuis gps.
-import { toLonLat } from '../gps.jsx';
+import { toLonLat } from '../InputEngine/gps.jsx';
 
 // Tuiles LiDAR sur le globe : chaque nuage calé par GPS (coordonnée posée au centre de son emprise, au bas du nuage)
 // est dessiné comme une boîte filaire (emprise X/Y × hauteur Z) et un repère au point d'ancrage, toujours visible.

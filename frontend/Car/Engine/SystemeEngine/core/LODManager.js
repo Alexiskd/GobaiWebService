@@ -1,4 +1,4 @@
-import { bodyLevel, planTiledBodies, satelliteShown } from '../../AstreSolideEngine/bodyLoading.jsx';
+import { bodyLevel, planTiledBodies, satelliteShown } from '../../AstreSolideEngine/BodyEngine/bodyLoading.jsx';
 
 /**
  * Adaptateur central du LOD Gobai. Les décisions géométriques restent dans bodyLoading.jsx :

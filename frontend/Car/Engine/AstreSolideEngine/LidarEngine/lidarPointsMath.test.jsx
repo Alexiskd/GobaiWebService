@@ -9,13 +9,13 @@ import { gunzipSync } from 'node:zlib';
 // Importe la palette, la clé de la racine et les fonctions testées du nuage de points.
 import { CLOUD_HEIGHT_M, DOWNSCALE_FILL, densityOrder, inDome, domeRadius, domeBudget, budgetForHeight, lonLatDistanceM, boxDistance2D, expandLonLatBox, boxShiftM, lonLatBox, searchRadius, shareBudget, viewFootprint, viewTarget, LIDAR_DOWNSCALE, LIDAR_PALETTE, ROOT_KEY, boxDistance, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, nodeUrl, parentKey, parseNodeKey, selectNodes, showCloud, tileFrame } from './lidarPointsMath.jsx';
 // Importe le rayon de la Terre en mètres, depuis gps.
-import { EARTH_RADIUS_M } from '../gps.jsx';
+import { EARTH_RADIUS_M } from '../InputEngine/gps.jsx';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis tiles/mercator.
 import { xyzToLonLat } from '../MapEngine/mercator.jsx';
 
 // Jeu d'essai : manifeste et racine de la dalle LiDAR HD de Paris (LHD_FXX_0652_6863), gardés pour les tests seulement
 // (l'application lit désormais les nuages de l'IGN en direct).
-const dir = new URL('../fixtures/lidar-paris/', import.meta.url);
+const dir = new URL('./fixtures/', import.meta.url);
 // Son manifeste.
 const manifest = JSON.parse(readFileSync(new URL('manifest.json', dir), 'utf8'));
 // L'arbre des nœuds construit à partir du manifeste.

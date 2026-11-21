@@ -5,7 +5,7 @@
 // Importe la conversion d'une longitude et d'une latitude en point 3D.
 import { lonLatToXYZ } from '../MapEngine/mercator.jsx';
 // Importe le rayon de la Terre, en mètres.
-import { EARTH_RADIUS_M } from '../gps.jsx';
+import { EARTH_RADIUS_M } from '../InputEngine/gps.jsx';
 
 // Demi-grand axe de l'ellipsoïde WGS84, en mètres.
 const A = 6_378_137;

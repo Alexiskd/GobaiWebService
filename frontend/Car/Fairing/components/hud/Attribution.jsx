@@ -13,7 +13,7 @@ import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe la liste des astres tuilés.
-import { TILED_BODIES } from '@/Engine/AstreSolideEngine/tiledBodies';
+import { TILED_BODIES } from '@/Engine/AstreSolideEngine/BodyEngine/tiledBodies';
 // Importe l'en-tête commun des fenêtres.
 import { PanelHeader } from '../ui/PanelHeader.jsx';
 // Importe l'arborescence du site et son compteur de pages.

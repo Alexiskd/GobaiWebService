@@ -1,9 +1,9 @@
 // Fonctions d'appel GET et POST.
 import { get, post } from './client.jsx';
 // Modèles 3D des astres, satellites sphériques, et inscription des satellites dans le moteur.
-import { BODY_MODELS, SPHERICAL_SATELLITE_IDS, registerSatelliteBodies } from '../../Engine/AstreSolideEngine/tiledBodies.jsx';
+import { BODY_MODELS, SPHERICAL_SATELLITE_IDS, registerSatelliteBodies } from '../../Engine/AstreSolideEngine/BodyEngine/tiledBodies.jsx';
 // Données scientifiques embarquées : le cœur du système solaire fonctionne sans API Gobai.
-import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../Engine/SystemeEngine/data/astronomy/data/bodies.data';
+import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../Engine/SystemeEngine/astronomy/data/bodies.data';
 
 // fetchBodies : les astres.
 export const fetchBodies = async () => ({ sun: SUN, moon: MOON, planets: PLANETS, satellites: ALL_SATELLITES });

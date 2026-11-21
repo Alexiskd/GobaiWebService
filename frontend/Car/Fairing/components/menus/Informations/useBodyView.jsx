@@ -5,9 +5,9 @@ import { searchPlaces } from '@/Computing/api';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe les lieux des astres et bodyId, l'identifiant d'un astre.
-import { BODY_PLACES, bodyId } from '@/Engine/AstreSolideEngine/bodyPlaces';
+import { BODY_PLACES, bodyId } from '@/Engine/AstreSolideEngine/LabelEngine/bodyPlaces';
 // Importe les types et la liste des lieux lunaires.
-import { FEATURE_TYPES, MOON_FEATURES } from '@/Engine/AstreSolideEngine/moonFeatures';
+import { FEATURE_TYPES, MOON_FEATURES } from '@/Engine/AstreSolideEngine/MoonEngine/moonFeatures';
 // Importe les caractéristiques de la Lune, d'une planète et d'un satellite.
 import { moonFacts, planetFacts, satelliteFacts } from './bodyFacts.jsx';
 

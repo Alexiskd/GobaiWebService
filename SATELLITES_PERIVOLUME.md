@@ -9,7 +9,7 @@
 
 ## Fichiers ajoutés/modifiés
 
-- `frontend/Car/Engine/SystemeEngine/data/astronomy/data/satellite-catalogue.observed.json`
-- `frontend/Car/Engine/AstreSolideEngine/satellitePerivolume.js`
-- `frontend/Car/Engine/AstreSolideEngine/satellitePerivolume.test.js`
-- `frontend/Car/Engine/AstreSolideEngine/satellites.jsx`
+- `frontend/Car/Engine/SystemeEngine/astronomy/data/satellite-catalogue.observed.json`
+- `frontend/Car/Engine/AstreSolideEngine/SatelliteEngine/satellitePerivolume.js`
+- `frontend/Car/Engine/AstreSolideEngine/SatelliteEngine/satellitePerivolume.test.js`
+- `frontend/Car/Engine/AstreSolideEngine/SatelliteEngine/satellites.jsx`

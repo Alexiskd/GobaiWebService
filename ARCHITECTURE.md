@@ -7,12 +7,20 @@ frontend/
     │   ├── SystemeEngine/               Orchestration, système, ressources, données orbitales
     │   │   ├── core/                    Scheduler, LOD, budgets GPU, ressources
     │   │   ├── PerivolumeEngine/        Périvolumes : gestionnaire, axiomes, géométrie, sphères dessinées (E = mc²)
-    │   │   └── data/astronomy/          Catalogue, éléments orbitaux, éphémérides
+    │   │   └── astronomy/               Catalogue, éléments orbitaux, éphémérides
     │   ├── AstreSolideEngine/
     │   │   ├── MapEngine/               Cartes, projections, tuiles
     │   │   ├── ReliefEngine/            Relief et géométrie d'élévation
-    │   │   ├── LidarEngine/             Points, ancrage et drapage LiDAR
-    │   │   └── AtmosphereEngine/        Nuages et couches atmosphériques des astres solides
+    │   │   ├── LidarEngine/             Points, ancrage et drapage LiDAR (jeu d'essai dans fixtures/)
+    │   │   ├── AtmosphereEngine/        Nuages et couches atmosphériques des astres solides
+    │   │   ├── BodyEngine/              Astres : types, booléens d'affichage, chargement, données, astres tuilés
+    │   │   ├── OrbitEngine/             Orbites, éphémérides, rubans d'orbite, gravité
+    │   │   ├── MoonEngine/              Lune : éphémérides, modèle, orbite, orbiteurs
+    │   │   ├── SatelliteEngine/         Satellites naturels et leurs périvolumes
+    │   │   ├── LabelEngine/             Noms des villes et des pays, frontières, lieux
+    │   │   ├── CameraEngine/            Caméra : inclinaison, focus, verrouillage, vol de zoom, échelles
+    │   │   ├── InputEngine/             Entrées : souris, toucher, boussole, GPS, repère de l'utilisateur
+    │   │   └── PerfEngine/              Mesure des images par seconde, économie d'énergie, purge du stockage
     │   ├── AstreGazeuxEngine/
     │   │   └── AtmosphereEngine/        Atmosphères et structures des astres gazeux
     │   ├── StarEngine/                  Étoiles, systèmes stellaires, ciel

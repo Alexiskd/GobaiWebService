@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LODManager } from './LODManager.js';
 import { RenderScheduler } from './RenderScheduler.js';
-import { LOD } from '../../AstreSolideEngine/bodyLoading.jsx';
+import { LOD } from '../../AstreSolideEngine/BodyEngine/bodyLoading.jsx';
 
 test('LODManager réutilise les niveaux existants et planifie les tuiles avec un budget', () => {
   const manager = new LODManager({ maxTiledBodies: 1 });

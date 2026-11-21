@@ -435,7 +435,7 @@ test('plate carrée : maillage d’une tuile posé à la bonne latitude, v=1 au 
 
 // ------------------------------------------------------------ frontières des pays
 // Importe buildBorderSegments et borderLift, les segments des frontières et leur hauteur, depuis bordersGeometry.
-import { buildBorderSegments, borderLift } from '../bordersGeometry.jsx';
+import { buildBorderSegments, borderLift } from '../LabelEngine/bordersGeometry.jsx';
 
 // Test : les frontières sont sur la sphère, découpées finement, sans traverser l'antiméridien (début).
 test('frontières : segments sur la sphère, découpés finement, sans traverser l’antiméridien', () => {
@@ -622,7 +622,7 @@ test('jupes : un pourtour enfoncé sous le bord, mêmes uv que le bord', () => {
 
 // ------------------------------------------------------------ modèle 3D NASA : calage par les uv
 // Importe uvAlignment et uvToLonLat, le calage par les uv et leur conversion, depuis moonModelMath.
-import { uvAlignment, uvToLonLat } from '../moonModelMath.jsx';
+import { uvAlignment, uvToLonLat } from '../MoonEngine/moonModelMath.jsx';
 // Importe lonLatToXYZ sous le nom llx, depuis mercator.
 import { lonLatToXYZ as llx } from './mercator.jsx';
 
@@ -662,7 +662,7 @@ test('modèle 3D : orientation retrouvée à partir des seules coordonnées de t
 
 // ------------------------------------------------------------ Lune en direct
 // Importe les fonctions et le rayon de la Lune en direct, depuis moonLive.
-import { moonState, orbiterMetrics, orbiterStateAt, eclToScene, MOON_RADIUS_KM } from '../moonLive.jsx';
+import { moonState, orbiterMetrics, orbiterStateAt, eclToScene, MOON_RADIUS_KM } from '../MoonEngine/moonLive.jsx';
 
 // Test : la phase, la distance, la libration et le point subsolaire de la Lune (début).
 test('Lune en direct : phase, distance, libration et point subsolaire', () => {
@@ -729,7 +729,7 @@ test('sondes : altitude, vitesse, période (vis-viva), visibilité de la Terre',
 test('sondes : étiquette cachée quand la Lune est entre la caméra et la sonde', async () => {
   // moonOrbiters.js importe three : on teste la fonction géométrique seule, recopiée de façon indépendante.
   // Lit le texte du fichier moonOrbiters.jsx.
-  const src = await import('node:fs').then((fs) => fs.readFileSync(new URL('../moonOrbiters.jsx', import.meta.url), 'utf8'));
+  const src = await import('node:fs').then((fs) => fs.readFileSync(new URL('../MoonEngine/moonOrbiters.jsx', import.meta.url), 'utf8'));
   // En garde la fin, à partir de la fonction segmentHitsSphere.
   const body = src.slice(src.indexOf('export function segmentHitsSphere'));
   // Recrée la fonction à partir de ce texte.
@@ -745,7 +745,7 @@ test('sondes : étiquette cachée quand la Lune est entre la caméra et la sonde
 
 // ------------------------------------------------------------ Danuri / ShadowCam : mosaïques polaires
 // Importe buildMosaicGrid et polarToLonLat, le maillage d'une mosaïque et la projection polaire inverse, depuis shadowcamMath.
-import { buildMosaicGrid, polarToLonLat } from '../shadowcamMath.jsx';
+import { buildMosaicGrid, polarToLonLat } from '../CameraEngine/shadowcamMath.jsx';
 
 // Test : la projection stéréographique polaire et le maillage centré sur le cratère (début).
 test('ShadowCam : stéréographique polaire et maillage centré sur le cratère', () => {

@@ -5,14 +5,14 @@ import { Box, IconButton, Typography } from '@mui/material';
 // Importe safe, la marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe bodyId, qui donne l'identifiant d'un astre.
-import { bodyId } from '@/Engine/AstreSolideEngine/bodyPlaces';
+import { bodyId } from '@/Engine/AstreSolideEngine/LabelEngine/bodyPlaces';
 // Importe les astres enlevés par défaut, la visibilité par défaut, le test de famille masquée et la famille d'une planète.
-import { defaultVisibility, isKindHidden, planetKind } from '@/Engine/AstreSolideEngine/bodyKinds';
+import { defaultVisibility, isKindHidden, planetKind } from '@/Engine/AstreSolideEngine/BodyEngine/bodyKinds';
 // Importe le calcul et l'affichage en console des booléens de chaque astre.
 // Importe la création du magasin du HUD et le crochet qui le lit.
 import { createHudStore, useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Booléens NASA JPL / Trek de chaque astre : la fonction pure et son affichage console (une ligne par astre).
-import { bodyBooleans, logBodyBooleans } from '@/Engine/AstreSolideEngine/bodyBooleans';
+import { bodyBooleans, logBodyBooleans } from '@/Engine/AstreSolideEngine/BodyEngine/bodyBooleans';
 // Importe le crochet du son des clics.
 import { useBubbleSound } from '@/Fairing/hooks/useBubbleSound';
 // Importe le crochet de la langue de l'interface.
@@ -111,7 +111,7 @@ import { useSiteAddress } from './scene/useSiteAddress.jsx';
 // Importe la traduction des actions de l'assistant.
 import { resolveAssistantAction } from './scene/assistantActions.jsx';
 // Lieux nommés de la Lune (sites d'alunissage, mers, cratères, régions) : la liste que l'assistant peut survoler.
-import { MOON_FEATURES } from '@/Engine/AstreSolideEngine/moonFeatures';
+import { MOON_FEATURES } from '@/Engine/AstreSolideEngine/MoonEngine/moonFeatures';
 // Importe le chargement de l'état des cartes des satellites.
 // Importe la valeur « nuit », le lecteur, l'abonnement et la bascule jour/nuit.
 import { NIGHT, getDayNight, subscribeDayNight, toggleDayNight } from '@/Engine/shared/lib/dayNight';

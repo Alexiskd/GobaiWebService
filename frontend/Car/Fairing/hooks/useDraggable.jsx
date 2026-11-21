@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useRef et useState.
 import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe clampPanelPosition, qui garde une position dans les limites de la fenêtre.
-import { clampPanelPosition } from '@/Engine/AstreSolideEngine/dragMath';
+import { clampPanelPosition } from '@/Engine/AstreSolideEngine/InputEngine/dragMath';
 
 // Mise en page « bureau » : chaque panneau garde la position où on l'a déposé, d'une visite à l'autre.
 // Préfixe des clés du stockage local où sont gardées les positions des panneaux.

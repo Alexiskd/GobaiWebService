@@ -5,7 +5,7 @@ import { ATMOSPHERES, cloudRadiusFactor, scatterParams, simCloudFade } from './a
 // Importe les cinq shaders des nuages et de la coquille, depuis atmosphereShaders.
 import { cloudVertexShader, earthCloudFragmentShader, shellFragmentShader, shellVertexShader, venusCloudFragmentShader } from './atmosphereShaders.jsx';
 // Importe la somme des amplitudes du bruit et la qualité des shaders, depuis powerSaver.
-import { QUALITY, fbmNorm } from '../powerSaver.jsx';
+import { QUALITY, fbmNorm } from '../PerfEngine/powerSaver.jsx';
 // Importe la taille de la texture de vent, l'état de l'animation, le contrôle d'une grille et la construction de la texture, depuis weatherFlow.
 import { WIND_TEXTURE_HEIGHT, WIND_TEXTURE_WIDTH, flowState, windTexels } from '../weatherFlow.jsx';
 

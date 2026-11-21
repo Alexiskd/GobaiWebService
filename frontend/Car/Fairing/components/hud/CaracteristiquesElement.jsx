@@ -11,7 +11,7 @@ import { SOLARIUM } from './theorieQuantique.js';
 // Briques de style communes de la fenêtre Node.
 import { Chiffre, Formule, GrilleChiffres, Note, SousTitre } from './nodeUi.jsx';
 // Écriture scientifique française.
-import { scientific } from '@/Engine/AstreSolideEngine/planetData';
+import { scientific } from '@/Engine/AstreSolideEngine/BodyEngine/planetData';
 
 // virgule : écrit un nombre avec une virgule décimale.
 const virgule = (n, d = 2) => n.toFixed(d).replace('.', ',');

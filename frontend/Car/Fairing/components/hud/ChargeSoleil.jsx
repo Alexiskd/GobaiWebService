@@ -7,7 +7,7 @@ import { CONSTANTES, LIGNES_SYNTHESE, SEUIL_IONISATION, qCouronne, qIonisee, qNe
 // Briques de style communes de la fenêtre Node.
 import { Chiffre, Fiche, Formule, GrilleChiffres, MONO, Note, Precision, SousTitre } from './nodeUi.jsx';
 // Écriture scientifique française.
-import { scientific } from '@/Engine/AstreSolideEngine/planetData';
+import { scientific } from '@/Engine/AstreSolideEngine/BodyEngine/planetData';
 
 // virgule : écrit un nombre avec une virgule décimale.
 const virgule = (n, d = 2) => n.toFixed(d).replace('.', ',');

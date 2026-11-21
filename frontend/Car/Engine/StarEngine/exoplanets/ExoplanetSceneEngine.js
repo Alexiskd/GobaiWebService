@@ -1,4 +1,4 @@
-import { calculateExoplanetPosition } from '../../SystemeEngine/data/astronomy/orbits/ExoplanetOrbitalEngine.js';
+import { calculateExoplanetPosition } from '../../SystemeEngine/astronomy/orbits/ExoplanetOrbitalEngine.js';
 
 const finite = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const rad = Math.PI / 180;
