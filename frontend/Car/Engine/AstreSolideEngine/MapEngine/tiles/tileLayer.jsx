@@ -18,6 +18,8 @@ import { EQUIRECTANGULAR, MERCATOR, projectionOf, tileBoundsIn } from '../projec
 import { MAX_HEIGHT_M, OCEAN_SHADE_BOOST, RELIEF_SKIRT, metersPerTexel, pointInTile, terrariumMeters, texelAt } from '../../ReliefEngine/relief.jsx';
 // Importe nativeTile et OVERZOOM_LEVELS, la tuile native d'une tuile sur-zoomée et le nombre de niveaux, depuis overzoom.
 import { nativeTile, OVERZOOM_LEVELS } from '../loading/overzoom.jsx';
+// Importe la basse résolution d'abord : premiers niveaux de l'astre entier et ancêtres des tuiles voulues.
+import { coarsePriority, isCoarseLevel, lowResTiles } from '../loading/lowRes.jsx';
 // Importe le repli des lumières de la nuit (ancêtre déjà chargé), depuis nightLights.
 import { LIGHTS_PAD, NEIGHBOUR_DIRS, fillPad, lightsFallback, lightsPrefetchList, neighbourTile, padLightsImage, paddedRect } from '../earth/nightLights.jsx';
 // Importe les outils du préchargement prédictif, depuis prefetch.
@@ -273,6 +275,10 @@ export class TileLayer {
     this.arrivedKeys = new Set(); // arrivées en attente de mise en place : on ne les redemande pas
     // Clés des tuiles voulues.
     this.wantedKeys = new Set();
+    // Clés des tuiles basse résolution demandées pour la vue en cours (affichées en attendant les tuiles fines).
+    this.lowKeys = new Set();
+    // Clés des premiers niveaux de l'astre entier, chargés avant tout le reste.
+    this.coarseKeys = new Set();
     // Tuiles en échec : instant du prochain essai.
     this.failed = new Map();       // clé → date de nouvel essai
     // Niveau le plus fin affiché.
@@ -428,12 +434,10 @@ export class TileLayer {
     // du zoom, pour laisser tout le réseau aux tuiles regardées.
     // Zoom en cours ?
     this.zooming = this.zoomWatch.update(view.cam, now);
-    // Sinon (début).
-    if (!this.zooming) {
-      // Précharge l'astre entier aux niveaux bas.
-      this.preloadWorld();
-    // Fin de ce cas.
-    }
+    // Les premiers niveaux de l'astre entier sont demandés même pendant un zoom : ce sont eux qui remplacent le fond
+    // sombre tant que rien de plus fin n'est arrivé. Le reste du préchargement attend la fin du zoom.
+    // Précharge l'astre entier aux niveaux bas ; pendant un zoom, seulement les premiers niveaux.
+    this.preloadWorld(this.zooming);
 
     // 1. Demandes de chargement pour les tuiles voulues (à chaque nouvelle sélection, sinon balayage périodique).
     // À chaque nouvelle sélection, ou toutes les 15 images (début).
@@ -471,6 +475,8 @@ export class TileLayer {
       }
       // Garde les clés voulues.
       this.wantedKeys = wantedKeys;
+      // Basse résolution d'abord : l'ancêtre de chaque tuile voulue pas encore affichable passe avant elle.
+      this.requestLowRes(wanted, reselect, now);
     // Fin des demandes.
     }
 
@@ -490,8 +496,8 @@ export class TileLayer {
     if ((reselect || prefetched) && this.loader.queued) {
       // Pour chaque clé en file (début).
       for (const key of this.loader.queuedKeys()) {
-        // Ni voulue, ni calque, ni altitude, ni gardée, ni prédictive : annulée.
-        if (!this.wantedKeys.has(key) && !key.startsWith('ov:') && !key.startsWith('h:') && !this.pinKeys.has(key) && !this.prefetchKeys.has(key)) this.loader.cancel(key);
+        // Ni voulue, ni basse résolution, ni calque, ni altitude, ni gardée, ni prédictive : annulée.
+        if (!this.wantedKeys.has(key) && !this.lowKeys.has(key) && !key.startsWith('ov:') && !key.startsWith('h:') && !this.pinKeys.has(key) && !this.prefetchKeys.has(key)) this.loader.cancel(key);
       // Fin de la boucle.
       }
     // Fin de ce cas.
@@ -513,8 +519,8 @@ export class TileLayer {
         const a = this.arrived.shift();
         // Elle n'est plus en attente.
         this.arrivedKeys.delete(a.key);
-        // Ni voulue ni gardée : rangée en mémoire vive ; suivante.
-        if (!this.wantedKeys.has(a.key) && !this.pinKeys.has(a.key)) { this.toRam(a); continue; }
+        // Ni voulue, ni basse résolution, ni gardée : rangée en mémoire vive ; suivante.
+        if (!this.wantedKeys.has(a.key) && !this.lowKeys.has(a.key) && !this.pinKeys.has(a.key)) { this.toRam(a); continue; }
         // La met en place sur la carte graphique.
         this.install(a);
         // Une mise en place de plus ; la première date le temps avant la première tuile.
@@ -743,12 +749,52 @@ export class TileLayer {
   }
 
   /**
+   * Basse résolution d'abord. Pour chaque tuile voulue qui n'est pas encore affichable, demande son ancêtre trois
+   * niveaux plus haut (64 fois moins de données pour la même zone), avec une priorité qui le fait passer avant les
+   * tuiles fines : la zone s'affiche d'abord floue, puis nette, au lieu de montrer le fond sombre de l'astre.
+   * Les niveaux gardés pour l'astre entier ne sont pas redemandés ici.
+   */
+  // requestLowRes : les tuiles voulues, vrai après une nouvelle sélection, l'instant présent (début).
+  requestLowRes(wanted, reselect, now) {
+    // Tuiles basse résolution utiles à la vue.
+    const low = lowResTiles(wanted, {
+      // Niveau le plus grossier : juste au-dessus des niveaux gardés, et pas sous le niveau minimal de la carte.
+      floor: Math.max(this.source.minZoom, this.pinnedMaxZoom + 1),
+      // Déjà affichable : sur la carte graphique.
+      covered: (key) => Boolean(this.ready(key)),
+    });
+    // Clés : un nouvel ensemble après une sélection, sinon le même, complété.
+    const keys = reselect ? new Set() : this.lowKeys;
+    // Pour chaque tuile basse résolution (début).
+    for (const t of low) {
+      // Note sa clé.
+      keys.add(t.key);
+      // Déjà arrivée, en attente de mise en place : suivante.
+      if (this.arrivedKeys.has(t.key)) continue;
+      // Image déjà décodée en mémoire vive.
+      const inRam = this.ram.peek(t.key);
+      // Dans ce cas : elle passe dans les arrivées ; suivante.
+      if (inRam) { this.ram.map.delete(t.key); this.arrivedKeys.add(t.key); this.arrived.push({ ...inRam, key: t.key, d: t.p }); continue; }
+      // Déjà en file : sa priorité est remontée ; suivante.
+      if (this.loader.has(t.key)) { this.loader.load(t.key, t.p); continue; }
+      // En échec récent : suivante.
+      if ((this.failed.get(t.key) ?? 0) > now) continue;
+      // La demande.
+      this.request(t.key, t);
+    // Fin de la boucle.
+    }
+    // Garde les clés.
+    this.lowKeys = keys;
+  // Fin de requestLowRes.
+  }
+
+  /**
    * Précharge l'astre entier aux niveaux 0 à `pinnedMaxZoom` (en plate carrée : 2·(4^(n+1) − 1)/3 tuiles, 170 pour n = 3),
    * avec son calque. Ces tuiles ne sont jamais évincées : où que l'on regarde, une image nette est déjà prête.
    * Appelé à chaque image : relance les tuiles échouées et le calque arrivé après coup. Coût : un parcours de la liste.
    */
-  // preloadWorld : précharge l'astre entier aux niveaux bas (début).
-  preloadWorld() {
+  // preloadWorld : précharge l'astre entier aux niveaux bas ; `coarseOnly` limite aux premiers niveaux (début).
+  preloadWorld(coarseOnly = false) {
     // Projection.
     const proj = this.projection;
     // Si la liste n'existe pas (début).
@@ -761,8 +807,12 @@ export class TileLayer {
         for (let y = 0; y < proj.rows(z); y++) for (let x = 0; x < proj.cols(z); x++) {
           // Clé de la tuile.
           const key = tileKey(z, x, y);
-          // L'ajoute, niveaux bas d'abord.
-          this.pinList.push({ key, z, x, y, d: PRELOAD_PRIORITY + z * 1e3 });
+          // Premiers niveaux : chargés avant tout le reste, ils remplacent le fond sombre pendant le chargement.
+          const coarse = isCoarseLevel(z, this.source.minZoom);
+          // L'ajoute, niveaux bas d'abord ; les premiers niveaux avec leur priorité propre.
+          this.pinList.push({ key, z, x, y, coarse, d: coarse ? coarsePriority(z) : PRELOAD_PRIORITY + z * 1e3 });
+          // Note la clé d'un premier niveau.
+          if (coarse) this.coarseKeys.add(key);
           // Note sa clé.
           this.pinKeys.add(key);
         // Fin des lignes et colonnes.
@@ -779,6 +829,8 @@ export class TileLayer {
     let done = 0;
     // Pour chaque tuile de la liste (début).
     for (const t of this.pinList) {
+      // Pendant un zoom, seuls les premiers niveaux sont traités : la liste est triée, on s'arrête au premier autre.
+      if (coarseOnly && !t.coarse) break;
       // Tuile déjà gardée.
       const e = this.pinned.get(t.key);
       // Si elle l'est (début).
@@ -797,6 +849,8 @@ export class TileLayer {
       this.request(t.key, t);
     // Fin de la boucle.
     }
+    // Passage limité aux premiers niveaux : le bilan du préchargement n'est pas recalculé.
+    if (coarseOnly) return;
     // Garde le nombre de tuiles prêtes.
     this.preloadDone = done;
     // Terminé (le calque peut changer : on revérifie alors, voir setOverlaySource).
@@ -848,8 +902,8 @@ export class TileLayer {
         // Tuile native du calque, s'il est prêt et couvre la tuile.
         const no = overlay?.ready && overlay.covers(coord) ? nativeTile(coord, overlay.maxZoom) : null;
         // Tuile à l'écran : demandée au réseau avant le reste (préchargements, relief).
-        // urgent : la tuile est-elle voulue à l'écran.
-        const urgent = () => this.wantedKeys.has(key);
+        // urgent : la tuile est-elle voulue à l'écran, ou affichée en basse résolution en attendant.
+        const urgent = () => this.wantedKeys.has(key) || this.lowKeys.has(key) || this.coarseKeys.has(key);
         // Fond et calque en même temps. Le calque est facultatif : s'il échoue, on affiche la tuile sans lui.
         // Charge le fond et le calque en même temps (début).
         const [base, ov] = await Promise.all([
@@ -870,8 +924,8 @@ export class TileLayer {
         // La tuile arrivée.
         const a = { key, coord, d: t.p ?? t.d, base, ov, overlay, baseRect, ovRect };
         // Voulue maintenant (ou préchargement global) → GPU ; préchargement prédictif → RAM, prête pour plus tard.
-        // Voulue ou gardée : en attente de mise en place.
-        if (this.wantedKeys.has(key) || this.pinKeys.has(key)) { this.arrivedKeys.add(key); this.arrived.push(a); }
+        // Voulue, basse résolution ou gardée : en attente de mise en place.
+        if (this.wantedKeys.has(key) || this.lowKeys.has(key) || this.pinKeys.has(key)) { this.arrivedKeys.add(key); this.arrived.push(a); }
         // Sinon : en mémoire vive.
         else this.toRam(a);
       // Fin de l'arrivée.
