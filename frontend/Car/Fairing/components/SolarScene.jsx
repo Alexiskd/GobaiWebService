@@ -35,10 +35,8 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 import { NavballPilote } from './hud/NavballPilote/index.js';
 // Importe le cadre des coordonnées GPS.
 import { GpsFrame } from './hud/GpsFrame.jsx';
-// Importe l'indicateur de chargement des tuiles.
 // Importe la jauge LiDAR.
 import { LidarJauge } from './hud/perf/LidarJauge.jsx';
-import { TuilesLoader } from './hud/perf/TuilesLoader.jsx';
 // Importe le bandeau du haut.
 import { HudTop } from './hud/HudTop.jsx';
 // Importe la fenêtre des paramètres.
@@ -723,8 +721,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const navigatorEl = navigatorOpen ? <Navigator bodies={shownBodies} focus={focus} onSelect={actions.selectFocus} onMovedChange={setNavigatorMoved} /> : null;
   // La jauge LiDAR.
   const lidarEl = <LidarJauge hud={hud} />;
-  // L'indicateur de chargement des tuiles de l'astre visé.
-  const tuilesEl = <TuilesLoader hud={hud} bodyId={currentBodyId} bodyName={currentBodyName} />;
   // La barre d'outils (début de la balise).
   const toolbarEl = (
       <Toolbar
@@ -843,8 +839,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       <ZoomPad onZoom={actions.zoom} />
       {/* La jauge LiDAR (ordinateur ; sur téléphone, sous le titre). */}
       {!compact && lidarEl}
-      {/* L'indicateur de chargement des tuiles (ordinateur ; sur téléphone, sous le titre). */}
-      {!compact && tuilesEl}
       {/* La barre d'outils (ordinateur). */}
       {!compact && toolbarEl}
       {/* Téléphone : les deux zones de commandes, où chaque élément a sa place et rien ne se recouvre. */}
@@ -872,8 +866,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
               </IconButton>
             // Fin des boutons.
             )}
-            // Indicateurs : chargement des tuiles et LiDAR.
-            status={<>{tuilesEl}{lidarEl}</>}
+            // Indicateur : la jauge LiDAR.
+            status={lidarEl}
           // Fin de la balise ouvrante.
           >
             {/* Le bandeau titre. */}
