@@ -188,9 +188,10 @@ export const eptCellKey = (c: EptCell): string => `${c.d}-${c.x}-${c.y}-${c.z}`;
 // Fonction inCell : la cellule et le nœud.
 export const inCell = (cell: EptEntry | EptCell, k: { level: number; x: number; y: number; z: number }): boolean => {
   // Le nœud est plus haut que la cellule : non.
-  if (k.level < cell.d) return false;
+  const d = (cell as EptCell).d ?? (cell as EptEntry).level;
+  if (k.level < d) return false;
   // Ses indices ramenés au niveau de la cellule.
-  const s = k.level - cell.d;
+  const s = k.level - d;
   // Dans la cellule si les trois indices concordent.
   return (k.x >> s) === cell.x && (k.y >> s) === cell.y && (k.z >> s) === cell.z;
 // Fin de inCell.
@@ -231,7 +232,7 @@ export function rekeyToTile(key: string, cell: EptCell): string | null {
   // Illisible ou hors de la cellule : null.
   if (!k || !inCell(cell, k)) return null;
   // Le décalage de niveau entre l'octree EPT et la dalle.
-  const s = k.level - cell.d;
+  const s = k.level - d;
   // Renvoie la clé renumérotée.
   return `${s}-${k.x - (cell.x << s)}-${k.y - (cell.y << s)}-${k.z - (cell.z << s)}`;
 // Fin de rekeyToTile.
