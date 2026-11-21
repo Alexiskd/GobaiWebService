@@ -3805,7 +3805,7 @@ export class SolarEngine {
     // Soulèvement du sol dessiné (m), sur une carte à plat.
     const groundLiftM = groundLayer ? (tileRadius(groundLevel, groundLayer.gap) - 1) * EARTH_RADIUS_M : 0;
     // Met à jour les points LiDAR : sur la carte à plat, leur sol est posé sur le sol dessiné.
-    if (this.shouldUpdateCoreEngine('lidarPoints', 'earth')) this.lidarPoints.update({ cam: this.cam, H: this.H, dpr: this.dpr, sunDir: this.sunDir, shade: this.tiles.uniforms.shade.value, hidden: Boolean(this.earth.hidden), now, flat: !this.tiles.reliefOn, groundLiftM });
+    if (this.shouldUpdateCoreEngine('lidarPoints', 'earth')) this.lidarPoints.update({ cam: this.cam, H: this.H, dpr: this.dpr, sunDir: this.sunDir, shade: this.tiles.uniforms.shade.value, hidden: Boolean(this.earth.hidden), now, flat: !this.tiles.reliefOn, groundLiftM, fps: this.fps, fpsLow: this.fpsMeter.low, fpsTarget: this.fpsTarget });
     // Met à jour les noms des pays.
     if (this.shouldUpdateCoreEngine('earthLabels', 'earth')) this.countryLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
     // Moteur de chargement planétaire : pixels par unité de scène à une unité de distance.

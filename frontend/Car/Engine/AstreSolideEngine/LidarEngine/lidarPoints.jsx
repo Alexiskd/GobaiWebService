@@ -13,7 +13,7 @@ import { LIDAR_STORE_BYTES, LidarStore } from './lidarStore.jsx';
 // Importe le maillage des nœuds (surfaces pleines au lieu de points).
 import { meshNode } from './lidarMeshMath.jsx';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
-import { DOWNSCALE_FILL, LIDAR_PALETTE, boxDistance2D, budgetForHeight, densityOrder, domeBudget, domeRadius, expandLonLatBox, inDome, lonLatDistanceM, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, boxShiftM, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath.jsx';
+import { BUDGET_GOVERNOR, PointBudgetGovernor, DOWNSCALE_FILL, LIDAR_PALETTE, boxDistance2D, budgetForHeight, densityOrder, domeBudget, domeRadius, expandLonLatBox, inDome, lonLatDistanceM, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, boxShiftM, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath.jsx';
 
 // Dalles LiDAR en vrais points 3D sur la Terre (LiDAR HD de l'IGN). Chaque dalle est un octree additif servi par
 // l'API (GET /lidar) : la racine donne la dalle entière, les niveaux suivants la densifient.
@@ -171,6 +171,10 @@ export class LidarPoints {
     this.store = new LidarStore(engine.power?.handheld ? LIDAR_STORE_BYTES.handheld : LIDAR_STORE_BYTES.desktop);
     // Budget de points du moment, fixé par la hauteur de la caméra.
     this.budget = this.profile.budget;
+    // Budget ajustable : monte tant que les images par seconde tiennent, baisse dès qu'elles fléchissent.
+    this.governor = new PointBudgetGovernor({ max: engine.power?.handheld ? BUDGET_GOVERNOR.maxHandheld : BUDGET_GOVERNOR.maxDesktop });
+    // Le budget a-t-il limité la dernière sélection ? Points affichés à la dernière image.
+    this.budgetBinding = false; this.shown = 0;
     // Rayon de la Terre dans la scène, ou 1.
     this.radius = engine.earth.def.radius || 1;
     // Repère des points.
@@ -804,7 +808,7 @@ export class LidarPoints {
   // evict : libère de la mémoire au-delà du plafond (début).
   evict(tile) {
     // Sous le plafond : rien à faire.
-    if (this.loaded <= this.profile.keep) return;
+    if (this.loaded <= this.profile.keep * Math.max(1, this.governor.scale)) return;
     // Nœuds chargés, non affichés à la dernière sélection, hors racine,
     const idle = [...tile.tree.values()].filter((n) => n.points && n.usedAt < this.stamp && n.key !== ROOT_KEY)
       // triés du plus ancien au plus récent, puis du plus fin au plus grossier.
@@ -812,7 +816,7 @@ export class LidarPoints {
     // Pour chacun (début).
     for (const node of idle) {
       // Repassé sous le plafond : arrêt.
-      if (this.loaded <= this.profile.keep) break;
+      if (this.loaded <= this.profile.keep * Math.max(1, this.governor.scale)) break;
       // Le libère.
       this.dropNode(tile, node);
     // Fin de la boucle.
@@ -825,7 +829,7 @@ export class LidarPoints {
    * nœuds à dessiner et à charger d'après la caméra.
    */
   // update : à chaque image, avec la caméra, la hauteur de l'écran, le Soleil et l'état de la carte (début).
-  update({ cam, H, dpr = 1, sunDir = null, shade = 1, hidden = false, now = performance.now(), flat = this.flat, groundLiftM = 0 }) {
+  update({ cam, H, dpr = 1, sunDir = null, shade = 1, hidden = false, now = performance.now(), flat = this.flat, groundLiftM = 0, fps = 0, fpsLow = 0, fpsTarget = 0 }) {
     // Applique l'état à plat ou en relief, et le soulèvement du sol dessiné.
     this.setGroundFlat(flat, groundLiftM);
     // Recherche des dalles de l'IGN sous la caméra (même sans dalle en place), si l'affichage est permis.
@@ -871,7 +875,10 @@ export class LidarPoints {
     // Hauteur de la caméra au-dessus de la Terre (m) : elle fixe le budget de points du dôme.
     const camAlt = (this.tmpN.copy(cam.position).applyMatrix4(this.tmpM.copy(frame.matrixWorld).invert()).divideScalar(this.radius).length() - 1) * EARTH_RADIUS_M;
     // Budget du moment, borné par celui de l'appareil.
-    this.budget = budgetForHeight(camAlt, this.profile.budget);
+    // Facteur du budget ajustable, d'après les images par seconde mesurées par le moteur.
+    const scale = this.governor.step(now, { fps, low: fpsLow, target: fpsTarget, shown: this.loaded, binding: this.budgetBinding });
+    // Budget du moment : la courbe selon la hauteur, multipliée par le facteur, bornée par celui de l'appareil.
+    this.budget = budgetForHeight(camAlt / scale, Math.round(this.profile.budget * scale));
     // Sélection à refaire si demandé, ou si le délai est écoulé.
     const select = this.dirty || now - this.selectAt >= SELECT_EVERY_MS;
     // Aucune dalle affichée et aucun avancement pour l'instant.
@@ -975,6 +982,8 @@ export class LidarPoints {
     if (select) {
       // Nœuds retenus, toutes dalles confondues : niveau par niveau, du centre vers le bord, dans le budget.
       const picked = domeBudget(wanted, this.budget);
+      // Le budget a limité la sélection si des nœuds voulus n'ont pas été pris.
+      this.budgetBinding = picked.length < wanted.length;
       // Clés retenues par dalle, dans l'ordre (niveau croissant).
       const byTile = new Map(domed.map((t) => [t, []]));
       // Range chaque nœud retenu avec sa dalle.
@@ -1008,7 +1017,7 @@ export class LidarPoints {
   // snapshot : l'état pour l'interface (début).
   snapshot() {
     // Nombre de dalles, points en mémoire, chargements en cours et avancement.
-    return { tiles: this.tiles.size, loaded: this.loaded, loading: this.active, progress: this.progress, budget: this.budget, store: this.store.snapshot() };
+    return { tiles: this.tiles.size, loaded: this.loaded, loading: this.active, progress: this.progress, budget: this.budget, budgetScale: this.governor.scale, store: this.store.snapshot() };
   // Fin de snapshot.
   }
 
