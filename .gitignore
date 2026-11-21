@@ -51,6 +51,8 @@ _sauvegarde_avant_optimisation/
 Thumbs.db
 # Réglages de dossier de Windows.
 desktop.ini
+# Raccourcis de Windows.
+*.lnk
 # Réglages des éditeurs JetBrains.
 .idea/
 # Réglages de VS Code.
