@@ -3,7 +3,7 @@ import { Box, Button, ToggleButton, ToggleButtonGroup, Typography } from '@mui/m
 // Importe le bouton de téléchargement d'une couche.
 import { DownloadButton } from '../../ui/Radio.jsx';
 // Importe layerSource, qui donne la source d'une couche.
-import { layerSource } from '../Informations/layerSource.jsx';
+import { layerSource } from '../Informations/couches/layerSource.jsx';
 // Importe Group, le groupe de réglages.
 import { Group } from '../../ui/Group.jsx';
 // Importe Switch, l'interrupteur.

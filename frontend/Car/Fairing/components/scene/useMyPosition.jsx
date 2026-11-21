@@ -1,9 +1,9 @@
 // Importe de React les crochets useCallback, useEffect et useSyncExternalStore.
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 // Importe le nom du lieu « Ma position », l'altitude d'arrivée, le message d'erreur de géolocalisation et la lecture unique de la boussole.
-import { MY_POSITION_NAME, flyAltitude, geolocationMessage, readCompassOnce } from '@/Engine/shared/lib/homePlace';
+import { MY_POSITION_NAME, flyAltitude, geolocationMessage, readCompassOnce } from '@/Engine/shared/lib/device/homePlace';
 // Importe livePosition, le suivi de la position en direct.
-import { livePosition } from '@/Engine/shared/lib/livePosition';
+import { livePosition } from '@/Engine/shared/lib/device/livePosition';
 // Importe compassHeading, qui calcule le cap à partir d'un événement d'orientation.
 import { compassHeading } from '@/Engine/AstreSolideEngine/InputEngine/userMarkerMath';
 

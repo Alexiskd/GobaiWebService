@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 // Importe le modèle d'éclairage testé.
 import { EARTH_LIGHT_GLSL, EARTH_TAU, GENERIC_LIGHT_GLSL, SKY_LIGHT, airMass, glintRoughness, sunTransmit } from './surfaceLight.jsx';
 // Importe le shader de fragments des tuiles.
-import { tileFragmentShader, tileVertexShader } from './MapEngine/tileShaders.jsx';
+import { tileFragmentShader, tileVertexShader } from './MapEngine/tiles/tileShaders.jsx';
 // Importe le shader des nuages de la Terre et celui de la coquille.
 import { earthCloudFragmentShader, shellFragmentShader } from './AtmosphereEngine/atmosphereShaders.jsx';
 

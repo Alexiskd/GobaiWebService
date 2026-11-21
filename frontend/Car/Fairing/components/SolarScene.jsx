@@ -20,11 +20,11 @@ import { useInterfaceLanguage } from '@/Fairing/hooks/useInterfaceLanguage';
 // Importe le crochet qui crée le moteur 3D.
 import { useSolarEngine } from '@/Fairing/hooks/useSolarEngine';
 // Importe le lecteur et l'abonnement du mode économie d'énergie.
-import { getPowerSaving, setPowerSaving, subscribePowerSaving } from '@/Engine/shared/lib/powerSaving';
+import { getPowerSaving, setPowerSaving, subscribePowerSaving } from '@/Engine/shared/lib/device/powerSaving';
 // Réglage du noir pur, actionnable par l'assistant comme par l'interrupteur de Paramètres.
-import { setOledBlack } from '@/Engine/shared/lib/oledBlack';
+import { setOledBlack } from '@/Engine/shared/lib/device/oledBlack';
 // Importe la préparation et l'exécution du partage de la vue.
-import { shareData, shareView } from '@/Engine/shared/lib/share';
+import { shareData, shareView } from '@/Engine/shared/lib/app/share';
 // Importe le crochet des couches de tuiles.
 import { useTileLayers } from '@/Fairing/hooks/useTileLayers';
 // Importe le crochet des messages temporaires.
@@ -37,8 +37,8 @@ import { NavballPilote } from './hud/NavballPilote/index.js';
 import { GpsFrame } from './hud/GpsFrame.jsx';
 // Importe l'indicateur de chargement des tuiles.
 // Importe la jauge LiDAR.
-import { LidarJauge } from './hud/LidarJauge.jsx';
-import { TuilesLoader } from './hud/TuilesLoader.jsx';
+import { LidarJauge } from './hud/perf/LidarJauge.jsx';
+import { TuilesLoader } from './hud/perf/TuilesLoader.jsx';
 // Importe le bandeau du haut.
 import { HudTop } from './hud/HudTop.jsx';
 // Importe la fenêtre des paramètres.
@@ -48,7 +48,7 @@ import { Navigator } from './hud/Navigator.jsx';
 // Importe l'affichage des messages temporaires.
 import { Toasts } from './hud/Toasts.jsx';
 // Importe la fenêtre des sources.
-import { Attribution } from './hud/Attribution.jsx';
+import { Attribution } from './hud/node/Attribution.jsx';
 // Importe l'attribution du ciel.
 import { SKY_ATTRIBUTION } from '@/Engine/StarEngine/SkyEngine/skyLayer';
 // Importe le pavé de zoom.
@@ -95,7 +95,7 @@ import { useEarthDisplay } from './scene/useEarthDisplay.jsx';
 // Importe le crochet des données de carte (villes, frontières).
 import { useMapFeeds } from './scene/useMapFeeds.jsx';
 // Importe le réglage de la pollution lumineuse de la Terre, pour sa mention dans les sources.
-import { EARTH_NIGHT_LIGHTS } from '@/Engine/AstreSolideEngine/MapEngine/nightLights';
+import { EARTH_NIGHT_LIGHTS } from '@/Engine/AstreSolideEngine/MapEngine/earth/nightLights';
 // Importe le crochet des données lunaires.
 import { useMoonFeeds } from './scene/useMoonFeeds.jsx';
 // Importe le crochet des calques de la Lune.
@@ -114,7 +114,7 @@ import { resolveAssistantAction } from './scene/assistantActions.jsx';
 import { MOON_FEATURES } from '@/Engine/AstreSolideEngine/MoonEngine/moonFeatures';
 // Importe le chargement de l'état des cartes des satellites.
 // Importe la valeur « nuit », le lecteur, l'abonnement et la bascule jour/nuit.
-import { NIGHT, getDayNight, subscribeDayNight, toggleDayNight } from '@/Engine/shared/lib/dayNight';
+import { NIGHT, getDayNight, subscribeDayNight, toggleDayNight } from '@/Engine/shared/lib/device/dayNight';
 // Importe l'enrobage qui anime le changement de thème.
 import { withThemeTransition } from '@/Fairing/theme/themeTransition';
 // Importe le crochet des commandes envoyées au moteur.

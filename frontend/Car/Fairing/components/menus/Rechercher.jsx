@@ -9,7 +9,7 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe coords, qui met en forme des coordonnées.
 import { coords } from '@/Engine/shared/lib/format';
 // Importe la largeur de vue d'une adresse, la normalisation de texte, le type d'un résultat et sa vignette.
-import { ADDRESS_VIEW_M, fold, placeResultType, resultIcon } from '@/Engine/shared/lib/search';
+import { ADDRESS_VIEW_M, fold, placeResultType, resultIcon } from '@/Engine/shared/lib/app/search';
 // Importe l'altitude pour une largeur de vue, la mise en forme et la lecture de coordonnées.
 import { altitudeForView, formatLatLon, parseLatLon } from '@/Engine/AstreSolideEngine/InputEngine/gps';
 // Importe l'icône de fermeture.

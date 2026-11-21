@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 // Importe la disposition harmonieuse et son emprise.
 import { harmoniser, emprise } from './harmonie3d.js';
 // Importe l'arborescence du site.
-import { SITE_TREE } from '../../../Fairing/components/hud/siteTree.js';
+import { SITE_TREE } from '../../../Fairing/components/hud/node/siteTree.js';
 
 // Compte les nœuds d'une arborescence.
 const count = (n) => 1 + n.children.reduce((sum, c) => sum + count(c), 0);

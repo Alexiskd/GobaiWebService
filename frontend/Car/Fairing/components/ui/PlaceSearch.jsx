@@ -5,7 +5,7 @@ import { List, ListItem, ListItemButton, ListItemText, Paper, TextField } from '
 // Importe coords, qui met en forme des coordonnées.
 import { coords } from '@/Engine/shared/lib/format';
 // Importe la largeur de vue d'une adresse et fold, qui normalise un texte pour la comparaison.
-import { ADDRESS_VIEW_M, fold } from '@/Engine/shared/lib/search';
+import { ADDRESS_VIEW_M, fold } from '@/Engine/shared/lib/app/search';
 // Importe altitudeForView, qui donne l'altitude correspondant à une largeur de vue.
 import { altitudeForView } from '@/Engine/AstreSolideEngine/InputEngine/gps';
 

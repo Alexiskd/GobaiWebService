@@ -1,7 +1,7 @@
 // Logo du fournisseur connecté (Claude, Mistral), pour la fenêtre et le bouton de l'assistant.
 import { useState } from 'react';
 import { Box } from '@mui/material';
-import { PROVIDERS } from '@/Engine/shared/lib/assistantSession';
+import { PROVIDERS } from '@/Engine/shared/lib/app/assistantSession';
 
 // Fichiers de logo absents du dossier public : notés une fois, pour ne pas les redemander à chaque rendu.
 const missing = new Set();

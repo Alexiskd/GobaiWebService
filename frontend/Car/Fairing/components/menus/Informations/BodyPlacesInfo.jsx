@@ -5,9 +5,9 @@ import { Section } from '../../ui/Section.jsx';
 // Importe Facts, la liste des caractéristiques.
 import { Facts } from './Facts.jsx';
 // Importe les sections propres à la Lune.
-import { MoonExtras } from './MoonExtras.jsx';
+import { MoonExtras } from './astres/MoonExtras.jsx';
 // Importe le Blend de la Lune (modèle 3D complet enregistré dans BP).
-import { MoonBlend } from './MoonBlend.jsx';
+import { MoonBlend } from './astres/MoonBlend.jsx';
 // Documentation et photos de l'astre (fiche de la documentation, Ma collection).
 import { BodyDocumentation, UncertaintyNote } from './BodyDocumentation.jsx';
 

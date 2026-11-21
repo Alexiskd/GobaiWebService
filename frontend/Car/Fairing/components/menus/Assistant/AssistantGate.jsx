@@ -1,7 +1,7 @@
 // Écrans affichés à la place de la fenêtre de l'assistant : connexion (Claude ou Mistral) et facturation.
 import { useEffect, useRef, useState } from 'react';
 import { Box, ButtonBase, CircularProgress, InputBase, Link, Stack, Typography } from '@mui/material';
-import { PROVIDERS, saveSession } from '@/Engine/shared/lib/assistantSession';
+import { PROVIDERS, saveSession } from '@/Engine/shared/lib/app/assistantSession';
 import { connectAssistant } from '@/Computing/api/assistant';
 import { ArrowBackIcon, KeyIcon, LogoutIcon, OpenInNewIcon } from '../../ui/icons.jsx';
 import { ProviderLogo } from './ProviderLogo.jsx';

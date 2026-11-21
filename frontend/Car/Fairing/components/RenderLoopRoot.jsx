@@ -1,7 +1,7 @@
 // Importe useEffect de React.
 import { useEffect } from 'react';
 // Importe la boucle de rendu de l'application complète.
-import { renderLoop } from '@/Engine/SystemeEngine/core/RenderLoop.js';
+import { renderLoop } from '@/Engine/SystemeEngine/core/render/RenderLoop.js';
 
 /**
  * RenderLoopRoot : possède la boucle de rendu de l'application complète.

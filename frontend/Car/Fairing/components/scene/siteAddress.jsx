@@ -2,7 +2,7 @@
 // Importe fold, qui normalise un texte (minuscules, sans accents).
 import { fold } from '../../../Engine/shared/lib/format.jsx';
 // Importe SITE_TREE, l'arborescence du site.
-import { SITE_TREE } from '../hud/siteTree.js';
+import { SITE_TREE } from '../hud/node/siteTree.js';
 
 /** Adresses connues du site (celles de l'arborescence, donc du sitemap). */
 // Ensemble des adresses connues, vide au départ.

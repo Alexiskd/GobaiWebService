@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect et useState.
 import { useCallback, useEffect, useState } from 'react';
 // Importe l'identifiant du calque des rues.
-import { ROADS_LAYER_ID } from '@/Engine/AstreSolideEngine/MapEngine/roadSource';
+import { ROADS_LAYER_ID } from '@/Engine/AstreSolideEngine/MapEngine/earth/roadSource';
 // Importe le chargement des volcans en éruption.
 import { fetchVolcanoes } from '@/Computing/api/scene';
 // Importe l'API des tuiles, pour la liste des villes du LiDAR HD.

@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // Importe fillTemplate, qui remplit l'adresse d'une tuile, depuis tiles/mercator.
 import { fillTemplate } from '../MapEngine/mercator.jsx';
 // Importe le chargement d'une image (sans cache, en mémoire seulement), depuis tiles/tileSource.
-import { loadImage } from '../MapEngine/tileSource.jsx';
+import { loadImage } from '../MapEngine/tiles/tileSource.jsx';
 // Importe la liste des tuiles à charger et le rectangle d'une tuile, depuis lidarDrapeMath.
 import { drapeTiles, tileRect } from './lidarDrapeMath.jsx';
 

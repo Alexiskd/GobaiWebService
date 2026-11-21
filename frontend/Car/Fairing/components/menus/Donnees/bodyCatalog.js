@@ -4,7 +4,7 @@
  * caractéristiques que la fenêtre Informations (bodyFacts, planetData, sunFacts). Calcul pur, sans React.
  */
 import { planetFacts, satelliteFacts } from '../Informations/bodyFacts.jsx';
-import { SUN_FACTS } from '../Informations/sunFacts.js';
+import { SUN_FACTS } from '../Informations/astres/sunFacts.js';
 import { MOON_KEPLER_ELEMENTS } from '../../../../Engine/AstreSolideEngine/OrbitEngine/planetOrbits.jsx';
 import { nf } from '../../../../Engine/shared/lib/format.jsx';
 

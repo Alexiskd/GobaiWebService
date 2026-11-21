@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { acquireUnitSphereGeometry } from '../../SystemeEngine/core/SharedGeometry.js';
-import { SharedResourcePool } from '../../SystemeEngine/core/SharedResourcePool.js';
+import { acquireUnitSphereGeometry } from '../../SystemeEngine/core/render/SharedGeometry.js';
+import { SharedResourcePool } from '../../SystemeEngine/core/system/SharedResourcePool.js';
 
 class FakeSphereGeometry {
   constructor(radius, width, height) { this.radius = radius; this.width = width; this.height = height; this.userData = {}; this.disposed = 0; }
