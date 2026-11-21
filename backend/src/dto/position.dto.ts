@@ -58,6 +58,19 @@ export class MoonSitesDto {
   @ApiProperty({ type: [MoonSiteDto] }) items!: MoonSiteDto[];
 }
 
+/** Une étape d'un trajet Terre → Lune. */
+export class TripLegDto {
+  @ApiProperty({ enum: ['sol', 'vol'], description: '`sol` : jusqu’au site de lancement ; `vol` : vers la Lune.' }) kind!: 'sol' | 'vol';
+  @ApiProperty({ example: 'Vol vers la Lune' }) label!: string;
+  @ApiProperty({ example: 4320, description: 'Durée de l’étape en minutes.' }) minutes!: number;
+}
+
+/** Site de lancement retenu pour un trajet Terre → Lune. */
+export class LaunchSiteDto {
+  @ApiProperty({ example: 'Centre spatial Kennedy (Cap Canaveral)' }) name!: string;
+  @ApiProperty({ example: 1240, description: 'Distance au sol entre le départ et ce site, en km.' }) distanceKm!: number;
+}
+
 /** Réponse de POST position/trajet : la durée, sans tracé. */
 export class TripDto {
   @ApiProperty({ enum: ['fixe', 'ia'], description: '`fixe` : 3 jours Terre ↔ site Apollo ; `ia` : estimée par le modèle de l’utilisateur.' })
@@ -67,6 +80,9 @@ export class TripDto {
   @ApiProperty({ example: 'Transit Terre–Lune d’une mission Apollo : 3 jours.' }) summary!: string;
   @ApiProperty({ example: 384400, description: 'Distance au sol (même astre) ou distance moyenne Terre–Lune, en km.' }) distanceKm!: number;
   @ApiProperty({ enum: ['surface', 'terre-lune'] }) distanceKind!: 'surface' | 'terre-lune';
+  @ApiPropertyOptional({ type: [TripLegDto], description: 'Étapes d’un trajet Terre → Lune : trajet au sol puis vol.' }) legs?: TripLegDto[];
+  @ApiPropertyOptional({ type: LaunchSiteDto, description: 'Site de lancement lunaire le plus proche du départ (Terre → Lune).' }) launchSite?: LaunchSiteDto;
+  @ApiPropertyOptional({ description: 'Vrai quand le trajet au sol n’est pas compté faute de clé : la durée ne porte que sur le vol.' }) needsKey?: boolean;
   @ApiPropertyOptional({ example: 'claude', description: 'Fournisseur qui a répondu (source `ia`).' }) provider?: string;
   @ApiPropertyOptional({ example: 'claude-fable-5-2', description: 'Modèle qui a répondu (source `ia`).' }) model?: string;
 }

@@ -1,6 +1,6 @@
 // Ce qui est testé : les calculs de position, la durée fixée Terre ↔ Apollo, la lecture de la réponse du modèle.
 import {
-  APOLLO_SITES, MAX_TRIP_MINUTES, apolloSiteAt, buildTripMessage, fixedTripMinutes, normalizePoint, parseTripReply,
+  APOLLO_SITES, AT_LAUNCH_SITE_KM, LAUNCH_SITES, MAX_TRIP_MINUTES, apolloSiteAt, buildTripMessage, fixedTripMinutes, nearestLaunchSite, normalizePoint, parseTripReply,
   surfaceDistanceKm, tripDistance,
 } from './position';
 // Service de position, testé avec un faux assistant (aucun appel réseau).
@@ -55,6 +55,17 @@ describe('position GPS', () => {
   });
 });
 
+describe('sites de lancement', () => {
+  it('retient le site le plus proche du départ, et rien pour un point lunaire', () => {
+    expect(nearestLaunchSite(paris)?.site.id).toBe('baikonour');
+    expect(nearestLaunchSite({ body: 'earth', lat: 29, lon: -81 })?.site.id).toBe('kennedy');
+    expect(nearestLaunchSite({ body: 'earth', lat: 26, lon: -97 })?.site.id).toBe('starbase');
+    expect(nearestLaunchSite(apollo11)).toBeNull();
+    expect(LAUNCH_SITES.length).toBeGreaterThanOrEqual(8);
+    expect(AT_LAUNCH_SITE_KM).toBe(5);
+  });
+});
+
 describe('durée fixée Terre ↔ Apollo', () => {
   it('vaut 3 jours entre la Terre et un site Apollo, dans les deux sens', () => {
     expect(fixedTripMinutes(paris, apollo11)).toBe(3 * 24 * 60);
@@ -69,6 +80,13 @@ describe('durée fixée Terre ↔ Apollo', () => {
 });
 
 describe('réponse du modèle', () => {
+  it('accepte une durée en texte, d’autres noms de champ, ou en heures et en jours', () => {
+    expect(parseTripReply('{"durationMinutes": "35 min"}')?.durationMinutes).toBe(35);
+    expect(parseTripReply('{"duration_minutes": 12}')?.durationMinutes).toBe(12);
+    expect(parseTripReply('{"durationHours": 1.5}')?.durationMinutes).toBe(90);
+    expect(parseTripReply('{"days": "3"}')?.durationMinutes).toBe(4320);
+  });
+
   it('lit un objet JSON, même entouré de texte', () => {
     const r = parseTripReply('Voici : {"durationMinutes": 35.4, "mode": "Voiture", "summary": "Environ 35 minutes."} Fin.');
     expect(r).toEqual({ durationMinutes: 35, mode: 'Voiture', summary: 'Environ 35 minutes.' });
@@ -80,6 +98,7 @@ describe('réponse du modèle', () => {
     expect(parseTripReply('{"durationMinutes": -5}')).toBeNull();
     expect(parseTripReply(`{"durationMinutes": ${MAX_TRIP_MINUTES + 1}}`)).toBeNull();
     expect(parseTripReply('{"durationMinutes": "beaucoup"}')).toBeNull();
+    expect(parseTripReply('{"durationMinutes": 5}')?.durationMinutes).toBe(5);
     expect(parseTripReply('{pas du json}')).toBeNull();
   });
 
@@ -102,6 +121,43 @@ describe('PositionService', () => {
     expect(fake.calls).toHaveLength(0);
   });
 
+  it('Terre → Apollo avec clé : trajet au sol jusqu’au site de lancement puis 3 jours de vol', async () => {
+    const fake = fakeAssistant('{"durationMinutes": 300, "mode": "Avion", "summary": "Vol puis route."}');
+    const r = await new PositionService(fake as never).trip('claude', 'cle-utilisateur-123456', paris, apollo11);
+    expect(r.durationMinutes).toBe(300 + 4320);
+    expect(r.legs?.map((l) => l.kind)).toEqual(['sol', 'vol']);
+    expect(r.launchSite?.name).toContain('Baïkonour');
+    expect(r.source).toBe('ia');
+    expect(fake.calls).toHaveLength(1);
+    // Le trajet au sol est demandé du départ vers le site de lancement.
+    expect(fake.calls[0].messages[0].content).toContain('Cosmodrome de Baïkonour');
+  });
+
+  it('Terre → Apollo sans clé : vol seul, avec l’invitation à connecter la clé', async () => {
+    const fake = fakeAssistant('inutile');
+    const r = await new PositionService(fake as never).trip('claude', '', paris, apollo11);
+    expect(r).toMatchObject({ source: 'fixe', durationMinutes: 4320, needsKey: true });
+    expect(r.legs).toHaveLength(1);
+    expect(fake.calls).toHaveLength(0);
+  });
+
+  it('départ déjà sur le site de lancement : aucun trajet au sol, aucun appel', async () => {
+    const fake = fakeAssistant('inutile');
+    const kennedy = { body: 'earth' as const, lat: 28.5729, lon: -80.649 };
+    const r = await new PositionService(fake as never).trip('claude', 'cle-utilisateur-123456', kennedy, apollo11);
+    expect(r).toMatchObject({ source: 'fixe', durationMinutes: 4320 });
+    expect(r.legs).toHaveLength(1);
+    expect(r.needsKey).toBeUndefined();
+    expect(fake.calls).toHaveLength(0);
+  });
+
+  it('Lune → Terre : 3 jours fixés, sans trajet au sol', async () => {
+    const fake = fakeAssistant('inutile');
+    const r = await new PositionService(fake as never).trip('claude', '', apollo11, paris);
+    expect(r).toMatchObject({ source: 'fixe', durationMinutes: 4320 });
+    expect(r.legs).toBeUndefined();
+  });
+
   it('demande l’estimation au modèle de l’utilisateur pour les autres trajets, avec sa clé', async () => {
     const fake = fakeAssistant('{"durationMinutes": 40, "mode": "Voiture", "summary": "Une quarantaine de minutes."}');
     const service = new PositionService(fake as never);
@@ -110,6 +166,14 @@ describe('PositionService', () => {
     expect(fake.calls).toHaveLength(1);
     expect(fake.calls[0].key).toBe('cle-utilisateur-123456');
     expect(fake.calls[0].system).toContain('aucun itinéraire');
+  });
+
+  it('redemande une fois quand la première réponse est illisible', async () => {
+    let n = 0;
+    const assistant = { complete: async (provider: string) => ({ text: n++ === 0 ? 'je ne sais pas' : '{"durationMinutes": 25}', provider, model: 'm' }) };
+    const r = await new PositionService(assistant as never).trip('claude', 'cle-utilisateur-123456', paris, conflans);
+    expect(r.durationMinutes).toBe(25);
+    expect(n).toBe(2);
   });
 
   it('refuse une position invalide (400) et une réponse inutilisable du modèle (502)', async () => {

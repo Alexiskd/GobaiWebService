@@ -30,7 +30,8 @@ function describeError(error, session) {
  * Fenêtre « Trajet » (même en-tête et même style que les autres fenêtres). Le départ (A) et l'arrivée (B) se posent
  * sur la Terre (recherche, « Ma position ») ou sur la Lune (sites Apollo). Dès que les deux sont posés, et à chaque
  * changement, la durée est recalculée toute seule :
- *  - Terre ↔ site Apollo : 3 jours, fixés par le serveur ;
+ *  - Terre → Lune : trajet au sol jusqu'au site de lancement le plus proche (estimé par le modèle), puis 3 jours de vol ;
+ *  - Lune → Terre : 3 jours, fixés par le serveur ;
  *  - tout autre trajet : estimé par le modèle de l'utilisateur (Claude ou Mistral) avec sa clé, sans tracé.
  * `onOpenAssistant` : ouvre la connexion de l'assistant, où l'on saisit sa clé.
  */
@@ -95,7 +96,7 @@ export function Trajet({ open, onClose, onOpenAssistant }) {
           <Box role="status" aria-live="polite" sx={{ minHeight: 120, p: 2, border: 1, borderColor: 'divider', borderRadius: 2 }}>
             {!ready && (
               <Typography color="text.secondary" variant="body2">
-                Choisissez un départ et une arrivée : la durée se calcule toute seule, sans tracé d’itinéraire. Terre ↔ site Apollo : 3 jours.
+                Choisissez un départ et une arrivée : la durée se calcule toute seule, sans tracé d’itinéraire. Terre → Lune : trajet jusqu’au site de lancement le plus proche, puis 3 jours de vol.
               </Typography>
             )}
             {ready && trip.status === 'loading' && !data && (
@@ -109,11 +110,24 @@ export function Trajet({ open, onClose, onOpenAssistant }) {
                 <Typography component="p" sx={{ fontSize: 40, fontWeight: 700, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{formatDuration(data.durationMinutes)}</Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
                   <Chip size="small" color={data.source === 'fixe' ? 'default' : 'primary'} variant="outlined"
-                    label={data.source === 'fixe' ? 'Valeur fixe Apollo' : `Calculé par ${PROVIDERS[data.provider]?.label ?? 'votre modèle'}`} />
+                    label={data.source === 'fixe' ? (data.legs ? 'Vol fixe : 3 j' : 'Valeur fixe Apollo') : `Calculé par ${PROVIDERS[data.provider]?.label ?? 'votre modèle'}`} />
                   {data.mode && <Chip size="small" variant="outlined" label={data.mode} />}
                   <Chip size="small" variant="outlined" label={data.distanceKind === 'terre-lune' ? `≈ ${formatKm(data.distanceKm)} (moyenne Terre–Lune)` : formatKm(data.distanceKm)} />
                 </Stack>
+                {data.legs?.length > 0 && (
+                  <Stack component="ul" spacing={0.5} aria-label="Étapes du trajet" sx={{ m: 0, p: 0, listStyle: 'none' }}>
+                    {data.legs.map((leg) => (
+                      <Stack component="li" key={leg.kind} direction="row" spacing={1} sx={{ justifyContent: 'space-between' }}>
+                        <Typography variant="body2">{leg.label}</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{formatDuration(leg.minutes)}</Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                )}
                 {data.summary && <Typography variant="body2" color="text.secondary">{data.summary}</Typography>}
+                {data.needsKey && onOpenAssistant && (
+                  <Button onClick={() => { onClose(); onOpenAssistant(); }} sx={{ minHeight: 44, textTransform: 'none', alignSelf: 'flex-start' }}>Connecter ma clé pour ajouter le trajet au sol</Button>
+                )}
               </Stack>
             )}
             {failure && (
