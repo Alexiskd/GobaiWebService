@@ -24,6 +24,13 @@ const RAD_TO_DEG = 180 / Math.PI;
 /** Durée d'un fondu entre deux niveaux d'une cellule (ms). */
 // Déclare et exporte la durée d'un fondu : 320 ms.
 export const FADE_MS = 320;
+/**
+ * Fondus entre niveaux coupés : une image qui arrive est posée d'un coup, opaque, à ses vraies couleurs. Avec un
+ * fondu, elle était d'abord transparente au-dessus du fond sombre de l'astre : un voile passait sur la carte à
+ * chaque chargement. Le mécanisme reste en place (une durée non nulle le rallume).
+ */
+// Fondus entre niveaux : coupés.
+export const TILE_FADES = false;
 // Rang de dessin des cellules en fondu : −1 000.
 const FADE_ORDER = -1000;      // cellules en fondu : dessinées juste après les cartes opaques, avant nuages et atmosphère
 // Hauteurs pendant un fondu, en fraction de l'écart entre deux niveaux de cellules (jamais un niveau entier : une
@@ -100,7 +107,7 @@ export class HexDisplay {
     // Paires en transition.
     this.active = new Set();
     // Durée d'un fondu : 0 si le système réduit les animations.
-    this.fadeMs = reducedMotion() ? 0 : FADE_MS; // « réduire les animations » du système : changement immédiat
+    this.fadeMs = !TILE_FADES || reducedMotion() ? 0 : FADE_MS; // fondus coupés, ou « réduire les animations » du système : changement immédiat
     // Instant de la dernière avancée des fondus.
     this.clock = 0;
     // Numéro de la vague de fondus.
@@ -122,7 +129,7 @@ export class HexDisplay {
   // setFadeMs : règle la durée des fondus (début).
   setFadeMs(ms) {
     // Animations réduites, ou durée absente, nulle ou invalide : rien ne change.
-    if (reducedMotion() || !(Number.isFinite(ms) && ms > 0)) return;
+    if (!TILE_FADES || reducedMotion() || !(Number.isFinite(ms) && ms > 0)) return;
     // Sinon : la durée de la table.
     this.fadeMs = ms;
   // Fin de setFadeMs.
