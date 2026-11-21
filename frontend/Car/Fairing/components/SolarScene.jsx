@@ -35,6 +35,8 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 import { NavballPilote } from './hud/NavballPilote/index.js';
 // Importe le cadre des coordonnées GPS.
 import { GpsFrame } from './hud/GpsFrame.jsx';
+// Importe le cadre de la visionneuse LiDAR HD de l'IGN.
+import { LidarFrame } from './hud/LidarFrame.jsx';
 // Importe le bandeau du haut.
 import { HudTop } from './hud/HudTop.jsx';
 // Importe la fenêtre des paramètres.
@@ -84,6 +86,8 @@ import { useLidarGlobe } from './scene/useLidarGlobe.jsx';
 import { cityNamesHintText } from './scene/layerHints.jsx';
 // Importe le crochet des réglages de caméra et d'affichage.
 import { useCameraToggles } from './scene/useCameraToggles.jsx';
+// Importe le crochet du cadre de la visionneuse LiDAR HD de l'IGN (ouverture sous 0,22 km d'altitude).
+import { useLidarFrame } from './scene/useLidarFrame.jsx';
 // Importe le crochet qui expose la catégorie d'écran au CSS.
 import { useDocumentViewport } from './scene/useDocumentViewport.jsx';
 // Importe le crochet de l'affichage de la Terre.
@@ -320,6 +324,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Aucun astre n'est automatiquement décoché au chargement : les cases de Paramètres restent cochées.
   const camera = useCameraToggles(engine, defaultVisibility());
   const { setBodyShown, setKind } = camera;
+  // La visionneuse LiDAR HD de l'IGN : visible quand la caméra survole la zone de référence sous 0,22 km.
+  const lidarFrame = useLidarFrame(engine);
   // Aller à un astre enlevé (recherche) : on le remet d'abord, puis on s'y téléporte une fois le moteur à jour.
   // revealAndFocus : remet un astre enlevé, puis s'y rend ; début de la fonction mémorisée.
   const revealAndFocus = useCallback((index) => {
@@ -772,6 +778,11 @@ export function SolarScene({ data, onSettled, covered = false }) {
         }}
       // Fin du conteneur de la scène.
       />
+
+      {/* La visionneuse LiDAR HD de l'IGN : un cadre en bas de la scène, ouvert quand la caméra de Gobai survole
+          la zone de référence de Paris sous 0,22 km d'altitude ; fermé par le visiteur, puis rouvert à la
+          prochaine entrée dans la zone. */}
+      {lidarFrame.visible && <LidarFrame url={lidarFrame.url} onClose={lidarFrame.hide} />}
    
 
 
