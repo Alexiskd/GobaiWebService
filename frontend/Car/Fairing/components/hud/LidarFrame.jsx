@@ -107,8 +107,8 @@ export function LidarFrame({ url, onClose }) {
         />
       {/* Fin de l'iframe. */}
       </Box>
-    // Fin du panneau.
-    />
+    {/* Fin du panneau. */}
+    </Paper>
   // Fin du rendu.
   );
 // Fin de LidarFrame.
