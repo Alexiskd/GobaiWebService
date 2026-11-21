@@ -116,7 +116,7 @@ import { dragRadPerPx, dragStep } from './touchMath.jsx';
 // Importe les réglages de rythme d'images et d'économie d'énergie, depuis powerSaver.
 import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './powerSaver.jsx';
 // Importe PerfProbe, la sonde de performance.
-import { PerfProbe } from './perfProbe.jsx';
+import { FpsMeter, PerfProbe } from './perfProbe.jsx';
 import { SystemRegistry } from '../SystemeEngine/core/SystemRegistry.js';
 import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
 import { CoreActivityPolicy } from '../SystemeEngine/core/CoreActivityPolicy.js';
@@ -568,7 +568,7 @@ export class SolarEngine {
     // Durée visée d'une image.
     this.frameMs = this.power.frameMs; // durée visée d'une image (0 = sans limite), voir refreshFrameMs
     // Compteur d'images par seconde, à zéro.
-    this.fps = 0; this.fpsSince = 0; this.fpsFrames = 0; // compteur d'images par seconde, voir countFps
+    this.fps = 0; this.fpsTarget = 0; this.fpsMeter = new FpsMeter(); // compteur d'images par seconde, voir countFps
     // Pas d'écran de chargement par-dessus.
     this.covered = false;              // écran de chargement par-dessus la scène (setCovered)
     // Pas d'économie d'énergie.
@@ -3878,28 +3878,25 @@ export class SolarEngine {
   }
 
   /**
-   * Compteur d'images par seconde (composante FpsCounter) : images réellement dessinées par le moteur, comptées sur
-   * une demi-seconde. Les rappels sautés (rythme réduit sur téléphone) ne comptent pas. Le HUD n'est prévenu que
-   * lorsque la valeur change.
+   * Compteur d'images par seconde (composante FpsCounter) : images réellement dessinées par le moteur, moyennées sur
+   * une fenêtre glissante d'une seconde (voir FpsMeter, perfProbe.jsx). Les rappels sautés (rythme réduit sur
+   * téléphone) ne comptent pas. Le HUD reçoit la moyenne, le rythme de l'image la plus lente et le rythme visé, et
+   * n'est prévenu que lorsqu'une valeur change.
    */
   // countFps : compte les images par seconde (début).
   countFps(now) {
-    // Au départ, ou après plus de 2 secondes : le compte repart de zéro.
-    if (!(this.fpsSince > 0) || now - this.fpsSince > 2000) { this.fpsSince = now; this.fpsFrames = 0; return; } // départ, retour d'onglet
-    // Une image de plus.
-    this.fpsFrames++;
-    // Durée de la mesure.
-    const span = now - this.fpsSince;
-    // Moins d'une demi-seconde : rien.
-    if (span < 500) return;
-    // Images par seconde, arrondies.
-    const fps = Math.round((this.fpsFrames * 1000) / span);
-    // Nouvelle mesure.
-    this.fpsSince = now;
-    // Compteur à zéro.
-    this.fpsFrames = 0;
-    // Valeur changée : la garde et prévient le HUD.
-    if (fps !== this.fps) { this.fps = fps; this.hud.set({ fps }); }
+    // Enregistre l'image ; une mesure n'est renvoyée que si elle a changé.
+    const measure = this.fpsMeter.tick(now);
+    // Rythme visé : celui du plafond en cours (60 quand il n'y a pas de plafond).
+    const fpsTarget = this.frameMs > 0 ? Math.round(1000 / this.frameMs) : 60;
+    // Ni nouvelle mesure ni nouveau rythme visé : rien.
+    if (!measure && fpsTarget === this.fpsTarget) return;
+    // Garde les valeurs.
+    if (measure) this.fps = measure.fps;
+    // Garde le rythme visé.
+    this.fpsTarget = fpsTarget;
+    // Prévient le HUD.
+    this.hud.set({ fps: this.fps, fpsLow: this.fpsMeter.low, fpsTarget });
   // Fin de countFps.
   }
 
