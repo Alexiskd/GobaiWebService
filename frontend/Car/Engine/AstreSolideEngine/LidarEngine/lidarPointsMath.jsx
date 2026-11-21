@@ -1,5 +1,5 @@
 // Dalles LiDAR en vrais points 3D : calculs purs (testés dans lidarPointsMath.test.jsx), sans three.js.
-// Format des fichiers : voir backend/src/services/lidar-tiles/lidar-tiles.ts.
+// Format des fichiers : voir backend/src/services/lidar/lidar-tiles/lidar-tiles.ts.
 //
 // Une dalle est un octree additif : la racine couvre toute la dalle en basse densité, chaque niveau ajoute des points
 // deux fois plus serrés. À chaque instant on affiche les nœuds dont les points seraient trop espacés à l'écran sans

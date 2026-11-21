@@ -7,7 +7,7 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes de la page de résultats et des paramètres de recherche.
 import { CitiesPageDto, FindCitiesQueryDto } from '../dto/cities.dto';
 // Service des villes.
-import { CitiesService } from '../services/cities/cities.service';
+import { CitiesService } from '../services/locations/cities/cities.service';
 
 // Rubrique « Villes » de la documentation.
 @ApiTags('Villes')

@@ -5,7 +5,7 @@ import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 // Forme d'une ligne de la réponse.
 import { SeoTagDto } from '../dto/seo.dto';
 // Service du balisage SEO (table seo_tags), déjà chargé en mémoire au démarrage.
-import { SeoTagsService } from '../services/seo/seo-tags.service';
+import { SeoTagsService } from '../services/content/seo/seo-tags.service';
 
 /** Routes de consultation du balisage SEO en base (table seo_tags) : titre, description, Open Graph, X/Twitter. */
 // Rubrique « Référencement » de la documentation.

@@ -7,7 +7,7 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Forme de la réponse des frontières.
 import { BordersDto } from '../dto/borders.dto';
 // Service des frontières.
-import { BordersService } from '../services/borders/borders.service';
+import { BordersService } from '../services/locations/borders/borders.service';
 
 // Rubrique « Frontières » de la documentation.
 @ApiTags('Frontières')

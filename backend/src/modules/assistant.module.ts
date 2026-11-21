@@ -7,7 +7,7 @@ import type { AppConfig } from '../common/configuration';
 // Contrôleur de l'assistant : la route /api/v1/assistant.
 import { AssistantController } from '../controllers/assistant.controller';
 // Service de l'assistant : appelle l'API Claude avec la clé gardée sur le serveur.
-import { AssistantService } from '../services/assistant/assistant.service';
+import { AssistantService } from '../services/content/assistant/assistant.service';
 
 // Ouvre la déclaration du module.
 @Module({

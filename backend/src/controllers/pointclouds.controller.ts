@@ -19,7 +19,7 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes du calage GPS reçu, d'un nuage et de la liste des nuages.
 import { PointCloudAnchorDto, PointCloudDto, PointCloudListDto } from '../dto/pointclouds.dto';
 // Type d'un fichier de nuage, service des nuages, et fonction qui analyse l'en-tête Range.
-import { PointCloudFile, PointCloudsService, parseRange } from '../services/pointclouds/pointclouds.service';
+import { PointCloudFile, PointCloudsService, parseRange } from '../services/lidar/pointclouds/pointclouds.service';
 
 /**
  * Nuages de points LiDAR : le serveur expose l’en-tête LAS, les flux COPC/LAS en Range et les ressources Potree converties.

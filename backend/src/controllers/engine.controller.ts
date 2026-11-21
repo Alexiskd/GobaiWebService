@@ -6,7 +6,7 @@ import type { Request } from 'express';
 // Documentation OpenAPI.
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 // Service du moteur.
-import { EngineService } from '../services/engine/engine.service';
+import { EngineService } from '../services/core/engine/engine.service';
 // Configuration : les origines du frontend.
 import { APP_CONFIG } from '../modules/config.module';
 import type { AppConfig } from '../common/configuration';

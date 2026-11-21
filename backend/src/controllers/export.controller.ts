@@ -15,9 +15,9 @@ import { BodyParamsDto, ExportableBodiesDto, ModelQueryDto, ExportQueryDto, Orbi
 // Garde des routes payantes et déclaration du droit exigé.
 import { RequiresScope, ScopeGuard } from '../common/jwt.guard';
 // Service d'export.
-import { ExportService } from '../services/export/export.service';
+import { ExportService } from '../services/commerce/export/export.service';
 // Clé d'un astre dans les droits.
-import { bodyKey } from '../services/store/catalogue';
+import { bodyKey } from '../services/commerce/store/catalogue';
 
 /** Niveau de zoom par défaut des tuiles assemblées. */
 const DEFAULT_ZOOM = 4;

@@ -3,7 +3,7 @@ import { Module } from '@nestjs/common';
 // Contrôleur du balisage SEO : la route /api/v1/seo.
 import { SeoController } from '../controllers/seo.controller';
 // Service du balisage SEO : la table seo_tags, stockée dans PostgreSQL.
-import { SeoTagsService } from '../services/seo/seo-tags.service';
+import { SeoTagsService } from '../services/content/seo/seo-tags.service';
 
 // Ouvre la déclaration du module.
 @Module({

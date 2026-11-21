@@ -9,15 +9,15 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes des données échangées.
 import { CatalogueDto, CreateOrderDto, LicenceDto, LicencesDto, OrderDto, OrderParamsDto } from '../dto/store.dto';
 // Service de la boutique.
-import { StoreService } from '../services/store/store.service';
+import { StoreService } from '../services/commerce/store/store.service';
 // Service des comptes : le compte connecté est celui des contributions, le même pour tout le site.
-import { ContributionsService } from '../services/contributions/contributions.service';
+import { ContributionsService } from '../services/content/contributions/contributions.service';
 // Lecture du jeton porté par l'en-tête Authorization.
-import { bearerToken, cookieSessionToken } from '../services/contributions/accounts';
+import { bearerToken, cookieSessionToken } from '../services/content/contributions/accounts';
 
 const sessionToken = (authorization?: string, cookie?: string) => bearerToken(authorization) || cookieSessionToken(cookie);
 // Mise en forme des prix.
-import { formatPrice } from '../services/store/catalogue';
+import { formatPrice } from '../services/commerce/store/catalogue';
 // Configuration : les sites de retour autorisés.
 import { APP_CONFIG } from '../modules/config.module';
 // Type de la configuration.

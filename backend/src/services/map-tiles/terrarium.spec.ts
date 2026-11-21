@@ -1,8 +1,8 @@
 // Tests de la lecture des TIFF flottants, de l'écriture Terrarium PNG et du découpage du relief lunaire.
 import { deflateSync, inflateSync } from 'node:zlib';
-import { cleanMoonHeights, moonReliefExportUrl, moonTileBounds, moonTileCount, moonVerticalStep } from './moon-relief.service';
-import { buildMoonMesh, meshToGlb, MOON_RADIUS_KM, sampleMosaic } from './moon-relief-model';
-import { realMoonPixel } from './moon-blend.service';
+import { cleanMoonHeights, moonReliefExportUrl, moonTileBounds, moonTileCount, moonVerticalStep } from './moon/moon-relief.service';
+import { buildMoonMesh, meshToGlb, MOON_RADIUS_KM, sampleMosaic } from './moon/moon-relief-model';
+import { realMoonPixel } from './moon/moon-blend.service';
 import { crc32, decodeFloat32Tiff, decodeTerrariumPng, encodeTerrariumPng, terrariumMeters } from './terrarium';
 
 /** TIFF d'une bande en flottants 32 bits, une seule bande de lignes, petit-boutiste ; Deflate et prédicteur 3 au choix. */

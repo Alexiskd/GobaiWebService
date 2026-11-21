@@ -11,7 +11,7 @@ import { CanActivate, ExecutionContext, Injectable, SetMetadata, UnauthorizedExc
 import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { JwtError, bearerToken, verifyJwt } from './jwt';
-import { scopeAllows } from '../services/store/catalogue';
+import { scopeAllows } from '../services/commerce/store/catalogue';
 // Sites partenaires autorisés sans paiement.
 import { isFreeOrigin } from './free-origins';
 

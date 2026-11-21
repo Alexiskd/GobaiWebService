@@ -31,9 +31,9 @@ import { setupOpenApi } from './modules/openapi';
 // Verrou payant devant la documentation (/api/docs, /api/docs-json) : même clé que les exports.
 import { docsPaywall } from './common/docs-paywall';
 // Pages des astres pour le référencement : recherche d'une page d'après l'adresse, et rendus HTML, Markdown et llms-full.txt.
-import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderLlmsFull } from './services/data/body-pages';
+import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderLlmsFull } from './services/core/data/body-pages';
 // Service du balisage SEO (table seo_tags) : titre et description de chaque page, lus en base s'ils y sont rangés.
-import { SeoTagsService } from './services/seo/seo-tags.service';
+import { SeoTagsService } from './services/content/seo/seo-tags.service';
 
 /**
  * Service web unique : l'API sert aussi le site compilé (frontend/dist), sur la même origine.

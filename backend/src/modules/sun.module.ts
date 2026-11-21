@@ -3,11 +3,11 @@ import { Module } from '@nestjs/common';
 // Contrôleur du Soleil : les routes /api/v1/sun.
 import { SunController } from '../controllers/sun.controller';
 // Service du Soleil : le point sous-solaire.
-import { SunService } from '../services/sun/sun.service';
+import { SunService } from '../services/celestial/sun/sun.service';
 // Service de l'activité solaire en direct (NOAA : indice Kp, taches, vent solaire, éruptions).
-import { SolarActivityService } from '../services/sun/solar-activity.service';
+import { SolarActivityService } from '../services/celestial/sun/solar-activity.service';
 // Service des régions actives et des éruptions localisées (NOAA SWPC et NASA DONKI).
-import { SolarRegionsService } from '../services/sun/solar-regions.service';
+import { SolarRegionsService } from '../services/celestial/sun/solar-regions.service';
 
 // Ouvre la déclaration du module.
 @Module({

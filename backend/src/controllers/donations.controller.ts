@@ -13,7 +13,7 @@ import {
 // depuis donations.dto.
 } from '../dto/donations.dto';
 // Importe DonationsService, le service des dons.
-import { DonationsService } from '../services/donations/donations.service';
+import { DonationsService } from '../services/commerce/donations/donations.service';
 
 /**
  * Dons par carte bancaire (Stripe Checkout), sans objectif ni limite :

@@ -12,7 +12,7 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes échangées.
 import { AssistantCatalogDto, AssistantReplyDto, AssistantRequestDto, AssistantSessionDto, AssistantSessionRequestDto } from '../dto/assistant.dto';
 // Service de l'assistant (deux fournisseurs derrière une interface commune).
-import { AssistantService } from '../services/assistant/assistant.service';
+import { AssistantService } from '../services/content/assistant/assistant.service';
 
 /** En-tête qui porte la clé d'API de l'utilisateur : jamais dans l'adresse ni dans le corps, jamais journalisé. */
 const KEY_HEADER = 'x-assistant-key';

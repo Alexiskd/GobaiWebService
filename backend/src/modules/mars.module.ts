@@ -1,23 +1,23 @@
 // Décorateur Module de NestJS.
 import { Module } from '@nestjs/common';
 // Service de mélange des couches de Mars.
-import { MarsBlendService } from '../services/mars/mars-blend.service';
+import { MarsBlendService } from '../services/celestial/mars/mars-blend.service';
 // Service de fusion des couches de Mars.
-import { MarsFusionService } from '../services/mars/mars-fusion.service';
+import { MarsFusionService } from '../services/celestial/mars/mars-fusion.service';
 // Service des capacités des sources de Mars (ce que chaque source de tuiles sait servir).
-import { MarsCapabilitiesService } from '../services/mars/capabilities.service';
+import { MarsCapabilitiesService } from '../services/celestial/mars/capabilities.service';
 // Service de santé des sources amont de Mars (joignables ou non).
-import { MarsHealthService } from '../services/mars/mars-upstream-health.service';
+import { MarsHealthService } from '../services/celestial/mars/mars-upstream-health.service';
 // Jeton d'injection de la configuration de Mars et fonction qui la lit.
-import { MARS_CONFIG, loadMarsConfig } from '../services/mars/mars.config';
+import { MARS_CONFIG, loadMarsConfig } from '../services/celestial/mars/mars.config';
 // Service du catalogue des couches de Mars.
-import { MarsCatalogService } from '../services/mars/mars-catalog.service';
+import { MarsCatalogService } from '../services/celestial/mars/mars-catalog.service';
 // Contrôleur de Mars : les routes /api/v1/mars.
 import { MarsController } from '../controllers/mars.controller';
 // Service des tuiles d'imagerie de Mars.
-import { MarsTileService } from '../services/mars/mars-imagery-tile.service';
+import { MarsTileService } from '../services/celestial/mars/mars-imagery-tile.service';
 // Service des appels aux sources amont de Mars.
-import { MarsUpstreamService } from '../services/mars/upstream.service';
+import { MarsUpstreamService } from '../services/celestial/mars/upstream.service';
 
 // Ouvre la déclaration du module.
 @Module({

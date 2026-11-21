@@ -9,7 +9,7 @@ import { Matches } from 'class-validator';
 // Forme commune des réponses d'erreur.
 import { ApiErrorDto } from '../dto/api-error.dto';
 // Service de la galerie.
-import { GalleryService } from '../services/gallery/gallery.service';
+import { GalleryService } from '../services/content/gallery/gallery.service';
 
 // Classe des paramètres d'adresse d'un média.
 class MediaParamsDto {

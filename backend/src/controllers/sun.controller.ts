@@ -13,13 +13,13 @@ import {
 // Fin de l'import.
 } from '@nestjs/common';
 // Service du point sous-solaire.
-import { SunService } from '../services/sun/sun.service';
+import { SunService } from '../services/celestial/sun/sun.service';
 // Liste des astres acceptés, et fonction qui vérifie qu'un texte en fait partie.
-import { SUN_BODIES, isSunBody } from '../services/sun/sun.types';
+import { SUN_BODIES, isSunBody } from '../services/celestial/sun/sun.types';
 // Service de l'activité solaire (NOAA).
-import { SolarActivityService } from '../services/sun/solar-activity.service';
+import { SolarActivityService } from '../services/celestial/sun/solar-activity.service';
 // Service des régions actives et des éruptions localisées (NOAA SWPC et NASA DONKI).
-import { SolarRegionsService } from '../services/sun/solar-regions.service';
+import { SolarRegionsService } from '../services/celestial/sun/solar-regions.service';
 // Décorateurs de documentation OpenAPI : étiquette du groupe et description des routes.
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 

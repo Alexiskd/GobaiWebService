@@ -16,9 +16,9 @@ import {
   CookieSessionDto, ListContributionsQueryDto, SessionDto, VoteDto, VoteResultDto,
 } from '../dto/contributions.dto';
 // Lecture du jeton porté par l'en-tête Authorization.
-import { bearerToken, cookieSessionToken, SESSION_TTL_SECONDS } from '../services/contributions/accounts';
+import { bearerToken, cookieSessionToken, SESSION_TTL_SECONDS } from '../services/content/contributions/accounts';
 // Service des contributions.
-import { ContributionsService } from '../services/contributions/contributions.service';
+import { ContributionsService } from '../services/content/contributions/contributions.service';
 
 const SESSION_COOKIE = 'gobai_session';
 const sessionCookieOptions = () => ({

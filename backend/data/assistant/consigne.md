@@ -1,7 +1,7 @@
 # Consigne de l'assistant de Go白ناन्टех
 
 Ce fichier est la consigne système envoyée au modèle à chaque message. Il se modifie sans toucher au code : le
-serveur le lit au démarrage (voir `src/services/assistant/assistant.service.ts`). S'il est absent ou illisible, le
+serveur le lit au démarrage (voir `src/services/content/assistant/assistant.service.ts`). S'il est absent ou illisible, le
 serveur retombe sur une consigne de secours écrite dans le code, plus courte mais équivalente.
 
 ## Qui tu es

@@ -25,17 +25,17 @@ import {
 // Type Express (effacé à la compilation) de la réponse.
 import type { Response } from 'express';
 // Service des capacités des sources de Mercure (ce que chaque source de tuiles déclare servir).
-import { MercuryCapabilitiesService } from '../services/mercury/capabilities.service';
+import { MercuryCapabilitiesService } from '../services/celestial/mercury/capabilities.service';
 // Service de santé des sources amont de Mercure.
-import { MercuryHealthService } from '../services/mercury/mercury-upstream-health.service';
+import { MercuryHealthService } from '../services/celestial/mercury/mercury-upstream-health.service';
 // Jeton d'injection de la configuration de Mercure et son type.
-import { MERCURY_CONFIG, type MercuryConfig } from '../services/mercury/mercury.config';
+import { MERCURY_CONFIG, type MercuryConfig } from '../services/celestial/mercury/mercury.config';
 // Service du catalogue : sources et couches de Mercure.
-import { MercuryCatalogService } from '../services/mercury/mercury-catalog.service';
+import { MercuryCatalogService } from '../services/celestial/mercury/mercury-catalog.service';
 // Types (effacés à la compilation) d'une emprise géographique et du résultat d'une lecture de tuile.
-import type { BBox, TileFetchResult } from '../services/mercury/mercury.types';
+import type { BBox, TileFetchResult } from '../services/celestial/mercury/mercury.types';
 // Service des tuiles de Mercure.
-import { MercuryTileService } from '../services/mercury/mercury-surface-tile.service';
+import { MercuryTileService } from '../services/celestial/mercury/mercury-surface-tile.service';
 // Décorateurs de documentation OpenAPI : étiquette du groupe et description des routes.
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 

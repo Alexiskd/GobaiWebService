@@ -7,9 +7,9 @@ import { ApiErrorDto } from '../dto/api-error.dto';
 // Forme de la fiche de World Atlas.
 import { WorldAtlasInfoDto } from '../dto/world-atlas.dto';
 // Type (effacé à la compilation) d'un document TopoJSON.
-import type { Topology } from '../services/world-atlas/topology';
+import type { Topology } from '../services/locations/world-atlas/topology';
 // Service World Atlas.
-import { WorldAtlasService } from '../services/world-atlas/world-atlas.service';
+import { WorldAtlasService } from '../services/locations/world-atlas/world-atlas.service';
 
 // Rubrique « World Atlas » de la documentation.
 @ApiTags('World Atlas')

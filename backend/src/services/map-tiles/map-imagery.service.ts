@@ -15,15 +15,15 @@ import { NasaTrekMoonProvider } from './providers/nasa-trek-moon.provider';
 // Fournisseur de Mars : NASA Mars Trek.
 import { NasaTrekMarsProvider } from './providers/nasa-trek-mars.provider';
 // Service des catalogues Lune, Mars et Mercure.
-import { SpaceLayersService } from './space-layers.service';
+import { SpaceLayersService } from './bodies/space-layers.service';
 // Service de l'imagerie de la Terre (couche unique).
-import { EarthImageryService } from './earth-imagery.service';
+import { EarthImageryService } from './earth/earth-imagery.service';
 // Calques LiDAR HD de l'IGN : mention, liste et résolution.
-import { LIDAR_HD_ATTRIBUTION, LIDAR_HD_CITY_ALTITUDE_M, lidarHdCities, lidarHdLayers, resolveLidarHd } from './lidar-hd';
+import { LIDAR_HD_ATTRIBUTION, LIDAR_HD_CITY_ALTITUDE_M, lidarHdCities, lidarHdLayers, resolveLidarHd } from './earth/lidar-hd';
 // Service des cartes des satellites naturels.
-import { SatelliteTilesService } from './satellite-tiles.service';
+import { SatelliteTilesService } from './bodies/satellite-tiles.service';
 // Identifiant de la couche mélangée de Mars.
-import { MARS_BLEND_LAYER_ID } from '../mars/mars-blend.service';
+import { MARS_BLEND_LAYER_ID } from '../celestial/mars/mars-blend.service';
 // Ouvre l'import de la fusion de Mars :
 import {
   // fonction qui donne l'identifiant de couche d'un algorithme ;
@@ -31,7 +31,7 @@ import {
   // liste des algorithmes de fusion.
   MARS_FUSION_ALGORITHM_INFO,
 // Fin de l'import.
-} from '../mars/mars-fusion.service';
+} from '../celestial/mars/mars-fusion.service';
 
 // Jeton d'injection de la liste des fournisseurs.
 export const TILE_PROVIDERS = 'TILE_PROVIDERS';
