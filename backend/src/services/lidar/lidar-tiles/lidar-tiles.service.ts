@@ -13,20 +13,32 @@ import { join } from 'node:path';
 // gzipSync : compression gzip.
 import { gzipSync } from 'node:zlib';
 // Conversion Lambert-93 → WGS84 et cap de la grille.
-import { gridNorthHeading, lambert93ToWgs84 } from '../../content/contributions/lambert93';
+import { gridNorthHeading, lambert93ToWgs84, wgs84ToLambert93 } from '../../content/contributions/lambert93';
 // Fonctions et constantes des nuages LiDAR HD de l'IGN.
 import {
   ByteCache, COPC_HEADER_BYTES, type CopcEntry, type CopcInfo, IGN_LIDAR_LAYER, type IgnLidarTile, LAZDEC_POINT_BYTES, LIDAR_IMAGERY, LIDAR_STEP,
-  encodeNode, isLidarNodeKey, isLidarTileId, lidarWfsBboxUrl, lidarWfsUrl, parseCopcHeader, parseLidarBox, parseHierarchyPage, tileKmFromId, tilesFromWfs,
+  encodeNode, type LonLatBox, isLidarNodeKey, isLidarTileId, lidarWfsBboxUrl, lidarWfsUrl, parseCopcHeader, parseLidarBox, parseHierarchyPage, tileKmFromId, tilesFromWfs,
 } from './lidar-tiles';
+// Fonctions et constantes des nuages EPT du LiDAR HD de l'IGN (la méthodologie de la visionneuse officielle de l'IGN).
+import {
+  EPT_NODE_VERSION, EPT_TILE_DEPTH, type EptCell, type EptDalle, type EptEntry, type EptInfo, IGN_EPT_VPC_URL,
+  cellBounds, cellsInBox, eptCellKey, eptDataUrl, eptHierarchyUrl, eptTileId, inCell, parseEptHierarchy, parseEptInfo, parseEptLazHeader, parseEptTileId, parseVpc, rekeyToEpt, rekeyToTile,
+} from '../lidar-ept/lidar-ept';
 
 /**
- * Nuages de points LiDAR HD de l'IGN, lus en direct (voir lidar-tiles.ts) : rien n'est stocké dans le dépôt ni en base.
+ * Nuages de points LiDAR HD de l'IGN, lus en direct (voir lidar-tiles.ts et lidar-ept.ts) : rien n'est stocké dans le
+ * dépôt ni en base. Deux sources y répondent :
  *
- *  - list(lon, lat) : demande au WFS de la Géoplateforme les dalles autour du point, lit l'en-tête et la hiérarchie
- *    COPC de chacune (requêtes partielles HTTP Range, quelques kilo-octets) et renvoie leurs manifestes ;
- *  - node(dalle, nœud) : lit le seul bloc LAZ du nœud (HTTP Range), le décode avec tools/lidar/lazdec (compilé au
- *    build) et le convertit au format compact du navigateur, compressé en gzip. Les nœuds servis restent en mémoire.
+ *  - la source EPT, celle de la visionneuse officielle de l'IGN (visionneuse-lidarhd.ign.fr) et la première essayée :
+ *    l'index des dalles (index.vpc), puis, par cellule de 781 m du niveau 6 de l'octree, le ept.json de sa dalle et la
+ *    page de hiérarchie de la cellule ; le nuage d'un nœud (ept-data/<clé>.laz, un seul bloc laszip) est décodé par
+ *    tools/lidar/lazdec, compilé au build ;
+ *  - le repli COPC : la couche WFS des métadonnées (adresses des nuages), l'en-tête et la hiérarchie COPC lus par
+ *    requêtes partielles, puis le bloc LAZ d'un nœud, décodé de la même façon.
+ *
+ *  - list(lon, lat) : rend les manifestes des dalles autour du point, les plus proches d'abord, 64 au plus ;
+ *  - node(dalle, nœud) : lit le seul nuage du nœud, le décode et le convertit au format compact du navigateur,
+ *    compressé en gzip. Les nœuds servis restent en mémoire.
  */
 /** Mémoire réservée aux nœuds déjà servis (le service gratuit de Render a 512 Mo en tout). */
 // Taille du cache mémoire : 48 Mo.
@@ -43,9 +55,28 @@ const FETCH_TIMEOUT_MS = 20_000;
 /** Version du format des nœuds servis : change l'adresse (cache du navigateur) si la conversion change. */
 // Version « ign2 » : les nuages gardés par les navigateurs sous l'ancienne adresse ne sont plus jamais demandés.
 const NODE_VERSION = 'ign2';
+/** Source des dalles : « auto » (EPT d'abord, COPC en repli), « ept » (EPT seul) ou « copc » (l'ancien WFS seul). */
+// La visionneuse officielle de l'IGN lit le jeu EPT : c'est la source par défaut (LIDAR_IGN_SOURCE).
+const SOURCE = (process.env.LIDAR_IGN_SOURCE?.trim() || 'auto').toLowerCase();
+/** L'index EPT des dalles, relu au plus toutes les 24 heures (LIDAR_IGN_EPT_VPC pour une autre adresse). */
+// Adresse de l'index et durée de vie.
+const VPC_URL = process.env.LIDAR_IGN_EPT_VPC?.trim() || IGN_EPT_VPC_URL;
+const VPC_MAX_AGE_MS = 24 * 3600 * 1000;
+/** Dalles EPT (cellules de 781 m) dont le manifeste est gardé en mémoire : 256, quatre champs de caméra de 64 dalles. */
+// Taille du cache des dalles EPT.
+const EPT_MAX_TILES = 256;
+/** Dalles EPT préparées au plus à chaque recherche, comme les dalles COPC. */
+// Dalles EPT rendues par la recherche : 64 (autant que le navigateur n'en garde).
+const EPT_MAX_LIST = 64;
 
 /** Dalle préparée : son manifeste public, l'adresse du nuage, l'en-tête COPC et les blocs de ses nœuds. */
 interface PreparedTile { manifest: Record<string, unknown>; url: string; info: CopcInfo; entries: Map<string, CopcEntry> }
+
+/** Dalle EPT préparée (le ept.json et la première page de sa hiérarchie) : celle des dalles du navigateur en sort. */
+interface EptFrame { dalle: EptDalle; info: EptInfo; base: string; page: EptEntry[] }
+
+/** Cellule de niveau 6 préparée : son manifeste public, sa dalle EPT, sa cellule et les nœuds à points de son arbre. */
+interface EptPrepared { manifest: Record<string, unknown>; frame: EptFrame; cell: EptCell; entries: EptEntry[] }
 
 // Rend la classe injectable par NestJS.
 @Injectable()
@@ -61,6 +92,14 @@ export class LidarTilesService {
   private readonly tiles = new Map<string, Promise<PreparedTile>>();
   // Cache mémoire des nœuds déjà convertis et compressés.
   private readonly cache = new ByteCache(CACHE_BYTES);
+  // Index EPT des dalles de l'IGN (lues une fois, gardées 24 heures) et sa date de lecture.
+  private vpcAt = 0;
+  private vpcDalles: EptDalle[] = [];
+  // ept.json et première page de la hiérarchie de chaque dalle EPT.
+  private readonly eptFrames = new Map<string, Promise<EptFrame>>();
+  // Dalles EPT (cellules de 781 m) préparées, par identifiant (les plus anciennes sortent au-delà du plafond).
+  private readonly eptTiles = new Map<string, Promise<EptPrepared>>();
+
   // Décodages en cours, et file d'attente des suivants.
   private running = 0;
   // File d'attente : fonctions qui libèrent la place suivante.
@@ -105,6 +144,21 @@ export class LidarTilesService {
     const empty = { storage: 'ign', available: this.available, items: [] as unknown[] };
     // Point invalide, ou décodeur absent : rien.
     if (!Number.isFinite(lon) || !Number.isFinite(lat) || !this.available) return empty;
+    // Source EPT (la méthodologie de la visionneuse officielle de l'IGN) : essayée d'abord, sauf si « copc ».
+    if (SOURCE !== 'copc') {
+      // Essai (début).
+      try {
+        // Les dalles EPT autour du point.
+        const eptItems = await this.listEpt(lon, lat, r, box);
+        // Trouvées : rendues comme réponse.
+        if (eptItems.length) return { storage: 'ept', available: this.available, items: eptItems };
+        // Aucune dalle EPT : la suite cherche dans le WFS si le repli est voulu.
+      // Échec : journalisé, la suite cherche dans le WFS.
+      } catch (e) { this.logger.warn(`EPT LiDAR HD : ${(e as Error).message}`); }
+      // Sans repli demandé ; rien.
+      if (SOURCE === 'ept') return empty;
+    // Fin de la source EPT.
+    }
     // Dalles trouvées dans le WFS de l'IGN.
     let found: IgnLidarTile[];
     // Essai (début).
@@ -134,6 +188,288 @@ export class LidarTilesService {
     // Distance approchée.
     return Math.hypot((c.lon - lon) * Math.cos(lat * (Math.PI / 180)), c.lat - lat) * 111_195;
   // Fin de distanceTo.
+  }
+
+  /**
+   * ---------------- Source EPT : la méthodologie de la visionneuse officielle de l'IGN ----------------
+   *
+   * L'index des dalles (index.vpc) est lu une fois puis gardé 24 heures. Chaque dalle du navigateur est une cellule
+   * du niveau 6 de l'octree EPT (781 m de côté, la taille des dalles COPC d'un kilomètre) : son manifeste est
+   * construit depuis le ept.json de sa dalle EPT et la page de hiérarchie de la cellule (les nœuds y sont
+   * renumérotés depuis son niveau, la racine devient « 0-0-0-0 »), son nuage de nœud est le fichier LAZ de ce nœud
+   * dans l'arbre EPT (ept-data/<clé>.laz), décodé par le même lazdec et converti au même format compact.
+   */
+
+  // Méthode eptIndex : l'index EPT, lu au plus toutes les 24 heures.
+  private async eptIndex(): Promise<EptDalle[]> {
+    // L'heure de la dernière lecture.
+    const now = Date.now();
+    // Déjà lue et pas périmée : la garde.
+    if (this.vpcDalles.length && now - this.vpcAt < VPC_MAX_AGE_MS) return this.vpcDalles;
+    // Lit l'index et range ses dalles.
+    this.vpcDalles = parseVpc(JSON.parse((await this.fetchBytes(VPC_URL)).toString('utf8')));
+    // Date la lecture.
+    this.vpcAt = now;
+    // Renvoie les dalles.
+    return this.vpcDalles;
+  // Fin de eptIndex.
+  }
+
+  /** Une dalle EPT préparée : son ept.json et les entrées de la première page de sa hiérarchie (celles jusqu'au niveau 6). */
+  // Méthode eptFrame : la dalle EPT, préparée une seule fois.
+  private eptFrame(d: EptDalle): Promise<EptFrame> {
+    // Déjà préparée ou en cours : la même promesse.
+    const known = this.eptFrames.get(d.id);
+    // Trouvée.
+    if (known) return known;
+    // Préparation (début).
+    const job = (async () => {
+      // Le ept.json de la dalle et sa première page de hiérarchie.
+      const info = parseEptInfo(JSON.parse((await this.fetchBytes(d.eptUrl)).toString('utf8')));
+      const page = parseEptHierarchy(JSON.parse((await this.fetchBytes(eptHierarchyUrl(d.base, `0-0-0-0`))).toString('utf8')));
+      // Renvoie la dalle préparée.
+      return { dalle: d, info, base: d.base, page };
+    // Fin de la préparation.
+    })();
+    // Échec : la dalle est oubliée (nouvel essai à la demande suivante).
+    job.catch(() => this.eptFrames.delete(d.id));
+    // Garde la préparation.
+    this.eptFrames.set(d.id, job);
+    // La renvoie.
+    return job;
+  // Fin de eptFrame.
+  }
+
+  /**
+   * Cellule d'une dalle EPT : son arbre (racine et descendants, renumérotés depuis son niveau) et ses points
+   * réels. Les entrées de la première page suffisent quand la racine y porte ses points ; sinon la page de la
+   * cellule, qui contient la suite de l'arbre (jusqu'au niveau le plus fin de la dalle), est lue.
+   */
+  // Méthode eptCellEntries : la dalle préparée et la cellule.
+  private async eptCellEntries(frame: EptFrame, cell: EptCell): Promise<EptEntry[]> {
+    // La clé de la cellule et sa racine dans la première page.
+    const key = eptCellKey(cell);
+    const root = frame.page.find((e) => e.key === key);
+    // Racine inconnue de la dalle : aucune cellule.
+    if (!root) return [];
+    // La racine et sa suite dans la même page (les nœuds y portent leurs points).
+    if (root.count >= 0) return frame.page.filter((e) => e.count > 0 && inCell(cell, e));
+    // La racine marque la suite ailleurs : la page de la cellule contient l'arbre entier.
+    const page = parseEptHierarchy(JSON.parse((await this.fetchBytes(eptHierarchyUrl(frame.base, key))).toString('utf8')));
+    // Les nœuds à points de la page, dans la cellule (la racine comprise ; les suites éventuelles plus profondes sont écartées).
+    return page.filter((e) => e.count > 0 && inCell(cell, e));
+  // Fin de eptCellEntries.
+  }
+
+  /** Prépare une cellule de niveau 6 (manifeste, arbre renuméroté), une seule fois. */
+  // Méthode eptPrepare : la dalle EPT et la cellule.
+  private eptPrepare(d: EptDalle, cell: EptCell): Promise<EptPrepared> {
+    // Identifiant de la dalle du navigateur.
+    const id = eptTileId(d.code, cell);
+    // Déjà préparée ou en cours : la même promesse.
+    const known = this.eptTiles.get(id);
+    // Trouvée.
+    if (known) return known;
+    // Plafond atteint : la plus ancienne sort.
+    if (this.eptTiles.size >= EPT_MAX_TILES) this.eptTiles.delete(this.eptTiles.keys().next().value as string);
+    // Préparation (début).
+    const job = (async () => {
+      // Le ept.json et la première page de la dalle.
+      const frame = await this.eptFrame(d);
+      // Les nœuds à points de la cellule, dans l'arbre EPT.
+      const entries = await this.eptCellEntries(frame, cell);
+      // Sans nœud : erreur (la cellule n'a pas de nuage).
+      if (!entries.length) throw new Error('cellule sans points');
+      // La racine de la dalle : la cellule elle-même.
+      const root = entries.find((e) => e.level === EPT_TILE_DEPTH);
+      // Sans racine : erreur.
+      if (!root) throw new Error('cellule sans racine');
+      // Les nœuds renumérotés depuis le niveau de la cellule, avec leurs points.
+      const nodes = entries.map((e) => ({ k: rekeyToTile(e.key, cell), n: e.count, b: 2 * e.count, h: EPT_NODE_VERSION })).filter((n) => n.k);
+      // Emprise de la cellule (un cube de 781 m de côté, en Lambert-93).
+      const [minX, minY, minZ, maxX, maxY] = cellBounds(frame.info, cell);
+      // Calage : centre de la cellule, bas du cube, cap de la grille.
+      const g = lambert93ToWgs84((minX + maxX) / 2, (minY + maxY) / 2);
+      // Écart des points de la racine : le côté de la cellule sur la densité de ses points.
+      const spacing = Math.sqrt(((maxX - minX) * (maxY - minY)) / Math.max(1, root.count));
+      // Manifeste public (début).
+      const manifest = {
+        // Identifiant, nom et clé EPT de la cellule.
+        id, name: `LiDAR HD ${d.code.toUpperCase()} ${cell.x}-${cell.y}`, tile: eptCellKey(cell),
+        // Source, licence et système.
+        source: 'IGN – LiDAR HD EPT (Géoplateforme, en direct)', license: 'Licence Ouverte 2.0 (Etalab)', acquired: '', crs: 'EPSG:2154 — RGF93 / Lambert-93, altitudes NGF-IGN69',
+        // Points de la cellule, format, pas et écart de ses points de racine.
+        points: entries.reduce((s, e) => s + e.count, 0), format: 1, step: LIDAR_STEP, spacing,
+        // Emprise : le cube de la cellule.
+        bounds: { minX, minY, minZ, maxX, maxY, maxZ: minZ + (maxX - minX) },
+        // Calage GPS.
+        anchor: { lat: g.lat, lon: g.lon, alt: minZ, heading: gridNorthHeading((minX + maxX) / 2, (minY + maxY) / 2) },
+        // Nœuds : clé, nombre de points, taille approximative et version.
+        nodes, storage: 'ept', nodeUrl: `/api/v1/lidar/${id}/{k}?v={h}`, imagery: LIDAR_IMAGERY,
+      // Fin du manifeste.
+      };
+      // Renvoie la cellule préparée.
+      return { manifest, frame, cell, entries };
+    // Fin de la préparation.
+    })();
+    // Échec : la cellule est oubliée (nouvel essai à la demande suivante).
+    job.catch(() => this.eptTiles.delete(id));
+    // Garde la préparation.
+    this.eptTiles.set(id, job);
+    // La renvoie.
+    return job;
+  // Fin de eptPrepare.
+  }
+
+  /**
+   * Dalles EPT autour d'un point : les cellules de niveau 6 qui touchent l'emprise (ou le cercle du rayon), les
+   * plus proches du point d'abord, 64 au plus, avec leurs manifestes. Lève une erreur si l'index EPT est illisible.
+   */
+  // Méthode listEpt : la longitude, la latitude, le rayon et l'emprise facultative.
+  private async listEpt(lon: number, lat: number, r: number, box?: LonLatBox | null): Promise<unknown[]> {
+    // L'index EPT des dalles (l'erreur de lecture remonte : le repli COPC prendra le relais).
+    const dalles = await this.eptIndex();
+    // Le point et l'emprise de recherche, en Lambert-93 (l'emprise : 8 km de côté au plus, comme le champ de la caméra).
+    const c = wgs84ToLambert93(lat, lon);
+    // Emprise X/Y de la recherche : les coins de l'emprise en degrés, convertis en Lambert-93, ou le cercle du rayon.
+    const [wx0, wy0, wx1, wy1]: [number, number, number, number] = box
+      // Les quatre coins de l'emprise de la caméra.
+      ? (() => {
+        // Coin sud-ouest et coin nord-est.
+        const a = wgs84ToLambert93(box[1], box[0]), b = wgs84ToLambert93(box[3], box[2]);
+        // L'emprise X/Y.
+        return [Math.min(a.east, b.east), Math.min(a.north, b.north), Math.max(a.east, b.east), Math.max(a.north, b.north)] as [number, number, number, number];
+      // Fin de l'emprise.
+      })()
+      // Le cercle du rayon autour du point.
+      : [c.east - r, c.north - r, c.east + r, c.north + r];
+    // Cellules candidates : celles des dalles EPT qui touchent l'emprise, avec l'adresse de leur dalle.
+    const cells: { d: EptDalle; cell: EptCell; dist: number }[] = [];
+    // Pour chaque dalle EPT qui touche l'emprise (début).
+    for (const d of dalles) {
+      // Hors de l'emprise en X/Y : suivante.
+      if (d.bbox[0] > wx1 || d.bbox[3] < wx0 || d.bbox[1] > wy1 || d.bbox[4] < wy0) continue;
+      // Le ept.json et la première page de la dalle (une erreur de dalle est écartée, sans casser la recherche).
+      let frame: EptFrame;
+      // Essai (début).
+      try { frame = await this.eptFrame(d); }
+      // Échec : journalisé, dalle suivante.
+      catch (e) { this.logger.warn(`Dalle EPT ${d.id} : ${(e as Error).message}`); continue; }
+      // Les cellules de la dalle dans l'emprise, gardées si la dalle EPT en parle (racine connue de sa hiérarchie).
+      for (const cell of cellsInBox(frame.info, [wx0, wy0, wx1, wy1])) {
+        // La racine de la cellule doit exister dans la première page (avec ou sans points).
+        if (!frame.page.some((e) => e.key === eptCellKey(cell))) continue;
+        // Le centre de la cellule en degrés, pour la distance au point.
+        const [minX, minY, , maxX, maxY] = cellBounds(frame.info, cell);
+        const g = lambert93ToWgs84((minX + maxX) / 2, (minY + maxY) / 2);
+        // Distance approchée du centre de la cellule au point.
+        const dist = Math.hypot((g.lon - lon) * Math.cos(lat * (Math.PI / 180)), g.lat - lat) * 111_195;
+        // Garde la cellule candidate.
+        cells.push({ d, cell, dist });
+      // Fin des cellules de la dalle.
+      }
+    // Fin des dalles.
+    }
+    // Les plus proches d'abord, puis 64 au plus.
+    cells.sort((a, b) => a.dist - b.dist);
+    // Manifestes préparés (64 au plus), les échecs étant écartés.
+    const items = (await Promise.all(cells.slice(0, EPT_MAX_LIST).map(({ d, cell }) => this.eptPrepare(d, cell).then((p) => p.manifest).catch((e: Error) => { this.logger.warn(`Dalle ${eptTileId(d.code, cell)} : ${e.message}`); return null; })))).filter(Boolean);
+    // Renvoie les manifestes.
+    return items;
+  // Fin de listEpt.
+  }
+
+  /** Retrouve une dalle EPT (cellule de niveau 6) d'après son identifiant, même sans préparation récente. */
+  // Méthode eptTileById : l'identifiant de la dalle EPT et sa cellule.
+  private async eptTileById(id: string, cell: EptCell): Promise<EptPrepared> {
+    // Déjà préparée : la renvoie.
+    const known = this.eptTiles.get(id);
+    // Trouvée.
+    if (known) return known;
+    // La dalle EPT de l'index.
+    const d = (await this.eptIndex()).find((e) => e.id === id.slice(0, id.indexOf('-', 4)));
+    // Inconnue : 404.
+    if (!d) throw new NotFoundException('Dalle LiDAR EPT inconnue.');
+    // La prépare.
+    return this.eptPrepare(d, cell);
+  // Fin de eptTileById.
+  }
+
+  /** Fichier d'un nœud d'une dalle EPT, lu, décodé et converti au format du navigateur, gzippé. */
+  // Méthode eptNode : la dalle préparée, la clé du nœud du navigateur et son entrée.
+  private async eptNode(p: EptPrepared, key: string): Promise<Buffer> {
+    // La clé EPT du nœud.
+    const ekey = rekeyToEpt(key, p.cell);
+    // Illisible : 404.
+    if (!ekey) throw new NotFoundException('Nœud LiDAR inconnu.');
+    // L'entrée EPT du nœud.
+    const e = p.entries.find((n) => n.key === ekey);
+    // Absente : 404.
+    if (!e) throw new NotFoundException('Nœud LiDAR inconnu.');
+    // Sans points : vide, compressé.
+    if (!e.count) return gzipSync(Buffer.alloc(0));
+    // Conversion (début).
+    const body = await this.slot(async () => {
+      // Essai (début).
+      try {
+        // Le nuage du nœud (LAZ 1.4, un seul bloc laszip).
+        const buf = await this.fetchBytes(eptDataUrl(p.frame.base, ekey));
+        // En-tête du fichier : adresse des points, nombre et format.
+        const h = parseEptLazHeader(buf);
+        // Le nombre annoncé par la hiérarchie doit être celui du fichier.
+        if (h.count !== e.count) throw new Error(`nombre de points divergent (${h.count}/${e.count})`);
+        // Décodage, dans un dossier temporaire.
+        const raw = await this.decodeEpt(buf, h.dataStart, e, p.frame.info);
+        // La cellule de niveau 6 de la dalle : son coin bas (le bas de la dalle du navigateur, en Z).
+        const [dMinX, , dMinZ] = cellBounds(p.frame.info, p.cell);
+        // Côtés du cube racine de la dalle EPT, et côté du nœud (m).
+        const rootX = p.frame.info.bounds[3] - dMinX, rootY = p.frame.info.bounds[4] - p.frame.info.bounds[1];
+        const nodeX = rootX / 2 ** e.level, nodeY = rootY / 2 ** e.level;
+        // Coin du nœud, en Lambert-93.
+        const nMinX = p.frame.info.bounds[0] + e.x * nodeX, nMinY = p.frame.info.bounds[1] + e.y * nodeY;
+        // Conversion au format du navigateur : X et Y depuis le coin du nœud, Z depuis le bas de la dalle.
+        const { bytes } = encodeNode(raw, { scale: p.frame.info.scale, offset: p.frame.info.offset, minX: nMinX, minY: nMinY, z0: dMinZ, step: LIDAR_STEP });
+        // Compressé.
+        return gzipSync(bytes, { level: 6 });
+      // Échec : 502, l'IGN ou le décodage ont échoué.
+      } catch (err) { this.logger.warn(`Nœud EPT ${ekey} : ${(err as Error).message}`); throw new BadGatewayException('Nuage LiDAR de l’IGN illisible pour ce nœud.'); }
+    // Fin de la conversion.
+    });
+    // Renvoie le fichier.
+    return body;
+  // Fin de eptNode.
+  }
+
+  /** Décode le nuage d'un nœud EPT (un seul bloc laszip du fichier, de l'adresse des points à la fin) avec lazdec. */
+  // Méthode decodeEpt : le fichier du nœud, l'adresse des points, l'entrée EPT et le ept.json de la dalle.
+  private async decodeEpt(buf: Buffer, dataStart: number, e: EptEntry, info: EptInfo): Promise<Buffer> {
+    // Dossier temporaire.
+    const dir = await mkdtemp(join(tmpdir(), 'lidar-'));
+    // Essai (début).
+    try {
+      // Fichiers : le nuage, la liste et la sortie.
+      const laz = join(dir, 'node.laz'), list = join(dir, 'list.txt'), out = join(dir, 'points.bin');
+      // Côté du nœud et son coin (m), puis en unités brutes du fichier (une unité de marge pour les arrondis).
+      const side = (info.bounds[3] - info.bounds[0]) / 2 ** e.level;
+      const minX = info.bounds[0] + e.x * side, minY = info.bounds[1] + e.y * side, minZ = info.bounds[2] + e.z * side;
+      const rawX = (m: number) => Math.floor((m - info.offset[0]) / info.scale[0]) - 1, rawY = (m: number) => Math.floor((m - info.offset[1]) / info.scale[1]) - 1, rawZ = (m: number) => Math.floor((m - info.offset[2]) / info.scale[2]) - 1;
+      // Côté en unités brutes, avec marge.
+      const s = Math.ceil(side / Math.min(...info.scale)) + 2;
+      // Écrit le nuage (le fichier entier contient le bloc des points de ce nœud).
+      await writeFile(laz, buf);
+      // Écrit la liste : niveau, adresse du bloc, taille du bloc, points, coin et côté du nœud en unités brutes.
+      await writeFile(list, `${e.level} ${dataStart} ${buf.length - dataStart} ${e.count} ${rawX(minX)} ${rawY(minY)} ${rawZ(minZ)} ${s}\n`);
+      // Lance lazdec ; un code de sortie non nul est toléré si tous les points sont là (points en bord de cube).
+      await new Promise<void>((resolve) => execFile(this.lazdec, [laz, list, out], { timeout: 30_000 }, () => resolve()));
+      // Points décodés.
+      const raw = await readFile(out).catch(() => Buffer.alloc(0));
+      // Nombre de points incorrect : erreur.
+      if (raw.length !== e.count * LAZDEC_POINT_BYTES) throw new Error(`décodage incomplet (${raw.length / LAZDEC_POINT_BYTES}/${e.count} points)`);
+      // Renvoie les points.
+      return raw;
+    // Dans tous les cas : supprime le dossier temporaire.
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  // Fin de decodeEpt.
   }
 
   /** Prépare une dalle (en-tête, hiérarchie, manifeste), une seule fois. */
@@ -253,6 +589,20 @@ export class LidarTilesService {
     if (hit) return hit;
     // Décodeur absent : 503.
     if (!this.available) throw new ServiceUnavailableException('Décodeur LAZ absent sur le serveur.');
+    // Dalle EPT (la méthodologie de la visionneuse de l'IGN) : son nœud est décodé depuis le jeu EPT.
+    const ept = parseEptTileId(tile);
+    // Une dalle EPT (début).
+    if (ept) {
+      // La cellule préparée (404 si inconnue de l'index EPT).
+      const p = await this.eptTileById(ept.dalle, ept.cell);
+      // Le fichier du nœud, converti et gzippé.
+      const body = await this.eptNode(p, key);
+      // Gardé en mémoire.
+      this.cache.set(ck, body);
+      // Renvoyé.
+      return body;
+    // Fin de la dalle EPT.
+    }
     // La dalle.
     const t = await this.tileById(tile);
     // Le nœud.
