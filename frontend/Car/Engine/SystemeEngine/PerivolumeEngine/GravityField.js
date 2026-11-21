@@ -11,9 +11,9 @@
  */
 
 // Importe les masses des astres (mesurées, ou estimées d'après le rayon) : la table que le moteur emploie déjà.
-import { BODY_MASS_KG, bodyMassKg } from '../../AstreSolideEngine/gravityMath.jsx';
+import { BODY_MASS_KG, bodyMassKg } from '../../AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 // Importe le rayon de la sphère de Hill, déjà employé pour la vue « système » du téléphone.
-import { hillRadius } from '../../AstreSolideEngine/systemView.jsx';
+import { hillRadius } from '../../AstreSolideEngine/CameraEngine/systemView.jsx';
 
 // Réexporte ces trois outils : tout le champ gravitationnel de l'affichage se lit depuis ce module.
 export { BODY_MASS_KG, bodyMassKg, hillRadius };

@@ -17,7 +17,7 @@ import { ANNEE_LUMIERE, G, H0_KM_S_MPC, M_E, M_P, M_SOLEIL, PARSEC, R_PROTON, R_
 // Rayon de Bohr, liaison H–H, distance de Proxima et couches (orbite de Neptune) de la théorie.
 import { COUCHES, DISTANCE_PROXIMA_AL, LIAISON_H2, rayonBohr } from './theorieQuantique.js';
 // Masses des astres du moteur, en kilogrammes.
-import { BODY_MASS_KG } from '../../../Engine/AstreSolideEngine/gravityMath.jsx';
+import { BODY_MASS_KG } from '../../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 
 /** Masse d'une sphère de diamètre d (m) et de masse volumique rho (kg/m³) : m = ρ · π d³ / 6. */
 // masseSphere : calcule cette masse, en kilogrammes.

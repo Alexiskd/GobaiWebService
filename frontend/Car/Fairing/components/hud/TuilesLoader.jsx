@@ -7,7 +7,7 @@ import { Box, LinearProgress, Paper, Typography } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe la table des astres cartographiés, qui donne la clé du HUD de chaque astre.
-import { TILED_BODY_BY_ID } from '@/Engine/AstreSolideEngine/tiledBodies';
+import { TILED_BODY_BY_ID } from '@/Engine/AstreSolideEngine/BodyEngine/tiledBodies';
 // Importe l'état de repos, le calcul de l'avancement et les deux délais d'affichage.
 import { HIDE_DELAY_MS, IDLE, SHOW_DELAY_MS, tileLoadStep } from '@/Engine/shared/lib/tileLoading';
 // Importe useViewport, qui donne la catégorie d'écran.

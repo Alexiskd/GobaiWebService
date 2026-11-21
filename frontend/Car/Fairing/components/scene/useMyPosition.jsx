@@ -5,7 +5,7 @@ import { MY_POSITION_NAME, flyAltitude, geolocationMessage, readCompassOnce } fr
 // Importe livePosition, le suivi de la position en direct.
 import { livePosition } from '@/Engine/shared/lib/livePosition';
 // Importe compassHeading, qui calcule le cap à partir d'un événement d'orientation.
-import { compassHeading } from '@/Engine/AstreSolideEngine/userMarkerMath';
+import { compassHeading } from '@/Engine/AstreSolideEngine/InputEngine/userMarkerMath';
 
 /**
  * « Ma position » : position de l'appareil suivie en direct (point bleu qui se déplace) et zoom d'arrivée dessus.

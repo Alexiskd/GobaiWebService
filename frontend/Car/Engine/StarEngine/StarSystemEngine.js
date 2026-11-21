@@ -1,7 +1,7 @@
-import { propagateAstrometricRecord } from '../SystemeEngine/data/astronomy/astrometry/AstrometricEngine.js';
-import { calculateExoplanetRecordPosition } from '../SystemeEngine/data/astronomy/orbits/ExoplanetOrbitalEngine.js';
-import { resolveAstronomicalCrossReferences } from '../SystemeEngine/data/astronomy/providers/AstronomicalCrossReferenceResolver.js';
-import { auditAstronomicalCatalog, classifyAstronomicalExistence } from '../SystemeEngine/data/astronomy/providers/AstronomicalCatalogIntegrity.js';
+import { propagateAstrometricRecord } from '../SystemeEngine/astronomy/astrometry/AstrometricEngine.js';
+import { calculateExoplanetRecordPosition } from '../SystemeEngine/astronomy/orbits/ExoplanetOrbitalEngine.js';
+import { resolveAstronomicalCrossReferences } from '../SystemeEngine/astronomy/providers/AstronomicalCrossReferenceResolver.js';
+import { auditAstronomicalCatalog, classifyAstronomicalExistence } from '../SystemeEngine/astronomy/providers/AstronomicalCatalogIntegrity.js';
 
 const isFiniteValue = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 

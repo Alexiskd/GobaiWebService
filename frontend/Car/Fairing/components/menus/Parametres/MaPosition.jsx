@@ -3,7 +3,7 @@ import { useState, useSyncExternalStore } from 'react';
 // Importe de MUI Box, Button, CircularProgress (roue de chargement), Stack et Typography.
 import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 // Importe la mise en forme d'une position.
-import { formatLatLon } from '@/Engine/AstreSolideEngine/gps';
+import { formatLatLon } from '@/Engine/AstreSolideEngine/InputEngine/gps';
 // Importe plusieurs éléments du module homePlace (début de la liste).
 import {
   // Le nom « Maison », l'altitude d'arrivée, le message d'erreur, le lecteur, la localisation, la conversion en lieu, le réglage et l'abonnement.

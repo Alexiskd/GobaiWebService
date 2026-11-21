@@ -1,5 +1,5 @@
 import { buildExoplanetSceneModel, createExoplanetSystemGroup } from './exoplanets/ExoplanetSceneEngine.js';
-import { propagateAstrometricCoordinates } from '../SystemeEngine/data/astronomy/astrometry/AstrometricEngine.js';
+import { propagateAstrometricCoordinates } from '../SystemeEngine/astronomy/astrometry/AstrometricEngine.js';
 
 const finite = (value) => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
 const DEG = Math.PI / 180;

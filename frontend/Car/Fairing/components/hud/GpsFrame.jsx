@@ -5,7 +5,7 @@ import { Box, Paper } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe les mises en forme de distance, de latitude et de longitude, le nombre de décimales et l'échelle arrondie.
-import { formatDistance, formatLat, formatLon, gpsDecimals, niceScale } from '@/Engine/AstreSolideEngine/gps';
+import { formatDistance, formatLat, formatLon, gpsDecimals, niceScale } from '@/Engine/AstreSolideEngine/InputEngine/gps';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe les limites des zones du téléphone.

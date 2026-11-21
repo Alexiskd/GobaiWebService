@@ -8,7 +8,7 @@ import { ANALOGIES, ECHELONS, GROUPES, NIVEAUX, dispersionAnalogie, etendue, pla
 // Briques de style communes de la fenêtre Node.
 import { Carte, Chiffre, Etiquette, Fiche, GrilleChiffres, MONO, Note, SousTitre } from './nodeUi.jsx';
 // Écriture scientifique française.
-import { scientific } from '@/Engine/AstreSolideEngine/planetData';
+import { scientific } from '@/Engine/AstreSolideEngine/BodyEngine/planetData';
 
 // Couleur de chaque groupe, prise dans le thème : cyan pour l'atome, menthe pour la matière, violet pour le cosmos.
 const COULEUR = { atomique: 'info.main', matiere: 'success.main', cosmique: 'secondary.main' };

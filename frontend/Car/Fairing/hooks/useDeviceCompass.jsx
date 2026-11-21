@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // Importe les lecteurs des deux sensibilités d'inclinaison (déplacement et zoom).
 import { getTiltSensitivity, getTiltZoomSensitivity } from '@/Engine/shared/lib/tiltSensitivity';
 // Importe les calculs purs du pilotage : inclinaison avant/arrière, bascule latérale, lissage, vitesse de déplacement, facteur de zoom.
-import { devicePitchDeg, deviceRollDeg, smoothValue, tiltPanRate, tiltZoomFactor } from '@/Engine/AstreSolideEngine/deviceCompassMath';
+import { devicePitchDeg, deviceRollDeg, smoothValue, tiltPanRate, tiltZoomFactor } from '@/Engine/AstreSolideEngine/InputEngine/deviceCompassMath';
 
 // screenAngle : angle de rotation de l'écran (API moderne, sinon ancienne propriété, sinon 0).
 const screenAngle = () => globalThis.screen?.orientation?.angle ?? globalThis.orientation ?? 0;

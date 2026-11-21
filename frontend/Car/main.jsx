@@ -2,7 +2,7 @@
 import { createRoot } from 'react-dom/client';
 import App from './Fairing/App.jsx';
 import { removeSeoShell, setAppRoot, unmountApp } from './Engine/shared/lib/appRoot.jsx';
-import { purgeStoredTiles } from './Engine/AstreSolideEngine/storagePurge.jsx';
+import { purgeStoredTiles } from './Engine/AstreSolideEngine/PerfEngine/storagePurge.jsx';
 
 // Nettoie les anciens caches incompatibles puis monte l'application côté navigateur.
 purgeStoredTiles();

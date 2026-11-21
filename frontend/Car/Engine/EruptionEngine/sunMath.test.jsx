@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe les planètes des données du backend.
-import { PLANETS } from '../SystemeEngine/data/astronomy/data/bodies.data';
+import { PLANETS } from '../SystemeEngine/astronomy/data/bodies.data';
 // Importe les trois fonctions testées.
 import { nextApsides, nextSeasons, sunLive } from './sunMath.jsx';
 

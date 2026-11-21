@@ -1,12 +1,12 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
-import { calculateOrbitPosition } from './orbitCalculation.jsx';
+import { calculateOrbitPosition } from './OrbitEngine/orbitCalculation.jsx';
 // Importe LidarGlobe et pickEarthAt, les nuages LiDAR calés sur le globe et le point de la Terre sous un pixel.
 import { LidarGlobe, pickEarthAt } from './LidarEngine/lidarGlobe.jsx';
 // Importe LidarPoints, les dalles LiDAR en points 3D.
 import { LidarPoints } from './LidarEngine/lidarPoints.jsx';
 // Importe hiddenByAny, le test d'un point masqué par un astre.
-import { hiddenByAny } from './labelOcclusion.jsx';
+import { hiddenByAny } from './LabelEngine/labelOcclusion.jsx';
 // Importe le moteur de chargement planétaire : budgets, taille apparente, niveau de détail, plan des tuiles, satellites, champ de vue.
 import {
   // Les deux budgets d'astres à tuiles, la taille apparente et le niveau de détail d'un astre ;
@@ -14,81 +14,81 @@ import {
   // l'échelle en pixels, le plan des tuiles, l'apparition des satellites, le test du champ et le cône de vue.
   pixelScale, planTiledBodies, satelliteShown, sphereInView, viewConeHalfAngle,
 // Fin de l'import.
-} from './bodyLoading.jsx';
+} from './BodyEngine/bodyLoading.jsx';
 // Importe nearestIndex et saveCamera, l'astre le plus proche et la sauvegarde de la caméra.
-import { nearestIndex, saveCamera } from './viewLock.jsx';
+import { nearestIndex, saveCamera } from './CameraEngine/viewLock.jsx';
 // Importe les constantes et les calculs de position des astres, depuis ephemeris.
-import { AU_UNITS, D, centuriesTT, earthPosition, heliocentric, orbitPositions, lonLatToVec } from './ephemeris.jsx';
-import { MOON_KEPLER_ELEMENTS } from './planetOrbits.jsx';
-import { satelliteState, synchronousBasis } from './satelliteMath.jsx';
+import { AU_UNITS, D, centuriesTT, earthPosition, heliocentric, orbitPositions, lonLatToVec } from './OrbitEngine/ephemeris.jsx';
+import { MOON_KEPLER_ELEMENTS } from './OrbitEngine/planetOrbits.jsx';
+import { satelliteState, synchronousBasis } from './SatelliteEngine/satelliteMath.jsx';
 // Importe layoutLabels, le placement des étiquettes sans chevauchement.
-import { layoutLabels } from './labelLayout.jsx';
+import { layoutLabels } from './LabelEngine/labelLayout.jsx';
 // Importe bindInput, le branchement de la souris, du clavier et du tactile.
-import { bindInput } from './input.jsx';
+import { bindInput } from './InputEngine/input.jsx';
 // Importe les calculs de la vue inclinée à l'approche du sol, depuis cameraTilt.
-import { TILT_MAX_ANGLE, approachAngle, approachTilt, tiltEngagement, tiltPose } from './cameraTilt.jsx';
+import { TILT_MAX_ANGLE, approachAngle, approachTilt, tiltEngagement, tiltPose } from './CameraEngine/cameraTilt.jsx';
 // Importe RELIEF_KEY et TileManager, la clé du choix du relief et le gestionnaire des tuiles d'un astre.
 import { RELIEF_KEY, TileManager } from './MapEngine/tileManager.jsx';
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude.
 import { xyzToLonLat } from './MapEngine/mercator.jsx';
 // Importe buildBorderSegments et borderLift, les segments des frontières et leur hauteur.
-import { BORDER_STYLE, COAST_STYLE, buildBorderSegments, borderLift } from './bordersGeometry.jsx';
+import { BORDER_STYLE, COAST_STYLE, buildBorderSegments, borderLift } from './LabelEngine/bordersGeometry.jsx';
 // Importe WorldLabels, les noms de lieux posés sur un astre.
-import { WorldLabels } from './worldLabels.jsx';
+import { WorldLabels } from './LabelEngine/worldLabels.jsx';
 // Importe CityCard, la fiche d'une ville au survol.
-import { CityCard } from './cityCard.jsx';
+import { CityCard } from './LabelEngine/cityCard.jsx';
 // Importe CountryLabels, les noms des pays.
-import { CountryLabels } from './countryLabels.jsx';
+import { CountryLabels } from './LabelEngine/countryLabels.jsx';
 
 // Importe moonState et orbiterMetrics, l'état de la Lune et les mesures d'une sonde.
-import { moonState, orbiterMetrics } from './moonLive.jsx';
+import { moonState, orbiterMetrics } from './MoonEngine/moonLive.jsx';
 // Importe MOON_FEATURES et FEATURE_TYPES, les lieux de la Lune et leurs types.
-import { MOON_FEATURES, FEATURE_TYPES } from './moonFeatures.jsx';
+import { MOON_FEATURES, FEATURE_TYPES } from './MoonEngine/moonFeatures.jsx';
 // Importe bodyId, l'identifiant d'un astre.
-import { bodyId } from './bodyPlaces.jsx';
+import { bodyId } from './LabelEngine/bodyPlaces.jsx';
 // Importe la vue d'un système planétaire sur téléphone : sphère de Hill, entrée et sortie, planète du système.
-import { hillRadius, insideSystem, outsideSystem, systemHostOf } from './systemView.jsx';
+import { hillRadius, insideSystem, outsideSystem, systemHostOf } from './CameraEngine/systemView.jsx';
 // Importe MoonOrbiters, les sondes en orbite lunaire.
-import { MoonOrbiters } from './moonOrbiters.jsx';
+import { MoonOrbiters } from './MoonEngine/moonOrbiters.jsx';
 // Importe MoonOrbit, le tracé de l'orbite de la Lune.
-import { MoonOrbit } from './moonOrbit.jsx';
+import { MoonOrbit } from './MoonEngine/moonOrbit.jsx';
 // Importe le ruban des orbites et la mise à jour de ses réglages partagés (taille du tampon de dessin, densité).
-import { OrbitRibbon, updateOrbitShared } from './orbitRibbon.jsx';
+import { OrbitRibbon, updateOrbitShared } from './OrbitEngine/orbitRibbon.jsx';
 // Importe l'outillage Schwarzschild : rosette des orbites, puits de gravité filaire, fondu et mélanges.
 import {
   AU_M, GEODESIC_EXAGGERATION, SCHWARZSCHILD_FADE_MS, WELL_EXAGGERATION, easeInOutCubic, gridWellY, layOrbitOnWell, mixPoints, schwarzschildGeodesic, schwarzschildGridSegments,
-} from '../SystemeEngine/data/astronomy/orbits/orbitSchwarzschildMath.jsx';
+} from '../SystemeEngine/astronomy/orbits/orbitSchwarzschildMath.jsx';
 // Importe les opacités de la traînée d'une orbite fermée, le point le plus proche et la couleur translucide d'un astre.
-import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './orbitRibbonMath.jsx';
+import { loopTrailAlphas, nearestPointIndex, rgbaOf } from './OrbitEngine/orbitRibbonMath.jsx';
 // Importe le matériau de la surface de la Lune et le chargement d'un modèle 3D.
-import { createMoonSurfaceMaterial, loadMoonModel } from './moonModel.jsx';
+import { createMoonSurfaceMaterial, loadMoonModel } from './MoonEngine/moonModel.jsx';
 // Importe ShadowCamLayer, les mosaïques polaires de ShadowCam.
-import { ShadowCamLayer } from './shadowcam.jsx';
+import { ShadowCamLayer } from './CameraEngine/shadowcam.jsx';
 // Importe la liste des astres tuilés et leurs altitudes minimales, depuis tiledBodies.
-import { GAS_MIN_ALTITUDE_RADII, TILED_BODIES, TILED_BODY_BY_ID, minAltitudeRadii } from './tiledBodies.jsx';
+import { GAS_MIN_ALTITUDE_RADII, TILED_BODIES, TILED_BODY_BY_ID, minAltitudeRadii } from './BodyEngine/tiledBodies.jsx';
 // Importe la liste complète des astres (planètes et naines) : elle borne la grille de courbure à l'aphélie de la
 // plus lointaine (Éris), si bien que le disque filaire englobe toujours tous les astres du système.
-import { PLANETS } from '../SystemeEngine/data/astronomy/data/bodies.data.ts';
+import { PLANETS } from '../SystemeEngine/astronomy/data/bodies.data.ts';
 // Importe UserMarker, le point de la position de l'utilisateur.
-import { UserMarker } from './userMarker.jsx';
+import { UserMarker } from './InputEngine/userMarker.jsx';
 // Importe flightDistance et flightPlan, le zoom d'arrivée.
-import { flightDistance, flightPlan } from './zoomFlight.jsx';
+import { flightDistance, flightPlan } from './CameraEngine/zoomFlight.jsx';
 // Importe scaleLevel, le niveau de l'échelle affichée.
-import { scaleLevel } from './scaleLevels.jsx';
+import { scaleLevel } from './CameraEngine/scaleLevels.jsx';
 // Importe le rayon de la Terre en mètres et les coordonnées des coins de l'écran, depuis gps.
-import { EARTH_RADIUS_M, insetCorners, screenGeo } from './gps.jsx';
+import { EARTH_RADIUS_M, insetCorners, screenGeo } from './InputEngine/gps.jsx';
 // Importe tileRadius, le rayon auquel un niveau de tuiles est posé.
 import { tileRadius } from './MapEngine/tileGeometry.jsx';
 // Importe SkyLayer, le ciel lointain.
 import { SkyLayer } from '../StarEngine/SkyEngine/skyLayer.jsx';
 // Importe SatelliteSystem, les satellites des planètes.
-import { SatelliteSystem } from './satellites.jsx';
+import { SatelliteSystem } from './SatelliteEngine/satellites.jsx';
 // Importe les calculs du ciel : voile du jour, conversion équatoriale, visibilité et éblouissement.
 import { daySkyVeil, equatorialDegToScene, skyVisibility, sunGlare } from '../StarEngine/SkyEngine/skyMath.jsx';
 // Importe defaultDistance, la distance de vue par défaut d'un astre.
-import { defaultDistance } from './focusMath.jsx';
+import { defaultDistance } from './CameraEngine/focusMath.jsx';
 // Importe isKindHidden et planetKind, les familles d'astres.
-import { isKindHidden, planetKind } from './bodyKinds.jsx';
+import { isKindHidden, planetKind } from './BodyEngine/bodyKinds.jsx';
 // Importe createSaturnRings, les anneaux de Saturne.
 import { createSaturnRings } from '../AstreGazeuxEngine/saturnRings.jsx';
 // Importe createSunSurface, la surface animée du Soleil et ses éruptions.
@@ -104,19 +104,19 @@ import { createAtmosphere } from './AtmosphereEngine/atmosphere.jsx';
 // Importe underCloudFloorRadii, la hauteur du plancher sous les nuages.
 import { underCloudFloorRadii } from './AtmosphereEngine/atmosphereData.jsx';
 // Importe la masse d'un astre, l'astre dominant et la mise en forme d'une distance.
-import { bodyMassKg, dominantBody, formatDistanceKm } from './gravityMath.jsx';
+import { bodyMassKg, dominantBody, formatDistanceKm } from './OrbitEngine/gravityMath.jsx';
 // Importe createGasInterior, l'intérieur d'une géante gazeuse.
 import { createGasInterior } from '../AstreGazeuxEngine/AtmosphereEngine/gasInterior.jsx';
 // Importe cloudZoomFactor et interiorReadout, le zoom près des nuages et la lecture de l'intérieur.
 import { cloudZoomFactor, interiorReadout } from '../AstreGazeuxEngine/AtmosphereEngine/gasInteriorMath.jsx';
 // Importe les calculs de la boussole, depuis deviceCompassMath.
-import { arrowSign, crossPole, moveOnSphere } from './deviceCompassMath.jsx';
+import { arrowSign, crossPole, moveOnSphere } from './InputEngine/deviceCompassMath.jsx';
 // Importe dragRadPerPx et dragStep, la conversion d'un glissement en rotation.
-import { dragRadPerPx, dragStep } from './touchMath.jsx';
+import { dragRadPerPx, dragStep } from './InputEngine/touchMath.jsx';
 // Importe les réglages de rythme d'images et d'économie d'énergie, depuis powerSaver.
-import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './powerSaver.jsx';
+import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './PerfEngine/powerSaver.jsx';
 // Importe PerfProbe, la sonde de performance.
-import { FpsMeter, PerfProbe } from './perfProbe.jsx';
+import { FpsMeter, PerfProbe } from './PerfEngine/perfProbe.jsx';
 import { SystemRegistry } from '../SystemeEngine/core/SystemRegistry.js';
 import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
 import { CoreActivityPolicy } from '../SystemeEngine/core/CoreActivityPolicy.js';
@@ -137,10 +137,10 @@ import { GalacticSpatialIndex } from '../SystemeEngine/core/GalacticSpatialIndex
 import { GalacticSectorStreamingManager } from '../SystemeEngine/core/GalacticSectorStreamingManager.js';
 import { GalacticSectorScheduler } from '../SystemeEngine/core/GalacticSectorScheduler.js';
 import { GalacticCatalogResidencyManager } from '../SystemeEngine/core/GalacticCatalogResidencyManager.js';
-import { createAstronomicalCatalogService } from '../SystemeEngine/data/astronomy/providers/AstronomicalCatalogService.js';
-import { GaiaDR3SectorStreamer } from '../SystemeEngine/data/astronomy/providers/GaiaDR3SectorStreamer.js';
+import { createAstronomicalCatalogService } from '../SystemeEngine/astronomy/providers/AstronomicalCatalogService.js';
+import { GaiaDR3SectorStreamer } from '../SystemeEngine/astronomy/providers/GaiaDR3SectorStreamer.js';
 import { GaiaStarfieldLayer } from '../StarEngine/GaiaStarfieldLayer.js';
-import { createAstronomicalSystemExplorer } from '../SystemeEngine/data/astronomy/AstronomicalSystemExplorer.js';
+import { createAstronomicalSystemExplorer } from '../SystemeEngine/astronomy/AstronomicalSystemExplorer.js';
 import { InterstellarSceneRenderer } from '../StarEngine/InterstellarSceneRenderer.js';
 import {
   createInterstellarEngineConfig,

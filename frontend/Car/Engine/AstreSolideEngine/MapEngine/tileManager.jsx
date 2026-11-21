@@ -1,5 +1,5 @@
 // Importe uploadShare, la part des envois de tuiles autorisée, depuis powerSaver.
-import { uploadShare } from '../powerSaver.jsx';
+import { uploadShare } from '../PerfEngine/powerSaver.jsx';
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe la source d'images des tuiles, le chargement d'une image (sans cache) et la limite par serveur, depuis tileSource.

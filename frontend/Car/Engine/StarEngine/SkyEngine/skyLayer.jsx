@@ -1,7 +1,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe la somme des amplitudes du bruit et la qualité des shaders, depuis powerSaver.
-import { QUALITY, fbmNorm } from '../../AstreSolideEngine/powerSaver.jsx';
+import { QUALITY, fbmNorm } from '../../AstreSolideEngine/PerfEngine/powerSaver.jsx';
 // Importe la liste des galaxies, le décodage du catalogue, la base d'une galaxie et le repère galactique, depuis skyMath.
 import { DEEP_SKY, decodeStarCatalog, deepSkyBasis, galacticFrame } from './skyMath.jsx';
 

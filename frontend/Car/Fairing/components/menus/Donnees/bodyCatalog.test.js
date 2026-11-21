@@ -1,7 +1,7 @@
 // Tests du catalogue de la Documentation : tous les astres de l'application, groupés et cherchables.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../../../Engine/SystemeEngine/data/astronomy/data/bodies.data.ts';
+import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../../../Engine/SystemeEngine/astronomy/data/bodies.data.ts';
 import { DOCUMENTS } from './data/index.js';
 import { buildBodyCatalog, filterCatalog, leadingNumber } from './bodyCatalog.js';
 

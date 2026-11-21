@@ -10,9 +10,9 @@
 // Constantes physiques communes (CODATA 2018, UAI 2015).
 import { E, EPS0, G, H, HBAR, M_E, M_P, M_SOLEIL, R_PROTON, R_SOLEIL, UA, ANNEE_LUMIERE, EV } from './constantesPhysiques.js';
 // Éléments képlériens du moteur : le demi-grand axe de chaque planète vient du catalogue, il n'est pas recopié ici.
-import { ASTRE_BY_ID } from '../../../Engine/SystemeEngine/data/astronomy/data/kepler-elements.ts';
+import { ASTRE_BY_ID } from '../../../Engine/SystemeEngine/astronomy/data/kepler-elements.ts';
 // Masses des astres du moteur, en kilogrammes.
-import { BODY_MASS_KG } from '../../../Engine/AstreSolideEngine/gravityMath.jsx';
+import { BODY_MASS_KG } from '../../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 
 // Les 118 symboles chimiques connus, dans l'ordre des numéros atomiques (1 = hydrogène … 118 = oganesson).
 export const SYMBOLES = [
