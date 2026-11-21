@@ -3,7 +3,7 @@ import test from 'node:test';
 // Importe assert en mode strict, pour les vérifications.
 import assert from 'node:assert/strict';
 // Importe le nom court de la carte graphique, la sonde de performances et le calcul de pourcentage.
-import { gpuLabel, PerfProbe, sharePercent } from './perfProbe.jsx';
+import { FpsMeter, gpuLabel, PerfProbe, sharePercent } from './perfProbe.jsx';
 
 // Test : la part d'un temps dans l'intervalle entre deux images.
 test('part de l’intervalle : en %, bornée, 0 sans mesure', () => {
@@ -142,5 +142,63 @@ test('sonde : sans chronomètre GPU (Safari, iPhone) ou sans contexte, le temps 
     assert.equal(out.calls, 0);
   // Fin de la boucle.
   }
+// Fin du test.
+});
+
+// Simule des images régulières : `count` images espacées de `stepMs`, à partir de `start`. Renvoie la dernière publication.
+function run(meter, start, stepMs, count) {
+  // Dernière publication vue.
+  let last = null;
+  // Chaque image.
+  for (let i = 0; i < count; i++) last = meter.tick(start + i * stepMs) || last;
+  // La renvoie.
+  return last;
+// Fin de run.
+}
+
+// Test : la moyenne sur fenêtre glissante.
+test('images par seconde : moyenne exacte sur la fenêtre glissante, à 60, 50 et 20 images par seconde', () => {
+  // 60 images par seconde pendant deux secondes.
+  assert.deepEqual(run(new FpsMeter(), 1000, 1000 / 60, 120), { fps: 60, low: 60 });
+  // 50 images par seconde (rythme plafonné du moteur).
+  assert.deepEqual(run(new FpsMeter(), 1000, 20, 100), { fps: 50, low: 50 });
+  // 20 images par seconde (repos sur téléphone).
+  assert.deepEqual(run(new FpsMeter(), 1000, 50, 40), { fps: 20, low: 20 });
+// Fin du test.
+});
+
+// Test : une image lente.
+test('images par seconde : une image lente baisse `low` sans fausser la moyenne, puis sort de la fenêtre', () => {
+  // Compteur.
+  const meter = new FpsMeter();
+  // Une seconde à 50 images par seconde.
+  run(meter, 0, 20, 51);
+  // Une image en retard de 100 ms, puis le rythme reprend pendant une demi-seconde.
+  const after = run(meter, 1100, 20, 26);
+  // L'à-coup se voit dans `low` (1000 ÷ 100 ms).
+  assert.equal(after.low, 10);
+  // La moyenne reste proche de 50 : 46 intervalles sur la seconde écoulée.
+  assert.ok(after.fps >= 45 && after.fps <= 47, `moyenne ${after.fps}`);
+  // Plus d'une seconde plus tard, l'image lente est sortie de la fenêtre.
+  assert.deepEqual(run(meter, 1620, 20, 60), { fps: 50, low: 50 });
+// Fin du test.
+});
+
+// Test : pause et publications.
+test('images par seconde : une pause relance la mesure, et rien n’est publié sans changement', () => {
+  // Compteur.
+  const meter = new FpsMeter();
+  // Une seconde à 60 images par seconde.
+  assert.deepEqual(run(meter, 0, 1000 / 60, 61), { fps: 60, low: 60 });
+  // Rythme inchangé : plus aucune publication.
+  assert.equal(run(meter, 1000 + 1000 / 60, 1000 / 60, 60), null);
+  // Retour d'onglet cinq secondes plus tard : la pause ne compte pas comme une image lente.
+  assert.equal(meter.tick(7000), null);
+  // Le rythme repris à 30 images par seconde est mesuré seul.
+  assert.deepEqual(run(meter, 7000 + 1000 / 30, 1000 / 30, 30), { fps: 30, low: 30 });
+  // Remise à zéro.
+  meter.reset();
+  // Plus aucune valeur.
+  assert.equal(meter.fps, 0);
 // Fin du test.
 });

@@ -236,3 +236,79 @@ export class PerfProbe {
   }
 // Fin de la classe PerfProbe.
 }
+
+// Fenêtre glissante de la mesure des images par seconde, en millisecondes.
+const FPS_WINDOW_MS = 1000;
+// Au-delà de cet écart entre deux images, c'est une pause (onglet caché, moteur suspendu) : la mesure repart.
+const FPS_GAP_MS = 1000;
+// Durée minimale observée avant de publier une première valeur.
+const FPS_MIN_SPAN_MS = 250;
+// Délai minimal entre deux publications.
+const FPS_PUBLISH_MS = 250;
+// Nombre maximal d'instants gardés (écrans 240 Hz compris).
+const FPS_MAX_SAMPLES = 300;
+
+/**
+ * Images par seconde, calculées sur une fenêtre glissante d'une seconde : (nombre d'intervalles) ÷ (durée réellement
+ * couverte par ces intervalles). Contrairement à un comptage par tranches d'une demi-seconde, la valeur ne saute pas
+ * d'une tranche à l'autre et ne dépend pas de l'endroit où la tranche est coupée. `low` est le rythme de l'image la
+ * plus lente de la fenêtre (1000 ÷ plus long intervalle) : il montre les à-coups que la moyenne cache.
+ */
+// Déclare et exporte la classe FpsMeter.
+export class FpsMeter {
+  // Constructeur : aucune image vue.
+  constructor() {
+    // Instants des images de la fenêtre, du plus ancien au plus récent.
+    this.times = [];
+    // Dernières valeurs publiées.
+    this.fps = 0; this.low = 0;
+    // Instant de la dernière publication.
+    this.publishedAt = -Infinity;
+  // Fin du constructeur.
+  }
+
+  /** Une image dessinée à l'instant `now` (ms). Renvoie { fps, low } quand la valeur publiée change, sinon null. */
+  // tick : enregistre une image (début).
+  tick(now) {
+    // Raccourci vers les instants.
+    const t = this.times;
+    // Instant de l'image précédente.
+    const last = t[t.length - 1];
+    // Pause ou horloge revenue en arrière : la fenêtre repart de cette image.
+    if (last !== undefined && (now - last > FPS_GAP_MS || now < last)) t.length = 0;
+    // Ajoute l'instant de cette image.
+    t.push(now);
+    // Retire les instants sortis de la fenêtre, en gardant toujours au moins un intervalle.
+    while (t.length > 2 && (now - t[0] > FPS_WINDOW_MS || t.length > FPS_MAX_SAMPLES)) t.shift();
+    // Durée couverte par la fenêtre.
+    const span = now - t[0];
+    // Pas encore assez de recul, ou publication trop récente : rien.
+    if (t.length < 2 || span < FPS_MIN_SPAN_MS || now - this.publishedAt < FPS_PUBLISH_MS) return null;
+    // Retient l'instant de cette publication.
+    this.publishedAt = now;
+    // Moyenne : intervalles de la fenêtre ramenés à la seconde.
+    const fps = Math.round(((t.length - 1) * 1000) / span);
+    // Plus long intervalle de la fenêtre.
+    let worst = 0;
+    // Parcourt les intervalles.
+    for (let i = 1; i < t.length; i++) worst = Math.max(worst, t[i] - t[i - 1]);
+    // Rythme de l'image la plus lente.
+    const low = worst > 0 ? Math.round(1000 / worst) : fps;
+    // Valeurs inchangées : rien à publier.
+    if (fps === this.fps && low === this.low) return null;
+    // Garde les nouvelles valeurs.
+    this.fps = fps; this.low = low;
+    // Les renvoie.
+    return { fps, low };
+  // Fin de tick.
+  }
+
+  /** Oublie la mesure (moteur relancé). */
+  // reset : remet le compteur à zéro.
+  reset() {
+    // Vide la fenêtre et les valeurs.
+    this.times.length = 0; this.fps = 0; this.low = 0; this.publishedAt = -Infinity;
+  // Fin de reset.
+  }
+// Fin de la classe FpsMeter.
+}
