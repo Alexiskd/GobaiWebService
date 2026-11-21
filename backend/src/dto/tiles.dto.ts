@@ -241,8 +241,6 @@ export class LocateDto {
 // Fin de LocateDto.
 }
 
-}
-
 // Forme des paramètres d'adresse d'une tuile.
 export class TileParamsDto {
   // layerId : un texte de 1 à 64 caractères parmi les minuscules, les chiffres et le tiret.
