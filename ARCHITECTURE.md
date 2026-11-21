@@ -22,7 +22,7 @@ frontend/
     ├── Fairing/                         Interface React, HUD, menus, scène, thème, hooks
     ├── Computing/                       Iframing et API
     │   ├── embed/                       Point d'entrée de la page d'embarquement (iframe)
-    │   └── api/                         API NestJS (contrôleurs, services) et client HTTP des adaptateurs
+    │   └── api/                         Client HTTP et adaptateurs de l'API (le serveur est dans backend/)
     └── Transmission/                    Mise en base de données
         └── persistence/                 Mappage et dépôt des données astronomiques
 ```
