@@ -4,4 +4,4 @@ Couche d'intégration Gobai Space : page d'embarquement servie dans une iframe, 
 
 ## Architecture
 - `embed/` — point d'entrée `embed.html` : protocole d'embarquement et bridge postMessage pour l'iframe.
-- `api/` — l'API du frontend, traduite en NestJS. Le serveur démarre par `main.ts` (`npm install`, puis `npm start` dans `api/`) ; les modules domaine (`scene/`, `tiles/`, `donations/`, `contributions/`) portent les contrôleurs et services des routes. Les modules client (`index.jsx`, `client.jsx`, `scene.jsx`, `tiles.jsx`, `contributions.jsx`) restent les adaptateurs consommés par Fairing et Engine : `get` appelle l'API NestJS, avec repli local sur les données embarquées quand elle ne répond pas.
+- `api/` — les adaptateurs client de l'API (`index.jsx`, `client.jsx`, `scene.jsx`, `tiles.jsx`, `contributions.jsx`, `store.jsx`, `assistant.jsx`), consommés par Fairing et Engine : `get` appelle l'API, avec repli local sur les données embarquées quand elle ne répond pas. Le serveur de l'API n'est pas ici : c'est le backend NestJS (`backend/src`, contrôleurs dans `backend/src/controllers`), seul à servir les routes `/api/v1`.
