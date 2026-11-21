@@ -22,8 +22,8 @@ export class DonationStatusDto {
 export class CreateDonationDto {
   // Description du montant.
   @ApiProperty({ example: 10, description: 'Montant du don en euros (2 décimales au plus).' })
-  // Converti en nombre, 2 décimales au plus, entre 1 et 100 000.
-  @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(1) @Max(100000)
+  // Converti en nombre, 2 décimales au plus, entre 0,01 (un centime) et 100 000.
+  @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0.01) @Max(100000)
   // amount : le montant en euros.
   amount!: number;
 // Fin de CreateDonationDto.

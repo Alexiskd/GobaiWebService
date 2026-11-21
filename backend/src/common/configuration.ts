@@ -218,8 +218,8 @@ export function loadConfiguration(env: NodeJS.ProcessEnv = process.env): AppConf
       siteUrls: donationSiteUrls,
       // currency : l'euro.
       currency: 'EUR',
-      // minAmountCents : 100 centimes.
-      minAmountCents: 100,
+      // minAmountCents : 1 centime.
+      minAmountCents: 1,
     // Fin des dons.
     },
     // Dossier des nuages de points : POINTCLOUD_DIR, ou « pointclouds ».
