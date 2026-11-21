@@ -67,9 +67,7 @@ import { Assistant } from './menus/Assistant/Assistant.jsx';
 import { useDonationPrompt } from './menus/Don/useDonationPrompt.jsx';
 // Importe la fenêtre de la langue.
 import { Langue } from './menus/Langue.jsx';
-// Importe la fenêtre du plateau tournant.
-import { Plateau } from './menus/Plateau/Plateau.jsx';
-// Importe le plateau tournant en ligne, posé dans le panneau d'informations.
+// Importe le plateau tournant en ligne, posé dans le panneau d'informations (plus de fenêtre séparée).
 import { PlateauInline } from './menus/Plateau/PlateauInline.jsx';
 // Importe la fenêtre Données (flux cognitif et théorie quantique).
 import { Donnees } from './menus/Donnees/Donnees.jsx';
@@ -262,12 +260,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const [navigatorOpen, setNavigatorOpen] = useState(false);
   // Rail de navigation déplacé à la main (ordinateur) : l'assistant n'a plus à s'en écarter.
   const [navigatorMoved, setNavigatorMoved] = useState(false);
-  // Plateau tournant : ouvert ou non, et son ouverture.
-  const plateauOpen = panels.panel === 'plateau'; const setPlateauOpen = (on) => panels.show('plateau', on);
   // La boutique des exports.
   const storeOpen = panels.panel === 'store'; const setStoreOpen = (on) => panels.show('store', on);
-  // Touches P (Données) et T (plateau tournant), sauf pendant une saisie.
-  // Effet exécuté une seule fois : deux raccourcis clavier.
+  // Touche P (Données), sauf pendant une saisie.
+  // Effet exécuté une seule fois : un raccourci clavier.
   useEffect(() => {
     // Déclare onKey, appelé à chaque touche enfoncée.
     const onKey = (e) => {
@@ -281,8 +277,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       const k = e.key.toLowerCase();
       // P : ouvre ou ferme la fenêtre Données.
       if (k === 'p') panels.toggle('gallery');
-      // T : ouvre ou ferme le plateau tournant.
-      else if (k === 't') panels.toggle('plateau');
     // Fin de onKey.
     };
     // Écoute les touches sur toute la fenêtre.
@@ -740,8 +734,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onGallery={() => setGalleryOpen(true)}
         // Paramètres : ouvre la fenêtre.
         onSettings={() => setSettingsOpen(true)}
-        // Plateau tournant : ouvre la fenêtre.
-        onPlateau={() => setPlateauOpen(true)}
         // Partager la vue.
         onShare={shareCurrentView}
         // Nom de la langue en cours (dans sa propre langue, sinon son nom courant), vide si elle est inconnue.
@@ -946,22 +938,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       {/* La galerie. */}
       <Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} />
       <Boutique open={storeOpen} onClose={() => setStoreOpen(false)} />
-      {/* Le plateau tournant (début de la balise). */}
-      <Plateau
-        // Ouvert ou non.
-        open={plateauOpen}
-        // Fermeture.
-        onClose={() => setPlateauOpen(false)}
-        // Le moteur.
-        engine={engine}
-        // Identifiant de l'astre visé.
-        bodyId={currentBodyId}
-        // Nom de l'astre visé.
-        bodyName={currentBodyName}
-        // Fond de carte de l'astre visé (celui de la Terre à défaut), null s'il n'y en a pas.
-        baseKey={bases.bases[currentBodyId || 'earth'] ?? null}
-      // Fin du plateau tournant.
-      />
 
       {/* Pendant le chargement, l'écran Artemis II (SolarSystem) couvre la scène ; ici, seulement l'échec du moteur. */}
       {/* Si le moteur n'existe pas et qu'il y a une erreur (début). */}

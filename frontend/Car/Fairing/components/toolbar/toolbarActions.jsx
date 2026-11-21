@@ -19,8 +19,8 @@ import {
   // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
   ScienceIcon, StoreIcon, FavoriteIcon, SettingsIcon,
-  // Arborescence des astres, plateau tournant et icône de l'assistant.
-  AccountTreeIcon, ThreeSixtyIcon, AutoAwesomeIcon,
+  // Arborescence des astres et icône de l'assistant.
+  AccountTreeIcon, AutoAwesomeIcon,
   // Mème.
   EmojiEmotionsIcon,
 // Fin de la liste ; module des icônes.
@@ -50,7 +50,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onContribute,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onShare, onContribute,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // Mème : rappel d'ouverture de sa fenêtre.
@@ -71,8 +71,6 @@ export function toolbarActions({
     // qui s'ouvre d'un appui sur son en-tête (et par la touche L).
     // Vue globale : retour à la vue d'ensemble.
     { id: 'reset', group: 'explore', icon: PublicIcon, label: 'Vue globale', short: 'Global', primary: true, onClick: onReset, title: 'Retour à la vue d’ensemble (0 du pavé numérique)' },
-    // Plateau tournant : n'était ouvert que par la touche T, sans bouton (inaccessible sur téléphone).
-    onPlateau && { id: 'plateau', group: 'explore', icon: ThreeSixtyIcon, label: 'Plateau tournant', short: 'Plateau', iconOnly: true, onClick: onPlateau, title: 'Plateau tournant : l’astre visé en tournant (T)' },
     // ── Bloc « display » — Affichage : éclairage, relativité, mouvements automatiques de la caméra.
     // Ombre : bouton à bascule comme « Vue 3/4 ». Enfoncé = face des astres opposée au Soleil dans l'ombre et interface
     // bleu nuit ; relâché = astres entièrement éclairés et interface gris doux.

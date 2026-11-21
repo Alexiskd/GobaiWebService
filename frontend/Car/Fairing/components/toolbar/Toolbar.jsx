@@ -24,8 +24,8 @@ export function Toolbar({
   schwarzschild, onToggleSchwarzschild,
   // Mème : rappel d'ouverture de sa fenêtre.
   onMeme,
-  // Le son (actif par défaut), la langue, les sources, la galerie, les paramètres, le plateau et le partage.
-  sound = true, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onGallery, onSettings, onPlateau, onShare, onContribute, onStore,
+  // Le son (actif par défaut), la langue, les sources, la galerie, les paramètres et le partage.
+  sound = true, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onGallery, onSettings, onShare, onContribute, onStore,
   // L'arborescence des astres (rappel et état).
   onNavigator, navigatorOpen,
 // Fin de la liste des propriétés.
@@ -50,9 +50,10 @@ export function Toolbar({
     // Les états affichés par les boutons.
     auto, tilt, sound,
     // Tous les autres rappels et libellés.
-    // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre). Le moniteur de
-    // performance n'est plus dans la barre : il s'active dans Paramètres.
-    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onPlateau, onShare, onContribute,
+    // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre). Le plateau
+    // tournant et le moniteur de performance ne sont plus dans la barre : le premier vit dans le panneau
+    // d'informations, le second a été retiré.
+    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onDonate, onHelp, onStore, onGallery, onSettings, onShare, onContribute,
     // Affichage Schwarzschild : l'état et le rappel passés à la liste.
     schwarzschild, onToggleSchwarzschild,
     // Mème : le rappel passé à la liste.

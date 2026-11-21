@@ -23,8 +23,6 @@ const KEYS = [
   ['S', 'Node Open Source (sources des données, services, logiciels, pages du site)'],
   // P : la fenêtre Données.
   ['P', 'Données (flux cognitif, théorie quantique)'],
-  // T : le plateau tournant.
-  ['T', 'Plateau tournant (fond de carte actif)'],
   // Point d'interrogation : cette aide.
   ['?', 'Afficher cette aide'],
   // Échap : la fermeture du panneau ouvert.
