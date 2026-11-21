@@ -545,22 +545,22 @@ test('intérieur du pays : une tuile vue pleine dispense ses descendantes de tou
 
 // Test : l'emprise d'un calque.
 test('emprise d’un calque : demandé seulement sur les tuiles qui la touchent, à partir de son niveau minimal', () => {
-  // Source du calque « lidar-hd-mns ».
-  const lidar = new TileSource({ api: { layer: async () => ({}) }, layerId: 'lidar-hd-mns' });
+  // Source d'un calque borné à la France.
+  const france = new TileSource({ api: { layer: async () => ({}) }, layerId: 'calque-france' });
   // Sa description : niveaux 6 à 18 et une emprise sur la France.
-  lidar.info = { urlTemplate: 'https://data.geopf.fr/wmts?TILEMATRIX={z}&TILEROW={y}&TILECOL={x}', minZoom: 6, maxZoom: 18, bounds: [[-5.5, 41.2, 9.8, 51.2]] };
+  france.info = { urlTemplate: 'https://data.geopf.fr/wmts?TILEMATRIX={z}&TILEROW={y}&TILECOL={x}', minZoom: 6, maxZoom: 18, bounds: [[-5.5, 41.2, 9.8, 51.2]] };
   // État : prête.
-  lidar.status = 'ready';
+  france.status = 'ready';
   // Paris au niveau 12 : couvert.
-  assert.equal(lidar.covers(tileAt(2.35, 48.85, 12)), true, 'Paris');
+  assert.equal(france.covers(tileAt(2.35, 48.85, 12)), true, 'Paris');
   // Paris au niveau 20 : couvert.
-  assert.equal(lidar.covers(tileAt(2.35, 48.85, 20)), true, 'au-delà du niveau natif : tuile ancêtre agrandie');
+  assert.equal(france.covers(tileAt(2.35, 48.85, 20)), true, 'au-delà du niveau natif : tuile ancêtre agrandie');
   // Paris au niveau 5 : pas couvert.
-  assert.equal(lidar.covers(tileAt(2.35, 48.85, 5)), false, 'sous le niveau minimal');
+  assert.equal(france.covers(tileAt(2.35, 48.85, 5)), false, 'sous le niveau minimal');
   // New York : pas couvert.
-  assert.equal(lidar.covers(tileAt(-74, 40.7, 12)), false, 'New York');
+  assert.equal(france.covers(tileAt(-74, 40.7, 12)), false, 'New York');
   // Berlin : pas couvert.
-  assert.equal(lidar.covers(tileAt(13.4, 52.5, 12)), false, 'Berlin');
+  assert.equal(france.covers(tileAt(13.4, 52.5, 12)), false, 'Berlin');
   // Sans emprise (calque mondial, autre astre) : toujours demandé, comme avant.
   // Source d'un calque sans emprise.
   const world = new TileSource({ api: { layer: async () => ({}) }, layerId: 'noms' });

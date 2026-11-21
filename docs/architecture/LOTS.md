@@ -227,14 +227,13 @@ Le profil `UNLOADED` ne détruit pas les objets épinglés, les sources, les mod
 
 # Lot 6 — Cadencement des moteurs spécialisés
 
-Le lot 6 ajoute `EngineActivityPolicy` et le raccorde à la boucle `SolarEngine`. Les moteurs spécialisés Terre (atmosphère, volcans, LiDAR, points LiDAR et annotations) et Lune (étiquettes lunaires) sont cadencés selon l'état de périvolume de leur astre.
+Le lot 6 ajoute `EngineActivityPolicy` et le raccorde à la boucle `SolarEngine`. Les moteurs spécialisés Terre (atmosphère, volcans, LiDAR des contributions et annotations) et Lune (étiquettes lunaires) sont cadencés selon l'état de périvolume de leur astre.
 
 | Moteur | ACTIVE / ciblé | BACKGROUND | UNLOADED |
 |---|---:|---:|---:|
 | Atmosphère | chaque image | 1/4 | suspendu |
 | Volcans | chaque image | 1/4 | suspendu |
-| LiDAR | chaque image | 1/3 | suspendu |
-| Points LiDAR | chaque image | 1/3 | suspendu |
+| LiDAR (contributions) | chaque image | 1/3 | suspendu |
 | Annotations Terre | chaque image | 1/2 | suspendu |
 | Étiquettes Lune | chaque image | 1/2 | suspendu |
 

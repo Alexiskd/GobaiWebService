@@ -11,7 +11,7 @@ frontend/
     │   ├── AstreSolideEngine/
     │   │   ├── MapEngine/               Cartes et projections ; tiles/ · loading/ · earth/ · hex/
     │   │   ├── ReliefEngine/            Relief et géométrie d'élévation
-    │   │   ├── LidarEngine/             Points, ancrage et drapage LiDAR (jeu d'essai dans fixtures/)
+    │   │   ├── LidarEngine/             Ancrage et rendu des nuages de points des contributions
     │   │   ├── AtmosphereEngine/        Nuages et couches atmosphériques des astres solides
     │   │   ├── BodyEngine/              Astres : types, booléens d'affichage, chargement, données, astres tuilés
     │   │   ├── OrbitEngine/             Orbites, éphémérides, rubans d'orbite, gravité

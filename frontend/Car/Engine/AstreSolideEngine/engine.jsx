@@ -3,8 +3,6 @@ import * as THREE from 'three';
 import { calculateOrbitPosition } from './OrbitEngine/orbitCalculation.jsx';
 // Importe LidarGlobe et pickEarthAt, les nuages LiDAR calés sur le globe et le point de la Terre sous un pixel.
 import { LidarGlobe, pickEarthAt } from './LidarEngine/lidarGlobe.jsx';
-// Importe LidarPoints, les dalles LiDAR en points 3D.
-import { LidarPoints } from './LidarEngine/lidarPoints.jsx';
 // Importe hiddenByAny, le test d'un point masqué par un astre.
 import { hiddenByAny } from './LabelEngine/labelOcclusion.jsx';
 // Importe le moteur de chargement planétaire : budgets, taille apparente, niveau de détail, plan des tuiles, satellites, champ de vue.
@@ -453,8 +451,6 @@ export class SolarEngine {
     this.earth.group.add(this.volcanoes.root);
     // Nuages LiDAR calés par GPS.
     this.lidar = new LidarGlobe(this); // nuages LiDAR calés par GPS, sur la Terre
-    // Dalles LiDAR en points 3D.
-    this.lidarPoints = new LidarPoints(this); // dalles LiDAR en vrais points 3D (GET /lidar)
     // Noms des pays posés à plat sur le globe, au milieu de chaque pays, visibles avant les villes.
     this.countryLabels = new CountryLabels({
       // Parent : celui du conteneur, ou la page.
@@ -2119,7 +2115,7 @@ export class SolarEngine {
       transitions: [...(this.coreTransitions ?? [])],
       queuedTasks: this.coreScheduler?.size ?? 0,
       managedResources: this.coreResources?.size ?? 0,
-      specializedEngineCadence: { atmosphere: this.coreEngineActivityPolicy?.getCadence('atmosphere') ?? null, lidar: this.coreEngineActivityPolicy?.getCadence('lidar') ?? null, lidarPoints: this.coreEngineActivityPolicy?.getCadence('lidarPoints') ?? null, volcanoes: this.coreEngineActivityPolicy?.getCadence('volcanoes') ?? null },
+      specializedEngineCadence: { atmosphere: this.coreEngineActivityPolicy?.getCadence('atmosphere') ?? null, lidar: this.coreEngineActivityPolicy?.getCadence('lidar') ?? null, volcanoes: this.coreEngineActivityPolicy?.getCadence('volcanoes') ?? null },
       renderBudget: this.coreRenderBudgetPolicy?.snapshot() ?? null,
       renderPipeline: this.coreRenderDiagnosticsPolicy?.snapshot() ?? null,
       gpuMemoryBudget: this.coreGpuMemoryBudget?.getDiagnostics() ?? null,
@@ -3400,25 +3396,6 @@ export class SolarEngine {
   // setBordersVisible : affiche ou masque les frontières.
   setBordersVisible(on) { this.bordersOn = on; this.applyBorders(); }
 
-  /** Dalles LiDAR en points 3D : manifestes de l'API (GET /lidar → items), puis affichage ou non. */
-  // setLidarPointTiles : reçoit les dalles LiDAR.
-  setLidarPointTiles(items) { this.lidarPoints.setTiles(items); }
-  /**
-   * Recherche des nuages LiDAR HD de l'IGN dans le champ de la caméra : `discovery(lon, lat, bbox)` (caméra, emprise
-   * [ouest, sud, est, nord] du champ au sol) renvoie une promesse des manifestes,
-   * `onTiles(places)` est appelé à chaque nouvelle liste de dalles.
-   */
-  // setLidarDiscovery : branche la recherche des dalles et le rappel des lieux.
-  setLidarDiscovery(discovery, onTiles = null) { this.lidarPoints.discovery = discovery; this.lidarPoints.onTiles = onTiles; }
-  // setLidarPointsVisible : affiche ou masque les points LiDAR.
-  setLidarPointsVisible(on) { this.lidarPoints.setEnabled(on); }
-  /** Couleur des points : « photo » (orthophoto drapée sur le nuage) ou « classes ». */
-  // setLidarPointsColor : choisit la couleur des points.
-  setLidarPointsColor(mode) { this.lidarPoints.setColorMode(mode); }
-  /** Surfaces pleines (maillage de triangles) au lieu de points. */
-  // setLidarSurfaces : choisit entre points et surfaces.
-  setLidarSurfaces(on) { this.lidarPoints.setSurfaces(on); }
-
   /** Noms des villes du monde : [{ name, lon, lat, pop, capital }] triés par population. */
   // setCityLabels : reçoit les villes du monde.
   setCityLabels(cities) { this.worldLabels.setCities(cities); }
@@ -3804,8 +3781,6 @@ export class SolarEngine {
     const groundLevel = groundLayer?.hex?.cells?.[0]?.level ?? groundLayer?.visibleZoom ?? 0;
     // Soulèvement du sol dessiné (m), sur une carte à plat.
     const groundLiftM = groundLayer ? (tileRadius(groundLevel, groundLayer.gap) - 1) * EARTH_RADIUS_M : 0;
-    // Met à jour les points LiDAR : sur la carte à plat, leur sol est posé sur le sol dessiné.
-    if (this.shouldUpdateCoreEngine('lidarPoints', 'earth')) this.lidarPoints.update({ cam: this.cam, H: this.H, dpr: this.dpr, sunDir: this.sunDir, shade: this.tiles.uniforms.shade.value, hidden: Boolean(this.earth.hidden), now, flat: !this.tiles.reliefOn, groundLiftM, fps: this.fps, fpsLow: this.fpsMeter.low, fpsTarget: this.fpsTarget });
     // Met à jour les noms des pays.
     if (this.shouldUpdateCoreEngine('earthLabels', 'earth')) this.countryLabels.update({ cam: this.cam, W: this.W, H: this.H, earthMesh: this.earth.mesh });
     // Moteur de chargement planétaire : pixels par unité de scène à une unité de distance.
@@ -4843,8 +4818,6 @@ export class SolarEngine {
       compass: this.compassState(),
       // les coordonnées des coins.
       gps: this.gpsState(),
-      // Nuage de points LiDAR à l'écran : avancement de son chargement (jauge), ou null.
-      lidarPoints: this.lidarPoints.progress,
       // Verrouillage de la vue : astre le plus proche de l'astre focus.
       viewLock: this.viewLockState(),
     // Fin de la publication.
@@ -5040,8 +5013,6 @@ export class SolarEngine {
     }
     // Libère les nuages LiDAR.
     this.lidar?.dispose();
-    // Libère les points LiDAR.
-    this.lidarPoints?.dispose();
     // Retire les repères créés.
     this.markerEls?.forEach((el) => el.remove());
     // Retire le moteur de la boucle de rendu de l'application.

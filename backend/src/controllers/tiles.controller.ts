@@ -40,8 +40,8 @@ import {
 } from '../common/tile-http';
 // Ouvre l'import des formes de données des tuiles :
 import {
-  // sources, table de priorité de la Terre, villes du LiDAR HD, préchargement de la Lune, paramètres d'une tuile de la Lune, requête de sources, localisation et sa requête, couche résolue, liste des couches, paramètres d'une tuile.
-  AttributionDto, EarthPlanDto, LidarHdCitiesDto, MoonPrefetchStatusDto, MoonTileParamsDto, AttributionQueryDto, LocateDto, LocateQueryDto, ResolvedTileLayerDto, TileLayerListDto, TileParamsDto,
+  // sources, table de priorité de la Terre, préchargement de la Lune, paramètres d'une tuile de la Lune, requête de sources, localisation et sa requête, couche résolue, liste des couches, paramètres d'une tuile.
+  AttributionDto, EarthPlanDto, MoonPrefetchStatusDto, MoonTileParamsDto, AttributionQueryDto, LocateDto, LocateQueryDto, ResolvedTileLayerDto, TileLayerListDto, TileParamsDto,
 // Fin de l'import.
 } from '../dto/tiles.dto';
 // Service principal des tuiles : couches, modèles d'adresse, sources.
@@ -535,31 +535,6 @@ export class TilesController {
     // Envoie la tuile avec la règle de cache des satellites (une semaine, immuable).
     sendTile(req, res, tile, SATELLITE_TILE);
   // Fin de satelliteTile.
-  }
-
-  // Route GET /api/v1/tiles/lidar-hd/cities, déclarée avant la route attrape-tout « :layerId/:z/:x/:y ».
-  @Get('lidar-hd/cities')
-  // Ouvre la description de la route :
-  @ApiOperation({
-    // son titre ;
-    summary: 'Villes de France où le LiDAR HD de l’IGN est proposé',
-    // début de son texte ;
-    description: 'Villes de la métropole, de la Corse et des cinq départements et régions d’outre-mer, dans l’ordre '
-      // suite du texte ;
-      + 'd’importance, avec l’altitude d’arrivée conseillée. Choisir une ville allume le calque LiDAR HD et s’y rend : '
-      // fin du texte.
-      + 'les tuiles sont alors chargées en direct chez l’IGN, sans téléchargement de dalle.',
-  // Fin de la description.
-  })
-  // Réponse 200 documentée : un LidarHdCitiesDto.
-  @ApiOkResponse({ type: LidarHdCitiesDto })
-  // Données fixes : gardées une journée par le navigateur et les relais.
-  @Header('Cache-Control', 'public, max-age=86400')
-  // Méthode lidarHdCities.
-  lidarHdCities(): LidarHdCitiesDto {
-    // Renvoie les villes et l'altitude d'arrivée.
-    return this.tiles.lidarCities();
-  // Fin de lidarHdCities.
   }
 
   // Route GET /api/v1/tiles/earth/sources, déclarée avant « earth/:layerId/… ».

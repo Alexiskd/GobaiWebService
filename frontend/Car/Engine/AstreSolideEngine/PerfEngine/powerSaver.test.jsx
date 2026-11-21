@@ -223,7 +223,7 @@ test('rythme visé : 20 images par seconde au repos sur téléphone et en mode �
 test('système d’une planète sur téléphone : même qualité, rythme maximal même au repos', () => {
   // Densité d'un téléphone (plafond et plancher), anisotropie d'un ordinateur.
   assert.equal(SYSTEM_PROFILE.dprMax, HANDHELD_PROFILE.dprMax); assert.equal(SYSTEM_PROFILE.dprMin, HANDHELD_PROFILE.dprMin); assert.equal(SYSTEM_PROFILE.anisotropy, DESKTOP_PROFILE.anisotropy);
-  // Toujours un téléphone (stockages et LiDAR dimensionnés au départ).
+  // Toujours un téléphone (dimensionnements de départ).
   assert.equal(SYSTEM_PROFILE.handheld, true);
   // Sans limite, en mouvement comme au repos.
   assert.equal(targetFrameMs(SYSTEM_PROFILE), 0); assert.equal(targetFrameMs(SYSTEM_PROFILE, { idle: true }), 0);

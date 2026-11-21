@@ -51,8 +51,6 @@ import { StoreModule } from './store.module';
 import { AssistantModule } from './assistant.module';
 // Module des nuages de points LiDAR servis en fichiers (COPC/LAS).
 import { PointCloudsModule } from './pointclouds.module';
-// Module des dalles LiDAR en vrais points 3D.
-import { LidarTilesModule } from './lidar-tiles.module';
 import { EngineModule } from './engine.module';
 // Module du balisage SEO des pages (titre, description, Open Graph, X/Twitter), stocké dans PostgreSQL.
 import { SeoModule } from './seo.module';
@@ -117,8 +115,6 @@ import { SeoModule } from './seo.module';
     ApisModule,
     // Moteur 3D chiffré, servi par l’API.
     EngineModule,
-    // Nuages LiDAR HD de l'IGN en vrais points 3D, lus en direct sur la Géoplateforme : /api/v1/lidar
-    LidarTilesModule,
     // Balisage SEO des pages (titre, description, Open Graph, X/Twitter), table seo_tags : /api/v1/seo
     SeoModule,
   // Fin de la liste des modules importés.

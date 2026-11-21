@@ -20,7 +20,7 @@ export class TileLayerDto {
   // kind : image, plan, relief, hybride ou calque transparent.
   kind: string;
   // provider : le fournisseur qui sert réellement les images, parmi les valeurs listées.
-  @ApiProperty({ enum: ['nasa-trek', 'mars-trek', 'moon-trek', 'usgs-astro', 'lroc-lunaserv', 'usgs-astro-mars', 'opm-mars', 'murray-lab', 'satellite-trek', 'earth-hd', 'ign-lidar-hd'], description: 'Fournisseur qui sert réellement les images.' }) provider: string;
+  @ApiProperty({ enum: ['nasa-trek', 'mars-trek', 'moon-trek', 'usgs-astro', 'lroc-lunaserv', 'usgs-astro-mars', 'opm-mars', 'murray-lab', 'satellite-trek', 'earth-hd'], description: 'Fournisseur qui sert réellement les images.' }) provider: string;
   // body : l'astre sur lequel la couche se pose, parmi les valeurs listées.
   @ApiProperty({ enum: ['earth', 'moon', 'mars', 'mercury', 'venus', 'io', 'europa', 'ganymede', 'callisto', 'mimas', 'enceladus', 'tethys', 'dione', 'rhea', 'titan', 'iapetus', 'miranda', 'ariel', 'umbriel', 'titania', 'oberon', 'triton', 'charon', 'jupiter', 'saturn', 'uranus', 'neptune'], description: 'Astre sur lequel la couche se pose.' }) body: string;
   // Ouvre la documentation du champ projection :
@@ -103,7 +103,7 @@ export class ResolvedTileLayerDto extends TileLayerDto {
     // facultatif, une liste de listes de nombres ;
     required: false, type: 'array', items: { type: 'array', items: { type: 'number' } },
     // sa description.
-    description: 'Emprises [ouest, sud, est, nord] en degrés hors desquelles un calque n’est pas demandé (LiDAR HD : la France).',
+    description: 'Emprises [ouest, sud, est, nord] en degrés hors desquelles un calque n’est pas demandé.',
   // Fin de la documentation.
   })
   // bounds : les emprises [ouest, sud, est, nord] hors desquelles le calque n'est pas demandé.
@@ -241,26 +241,6 @@ export class LocateDto {
 // Fin de LocateDto.
 }
 
-// Forme d'une ville de France proposée pour le LiDAR HD.
-export class LidarHdCityDto {
-  // name : son nom.
-  @ApiProperty({ example: 'Paris' }) name: string;
-  // region : sa région administrative.
-  @ApiProperty({ example: 'Île-de-France' }) region: string;
-  // lon : sa longitude en degrés.
-  @ApiProperty({ example: 2.353 }) lon: number;
-  // lat : sa latitude en degrés.
-  @ApiProperty({ example: 48.858 }) lat: number;
-// Fin de LidarHdCityDto.
-}
-
-// Forme de la réponse de GET /tiles/lidar-hd/cities.
-export class LidarHdCitiesDto {
-  // altitudeM : l'altitude d'arrivée conseillée au-dessus d'une ville, en mètres.
-  @ApiProperty({ example: 2000, description: 'Altitude d’arrivée conseillée au-dessus d’une ville (m).' }) altitudeM: number;
-  // items : les villes, dans l'ordre d'importance.
-  @ApiProperty({ type: [LidarHdCityDto] }) items: LidarHdCityDto[];
-// Fin de LidarHdCitiesDto.
 }
 
 // Forme des paramètres d'adresse d'une tuile.

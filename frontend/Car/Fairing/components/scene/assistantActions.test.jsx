@@ -7,14 +7,12 @@ import { resolveAssistantAction as r } from './assistantActions.jsx';
 
 // Liste d'astres d'essai : Soleil, Vénus et Titan, avec leurs indices.
 const BODIES = [{ index: 0, name: 'Soleil' }, { index: 2, name: 'Vénus' }, { index: 16, name: 'Titan' }];
-// Villes d'essai du LiDAR HD : une de métropole et une d'outre-mer.
-const CITIES = [{ name: 'Toulouse', region: 'Occitanie', lon: 1.448, lat: 43.622 }, { name: 'Cayenne', region: 'Guyane', lon: -52.33, lat: 4.933 }];
 // Lieux d'essai de la Terre : deux villes du monde.
 const EARTH = [{ name: 'Tokyo', lon: 139.7, lat: 35.7 }, { name: 'Le Caire', lon: 31.2, lat: 30 }];
 // Lieux d'essai de la Lune : un site d'alunissage et un cratère.
 const MOON = [{ name: 'Apollo 11', type: 'landing', lon: 23.473, lat: 0.674 }, { name: 'Copernic', type: 'crater', lon: -20.1, lat: 9.6 }];
-// Les trois listes réunies, comme la composante les passe.
-const LISTS = { lidarCities: CITIES, earthPlaces: EARTH, moonPlaces: MOON };
+// Les deux listes réunies, comme la composante les passe.
+const LISTS = { earthPlaces: EARTH, moonPlaces: MOON };
 
 // Test : les actions valides deviennent des commandes de l'interface.
 test('assistant : actions valides traduites en commandes de l’interface', () => {
@@ -43,8 +41,6 @@ test('assistant : actions valides traduites en commandes de l’interface', () =
 test('assistant : tous les interrupteurs de Paramètres sont pilotables', () => {
   // Le relief 3D.
   assert.deepEqual(r({ name: 'regler_affichage', input: { reglage: 'relief_3d', actif: true } }, BODIES), { type: 'setting', setting: 'relief_3d', on: true, label: 'Relief 3D : activé' });
-  // Le calque LiDAR HD.
-  assert.equal(r({ name: 'regler_affichage', input: { reglage: 'lidar_hd', actif: true } }, BODIES).setting, 'lidar_hd');
   // Les volcans en éruption.
   assert.equal(r({ name: 'regler_affichage', input: { reglage: 'volcans', actif: false } }, BODIES).on, false);
   // Les rues et routes.
@@ -59,39 +55,6 @@ test('assistant : tous les interrupteurs de Paramètres sont pilotables', () => 
   assert.equal(r({ name: 'regler_affichage', input: { reglage: 'noir_pur', actif: true } }, BODIES).setting, 'noir_pur');
   // Un réglage inventé reste refusé.
   assert.equal(r({ name: 'regler_affichage', input: { reglage: 'tout_casser', actif: true } }, BODIES), null);
-// Fin du test.
-});
-
-// Test : les commandes du LiDAR HD.
-test('assistant : modèle, ville et couleur du LiDAR HD', () => {
-  // Choisir le modèle de surface : commande lidar avec l'identifiant du calque.
-  assert.deepEqual(r({ name: 'choisir_modele_lidar', input: { modele: 'surface' } }, BODIES, LISTS), { type: 'lidar', layerId: 'lidar-hd-mns', label: 'LiDAR HD : Surface' });
-  // Le sol nu donne le calque du modèle de terrain.
-  assert.equal(r({ name: 'choisir_modele_lidar', input: { modele: 'sol_nu' } }, BODIES, LISTS).layerId, 'lidar-hd-mnt');
-  // Les hauteurs donnent le calque du modèle de hauteur.
-  assert.equal(r({ name: 'choisir_modele_lidar', input: { modele: 'hauteurs' } }, BODIES, LISTS).layerId, 'lidar-hd-mnh');
-  // Un modèle inventé est refusé.
-  assert.equal(r({ name: 'choisir_modele_lidar', input: { modele: 'laser' } }, BODIES, LISTS), null);
-  // Aller au-dessus d'une ville : la ville est retrouvée sans tenir compte de la casse.
-  assert.equal(r({ name: 'aller_au_dessus_d_une_ville', input: { ville: 'toulouse' } }, BODIES, LISTS).city.lat, 43.622);
-  // Une ville d'outre-mer passe aussi.
-  assert.equal(r({ name: 'aller_au_dessus_d_une_ville', input: { ville: 'Cayenne' } }, BODIES, LISTS).label, 'LiDAR HD au-dessus de Cayenne');
-  // Une ville absente de la liste est refusée.
-  assert.equal(r({ name: 'aller_au_dessus_d_une_ville', input: { ville: 'Berlin' } }, BODIES, LISTS), null);
-  // Sans liste de villes, rien ne passe.
-  assert.equal(r({ name: 'aller_au_dessus_d_une_ville', input: { ville: 'Toulouse' } }, BODIES), null);
-  // Couleur des points : comme la carte satellite.
-  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'carte' } }, BODIES, LISTS).mode, 'carte');
-  // Couleur des points : celles de la photo.
-  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'photo' } }, BODIES, LISTS).mode, 'photo');
-  // Couleur des points : le type de chaque point, qui vaut « classes » dans le réglage.
-  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'types' } }, BODIES, LISTS).mode, 'classes');
-  // Une couleur inventée est refusée.
-  assert.equal(r({ name: 'choisir_couleur_points_lidar', input: { couleur: 'arc_en_ciel' } }, BODIES, LISTS), null);
-  // Paris en 3D a été retiré : ce réglage n'existe plus.
-  assert.equal(r({ name: 'regler_affichage', input: { reglage: 'paris_3d', actif: true } }, BODIES), null);
-  // Protection du prototype, comme pour les fenêtres.
-  assert.equal(r({ name: 'choisir_modele_lidar', input: { modele: '__proto__' } }, BODIES, LISTS), null);
 // Fin du test.
 });
 

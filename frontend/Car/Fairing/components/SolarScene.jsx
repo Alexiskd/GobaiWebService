@@ -35,8 +35,6 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 import { NavballPilote } from './hud/NavballPilote/index.js';
 // Importe le cadre des coordonnées GPS.
 import { GpsFrame } from './hud/GpsFrame.jsx';
-// Importe la jauge LiDAR.
-import { LidarJauge } from './hud/perf/LidarJauge.jsx';
 // Importe le bandeau du haut.
 import { HudTop } from './hud/HudTop.jsx';
 // Importe la fenêtre des paramètres.
@@ -82,8 +80,6 @@ import { Informations } from './menus/Informations/Informations.jsx';
 import { Rechercher } from './menus/Rechercher.jsx';
 // Importe le crochet des nuages LiDAR sur le globe.
 import { useLidarGlobe } from './scene/useLidarGlobe.jsx';
-// Importe le crochet des dalles LiDAR en points 3D.
-import { useLidarPoints } from './scene/useLidarPoints.jsx';
 // Importe le texte d'aide des noms de villes.
 import { cityNamesHintText } from './scene/layerHints.jsx';
 // Importe le crochet des réglages de caméra et d'affichage.
@@ -149,7 +145,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Magasin du HUD, créé une seule fois (début de l'appel).
   const hud = useMemo(
     // Ses valeurs de départ : textes vides, texte d'aide du zoom, et tout le reste à null ou à 0.
-    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', zoomShort: '', scaleText: '', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null, lidarPoints: null, viewLock: null, fps: 0, perf: null }),
+    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', zoomShort: '', scaleText: '', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null, viewLock: null, fps: 0, perf: null }),
     // Aucune dépendance.
     []
   // Fin de l'appel.
@@ -366,8 +362,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   }, [navBodies, camera.kinds, camera.hiddenBodies]);
   // Les astres affichés seulement.
   const shownBodies = useMemo(() => bodyStates.filter((b) => b.shown), [bodyStates]);
-  // Affichage de la Terre : ombrage, frontières, noms, rues, LiDAR HD.
-  const earth = useEarthDisplay({ engine, lidarLayers: bases.lidarLayers, push });
+  // Affichage de la Terre : ombrage, frontières, noms, rues.
+  const earth = useEarthDisplay({ engine, push });
   // Bouton Jour / Nuit : le thème de l'interface (App.jsx lit la même valeur) et l'ombre des astres vont ensemble.
   // Nuit : face opposée au Soleil dans l'ombre. Jour : astres éclairés sur toute leur surface.
   // Vrai si le réglage jour/nuit est sur « nuit ».
@@ -425,9 +421,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const myPosition = useMyPosition({ showPosition: actions.showPosition, goPlace: actions.pickPlace, push });
   // Nuages LiDAR sur le globe.
   const lidarGlobe = useLidarGlobe(engine);
-  // Dalles LiDAR en vrais points 3D (Paris) : chargées par le moteur à l'approche, interrupteur dans Paramètres.
-  // Dalles LiDAR en points 3D.
-  const lidarPoints = useLidarPoints(engine);
   // Retour de Stripe : rouvre la fenêtre pour confirmer le don ou signaler son annulation.
   useEffect(() => { if (hasDonationReturn()) panels.setPanel('donate'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Rappel des dons : la fenêtre « Dons » s'ouvre à l'ouverture de l'application (une fois l'écran de chargement
@@ -455,11 +448,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // elle est refusée. Rien d'autre que ces boutons et réglages n'est accessible à l'assistant.
   // Déclare runAssistantAction : exécute une action demandée par l'assistant.
   const runAssistantAction = (action) => {
-    // Valide l'action et la traduit en commande, avec les astres et les trois listes de lieux : les villes du
-    // LiDAR HD, les villes du monde (lieux de la Terre) et les lieux nommés de la Lune.
+    // Valide l'action et la traduit en commande, avec les astres et les deux listes de lieux : les villes du monde (lieux de la Terre) et les lieux nommés de la Lune.
     const cmd = resolveAssistantAction(action, navBodies, {
-      // les villes de France où le LiDAR HD est proposé ;
-      lidarCities: earth.lidarCities,
       // les villes du monde, reçues avec les données de la scène ;
       earthPlaces: data.cities,
       // les lieux nommés de la Lune, portés par le moteur.
@@ -526,10 +516,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         coordonnees_gps: earth.setGps,
         // Le relief 3D du globe.
         relief_3d: camera.setRelief,
-        // Le calque LiDAR HD : allumé sur le premier modèle proposé, éteint sinon.
-        lidar_hd: (on) => earth.setLidar(on ? (bases.lidarLayers[0]?.id ?? null) : null),
-        // Les points LiDAR 3D.
-        points_lidar: lidarPoints.setOn,
         // Le noir pur de l'interface.
         noir_pur: setOledBlack,
         // L'économie d'énergie.
@@ -544,18 +530,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       case 'body': camera.setBodyShown(cmd.index, cmd.on); break;
       // speed : règle la vitesse de rotation.
       case 'speed': camera.setRotateSpeed(cmd.speed); break;
-      // lidar : choisit le modèle LiDAR HD affiché (et allume le calque).
-      case 'lidar': earth.setLidar(cmd.layerId); break;
-      // lidarCity : allume le calque LiDAR HD et se rend au-dessus de la ville.
-      case 'lidarCity':
-        // Allume le calque sur le premier modèle proposé s'il est éteint.
-        if (!earth.lidarId) earth.setLidar(bases.lidarLayers[0]?.id ?? null);
-        // Se rend au-dessus de la ville, à l'altitude où l'ombrage se lit, en vol.
-        actions.pickPlace({ name: cmd.city.name, lat: cmd.city.lat, lon: cmd.city.lon, altitudeM: earth.lidarCityAltitudeM, fly: true });
-        // Fin de la commande.
-        break;
-      // lidarColor : choisit la couleur des points LiDAR 3D.
-      case 'lidarColor': lidarPoints.setColor(cmd.mode); break;
       // earthPlace : survole un lieu nommé de la Terre, en vol ; l'altitude est celle du moteur.
       case 'earthPlace': actions.pickPlace({ name: cmd.place.name, lon: cmd.place.lon, lat: cmd.place.lat, fly: true }); break;
       // moonPlace : survole un lieu nommé de la Lune ; goToSite cible la Lune et choisit son altitude de survol.
@@ -674,19 +648,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
           lightView: camera.lightView,
           onLightView: camera.setLightView,
           volcanoesHint: earth.volcanoCount === null ? 'En direct · NASA EONET' : `${earth.volcanoCount} en cours dans le monde · NASA EONET`,
-          lidarId: earth.lidarId,
-          lidarLayers: earth.lidarLayers,
-          onLidar: earth.setLidar,
-          lidarCities: earth.lidarCities,
-          lidarCityAltitudeM: earth.lidarCityAltitudeM,
-          lidarPoints: lidarPoints.on,
-          lidarPlaces: lidarPoints.places,
-          onLidarPoints: lidarPoints.setOn,
-          lidarColor: lidarPoints.color,
-          onLidarColor: lidarPoints.setColor,
-          // Surfaces LiDAR : état et rappel.
-          lidarSurfaces: lidarPoints.surfaces,
-          onLidarSurfaces: lidarPoints.setSurfaces,
         }}
         moonPlaces={moon.moonFeatures}
         onMoonPlaces={moon.setMoonFeatures}
@@ -719,8 +680,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // L'arborescence des astres, ouverte par son bouton : elle garde son pilotage du zoom par le menu des satellites
   // (planète seule quand il est fermé, système complet quand il est ouvert).
   const navigatorEl = navigatorOpen ? <Navigator bodies={shownBodies} focus={focus} onSelect={actions.selectFocus} onMovedChange={setNavigatorMoved} /> : null;
-  // La jauge LiDAR.
-  const lidarEl = <LidarJauge hud={hud} />;
   // La barre d'outils (début de la balise).
   const toolbarEl = (
       <Toolbar
@@ -837,8 +796,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
       {/* Le pavé de zoom. */}
       <ZoomPad onZoom={actions.zoom} />
-      {/* La jauge LiDAR (ordinateur ; sur téléphone, sous le titre). */}
-      {!compact && lidarEl}
       {/* La barre d'outils (ordinateur). */}
       {!compact && toolbarEl}
       {/* Téléphone : les deux zones de commandes, où chaque élément a sa place et rien ne se recouvre. */}
@@ -866,8 +823,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
               </IconButton>
             // Fin des boutons.
             )}
-            // Indicateur : la jauge LiDAR.
-            status={lidarEl}
+            // Indicateur : aucun.
+            status={null}
           // Fin de la balise ouvrante.
           >
             {/* Le bandeau titre. */}

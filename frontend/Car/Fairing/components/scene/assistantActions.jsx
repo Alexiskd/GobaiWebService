@@ -24,24 +24,10 @@ const SETTINGS = {
   noms_villes: 'Noms des villes', noms_pays: 'Noms des pays', frontieres_et_littoraux: 'Frontières et littoraux',
   // rues et routes, volcans en éruption et coordonnées GPS.
   rues: 'Rues et routes', volcans: 'Volcans en éruption', coordonnees_gps: 'Coordonnées GPS',
-  // Cartographie en relief : relief 3D, calque LiDAR HD et points LiDAR 3D.
-  relief_3d: 'Relief 3D', lidar_hd: 'LiDAR HD (France)', points_lidar: 'Points LiDAR 3D',
+  // Cartographie en relief : relief 3D.
+  relief_3d: 'Relief 3D',
   // Appareil : noir pur, économie d'énergie et moniteur de performance.
   noir_pur: 'Noir pur', economie_energie: 'Économie d’énergie', moniteur_performance: 'Moniteur de performance',
-// Fin de l'objet.
-};
-/** Modèles LiDAR HD : identifiant de l'outil → identifiant du calque de l'API et nom affiché. */
-// Modèles LiDAR HD (début de l'objet).
-const LIDAR_MODELS = {
-  // La surface, le sol nu et les hauteurs.
-  surface: ['lidar-hd-mns', 'Surface'], sol_nu: ['lidar-hd-mnt', 'Sol nu'], hauteurs: ['lidar-hd-mnh', 'Hauteurs'],
-// Fin de l'objet.
-};
-/** Couleur des points LiDAR : identifiant de l'outil → valeur du réglage et nom affiché. */
-// Modes de couleur des points LiDAR (début de l'objet).
-const LIDAR_COLORS = {
-  // Comme la carte satellite, les couleurs de la photo, et le type de chaque point.
-  carte: ['carte', 'Comme la carte'], photo: ['photo', 'Couleurs de la photo'], types: ['classes', 'Types de points'],
 // Fin de l'objet.
 };
 // Familles d'astres : identifiant → [type du moteur, nom affiché] (début de l'objet).
@@ -66,8 +52,7 @@ const findBody = (bodies, name) => bodies.find((b) => fold(b.name) === fold(Stri
  * @param action  { name, input } venu du serveur
  * @param bodies  astres de la navigation : [{ index, name }]
  * @param lists   listes de lieux, chacune facultative :
- *                lidarCities  villes du LiDAR HD : [{ name, region, lon, lat }]
- *                earthPlaces  lieux nommés de la Terre : [{ name, lon, lat }]
+ *           *                earthPlaces  lieux nommés de la Terre : [{ name, lon, lat }]
  *                moonPlaces   lieux nommés de la Lune : [{ name, type, lon, lat, info }]
  * @returns {{ type: string, label: string, ... } | null}  commande validée et son libellé affiché ; null si l'action
  *          est inconnue ou si une valeur n'est pas dans la liste autorisée (elle est alors ignorée)
@@ -77,7 +62,7 @@ export function resolveAssistantAction(action, bodies = [], lists = {}) {
   // Les paramètres de l'action, objet vide à défaut.
   const input = action?.input || {};
   // Les trois listes de lieux, vides à défaut.
-  const { lidarCities = [], earthPlaces = [], moonPlaces = [] } = lists;
+  const { earthPlaces = [], moonPlaces = [] } = lists;
   // byName : cherche un lieu par son nom dans une liste, sans tenir compte des accents ni de la casse.
   const byName = (list, name) => list.find((p) => fold(p.name) === fold(String(name ?? ''))) || null;
   // Selon le nom de l'action.
@@ -134,30 +119,6 @@ export function resolveAssistantAction(action, bodies = [], lists = {}) {
         ? { type: 'speed', speed: input.vitesse, label: `Vitesse de rotation ×${String(input.vitesse).replace('.', ',')}` }
         // … sinon null.
         : null;
-    // Choisir le modèle LiDAR HD.
-    case 'choisir_modele_lidar': {
-      // Le modèle demandé, null s'il n'est pas autorisé.
-      const model = own(LIDAR_MODELS, input.modele) ? LIDAR_MODELS[input.modele] : null;
-      // Trouvé : commande lidar avec l'identifiant du calque et son libellé ; sinon null.
-      return model ? { type: 'lidar', layerId: model[0], label: `LiDAR HD : ${model[1]}` } : null;
-    // Fin du cas.
-    }
-    // Aller au-dessus d'une ville de France, calque LiDAR HD allumé.
-    case 'aller_au_dessus_d_une_ville': {
-      // La ville demandée, sans tenir compte des accents ni de la casse.
-      const city = byName(lidarCities, input.ville);
-      // Trouvée : commande lidarCity avec ses coordonnées et son libellé ; sinon null.
-      return city ? { type: 'lidarCity', city, label: `LiDAR HD au-dessus de ${city.name}` } : null;
-    // Fin du cas.
-    }
-    // Choisir la couleur des points LiDAR 3D.
-    case 'choisir_couleur_points_lidar': {
-      // Le mode demandé, null s'il n'est pas autorisé.
-      const mode = own(LIDAR_COLORS, input.couleur) ? LIDAR_COLORS[input.couleur] : null;
-      // Trouvé : commande lidarColor avec la valeur du réglage et son libellé ; sinon null.
-      return mode ? { type: 'lidarColor', mode: mode[0], label: `Points LiDAR : ${mode[1]}` } : null;
-    // Fin du cas.
-    }
     // Aller à un lieu nommé de la Terre.
     case 'aller_a_un_lieu_de_la_terre': {
       // Le lieu demandé, parmi ceux que l'app connaît.

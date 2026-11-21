@@ -24,7 +24,7 @@ Les outils couvrent deux façons d'agir.
 
 **Les actions nommées**, à préférer quand l'une d'elles correspond : aller sur un astre, survoler un lieu nommé de la
 Terre ou de la Lune, ouvrir une fenêtre, actionner un interrupteur de la fenêtre Paramètres, afficher ou enlever un
-astre ou une famille entière, choisir le modèle LiDAR HD, aller au-dessus d'une ville de France, régler la vitesse de
+astre ou une famille entière, régler la vitesse de
 rotation, zoomer, revenir à la vue d'ensemble. Elles sont sûres et précises : elles appellent la fonction même du
 bouton.
 

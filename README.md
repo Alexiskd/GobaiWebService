@@ -108,7 +108,6 @@ The Earth has a single imagery layer, `earth-hd`, zoomable to level 19 everywher
 - **Mars, Mercury, natural satellites: estimated relief (`image`).** No elevation tiles are wired for them, so the shader reads the brightness variations of the image itself as slopes and shades them. This is an estimate, not a measurement, and it adds no volume. The Moon keeps its LOLA shading.
 - Setting: `engine.setRelief(on, exaggeration)` (1 = real heights), kept in `localStorage['gobai:relief']` (`0` = off, a number = exaggeration). There is no button in the interface yet.
 - Known limits: at the edge between two elevation tiles on steep ground, a thin gap can show (hidden by deeper skirts in most cases); labels and borders are not lifted; over-zoomed tiles reuse level 12 elevations.
-- LiDAR: the tile boxes already sit at their real altitude, so they now rest on the lifted ground. Real 3D points: see the next section.
 
 ## View lock, Moon orbit and Moon mosaic
 
@@ -119,17 +118,6 @@ The Earth has a single imagery layer, `earth-hd`, zoomable to level 19 everywher
   - *Poles.* Beyond 70° of latitude the Kaguya mosaic is not realistic in places (orbit strips lit differently, black or saturated areas). There, and only there, it is blended with the LROC WAC mosaic: brightness comes from LROC, the fine grain stays Kaguya's. The blend grows with latitude (none at 70°, full at 84°); Kaguya areas that agree with LROC are left untouched. Near the poles the brightness match between the two mosaics is the one measured once on the whole Moon (level 0), the same for every tile.
   - *LROC upscaling.* Beyond its native level the LROC fill is enlarged with a Lanczos filter and re-sharpened, with a margin around the cropped area so tile edges are computed from real neighbours. Level 8 of the WAC mosaic is tried first and dropped if NASA does not serve it. This makes the fill look sharper; it does not add real detail. The brightness match now follows a least-squares fit, so Kaguya's own grain no longer inflates the contrast of the fill.
   - *Speed.* Moon tiles are re-encoded as WebP (several times lighter than NASA's PNG), kept in server memory for the most requested ones (32 MB) and on disk, served with a one-year immutable cache header, and loaded 12 at a time by the app (6 on phones). When the app requests a tile, its four children are prepared in the background, so zooming in finds them already on the server. On-screen tiles come first: while the app is waiting for a tile, the start-up preload and the look-ahead pause (the server only has a fraction of a CPU), and the look-ahead does not run during the preload. Tile addresses carry `?v=3` and browsers drop `moon-tiles-v1` and `moon-tiles-v2`.
-
-## LiDAR HD point clouds, live from the IGN
-
-The LiDAR HD point clouds of the whole of France are drawn point by point on the Earth, read live from the IGN's Géoplateforme (dataset `IGNF_NUAGES-DE-POINTS-LIDAR-HD`, catalogue `https://data.geopf.fr/catalog`). Nothing is stored in the repository or the database any more: the Paris tile that used to be versioned (`backend/data/lidar`, 55 MB) and its preparation script are removed; its manifest and root node only remain as a test fixture (`frontend/src/moteur/engine/__fixtures__/lidar-paris`).
-
-- **Finding every tile in the camera's field.** Below 3 km of altitude, the engine casts nine rays through the screen (corners, edge midpoints, centre) and takes the ground footprint they cover — top-down as well as in a 3/4 view, up to 3 km from the camera; a ray above the horizon counts at that range — plus the point below the camera. It asks the server for every tile touching that footprint (`GET /api/v1/lidar?lon=&lat=&bbox=west,south,east,north`, at most every 1.5 s and after an edge of the footprint moved 300 m; 8 km sides at most, 32 tiles at most, nearest the camera first). 32 tiles are kept, those outside the field leave first; the point budget is shared between the tiles on screen, the nearest getting the most (1/d², 60 000-point floor). The server reads the **EPT** dataset of the IGN (`lidarhd_fxx_ept`, the methodology of the official visionneuse `visionneuse-lidarhd.ign.fr`): the tile index `index.vpc` (`LIDAR_IGN_EPT_VPC`), then per 781 m cell of the octree's level 6 the `ept.json` of its dalle and the cell's hierarchy page. The COPC route over the WFS layer `IGNF_LIDAR-HD_METADONNEE:metadata` (overridable with `LIDAR_IGN_WFS_LAYER`) remains as a fallback (`LIDAR_IGN_SOURCE`: `auto`, `ept`, `copc`).
-- **Reading a tile.** The EPT source keeps the tile's manifest in memory (256 cells); the COPC one reads the LAS 1.4 header, the `copc info` VLR and the COPC hierarchy with HTTP Range requests (a few kilobytes), then builds the same manifest as before (cube, Lambert-93 → GPS anchor, grid heading, nodes); 64 manifests are kept in memory.
-- **Reading a node.** `GET /api/v1/lidar/:tile/:node` reads only that node's cloud — the EPT file `ept-data/<key>.laz` (a single laszip block) or a COPC's LAZ chunk (HTTP Range) — decodes it with `backend/tools/lidar/lazdec` (C, compiled at build by `npm run build:lazdec`; without gcc the clouds are reported unavailable), drops noise and virtual points, splits buildings into roof and facade (top of each 1 m cell), takes the brightness from the laser intensity, and sends the browser's compact format (8 bytes per point, gzip). Two decodes run at a time, 48 MB of nodes stay in memory, and the browser caches them for a year. Format and pure functions: `backend/src/services/lidar/lidar-tiles/lidar-tiles.ts` and `backend/src/services/lidar/lidar-ept/lidar-ept.ts`.
-- **Display** (`engine/lidarPoints.jsx`, pure logic in `lidarPointsMath.jsx`): loaded progressively — drawn below 0.75 km (only the root of each tile in view from high up, finer levels while descending), only nodes inside the camera's field, point budget, ×4 thinning, orthophoto draping — colour modes « Comme la carte » (default: each point takes exactly the colour of the satellite map below it), « Couleurs de la photo » (photo shaded by the laser relief) and « Types de points ».
-- **Tiles on disk / offline colourisation.** `backend/tools/lidar/telecharger_tuiles.py` and `colorize.py` are kept.
-- Known limits: point format 6 only (the LiDAR HD one); the brightness no longer includes the relief shading and occlusion computed offline before; checked on synthetic data only (header, hierarchy, conversion), not against the IGN servers.
 
 ## Performance notes
 
@@ -206,7 +194,6 @@ A new Earth overlay, "Rues et routes" (Settings → Earth layers, off by default
 - `vectorTile.jsx` decodes the vector tiles (protobuf) without any dependency and reads only the two layers used (`transportation`, `transportation_name`). `roadStyle.jsx` holds the drawing rules; `roadSource.jsx` draws each tile on a transparent canvas and plugs into the existing overlay slot of the tile layer.
 - From far away (levels 6 to 10) only motorways and main roads exist in the data; secondary roads, then every street from level 12, paths from level 15. Names: main roads from level 10, streets from level 15, written straight along the road, never cut at a tile edge.
 - The data stops at level 14; beyond, the level-14 tile is redrawn enlarged up to level 17, so lines stay sharp.
-- One overlay per tile: turning the streets on turns the IGN LiDAR HD overlay off, and the other way round.
 - Vector tiles carry every map layer, so they are heavier to download than image tiles; phones use 256 px canvases at every level to save memory.
 
 ## Flat Earth tiles by default (12 November 2026)
@@ -215,7 +202,6 @@ The Earth map is now flat by default: tiles are plain squares on the sphere, wit
 
 - Setting: Settings → "Relief de la Terre en 3D" (off by default, stored under `gobai:relief-3d`; the old key `gobai:relief`, on by default, is no longer read). Turning it on or off rebuilds the displayed tiles in place from the caches.
 - The relief shading of the other bodies (estimated from the image, no download) is always on.
-- LiDAR point tiles: on a flat map the cloud is lowered so that its ground (median of the points classified as ground in the root node) lies on the map; with the relief on it stays at its real altitude.
 
 ## Earth sources: a missing tile is not an outage (12 November 2026)
 

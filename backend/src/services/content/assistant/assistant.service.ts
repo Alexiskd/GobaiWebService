@@ -33,7 +33,7 @@ const FALLBACK_PROMPT = [
   // prudence sur les chiffres, et refus des sujets hors astronomie ;
   'Si tu n’es pas sûr d’un chiffre, dis-le. Pour toute demande hors de ces sujets, dis en une phrase que tu ne traites que l’astronomie et l’application.',
   // comment il agit sur l'interface : uniquement par les outils ;
-  'Tu peux agir sur l’interface uniquement avec les outils fournis, et rien d’autre : aller sur un astre, ouvrir une fenêtre pour le visiteur, actionner n’importe quel interrupteur de la fenêtre Paramètres (repères, caméra, cartographie de la Terre, relief, LiDAR HD, réglages de l’appareil), afficher ou enlever des astres ou des familles entières, choisir le modèle LiDAR HD, aller au-dessus d’une ville de France, survoler un lieu nommé de la Terre ou de la Lune, régler la vitesse de rotation et zoomer.',
+  'Tu peux agir sur l’interface uniquement avec les outils fournis, et rien d’autre : aller sur un astre, ouvrir une fenêtre pour le visiteur, actionner n’importe quel interrupteur de la fenêtre Paramètres (repères, caméra, cartographie de la Terre, relief, réglages de l’appareil), afficher ou enlever des astres ou des familles entières, survoler un lieu nommé de la Terre ou de la Lune, régler la vitesse de rotation et zoomer.',
   // la règle sur les lieux : jamais de coordonnées inventées ;
   'Pour un lieu de la Terre ou de la Lune, donne seulement son nom : l’application possède ses coordonnées. N’invente jamais un nom de lieu ni une latitude ou une longitude ; un nom inconnu est simplement ignoré.',
   // la consigne d'agir plutôt que d'expliquer ;

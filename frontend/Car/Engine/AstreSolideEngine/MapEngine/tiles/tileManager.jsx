@@ -744,7 +744,7 @@ export class TileManager {
       // Couche expérimentale.
       experimental: Boolean(info?.experimental),
       // Au-delà de la résolution réelle, l'image est complétée par un détail simulé : on le dit avec les sources.
-      // Le calque affiché (ex. LiDAR HD de l'IGN) est cité avec le fond.
+      // Le calque superposé affiché est cité avec le fond.
       // Texte des sources : le fond, le calque et la mention du détail simulé,
       attributionText: [info?.attribution?.text, b ? this.overlay?.source.info?.attribution?.text : null, this.synthetic ? SYNTHETIC_NOTE : null]
         // sans vide ni doublon, séparés par un point médian.

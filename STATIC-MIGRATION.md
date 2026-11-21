@@ -41,7 +41,7 @@ Le fallback SPA est configuré dans `frontend/public/_redirects`.
 
 ## Limites fonctionnelles
 
-Les appels frontend vers `/api` et `/api/v1` ne sont pas servis par un Static Site. Les fonctionnalités qui en dépendent restent indisponibles sans migration ou API externe : authentification, contributions, galerie personnelle, stockage PostgreSQL, paiements, assistant serveur, données relayées, certaines couches/tuiles, LiDAR serveur et autres routes métier.
+Les appels frontend vers `/api` et `/api/v1` ne sont pas servis par un Static Site. Les fonctionnalités qui en dépendent restent indisponibles sans migration ou API externe : authentification, contributions, galerie personnelle, stockage PostgreSQL, paiements, assistant serveur, données relayées, certaines couches/tuiles et autres routes métier.
 
 Les connecteurs publics directs sont conservés, mais leur accès dépend de CORS, quotas et disponibilité des fournisseurs. Aucune clé secrète ne doit être incluse dans le bundle Vite ou dans une variable `VITE_*`.
 

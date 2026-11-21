@@ -1,7 +1,5 @@
 // Données des astres : tous les satellites, la Lune, les planètes et le Soleil.
 import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../core/data/bodies.data';
-// Villes de France où le calque LiDAR HD est proposé.
-import { LIDAR_HD_CITIES } from '../../core/data/lidar-hd-cities.data';
 
 /**
  * Actions que l'assistant peut déclencher dans l'interface : uniquement des boutons et réglages qui existent déjà
@@ -28,20 +26,11 @@ export const DISPLAY_SETTINGS = [
   // cartographie de la Terre à plat,
   'noms_villes', 'noms_pays', 'frontieres_et_littoraux', 'rues', 'volcans', 'coordonnees_gps',
   // cartographie en relief,
-  'relief_3d', 'lidar_hd', 'points_lidar',
+  'relief_3d',
   // appareil.
   'noir_pur', 'economie_energie', 'moniteur_performance',
 // Fin de la liste.
 ] as const;
-/** Modèles LiDAR HD : l'ombrage de la surface, du sol nu ou des hauteurs. */
-// Modèles LiDAR HD proposés.
-export const LIDAR_MODELS = ['surface', 'sol_nu', 'hauteurs'] as const;
-/** Couleur des points LiDAR 3D : celles de la photo aérienne, ou le type de chaque point. */
-// Modes de couleur des points LiDAR.
-export const LIDAR_COLORS = ['carte', 'photo', 'types'] as const;
-/** Villes de France où le calque LiDAR HD est proposé : valeurs acceptées par l'outil des villes. */
-// Noms des villes du LiDAR HD.
-export const LIDAR_CITY_NAMES: string[] = LIDAR_HD_CITIES.map((c) => c.name);
 // Familles d'astres que l'assistant peut afficher ou enlever.
 export const FAMILIES = ['planetes_solides', 'planetes_gazeuses', 'planetes_naines', 'satellites_naturels'] as const;
 // Vitesses de rotation automatique acceptées.
@@ -82,7 +71,7 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
   }),
   // Outil « regler_affichage » : active ou désactive un interrupteur.
   tool('regler_affichage', 'Active ou désactive un interrupteur de l’interface : repères du système solaire, caméra, '
-    + 'cartographie de la Terre (noms, frontières, rues, volcans, relief 3D, LiDAR HD, points LiDAR 3D) et réglages '
+    + 'cartographie de la Terre (noms, frontières, rues, volcans) et réglages '
     + 'de l’appareil. Ce sont les interrupteurs de la fenêtre Paramètres et de la barre d’outils.', {
     // Paramètre reglage : un texte parmi les réglages autorisés.
     reglage: { type: 'string', enum: [...DISPLAY_SETTINGS] },
@@ -110,26 +99,6 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
   tool('regler_vitesse_rotation', 'Règle la vitesse de la rotation automatique de la vue (boutons de Paramètres).', {
     // Paramètre vitesse : un nombre parmi les vitesses autorisées.
     vitesse: { type: 'number', enum: [...ROTATION_SPEEDS], description: '1 = vitesse normale.' },
-  // Fin de l'outil.
-  }),
-  // Outil « choisir_modele_lidar » : choisit le modèle LiDAR HD affiché.
-  tool('choisir_modele_lidar', 'Choisit le modèle LiDAR HD affiché sur la France et allume le calque s’il est éteint '
-    + '(boutons de Paramètres › Cartographie en relief).', {
-    // Paramètre modele : un texte parmi les modèles autorisés.
-    modele: { type: 'string', enum: [...LIDAR_MODELS], description: 'surface = sol, bâtiments et végétation ; sol_nu = le sol seul ; hauteurs = ce qui dépasse du sol.' },
-  // Fin de l'outil.
-  }),
-  // Outil « aller_au_dessus_d_une_ville » : se rend au-dessus d'une ville de France, calque LiDAR HD allumé.
-  tool('aller_au_dessus_d_une_ville', 'Allume le calque LiDAR HD de l’IGN et se rend au-dessus d’une ville de France '
-    + '(menu « Aller au-dessus d’une ville » de Paramètres). Ne fonctionne que pour les villes de la liste.', {
-    // Paramètre ville : un texte parmi les villes proposées.
-    ville: { type: 'string', enum: LIDAR_CITY_NAMES, description: 'Nom de la ville, tel qu’il figure dans la liste.' },
-  // Fin de l'outil.
-  }),
-  // Outil « choisir_couleur_points_lidar » : choisit la couleur des points LiDAR 3D.
-  tool('choisir_couleur_points_lidar', 'Choisit la couleur des points LiDAR 3D (boutons de Paramètres).', {
-    // Paramètre couleur : un texte parmi les modes autorisés.
-    couleur: { type: 'string', enum: [...LIDAR_COLORS], description: 'carte = couleur de la carte satellite dessous ; photo = photo aérienne nuancée par le relief ; types = couleur selon le type de point.' },
   // Fin de l'outil.
   }),
   // Outil « aller_a_un_lieu_de_la_terre » : survole un lieu nommé de la Terre.

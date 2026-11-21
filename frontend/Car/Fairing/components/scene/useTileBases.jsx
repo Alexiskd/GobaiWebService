@@ -16,10 +16,6 @@ const DEFAULT_BASE = {
 // Fin de l'objet.
 };
 
-/** Calques LiDAR HD de l'IGN (ombrages des modèles de surface, de terrain et de hauteur), voir useEarthDisplay. */
-// isLidarLayer : vrai pour un calque superposé dont l'identifiant commence par « lidar-hd- ».
-export const isLidarLayer = (l) => l.kind === 'overlay' && l.id.startsWith('lidar-hd-');
-
 // isOwnLayer : fabrique le test « ce calque appartient à cet astre » (pour la Terre : astre absent ou « earth »).
 const isOwnLayer = (id) => (l) => (id === 'earth' ? !l.body || l.body === 'earth' : l.body === id);
 
@@ -227,8 +223,6 @@ export function useTileBases({ engine, engineRef, status, layers, allLayers = []
     chooseMoonBase, chooseMarsBase, chooseMercuryBase, chooseVenusBase,
     // La couche unique de la Terre, telle que l'API la décrit (nom, description, source), null tant qu'elle n'est pas posée.
     baseLayer: earthLayers.find((l) => l.id === bases.earth) || null,
-    // Les calques LiDAR HD de la Terre.
-    lidarLayers: earthLayers.filter(isLidarLayer),
   // Fin de l'objet renvoyé.
   };
 // Fin de useTileBases.

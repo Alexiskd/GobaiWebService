@@ -30,10 +30,8 @@ export type ProviderId =
   | 'opm-mercury'
   // Trek pour les satellites naturels ;
   | 'satellite-trek'
-  // la couche unique de la Terre ;
-  | 'earth-hd'
-  // le LiDAR HD de l'IGN.
-  | 'ign-lidar-hd';
+  // la couche unique de la Terre.
+  | 'earth-hd';
 
 /** Astre sur lequel la couche se pose. */
 // Type TileBody : l'astre d'une couche, parmi la Terre, la Lune, Mars, Mercure, Vénus,
@@ -115,7 +113,7 @@ export interface ResolvedTileLayer extends TileLayerInfo {
    */
   // plan : l'adresse de la table de priorité des sources.
   plan?: string;
-  /** Emprises [ouest, sud, est, nord] (degrés) hors desquelles un calque n'est pas demandé (LiDAR HD : la France). */
+  /** Emprises [ouest, sud, est, nord] (degrés) hors desquelles un calque n'est pas demandé (la couche unique de la Terre : la France). */
   // bounds : les emprises hors desquelles la couche n'est pas demandée.
   bounds?: Array<[number, number, number, number]>;
   /** Couche unique de la Terre : le navigateur accorde les couleurs des sources nationales sur la mosaïque mondiale. */

@@ -4,7 +4,7 @@ Moteur des corps solides : planètes telluriques, lunes, astéroïdes et planèt
 
 ## Sous-moteurs
 
-- `MapEngine/`, `ReliefEngine/`, `LidarEngine/`, `AtmosphereEngine/` — cartes, relief, LiDAR, atmosphère.
+- `MapEngine/`, `ReliefEngine/`, `LidarEngine/`, `AtmosphereEngine/` — cartes, relief, nuages de points (contributions), atmosphère.
 - `BodyEngine/` — types d'astres, booléens d'affichage, chargement, données, astres tuilés.
 - `OrbitEngine/` — orbites, éphémérides, rubans d'orbite, gravité.
 - `MoonEngine/` — la Lune : éphémérides, modèle, orbite, orbiteurs.

@@ -1,9 +1,9 @@
 // Désinstallation de tout ce que l'app avait gardé sur l'appareil, à la mise à jour.
 //
-// Plus rien n'est gardé sur le disque du navigateur : les tuiles et les nuages LiDAR sont téléchargés sans cache et
-// ne vivent qu'en mémoire (voir tiles/tileSource.jsx, loadImage, et lidarPoints.jsx). À la première ouverture après
+// Plus rien n'est gardé sur le disque du navigateur : les tuiles sont téléchargées sans cache et
+// ne vivent qu'en mémoire (voir tiles/tileSource.jsx, loadImage). À la première ouverture après
 // cette mise à jour, tous les caches enregistrés par les versions précédentes (Cache Storage : tuiles de la Terre, de
-// la Lune, des planètes, relief, calques et nuages LiDAR, photos drapées) sont supprimés. Seule la page d'accueil du
+// la Lune, des planètes, relief, calques et photos drapées) sont supprimés. Seule la page d'accueil du
 // service worker (« gobai-shell-… », ouverture hors ligne de l'app installée) est gardée.
 
 /** Version de la désinstallation : la changer relance la suppression une fois chez chaque visiteur. */

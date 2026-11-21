@@ -4,8 +4,7 @@
   "private": true,
   "description": "API NestJS du système solaire en direct : astres, éphémérides, villes, routes et modèle de tuiles de la Terre",
   "scripts": {
-    "build": "nest build && npm run build:lazdec",
-    "build:lazdec": "gcc -O2 -o tools/lidar/lazdec tools/lidar/lazdec.c || echo \"lazdec non compilé : nuages LiDAR HD indisponibles\"",
+    "build": "nest build",
     "start": "nest start",
     "dev": "nest start --watch",
     "start:dev": "nest start --watch",

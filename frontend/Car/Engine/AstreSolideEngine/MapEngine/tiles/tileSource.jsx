@@ -279,7 +279,7 @@ export class TileSource {
 
   /**
    * La couche a-t-elle une image pour cette tuile ? Vrai par défaut. Une couche limitée à une emprise (`info.bounds`,
-   * ex. calque LiDAR HD sur la France) n'est demandée que pour les tuiles qui la touchent, à partir de son niveau
+   * ex. un calque limité à la France) n'est demandée que pour les tuiles qui la touchent, à partir de son niveau
    * minimal : ailleurs sur le globe, aucune requête.
    */
   // covers : la couche a-t-elle une image pour cette tuile (début).

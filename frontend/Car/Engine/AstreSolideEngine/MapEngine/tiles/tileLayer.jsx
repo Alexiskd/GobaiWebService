@@ -1664,7 +1664,7 @@ export class TileLayer {
     if (!ov?.ready || e.ovMap || e.ovRequested || e.ovFailed) return;
     // Rues et routes : demandées seulement aux paliers qui les affichent (table du serveur).
     if (ov.layerId === ROADS_LAYER_ID && this.tier?.details?.roads === false) return;
-    // Hors de l'emprise du calque (ex. LiDAR HD hors de France) : rien à demander pour cette tuile.
+    // Hors de l'emprise du calque (ex. un calque limité à la France) : rien à demander pour cette tuile.
     // Hors de l'emprise du calque : noté en échec, terminé.
     if (!ov.covers(e)) { e.ovFailed = true; return; }
     // Demande notée.

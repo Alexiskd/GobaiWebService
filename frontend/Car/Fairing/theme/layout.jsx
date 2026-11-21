@@ -21,7 +21,7 @@ export const STRIP_H = 52;     // hauteur de la bande des astres (mobile)
 export const ZOOM_BOTTOM = 64;
 // Téléphone : l'écran est découpé en trois zones qui ne se recouvrent jamais.
 //  - En haut, la zone du titre (MobileTopBar) : bandeau titre, bouton de don, puis les indicateurs (chargement des
-//    tuiles, LiDAR), les uns sous les autres dans le flux. Sa limite basse est publiée dans --hud-top.
+//    tuiles), les uns sous les autres dans le flux. Sa limite basse est publiée dans --hud-top.
 //  - En bas, le dock (MobileDock) : de haut en bas, le tiroir Informations, la barre de l'assistant, la bande des astres
 //    et la navigation (Explorer, Orbite, Données, Menu), empilés dans le flux. Sa hauteur est publiée dans
 //    --hud-bottom. En largeur suffisante (paysage), les deux premiers se partagent une rangée.

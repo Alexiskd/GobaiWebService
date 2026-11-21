@@ -35,7 +35,7 @@ Le travail se fait en cinq lots, une PR chacun :
 | Noms des villes, noms des pays | Paramètres › Cartographie | désactivés |
 | Volcans en éruption | Paramètres › Cartographie | désactivé |
 | Lumières de la nuit, vue de la pollution lumineuse | Paramètres › Cartographie | activées / désactivée |
-| Relief 3D, LiDAR HD, points LiDAR 3D | Paramètres › Cartographie en relief | désactivés |
+| Relief 3D | Paramètres › Cartographie en relief | désactivé |
 | Ma position | Paramètres › Ma position | à la demande |
 | Moteur atmosphérique : incendies, cyclones, foudre, précipitations, orages, aérosols, vents | Paramètres › Atmosphère | désactivés |
 

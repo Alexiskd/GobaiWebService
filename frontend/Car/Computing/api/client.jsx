@@ -63,9 +63,7 @@ function staticResponse(path) {
   if (p === '/sun/activity') return { source: 'simulation locale', flares: [] };
   if (p === '/donations/config') return { enabled: false, currency: 'EUR', minAmount: 0.01 };
   if (p === '/places') return { provider: 'local', items: [], attribution: 'Recherche distante désactivée' };
-  if (p === '/lidar') return { available: false, items: [] };
   if (p === '/volcanoes') return { available: false, items: [], features: [] };
-  if (p === '/tiles/lidar-hd/cities') return { altitudeM: 0, items: [] };
   return { available: false, items: [] };
 }
 

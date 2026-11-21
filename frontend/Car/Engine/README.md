@@ -4,7 +4,7 @@
 
 ## Architecture
 - `SystemeEngine/` — orchestration du système, gestion des ressources, politiques de rendu, catalogue et éphémérides.
-- `AstreSolideEngine/` — corps solides et leurs sous-moteurs Map, Relief, Lidar et Atmosphere.
+- `AstreSolideEngine/` — corps solides et leurs sous-moteurs Map, Relief, nuages de points (contributions) et Atmosphere.
 - `AstreGazeuxEngine/` — corps gazeux et leur AtmosphereEngine.
 - `StarEngine/` — étoiles, systèmes stellaires et ciel.
 - `TextureEngine/` — textures et mosaïques de surface.

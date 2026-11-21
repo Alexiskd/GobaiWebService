@@ -13,9 +13,9 @@ const fakeCaches = (names) => ({ names: [...names], keys() { return Promise.reso
 // Désinstallation : tous les caches partent, une seule fois par version, sauf la page du service worker.
 test('purgeStoredTiles : supprime tous les caches de l\'appareil une fois par version', async () => {
   // Un stockage vide et les caches des versions précédentes.
-  const storage = fakeStorage(), store = fakeCaches(['earth-direct-v1', 'moon-tiles-v3', 'mars-tiles-v1', 'relief-v1', 'lidar-hd-v1', 'lidar-drape-v1', 'gobai-shell-v1']);
+  const storage = fakeStorage(), store = fakeCaches(['earth-direct-v1', 'moon-tiles-v3', 'mars-tiles-v1', 'relief-v1', 'gobai-shell-v1']);
   // Première ouverture : six caches supprimés.
-  assert.equal(await purgeStoredTiles(storage, store), 6);
+  assert.equal(await purgeStoredTiles(storage, store), 4);
   // Seule la page du service worker reste.
   assert.deepEqual(store.names, ['gobai-shell-v1']);
   // La version est retenue.

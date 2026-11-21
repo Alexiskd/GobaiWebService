@@ -18,8 +18,6 @@ import { NasaTrekMarsProvider } from './providers/nasa-trek-mars.provider';
 import { SpaceLayersService } from './bodies/space-layers.service';
 // Service de l'imagerie de la Terre (couche unique).
 import { EarthImageryService } from './earth/earth-imagery.service';
-// Calques LiDAR HD de l'IGN : mention, liste et résolution.
-import { LIDAR_HD_ATTRIBUTION, LIDAR_HD_CITY_ALTITUDE_M, lidarHdCities, lidarHdLayers, resolveLidarHd } from './earth/lidar-hd';
 // Service des cartes des satellites naturels.
 import { SatelliteTilesService } from './bodies/satellite-tiles.service';
 // Identifiant de la couche mélangée de Mars.
@@ -209,25 +207,9 @@ export class TilesService {
     const spaceLayer = this.space?.resolve(layerId);
     // Trouvée : on la renvoie.
     if (spaceLayer) return spaceLayer;
-    // Calques LiDAR HD de l'IGN (France) : tuiles WMTS chargées directement par le navigateur.
-    // Cherche la couche parmi les calques LiDAR HD.
-    const lidar = resolveLidarHd(layerId);
-    // Trouvée : on la renvoie.
-    if (lidar) return lidar;
     // Sinon demande au fournisseur de cette couche.
     return this.providerFor(layerId).resolve(layerId);
   // Fin de resolve.
-  }
-
-  /**
-   * Villes de France où le LiDAR HD de l'IGN est proposé, avec l'altitude d'arrivée conseillée. L'app en fait la
-   * liste de Paramètres : choisir une ville allume le calque et s'y rend.
-   */
-  // Méthode lidarCities : les villes et l'altitude d'arrivée.
-  lidarCities() {
-    // L'altitude d'arrivée conseillée et l'index des villes.
-    return { altitudeM: LIDAR_HD_CITY_ALTITUDE_M, items: lidarHdCities() };
-  // Fin de lidarCities.
   }
 
   // Méthode layer : la description d'une couche.
@@ -281,8 +263,6 @@ export class TilesService {
     const spaceLayer = this.space?.resolve(layerId);
     // Trouvée : sa mention et son fournisseur.
     if (spaceLayer) return { copyright: spaceLayer.attribution.text, provider: spaceLayer.provider };
-    // Calque LiDAR HD : la mention de l'IGN.
-    if (resolveLidarHd(layerId)) return { copyright: LIDAR_HD_ATTRIBUTION, provider: 'ign-lidar-hd' };
     // Sinon, fournisseur de la couche.
     const provider = this.providerFor(layerId);
     // Lui demande la mention pour la zone.
@@ -337,8 +317,8 @@ export class TilesService {
 
   // Méthode privée allLayers : toutes les couches connues.
   private allLayers() {
-    // La Lune, Mars, le mélange et les fusions, les catalogues, les satellites, la couche unique de la Terre et le LiDAR HD.
-    return [...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...(this.space?.list() ?? []), ...(this.satellites?.layers() ?? []), ...this.earth.layers(), ...lidarHdLayers()];
+    // La Lune, Mars, le mélange et les fusions, les catalogues, les satellites, la couche unique de la Terre.
+    return [...this.moon.layers(), ...this.mars.layers(), MARS_BLEND_LAYER, ...MARS_FUSION_LAYERS, ...(this.space?.list() ?? []), ...(this.satellites?.layers() ?? []), ...this.earth.layers()];
   // Fin de allLayers.
   }
 
