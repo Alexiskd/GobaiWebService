@@ -1,13 +1,14 @@
 // Fenêtre « Trajet » : temps de trajet entre deux positions de la Terre ou de la Lune. Aucun tracé d'itinéraire.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogContent, IconButton, Link, Stack, Tooltip, Typography } from '@mui/material';
-import { computeTrip, fetchMoonSites } from '@/Computing/api';
+import { computeItinerary, computeTrip, fetchMoonSites } from '@/Computing/api';
 import { PROVIDERS } from '@/Engine/shared/lib/app/assistantSession';
 import { formatDuration, formatKm, isPoint, pointLabel, tripSignature } from '@/Engine/shared/lib/app/trajet';
 import { useAssistantSession } from '@/Fairing/hooks/useAssistantSession';
 import { useViewport } from '@/Fairing/hooks/useViewport';
 import { PanelHeader } from '../../ui/PanelHeader.jsx';
-import { SwapVertIcon } from '../../ui/icons.jsx';
+import { RouteIcon, SwapVertIcon } from '../../ui/icons.jsx';
+import { ItineraireView } from './ItineraireView.jsx';
 import { PointPicker } from './PointPicker.jsx';
 
 /** Délai entre un changement de position et le recalcul automatique (ms) : évite un appel par touche ou par clic. */
@@ -45,6 +46,8 @@ export function Trajet({ open, onClose, onOpenAssistant }) {
   const [trip, setTrip] = useState({ status: 'idle', data: null, error: null });
   // Recalcul demandé à la main (bouton « Recalculer ») : change la signature.
   const [nonce, setNonce] = useState(0);
+  // Itinéraire demandé par le bouton « Itinéraire » : 'idle' | 'loading' | 'done' | 'error'.
+  const [itin, setItin] = useState({ status: 'idle', data: null, error: null });
   const provider = session?.provider ?? DEFAULT_PROVIDER;
   const signature = tripSignature(a, b, provider);
   const apiKey = session?.key ?? '';
@@ -73,13 +76,34 @@ export function Trajet({ open, onClose, onOpenAssistant }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, signature, apiKey, nonce]);
 
+  // Un autre départ, une autre arrivée ou une autre connexion : l'itinéraire affiché n'est plus le bon.
+  useEffect(() => { setItin({ status: 'idle', data: null, error: null }); }, [signature]);
+  // Fenêtre fermée : requête d'itinéraire abandonnée.
+  const itinCtrl = useRef(null);
+  useEffect(() => { if (!open) { itinCtrl.current?.abort(); setItin({ status: 'idle', data: null, error: null }); } }, [open]);
+
+  // Itinéraire : le modèle de l'utilisateur le découpe en étapes (un moyen de locomotion chacune), que les moteurs modélisent.
+  const planItinerary = () => {
+    itinCtrl.current?.abort();
+    const ctrl = new AbortController();
+    itinCtrl.current = ctrl;
+    setItin({ status: 'loading', data: null, error: null });
+    computeItinerary(provider, apiKey, a, b, ctrl.signal).then(
+      (data) => setItin({ status: 'done', data, error: null }),
+      (error) => { if (error?.name !== 'AbortError') setItin({ status: 'error', data: null, error }); },
+    );
+  };
+
   const swap = () => { setA(b); setB(a); };
   const ready = isPoint(a) && isPoint(b);
   const data = trip.data;
   const failure = trip.status === 'error' ? describeError(trip.error, session) : null;
+  // L'itinéraire n'existe qu'entre deux lieux de la Terre.
+  const onEarth = ready && a.body === 'earth' && b.body === 'earth';
+  const itinFailure = itin.status === 'error' ? describeError(itin.error, session) : null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullScreen={compact} maxWidth="xs" fullWidth aria-label="Temps de trajet">
+    <Dialog open={open} onClose={onClose} fullScreen={compact} maxWidth={itin.data ? 'sm' : 'xs'} fullWidth aria-label="Temps de trajet">
       <PanelHeader kicker="Terre et Lune" title="Temps de trajet" onClose={onClose} />
       <DialogContent>
         <Stack spacing={2}>
@@ -141,6 +165,26 @@ export function Trajet({ open, onClose, onOpenAssistant }) {
               </Stack>
             )}
           </Box>
+
+          {/* Itinéraire : étapes par moyen de locomotion, modélisées en 3D (véhicules volants) ou en 2D (au sol). */}
+          <Stack spacing={1.5}>
+            <Button
+              variant="outlined" startIcon={<RouteIcon />} onClick={planItinerary} disabled={!onEarth || itin.status === 'loading'}
+              sx={{ minHeight: 44, textTransform: 'none', alignSelf: 'flex-start' }}
+            >
+              {itin.status === 'loading' ? 'Calcul de l’itinéraire…' : itin.data ? 'Recalculer l’itinéraire' : 'Itinéraire'}
+            </Button>
+            {ready && !onEarth && <Typography variant="caption" color="text.secondary">L’itinéraire est disponible entre deux lieux de la Terre.</Typography>}
+            {itin.status === 'loading' && <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}><CircularProgress size={20} /><Typography variant="body2">Le modèle prépare les étapes…</Typography></Stack>}
+            {itinFailure && (
+              <Alert severity="warning" sx={{ alignItems: 'center' }}>
+                {itinFailure.text}
+                {itinFailure.connect && onOpenAssistant && <Button size="small" onClick={() => { onClose(); onOpenAssistant(); }} sx={{ ml: 1 }}>Me connecter</Button>}
+                {itinFailure.billingUrl && <Link href={itinFailure.billingUrl} target="_blank" rel="noopener noreferrer" sx={{ ml: 1 }}>Ajouter un moyen de paiement</Link>}
+              </Alert>
+            )}
+            {itin.data && <ItineraireView itinerary={itin.data} />}
+          </Stack>
 
           <Typography variant="caption" color="text.secondary">
             {session

@@ -26,7 +26,7 @@ const TAGS: [string, string][] = [
   ['World Atlas', 'Pays en TopoJSON, source des frontières.'],
   ['Villes', 'Villes du globe avec recherche.'],
   ['Lieux', 'Recherche de lieux et noms de villes.'],
-  ['Position', 'Position GPS sur la Terre ou la Lune et temps de trajet (durée seule, sans tracé).'],
+  ['Position', 'Position GPS sur la Terre ou la Lune, temps de trajet (durée seule) et itinéraire par étapes (un moyen de locomotion par étape).'],
   // Les exports payants.
   ['Boutique', 'Catalogue des exports payants, paiement et jeton d’accès.'],
   ['Exports', 'Modèle 3D complet d’un astre, tuiles assemblées et calcul d’orbite ; jeton d’accès requis.'],
