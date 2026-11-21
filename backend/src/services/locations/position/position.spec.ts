@@ -69,6 +69,13 @@ describe('durée fixée Terre ↔ Apollo', () => {
 });
 
 describe('réponse du modèle', () => {
+  it('accepte une durée en texte, d’autres noms de champ, ou en heures et en jours', () => {
+    expect(parseTripReply('{"durationMinutes": "35 min"}')?.durationMinutes).toBe(35);
+    expect(parseTripReply('{"duration_minutes": 12}')?.durationMinutes).toBe(12);
+    expect(parseTripReply('{"durationHours": 1.5}')?.durationMinutes).toBe(90);
+    expect(parseTripReply('{"days": "3"}')?.durationMinutes).toBe(4320);
+  });
+
   it('lit un objet JSON, même entouré de texte', () => {
     const r = parseTripReply('Voici : {"durationMinutes": 35.4, "mode": "Voiture", "summary": "Environ 35 minutes."} Fin.');
     expect(r).toEqual({ durationMinutes: 35, mode: 'Voiture', summary: 'Environ 35 minutes.' });
@@ -80,6 +87,7 @@ describe('réponse du modèle', () => {
     expect(parseTripReply('{"durationMinutes": -5}')).toBeNull();
     expect(parseTripReply(`{"durationMinutes": ${MAX_TRIP_MINUTES + 1}}`)).toBeNull();
     expect(parseTripReply('{"durationMinutes": "beaucoup"}')).toBeNull();
+    expect(parseTripReply('{"durationMinutes": 5}')?.durationMinutes).toBe(5);
     expect(parseTripReply('{pas du json}')).toBeNull();
   });
 
@@ -110,6 +118,14 @@ describe('PositionService', () => {
     expect(fake.calls).toHaveLength(1);
     expect(fake.calls[0].key).toBe('cle-utilisateur-123456');
     expect(fake.calls[0].system).toContain('aucun itinéraire');
+  });
+
+  it('redemande une fois quand la première réponse est illisible', async () => {
+    let n = 0;
+    const assistant = { complete: async (provider: string) => ({ text: n++ === 0 ? 'je ne sais pas' : '{"durationMinutes": 25}', provider, model: 'm' }) };
+    const r = await new PositionService(assistant as never).trip('claude', 'cle-utilisateur-123456', paris, conflans);
+    expect(r.durationMinutes).toBe(25);
+    expect(n).toBe(2);
   });
 
   it('refuse une position invalide (400) et une réponse inutilisable du modèle (502)', async () => {

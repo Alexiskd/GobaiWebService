@@ -51,11 +51,16 @@ export class PositionService {
       };
     }
 
-    // Sinon, le modèle de l'utilisateur estime la durée.
-    const { text, provider, model } = await this.assistant.complete(
-      providerId, key, TRIP_SYSTEM_PROMPT, [{ role: 'user', content: buildTripMessage(a, b) }],
-    );
-    const estimate = parseTripReply(text);
+    // Sinon, le modèle de l'utilisateur estime la durée ; une réponse illisible est redemandée une fois.
+    const messages: { role: 'user' | 'assistant'; content: string }[] = [{ role: 'user', content: buildTripMessage(a, b) }];
+    let answer = await this.assistant.complete(providerId, key, TRIP_SYSTEM_PROMPT, messages, 600);
+    let estimate = parseTripReply(answer.text);
+    if (!estimate) {
+      messages.push({ role: 'assistant', content: answer.text || '(vide)' }, { role: 'user', content: 'Réponds seulement par l’objet JSON demandé, avec durationMinutes en nombre.' });
+      answer = await this.assistant.complete(providerId, key, TRIP_SYSTEM_PROMPT, messages, 600);
+      estimate = parseTripReply(answer.text);
+    }
+    const { provider, model } = answer;
     if (!estimate) {
       throw new HttpException({
         statusCode: 502, error: 'Bad Gateway', code: 'unavailable', provider,

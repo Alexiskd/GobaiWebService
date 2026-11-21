@@ -908,10 +908,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         focus={focus}
         // Sélection d'un astre.
         onSelect={actions.selectFocus}
-        // Aller à un lieu.
-        onGoPlace={actions.pickPlace}
-        // « Ma position ».
-        myPosition={myPosition}
         // Familles affichées.
         kinds={camera.kinds}
         // Affichage d'une famille.

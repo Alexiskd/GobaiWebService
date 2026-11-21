@@ -112,6 +112,23 @@ export function buildTripMessage(a: PositionPoint, b: PositionPoint): string {
 /** Durée estimée lue dans la réponse du modèle. */
 export interface TripEstimate { durationMinutes: number; mode: string; summary: string }
 
+/** Nombre lu dans une valeur : un nombre, ou un texte qui commence par un nombre (« 35 », « 35,5 min »). */
+function numberOf(v: unknown): number | null {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  const m = typeof v === 'string' ? /^\s*(\d+(?:[.,]\d+)?)/.exec(v) : null;
+  return m ? Number(m[1].replace(',', '.')) : null;
+}
+
+/** Durée en minutes lue dans l'objet du modèle : `durationMinutes` (ou `duration_minutes`, `minutes`), sinon heures ou jours. */
+function minutesOf(json: Record<string, unknown>): number | null {
+  const direct = numberOf(json.durationMinutes ?? json.duration_minutes ?? json.minutes);
+  if (direct !== null) return direct;
+  const hours = numberOf(json.durationHours ?? json.duration_hours ?? json.hours);
+  if (hours !== null) return hours * 60;
+  const days = numberOf(json.durationDays ?? json.duration_days ?? json.days);
+  return days !== null ? days * 1440 : null;
+}
+
 /** Lit la réponse du modèle (un objet JSON, éventuellement entouré de texte) ; null si elle est inutilisable. */
 export function parseTripReply(text: string): TripEstimate | null {
   const start = text.indexOf('{');
@@ -119,8 +136,8 @@ export function parseTripReply(text: string): TripEstimate | null {
   if (start < 0 || end <= start) return null;
   let json: Record<string, unknown>;
   try { json = JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>; } catch { return null; }
-  const minutes = Number(json.durationMinutes);
-  if (!Number.isFinite(minutes) || minutes <= 0 || minutes > MAX_TRIP_MINUTES) return null;
+  const minutes = minutesOf(json);
+  if (minutes === null || minutes <= 0 || minutes > MAX_TRIP_MINUTES) return null;
   const clean = (v: unknown, max: number) => (typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, max) : '');
   return { durationMinutes: Math.max(1, Math.round(minutes)), mode: clean(json.mode, 40), summary: clean(json.summary, 240) };
 }
