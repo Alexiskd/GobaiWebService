@@ -4,10 +4,11 @@ import { PanelHeader } from '../../ui/PanelHeader.jsx';
 import { AstresAffiches } from './AstresAffiches.jsx';
 import { Reperes } from './Reperes.jsx';
 import { AllerAUnAstre } from './AllerAUnAstre.jsx';
+import { EntrainementIA } from './EntrainementIA.jsx';
 import { CatalogueAstres } from '../Astres/CatalogueAstres.jsx';
 
 /**
- * Fenêtre des paramètres : une seule page, les astres (familles affichées, aller à un astre, catalogue). Les pages
+ * Fenêtre des paramètres : une seule page : astres (familles affichées, aller à un astre, catalogue) et lien « Entraînement IA » vers gobaispace.info. Les pages
  * « Général » (Ma position, pilotage au téléphone) et « Affichage » ont été supprimées ; « Ma position » vit sous la navball.
  */
 export function Parametres({
@@ -37,6 +38,7 @@ export function Parametres({
               <Reperes orbits={orbits} onOrbits={onOrbits} markers={markers} onMarkers={onMarkers} satellites={satellites} onSatellites={onSatellites} sky={sky} onSky={onSky} />
             </Box>
             <AstresAffiches kinds={kinds} onKind={onKind} />
+            <EntrainementIA />
             <AllerAUnAstre bodies={bodies} focus={focus} onPick={pick} onShown={onBodyShown} />
             <CatalogueAstres bodies={bodies} onSelect={onSelect} onBodyShown={onBodyShown} onDone={onClose} engineRef={engineRef} />
           </Stack>
