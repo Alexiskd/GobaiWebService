@@ -16,6 +16,14 @@ function storedColor() {
 // Fin de storedColor.
 }
 // Déclare storedOn, qui lit l'affichage enregistré.
+// Clé du réglage « surfaces » : « 1 » = maillage de triangles, sinon points.
+const SURFACES_KEY = 'gobai:lidar-3d-surfaces';
+// storedSurfaces : lit le réglage enregistré (points par défaut).
+function storedSurfaces() {
+  // Lecture protégée : le stockage peut être refusé.
+  try { return globalThis.localStorage?.getItem(SURFACES_KEY) === '1'; } catch { return false; }
+// Fin de storedSurfaces.
+}
 function storedOn() {
   // Affiché sauf si la valeur enregistrée vaut « 0 » ; affiché si le stockage est inaccessible.
   try { return globalThis.localStorage?.getItem(KEY) !== '0'; } catch { return true; }
@@ -35,6 +43,8 @@ export function useLidarPoints(engine) {
   const [places, setPlaces] = useState([]);
   // État : le mode de couleur, lu dans le stockage.
   const [color, setColorState] = useState(storedColor);
+  // État : surfaces pleines au lieu de points.
+  const [surfaces, setSurfacesState] = useState(storedSurfaces);
 
   // Effet qui branche la recherche des nuages LiDAR HD de l'IGN : le moteur demande les dalles du champ de la caméra
   // quand elle descend sous 3 km, partout en France ; le serveur les lit en direct sur la Géoplateforme.
@@ -61,6 +71,8 @@ export function useLidarPoints(engine) {
   useEffect(() => { engine?.setLidarPointsVisible?.(on); }, [engine, on]);
   // Transmet le mode de couleur au moteur, s'il gère cette commande.
   useEffect(() => { engine?.setLidarPointsColor?.(color); }, [engine, color]);
+  // Transmet le mode surfaces au moteur.
+  useEffect(() => { engine?.setLidarSurfaces?.(surfaces); }, [engine, surfaces]);
 
   // setOn : affiche ou masque le nuage ; début de la fonction mémorisée.
   const setOn = useCallback((value) => {
@@ -83,6 +95,15 @@ export function useLidarPoints(engine) {
   }, []);
 
   // Renvoie l'affichage, le mode de couleur, leurs deux fonctions et les lieux.
-  return { on, setOn, color, setColor, places };
+  // setSurfaces : choisit entre points et surfaces ; début de la fonction mémorisée.
+  const setSurfaces = useCallback((value) => {
+    // Met à jour l'état.
+    setSurfacesState(Boolean(value));
+    // Enregistre le choix.
+    try { globalThis.localStorage?.setItem(SURFACES_KEY, value ? '1' : '0'); } catch { /* stockage refusé : valable pour la session */ }
+  // Fin de setSurfaces ; fonction stable.
+  }, []);
+
+  return { on, setOn, color, setColor, surfaces, setSurfaces, places };
 // Fin de useLidarPoints.
 }

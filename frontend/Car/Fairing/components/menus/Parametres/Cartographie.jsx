@@ -128,7 +128,7 @@ export function CartographieRelief({
   // Les villes de France du LiDAR HD et l'altitude d'arrivée au-dessus d'une ville.
   lidarCities = [], lidarCityAltitudeM = 2000,
   // Les points LiDAR, leurs lieux, leur couleur, leurs rappels, l'aller à un lieu et le rappel de fin.
-  lidarPoints = false, lidarPlaces = [], onLidarPoints, lidarColor = 'carte', onLidarColor, onGoPlace, onDone,
+  lidarPoints = false, lidarPlaces = [], onLidarPoints, lidarColor = 'carte', onLidarColor, lidarSurfaces = false, onLidarSurfaces, onGoPlace, onDone,
 // Fin de la liste des propriétés.
 }) {
   // Vrai si un calque LiDAR HD est choisi.
@@ -274,6 +274,8 @@ export function CartographieRelief({
                 <ToggleButton value="classes" title="Couleur selon le type de point : sol, toit, façade, végétation" sx={{ textTransform: 'none', lineHeight: 1.2 }}>Types de points</ToggleButton>
               {/* Fin du choix de la couleur. */}
               </ToggleButtonGroup>
+              {/* Interrupteur des surfaces : maillage de triangles au lieu de points. */}
+              <Switch checked={lidarSurfaces} onChange={onLidarSurfaces} label="Surfaces pleines (bêta)" hint="Sol, toits et façades reliés en surfaces au lieu de points séparés" />
               {/* Un bouton par dalle (début). */}
               {lidarPlaces.map((place) => (
                 // Le bouton (début de la balise).

@@ -10,6 +10,8 @@ import { LidarDrape } from './lidarDrape.jsx';
 import { drapePlan, nodeDrape } from './lidarDrapeMath.jsx';
 // Importe la base de données des nuages, en mémoire, et ses capacités, depuis lidarStore.
 import { LIDAR_STORE_BYTES, LidarStore } from './lidarStore.jsx';
+// Importe le maillage des nœuds (surfaces pleines au lieu de points).
+import { meshNode } from './lidarMeshMath.jsx';
 // Importe la palette, les constantes et les fonctions de calcul des dalles LiDAR, depuis lidarPointsMath.
 import { DOWNSCALE_FILL, LIDAR_PALETTE, boxDistance2D, budgetForHeight, densityOrder, domeBudget, domeRadius, expandLonLatBox, inDome, lonLatDistanceM, LUM_NEUTRAL, POINT_FILL, ROOT_KEY, buildTree, dayTint, decodeNode, downscalePoints, groundLevel, levelSpacing, loadProgress, boxShiftM, nodeUrl, selectNodes, showCloud, tileFrame } from './lidarPointsMath.jsx';
 
@@ -125,6 +127,24 @@ const pointFragment = [
 // Fin du shader de fragment : les lignes sont jointes.
 ].join('\n');
 
+// Surfaces : le même calcul de couleur que les points (classe, luminosité, drapage de l'orthophoto), appliqué aux
+// sommets d'un maillage de triangles. Les lignes propres aux points (taille à l'écran) sont retirées, et la position
+// du sommet est transmise pour l'ombrage de relief.
+const meshVertex = pointVertex
+  // Plus de taille de point : la ligne devient vide.
+  .replace('gl_PointSize=clamp(uSize*uPx/w,uRange.x,uRange.y);vSz=gl_PointSize;', 'vPos=position;')
+  // La variable de taille laisse la place à la position du sommet.
+  .replace('varying vec3 vCol;varying float vSz;', 'varying vec3 vCol;varying vec3 vPos;');
+// Shader de fragment des surfaces (début).
+const meshFragment = [
+  // Couleur et position reçues du shader de sommet.
+  'varying vec3 vCol;varying vec3 vPos;',
+  // Pente du triangle : sa normale, d'après les dérivées de la position. Une surface à plat garde sa couleur, une
+  // façade est assombrie d'un quart : le relief se lit sans éclairage supplémentaire.
+  'void main(){vec3 n=normalize(cross(dFdx(vPos),dFdy(vPos)));gl_FragColor=vec4(vCol*mix(.75,1.,abs(n.z)),1.);}',
+// Fin du shader de fragment des surfaces : les lignes sont jointes.
+].join('\n');
+
 // Passe 1 : profondeur remise au plus loin dans l'emprise (rien n'est dessiné).
 // Shader de sommet de la passe 1 : la profondeur est poussée au plus loin.
 const resetVertex = 'void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_Position.z=gl_Position.w*.9999995;}';
@@ -154,6 +174,8 @@ export class LidarPoints {
     // Rayon de la Terre dans la scène, ou 1.
     this.radius = engine.earth.def.radius || 1;
     // Repère des points.
+    // Surfaces pleines au lieu de points : désactivé par défaut (voir setSurfaces).
+    this.surfaces = false;
     this.root = new THREE.Object3D();
     // Son nom.
     this.root.name = 'lidar-points';
@@ -339,6 +361,23 @@ export class LidarPoints {
     // Sélection à refaire.
     this.dirty = true;
   // Fin de setEnabled.
+  }
+
+  /**
+   * Surfaces pleines (maillage) au lieu de points. Les nœuds déjà affichés sont retirés : ils sont redemandés
+   * aussitôt et reconstruits dans le nouveau mode.
+   */
+  // setSurfaces : choisit entre points et surfaces (début).
+  setSurfaces(on) {
+    // Valeur demandée.
+    const next = Boolean(on);
+    // Inchangée : rien.
+    if (next === this.surfaces) return;
+    // Retient le mode.
+    this.surfaces = next;
+    // Retire chaque nœud affiché de chaque dalle.
+    for (const tile of this.tiles.values()) for (const node of tile.tree.values()) this.dropNode(tile, node);
+  // Fin de setSurfaces.
   }
 
   /** Couleur des points : « carte » (couleur de la carte satellite, par défaut), « photo » (photo retouchée par le relief) ou « classes » (type de point). */
@@ -548,13 +587,18 @@ export class LidarPoints {
     // Fin de ce cas.
     }
     // Réduction automatique ×4 : un point gardé sur quatre, quatre fois moins à dessiner et à garder en mémoire.
-    const { position, attr, n: kept } = downscalePoints(decoded.position, decoded.attr);
+    // En mode surfaces : maillage du nœud (un sommet par case, le point le plus haut), sinon rien.
+    const mesh = this.surfaces ? meshNode(decoded.position, decoded.attr, decoded.position.length / 3, node.size / step) : null;
+    // Sommets du maillage, ou points réduits.
+    const { position, attr, n: kept } = mesh ? { position: mesh.position, attr: mesh.attr, n: mesh.vertices } : downscalePoints(decoded.position, decoded.attr);
     // Géométrie.
     const geo = new THREE.BufferGeometry();
     // Attribut des positions.
     geo.setAttribute('position', new THREE.BufferAttribute(position, 3));
     // Attribut de la classe et de la luminosité.
     geo.setAttribute('attr', new THREE.BufferAttribute(attr, 2));
+    // En mode surfaces : les triangles.
+    if (mesh) geo.setIndex(new THREE.BufferAttribute(mesh.index, 1));
     // Volume du nœud en pas de quantification : X, Y dans son cube, Z sur la hauteur de la dalle.
     // Côté et hauteur du volume du nœud, en pas de quantification.
     const s = node.size / step, h = (tile.height + 1) / step;
@@ -567,7 +611,9 @@ export class LidarPoints {
     // Matériau (début).
     const material = new THREE.ShaderMaterial({
       // Shaders des points.
-      vertexShader: pointVertex, fragmentShader: pointFragment,
+      vertexShader: mesh ? meshVertex : pointVertex, fragmentShader: mesh ? meshFragment : pointFragment,
+      // Surfaces : visibles des deux côtés, avec les dérivées à l'écran (pente des triangles).
+      side: mesh ? THREE.DoubleSide : THREE.FrontSide, extensions: { derivatives: Boolean(mesh) },
       // Variables uniformes (début).
       uniforms: {
         // La taille, puis les valeurs partagées et la teinte de la dalle.
@@ -579,7 +625,7 @@ export class LidarPoints {
     // Fin du matériau.
     });
     // Objet de points.
-    const points = new THREE.Points(geo, material);
+    const points = mesh ? new THREE.Mesh(geo, material) : new THREE.Points(geo, material);
     // Placé à l'origine du nœud.
     points.position.set(origin[0], origin[1], 0);
     // À l'échelle du pas de quantification.

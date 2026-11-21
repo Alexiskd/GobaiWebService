@@ -3415,6 +3415,9 @@ export class SolarEngine {
   /** Couleur des points : « photo » (orthophoto drapée sur le nuage) ou « classes ». */
   // setLidarPointsColor : choisit la couleur des points.
   setLidarPointsColor(mode) { this.lidarPoints.setColorMode(mode); }
+  /** Surfaces pleines (maillage de triangles) au lieu de points. */
+  // setLidarSurfaces : choisit entre points et surfaces.
+  setLidarSurfaces(on) { this.lidarPoints.setSurfaces(on); }
 
   /** Noms des villes du monde : [{ name, lon, lat, pop, capital }] triés par population. */
   // setCityLabels : reçoit les villes du monde.

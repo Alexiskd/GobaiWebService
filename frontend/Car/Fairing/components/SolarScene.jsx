@@ -682,6 +682,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
           onLidarPoints: lidarPoints.setOn,
           lidarColor: lidarPoints.color,
           onLidarColor: lidarPoints.setColor,
+          // Surfaces LiDAR : état et rappel.
+          lidarSurfaces: lidarPoints.surfaces,
+          onLidarSurfaces: lidarPoints.setSurfaces,
         }}
         moonPlaces={moon.moonFeatures}
         onMoonPlaces={moon.setMoonFeatures}
