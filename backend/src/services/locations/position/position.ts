@@ -71,9 +71,42 @@ export function apolloSiteAt(p: PositionPoint): MoonSite | null {
   return APOLLO_SITES.find((s) => Math.abs(s.lat - p.lat) <= SITE_TOLERANCE_DEG && Math.abs(s.lon - p.lon) <= SITE_TOLERANCE_DEG) ?? null;
 }
 
+/** Un site de lancement capable d'envoyer une mission vers la Lune. */
+export interface LaunchSite { id: string; name: string; lat: number; lon: number; info: string }
+
+/** Sites de lancement d'où des fusées capables d'aller sur la Lune ont décollé ou doivent décoller. */
+export const LAUNCH_SITES: readonly LaunchSite[] = [
+  { id: 'kennedy', name: 'Centre spatial Kennedy (Cap Canaveral)', lat: 28.5729, lon: -80.649, info: 'Saturn V, SLS (Artemis), Falcon 9' },
+  { id: 'starbase', name: 'Starbase (Boca Chica)', lat: 25.9972, lon: -97.156, info: 'Starship (alunisseur d’Artemis)' },
+  { id: 'baikonour', name: 'Cosmodrome de Baïkonour', lat: 45.965, lon: 63.305, info: 'Luna, Proton, Soyouz' },
+  { id: 'vostochny', name: 'Cosmodrome de Vostotchny', lat: 51.8844, lon: 128.3339, info: 'Soyouz-2 (programme lunaire russe)' },
+  { id: 'jiuquan', name: 'Centre de Jiuquan', lat: 40.9586, lon: 100.2915, info: 'Longue Marche 2F (vols habités chinois)' },
+  { id: 'wenchang', name: 'Centre de Wenchang', lat: 19.6145, lon: 110.951, info: 'Longue Marche 5 (Chang’e 5 et 6)' },
+  { id: 'sriharikota', name: 'Centre Satish Dhawan (Sriharikota)', lat: 13.7199, lon: 80.2304, info: 'LVM3 (Chandrayaan)' },
+  { id: 'tanegashima', name: 'Centre de Tanegashima', lat: 30.4009, lon: 130.9751, info: 'H-IIA (SLIM)' },
+];
+
+/** En dessous de cette distance au site de lancement, le trajet au sol est nul : on y est déjà (km). */
+export const AT_LAUNCH_SITE_KM = 5;
+
+/** Site de lancement le plus proche d'une position de la Terre, avec la distance au sol, ou null pour un point lunaire. */
+export function nearestLaunchSite(p: PositionPoint): { site: LaunchSite; km: number } | null {
+  if (p.body !== 'earth') return null;
+  let best: { site: LaunchSite; km: number } | null = null;
+  for (const site of LAUNCH_SITES) {
+    const km = surfaceDistanceKm(p, { body: 'earth', lat: site.lat, lon: site.lon }) as number;
+    if (!best || km < best.km) best = { site, km };
+  }
+  return best;
+}
+
+/** Position du site de lancement, nommée, pour demander le trajet au sol au modèle. */
+export const launchSitePoint = (site: LaunchSite): PositionPoint => ({ body: 'earth', lat: site.lat, lon: site.lon, name: site.name });
+
 /**
  * Durée fixée d'un trajet, en minutes, ou null quand elle doit être calculée par le modèle de l'utilisateur.
- * Pour le moment : un point sur la Terre et l'autre sur un site Apollo de la Lune = 3 jours (dans les deux sens).
+ * Pour le moment : un point sur la Terre et l'autre sur un site Apollo de la Lune = 3 jours de vol (dans les deux sens).
+ * Au départ de la Terre, c'est la durée du vol seul : le service y ajoute le trajet jusqu'au site de lancement.
  * Mettre APOLLO_FIXED_DAYS à null rend ce calcul au modèle.
  */
 export function fixedTripMinutes(a: PositionPoint, b: PositionPoint): number | null {
