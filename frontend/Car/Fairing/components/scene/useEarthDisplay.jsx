@@ -71,6 +71,71 @@ export function useEarthDisplay({ engine, push }) {
   useEffect(() => { engine?.setBordersVisible(borders); }, [engine, borders]);
   // Transmet l'affichage des littoraux au moteur.
   useEffect(() => { engine?.setCoastsVisible(coasts); }, [engine, coasts]);
+
+  // Volcans en éruption, en direct (NASA EONET) : masqués par défaut.
+  // État : volcans affichés ou non, lu dans le stockage.
+  const [volcanoes, setVolcanoesOn] = useState(storedVolcanoes);
+  // État : nombre de volcans en éruption, null tant que la liste n'est pas arrivée.
+  const [volcanoCount, setVolcanoCount] = useState(null);
+  // setVolcanoes : affiche ou masque les volcans ; début de la fonction mémorisée.
+  const setVolcanoes = useCallback((on) => {
+    // Change l'état.
+    setVolcanoesOn(Boolean(on));
+    // Garde le choix : « 1 » s'ils sont affichés, rien sinon.
+    remember(VOLCANOES_KEY, on ? '1' : null);
+  // Fin de setVolcanoes ; fonction stable.
+  }, []);
+  // Transmet l'affichage des volcans au moteur.
+  useEffect(() => { engine?.setVolcanoesVisible(volcanoes); }, [engine, volcanoes]);
+  // Charge la liste des volcans quand ils sont affichés, puis toutes les 30 minutes (début de l'effet).
+  useEffect(() => {
+    // Sans moteur, ou volcans masqués : rien.
+    if (!engine || !volcanoes) return undefined;
+    // Contrôleur d'abandon de la lecture en cours.
+    const controller = new AbortController();
+    // load : lit la liste et la pose dans le moteur ; un échec est ignoré, le calque est automatique.
+    const load = () => fetchVolcanoes(controller.signal)
+      // Liste reçue : la pose et note le nombre de volcans.
+      .then((data) => { const list = data?.volcanoes || []; engine.setVolcanoes(list); setVolcanoCount(list.length); })
+      // Échec : rien.
+      .catch(() => {});
+    // Première lecture.
+    load();
+    // Lectures suivantes.
+    const timer = setInterval(load, VOLCANOES_REFRESH_MS);
+    // Nettoyage : arrête les lectures.
+    return () => { controller.abort(); clearInterval(timer); };
+  // Fin de l'effet.
+  }, [engine, volcanoes]);
+  // Transmet l'affichage des noms de pays au moteur.
+  useEffect(() => { engine?.setCountryLabelsVisible(countryNames); }, [engine, countryNames]);
+  // Transmet l'affichage des noms de villes au moteur.
+  useEffect(() => { engine?.setCityLabelsVisible(showCityNames); }, [engine, showCityNames]);
+  // Transmet l'affichage des coordonnées GPS au moteur, s'il gère cette commande.
+  useEffect(() => { engine?.setGpsVisible?.(gps); }, [engine, gps]);
+
+  // Touche G : afficher ou masquer les coordonnées GPS (hors saisie de texte).
+  // Effet exécuté une seule fois : le raccourci clavier.
+  useEffect(() => {
+    // Déclare onKey, appelé à chaque touche enfoncée.
+    const onKey = (e) => {
+      // La cible de la frappe.
+      const t = e.target;
+      // Pendant la saisie dans un champ, rien à faire.
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      // Avec Ctrl, Cmd ou Alt, ou pour une autre touche que G, rien à faire.
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.toLowerCase() !== 'g') return;
+      // Inverse l'affichage des coordonnées GPS.
+      setGps((v) => !v);
+    // Fin de onKey.
+    };
+    // Écoute les touches sur toute la fenêtre.
+    window.addEventListener('keydown', onKey);
+    // Nettoyage : retire l'écouteur.
+    return () => window.removeEventListener('keydown', onKey);
+  // Fin de l'effet ; aucune dépendance.
+  }, []);
+
   // Effet qui choisit le calque superposé de la Terre.
   useEffect(() => {
     // Sans moteur, rien à faire.
