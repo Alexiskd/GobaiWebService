@@ -2,14 +2,22 @@
 import { BadRequestException, HttpException } from '@nestjs/common';
 // Service de l'assistant : il porte l'appel au modèle de l'utilisateur et le classement des refus du fournisseur.
 import { AssistantService } from '../../content/assistant/assistant.service';
+// Itinéraire : consigne du modèle, lecture et validation de sa réponse.
+import { ITINERARY_SYSTEM_PROMPT, Itinerary, buildItineraryMessage, parseItineraryReply } from './itinerary';
 // Calculs purs de la position et du trajet.
 import {
   APOLLO_SITES, AT_LAUNCH_SITE_KM, LaunchSite, MoonSite, PositionPoint, TRIP_SYSTEM_PROMPT, buildTripMessage, fixedTripMinutes,
   launchSitePoint, nearestLaunchSite, normalizePoint, parseTripReply, tripDistance,
 } from './position';
 
+/** Jetons accordés au modèle pour un itinéraire (plusieurs étapes avec leurs points intermédiaires). */
+const ITINERARY_MAX_TOKENS = 3000;
+
 /** Une étape d'un trajet : `sol` (jusqu'au site de lancement) ou `vol` (vers la Lune). */
 export interface TripLeg { kind: 'sol' | 'vol'; label: string; minutes: number }
+
+/** Résultat d'un itinéraire : les étapes validées, le fournisseur et le modèle qui ont répondu. */
+export interface ItineraryResult extends Itinerary { provider: string; model: string }
 
 /** Résultat d'un calcul de trajet. */
 export interface TripResult {
@@ -96,6 +104,38 @@ export class PositionService {
       summary: `${ground.estimate.summary} Puis 3 jours de vol vers la Lune.`.trim(), legs: [groundLeg, flight], ...base,
       provider: ground.provider, model: ground.model,
     };
+  }
+
+  /**
+   * Itinéraire entre deux lieux de la Terre : le modèle de l'utilisateur (sa clé, jamais gardée) le découpe en étapes,
+   * chacune avec son moyen de locomotion ; le frontend modélise chaque étape avec le moteur de ce moyen (3D pour les
+   * véhicules volants, 2D pour ceux qui roulent, marchent ou naviguent). Une réponse illisible est redemandée une fois.
+   */
+  async itinerary(providerId: string, key: string, rawA: unknown, rawB: unknown): Promise<ItineraryResult> {
+    const a = this.pointOf(rawA, 'A');
+    const b = this.pointOf(rawB, 'B');
+    if (a.body !== 'earth' || b.body !== 'earth') {
+      throw new BadRequestException('L’itinéraire n’est disponible qu’entre deux lieux de la Terre.');
+    }
+    const messages: { role: 'user' | 'assistant'; content: string }[] = [{ role: 'user', content: buildItineraryMessage(a, b) }];
+    let answer = await this.assistant.complete(providerId, key, ITINERARY_SYSTEM_PROMPT, messages, ITINERARY_MAX_TOKENS);
+    let itinerary = parseItineraryReply(answer.text, a, b);
+    if (!itinerary) {
+      messages.push(
+        { role: 'assistant', content: answer.text || '(vide)' },
+        { role: 'user', content: 'Réponds seulement par l’objet JSON demandé : "segments" non vide, chaque étape avec mode, category, from, to, waypoints et minutes ; la dernière étape arrive en B.' },
+      );
+      answer = await this.assistant.complete(providerId, key, ITINERARY_SYSTEM_PROMPT, messages, ITINERARY_MAX_TOKENS);
+      itinerary = parseItineraryReply(answer.text, a, b);
+    }
+    const { provider, model } = answer;
+    if (!itinerary) {
+      throw new HttpException({
+        statusCode: 502, error: 'Bad Gateway', code: 'unavailable', provider,
+        message: 'Le modèle n’a pas renvoyé un itinéraire exploitable : réessayez dans un instant.',
+      }, 502);
+    }
+    return { ...itinerary, provider, model };
   }
 
   /** Estimation du modèle de l'utilisateur pour un trajet ; une réponse illisible est redemandée une fois. */

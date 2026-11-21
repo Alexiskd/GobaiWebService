@@ -72,6 +72,7 @@ export { default as CheckIcon } from '@mui/icons-material/Check';
 export { default as CloseIcon } from '@mui/icons-material/Close';
 // Lecture d'une vidéo de la galerie, et arrêt d'un téléchargement.
 export { default as PlayArrowIcon } from '@mui/icons-material/PlayArrow';
+export { default as PauseIcon } from '@mui/icons-material/Pause';
 export { default as StopIcon } from '@mui/icons-material/Stop';
 // Téléchargement, et ouverture dans un nouvel onglet.
 export { default as DownloadIcon } from '@mui/icons-material/Download';

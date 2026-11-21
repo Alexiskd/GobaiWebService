@@ -86,3 +86,35 @@ export class TripDto {
   @ApiPropertyOptional({ example: 'claude', description: 'Fournisseur qui a répondu (source `ia`).' }) provider?: string;
   @ApiPropertyOptional({ example: 'claude-fable-5-2', description: 'Modèle qui a répondu (source `ia`).' }) model?: string;
 }
+
+/** Un point d'une étape d'itinéraire. */
+export class GeoPointDto {
+  @ApiProperty({ example: 48.99 }) lat!: number;
+  @ApiProperty({ example: 2.09 }) lon!: number;
+  @ApiPropertyOptional({ example: 'Gare de Conflans' }) name?: string;
+}
+
+/** Une étape d'un itinéraire, avec le moteur qui la modélise côté frontend. */
+export class ItinerarySegmentDto {
+  @ApiProperty({ example: 0 }) index!: number;
+  @ApiProperty({ example: 'train', description: 'Moteur : marche, course, velo, trottinette, moto, voiture, bus, tramway, metro, train, bateau, ski, cheval, avion, helicoptere, fusee, drone, ballon, planeur, ou autre-sol / autre-vol.' }) mode!: string;
+  @ApiProperty({ example: 'Train', description: 'Nom du moyen, tel que donné par le modèle.' }) modeLabel!: string;
+  @ApiProperty({ enum: ['sol', 'vol'], description: '`vol` : modélisé en 3D ; `sol` : modélisé en 2D.' }) category!: 'sol' | 'vol';
+  @ApiProperty({ example: 'Train jusqu’à Paris Saint-Lazare' }) label!: string;
+  @ApiProperty({ type: GeoPointDto }) from!: GeoPointDto;
+  @ApiProperty({ type: GeoPointDto }) to!: GeoPointDto;
+  @ApiProperty({ type: [GeoPointDto], description: 'Points intermédiaires, extrémités exclues.' }) waypoints!: GeoPointDto[];
+  @ApiProperty({ example: 25, description: 'Durée de l’étape en minutes.' }) minutes!: number;
+  @ApiProperty({ example: 21.4, description: 'Longueur du tracé en km, recalculée par le serveur.' }) km!: number;
+  @ApiPropertyOptional({ example: 11, description: 'Altitude de croisière en km (étapes aériennes).' }) altitudeKm?: number;
+}
+
+/** Réponse de POST position/itineraire. */
+export class ItineraryDto {
+  @ApiProperty({ example: 'Marche jusqu’à la gare, puis train.' }) summary!: string;
+  @ApiProperty({ example: 62 }) totalMinutes!: number;
+  @ApiProperty({ example: 41.2 }) totalKm!: number;
+  @ApiProperty({ type: [ItinerarySegmentDto] }) segments!: ItinerarySegmentDto[];
+  @ApiPropertyOptional({ example: 'claude' }) provider?: string;
+  @ApiPropertyOptional({ example: 'claude-fable-5-2' }) model?: string;
+}
