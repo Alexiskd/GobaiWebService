@@ -1189,7 +1189,8 @@ export class SolarEngine {
     this.coreGpuMemoryBudget = new SatelliteGpuBudgetOrchestrator({
       globalBudgetBytes: 512 * 1024 * 1024,
       defaultBodyBudgetBytes: 256 * 1024 * 1024,
-      onError: (error, context) => console.error(`[Gobai Core] budget GPU (${context})`, error),
+      // Erreur du budget GPU : ignorée en silence (aucun log en console).
+      onError: () => {},
     });
     // Atlas couleur expérimental activé sur Terre et Lune ; les autres couches
     // (altitude, normales, nuit) conservent leurs chargeurs spécialisés.
@@ -1205,9 +1206,8 @@ export class SolarEngine {
     this.coreRenderBudget = this.coreRenderBudgetPolicy.snapshot();
     this.coreRenderDiagnosticsPolicy = new RenderDiagnosticsPolicy();
     this.coreRenderDiagnostics = this.coreRenderDiagnosticsPolicy.snapshot();
-    this.coreScheduler = new RenderScheduler({ maxTasksPerFrame: 3, onError: (error, id) => {
-      console.error(`[Gobai Core] tâche ${id} en échec`, error);
-    } });
+    // Ordonnanceur : trois tâches par image ; une tâche en échec est ignorée en silence (aucun log en console).
+    this.coreScheduler = new RenderScheduler({ maxTasksPerFrame: 3, onError: () => {} });
     this.coreTransitions = [];
     this.coreTargets = this.focusTargets.map((target, index) => {
       const id = target.tiled?.id || (index === 0 ? 'sun' : index === this.moonFocus ? 'moon' : `body-${index}`);
@@ -1483,7 +1483,8 @@ export class SolarEngine {
     });
     this.interstellarSystems = new Map();
     this.interstellarResourceLifecycle = new InterstellarResourceLifecycleManager({
-      onError: (error, id, state) => console.warn(`[Gobai interstellar lifecycle] ${id} → ${state}`, error),
+      // Erreur du cycle de vie interstellaire : ignorée en silence (aucun log en console).
+      onError: () => {},
     });
     this.interstellarLoadControllers = new Map();
     this.interstellarLOD = new InterstellarLODManager({ maxPlanetSystems: 8, maxDetailedSystems: 2 });
@@ -1508,7 +1509,8 @@ export class SolarEngine {
         this.galacticCatalogResidency?.removeSector(key);
         this.evictGaiaSectorStars(key, starIds);
       },
-      onSectorError: ({ key, error }) => console.warn(`[Gobai Gaia scheduler] ${key}`, error),
+      // Erreur d'un secteur Gaia : ignorée en silence (aucun log en console).
+      onSectorError: () => {},
     });
     this.galacticStreamingFrame = 0;
     this.galacticStreamingLastResult = null;
@@ -1900,18 +1902,21 @@ export class SolarEngine {
         });
         atlas = new SatelliteMultiLayerTextureAtlasManager({
           pageSize: 2048, gutter: 4, maxPages: 4, channels: { color: channel },
-          onError: (error, id) => console.warn(`[Gobai Atlas ${bodyId}] ${id}`, error),
+          // Erreur de l'atlas : ignorée en silence (aucun log en console).
+          onError: () => {},
         });
         bridge = new SatelliteAtlasGpuBudgetBridge({
           atlas, budgetManager: this.getSurfaceGpuBudgetManager(),
           bytesPerPage: (info) => Math.ceil(info.pageSize * info.pageSize * 4 * info.channelCount * (4 / 3)),
           resourceIdPrefix: `surface-atlas-${bodyId}`, priority: 0,
-          onError: (error, id) => console.warn(`[Gobai Atlas budget ${bodyId}] ${id}`, error),
+          // Erreur du budget de l'atlas : ignorée en silence (aucun log en console).
+          onError: () => {},
         });
         unregisterBridge = this.registerSurfaceAtlasBudgetBridge(bridge);
         pipeline = new SatelliteTileAtlasPipeline({
           atlas, memoryBudgetBridge: bridge, bodyId, diagnostics: this.surfaceAtlasDiagnostics, maxItemsPerInstall: 1, mode: this.surfaceAtlasMode,
-          onError: (error, id) => console.warn(`[Gobai Atlas pipeline ${bodyId}] ${id}`, error),
+          // Erreur du pipeline de l'atlas : ignorée en silence (aucun log en console).
+          onError: () => {},
         });
         tiled.tiles.setSurfaceAtlasPipeline(pipeline);
         this.surfaceAtlasRuntimes.set(bodyId, { atlas, bridge, pipeline });
@@ -1920,8 +1925,7 @@ export class SolarEngine {
         try { pipeline?.dispose(); } catch {}
         try { unregisterBridge?.(); } catch { bridge?.dispose(); }
         try { atlas?.dispose(); } catch {}
-        // Une indisponibilité Canvas/WebGL ne bloque jamais le chargement historique.
-        console.warn(`[Gobai Atlas ${bodyId}] activation ignorée, repli classique conservé.`, error);
+        // Une indisponibilité Canvas/WebGL ne bloque jamais le chargement historique : repli classique, sans message.
       }
     }
   }

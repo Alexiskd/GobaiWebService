@@ -65,7 +65,7 @@ test('tick : dt borné à dtMaxMs (retour d\'onglet : pas de saut)', () => {
   loop.stop();
 });
 
-test('tick : l\'erreur d\'un moteur n\'arrête pas les autres ni la boucle', () => {
+test('tick : l\'erreur d\'un moteur n\'arrête pas les autres ni la boucle, sans rien écrire en console', () => {
   const { loop, pending } = setup();
   const errors = [];
   const origError = console.error;
@@ -77,7 +77,7 @@ test('tick : l\'erreur d\'un moteur n\'arrête pas les autres ni la boucle', () 
   pending.pop()(1000);
   console.error = origError;
   assert.equal(called, true);
-  assert.equal(errors[0], '[RenderLoop] moteur en échec');
+  assert.equal(errors.length, 0);
   assert.equal(pending.length, 1);
   loop.stop();
 });

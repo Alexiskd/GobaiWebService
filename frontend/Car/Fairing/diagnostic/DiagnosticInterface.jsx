@@ -4,7 +4,7 @@
  *  - rouge : chevauchement ou commande recouverte ;
  *  - magenta : hors écran ;
  *  - orange : cible tactile de moins de 44 px ;
- * avec leur nombre dans un encart, et le détail dans la console. `window.gobaiDiagnostic()` renvoie le relevé. Rien
+ * avec leur nombre dans un encart. `window.gobaiDiagnostic()` renvoie le relevé. Rien
  * n'est monté sans le paramètre ; le calque laisse passer tous les gestes et n'est pas lu par les lecteurs d'écran.
  */
 // Hooks de React.
@@ -26,10 +26,10 @@ export function DiagnosticInterface() {
   const [res, setRes] = useState(null);
   // Mesure périodique (début).
   useEffect(() => {
-    // Relevé exposé à la console.
+    // Relevé disponible sur demande (window.gobaiDiagnostic()), sans rien écrire en console.
     window.gobaiDiagnostic = () => summarize(auditDocument());
-    // Une mesure : relevé, dessin, console.
-    const run = () => { const r = auditDocument(); setRes(r); console.info('[diagnostic interface]', summarize(r)); };
+    // Une mesure : relevé puis dessin à l'écran (aucun log en console).
+    const run = () => setRes(auditDocument());
     // Toutes les 1,5 s.
     const id = setInterval(run, 1500);
     // Première mesure après la mise en page.

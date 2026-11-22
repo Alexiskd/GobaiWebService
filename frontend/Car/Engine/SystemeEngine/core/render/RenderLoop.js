@@ -108,8 +108,8 @@ export class RenderLoop {
     this.lastNow = now;
     // Appelle chaque moteur, dans l'ordre d'enregistrement.
     for (const update of this.engines.values()) {
-      // Une erreur d'un moteur n'arrête pas les autres.
-      try { update(now, dt); } catch (error) { console.error('[RenderLoop] moteur en échec', error); }
+      // Une erreur d'un moteur n'arrête pas les autres ; elle est ignorée en silence (aucun log en console).
+      try { update(now, dt); } catch { /* moteur en échec : on passe au suivant */ }
     // Fin des moteurs.
     }
     // Demande l'image suivante.
