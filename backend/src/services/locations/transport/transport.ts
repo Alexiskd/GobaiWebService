@@ -135,6 +135,15 @@ export function navitiaDate(v: unknown): string {
   return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}` : '';
 }
 
+/** Date et heure de Paris à un instant donné : { date: « 2026-11-23 », dateTime: « 2026-11-23T00:05 » }. */
+export function parisNow(ms: number = Date.now()): { date: string; dateTime: string } {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
+  const date = `${parts.year}-${parts.month}-${parts.day}`;
+  return { date, dateTime: `${date}T${parts.hour}:${parts.minute}` };
+}
+
 /** Date ISO (« 2026-11-23 » ou « 2026-11-23T08:00 ») → format Navitia « 20261123T080000 ». */
 export function toNavitiaDate(iso: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(iso);

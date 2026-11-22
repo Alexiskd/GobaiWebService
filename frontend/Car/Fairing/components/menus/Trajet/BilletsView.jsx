@@ -6,8 +6,11 @@ import { Alert, Button, Chip, CircularProgress, Link, TextField } from '@/Fairin
 import { fetchTickets } from '@/Computing/api';
 import { formatDuration } from '@/Engine/shared/lib/app/trajet';
 
-/** Date du jour + n jours, au format AAAA-MM-JJ. */
-const dayPlus = (n) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10);
+/** Date du jour + n jours, au format AAAA-MM-JJ, dans le fuseau de l'appareil (pas en UTC : à 0 h 30 à Paris, c'est déjà demain). */
+const dayPlus = (n) => {
+  const d = new Date(Date.now() + n * 86400_000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /** Heure lisible d'une date ISO (« 07:45 »), sans conversion de fuseau : l'heure locale du départ. */
 const hhmm = (iso) => (typeof iso === 'string' && /T(\d{2}:\d{2})/.exec(iso)?.[1]) || '';
@@ -56,7 +59,7 @@ function Offre({ main, sub, right, href, cta }) {
 
 /** `a`, `b` : les deux lieux de la Terre du trajet. */
 export function BilletsView({ a, b }) {
-  const [date, setDate] = useState(() => dayPlus(7));
+  const [date, setDate] = useState(() => dayPlus(0));
   const [state, setState] = useState({ status: 'idle', data: null, error: null });
   const ctrl = useRef(null);
 

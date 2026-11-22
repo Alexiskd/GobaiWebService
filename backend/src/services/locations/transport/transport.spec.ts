@@ -1,6 +1,6 @@
 // Vols et trains : lecture des réponses, aéroport le plus proche, liens de réservation.
 import {
-  MAX_OFFERS, aviasalesUrl, nearestAirport, navitiaDate, parseAirports, parseFlights, parseTrainJourneys, toNavitiaDate,
+  MAX_OFFERS, aviasalesUrl, nearestAirport, navitiaDate, parisNow, parseAirports, parseFlights, parseTrainJourneys, toNavitiaDate,
 } from './transport';
 
 const AIRPORTS = parseAirports([
@@ -62,5 +62,13 @@ describe('transport', () => {
     expect(journeys).toHaveLength(1);
     expect(journeys[0]).toMatchObject({ durationMinutes: 345, trains: ['TGV INOUI 6173'], from: 'Paris Gare de Lyon', to: 'Nice Ville', co2Grams: 1520 });
     expect(journeys.length).toBeLessThanOrEqual(MAX_OFFERS);
+  });
+});
+
+describe('parisNow', () => {
+  it('donne la date de Paris, pas celle de UTC', () => {
+    // 22 nov. 2026 à 23 h 30 UTC = 23 nov. à 0 h 30 à Paris (UTC+1).
+    expect(parisNow(Date.UTC(2026, 10, 22, 23, 30))).toEqual({ date: '2026-11-23', dateTime: '2026-11-23T00:30' });
+    expect(toNavitiaDate('2026-11-23T00:30')).toBe('20261123T003000');
   });
 });

@@ -8,7 +8,7 @@
  */
 import { BadRequestException, Logger } from '@nestjs/common';
 import {
-  Airport, FlightOffer, LatLon, TrainJourney, nearestAirport, parseAirports, parseFlights, parseTrainJourneys, toNavitiaDate,
+  Airport, FlightOffer, LatLon, TrainJourney, nearestAirport, parseAirports, parseFlights, parseTrainJourneys, parisNow, toNavitiaDate,
 } from './transport';
 
 /** Liste publique des aéroports de Travelpayouts (sans jeton). */
@@ -49,13 +49,15 @@ export class TransportService {
     return { date, flights, trains };
   }
 
-  /** Date demandée, ou dans 7 jours ; refusée si elle est passée ou à plus d'un an. */
+  /** Date demandée, ou aujourd'hui (heure de Paris) ; refusée si elle est passée ou à plus d'un an. */
   private dateOf(raw: unknown): string {
-    const today = new Date().toISOString().slice(0, 10);
-    if (raw === undefined || raw === null || raw === '') return new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10);
+    const today = parisNow().date;
+    if (raw === undefined || raw === null || raw === '') return today;
     if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw) || Number.isNaN(Date.parse(raw))) throw new BadRequestException('Date invalide : AAAA-MM-JJ attendu.');
-    const max = new Date(Date.now() + 365 * 86400_000).toISOString().slice(0, 10);
-    if (raw < today || raw > max) throw new BadRequestException('La date doit être comprise entre aujourd’hui et dans un an.');
+    const max = parisNow(Date.now() + 365 * 86400_000).date;
+    // La veille reste acceptée : un appareil à l'ouest de Paris (Amériques) est encore la veille.
+    const yesterday = parisNow(Date.now() - 86400_000).date;
+    if (raw < yesterday || raw > max) throw new BadRequestException('La date doit être comprise entre aujourd’hui et dans un an.');
     return raw;
   }
 
@@ -108,14 +110,14 @@ export class TransportService {
     return list;
   }
 
-  /** Trains : trajets SNCF de A vers B à partir de 6 h le jour demandé. */
+  /** Trains : trajets SNCF de A vers B, à partir de maintenant aujourd'hui, sinon à partir de 6 h le jour demandé. */
   private async trains(a: LatLon, b: LatLon, date: string): Promise<TicketsResult['trains']> {
     const source = 'SNCF (API SNCF)';
     const key = this.env.SNCF_API_KEY?.trim();
     if (!key) return { status: 'non-configure', message: 'Recherche de trains non configurée (SNCF_API_KEY).', source };
     try {
       const query = new URLSearchParams({
-        from: `${a.lon};${a.lat}`, to: `${b.lon};${b.lat}`, datetime: toNavitiaDate(date), datetime_represents: 'departure',
+        from: `${a.lon};${a.lat}`, to: `${b.lon};${b.lat}`, datetime: date === parisNow().date ? toNavitiaDate(parisNow().dateTime) : toNavitiaDate(date), datetime_represents: 'departure',
         count: '5', min_nb_journeys: '3',
       });
       const res = await this.fetchFn(`${SNCF_JOURNEYS_URL}?${query}`, {
