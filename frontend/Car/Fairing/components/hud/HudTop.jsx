@@ -82,7 +82,7 @@ export function HudTop({ hud }) {
       {/* Emblème seul : l'image a de larges marges transparentes (27 % à gauche, 20 % à droite), rognées ici pour que
           l'espace bord gauche → logo soit exactement celui du texte → bord droit (le `px` du bandeau). */}
       {/* Cadre de l'emblème : largeur selon l'écran, proportions de l'emblème, ce qui dépasse est masqué. */}
-      <Box sx={{ width: compact ? 40 : 'clamp(52px, 5vw, 76px)', aspectRatio: `${LOGO.w} / ${LOGO.h}`, flex: 'none', overflow: 'hidden' }}>
+      <Box sx={{ width: compact ? 30 : 'clamp(38px, 3.6vw, 56px)', aspectRatio: `${LOGO.w} / ${LOGO.h}`, flex: 'none', overflow: 'hidden' }}>
         {/* L'image du logo (début de la balise). */}
         <Box
           // Rendue en balise img.
