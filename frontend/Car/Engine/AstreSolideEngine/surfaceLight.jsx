@@ -110,3 +110,27 @@ export const EARTH_LIGHT_GLSL = [
   'return mix(land,ocean,wm);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
 ].join('\n');
+
+/**
+ * Modèle de Jupiter : couleur et lumière d'un sommet de nuages vu comme sur les images de Juno et de Cassini.
+ *  - jupiterGrade : colorimétrie de la carte (bandes brunes et ocre, zones crème, Grande Tache rouge brique) :
+ *    saturation +18 %, teinte un peu plus chaude, contraste +12 % autour du gris moyen ;
+ *  - jupiterLight : lumière diffuse (diffusion multiple, pas d'ombre franche) : terminateur large et doux, et
+ *    assombrissement du bord, I(µ) = 1 − 0,62·(1 − µ) (coefficient de l'ordre de celui mesuré dans le visible), puis
+ *    un léger voile gris-bleu de brume haute au limbe, côté jour.
+ * Approximations pour le rendu : ce ne sont pas des mesures.
+ */
+// Déclare et exporte le GLSL du modèle de Jupiter.
+export const JUPITER_LIGHT_GLSL = [
+  // jupiterGrade : couleur sRGB de la carte → couleur sRGB retouchée.
+  'vec3 jupiterGrade(vec3 c){float l=dot(c,vec3(.299,.587,.114));vec3 s=mix(vec3(l),c,1.18)*vec3(1.04,1.,.93);return clamp((s-.5)*1.12+.48,0.,1.);}',
+  // jupiterLight : couleur sRGB retouchée, cosinus du Soleil d et cosinus de la vue mu → couleur sRGB éclairée.
+  'vec3 jupiterLight(vec3 g,float d,float mu){vec3 cl=pow(g,vec3(2.2));',
+  // Éclairement diffus : montée douce de −0,1 à 1 (terminateur large) ; assombrissement du bord.
+  'float ill=pow(clamp((d+.1)/1.1,0.,1.),.8);float ld=1.-.62*(1.-mu);',
+  // Voile de brume haute au limbe (gris-bleu), proportionnel à la lumière reçue ; faible lueur de nuit.
+  'vec3 o=cl*ill*ld*1.15+vec3(.62,.68,.78)*pow(1.-mu,2.5)*.1*ill+vec3(.002,.0015,.001);',
+  // Retour à l'écran.
+  'return pow(o,vec3(.4545));}',
+// Fin du tableau.
+];

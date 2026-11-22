@@ -7,7 +7,7 @@
 // Compatible tampon de profondeur logarithmique.
 
 // Importe les GLSL d'éclairage : modèle général et modèle de la Terre, depuis surfaceLight.
-import { EARTH_LIGHT_GLSL, GENERIC_LIGHT_GLSL } from '../../surfaceLight.jsx';
+import { EARTH_LIGHT_GLSL, GENERIC_LIGHT_GLSL, JUPITER_LIGHT_GLSL } from '../../surfaceLight.jsx';
 
 // Déclare et exporte le shader de sommets des tuiles (début).
 export const tileVertexShader = [
@@ -233,8 +233,10 @@ export const tileFragmentShader = [
   'varying vec2 vUv;varying vec3 vN;varying vec3 vV;varying vec3 vE;varying vec3 vNo;',
   // Modèle d'éclairage (0 : général ; 1 : la Terre) ; masque de l'eau (1 = mer), lu avec globalRect, et sa présence.
   'uniform float surfModel;uniform sampler2D wMap;uniform float wOn;',
+  // Modèle de Jupiter : 1 pour Jupiter (voir JUPITER_LIGHT_GLSL), 0 ailleurs.
+  'uniform float gasModel;',
   // Fonctions d'éclairage partagées : modèle général et modèle de la Terre (surfaceLight.jsx).
-  GENERIC_LIGHT_GLSL, EARTH_LIGHT_GLSL,
+  GENERIC_LIGHT_GLSL, EARTH_LIGHT_GLSL, JUPITER_LIGHT_GLSL,
   // Détail simulé au-delà de la résolution des images (géantes gazeuses, satellites) : voir `synthDetail` plus bas.
   // Variables uniformes du détail simulé : son type et sa force, et les coordonnées de la tuile.
   'uniform vec2 detail;uniform vec3 tileCoord;',
@@ -335,10 +337,10 @@ export const tileFragmentShader = [
   // Couleur de base : sans ombre l'image brute, avec ombre le mélange nuit/jour.
   'vec3 base=mix(col,mix(night,lit,dayV),sh);',
   // Modèle général : halo bleu au limbe, côté jour, seulement avec atmosphère.
-  'if(surfModel<.5){float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);}',
+  'if(surfModel<.5&&gasModel<.5){float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);}',
   // Modèle de la Terre (début) : couleur de la surface en lumière linéaire.
   // Eau : part de mer du point, lue dans le masque mondial ; sans masque, estimée d'après la couleur (bleu dominant, sombre).
-  'else{float wm=wOn>.5?texture2D(wMap,globalRect.xy+vUv*globalRect.zw).r:smoothstep(.0,.08,col.b-max(col.r*1.1,col.g*.95))*(1.-smoothstep(.35,.5,dot(col,vec3(.299,.587,.114))));',
+  'else if(surfModel>.5){float wm=wOn>.5?texture2D(wMap,globalRect.xy+vUv*globalRect.zw).r:smoothstep(.0,.08,col.b-max(col.r*1.1,col.g*.95))*(1.-smoothstep(.35,.5,dot(col,vec3(.299,.587,.114))));',
   // Colorimétrie de la Terre appliquée à la couleur de surface, puis passage en lumière linéaire.
   'vec3 cl=pow(earthGrade(col,wm),vec3(2.2));',
   // Normale du terrain : la sphère inclinée par la pente du relief (vers l'est et le nord), selon la force de l'ombrage.
@@ -353,6 +355,8 @@ export const tileFragmentShader = [
   'vec3 nv=(col*vec3(.024,.034,.06)+vec3(0.,.0015,.004))*3.;',
   // Couleur de base : sans ombre l'image brute, avec ombre l'éclairage de la Terre, en vue de nuit la nuit. Fin du modèle de la Terre.
   'base=mix(mix(col,eb,shade),nv,lv);}',
+  // Modèle de Jupiter : couleur retouchée et éclairée en lumière diffuse ; sans ombre, l'image brute ; en vue de nuit, la nuit.
+  'if(gasModel>.5){base=mix(mix(col,jupiterLight(jupiterGrade(col),d,mu),shade),col*vec3(.07,.1,.18)+vec3(0.,.002,.005),lv);}',
   // Lumières de la nuit : elles s'allument quand le Soleil passe sous l'horizon du lieu (d < 0,02) et brillent pleinement
   // à 10° dessous (d < −0,17), en suivant le terminateur. Rien de jour, rien sans ombre. Vue de la pollution lumineuse :
   // allumées partout, moitié plus vives.

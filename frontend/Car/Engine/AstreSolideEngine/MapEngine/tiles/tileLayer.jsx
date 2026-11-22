@@ -1057,7 +1057,7 @@ export class TileLayer {
         // Vue de la pollution lumineuse : toute la Terre de nuit.
         lightView: this.uniforms.lightView || RELIEF_OFF,
         // Modèle d'éclairage de l'astre (1 : la Terre), masque de l'eau et sa présence.
-        surfModel: this.uniforms.surfModel || RELIEF_OFF, wMap: this.uniforms.wMap || { value: this.placeholder }, wOn: this.uniforms.wOn || RELIEF_OFF,
+        surfModel: this.uniforms.surfModel || RELIEF_OFF, gasModel: this.uniforms.gasModel || RELIEF_OFF, wMap: this.uniforms.wMap || { value: this.placeholder }, wOn: this.uniforms.wOn || RELIEF_OFF,
         // Exagération du relief.
         reliefExag: this.uniforms.reliefExag || RELIEF_OFF,
         // Force de l'ombrage du relief.

@@ -126,6 +126,8 @@ export class TileManager {
       lgMap: { value: placeholderTexture() }, lgOn: { value: 0 }, lightView: { value: 0 },
       // Modèle d'éclairage : 1 pour la Terre (lumière physique, voir surfaceLight.jsx), 0 pour le modèle général.
       surfModel: { value: body.lighting === 'earth' ? 1 : 0 },
+      // Modèle de Jupiter : 1 si l'astre déclare `lighting: 'jupiter'`.
+      gasModel: { value: body.lighting === 'jupiter' ? 1 : 0 },
       // Masque de l'eau (reflet du Soleil sur la mer) : en attente, absent.
       wMap: { value: placeholderTexture() }, wOn: { value: 0 },
       // Lumières : côté des textures de tuiles (bordure comprise) et de la mosaïque mondiale (en pixels), et lecture en
