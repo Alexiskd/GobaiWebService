@@ -87,7 +87,7 @@ const PREFETCH_PRIORITY = 1e3;  // préchargement prédictif : après les tuiles
 // Calcul de la vue prédite toutes les 4 images.
 const PREFETCH_EVERY = 4;       // calcul de la vue prédite toutes les 4 images
 // Demandes prédictives en file, au plus : 48.
-const PREFETCH_MAX_QUEUED = 48; // demandes prédictives en file au plus (les plus utiles d'abord)
+const PREFETCH_MAX_QUEUED = 120; // demandes prédictives en file au plus (les plus utiles d'abord ; 48 avant)
 // Relance des demandes, vue immobile : toutes les 15 images.
 const REQUEST_SWEEP_EVERY = 15; // vue immobile : relance des demandes (échecs expirés, L2) toutes les 15 images
 // Netteté qui suit le mouvement : pendant un déplacement, une rotation ou un zoom, l'erreur tolérée à l'écran est
