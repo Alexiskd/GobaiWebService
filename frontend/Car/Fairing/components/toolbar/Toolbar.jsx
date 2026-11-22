@@ -26,6 +26,8 @@ export function Toolbar({
   sound = true, onToggleSound, onLanguage, languageLabel, onSources, onGallery, onSettings, onShare, onContribute, onStore,
   // Fenêtre Trajet : son rappel et son état.
   onTrip, tripOpen,
+  // Informations de l'astre focus : rappel et état.
+  onInfos, infosOpen,
   // L'arborescence des astres (rappel et état).
   onNavigator, navigatorOpen,
 // Fin de la liste des propriétés.
@@ -53,7 +55,7 @@ export function Toolbar({
     // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre). Le plateau
     // tournant et le moniteur de performance ne sont plus dans la barre : le premier vit dans le panneau
     // d'informations, le second a été retiré.
-    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen,
+    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen, onInfos, infosOpen,
     // Affichage Schwarzschild : l'état et le rappel passés à la liste.
     schwarzschild, onToggleSchwarzschild,
     // L'arborescence des astres, et le moniteur de performance hors téléphone.

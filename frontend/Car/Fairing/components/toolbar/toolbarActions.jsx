@@ -20,7 +20,7 @@ import {
   VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
   ScienceIcon, StoreIcon, SettingsIcon,
   // Arborescence des astres et icône de l'assistant.
-  AccountTreeIcon, AutoAwesomeIcon, RouteIcon,
+  AccountTreeIcon, AutoAwesomeIcon, RouteIcon, InfoIcon,
 // Fin de la liste ; module des icônes.
 } from '../ui/icons.jsx';
 // Importe EmcIcon, le profil d'Einstein (image PNG) du bouton de l'affichage relativiste.
@@ -48,7 +48,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt, sound,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen, onInfos, infosOpen,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -65,8 +65,9 @@ export function toolbarActions({
     onNavigator && { id: 'navigator', group: 'explore', icon: AccountTreeIcon, label: 'Astres', iconOnly: true, pressed: navigatorOpen, onClick: onNavigator, title: 'Arborescence des astres : planètes et satellites' },
     // Trajet : fenêtre de temps de trajet entre deux positions de la Terre ou de la Lune (sans tracé).
     onTrip && { id: 'trip', group: 'explore', icon: RouteIcon, label: 'Trajet', iconOnly: true, pressed: tripOpen, onClick: onTrip, title: 'Temps de trajet entre deux positions de la Terre ou de la Lune' },
-    // Le bouton Informations n'existe plus : le menu des cartes est rendu dans le panneau des caractéristiques,
-    // qui s'ouvre d'un appui sur son en-tête (et par la touche L).
+    // Informations : ouvre la fiche de l'astre focus (description, caractéristiques, cartes). Sur téléphone, c'est le
+    // seul moyen de l'ouvrir : le tiroir n'est plus posé tout seul sur l'écran. Même effet que la touche L.
+    onInfos && { id: 'infos', group: 'explore', icon: InfoIcon, label: 'Informations', iconOnly: true, pressed: infosOpen, onClick: onInfos, title: 'Informations : description et caractéristiques de l’astre focus (L)' },
     // Vue globale : retour à la vue d'ensemble.
     { id: 'reset', group: 'explore', icon: PublicIcon, label: 'Vue globale', short: 'Global', primary: true, onClick: onReset, title: 'Retour à la vue d’ensemble (0 du pavé numérique)' },
     // ── Bloc « display » — Affichage : éclairage, relativité, mouvements automatiques de la caméra.
