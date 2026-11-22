@@ -13,6 +13,7 @@
     "moon:prefetch": "nest build && node dist/services/core/scripts/moon-prefetch.js",
     "world-atlas:build": "nest build && node dist/services/core/scripts/world-atlas-build.js",
     "pointcloud:anchor": "nest build && node dist/services/core/scripts/pointcloud-anchor.js",
+    "earth:ktx2": "nest build && node dist/services/core/scripts/earth-ktx2-prebake.js",
     "dwarf:import": "nest build && node dist/services/core/scripts/dwarf-planets-import.js",
     "test": "jest"
   },
