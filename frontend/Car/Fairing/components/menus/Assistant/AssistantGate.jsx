@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Box, ButtonBase, CircularProgress, InputBase, Link, Stack, Typography } from '@mui/material';
 import { PROVIDERS, saveSession } from '@/Engine/shared/lib/app/assistantSession';
 import { connectAssistant } from '@/Computing/api/assistant';
-import { ArrowBackIcon, KeyIcon, LogoutIcon, OpenInNewIcon } from '../../ui/icons.jsx';
+import { safe } from '@/Fairing/theme/mediaQueries';
+import { ArrowBackIcon, KeyIcon, LogoutIcon, OpenInNewIcon, SendIcon } from '../../ui/icons.jsx';
 import { ProviderLogo } from './ProviderLogo.jsx';
 import { C, SANS, SERIF, WRAP } from './assistantTheme.js';
 
@@ -41,13 +42,10 @@ function ErrorNote({ children }) {
 const KEY_NOTE = 'Votre clé reste dans ce navigateur. Elle passe par le serveur de Gobai Space à chaque question, sans y être enregistrée. Les requêtes sont facturées sur votre compte chez le fournisseur.';
 
 /**
- * Écran de connexion : choix du fournisseur, puis saisie de la clé. La clé est vérifiée par un appel de test chez le
- * fournisseur ; tant qu'elle n'est pas valide, la fenêtre de l'assistant reste masquée.
- *  - clé valide et compte en état de payer → session enregistrée dans le navigateur, `onConnected` ;
- *  - pas de moyen de paiement ou plus de crédit → `onBilling` (écran de facturation) ;
- *  - clé refusée, ou autre refus → message sous le champ.
+ * Logique de connexion, partagée par l'écran (ordinateur) et la barre (téléphone) : fournisseur choisi, clé saisie,
+ * appel de test chez le fournisseur, erreur éventuelle.
  */
-export function LoginScreen({ initialError = '', onBilling, onConnected }) {
+function useLogin({ initialError, onBilling, onConnected }) {
   const [provider, setProvider] = useState(null);
   const [key, setKey] = useState('');
   const [busy, setBusy] = useState(false);
@@ -82,6 +80,121 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
     }
   };
 
+  /** Choisit un fournisseur (efface l'erreur précédente). */
+  const choose = (id) => { setProvider(id); setError(''); };
+  /** Revient au choix du fournisseur et efface la clé saisie. */
+  const back = () => { setProvider(null); setKey(''); setError(''); };
+
+  return { p, key, setKey, clean, busy, error, inputRef, submit, choose, back };
+}
+
+/**
+ * Barre de connexion sur téléphone : la même pilule que la barre de saisie de l'assistant (52 px de haut, même largeur,
+ * posée dans le dock du bas), jamais plus grande. Deux temps : 1) deux boutons, Claude et Mistral ; 2) un retour, le
+ * champ de la clé d'API et le bouton de connexion. Une erreur s'affiche au-dessus de la pilule, comme pour la saisie.
+ * `checkingLabel` : vérification d'une clé déjà enregistrée, un indicateur remplace le contenu.
+ */
+export function MobileLoginBar({ initialError = '', onBilling, onConnected, checkingLabel = '' }) {
+  const { p, key, setKey, clean, busy, error, inputRef, submit, choose, back } = useLogin({ initialError, onBilling, onConnected });
+  return (
+    <Box
+      component="section"
+      aria-label="Connexion à l’assistant"
+      data-assistant-panel=""
+      sx={{
+        position: 'relative', display: 'flex', flexDirection: 'column', gap: 0.75,
+        pl: `calc(${safe('left')} + 10px)`, pr: `calc(${safe('right')} + 10px)`, '@media (min-width: 700px)': { pl: 0, pr: `calc(${safe('right')} + 8px)` },
+        pointerEvents: 'none',
+      }}
+    >
+      {error && (
+        <Box sx={{ pointerEvents: 'auto', width: '100%', maxWidth: 440, mx: 'auto', boxSizing: 'border-box', px: 1.5, py: 1, borderRadius: '16px', bgcolor: 'rgba(31, 30, 29, 0.94)', border: `1px solid ${C.border}` }}>
+          <Typography role="alert" sx={{ ...WRAP, fontFamily: SANS, fontSize: 13.5, lineHeight: 1.4, color: C.error }}>{error}</Typography>
+        </Box>
+      )}
+      <Box
+        component="form"
+        onSubmit={submit}
+        sx={{
+          pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 0.5,
+          width: '100%', maxWidth: 440, mx: 'auto', boxSizing: 'border-box',
+          minHeight: 40, pl: 0.4, pr: 0.5, py: 0.4,
+          borderRadius: '20px', fontFamily: SANS, color: C.text,
+          bgcolor: 'rgba(31, 30, 29, 0.88)', backdropFilter: 'blur(14px) saturate(140%)', WebkitBackdropFilter: 'blur(14px) saturate(140%)',
+          border: `1px solid ${error ? C.error : C.border}`, boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
+        }}
+      >
+        {checkingLabel ? (
+          <Stack direction="row" spacing={1} role="status" sx={{ alignItems: 'center', flex: '1 1 auto', minWidth: 0, minHeight: 32, px: 1.25 }}>
+            <CircularProgress size={16} sx={{ color: C.accent, flex: 'none' }} />
+            <Typography noWrap sx={{ fontFamily: SANS, fontSize: 14, color: C.muted }}>{checkingLabel}</Typography>
+          </Stack>
+        ) : !p ? (
+          // Temps 1 : le choix du fournisseur, deux moitiés de la pilule.
+          Object.values(PROVIDERS).map((x) => (
+            <ButtonBase
+              key={x.id}
+              type="button"
+              onClick={() => choose(x.id)}
+              aria-label={`Se connecter à ${x.label}`}
+              sx={{
+                flex: '1 1 0', minWidth: 0, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75, px: 1, borderRadius: '16px',
+                fontFamily: SANS, fontSize: 14, fontWeight: 600, color: C.text, '&:active': { bgcolor: C.row }, '&.Mui-focusVisible': { bgcolor: C.row },
+              }}
+            >
+              <ProviderLogo provider={x.id} size={18} />
+              <Box component="span" sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.label}</Box>
+            </ButtonBase>
+          ))
+        ) : (
+          // Temps 2 : retour, clé d'API, connexion. 16 px pour que Safari ne zoome pas au focus.
+          <>
+            <ButtonBase type="button" onClick={back} disabled={busy} aria-label="Changer de fournisseur" sx={{ flex: 'none', width: 32, height: 32, borderRadius: '50%', color: C.muted }}>
+              <ArrowBackIcon sx={{ fontSize: 17 }} />
+            </ButtonBase>
+            <KeyIcon sx={{ fontSize: 18, color: C.muted, flex: 'none' }} />
+            <InputBase
+              fullWidth
+              inputRef={inputRef}
+              type="password"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder={`Clé d’API ${p.label}…`}
+              autoComplete="off"
+              disabled={busy}
+              enterKeyHint="go"
+              inputProps={{ 'aria-label': `Clé d’API ${p.platform}`, spellCheck: false, autoCapitalize: 'off', autoCorrect: 'off', 'aria-invalid': Boolean(error) }}
+              sx={{ flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, '& input': { p: 0 }, '& input::placeholder': { color: C.muted, opacity: 1 } }}
+            />
+            <ButtonBase
+              type="submit"
+              disabled={busy || !clean}
+              aria-label={busy ? 'Vérification de la clé' : 'Se connecter'}
+              sx={{
+                flex: 'none', width: 32, height: 32, borderRadius: '50%',
+                bgcolor: !busy && clean ? C.accent : C.row, color: !busy && clean ? '#1f1e1d' : C.muted,
+                transition: 'background-color 120ms', '&:active': { transform: 'scale(0.94)' },
+              }}
+            >
+              {busy ? <CircularProgress size={16} sx={{ color: C.accent }} /> : <SendIcon sx={{ fontSize: 17 }} />}
+            </ButtonBase>
+          </>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+/**
+ * Écran de connexion : choix du fournisseur, puis saisie de la clé. La clé est vérifiée par un appel de test chez le
+ * fournisseur ; tant qu'elle n'est pas valide, la fenêtre de l'assistant reste masquée.
+ *  - clé valide et compte en état de payer → session enregistrée dans le navigateur, `onConnected` ;
+ *  - pas de moyen de paiement ou plus de crédit → `onBilling` (écran de facturation) ;
+ *  - clé refusée, ou autre refus → message sous le champ.
+ */
+export function LoginScreen({ initialError = '', onBilling, onConnected }) {
+  const { p, key, setKey, clean, busy, error, inputRef, submit, choose, back } = useLogin({ initialError, onBilling, onConnected });
+
   return (
     <Box component="section" aria-label="Connexion à l’assistant" sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, p: 1.5, minWidth: 0 }}>
       <Typography component="h3" sx={{ ...WRAP, fontFamily: SERIF, fontSize: 18, lineHeight: 1.3, color: C.text }}>
@@ -96,7 +209,7 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
           <ErrorNote>{error}</ErrorNote>
           <Stack spacing={1}>
             {Object.values(PROVIDERS).map((x) => (
-              <GateButton key={x.id} onClick={() => { setProvider(x.id); setError(''); }} sx={{ justifyContent: 'flex-start', textAlign: 'left' }}>
+              <GateButton key={x.id} onClick={() => choose(x.id)} sx={{ justifyContent: 'flex-start', textAlign: 'left' }}>
                 <ProviderLogo provider={x.id} size={24} />
                 <Box component="span" sx={{ ...WRAP, display: 'flex', flexDirection: 'column' }}>
                   <span>Se connecter à {x.label}</span>
@@ -135,7 +248,7 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
             Obtenir une clé sur {p.platform} <OpenInNewIcon sx={{ fontSize: 15 }} />
           </Link>
           <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 1 }}>
-            <GateButton type="button" onClick={() => { setProvider(null); setKey(''); setError(''); }} disabled={busy} aria-label="Changer de fournisseur">
+            <GateButton type="button" onClick={back} disabled={busy} aria-label="Changer de fournisseur">
               <ArrowBackIcon sx={{ fontSize: 18 }} /> Retour
             </GateButton>
             <GateButton type="submit" primary disabled={busy || !clean}>
