@@ -22,39 +22,39 @@
    "folder": "jupiter",
    "title": "Carte aplatie des nuages de Jupiter",
    "kind": "image",
-   "mime": "image/png",
-   "file": "medias/jupiter-1/carte-aplatie-des-nuages-de-jupiter.png",
+   "mime": "image/webp",
+   "file": "medias/jupiter-1/carte-aplatie-des-nuages-de-jupiter.webp",
    "thumb": "vignettes/jupiter-1/carte-aplatie-des-nuages-de-jupiter.jpg",
-   "bytes": 2713028,
+   "bytes": 364170,
    "width": 1774,
    "height": 887,
-   "sha256": "ec49b2fafa3889b98a139787007114ab8d8753ae8b0ac66808390045de38507f"
+   "sha256": "298e39162a8c75fc53d4f52861e951e1889ca5e2c266f8615d1cf3993c2f04db"
   },
   {
    "id": "jupiter-carte-panoramique-des-tempetes-joviennes",
    "folder": "jupiter",
    "title": "Carte panoramique des tempêtes joviennes",
    "kind": "image",
-   "mime": "image/png",
-   "file": "medias/jupiter-1/carte-panoramique-des-tempetes-joviennes.png",
+   "mime": "image/webp",
+   "file": "medias/jupiter-1/carte-panoramique-des-tempetes-joviennes.webp",
    "thumb": "vignettes/jupiter-1/carte-panoramique-des-tempetes-joviennes.jpg",
-   "bytes": 3704983,
+   "bytes": 663692,
    "width": 1774,
    "height": 887,
-   "sha256": "48dae8f6031b96f8545c0acab829ec282f4e9e8912a8dd762d249ce42c001a37"
+   "sha256": "2ad0dcef812bd43511252217380141b861ace36b9416406f3a733e344e184be1"
   },
   {
    "id": "jupiter-carte-panoramique-detaillee-des-nuages-de-jupiter",
    "folder": "jupiter",
    "title": "Carte panoramique détaillée des nuages de Jupiter",
    "kind": "image",
-   "mime": "image/png",
-   "file": "medias/jupiter-1/carte-panoramique-detaillee-des-nuages-de-jupiter.png",
+   "mime": "image/webp",
+   "file": "medias/jupiter-1/carte-panoramique-detaillee-des-nuages-de-jupiter.webp",
    "thumb": "vignettes/jupiter-1/carte-panoramique-detaillee-des-nuages-de-jupiter.jpg",
-   "bytes": 2695814,
+   "bytes": 369158,
    "width": 1774,
    "height": 887,
-   "sha256": "4d37359eddc0fd7d51c5fd2df68595fbb7a6d9fb1d3f182cc9e73803078a9b42"
+   "sha256": "511c5a916b25c3e1231db8b7ea77de7719a9a652792fae5bc5ba480dbe55bdc1"
   },
   {
    "id": "jupiter-29103644",
@@ -997,13 +997,13 @@
    "folder": "jupiter",
    "title": "Texture panoramique des tempêtes de Jupiter",
    "kind": "image",
-   "mime": "image/png",
-   "file": "medias/jupiter-4/texture-panoramique-des-tempetes-de-jupiter.png",
+   "mime": "image/webp",
+   "file": "medias/jupiter-4/texture-panoramique-des-tempetes-de-jupiter.webp",
    "thumb": "vignettes/jupiter-4/texture-panoramique-des-tempetes-de-jupiter.jpg",
-   "bytes": 3352414,
+   "bytes": 530834,
    "width": 1774,
    "height": 887,
-   "sha256": "2b5639dbd1e044f85eca3b00e8d8a952c5c806da5ea98d340246a416ec4eb218"
+   "sha256": "e8c76f5c8f0f08daa9d4a96525b8cb4e67ea4fbcfc243c2e226de74f74a37116"
   },
   {
    "id": "saturne-pia01378-orig",
@@ -1286,10 +1286,10 @@
    "mime": "video/mp4",
    "file": "medias/satellites/video-d-animation-du-survol-de-la-lune-par-artemis-ii.mp4",
    "thumb": "vignettes/satellites/video-d-animation-du-survol-de-la-lune-par-artemis-ii.jpg",
-   "bytes": 11358883,
+   "bytes": 399773,
    "width": 640,
    "height": 360,
-   "sha256": "44af0e4f7ea755c8ef4fcd2f06a2f2462b4fa3b41b60f2395a8548c7321c229b",
+   "sha256": "8183664c7b263f35a94493217dd8bf6f248ddd01e122bb99b2253dba94c5e092",
    "duration": 57.4
   },
   {
