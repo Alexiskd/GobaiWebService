@@ -39,14 +39,8 @@ export { default as GalleryIcon } from '@mui/icons-material/Collections';
 // Moniteur de performance.
 export { default as SpeedIcon } from '@mui/icons-material/Speed';
 // Faire un don.
-// Paramètres.
-export { default as SettingsIcon } from '@mui/icons-material/Settings';
 // Arborescence des astres : un arbre.
 export { default as AccountTreeIcon } from '@mui/icons-material/AccountTree';
-// Données et sources : l'espace « Données ».
-export { default as StorageIcon } from '@mui/icons-material/Storage';
-// Menu : l'espace « Menu » de la navigation du téléphone.
-export { default as MenuIcon } from '@mui/icons-material/Menu';
 // Pilotage au téléphone : zoom seul, puis zoom et déplacement.
 export { default as ArrowUpwardIcon } from '@mui/icons-material/ArrowUpward';
 export { default as FlightTakeoffIcon } from '@mui/icons-material/FlightTakeoff';

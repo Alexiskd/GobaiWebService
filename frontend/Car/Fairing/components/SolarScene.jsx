@@ -677,8 +677,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         infosOpen={panels.layersOpen}
         // Galerie : ouvre la fenêtre.
         onGallery={() => setGalleryOpen(true)}
-        // Paramètres : ouvre la fenêtre.
-        onSettings={() => setSettingsOpen(true)}
       // Fin de la barre d'outils.
       />
   // Fin de la constante.
@@ -777,8 +775,47 @@ export function SolarScene({ data, onSettled, covered = false }) {
           camera.nightLights || camera.lightView ? EARTH_NIGHT_LIGHTS.attribution : '',
         // Sans les entrées vides, jointes par un point médian.
         ].filter(Boolean).join(' · ')}
-        // Ouverte si le panneau courant est celui des sources.
-        open={panels.panel === 'sources'}
+        // Ouverte si le panneau courant est celui des sources ou des paramètres.
+        open={panels.panel === 'sources' || settingsOpen}
+        // Onglet demandé : « Paramètres » quand ils sont ouverts (bouton de l'assistant), sinon les sources.
+        view={settingsOpen ? 'settings' : ''}
+        // L'onglet « Paramètres » de la fenêtre : le contenu des paramètres, sans fenêtre propre (début de la balise).
+        settings={(
+          <Parametres
+            // Fermeture : referme la fenêtre Node.
+            onClose={() => panels.closePanel()}
+            // Référence du moteur, utilisée par le catalogue extrasolaire.
+            engineRef={engineRef}
+            // Tous les astres, avec leur état.
+            bodies={bodyStates}
+            // Affichage d'un astre.
+            onBodyShown={camera.setBodyShown}
+            // Astre visé.
+            focus={focus}
+            // Sélection d'un astre.
+            onSelect={actions.selectFocus}
+            // Familles affichées.
+            kinds={camera.kinds}
+            // Affichage d'une famille.
+            onKind={camera.setKind}
+            // Lignes d'orbite.
+            orbits={camera.orbits}
+            // Réglage des orbites.
+            onOrbits={camera.setOrbits}
+            // Repères des planètes.
+            markers={camera.markers}
+            // Réglage des repères des planètes.
+            onMarkers={camera.setMarkers}
+            // Repères des satellites.
+            satellites={camera.satellites}
+            // Réglage des repères des satellites.
+            onSatellites={camera.setSatellites}
+            // Ciel.
+            sky={camera.sky}
+            // Réglage du ciel.
+            onSky={camera.setSky}
+          />
+        )}
         // Fermeture.
         onClose={panels.closePanel}
       // Fin de la fenêtre des sources.
@@ -811,44 +848,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       {/* La fenêtre de don. */}
       {/* La fenêtre de temps de trajet : se connecte à l'assistant (clé de l'utilisateur) pour les trajets hors Apollo. */}
       <Trajet open={panels.panel === 'trip'} onClose={panels.closePanel} onOpenAssistant={() => setAssistantOpen(true)} />
-      {/* La fenêtre des paramètres (début de la balise). */}
-      <Parametres
-        // Ouverte ou non.
-        open={settingsOpen}
-        // Fermeture.
-        onClose={() => setSettingsOpen(false)}
-        // Référence du moteur, utilisée par le catalogue extrasolaire.
-        engineRef={engineRef}
-        // Tous les astres, avec leur état.
-        bodies={bodyStates}
-        // Affichage d'un astre.
-        onBodyShown={camera.setBodyShown}
-        // Astre visé.
-        focus={focus}
-        // Sélection d'un astre.
-        onSelect={actions.selectFocus}
-        // Familles affichées.
-        kinds={camera.kinds}
-        // Affichage d'une famille.
-        onKind={camera.setKind}
-        // Lignes d'orbite.
-        orbits={camera.orbits}
-        // Réglage des orbites.
-        onOrbits={camera.setOrbits}
-        // Repères des planètes.
-        markers={camera.markers}
-        // Réglage des repères des planètes.
-        onMarkers={camera.setMarkers}
-        // Repères des satellites.
-        satellites={camera.satellites}
-        // Réglage des repères des satellites.
-        onSatellites={camera.setSatellites}
-        // Ciel.
-        sky={camera.sky}
-        // Réglage du ciel.
-        onSky={camera.setSky}
-      // Fin de la fenêtre des paramètres.
-      />
       {/* La galerie. */}
       <Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} />
 

@@ -60,6 +60,7 @@ const TOUTES_API = API_GROUPS.flatMap((g) => g.items);
 // Dans l'ordre où l'on en a besoin : d'où viennent les données, quels services sont appelés, sur quels logiciels le
 // site repose, quelles pages il a. Flux cognitif et Théorie quantique sont dans la fenêtre « Données ».
 const ONGLETS = [
+  { id: 'settings', label: 'Paramètres', aide: 'Astres affichés, aller à un astre, catalogue' },
   { id: 'sources', label: 'Sources des données', aide: 'Origine des données affichées' },
   { id: 'apis', label: 'Services (API)', aide: 'Services externes appelés' },
   { id: 'credits', label: 'Logiciels libres', aide: 'Dépôts et dépendances' },
@@ -311,7 +312,7 @@ function SiteTree() {
  * La mention de la Terre est redemandée au fournisseur quand la vue se stabilise.
  */
 // Déclare et exporte le composant Attribution : HUD, Lune réelle, mentions supplémentaires, ouverture et fermeture.
-export function Attribution({ hud, moonReal = false, extra = '', open = false, onClose }) {
+export function Attribution({ hud, moonReal = false, extra = '', open = false, onClose, settings = null, view = '' }) {
   // Lit le mode compact.
   const { compact } = useViewport();
   // Lit l'état des tuiles de la Terre.
@@ -324,6 +325,8 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
   const [copyright, setCopyright] = useState('');
   // État : l'onglet affiché, « Générique » au départ.
   const [tab, setTab] = useState('sources');
+  // À l'ouverture : l'onglet demandé (« settings » depuis les paramètres), sinon celui des sources.
+  useEffect(() => { if (open) setTab(view === 'settings' ? 'settings' : 'sources'); }, [open, view]);
 
   // Clé de la vue : la couche, le zoom et les quatre limites ; null sans limites.
   const key = b ? `${layerId}|${b.zoom}|${b.north}|${b.south}|${b.east}|${b.west}` : null;
@@ -398,7 +401,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
   ].filter(Boolean);
 
   // Le contenu de l'onglet affiché.
-  const contenu = tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />;
+  const contenu = tab === 'settings' ? settings : tab === 'credits' ? <Credits /> : tab === 'tree' ? <SiteTree /> : tab === 'apis' ? <ApiList /> : <SourcesAndCompanies rows={rows} />;
 
   // Début du rendu.
   return (

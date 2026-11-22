@@ -1,24 +1,17 @@
-// Importe de React les crochets useEffect (écoute), useLayoutEffect (mesure avant affichage), useRef (référence) et
-// useState (état).
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-// Importe de MUI Divider (filet), IconButton (bouton icône), Menu (menu déroulant), Paper (carte), Stack (pile),
-// Tooltip (infobulle) et useMediaQuery (largeur de l'écran).
-import { Divider, IconButton, Menu, Paper, Stack, Tooltip, useMediaQuery } from '@mui/material';
-// Importe l'icône du menu (trois traits), la même que l'onglet « Menu » du téléphone.
-import { MenuIcon } from '../ui/icons.jsx';
+// Importe de MUI Divider (filet), Paper (carte), Stack (pile) et useMediaQuery (largeur de l'écran).
+import { Divider, Paper, Stack, useMediaQuery } from '@mui/material';
 // Importe safe, qui donne une marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe Readout, l'indicateur de zoom.
 import { Readout } from '../hud/Readout.jsx';
 // Importe ToolbarButton, le bouton d'action.
 import { ToolbarButton } from './ToolbarButton.jsx';
-// Ordre des blocs, leurs noms et les blocs repliables.
-import { FOLDABLE_GROUPS, GROUP_LABELS, TOOLBAR_GROUPS } from './toolbarActions.jsx';
+// Ordre des blocs et leurs noms.
+import { GROUP_LABELS, TOOLBAR_GROUPS } from './toolbarActions.jsx';
 
-// Ordinateur / laptop : une seule ligne alignée, six blocs séparés (explorer, affichage, données, assistant, réglages,
-// infos), indicateur de zoom intégré à gauche. Si la ligne ne tient pas dans l'écran (tablette en portrait, cibles
-// tactiles de 44 px), les blocs « réglages » et « infos » passent dans un menu « Menu » : aucun bouton n'est caché au
-// bout d'un défilement horizontal.
+// Ordinateur / laptop : une seule ligne alignée, cinq blocs séparés (explorer, affichage, données, assistant, Node),
+// indicateur de zoom intégré à gauche. Aucun bouton parent « Menu » : Données et Node sont des boutons directs, et les
+// paramètres sont un onglet de la fenêtre Node.
 // Déclare et exporte le composant DesktopToolbar : reçoit le HUD et les actions.
 export function DesktopToolbar({ hud, actions }) {
   // Les blocs de la barre, dans l'ordre d'affichage (voir toolbarActions)…
@@ -28,72 +21,13 @@ export function DesktopToolbar({ hud, actions }) {
     // … sans les groupes vides.
     .filter((list) => list.length);
   // Écran de moins de 1 200 px (petit portable, tablette en paysage) : toutes les actions en icônes, avec leur
-  // infobulle, pour que la barre tienne entière, sans bouton caché au bout d'un défilement horizontal.
+  // infobulle, pour que la barre tienne entière.
   const narrow = useMediaQuery('(max-width: 1200px)', { noSsr: true });
-  // Référence de la barre, mesurée.
-  const barRef = useRef(null);
-  // Vrai si les blocs « réglages » et « infos » sont repliés dans le menu (la barre entière ne tient pas).
-  const [fold, setFold] = useState(false);
-  // Même valeur, lisible dans les écouteurs (sans attendre un rendu).
-  const foldRef = useRef(false);
-  // Largeur qu'il faut à la barre entière (mesurée au moment du repli), pour savoir quand la déplier.
-  const needed = useRef(0);
-  // Bouton d'ancrage du menu ouvert, ou null.
-  const [menuEl, setMenuEl] = useState(null);
-  // Pose l'état replié ou déplié (état et valeur lisible).
-  const setFolded = (v) => { foldRef.current = v; setFold(v); };
-  // Contrôle du débordement : la barre entière déborde, on mémorise sa largeur et on replie. Ce contrôle ne déplie
-  // jamais : il ne peut pas replier et déplier sans fin (début).
-  const overflowCheck = () => {
-    // La barre.
-    const el = barRef.current;
-    // Pas encore rendue, ou déjà repliée : rien.
-    if (!el || foldRef.current) return;
-    // Contenu plus large que la barre : largeur mémorisée, blocs repliables repliés.
-    if (el.scrollWidth > el.clientWidth + 1) { needed.current = el.scrollWidth; setFolded(true); }
-  // Fin du contrôle du débordement.
-  };
-  // Après chaque rendu (actions changées, libellés ou icônes).
-  useLayoutEffect(() => { overflowCheck(); });
-  // Quand un élément de la barre change de taille sans nouveau rendu de la barre (indicateur de zoom dont le texte
-  // s'allonge, par exemple) : chaque enfant est observé (début).
-  useEffect(() => {
-    // La barre.
-    const el = barRef.current;
-    // Sans barre ou sans ResizeObserver : rien.
-    if (!el || typeof ResizeObserver !== 'function') return undefined;
-    // Observateur qui relance le contrôle.
-    const ro = new ResizeObserver(overflowCheck);
-    // Chaque enfant observé.
-    [...el.children].forEach((c) => ro.observe(c));
-    // Nettoyage : fin de l'observation.
-    return () => ro.disconnect();
-  // Fin de l'observation des enfants.
-  });
-  // Changement de taille de la fenêtre (rotation, fenêtre agrandie ou réduite) : dépli si la barre entière tient
-  // désormais, sinon contrôle du débordement (début).
-  useEffect(() => {
-    // Compare la place à la largeur mémorisée.
-    const onResize = () => { if (foldRef.current && window.innerWidth - 28 >= needed.current) setFolded(false); else overflowCheck(); };
-    // À chaque changement de taille de la fenêtre.
-    window.addEventListener('resize', onResize);
-    // Nettoyage : fin de l'écoute.
-    return () => window.removeEventListener('resize', onResize);
-  // Une seule écoute : les valeurs lues sont dans des références.
-  }, []);
-  // Passage des libellés aux icônes (ou l'inverse) : la barre change de largeur, elle est remesurée dépliée.
-  useEffect(() => { setFolded(false); }, [narrow]);
-  // Les blocs affichés dans la barre : tous, ou tous sauf les repliables une fois repliés.
-  const shown = fold ? groups.filter((list) => !FOLDABLE_GROUPS.has(list[0].group)) : groups;
-  // Les actions du menu : celles des blocs repliables une fois repliés (dans l'ordre de la barre), aucune sinon.
-  const folded = fold ? groups.filter((list) => FOLDABLE_GROUPS.has(list[0].group)).flat() : [];
 
   // Début du rendu.
   return (
     // Carte de la barre (début de la balise).
     <Paper
-      // Référence mesurée.
-      ref={barRef}
       // Ombre marquée.
       elevation={6}
       // Rôle de barre d'outils.
@@ -117,7 +51,7 @@ export function DesktopToolbar({ hud, actions }) {
       {/* L'indicateur de zoom, à gauche. */}
       <Readout hud={hud} />
       {/* Un bloc par groupe (début). */}
-      {shown.map((list) => (
+      {groups.map((list) => (
         // Ligne du bloc, au rôle de groupe, nommée en clair pour les lecteurs d'écran.
         <Stack key={list[0].group} direction="row" spacing={0.25} role="group" aria-label={GROUP_LABELS[list[0].group] || list[0].group} sx={{ alignItems: 'center' }}>
           {/* Filet vertical qui sépare du bloc précédent. */}
@@ -128,56 +62,6 @@ export function DesktopToolbar({ hud, actions }) {
         </Stack>
       // Fin des blocs.
       ))}
-      {/* Le groupe replié : un bouton « Menu » et son menu déroulant (début). */}
-      {folded.length > 0 && (
-        // Ligne du menu, au rôle de groupe.
-        <Stack direction="row" role="group" aria-label="menu" sx={{ alignItems: 'center' }}>
-          {/* Filet vertical qui sépare du bloc précédent. */}
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.25, my: 0.5 }} />
-          {/* Infobulle : ce que contient le menu. */}
-          <Tooltip title={folded.map((a) => a.label).join(' · ')}>
-            {/* Le bouton (début de la balise). */}
-            <IconButton
-              // Nom pour les lecteurs d'écran.
-              aria-label="Menu"
-              // Il ouvre un menu, ouvert ou non.
-              aria-haspopup="menu" aria-expanded={Boolean(menuEl)}
-              // Au clic : ouvre le menu sous le bouton.
-              onClick={(e) => setMenuEl(e.currentTarget)}
-              // Carré de 32 px (44 px sur écran tactile, par le thème), comme les autres boutons icône.
-              sx={{ width: 32, height: 32 }}
-            // Fin de la balise ouvrante.
-            >
-              {/* L'icône du menu. */}
-              <MenuIcon sx={{ fontSize: 18 }} />
-            {/* Fin du bouton. */}
-            </IconButton>
-          {/* Fin de l'infobulle. */}
-          </Tooltip>
-          {/* Le menu déroulant, au-dessus du bouton, aligné à droite (début de la balise). */}
-          <Menu
-            // Ancré au bouton.
-            anchorEl={menuEl}
-            // Ouvert quand il a une ancre.
-            open={Boolean(menuEl)}
-            // Fermeture (Échap, clic à côté).
-            onClose={() => setMenuEl(null)}
-            // Point d'ancrage : le coin haut droit du bouton…
-            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-            // … contre le coin bas droit du menu : il s'ouvre vers le haut, la barre étant en bas de l'écran.
-            transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            // Nom du menu pour les lecteurs d'écran.
-            aria-label="Menu"
-          // Fin de la balise ouvrante.
-          >
-            {/* Une entrée par action repliée (44 px de haut sur écran tactile) ; un choix referme le menu. */}
-            {folded.map((a) => <ToolbarButton key={a.id} action={a} compact={false} inMenu onPick={() => setMenuEl(null)} />)}
-          {/* Fin du menu. */}
-          </Menu>
-        {/* Fin de la ligne du menu. */}
-        </Stack>
-      // Fin du groupe replié.
-      )}
     {/* Fin de la carte. */}
     </Paper>
   // Fin du rendu.

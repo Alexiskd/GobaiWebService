@@ -4,8 +4,8 @@ import { useRef, useState } from 'react';
 import { Box, ButtonBase, Paper, Typography } from '@mui/material';
 // Importe iconNode, le dessin d'une icône.
 import { iconNode } from './iconNode.jsx';
-// Importe les icônes des quatre espaces.
-import { ExploreIcon, ShadowIcon, StorageIcon, MenuIcon } from '../ui/icons.jsx';
+// Importe les icônes des deux espaces à feuille.
+import { ExploreIcon, ShadowIcon } from '../ui/icons.jsx';
 // Onglet du téléphone de chaque bloc de la barre.
 import { PHONE_TAB } from './toolbarActions.jsx';
 // Importe FeuilleActions, la feuille qui monte du bas de l'écran.
@@ -13,18 +13,17 @@ import { FeuilleActions } from '../ui/FeuilleActions.jsx';
 // Importe safe, la marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 
-// Les quatre espaces de la navigation (début).
+// Les deux espaces de la navigation qui ouvrent une feuille (début).
 const TABS = [
   // Explorer.
   { id: 'explore', label: 'Explorer', icon: ExploreIcon, title: 'Explorer' },
   // Affichage : éclairage, relativité, mouvements automatiques de la caméra, verrouillage.
   { id: 'display', label: 'Affichage', icon: ShadowIcon, title: 'Affichage' },
-  // Données : documents et images, contributions, exports.
-  { id: 'data', label: 'Données', icon: StorageIcon, title: 'Données' },
-  // Menu : réglages et infos.
-  { id: 'menu', label: 'Menu', icon: MenuIcon, title: 'Menu : réglages et infos' },
 // Fin des espaces.
 ];
+
+// Boutons directs de la barre du bas (début) : ils ouvrent leur fenêtre sans feuille ni bouton parent.
+const DIRECT_IDS = ['gallery', 'sources'];
 
 // Titre de la feuille de chaque espace (début).
 const TITLES = {
@@ -32,10 +31,6 @@ const TITLES = {
   explore: 'Explorer',
   // Affichage.
   display: 'Affichage',
-  // Données.
-  data: 'Données',
-  // Menu.
-  menu: 'Réglages et infos',
 // Fin des titres.
 };
 
@@ -116,7 +111,7 @@ function ActionTile({ action, onPick, anchorRef }) {
 // Fin de ActionTile.
 }
 
-/** Navigation mobile en quatre espaces ; les actions existantes restent les mêmes. */
+/** Navigation mobile : deux espaces à feuille (Explorer, Affichage) et deux boutons directs (Données, Node). */
 // Déclare et exporte le composant CompactToolbar, avec les actions (début).
 export function CompactToolbar({ actions }) {
   // État : l'espace ouvert, aucun au départ.
@@ -132,6 +127,17 @@ export function CompactToolbar({ actions }) {
   const close = () => setActive(null);
   // toggle : ouvre un espace, ou le referme s'il est déjà ouvert.
   const toggle = (id) => setActive((current) => current === id ? null : id);
+
+  // Boutons de la barre (début) : d'abord les espaces à feuille…
+  const entries = [
+    ...TABS.map((tab) => ({ key: tab.id, label: tab.label, title: tab.title, icon: tab.icon, sheet: true, isActive: active === tab.id, onClick: () => toggle(tab.id) })),
+    // … puis les actions directes (celles qui existent), qui ouvrent leur fenêtre sans passer par une feuille.
+    ...DIRECT_IDS.map((id) => actions.find((a) => a.id === id)).filter(Boolean).map((a) => ({
+      key: a.id, label: a.short || a.label, title: a.label, icon: a.icon, sheet: false, isActive: Boolean(a.pressed),
+      onClick: () => { setActive(null); a.onClick?.({ currentTarget: anchorRef.current }); },
+    })),
+  // Fin des boutons de la barre.
+  ];
 
   // Rendu (début).
   return (
@@ -155,8 +161,8 @@ export function CompactToolbar({ actions }) {
         sx={{
           // dans le flux du dock du bas (MobileDock), dont elle est le dernier étage, sur toute la largeur ;
           position: 'relative',
-          // quatre colonnes égales ;
-          display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+          // autant de colonnes égales que de boutons ;
+          display: 'grid', gridTemplateColumns: `repeat(${entries.length}, minmax(0, 1fr))`,
           // marges intérieures, avec celles de sécurité sur les côtés (paysage, encoche) ;
           gap: 0, pt: 0.75, pl: `calc(6px + ${safe('left')})`, pr: `calc(6px + ${safe('right')})`,
           // marge du bas : 6 px plus la marge de sécurité de l'écran ;
@@ -171,24 +177,24 @@ export function CompactToolbar({ actions }) {
         }}
       // Fin des réglages de la barre.
       >
-        {/* Pour chaque espace (début). */}
-        {TABS.map((tab) => {
+        {/* Pour chaque bouton (début). */}
+        {entries.map((tab) => {
           // Est-il ouvert ?
-          const isActive = active === tab.id;
+          const { isActive } = tab;
           // Rendu (début).
           return (
             // Bouton de l'espace (début).
             <ButtonBase
               // Sa clé.
-              key={tab.id}
+              key={tab.key}
               // Nom pour les lecteurs d'écran.
               aria-label={tab.title}
-              // État ouvert, pour les lecteurs d'écran.
-              aria-expanded={isActive}
+              // État ouvert, pour les lecteurs d'écran (seulement pour les espaces à feuille).
+              aria-expanded={tab.sheet ? isActive : undefined}
               // Lien avec la feuille, quand elle est ouverte.
-              aria-controls={isActive ? 'gobai-mobile-actions' : undefined}
-              // Au clic : ouvre ou referme l'espace.
-              onClick={() => toggle(tab.id)}
+              aria-controls={tab.sheet && isActive ? 'gobai-mobile-actions' : undefined}
+              // Au clic : ouvre ou referme l'espace, ou ouvre directement la fenêtre.
+              onClick={tab.onClick}
               // Style (début) :
               sx={{
                 // taille minimale et marges ;
@@ -244,8 +250,8 @@ export function CompactToolbar({ actions }) {
               ))}
             {/* Fin de la grille. */}
             </Box>
-          // Sinon, hors de l'espace « Données » (début).
-          ) : selected?.id !== 'data' ? (
+          // Sinon, si un espace est ouvert (début).
+          ) : selected ? (
             // Message (début).
             <Typography color="text.secondary" sx={{ px: 1, py: 2, fontSize: 13 }}>
               {/* Le texte : aucune action dans cet espace. */}
