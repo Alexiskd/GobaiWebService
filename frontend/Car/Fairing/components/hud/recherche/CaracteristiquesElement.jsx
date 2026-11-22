@@ -1,7 +1,5 @@
 // Section « Caractéristiques d'un élément » de l'onglet « Théorie quantique » : le numéro atomique Z, la masse
 // atomique A_r (exemple du chlore) et le défaut de masse (exemple de l'hélium 4), avec les valeurs calculées.
-// Composants MUI.
-import { Box } from '@mui/material';
 // Calculs des caractéristiques d'un élément.
 import { CHLORE, NA, U_KG, chargeNoyau, defautMasseHelium, energieLiaisonHelium, masseAtomiqueChlore, masseMolaireChlore } from './caracteristiquesElement.js';
 // Compteurs du tableau hypothétique : systèmes à une étoile et systèmes multiples.
@@ -23,7 +21,7 @@ const pourcent = (p) => `${virgule(p * 100)} %`;
 export function CaracteristiquesElement() {
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Chiffres clés. */}
       <GrilleChiffres>
         <Chiffre libelle={`Charge du noyau du Solarium (Z = ${SOLARIUM.z})`} valeur={`+${scientific(chargeNoyau(SOLARIUM.z), 3)} C`} detail="Q = +Z · e" />
@@ -58,11 +56,11 @@ export function CaracteristiquesElement() {
         noyau d’hélium convertit environ 0,7 % de leur masse en rayonnement.
       </Note>
 
-      <Note sx={{ mt: 2 }}>
+      <Note className="mt-4">
         <strong>Comparaison avec le voisinage :</strong> sur les {SYSTEMES.length} systèmes du tableau hypothétique,{' '}
         <strong>{countMonoEtoiles()}</strong> n’ont qu’une seule étoile et <strong>{countMultiples()}</strong> sont multiples.
       </Note>
-    </Box>
+    </div>
   );
 // Fin de CaracteristiquesElement.
 }

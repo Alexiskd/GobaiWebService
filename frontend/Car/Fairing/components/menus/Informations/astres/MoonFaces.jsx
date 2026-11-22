@@ -1,5 +1,5 @@
-// Importe de MUI Button et ButtonGroup (groupe de boutons).
-import { Button, ButtonGroup } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Button, ButtonGroup } from '@/Fairing/kit';
 // Importe Section, la section d'un panneau.
 import { Section } from '../../../ui/Section.jsx';
 

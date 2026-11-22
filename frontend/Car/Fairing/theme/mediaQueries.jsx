@@ -1,4 +1,4 @@
-// Requêtes média partagées par `useMediaQuery` (logique) et par les `sx` MUI (mise en page).
+// Requêtes média partagées par `useMediaQuery` (logique) et par les styles des composants (mise en page).
 // Requêtes média :
 export const QUERIES = {
   // xs : jusqu'à 480 pixels de large ;

@@ -1,6 +1,7 @@
 // Fenêtre « Trajet » : temps de trajet entre deux positions de la Terre ou de la Lune. Aucun tracé d'itinéraire.
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Box, Button, Chip, CircularProgress, Dialog, DialogContent, IconButton, Link, Stack, Tooltip, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Alert, Button, Chip, CircularProgress, Dialog, DialogContent, IconButton, Link, Tooltip } from '@/Fairing/kit';
 import { computeItinerary, computeTrip, fetchMoonSites } from '@/Computing/api';
 import { PROVIDERS } from '@/Engine/shared/lib/app/assistantSession';
 import { formatDuration, formatKm, isPoint, pointLabel, tripSignature } from '@/Engine/shared/lib/app/trajet';
@@ -106,92 +107,92 @@ export function Trajet({ open, onClose, onOpenAssistant }) {
     <Dialog open={open} onClose={onClose} fullScreen={compact} maxWidth={itin.data ? 'sm' : 'xs'} fullWidth aria-label="Temps de trajet">
       <PanelHeader kicker="Terre et Lune" title="Temps de trajet" onClose={onClose} />
       <DialogContent>
-        <Stack spacing={2}>
+        <div className="flex flex-col gap-4">
           <PointPicker label="Départ (A)" value={a} onChange={setA} moonSites={moonSites} />
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <div className="flex justify-center">
             <Tooltip title="Inverser le départ et l’arrivée">
               <span>
-                <IconButton onClick={swap} disabled={!a && !b} aria-label="Inverser le départ et l’arrivée" sx={{ width: 44, height: 44 }}><SwapVertIcon /></IconButton>
+                <IconButton onClick={swap} disabled={!a && !b} aria-label="Inverser le départ et l’arrivée" className="w-11 h-11"><SwapVertIcon /></IconButton>
               </span>
             </Tooltip>
-          </Box>
+          </div>
           <PointPicker label="Arrivée (B)" value={b} onChange={setB} moonSites={moonSites} />
 
-          <Box role="status" aria-live="polite" sx={{ minHeight: 120, p: 2, border: 1, borderColor: 'divider', borderRadius: 2 }}>
+          <div role="status" aria-live="polite" className="min-h-30 p-4 border border-line rounded-[16px]">
             {!ready && (
-              <Typography color="text.secondary" variant="body2">
+              <p className="t-body2 text-soft">
                 Choisissez un départ et une arrivée : la durée se calcule toute seule, sans tracé d’itinéraire. Terre → Lune : trajet jusqu’au site de lancement le plus proche, puis 3 jours de vol.
-              </Typography>
+              </p>
             )}
             {ready && trip.status === 'loading' && !data && (
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                <CircularProgress size={20} /><Typography variant="body2">Calcul du trajet…</Typography>
-              </Stack>
+              <div className="flex flex-row gap-3 items-center">
+                <CircularProgress size={20} /><p className="t-body2">Calcul du trajet…</p>
+              </div>
             )}
             {ready && data && !failure && (
-              <Stack spacing={1} sx={{ opacity: trip.status === 'loading' ? 0.5 : 1, transition: 'opacity 150ms' }}>
-                <Typography variant="caption" color="text.secondary">{pointLabel(a)} → {pointLabel(b)}</Typography>
-                <Typography component="p" sx={{ fontSize: 40, fontWeight: 700, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{formatDuration(data.durationMinutes)}</Typography>
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
+              <div className={`flex flex-col gap-2 ${trip.status === 'loading' ? 'opacity-50' : 'opacity-100'} [transition:opacity_150ms]`}>
+                <span className="t-caption text-soft">{pointLabel(a)} → {pointLabel(b)}</span>
+                <p className="t-body1 text-[40px] font-bold leading-[1.1] tabular-nums">{formatDuration(data.durationMinutes)}</p>
+                <div className="flex flex-row gap-2 flex-wrap gap-y-1">
                   <Chip size="small" color={data.source === 'fixe' ? 'default' : 'primary'} variant="outlined"
                     label={data.source === 'fixe' ? (data.legs ? 'Vol fixe : 3 j' : 'Valeur fixe Apollo') : `Calculé par ${PROVIDERS[data.provider]?.label ?? 'votre modèle'}`} />
                   {data.mode && <Chip size="small" variant="outlined" label={data.mode} />}
                   <Chip size="small" variant="outlined" label={data.distanceKind === 'terre-lune' ? `≈ ${formatKm(data.distanceKm)} (moyenne Terre–Lune)` : formatKm(data.distanceKm)} />
-                </Stack>
+                </div>
                 {data.legs?.length > 0 && (
-                  <Stack component="ul" spacing={0.5} aria-label="Étapes du trajet" sx={{ m: 0, p: 0, listStyle: 'none' }}>
+                  <ul aria-label="Étapes du trajet" className="flex flex-col gap-1 m-0 p-0 list-none">
                     {data.legs.map((leg) => (
-                      <Stack component="li" key={leg.kind} direction="row" spacing={1} sx={{ justifyContent: 'space-between' }}>
-                        <Typography variant="body2">{leg.label}</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{formatDuration(leg.minutes)}</Typography>
-                      </Stack>
+                      <li key={leg.kind} className="flex flex-row gap-2 justify-between">
+                        <p className="t-body2">{leg.label}</p>
+                        <p className="t-body2 font-semibold tabular-nums whitespace-nowrap">{formatDuration(leg.minutes)}</p>
+                      </li>
                     ))}
-                  </Stack>
+                  </ul>
                 )}
-                {data.summary && <Typography variant="body2" color="text.secondary">{data.summary}</Typography>}
+                {data.summary && <p className="t-body2 text-soft">{data.summary}</p>}
                 {data.needsKey && onOpenAssistant && (
-                  <Button onClick={() => { onClose(); onOpenAssistant(); }} sx={{ minHeight: 44, textTransform: 'none', alignSelf: 'flex-start' }}>Connecter ma clé pour ajouter le trajet au sol</Button>
+                  <Button onClick={() => { onClose(); onOpenAssistant(); }} className="min-h-11 normal-case self-start">Connecter ma clé pour ajouter le trajet au sol</Button>
                 )}
-              </Stack>
+              </div>
             )}
             {failure && (
-              <Stack spacing={1}>
-                <Alert severity="warning" sx={{ alignItems: 'center' }}>{failure.text}</Alert>
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
-                  {failure.connect && onOpenAssistant && <Button onClick={() => { onClose(); onOpenAssistant(); }} sx={{ minHeight: 44, textTransform: 'none' }}>Me connecter avec ma clé</Button>}
-                  {failure.billingUrl && <Link href={failure.billingUrl} target="_blank" rel="noopener noreferrer" sx={{ alignSelf: 'center' }}>Ajouter un moyen de paiement</Link>}
-                  {!failure.connect && !failure.billingUrl && <Button onClick={() => setNonce((n) => n + 1)} sx={{ minHeight: 44, textTransform: 'none' }}>Recalculer</Button>}
-                </Stack>
-              </Stack>
+              <div className="flex flex-col gap-2">
+                <Alert severity="warning" className="items-center">{failure.text}</Alert>
+                <div className="flex flex-row gap-2 flex-wrap gap-y-2">
+                  {failure.connect && onOpenAssistant && <Button onClick={() => { onClose(); onOpenAssistant(); }} className="min-h-11 normal-case">Me connecter avec ma clé</Button>}
+                  {failure.billingUrl && <Link href={failure.billingUrl} target="_blank" rel="noopener noreferrer" className="self-center">Ajouter un moyen de paiement</Link>}
+                  {!failure.connect && !failure.billingUrl && <Button onClick={() => setNonce((n) => n + 1)} className="min-h-11 normal-case">Recalculer</Button>}
+                </div>
+              </div>
             )}
-          </Box>
+          </div>
 
           {/* Itinéraire : étapes par moyen de locomotion, modélisées en 3D (véhicules volants) ou en 2D (au sol). */}
-          <Stack spacing={1.5}>
+          <div className="flex flex-col gap-3">
             <Button
               variant="outlined" startIcon={<RouteIcon />} onClick={planItinerary} disabled={!onEarth || itin.status === 'loading'}
-              sx={{ minHeight: 44, textTransform: 'none', alignSelf: 'flex-start' }}
+              className="min-h-11 normal-case self-start"
             >
               {itin.status === 'loading' ? 'Calcul de l’itinéraire…' : itin.data ? 'Recalculer l’itinéraire' : 'Itinéraire'}
             </Button>
-            {ready && !onEarth && <Typography variant="caption" color="text.secondary">L’itinéraire est disponible entre deux lieux de la Terre.</Typography>}
-            {itin.status === 'loading' && <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}><CircularProgress size={20} /><Typography variant="body2">Le modèle prépare les étapes…</Typography></Stack>}
+            {ready && !onEarth && <span className="t-caption text-soft">L’itinéraire est disponible entre deux lieux de la Terre.</span>}
+            {itin.status === 'loading' && <div className="flex flex-row gap-3 items-center"><CircularProgress size={20} /><p className="t-body2">Le modèle prépare les étapes…</p></div>}
             {itinFailure && (
-              <Alert severity="warning" sx={{ alignItems: 'center' }}>
+              <Alert severity="warning" className="items-center">
                 {itinFailure.text}
-                {itinFailure.connect && onOpenAssistant && <Button size="small" onClick={() => { onClose(); onOpenAssistant(); }} sx={{ ml: 1 }}>Me connecter</Button>}
-                {itinFailure.billingUrl && <Link href={itinFailure.billingUrl} target="_blank" rel="noopener noreferrer" sx={{ ml: 1 }}>Ajouter un moyen de paiement</Link>}
+                {itinFailure.connect && onOpenAssistant && <Button size="small" onClick={() => { onClose(); onOpenAssistant(); }} className="ml-2">Me connecter</Button>}
+                {itinFailure.billingUrl && <Link href={itinFailure.billingUrl} target="_blank" rel="noopener noreferrer" className="ml-2">Ajouter un moyen de paiement</Link>}
               </Alert>
             )}
             {itin.data && <ItineraireView itinerary={itin.data} />}
-          </Stack>
+          </div>
 
-          <Typography variant="caption" color="text.secondary">
+          <span className="t-caption text-soft">
             {session
               ? `Les trajets hors Apollo sont recalculés automatiquement par ${PROVIDERS[provider]?.label ?? 'votre modèle'}, avec votre clé : elle reste dans ce navigateur.`
               : 'Les trajets hors Apollo sont calculés par votre modèle Claude ou Mistral : connectez-vous avec votre clé depuis le bouton Assistant.'}
-          </Typography>
-        </Stack>
+          </span>
+        </div>
       </DialogContent>
     </Dialog>
   );

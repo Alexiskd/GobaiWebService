@@ -1,30 +1,29 @@
 // Écrans affichés à la place de la fenêtre de l'assistant : connexion (Claude ou Mistral) et facturation.
 import { useEffect, useRef, useState } from 'react';
-import { Box, ButtonBase, CircularProgress, InputBase, Link, Stack, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { CircularProgress, InputBase, Link, cx } from '@/Fairing/kit';
 import { PROVIDERS, saveSession } from '@/Engine/shared/lib/app/assistantSession';
 import { connectAssistant } from '@/Computing/api/assistant';
-import { safe } from '@/Fairing/theme/mediaQueries';
 import { ArrowBackIcon, KeyIcon, LogoutIcon, OpenInNewIcon, SendIcon } from '../../ui/icons.jsx';
 import { ProviderLogo } from './ProviderLogo.jsx';
-import { C, SANS, SERIF, WRAP } from './assistantTheme.js';
+import { C } from './assistantTheme.js';
 
 /** Bouton plein (action principale) ou bordé, 48 px de haut : cible tactile confortable, libellé qui passe à la ligne. */
-function GateButton({ primary = false, children, sx, ...props }) {
+function GateButton({ primary = false, children, className, ...props }) {
+  // Rend le bouton : plein (couleur d'accent) ou à contour.
   return (
-    <ButtonBase
+    <button type="button"
       {...props}
-      sx={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, minHeight: 48, px: 1.5, py: 1,
-        borderRadius: '12px', fontFamily: SANS, fontSize: 15, fontWeight: 600, lineHeight: 1.3, textAlign: 'center', ...WRAP,
-        ...(primary
-          ? { bgcolor: C.accent, color: '#1f1e1d', '&:hover, &.Mui-focusVisible': { bgcolor: '#e08a6d' } }
-          : { border: `1px solid ${C.border}`, color: C.text, '&:hover, &.Mui-focusVisible': { bgcolor: C.row } }),
-        '&.Mui-disabled': { bgcolor: primary ? C.row : 'transparent', color: C.muted },
-        ...sx,
-      }}
+      className={cx(
+        'g-base flex items-center justify-center gap-2 min-h-12 px-3 py-2 rounded-[12px] font-sys text-[15px] font-semibold leading-[1.3] text-center min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] disabled:text-[#a3a097]',
+        primary
+          ? 'bg-[#d97757] text-[#1f1e1d] hover:bg-[#e08a6d] focus-visible:bg-[#e08a6d] disabled:bg-[#30302e]'
+          : 'border border-[#3b3a37] text-[#eceae3] hover:bg-[#30302e] focus-visible:bg-[#30302e] disabled:bg-transparent',
+        className,
+      )}
     >
       {children}
-    </ButtonBase>
+    </button>
   );
 }
 
@@ -32,9 +31,9 @@ function GateButton({ primary = false, children, sx, ...props }) {
 function ErrorNote({ children }) {
   if (!children) return null;
   return (
-    <Typography role="alert" sx={{ ...WRAP, px: 1.25, py: 1, borderRadius: '10px', borderLeft: `3px solid ${C.error}`, bgcolor: C.field, color: C.error, fontFamily: SANS, fontSize: 13.5, lineHeight: 1.45 }}>
+    <p role="alert" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] px-2.5 py-2 rounded-[10px] bg-[#262624] text-[#e5867a] font-sys text-[13.5px] leading-[1.45]" style={{ borderLeft: `3px solid ${C.error}` }}>
       {children}
-    </Typography>
+    </p>
   );
 }
 
@@ -97,62 +96,46 @@ function useLogin({ initialError, onBilling, onConnected }) {
 export function MobileLoginBar({ initialError = '', onBilling, onConnected, checkingLabel = '' }) {
   const { p, key, setKey, clean, busy, error, inputRef, submit, choose, back } = useLogin({ initialError, onBilling, onConnected });
   return (
-    <Box
-      component="section"
+    <section
       aria-label="Connexion à l’assistant"
       data-assistant-panel=""
-      sx={{
-        position: 'relative', display: 'flex', flexDirection: 'column', gap: 0.75,
-        pl: `calc(${safe('left')} + 10px)`, pr: `calc(${safe('right')} + 10px)`, '@media (min-width: 700px)': { pl: 0, pr: `calc(${safe('right')} + 8px)` },
-        pointerEvents: 'none',
-      }}
+      className="relative flex flex-col gap-1.5 pointer-events-none pl-[calc(var(--safe-left,env(safe-area-inset-left,0px))_+_10px)] pr-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_10px)] min-[700px]:pl-0 min-[700px]:pr-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_8px)]"
     >
       {error && (
-        <Box sx={{ pointerEvents: 'auto', width: '100%', maxWidth: 440, mx: 'auto', boxSizing: 'border-box', px: 1.5, py: 1, borderRadius: '16px', bgcolor: 'rgba(31, 30, 29, 0.94)', border: `1px solid ${C.border}` }}>
-          <Typography role="alert" sx={{ ...WRAP, fontFamily: SANS, fontSize: 13.5, lineHeight: 1.4, color: C.error }}>{error}</Typography>
-        </Box>
+        <div className="pointer-events-auto w-full max-w-110 mx-auto box-border px-3 py-2 rounded-[16px] bg-[color:rgba(31,30,29,0.94)]" style={{ border: `1px solid ${C.border}` }}>
+          <p role="alert" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13.5px] leading-[1.4] text-[#e5867a]">{error}</p>
+        </div>
       )}
-      <Box
-        component="form"
+      <form
         onSubmit={submit}
-        sx={{
-          pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 0.5,
-          width: '100%', maxWidth: 440, mx: 'auto', boxSizing: 'border-box',
-          minHeight: 40, pl: 0.4, pr: 0.5, py: 0.4,
-          borderRadius: '20px', fontFamily: SANS, color: C.text,
-          bgcolor: 'rgba(31, 30, 29, 0.88)', backdropFilter: 'blur(14px) saturate(140%)', WebkitBackdropFilter: 'blur(14px) saturate(140%)',
-          border: `1px solid ${error ? C.error : C.border}`, boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-        }}
+        className="pointer-events-auto flex items-center gap-1 w-full max-w-110 mx-auto box-border min-h-10 pl-[3.2px] pr-1 py-[3.2px] rounded-[20px] font-sys text-[#eceae3] bg-[color:rgba(31,30,29,0.88)] [box-shadow:0_4px_16px_rgba(0,0,0,0.4)]" style={{ border: `1px solid ${error ? C.error : C.border}` }}
       >
         {checkingLabel ? (
-          <Stack direction="row" spacing={1} role="status" sx={{ alignItems: 'center', flex: '1 1 auto', minWidth: 0, minHeight: 32, px: 1.25 }}>
-            <CircularProgress size={16} sx={{ color: C.accent, flex: 'none' }} />
-            <Typography noWrap sx={{ fontFamily: SANS, fontSize: 14, color: C.muted }}>{checkingLabel}</Typography>
-          </Stack>
+          <div role="status" className="flex flex-row gap-2 items-center flex-auto min-w-0 min-h-8 px-2.5">
+            <CircularProgress size={16} className="text-[#d97757] flex-none" />
+            <p className="t-body1 truncate font-sys text-[14px] text-[#a3a097]">{checkingLabel}</p>
+          </div>
         ) : !p ? (
           // Temps 1 : le choix du fournisseur, deux moitiés de la pilule.
           Object.values(PROVIDERS).map((x) => (
-            <ButtonBase
+            <button
               key={x.id}
               type="button"
               onClick={() => choose(x.id)}
               aria-label={`Se connecter à ${x.label}`}
-              sx={{
-                flex: '1 1 0', minWidth: 0, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75, px: 1, borderRadius: '16px',
-                fontFamily: SANS, fontSize: 14, fontWeight: 600, color: C.text, '&:active': { bgcolor: C.row }, '&.Mui-focusVisible': { bgcolor: C.row },
-              }}
+              className="g-base flex-[1_1_0] min-w-0 min-h-8 flex items-center justify-center gap-1.5 px-2 rounded-[16px] font-sys text-[14px] font-semibold text-[#eceae3] active:bg-[#30302e] focus-visible:bg-[#30302e]"
             >
               <ProviderLogo provider={x.id} size={18} />
-              <Box component="span" sx={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{x.label}</Box>
-            </ButtonBase>
+              <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{x.label}</span>
+            </button>
           ))
         ) : (
           // Temps 2 : retour, clé d'API, connexion. 16 px pour que Safari ne zoome pas au focus.
           <>
-            <ButtonBase type="button" onClick={back} disabled={busy} aria-label="Changer de fournisseur" sx={{ flex: 'none', width: 32, height: 32, borderRadius: '50%', color: C.muted }}>
-              <ArrowBackIcon sx={{ fontSize: 17 }} />
-            </ButtonBase>
-            <KeyIcon sx={{ fontSize: 18, color: C.muted, flex: 'none' }} />
+            <button type="button" onClick={back} disabled={busy} aria-label="Changer de fournisseur" className="g-base flex-none w-8 h-8 rounded-full text-[#a3a097]">
+              <ArrowBackIcon className="text-[17px]" />
+            </button>
+            <KeyIcon className="text-[18px] text-[#a3a097] flex-none" />
             <InputBase
               fullWidth
               inputRef={inputRef}
@@ -164,24 +147,20 @@ export function MobileLoginBar({ initialError = '', onBilling, onConnected, chec
               disabled={busy}
               enterKeyHint="go"
               inputProps={{ 'aria-label': `Clé d’API ${p.platform}`, spellCheck: false, autoCapitalize: 'off', autoCorrect: 'off', 'aria-invalid': Boolean(error) }}
-              sx={{ flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, '& input': { p: 0 }, '& input::placeholder': { color: C.muted, opacity: 1 } }}
+              className="flex-auto min-w-0 text-[#eceae3] font-sys text-[16px] leading-[1.35] [&_input]:p-0 [&_input::placeholder]:text-[#a3a097] [&_input::placeholder]:opacity-100"
             />
-            <ButtonBase
+            <button
               type="submit"
               disabled={busy || !clean}
               aria-label={busy ? 'Vérification de la clé' : 'Se connecter'}
-              sx={{
-                flex: 'none', width: 32, height: 32, borderRadius: '50%',
-                bgcolor: !busy && clean ? C.accent : C.row, color: !busy && clean ? '#1f1e1d' : C.muted,
-                transition: 'background-color 120ms', '&:active': { transform: 'scale(0.94)' },
-              }}
+              className={`g-base flex-none w-8 h-8 rounded-full ${!busy && clean ? 'bg-[#d97757]' : 'bg-[#30302e]'} ${!busy && clean ? 'text-[#1f1e1d]' : 'text-[#a3a097]'} [transition:background-color_120ms] active:[transform:scale(0.94)]`}
             >
-              {busy ? <CircularProgress size={16} sx={{ color: C.accent }} /> : <SendIcon sx={{ fontSize: 17 }} />}
-            </ButtonBase>
+              {busy ? <CircularProgress size={16} className="text-[#d97757]" /> : <SendIcon className="text-[17px]" />}
+            </button>
           </>
         )}
-      </Box>
-    </Box>
+      </form>
+    </section>
   );
 }
 
@@ -196,39 +175,39 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
   const { p, key, setKey, clean, busy, error, inputRef, submit, choose, back } = useLogin({ initialError, onBilling, onConnected });
 
   return (
-    <Box component="section" aria-label="Connexion à l’assistant" sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, p: 1.5, minWidth: 0 }}>
-      <Typography component="h3" sx={{ ...WRAP, fontFamily: SERIF, fontSize: 18, lineHeight: 1.3, color: C.text }}>
+    <section aria-label="Connexion à l’assistant" className="flex flex-col gap-2.5 p-3 min-w-0">
+      <h3 className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-serif text-[18px] leading-[1.3] text-[#eceae3]">
         {p ? `Se connecter à ${p.label}` : 'Connectez-vous pour utiliser l’assistant'}
-      </Typography>
+      </h3>
 
       {!p ? (
         <>
-          <Typography sx={{ ...WRAP, fontFamily: SANS, fontSize: 13.5, lineHeight: 1.45, color: C.muted }}>
+          <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13.5px] leading-[1.45] text-[#a3a097]">
             Choisissez votre fournisseur, puis entrez votre propre clé d’API.
-          </Typography>
+          </p>
           <ErrorNote>{error}</ErrorNote>
-          <Stack spacing={1}>
+          <div className="flex flex-col gap-2">
             {Object.values(PROVIDERS).map((x) => (
-              <GateButton key={x.id} onClick={() => choose(x.id)} sx={{ justifyContent: 'flex-start', textAlign: 'left' }}>
+              <GateButton key={x.id} onClick={() => choose(x.id)} className="justify-start text-left">
                 <ProviderLogo provider={x.id} size={24} />
-                <Box component="span" sx={{ ...WRAP, display: 'flex', flexDirection: 'column' }}>
+                <span className="min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] flex flex-col">
                   <span>Se connecter à {x.label}</span>
-                  <Box component="span" sx={{ fontSize: 12, fontWeight: 400, color: C.muted }}>{x.platform}</Box>
-                </Box>
+                  <span className="text-[12px] font-normal text-[#a3a097]">{x.platform}</span>
+                </span>
               </GateButton>
             ))}
-          </Stack>
+          </div>
         </>
       ) : (
-        <Box component="form" onSubmit={submit} sx={{ display: 'flex', flexDirection: 'column', gap: 1.1, minWidth: 0 }}>
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: 0 }}>
+        <form onSubmit={submit} className="flex flex-col gap-[8.8px] min-w-0">
+          <div className="flex flex-row gap-2 items-center min-w-0">
             <ProviderLogo provider={p.id} size={22} />
-            <Typography component="label" htmlFor="gobai-assistant-key" sx={{ ...WRAP, fontFamily: SANS, fontSize: 14, color: C.text }}>
+            <label htmlFor="gobai-assistant-key" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[14px] text-[#eceae3]">
               Clé d’API {p.platform}
-            </Typography>
-          </Stack>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.25, minHeight: 48, borderRadius: '12px', bgcolor: C.field, border: `1px solid ${error ? C.error : C.border}`, '&:focus-within': { borderColor: C.muted } }}>
-            <KeyIcon sx={{ fontSize: 18, color: C.muted, flex: 'none' }} />
+            </label>
+          </div>
+          <div className="flex items-center gap-2 px-2.5 min-h-12 rounded-[12px] bg-[#262624] focus-within:border-[#a3a097]" style={{ border: `1px solid ${error ? C.error : C.border}` }}>
+            <KeyIcon className="text-[18px] text-[#a3a097] flex-none" />
             <InputBase
               id="gobai-assistant-key"
               inputRef={inputRef}
@@ -240,26 +219,26 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
               disabled={busy}
               inputProps={{ spellCheck: false, autoCapitalize: 'off', autoCorrect: 'off', 'aria-invalid': Boolean(error), 'aria-describedby': 'gobai-assistant-key-note' }}
               // 16 px : Safari sur iPhone ne zoome pas au focus.
-              sx={{ flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, '& input::placeholder': { color: C.muted, opacity: 1 } }}
+              className="flex-auto min-w-0 text-[#eceae3] font-sys text-[16px] [&_input::placeholder]:text-[#a3a097] [&_input::placeholder]:opacity-100"
             />
-          </Box>
+          </div>
           <ErrorNote>{error}</ErrorNote>
-          <Link href={p.keysUrl} target="_blank" rel="noopener noreferrer" sx={{ ...WRAP, alignSelf: 'flex-start', display: 'inline-flex', alignItems: 'center', gap: 0.5, minHeight: 32, color: C.accent, fontFamily: SANS, fontSize: 13.5 }}>
-            Obtenir une clé sur {p.platform} <OpenInNewIcon sx={{ fontSize: 15 }} />
+          <Link href={p.keysUrl} target="_blank" rel="noopener noreferrer" className="min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] self-start inline-flex items-center gap-1 min-h-8 text-[#d97757] font-sys text-[13.5px]">
+            Obtenir une clé sur {p.platform} <OpenInNewIcon className="text-[15px]" />
           </Link>
-          <Box sx={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 1 }}>
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2">
             <GateButton type="button" onClick={back} disabled={busy} aria-label="Changer de fournisseur">
-              <ArrowBackIcon sx={{ fontSize: 18 }} /> Retour
+              <ArrowBackIcon className="text-[18px]" /> Retour
             </GateButton>
             <GateButton type="submit" primary disabled={busy || !clean}>
-              {busy ? <><CircularProgress size={16} sx={{ color: C.muted }} /> Vérification…</> : 'Se connecter'}
+              {busy ? <><CircularProgress size={16} className="text-[#a3a097]" /> Vérification…</> : 'Se connecter'}
             </GateButton>
-          </Box>
-        </Box>
+          </div>
+        </form>
       )}
 
-      <Typography id="gobai-assistant-key-note" sx={{ ...WRAP, fontFamily: SANS, fontSize: 11.5, lineHeight: 1.45, color: C.muted }}>{KEY_NOTE}</Typography>
-    </Box>
+      <p id="gobai-assistant-key-note" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[11.5px] leading-[1.45] text-[#a3a097]">{KEY_NOTE}</p>
+    </section>
   );
 }
 
@@ -293,29 +272,29 @@ export function BillingScreen({ provider, keyToRetry, message, billingUrl, onRes
   };
 
   return (
-    <Box component="section" role="alert" aria-label={`Facturation ${p.label}`} sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, p: 1.5, minWidth: 0 }}>
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: 0 }}>
+    <section role="alert" aria-label={`Facturation ${p.label}`} className="flex flex-col gap-2.5 p-3 min-w-0">
+      <div className="flex flex-row gap-2 items-center min-w-0">
         <ProviderLogo provider={p.id} size={24} />
-        <Typography component="h3" sx={{ ...WRAP, fontFamily: SERIF, fontSize: 18, lineHeight: 1.3, color: C.text }}>Moyen de paiement requis</Typography>
-      </Stack>
-      <Typography sx={{ ...WRAP, fontFamily: SANS, fontSize: 14, lineHeight: 1.5, color: C.text }}>
+        <h3 className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-serif text-[18px] leading-[1.3] text-[#eceae3]">Moyen de paiement requis</h3>
+      </div>
+      <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[14px] leading-[1.5] text-[#eceae3]">
         {message || `Votre compte ${p.label} n’a pas de moyen de paiement ou n’a plus de crédit gratuit.`}
-      </Typography>
-      <Typography sx={{ ...WRAP, fontFamily: SANS, fontSize: 13, lineHeight: 1.45, color: C.muted }}>
+      </p>
+      <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13px] leading-[1.45] text-[#a3a097]">
         Ajoutez un moyen de paiement sur {p.platform}, puis revenez ici.
-      </Typography>
+      </p>
       <GateButton primary component="a" href={billingUrl || p.billingUrl} target="_blank" rel="noopener noreferrer">
-        Ajouter un moyen de paiement <OpenInNewIcon sx={{ fontSize: 17 }} />
+        Ajouter un moyen de paiement <OpenInNewIcon className="text-[17px]" />
       </GateButton>
       {keyToRetry && (
         <GateButton onClick={retry} disabled={busy}>
-          {busy ? <><CircularProgress size={16} sx={{ color: C.muted }} /> Vérification…</> : 'J’ai ajouté un moyen de paiement'}
+          {busy ? <><CircularProgress size={16} className="text-[#a3a097]" /> Vérification…</> : 'J’ai ajouté un moyen de paiement'}
         </GateButton>
       )}
       <ErrorNote>{note}</ErrorNote>
-      <GateButton onClick={onLogout} sx={{ border: 'none', color: C.muted, minHeight: 44 }}>
-        <LogoutIcon sx={{ fontSize: 17 }} /> Se déconnecter
+      <GateButton onClick={onLogout} className="border-0 text-[#a3a097] min-h-11">
+        <LogoutIcon className="text-[17px]" /> Se déconnecter
       </GateButton>
-    </Box>
+    </section>
   );
 }

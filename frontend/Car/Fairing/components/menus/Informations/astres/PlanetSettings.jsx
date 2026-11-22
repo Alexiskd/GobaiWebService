@@ -1,4 +1,3 @@
-import { Box, Typography } from '@mui/material';
 import { Atmosphere } from '../../Parametres/Atmosphere.jsx';
 import { Cartographie, CartographieRelief } from '../../Parametres/Cartographie.jsx';
 import { VitesseRotation } from '../../Parametres/VitesseRotation.jsx';
@@ -21,10 +20,10 @@ export function PlanetSettings({
   const mars = bodyId === 'mars';
 
   return (
-    <Box component="section" aria-label={`Réglages de ${bodyName || 'l’astre'}`} sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
-      <Typography component="h3" variant="subtitle2" color="text.secondary" sx={{ minHeight: 36, display: 'flex', alignItems: 'center' }}>
+    <section aria-label={`Réglages de ${bodyName || 'l’astre'}`} className="mt-2 pt-2 border-t border-line">
+      <h3 className="t-subtitle2 text-soft min-h-9 flex items-center">
         Réglages · {bodyName || 'Astre'}
-      </Typography>
+      </h3>
       <VitesseRotation speed={rotateSpeed} onSpeed={onRotateSpeed} rotating={rotating} />
 
       {earth && (
@@ -59,6 +58,6 @@ export function PlanetSettings({
           <Switch checked={moonPlaces} onChange={onMoonPlaces} label="Lieux de la Lune" hint="Alunissages (Apollo, Chang’e…), mers, cratères" />
         </Group>
       )}
-    </Box>
+    </section>
   );
 }

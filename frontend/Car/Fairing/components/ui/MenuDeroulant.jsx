@@ -1,14 +1,14 @@
 // Importe useState de React.
 import { useState } from 'react';
-// Importe de MUI MenuItem (entrée de menu) et TextField (champ).
-import { MenuItem, TextField } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { MenuItem, TextField, cx } from '@/Fairing/kit';
 
 /**
- * Menu déroulant générique (MUI). `options` : liste de textes ou de { value, label }.
+ * Menu déroulant générique (liste native du kit). `options` : liste de textes ou de { value, label }.
  * Contrôlé si `value` est fourni, sinon garde son propre choix. Ne déclenche pas le déplacement d'un panneau parent.
  */
 // Déclare et exporte le composant MenuDeroulant, avec ses valeurs par défaut (libellé « Menu », une option « vide », petite taille).
-export function MenuDeroulant({ label = 'Menu', options = ['vide'], value, defaultValue, onChange, size = 'small', sx }) {
+export function MenuDeroulant({ label = 'Menu', options = ['vide'], value, defaultValue, onChange, size = 'small', className }) {
   // Normalise les options : un simple texte devient un objet { value, label }.
   const items = options.map((o) => (typeof o === 'object' ? o : { value: o, label: o }));
   // État interne : le choix propre, initialisé à la valeur par défaut, sinon à la première option, sinon vide.
@@ -17,10 +17,11 @@ export function MenuDeroulant({ label = 'Menu', options = ['vide'], value, defau
   const current = value ?? own;
   // Début du rendu.
   return (
-    // Champ MUI (début de la balise).
+    // Champ du kit (début de la balise).
     <TextField
       // Mode liste déroulante.
       select
+      fullWidth={false}
       // Libellé du champ.
       label={label}
       // Taille du champ.
@@ -32,7 +33,7 @@ export function MenuDeroulant({ label = 'Menu', options = ['vide'], value, defau
       // Arrête la propagation de l'appui, pour ne pas déplacer le panneau parent.
       onPointerDown={(e) => e.stopPropagation()}
       // Largeur minimale de 120 px, puis les styles passés par le parent.
-      sx={{ minWidth: 120, ...sx }}
+      className={cx('min-w-30', className)}
     // Fin de la balise ouvrante.
     >
       {/* Une entrée de menu par option. */}

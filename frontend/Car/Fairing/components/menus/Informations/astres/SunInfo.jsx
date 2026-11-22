@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect, useMemo et useState.
 import { useEffect, useMemo, useState } from 'react';
-// Importe de MUI Box, Chip, Stack, les éléments de tableau et Typography.
-import { Box, Chip, Stack, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Chip, Table, TableBody, TableCell, TableRow } from '@/Fairing/kit';
 // Importe le chargement de l'activité solaire et celui des régions actives.
 import { fetchSolarActivity, fetchSolarRegions } from '@/Computing/api/scene';
 // Importe le libellé de l'indice Kp, les prochains apsides, les prochaines saisons et les grandeurs du Soleil en direct.
@@ -52,9 +52,9 @@ function Rows({ rows }) {
           // La ligne.
           <TableRow key={k}>
             {/* Le libellé, en couleur secondaire, sur 46 % de la largeur. */}
-            <TableCell sx={{ pl: 0, color: 'text.secondary', width: '46%' }}>{k}</TableCell>
+            <TableCell className="pl-0 text-soft w-[46%]">{k}</TableCell>
             {/* La valeur, en chiffres de largeur fixe. */}
-            <TableCell sx={{ pr: 0, fontVariantNumeric: 'tabular-nums' }}>{v}</TableCell>
+            <TableCell className="pr-0 tabular-nums">{v}</TableCell>
           {/* Fin de la ligne. */}
           </TableRow>
         // Fin des lignes.
@@ -73,13 +73,13 @@ function Title({ children, adornment }) {
   // Début du rendu.
   return (
     // Ligne du titre ; le premier titre n'a pas de marge en haut.
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 2, mb: 0.5, '&:first-of-type': { mt: 0 } }}>
+    <div className="flex flex-row gap-2 items-center mt-4 mb-1 first-of-type:mt-0">
       {/* Le titre de niveau 3, au style overline, couleur primaire. */}
-      <Typography component="h3" variant="overline" color="primary" sx={{ lineHeight: 1.6 }}>{children}</Typography>
+      <h3 className="t-overline text-primary leading-[1.6]">{children}</h3>
       {/* L'ornement. */}
       {adornment}
     {/* Fin de la ligne. */}
-    </Stack>
+    </div>
   // Fin du rendu.
   );
 // Fin de Title.
@@ -171,7 +171,7 @@ export function SunInfo({ earthElements }) {
   // Début du rendu.
   return (
     // Conteneur de la fiche.
-    <Box>
+    <div>
         {/* S'il y a des grandeurs en direct (début). */}
         {live && (
           // Fragment du bloc.
@@ -221,9 +221,9 @@ export function SunInfo({ earthElements }) {
         {/* Le titre « Activité solaire », avec l'étiquette NOAA quand les données sont prêtes. */}
         <Title adornment={activity.state === 'ready' ? <Chip size="small" label="NOAA" variant="outlined" /> : null}>Activité solaire</Title>
         {/* Pendant le chargement : un message d'attente. */}
-        {activity.state === 'loading' && <Typography variant="body2" color="text.secondary">Chargement de la météo spatiale…</Typography>}
+        {activity.state === 'loading' && <p className="t-body2 text-soft">Chargement de la météo spatiale…</p>}
         {/* En cas d'erreur : un message d'indisponibilité. */}
-        {activity.state === 'error' && <Typography variant="body2" color="text.secondary">Météo spatiale indisponible pour le moment.</Typography>}
+        {activity.state === 'error' && <p className="t-body2 text-soft">Météo spatiale indisponible pour le moment.</p>}
         {/* S'il y a des données (début). */}
         {a && (
           // Fragment du bloc.
@@ -239,15 +239,15 @@ export function SunInfo({ earthElements }) {
             // Fin des lignes.
             ]} />
             {/* Sous-titre des éruptions. */}
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, mb: 0.5 }}>Éruptions des 7 derniers jours (classe C et plus)</Typography>
+            <p className="t-body2 text-soft mt-3 mb-1">Éruptions des 7 derniers jours (classe C et plus)</p>
             {/* S'il n'y a aucune éruption (début). */}
             {a.flares.length === 0 ? (
               // Un message qui le dit.
-              <Typography variant="body2">Aucune éruption notable.</Typography>
+              <p className="t-body2">Aucune éruption notable.</p>
             // Sinon (début).
             ) : (
               // Rangée d'étiquettes, qui passe à la ligne.
-              <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+              <div className="flex flex-row gap-2 flex-wrap">
                 {/* Une étiquette par éruption (début). */}
                 {a.flares.map((f) => (
                   // L'étiquette : classe et date, colorée selon la classe.
@@ -255,7 +255,7 @@ export function SunInfo({ earthElements }) {
                 // Fin des étiquettes.
                 ))}
               {/* Fin de la rangée. */}
-              </Stack>
+              </div>
             // Fin du choix.
             )}
           {/* Fin du fragment. */}
@@ -270,11 +270,11 @@ export function SunInfo({ earthElements }) {
             {/* Le titre « Régions actives », avec le nombre de régions. */}
             <Title adornment={<Chip size="small" label={`${regions.regions.length} régions`} variant="outlined" />}>Régions actives</Title>
             {/* La note du repère des positions. */}
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            <p className="t-body2 text-soft mb-1">
               {/* Ce que veut dire la position, et ce qu'elle sert à placer. */}
               Position vue de la Terre (N/S = latitude, E/W = longitude depuis le méridien central) : ce sont ces régions qui éclatent sur le Soleil en 3D.
             {/* Fin de la note. */}
-            </Typography>
+            </p>
             {/* Les lignes : une par région, les plus grandes d'abord (début). */}
             <Rows rows={regions.regions.slice(0, 8).map((r) => [
               // Le libellé : le numéro NOAA de la région.
@@ -300,9 +300,9 @@ export function SunInfo({ earthElements }) {
               // Fragment du bloc.
               <>
                 {/* Sous-titre des éruptions localisées. */}
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, mb: 0.5 }}>Éruptions localisées des 3 derniers jours</Typography>
+                <p className="t-body2 text-soft mt-3 mb-1">Éruptions localisées des 3 derniers jours</p>
                 {/* Rangée d'étiquettes, qui passe à la ligne. */}
-                <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                <div className="flex flex-row gap-2 flex-wrap">
                   {/* Une étiquette par éruption (début). */}
                   {regions.flares.map((f) => (
                     // L'étiquette : classe, position de départ et date, colorée selon la classe.
@@ -310,7 +310,7 @@ export function SunInfo({ earthElements }) {
                   // Fin des étiquettes.
                   ))}
                 {/* Fin de la rangée. */}
-                </Stack>
+                </div>
               {/* Fin du fragment. */}
               </>
             // Fin du cas.
@@ -326,19 +326,19 @@ export function SunInfo({ earthElements }) {
         <Rows rows={FACTS} />
 
         {/* Bloc de la note finale. */}
-        <Box sx={{ mt: 2 }}>
+        <div className="mt-4">
           {/* La note (début de la balise). */}
-          <Typography variant="caption" color="text.secondary">
+          <span className="t-caption text-soft">
             {/* L'origine des calculs et de l'activité solaire (texte sur deux lignes). */}
             Grandeurs en direct et saisons calculées à partir des éléments orbitaux JPL (précision de quelques heures).
             Activité solaire : NOAA Space Weather Prediction Center, actualisée toutes les 10 min.
             Régions actives : NOAA SWPC (groupes de taches) et NASA DONKI (éruptions localisées), actualisées toutes les 15 min.
           {/* Fin de la note. */}
-          </Typography>
+          </span>
         {/* Fin du bloc. */}
-        </Box>
+        </div>
     {/* Fin du conteneur. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de SunInfo.

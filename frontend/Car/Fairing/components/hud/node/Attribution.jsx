@@ -4,8 +4,8 @@
 // Les pages de recherche de l'auteur (flux cognitif, théorie quantique) sont dans la fenêtre « Données ».
 // Importe de React les crochets useEffect, useState et useSyncExternalStore.
 import { useEffect, useState, useSyncExternalStore } from 'react';
-// Importe de MUI Box, la boîte de dialogue, Link, l'interrupteur et les onglets.
-import { Box, Dialog, DialogContent, Link, Switch as MuiSwitch, Tab, Tabs } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Dialog, DialogContent, Link, Switch, Tab, Tabs } from '@/Fairing/kit';
 // Importe tilesApi, le client de l'API des tuiles.
 import { tilesApi } from '@/Computing/api';
 // Importe useHud, qui lit une valeur du magasin du HUD.
@@ -27,7 +27,7 @@ import { API_GROUPS, countApis } from './apiList.js';
 // Importe le blocage des API externes : état, abonnement, relecture et bascule.
 import { apiState, getApiBlockState, refreshServerBlocked, setApiBlocked, subscribe } from '@/Engine/shared/lib/app/apiBlock';
 // Importe les briques de style communes de la fenêtre.
-import { Carte, Chiffre, Etiquette, Fiche, GrilleChiffres, MONO, Note, Precision, Section } from './nodeUi.jsx';
+import { Carte, Chiffre, Etiquette, Fiche, GrilleChiffres, Note, Precision, Section } from './nodeUi.jsx';
 
 // Calculé à chaque lecture : des satellites peuvent être ajoutés après le chargement.
 // satelliteTiles : les astres tuilés qui sont des satellites ou des géantes gazeuses.
@@ -80,10 +80,10 @@ const KIND_SECTIONS = [
 // Déclare le composant Depot : reçoit une entrée des crédits.
 const Depot = ({ item }) => (
   // Le nom en lien, puis l'adresse en petit.
-  <Box>
-    <Link href={`https://github.com/${item.repo}`} target="_blank" rel="noopener noreferrer" underline="hover" sx={{ fontWeight: 600 }}>{item.name}</Link>
+  <div>
+    <Link href={`https://github.com/${item.repo}`} target="_blank" rel="noopener noreferrer" underline="hover" className="font-semibold">{item.name}</Link>
     <Precision brut>github.com/{item.repo}</Precision>
-  </Box>
+  </div>
 // Fin de Depot.
 );
 
@@ -95,7 +95,7 @@ function Credits() {
   const depots = new Set(paquets.map((p) => p.repo)).size;
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Chiffres clés. */}
       <GrilleChiffres>
         <Chiffre libelle="Paquets déclarés" valeur={paquets.length} detail="dans les manifestes package.json du dépôt" />
@@ -124,7 +124,7 @@ function Credits() {
         Seuls les paquets présents dans <code>frontend/package.json</code> et <code>frontend/Car/Computing/api/package.json</code>{' '}
         sont listés ; aucun auteur ni date n’est ajouté de mémoire.
       </Note>
-    </Box>
+    </div>
   );
 // Fin de Credits.
 }
@@ -134,7 +134,7 @@ function Credits() {
 function SourcesAndCompanies({ rows }) {
   // Début du rendu.
   return (
-    <Box>
+    <div>
       <Section numero={1} titre="Sources des données" sousTitre="Seules les sources des cartes actuellement chargées sont listées.">
         <Fiche
           fixe label="Sources des données affichées"
@@ -155,7 +155,7 @@ function SourcesAndCompanies({ rows }) {
               fixe label={title}
               colonnes={[{ largeur: '40%' }, {}]}
               lignes={list.map((api) => [
-                <Box key={api.name}><Etiquette>{api.name}</Etiquette><Precision brut sx={{ mt: 0.25 }}>{api.host}</Precision></Box>,
+                <div key={api.name}><Etiquette>{api.name}</Etiquette><Precision brut className="mt-0.5">{api.host}</Precision></div>,
                 api.use,
               ])}
             />
@@ -163,7 +163,7 @@ function SourcesAndCompanies({ rows }) {
         );
       // Fin des familles.
       })}
-    </Box>
+    </div>
   );
 // Fin de SourcesAndCompanies.
 }
@@ -198,7 +198,7 @@ function ApiList() {
   const aCle = TOUTES_API.filter((api) => api.key).length;
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Chiffres clés. */}
       <GrilleChiffres>
         <Chiffre libelle="Services externes" valeur={countApis()} detail="relevés dans le code de l’application" />
@@ -220,18 +220,18 @@ function ApiList() {
               const st = apiState(api, block);
               // Les trois cellules : nom et adresse, usage et mentions, interrupteur.
               return [
-                <Box key="nom" sx={{ color: st === 'on' ? 'text.primary' : 'text.disabled' }}>
-                  <Box component="span" sx={{ fontWeight: 600 }}>{api.name}</Box>
+                <div key="nom" className={`${st === 'on' ? 'text-ink' : 'text-faint'}`}>
+                  <span className="font-semibold">{api.name}</span>
                   <Precision brut>{api.host}</Precision>
-                </Box>,
-                <Box key="usage" sx={{ color: st === 'on' ? 'text.primary' : 'text.disabled' }}>
+                </div>,
+                <div key="usage" className={`${st === 'on' ? 'text-ink' : 'text-faint'}`}>
                   {api.use}
                   {api.key && <Precision>Seulement si la clé est saisie</Precision>}
                   {api.requis && <Precision couleur="info.main">Nécessaire à l’ouverture de l’application</Precision>}
                   {st !== 'on' && <Precision couleur="warning.main">{API_STATE_NOTE[st]}</Precision>}
-                </Box>,
+                </div>,
                 // Allumé : API connectée. Un service requis ou un réglage permanent ne se change pas d'ici.
-                <MuiSwitch
+                <Switch
                   key="etat" size="small" checked={st === 'on'} disabled={st === 'permanent' || Boolean(api.requis)}
                   onChange={(e) => setApiBlocked(api, !e.target.checked)}
                   slotProps={{ input: { role: 'switch', 'aria-label': `${api.name} : API connectée` } }}
@@ -241,7 +241,7 @@ function ApiList() {
           />
         </Section>
       ))}
-    </Box>
+    </div>
   );
 // Fin de ApiList.
 }
@@ -252,22 +252,22 @@ function TreeNode({ item, root = false }) {
   // Début du rendu.
   return (
     // Élément de liste sans puce.
-    <Box component="li" sx={{ listStyle: 'none', py: 0.4 }}>
+    <li className="list-none py-[3.2px]">
       {/* Le nom : en lien si le nœud a une adresse, en demi-gras s'il est la racine ou s'il a des enfants. */}
       {item.path ? (
-        <Link href={item.path} underline="hover" sx={{ fontWeight: root || item.children.length ? 700 : 400 }}>{item.name}</Link>
+        <Link href={item.path} underline="hover" className={`${root || item.children.length ? 'font-bold' : 'font-normal'}`}>{item.name}</Link>
       ) : (
-        <Box component="span" sx={{ fontWeight: 700 }}>{item.name}</Box>
+        <span className="font-bold">{item.name}</span>
       )}
       {/* L'adresse, à chasse fixe, à côté du nom. */}
-      {item.path && <Box component="span" translate="no" sx={{ ml: 1, fontFamily: MONO, fontSize: '0.75em', color: 'text.secondary', overflowWrap: 'anywhere' }}>{item.path}</Box>}
+      {item.path && <span translate="no" className="ml-2 font-mono text-[0.75em] text-soft [overflow-wrap:anywhere]">{item.path}</span>}
       {/* Les enfants, dans une liste imbriquée bordée à gauche d'un trait vertical. */}
       {item.children.length > 0 && (
-        <Box component="ul" sx={{ m: 0, mt: 0.4, ml: 0.75, pl: 1.75, borderLeft: 1, borderColor: 'divider' }}>
+        <ul className="m-0 mt-[3.2px] ml-1.5 pl-3.5 border-l border-line">
           {item.children.map((child) => <TreeNode key={child.name} item={child} />)}
-        </Box>
+        </ul>
       )}
-    </Box>
+    </li>
   );
 // Fin de TreeNode.
 }
@@ -279,7 +279,7 @@ function SiteTree() {
   const astres = countPages(SITE_TREE.children[0]);
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Chiffres clés. */}
       <GrilleChiffres>
         <Chiffre libelle="Pages" valeur={countPages()} detail="chacune a sa propre adresse" />
@@ -287,13 +287,13 @@ function SiteTree() {
         <Chiffre libelle="Fenêtres" valeur={countPages() - astres - 1} detail="Données, Node et Dons" />
       </GrilleChiffres>
       <Section numero={1} titre="Arborescence en 3D" sousTitre="Glisser pour tourner ; cliquer une page pour l’ouvrir. Disposition calculée par la stack @go-/harmonie-3d.">
-        <Carte sx={{ bgcolor: 'transparent', p: 0 }}>
+        <Carte className="bg-transparent p-0">
           <SiteTree3D />
         </Carte>
       </Section>
       <Section numero={2} titre="Arborescence du site" sousTitre="Chaque lien ouvre le site directement sur l’astre ou la fenêtre.">
-        <Carte sx={{ bgcolor: 'transparent' }}>
-          <Box component="ul" sx={{ m: 0, p: 0 }}><TreeNode item={SITE_TREE} root /></Box>
+        <Carte className="bg-transparent">
+          <ul className="m-0 p-0"><TreeNode item={SITE_TREE} root /></ul>
         </Carte>
       </Section>
       <Note>
@@ -301,7 +301,7 @@ function SiteTree() {
         place sur l’astre nommé. Les adresses des astres sont celles du sitemap ; <code>/galerie</code> y désigne la fenêtre
         Données, ouverte aussi par <code>/donnees</code>.
       </Note>
-    </Box>
+    </div>
   );
 // Fin de SiteTree.
 }
@@ -408,12 +408,12 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
     // Fenêtre large ; plein écran en mode compact. La hauteur est fixe sur ordinateur : changer d'onglet ne la fait pas sauter.
     <Dialog
       open={open} onClose={onClose} fullScreen={compact} maxWidth="lg" fullWidth aria-label="Node Open Source"
-      slotProps={{ paper: { sx: { overflow: 'hidden', height: compact ? '100%' : 'min(88vh, 900px)' } } }}
+      paperClassName="overflow-hidden" paperStyle={{ height: compact ? '100%' : 'min(88vh, 900px)' }}
     >
       {/* En-tête : surtitre, titre et bouton de fermeture. */}
-      <PanelHeader kicker="Go白ناन्टех · Node Open Source" title="Node — sources et outils" onClose={onClose} sx={{ px: 2.5, pt: 2, pb: 1.5 }} />
+      <PanelHeader kicker="Go白ناन्टех · Node Open Source" title="Node — sources et outils" onClose={onClose} className="px-5 pt-4 pb-3" />
       {/* Corps : navigation à gauche et contenu à droite sur ordinateur ; navigation au-dessus sur téléphone. */}
-      <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: compact ? 'column' : 'row' }}>
+      <div className={`flex-1 min-h-0 flex ${compact ? 'flex-col' : 'flex-row'}`}>
         {/* Les onglets : verticaux avec une ligne d'aide sur ordinateur, horizontaux et défilants sur téléphone. */}
         <Tabs
           value={tab}
@@ -422,37 +422,35 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
           variant="scrollable"
           scrollButtons={compact ? 'auto' : false}
           aria-label="Sections de la fenêtre Node Open Source"
-          sx={compact
-            ? { flex: 'none', px: 1, borderBottom: 1, borderColor: 'divider' }
-            : { flex: 'none', width: 232, py: 1, borderRight: 1, borderColor: 'divider', '& .MuiTabs-indicator': { left: 0, right: 'auto', width: 3 } }}
+          className={`${compact ? 'flex-none px-2 border-b border-line' : 'flex-none w-58 py-2 border-r border-line'}`}
         >
           {ONGLETS.map((o, i) => (
             <Tab
               key={o.id} value={o.id} id={`node-tab-${o.id}`} aria-controls={`node-panel-${o.id}`}
               // Sur téléphone, le libellé seul ; sur ordinateur, le numéro, le libellé et la ligne d'aide.
               label={compact ? o.label : (
-                <Box sx={{ display: 'grid', gridTemplateColumns: '22px minmax(0, 1fr)', columnGap: 1, textAlign: 'left', width: '100%' }}>
-                  <Box component="span" aria-hidden="true" sx={{ fontFamily: MONO, fontSize: '0.7rem', color: 'primary.main', pt: '3px' }}>{String(i + 1).padStart(2, '0')}</Box>
-                  <Box component="span" sx={{ minWidth: 0 }}>
-                    <Box component="span" sx={{ display: 'block', lineHeight: 1.3 }}>{o.label}</Box>
-                    <Box component="span" sx={{ display: 'block', fontSize: '0.72rem', fontWeight: 400, color: 'text.secondary', lineHeight: 1.35, mt: 0.25 }}>{o.aide}</Box>
-                  </Box>
-                </Box>
+                <div className="grid grid-cols-[22px_minmax(0,1fr)] gap-x-2 text-left w-full">
+                  <span aria-hidden="true" className="font-mono text-[0.7rem] text-primary pt-[3px]">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="min-w-0">
+                    <span className="block leading-[1.3]">{o.label}</span>
+                    <span className="block text-[0.72rem] font-normal text-soft leading-[1.35] mt-0.5">{o.aide}</span>
+                  </span>
+                </div>
               )}
-              sx={compact ? { minWidth: 96 } : { alignItems: 'flex-start', px: 2, py: 1.1, maxWidth: 'none', '&.Mui-selected': { bgcolor: 'action.hover' } }}
+              className={`${compact ? 'min-w-24' : 'items-start justify-start w-full text-left px-4 py-2 max-w-none aria-selected:bg-hover'}`}
             />
           ))}
         </Tabs>
         {/* Contenu de l'onglet : seul élément qui défile. */}
-        <DialogContent sx={{ flex: 1, minWidth: 0, p: { xs: 1.5, sm: 3 } }}>
+        <DialogContent className="flex-1 min-w-0 p-3 min-[600px]:p-6">
           {/* Panneau de l'onglet, relié à son onglet pour l'accessibilité, limité en largeur pour la lecture. */}
-          <Box role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`} sx={{ maxWidth: 880, mx: 'auto', minWidth: 0 }}>
+          <div role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`} className="max-w-220 mx-auto min-w-0">
             {contenu}
             {/* Rappel du raccourci clavier, sur ordinateur seulement. */}
-            {!compact && <Note sx={{ mt: 4, fontSize: '0.78rem' }}>Touche S pour ouvrir ou fermer cette fenêtre.</Note>}
-          </Box>
+            {!compact && <Note className="mt-8 text-[0.78rem]">Touche S pour ouvrir ou fermer cette fenêtre.</Note>}
+          </div>
         </DialogContent>
-      </Box>
+      </div>
     </Dialog>
   // Fin du rendu.
   );

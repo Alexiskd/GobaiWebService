@@ -166,8 +166,8 @@ export function auditDocument(doc = document, options = {}) {
   options = { minTarget: coarse ? MIN_TARGET : 24, ...options };
   // Fenêtre.
   const viewport = { w: doc.documentElement.clientWidth, h: doc.documentElement.clientHeight };
-  // Fenêtres modales ouvertes (MUI : .MuiModal-root ; ARIA : aria-modal).
-  const modals = [...doc.querySelectorAll('.MuiModal-root, [aria-modal="true"]')].filter((m) => isShown(m, m.getBoundingClientRect()));
+  // Fenêtres modales ouvertes (kit : .g-dialog, .g-sheet ; ARIA : aria-modal).
+  const modals = [...doc.querySelectorAll('.g-dialog, .g-sheet, [aria-modal="true"]')].filter((m) => isShown(m, m.getBoundingClientRect()));
   // Éléments interactifs rendus, chacun numéroté.
   const els = [...doc.querySelectorAll(INTERACTIVE)].filter((el) => !el.closest('[aria-hidden="true"]') && isShown(el, el.getBoundingClientRect()));
   // Numéros.
@@ -196,8 +196,8 @@ export function auditDocument(doc = document, options = {}) {
     const scrollable = Boolean(sr) && (b.top < sr.top - 1 || b.bottom > sr.bottom + 1 || b.left < sr.left - 1 || b.right > sr.right + 1);
     // Partie visible (coupée par le conteneur défilant) : seule elle peut en chevaucher une autre.
     const vis = sr ? { x: Math.max(b.left, sr.left), y: Math.max(b.top, sr.top), w: Math.max(0, Math.min(b.right, sr.right) - Math.max(b.left, sr.left)), h: Math.max(0, Math.min(b.bottom, sr.bottom) - Math.max(b.top, sr.top)) } : rect;
-    // Cible tactile : un champ de saisie se touche sur tout son cadre (MUI : .MuiInputBase-root), pas seulement sa ligne.
-    const frame = /^(INPUT|TEXTAREA)$/.test(el.tagName) ? el.closest('.MuiInputBase-root') : null;
+    // Cible tactile : un champ de saisie se touche sur tout son cadre (kit : .g-inputbase, .g-field-box), pas seulement sa ligne.
+    const frame = /^(INPUT|TEXTAREA)$/.test(el.tagName) ? el.closest('.g-inputbase, .g-field-box') : null;
     // Taille de la cible.
     const tb = frame ? frame.getBoundingClientRect() : b;
     // Lien dans le texte (en ligne) : exempté de la taille minimale, comme le prévoit WCAG 2.5.8.
@@ -208,8 +208,8 @@ export function auditDocument(doc = document, options = {}) {
     for (let n = el.parentElement; n; n = n.parentElement) if (ids.has(n)) ancestors.push(ids.get(n));
     // Libellé coupé : contenu plus large que l'élément, rogné, et c'est bien du texte qui dépasse (boutons et liens).
     const truncated = /^(BUTTON|A)$/.test(el.tagName) && el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflow !== 'visible' && textClipped(el);
-    // Désactivé (attribut, ARIA ou classe MUI) : pas une commande à atteindre pour l'instant.
-    const disabled = el.disabled === true || el.getAttribute('aria-disabled') === 'true' || el.classList.contains('Mui-disabled');
+    // Désactivé (attribut ou ARIA) : pas une commande à atteindre pour l'instant.
+    const disabled = el.disabled === true || el.getAttribute('aria-disabled') === 'true' ;
     // Le relevé.
     return { id: i, label: labelOf(el), tag: el.tagName.toLowerCase(), rect, vis, target: { w: tb.width, h: tb.height }, inline, reachable, modal, scrollable, ancestors, truncated, disabled, occluder: occ ? labelOf(occ).slice(0, 40) || occ.tagName : null, el };
   // Fin du relevé.

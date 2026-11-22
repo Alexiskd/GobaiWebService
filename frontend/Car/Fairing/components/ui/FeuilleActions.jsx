@@ -1,11 +1,13 @@
 // Importe de React les crochets useEffect, useRef et useState.
 import { useEffect, useRef, useState } from 'react';
-// Importe de MUI Box, Drawer (tiroir), IconButton (bouton icône) et Paper (carte).
-import { Box, Drawer, IconButton, Paper } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Drawer, IconButton } from '@/Fairing/kit';
+// Importe les conversions des valeurs de style calculées au rendu.
+import { sp } from '@/Fairing/kit/sx';
 // Importe l'icône de fermeture (croix).
 import { CloseIcon } from './icons.jsx';
 // Importe MQ (requêtes média) et safe (marges de sécurité de l'écran).
-import { MQ, safe } from '@/Fairing/theme/mediaQueries';
+import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe les calculs du geste : décalage, vitesse et décision de fermeture.
 import { dragOffset, dragVelocity, shouldClose } from '@/Engine/shared/lib/device/sheetGesture';
 
@@ -13,7 +15,7 @@ import { dragOffset, dragVelocity, shouldClose } from '@/Engine/shared/lib/devic
  * Feuille du téléphone : panneau qui monte du bas de l'écran, à portée de pouce, et se referme en le tirant vers le
  * bas par sa poignée, en touchant le voile, avec Échap ou par son bouton Fermer (44 px, toujours visible en haut à
  * droite, aussi pour les lecteurs d'écran). Le contenu défile à l'intérieur si l'écran est trop bas.
- * Le tiroir MUI porte l'animation d'entrée, le voile et le piège du focus ; la feuille visible est posée dedans pour
+ * Le tiroir du kit (Base UI) porte l'animation d'entrée, le voile et le piège du focus ; la feuille visible est posée dedans pour
  * pouvoir suivre le doigt sans gêner cette animation.
  */
 // Déclare et exporte le composant FeuilleActions : état d'ouverture, fermeture, libellé et contenu.
@@ -76,60 +78,19 @@ export function FeuilleActions({ open, onClose, label, children }) {
 
   // Début du rendu.
   return (
-    // Tiroir MUI (début de la balise).
-    <Drawer
-      // Ancré en bas de l'écran.
-      anchor="bottom"
-      // Ouvert ou fermé selon le parent.
-      open={open}
-      // Fermeture demandée par le voile ou la touche Échap.
-      onClose={onClose}
-      // Réglages des éléments internes du tiroir (début).
-      slotProps={{
-        // Le papier du tiroir est invisible : c'est la feuille posée dedans qui se voit et qui suit le doigt.
-        // Papier du tiroir : transparent, sans flou, sans ombre, débordement visible.
-        paper: { sx: { backgroundColor: 'transparent', backdropFilter: 'none', boxShadow: 'none', border: 'none', overflow: 'visible' } },
-      // Fin des réglages.
-      }}
-    // Fin de la balise ouvrante.
-    >
+    // Tiroir du kit (début de la balise).
+    <Drawer open={open} onClose={onClose} aria-label={label}>
       {/* La feuille visible (début de la balise). */}
-      <Paper
-        // Ombre marquée.
-        elevation={8}
-        // Rôle de boîte de dialogue.
-        role="dialog"
-        // Dialogue modal.
-        aria-modal="true"
-        // Nom de la feuille pour les lecteurs d'écran.
-        aria-label={label}
+      <div
         // Marqueur de l'élément d'interface « actions ».
         data-hud="actions"
         // Début du style.
-        sx={{
-          // Colonne, toute la largeur, 560 px au plus, centrée ; repère du bouton Fermer.
-          position: 'relative', display: 'flex', flexDirection: 'column', width: '100%', maxWidth: 560, mx: 'auto',
-          // Hauteur maximale : l'écran moins la marge de sécurité du haut et 56 px.
-          maxHeight: `calc(100dvh - ${safe('top')} - 56px)`,
-          // Coins arrondis en haut seulement.
-          borderRadius: '20px 20px 0 0',
-          // Marges de sécurité à gauche et à droite.
-          pl: safe('left'), pr: safe('right'),
-          // Décalage vertical qui suit le doigt.
-          transform: `translate3d(0, ${offset}px, 0)`,
-          // Pas de transition pendant le tirage ; retour animé en 220 ms sinon.
-          transition: dragging ? 'none' : 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)',
-          // Prévient le navigateur de l'animation seulement pendant le tirage.
-          willChange: dragging ? 'transform' : 'auto',
-          // Pas de transition si l'utilisateur a demandé moins de mouvement.
-          [MQ.reducedMotion]: { transition: 'none' },
-        // Fin du style.
-        }}
+        className={`g-paper g-elev relative flex flex-col w-full max-w-140 mx-auto rounded-[16px_16px_0_0] ${dragging ? '[transition:none]' : '[transition:transform_220ms_cubic-bezier(0.2,0.8,0.2,1)]'} ${dragging ? '[will-change:transform]' : '[will-change:auto]'} motion-reduce:[transition:none]`} style={{ maxHeight: `calc(100dvh - ${safe('top')} - 56px)`, paddingLeft: sp(safe('left')), paddingRight: sp(safe('right')), transform: `translate3d(0, ${offset}px, 0)` }}
       // Fin de la balise ouvrante.
       >
         {/* Poignée : toute la bande du haut se saisit, le trait n'en est que le repère. */}
         {/* La bande de la poignée (début de la balise). */}
-        <Box
+        <div
           // Début du tirage.
           onPointerDown={onPointerDown}
           // Suivi du doigt.
@@ -139,13 +100,13 @@ export function FeuilleActions({ open, onClose, label, children }) {
           // Tirage annulé par le système.
           onPointerCancel={(e) => endDrag(e, true)}
           // Bande de 32 px de haut, contenu centré, gestes tactiles réservés au tirage, curseur en main.
-          sx={{ flex: 'none', height: 32, display: 'grid', placeItems: 'center', touchAction: 'none', cursor: 'grab' }}
+          className="flex-none h-8 grid place-items-center touch-none cursor-grab"
         // Fin de la balise ouvrante.
         >
           {/* Le trait de repère : 40 px sur 4, arrondi, semi-transparent, décoratif. */}
-          <Box aria-hidden="true" sx={{ width: 40, height: 4, borderRadius: 2, bgcolor: 'text.secondary', opacity: 0.5 }} />
+          <div aria-hidden="true" className="w-10 h-1 rounded-full bg-soft opacity-50" />
         {/* Fin de la bande de la poignée. */}
-        </Box>
+        </div>
         {/* Bouton Fermer : en haut à droite, hors de la poignée et du défilement, cible de 44 px (début). */}
         <IconButton
           // Nom pour les lecteurs d'écran.
@@ -153,21 +114,21 @@ export function FeuilleActions({ open, onClose, label, children }) {
           // Ferme la feuille.
           onClick={onClose}
           // Posé sur la feuille, à 4 px du haut et à 6 px du bord droit (marge de sécurité comprise), au-dessus du contenu.
-          sx={{ position: 'absolute', top: 4, right: `calc(${safe('right')} + 6px)`, zIndex: 1, width: 44, height: 44 }}
+          className="absolute top-1 z-1 w-11 h-11" style={{ right: `calc(${safe('right')} + 6px)` }}
         // Fin de la balise ouvrante.
         >
           {/* La croix. */}
-          <CloseIcon sx={{ fontSize: 20 }} />
+          <CloseIcon className="text-[20px]" />
         {/* Fin du bouton Fermer. */}
         </IconButton>
         {/* Zone de contenu : défile verticalement sans entraîner la page, avec la marge de sécurité du bas. */}
-        <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', px: 1.5, pb: `calc(${safe('bottom')} + 12px)` }}>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3" style={{ paddingBottom: `calc(${safe('bottom')} + 12px)` }}>
           {/* Le contenu de la feuille. */}
           {children}
         {/* Fin de la zone de contenu. */}
-        </Box>
+        </div>
       {/* Fin de la feuille. */}
-      </Paper>
+      </div>
     {/* Fin du tiroir. */}
     </Drawer>
   // Fin du rendu.

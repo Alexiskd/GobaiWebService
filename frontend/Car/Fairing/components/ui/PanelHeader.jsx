@@ -1,5 +1,5 @@
-// Importe de MUI Box, IconButton (bouton icône), Stack (pile), Tooltip (infobulle) et Typography (texte).
-import { Box, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { IconButton, Tooltip, cx } from '@/Fairing/kit';
 // Importe les icônes de fermeture et de poignée.
 import { CloseIcon, DragIndicatorIcon } from './icons.jsx';
 
@@ -8,59 +8,43 @@ import { CloseIcon, DragIndicatorIcon } from './icons.jsx';
  * `dragProps` (useDraggable) fait de tout l'en-tête la poignée ; `onClose` ajoute le bouton de fermeture.
  */
 // Déclare et exporte le composant PanelHeader : surtitre, titre, ornement du titre, fermeture, actions, propriétés de déplacement, mode feuille, clic et styles.
-export function PanelHeader({ kicker, title, titleAdornment, onClose, closeLabel = 'Fermer', actions, dragProps, sheet = false, onClick, sx }) {
+export function PanelHeader({ kicker, title, titleAdornment, onClose, closeLabel = 'Fermer', actions, dragProps, sheet = false, onClick, className }) {
   // Déplaçable si les propriétés de déplacement contiennent un gestionnaire d'appui.
   const draggable = Boolean(dragProps?.onPointerDown);
   // Début du rendu.
   return (
     // Ligne de l'en-tête (début de la balise).
-    <Stack
-      // Rendue en balise header.
-      component="header"
-      // Disposition horizontale.
-      direction="row"
-      // Espacement entre les éléments.
-      spacing={1}
+    <header
       // Pose les propriétés de déplacement sur tout l'en-tête.
       {...dragProps}
       // Gestionnaire de clic éventuel.
       onClick={onClick}
       // Début du style.
-      sx={{ alignItems: 'center',
-        // Position relative, marges intérieures (plus de place en haut en mode feuille), taille fixe.
-        position: 'relative', px: 2, pt: sheet ? 2 : 1.5, pb: 1, flex: 'none',
-        // Filet de séparation en bas.
-        borderBottom: 1, borderColor: 'divider',
-        // Curseur : main si déplaçable, pointeur si cliquable, normal sinon ; texte non sélectionnable ; gestes tactiles réservés au déplacement.
-        cursor: draggable ? 'grab' : onClick ? 'pointer' : 'default', userSelect: 'none', touchAction: draggable ? 'none' : 'auto',
-        // Styles supplémentaires passés par le parent.
-        ...sx,
-      // Fin du style.
-      }}
+      className={cx('flex flex-row gap-2 items-center relative px-4 pb-2 flex-none border-b border-line select-none', sheet ? 'pt-4' : 'pt-3', draggable ? 'cursor-grab touch-none' : onClick ? 'cursor-pointer' : 'cursor-default', className)}
     // Fin de la balise ouvrante.
     >
       {/* En mode feuille (début). */}
       {sheet && (
         // Petit trait centré en haut, décoratif : la poignée du tiroir.
-        <Box aria-hidden="true" sx={{ position: 'absolute', top: 6, left: '50%', ml: '-18px', width: 36, height: 4, borderRadius: 2, bgcolor: 'text.disabled' }} />
+        <div aria-hidden="true" className="absolute top-1.5 left-1/2 ml-[-18px] w-9 h-1 rounded-full bg-faint" />
       // Fin du mode feuille.
       )}
       {/* Si déplaçable : icône de poignée grisée, cachée aux lecteurs d'écran. */}
-      {draggable && <DragIndicatorIcon fontSize="small" sx={{ color: 'text.disabled', ml: -1 }} aria-hidden="true" />}
+      {draggable && <DragIndicatorIcon fontSize="small" className="text-faint -ml-2" aria-hidden="true" />}
       {/* Zone des titres, qui prend la largeur restante. */}
-      <Box sx={{ flex: 1, minWidth: 0 }}>
+      <div className="flex-1 min-w-0">
         {/* Si un surtitre est donné : au style overline, couleur primaire. */}
-        {kicker && <Typography variant="overline" color="primary" sx={{ display: 'block', lineHeight: 1.6 }}>{kicker}</Typography>}
+        {kicker && <span className="t-overline text-primary block leading-[1.6]">{kicker}</span>}
         {/* Ligne du titre, qui passe à la ligne si elle manque de place. */}
-        <Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="flex flex-row gap-2 items-center flex-wrap">
           {/* Le titre, de niveau 2, en demi-gras, coupé n'importe où s'il est trop long. */}
-          <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 600, overflowWrap: 'anywhere' }}>{title}</Typography>
+          <h2 className="t-subtitle1 font-semibold [overflow-wrap:anywhere]">{title}</h2>
           {/* L'ornement du titre. */}
           {titleAdornment}
         {/* Fin de la ligne du titre. */}
-        </Stack>
+        </div>
       {/* Fin de la zone des titres. */}
-      </Box>
+      </div>
       {/* Les actions fournies par le parent. */}
       {actions}
       {/* Si une fermeture est prévue (début). */}
@@ -78,7 +62,7 @@ export function PanelHeader({ kicker, title, titleAdornment, onClose, closeLabel
       // Fin du bouton de fermeture.
       )}
     {/* Fin de l'en-tête. */}
-    </Stack>
+    </header>
   // Fin du rendu.
   );
 // Fin de PanelHeader.

@@ -1,4 +1,3 @@
-import { Box, Stack } from '@mui/material';
 import { AstresAffiches } from './AstresAffiches.jsx';
 import { Reperes } from './Reperes.jsx';
 import { AllerAUnAstre } from './AllerAUnAstre.jsx';
@@ -17,18 +16,18 @@ export function Parametres({
   const pick = (index) => { onSelect?.(index); onClose?.(); };
 
   return (
-    <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-      <Stack spacing={1.5}>
+    <div className="max-w-225 mx-auto">
+      <div className="flex flex-col gap-3">
         {/* Repères et Univers : masqués à l'écran, mais toujours montés dans le DOM, */}
         {/* pour que l'assistant puisse continuer à actionner ces réglages. */}
-        <Box sx={{ display: 'none' }} aria-hidden="true">
+        <div className="hidden" aria-hidden="true">
           <Reperes orbits={orbits} onOrbits={onOrbits} markers={markers} onMarkers={onMarkers} satellites={satellites} onSatellites={onSatellites} sky={sky} onSky={onSky} />
-        </Box>
+        </div>
         <AstresAffiches kinds={kinds} onKind={onKind} />
         <EntrainementIA />
         <AllerAUnAstre bodies={bodies} focus={focus} onPick={pick} onShown={onBodyShown} />
         <CatalogueAstres bodies={bodies} onSelect={onSelect} onBodyShown={onBodyShown} onDone={onClose} engineRef={engineRef} />
-      </Stack>
-    </Box>
+      </div>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 // Marge de sécurité des écrans à encoche.
 import { safe } from './mediaQueries.jsx';
 
-// Cotes de la mise en page du HUD, partagées par les composants (sx).
+// Cotes de la mise en page du HUD, partagées par les composants.
 // Marge au bord de l'écran : 14 pixels.
 export const GUTTER = 14;      // marge au bord de l'écran (px)
 // Largeur du rail des astres : 260 pixels.

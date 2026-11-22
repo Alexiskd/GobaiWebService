@@ -1,5 +1,5 @@
-// Importe de MUI Box, Stack (pile) et Typography (texte).
-import { Box, Stack, Typography } from '@mui/material';
+// Ligne d'état : éléments HTML habillés par Tailwind CSS.
+import { tok } from '@/Fairing/kit/sx';
 
 // Table des couleurs de la pastille selon le ton : vert (ok), bleu (en cours), rouge (erreur).
 const TONE_COLOR = { ok: 'success.main', busy: 'info.main', bad: 'error.main' };
@@ -10,29 +10,19 @@ export function StatusLine({ text, tone, title }) {
   // Début du rendu.
   return (
     // Ligne horizontale au rôle d'état, éléments centrés verticalement, avec infobulle et marges.
-    <Stack direction="row" spacing={1} role="status" title={title} sx={{ alignItems: 'center', px: 0.5, py: 1 }}>
+    <div role="status" title={title} className="flex flex-row gap-2 items-center px-1 py-2">
       {/* La pastille (début de la balise). */}
-      <Box
+      <div
         // Cachée aux lecteurs d'écran : purement décorative.
         aria-hidden="true"
         // Début du style de la pastille.
-        sx={{
-          // Rond de 8 px qui ne se déforme pas ; couleur du ton, grisée si le ton est inconnu.
-          width: 8, height: 8, borderRadius: '50%', flex: 'none', bgcolor: TONE_COLOR[tone] || 'text.disabled',
-          // Pulsation continue seulement quand le ton est « en cours ».
-          animation: tone === 'busy' ? 'status-pulse 1.2s ease-in-out infinite' : 'none',
-          // Définition de la pulsation : opacité de 0,35 à mi-parcours.
-          '@keyframes status-pulse': { '50%': { opacity: 0.35 } },
-          // Pas d'animation si l'utilisateur a demandé moins de mouvement.
-          '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
-        // Fin du style.
-        }}
+        className={`w-2 h-2 rounded-full flex-none ${tone === 'busy' ? '[animation:status-pulse_1.2s_ease-in-out_infinite]' : '[animation:none]'} motion-reduce:[animation:none]`} style={{ backgroundColor: tok(TONE_COLOR[tone] || 'text.disabled') }}
       // Fin de la pastille.
       />
       {/* Le texte, en petit ; rouge en cas d'erreur, couleur secondaire sinon. */}
-      <Typography variant="caption" color={tone === 'bad' ? 'error' : 'text.secondary'}>{text}</Typography>
+      <span className={`t-caption ${tone === 'bad' ? 'text-error' : 'text-soft'}`}>{text}</span>
     {/* Fin de la ligne. */}
-    </Stack>
+    </div>
   // Fin du rendu.
   );
 // Fin de StatusLine.

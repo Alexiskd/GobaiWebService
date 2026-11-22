@@ -1,5 +1,5 @@
-// Importe de MUI Box, Button, Paper et Typography.
-import { Box, Button, Paper, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Button } from '@/Fairing/kit';
 // Importe les icônes du bouton (cerveau, lien externe).
 import { OpenInNewIcon, PsychologyIcon } from '../../ui/icons.jsx';
 
@@ -12,18 +12,18 @@ export const ENTRAINEMENT_IA_URL = 'https://gobaispace.info';
  */
 export function EntrainementIA() {
   return (
-    <Box role="group" aria-label="Entraînement IA">
-      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2.2 }}>Entraînement IA</Typography>
-      <Paper variant="outlined" sx={{ bgcolor: 'transparent', backdropFilter: 'none', p: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1.5, flexWrap: 'wrap' }}>
-        <Typography variant="body2" color="text.secondary" sx={{ flex: '1 1 220px' }}>Entraîner l’IA sur le site gobaispace.info.</Typography>
+    <div role="group" aria-label="Entraînement IA">
+      <span className="t-overline text-soft block leading-[2.2]">Entraînement IA</span>
+      <div className="g-paper g-paper-outlined bg-transparent p-3 flex items-center justify-between gap-3 flex-wrap">
+        <p className="t-body2 text-soft flex-[1_1_220px]">Entraîner l’IA sur le site gobaispace.info.</p>
         <Button
           component="a" href={ENTRAINEMENT_IA_URL} target="_blank" rel="noopener noreferrer"
           variant="contained" startIcon={<PsychologyIcon />} endIcon={<OpenInNewIcon fontSize="small" />}
-          sx={{ minHeight: 44, textTransform: 'none' }}
+          className="min-h-11 normal-case"
         >
           Entraînement IA
         </Button>
-      </Paper>
-    </Box>
+      </div>
+    </div>
   );
 }

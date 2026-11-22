@@ -2,8 +2,8 @@
 import { BodyDocumentation } from './BodyDocumentation.jsx';
 import { SUN_FACTS } from './astres/sunFacts.js';
 import { useEffect, useRef, useState } from 'react';
-// Importe de MUI Box, Collapse (repli animé), IconButton, Paper, Stack et Typography.
-import { Box, Collapse, IconButton, Paper, Stack, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Collapse, IconButton } from '@/Fairing/kit';
 // Importe le champ de recherche de lieux.
 import { PlaceSearch } from '@/Fairing/components/ui/PlaceSearch';
 // Importe le crochet de déplacement des panneaux.
@@ -38,7 +38,7 @@ function ZoomReadout({ hud }) {
   // Lit le niveau d'échelle.
   const scale = useHud(hud, (s) => s.scaleText);
   // Affiche la distance, suivie du niveau d'échelle s'il existe ; rien sans distance.
-  return zoom ? <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>{scale ? `${zoom} · ${scale}` : zoom}</Typography> : null;
+  return zoom ? <span className="t-caption text-soft tabular-nums">{scale ? `${zoom} · ${scale}` : zoom}</span> : null;
 // Fin de ZoomReadout.
 }
 
@@ -48,32 +48,15 @@ function ZoomReadout({ hud }) {
  */
 function Pastille({ accent = false, children }) {
   return (
-    <Box
-      component="span"
-      sx={{
-        display: 'inline-flex', alignItems: 'center', height: 20, px: 0.9, borderRadius: 999, whiteSpace: 'nowrap',
-        fontSize: 11, fontWeight: 600, lineHeight: 1, letterSpacing: '0.02em', fontVariantNumeric: 'tabular-nums',
-        border: 1, borderColor: accent ? 'primary.main' : 'divider',
-        color: accent ? 'primary.main' : 'text.secondary', bgcolor: accent ? 'transparent' : 'action.hover',
-      }}
+    <span
+      className={`inline-flex items-center h-5 px-[7.2px] rounded-full whitespace-nowrap text-[11px] font-semibold leading-none tracking-[0.02em] tabular-nums border ${accent ? 'border-primary' : 'border-line'} ${accent ? 'text-primary' : 'text-soft'} ${accent ? 'bg-transparent' : 'bg-hover'}`}
     >
       {children}
-    </Box>
+    </span>
   );
 }
 
-/**
- * Style des titres de section du panneau (« Rechercher un lieu », « Caractéristiques », « Cartes et couches »…) :
- * petites capitales en couleur de texte pleine, précédées d'un trait vertical de la couleur primaire.
- * Posé sur le conteneur du contenu, il ne touche pas les mêmes composants Section employés dans les autres fenêtres.
- */
-const TITRES_SX = {
-  '& h3.MuiTypography-overline': {
-    display: 'flex', alignItems: 'center', gap: 1, mb: 0.5,
-    color: 'text.primary', fontWeight: 700, letterSpacing: '0.09em', lineHeight: 2.2,
-    '&::before': { content: '""', flex: 'none', width: 3, height: 12, borderRadius: 2, bgcolor: 'primary.main' },
-  },
-};
+// Les titres de section du panneau (h3 en capitales) portent une barre d'accent : classe `g-titres` de theme/app.css.
 
 // Déclare le composant InformationsShell, la coquille du panneau : vue, HUD, informations ouvertes, fermeture, menu, Soleil, fermable et contenu.
 function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, closable, children }) {
@@ -113,31 +96,18 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
   // Ordinateur : fenêtre flottante à droite (déplaçable). Mobile : tiroir dans le flux du dock du bas (MobileDock),
   // au-dessus de la barre de l'assistant, de la bande des astres et de la navigation : il ne recouvre jamais ces étages.
   // Placement du panneau : en mode compact (début).
-  const placement = compact ? {
-    // Dans le flux du dock, sur toute sa largeur.
-    position: 'relative', width: 'auto',
-    // Peut se réduire quand la place manque (son contenu défile alors) ; jamais plus haut que l'espace entre la zone
-    // du titre et la base du dock.
-    flex: '0 1 auto', minHeight: 0, maxHeight: DOCK_SURFACE_MAX,
-    // Arrondi en haut seulement ; carte arrondie en écran large (surfaces côte à côte).
-    borderRadius: '18px 18px 0 0', '@media (min-width: 700px)': { borderRadius: '18px' },
-  // Sinon (début).
-  } : {
-    // À droite, près du haut, de la largeur d'un panneau, de hauteur limitée.
-    right: edge('right', 76), top: edge('top', 12), width: PANEL_W, maxHeight: 'calc(100dvh - 100px)',
-    // Au niveau des panneaux du HUD.
-    zIndex: (t) => t.zIndex.hudPanel,
-  // Fin du placement.
-  };
+  const placementClass = compact
+    ? 'relative w-auto flex-[0_1_auto] min-h-0 rounded-[14px_14px_0_0] min-[700px]:rounded-[14px]'
+    : 'fixed z-[30]';
+  // Position et tailles calculées (marges de sécurité, largeur du panneau).
+  const placementStyle = compact
+    ? { maxHeight: DOCK_SURFACE_MAX }
+    : { right: edge('right', 76), top: edge('top', 12), width: PANEL_W, maxHeight: 'calc(100dvh - 100px)' };
 
   // Début du rendu.
   return (
     // Le panneau (début de la balise).
-    <Paper
-      // Rendu en balise section.
-      component="section"
-      // Ombre marquée.
-      elevation={8}
+    <section
       // Attribut data-body : l'identifiant de l'astre.
       data-body={view?.id}
       // Marqueur « sheet » en mode compact.
@@ -147,9 +117,9 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
       // Référence pour le déplacement.
       ref={drag.ref}
       // Style de position, après déplacement.
-      style={drag.style}
+      style={{ ...placementStyle, ...drag.style }}
       // Fixé, en colonne, sans débordement, avec le placement calculé.
-      sx={{ position: 'fixed', display: 'flex', flexDirection: 'column', overflow: 'hidden', ...placement }}
+      className={`g-paper g-elev flex flex-col overflow-hidden ${placementClass}`}
     // Fin de la balise ouvrante.
     >
       {/* L'en-tête (début de la balise). */}
@@ -165,20 +135,20 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
         // Type et diamètre à côté du nom de l'astre, dans le même axe que le titre ; zoom en mode compact.
         titleAdornment={(
           // Ligne du type, du diamètre et du zoom (début).
-          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: 0, flexWrap: 'wrap' }}>
+          <div className="flex flex-row gap-2 items-center min-w-0 flex-wrap">
             {/* Type de l'astre, suivi de son diamètre s'il est connu. */}
             {view && <Pastille accent>{view.type}</Pastille>}
             {view?.diameter && <Pastille>⌀ {view.diameter}</Pastille>}
             {/* Zoom, en mode compact. */}
             {compact && <ZoomReadout hud={hud} />}
           {/* Fin de la ligne. */}
-          </Stack>
+          </div>
         // Fin de l'ajout au titre.
         )}
         // Bouton de fermeture seulement pour le Soleil ouvert à la demande.
         onClose={sun && closable ? onCloseLayers : undefined}
         // Pas de filet sous l'en-tête quand le panneau est replié.
-        sx={open ? undefined : { borderBottom: 0 }}
+        className={`${open ? '' : 'border-b-0'}`}
         // Actions de l'en-tête (début).
         actions={(
           // Le bouton de repli (début de la balise).
@@ -202,38 +172,38 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
       // Fin de l'en-tête.
       />
       {/* Zone repliable : démontée quand elle est repliée, défile sans entraîner la page. */}
-      <Collapse in={open} timeout="auto" unmountOnExit sx={{ flex: '0 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+      <Collapse in={open} timeout="auto" unmountOnExit className="flex-[0_1_auto] min-h-0 overflow-y-auto overscroll-contain">
         {/* Marges intérieures (sur téléphone, la navigation du dock porte la marge de sécurité du bas). */}
-        <Box sx={{ px: 2, pt: 1.5, pb: 1.5, ...TITRES_SX }}>
+        <div className="g-titres px-4 pt-3 pb-3">
           {/* Le contenu propre à l'astre. */}
           {children}
           {/* Cartes et couches de l'astre : plus de bouton dans la barre d'outils, la section est rendue ici, à la
               suite des caractéristiques, dès qu'un astre est visé (début). */}
           {!sun && view && (
             // Section des cartes, séparée des caractéristiques par un filet.
-            <Box component="section" aria-label="Cartes et couches" ref={layersRef} sx={{ mt: 0.5, pt: 1.25, borderTop: 1, borderColor: 'divider' }}>
+            <section aria-label="Cartes et couches" ref={layersRef} className="mt-1 pt-2.5 border-t border-line">
               {/* Ligne du titre. */}
-              <Stack direction="row" sx={{ alignItems: 'center', minHeight: 36 }}>
+              <div className="flex flex-row items-center min-h-9">
                 {/* Le titre (début de la balise). */}
-                <Typography component="h3" variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2.2 }}>
+                <h3 className="t-overline text-soft block leading-[2.2]">
                   {/* « Cartes et couches », suivi du nom de l'astre s'il est connu. */}
                   Cartes et couches{menu.bodyName ? ` · ${menu.bodyName}` : ''}
                 {/* Fin du titre. */}
-                </Typography>
+                </h3>
               {/* Fin de la ligne. */}
-              </Stack>
+              </div>
               {/* Le menu des cartes de l'astre. */}
               <BodyLayersMenu hud={hud} {...menu} />
             {/* Fin de la section. */}
-            </Box>
+            </section>
           // Fin du cas.
           )}
         {/* Fin des marges. */}
-        </Box>
+        </div>
       {/* Fin de la zone repliable. */}
       </Collapse>
     {/* Fin du panneau. */}
-    </Paper>
+    </section>
   // Fin du rendu.
   );
 // Fin de InformationsShell.

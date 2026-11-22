@@ -4,6 +4,8 @@
 import { createRoot } from 'react-dom/client';
 // Importe SceneStyles, qui habille les divs posés par le moteur dans la page.
 import { SceneStyles } from '@/Fairing/theme/SceneStyles.jsx';
+// Importe la feuille de style des éléments que le moteur pose dans la page.
+import '@/Fairing/theme/scene.css';
 // Importe createHudStore : le magasin minimal que le moteur écrit en continu (rien ne le lit à l'écran).
 import { createHudStore } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe fetchSceneData et tilesApi, les mêmes sources que l'application principale.

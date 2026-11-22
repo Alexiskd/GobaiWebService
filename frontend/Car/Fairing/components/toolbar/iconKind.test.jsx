@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 // Importe la nature d'une icône.
 import { iconKind } from './iconKind.js';
 
-// Test : une icône MUI est un objet memo, pas une fonction.
+// Test : une icône peut être un objet memo (comme celles de certaines bibliothèques), pas une fonction.
 test('reconnaît une icône MUI (React.memo) comme un composant', () => {
   // Ce que createSvgIcon de MUI rend réellement : memo(forwardRef(…)).
   const forwardRef = { $$typeof: Symbol.for('react.forward_ref'), render: () => null };

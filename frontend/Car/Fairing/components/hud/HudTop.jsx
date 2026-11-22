@@ -1,7 +1,7 @@
 // Importe useSyncExternalStore de React.
 import { useSyncExternalStore } from 'react';
-// Importe de MUI Box, Paper et Typography.
-import { Box, Paper, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Typography } from '@/Fairing/kit';
 // Importe la valeur « nuit », le lecteur et l'abonnement du réglage jour/nuit.
 import { NIGHT, getDayNight, subscribeDayNight } from '@/Engine/shared/lib/device/dayNight';
 // Importe useHud, qui lit une valeur du magasin du HUD.
@@ -18,8 +18,6 @@ import { safe } from '@/Fairing/theme/mediaQueries';
 import { FpsCounter } from './perf/FpsCounter.jsx';
 // Importe le badge « En direct ».
 import { LiveBadge } from '../ui/LiveBadge.jsx';
-// Importe le menu déroulant générique.
-import { MenuDeroulant } from '../ui/MenuDeroulant.jsx';
 
 // Emblème dans /logo.webp (copie légère de /logo.png, 1379 × 752 px ramenés à 640 px de large) : rectangle réellement
 // dessiné, hors marges transparentes. Les mesures ci-dessous sont celles de l'image d'origine ; seuls leurs rapports servent.
@@ -44,49 +42,23 @@ export function HudTop({ hud }) {
   // Début du rendu.
   return (
     // Le bandeau (début de la balise).
-    <Paper
-      // Rendu en balise header.
-      component="header"
-      // Ombre moyenne.
-      elevation={4}
+    <header
       // Marqueur de l'élément d'interface « title ».
       data-hud="title"
       // Référence pour le déplacement.
       ref={drag.ref}
-      // Style de position, après déplacement.
-      style={drag.style}
       // Propriétés de la poignée : tout le bandeau se saisit.
       {...drag.handleProps}
       // Début du style.
-      sx={{
-        // Ordinateur : fixé en haut à gauche, au niveau du HUD, sans ancrage à droite, jamais plus large que l'écran.
-        // Téléphone : dans le flux de la zone du titre (MobileTopBar), qui le place et le borne à côté de ses boutons.
-        ...(compact
-          // Téléphone : dans le flux.
-          ? { position: 'relative' }
-          // Ordinateur : fixé.
-          // Ordinateur : fixé ; sa largeur s'arrête avant le panneau d'informations, posé en haut à droite (à 76 px du
-          // bord, PANEL_W de large, 8 px d'écart) : le bandeau passe à la ligne au lieu de glisser sous le panneau.
-          : { position: 'fixed', zIndex: (t) => t.zIndex.hud, top: edge('top', 12), left: edge('left', 14), right: 'auto', maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 98px - ${PANEL_W})` }),
-        // Même marge intérieure à gauche (avant le logo) et à droite (après le texte) : le bandeau épouse son contenu.
-        // Contenu en ligne, centré verticalement.
-        display: 'flex', alignItems: 'center',
-        // Espacement et marges intérieures, réduits en mode compact.
-        gap: compact ? 1 : 1.5, px: compact ? 1.25 : 1.75, py: compact ? 0.25 : 0.5,
-        // Curseur en main et gestes réservés au déplacement, sauf en mode compact ; texte non sélectionnable.
-        cursor: compact ? 'default' : 'grab', userSelect: 'none', touchAction: compact ? 'auto' : 'none',
-      // Fin du style.
-      }}
+      className={`g-paper ${compact ? 'relative' : 'fixed z-[20] right-auto'} flex items-center ${compact ? 'gap-2' : 'gap-3'} ${compact ? 'px-2.5' : 'px-3.5'} ${compact ? 'py-0.5' : 'py-1'} ${compact ? 'cursor-default' : 'cursor-grab'} select-none ${compact ? 'touch-auto' : 'touch-none'}`} style={{ ...drag.style, ...(compact ? {  } : { top: edge('top', 12), left: edge('left', 14), maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 98px - ${PANEL_W})` }) }}
     // Fin de la balise ouvrante.
     >
       {/* Emblème seul : l'image a de larges marges transparentes (27 % à gauche, 20 % à droite), rognées ici pour que
           l'espace bord gauche → logo soit exactement celui du texte → bord droit (le `px` du bandeau). */}
       {/* Cadre de l'emblème : largeur selon l'écran, proportions de l'emblème, ce qui dépasse est masqué. */}
-      <Box sx={{ width: compact ? 30 : 'clamp(38px, 3.6vw, 56px)', aspectRatio: `${LOGO.w} / ${LOGO.h}`, flex: 'none', overflow: 'hidden' }}>
+      <div className={`${compact ? 'w-7.5' : 'w-[clamp(38px,3.6vw,56px)]'} flex-none overflow-hidden`} style={{ aspectRatio: `${LOGO.w} / ${LOGO.h}` }}>
         {/* L'image du logo (début de la balise). */}
-        <Box
-          // Rendue en balise img.
-          component="img"
+        <img
           // Adresse du logo (le paramètre v force le rechargement).
           src="/logo.webp?v=4"
           // Texte alternatif.
@@ -102,48 +74,42 @@ export function HudTop({ hud }) {
           // Décodage asynchrone.
           decoding="async"
           // Début du style.
-          sx={{
-            // Affichée en bloc, sans largeur maximale, hauteur proportionnelle.
-            display: 'block', maxWidth: 'none', height: 'auto',
-            // Agrandie et décalée pour que seul l'emblème soit visible dans le cadre.
-            width: `${(LOGO.fullW / LOGO.w) * 100}%`, ml: `${(-LOGO.x / LOGO.w) * 100}%`, mt: `${(-LOGO.y / LOGO.w) * 100}%`,
-          // Fin du style.
-          }}
+          className="block max-w-none h-auto" style={{ width: `${(LOGO.fullW / LOGO.w) * 100}%`, marginLeft: `${(-LOGO.x / LOGO.w) * 100}%`, marginTop: `${(-LOGO.y / LOGO.w) * 100}%` }}
         // Fin de l'image.
         />
       {/* Fin du cadre de l'emblème. */}
-      </Box>
+      </div>
       {/* Zone des textes. */}
-      <Box sx={{ minWidth: 0 }}>
+      <div className="min-w-0">
         {/* Le titre de niveau 1, jamais traduit, plus petit en mode compact. */}
-        <Typography component="h1" translate="no" variant={compact ? 'subtitle1' : 'h6'} sx={{ fontWeight: 600, lineHeight: 1.1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: '0.3em' }}>
+        <Typography component="h1" translate="no" variant={compact ? 'subtitle1' : 'h6'} className="font-semibold leading-[1.1] flex items-center flex-wrap gap-x-[0.3em]">
           {/* Le symbole ∞ en bleu, agrandi, décoratif. */}
-          <Box component="span" aria-hidden="true" sx={{ color: '#0000FF', fontSize: compact ? '1.9em' : '2.2em', lineHeight: 0.8, fontWeight: 700 }}>∞</Box>
+          <span aria-hidden="true" className={`text-[#0000FF] ${compact ? 'text-[1.9em]' : 'text-[2.2em]'} leading-[0.8] font-bold`}>∞</span>
           {/* Le nom de l'application, suivi d'une espace. */}
           Go白ناन्टех{' '}
           {/* La suite du nom, hors mode compact, en couleur secondaire, décorative. */}
-          {!compact && <Box component="span" aria-hidden="true" sx={{ color: 'text.secondary', fontWeight: 400 }}>α΄一하나א</Box>}
+          {!compact && <span aria-hidden="true" className="text-soft font-normal">α΄一하나א</span>}
           {/* Le badge « En direct », masqué mais toujours à sa place hors mode nuit. */}
-          <LiveBadge sx={{ ml: '0.2em', visibility: live ? 'visible' : 'hidden' }} />
+          <LiveBadge className={`ml-[0.2em] ${live ? 'visible' : 'invisible'}`} />
           {/* Sujet du site à côté de son nom, écrit dans le bleu du fond du bandeau (il suit le thème jour / nuit). */}
           {/* Le sujet du site, à traduire, de la couleur du fond du bandeau. */}
-          <Box component="span" translate="yes" sx={{ color: 'background.paper', fontWeight: 400 }}>: système solaire 3D</Box>
+          <span translate="yes" className="text-surface font-normal">: système solaire 3D</span>
         {/* Fin du titre. */}
         </Typography>
         {/* La date, en petit, en chiffres de largeur fixe. */}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>
+        <span className="t-caption text-soft block mt-0 leading-[1.2] tabular-nums">
           {/* La date. */}
           {date}
           {/* Le compteur d'images par seconde, à la suite (ordinateur ; rien sur téléphone). */}
           <FpsCounter hud={hud} />
         {/* Fin de la ligne de la date. */}
-        </Typography>
+        </span>
         {/* Le texte de l'astre visé, s'il existe, hors mode compact. */}
-        {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>{focusText}</Typography>}
+        {focusText && !compact && <span className="t-caption text-soft block leading-[1.2] tabular-nums">{focusText}</span>}
       {/* Fin de la zone des textes. */}
-      </Box>
+      </div>
     {/* Fin du bandeau. */}
-    </Paper>
+    </header>
   // Fin du rendu.
   );
 // Fin de HudTop.

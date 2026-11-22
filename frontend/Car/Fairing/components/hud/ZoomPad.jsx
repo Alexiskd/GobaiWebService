@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect et useRef.
 import { useCallback, useEffect, useRef } from 'react';
-// Importe de MUI Paper, Tooltip, IconButton et Divider.
-import { Paper, Tooltip, IconButton, Divider } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Tooltip, IconButton } from '@/Fairing/kit';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe la distance du pavé au bas de l'écran et edge, la distance à un bord.
@@ -119,7 +119,7 @@ export function ZoomPad({ onZoom }) {
         // Les propriétés communes.
         {...common}
         // Carré de 48 px, sans arrondi, gestes tactiles réservés.
-        sx={{ borderRadius: 0, width: 48, height: 48, touchAction: 'none' }}
+        className="rounded-none w-12 h-12 touch-none"
       // Fin de la balise ouvrante.
       >
         {/* L'icône. */}
@@ -138,31 +138,23 @@ export function ZoomPad({ onZoom }) {
   // Début du rendu.
   return (
     // Carte du pavé (début de la balise).
-    <Paper
-      // Ombre moyenne.
-      elevation={4}
+    <div
       // Rôle de groupe.
       role="group"
       // Nom pour les lecteurs d'écran.
       aria-label="Contrôles de zoom"
       // Début du style.
-      sx={{
-        // Fixée en bas à droite, au niveau du HUD.
-        position: 'fixed', zIndex: (t) => t.zIndex.hud, right: edge('right', compact ? 8 : 14), bottom: edge('bottom', ZOOM_BOTTOM),
-        // Boutons empilés ; ce qui dépasse est masqué.
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      // Fin du style.
-      }}
+      className="g-paper fixed z-[20] flex flex-col overflow-hidden" style={{ right: edge('right', compact ? 8 : 14), bottom: edge('bottom', ZOOM_BOTTOM) }}
     // Fin de la balise ouvrante.
     >
       {/* Le bouton plus : facteur 0,94, la vue se rapproche. */}
       {button(0.94, 'Maintenir pour zoomer', AddIcon)}
       {/* Filet de séparation. */}
-      <Divider />
+      <hr className="g-divider" />
       {/* Le bouton moins : facteur 1,064, la vue s'éloigne. */}
       {button(1.064, 'Maintenir pour dézoomer', RemoveIcon)}
     {/* Fin de la carte. */}
-    </Paper>
+    </div>
   // Fin du rendu.
   );
 // Fin de ZoomPad.

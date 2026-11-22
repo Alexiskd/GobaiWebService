@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useRef, useState et useSyncExternalStore.
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
-// Importe de MUI Box, ButtonBase (bouton nu), Divider, Paper, Slider (réglette) et Tooltip.
-import { Box, ButtonBase, Divider, Paper, Slider, Tooltip } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Slider, Tooltip } from '@/Fairing/kit';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe le crochet du pilotage en penchant le téléphone.
@@ -286,33 +286,21 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
     {/* Pendant un pilotage au téléphone (début). */}
     {pilot.mode && (
       // Carte de la réglette (début de la balise).
-      <Paper
-        // Ombre moyenne.
-        elevation={4}
+      <div
         // Rôle de groupe.
         role="group"
         // Nom pour les lecteurs d'écran.
         aria-label="Sensibilité avancer / reculer"
         // Début du style.
-        sx={{
-          // Fixée à gauche de la navball, au même niveau vertical ; navball en rangée : sous elle, au bord droit.
-          position: 'fixed', zIndex: (t) => t.zIndex.hud,
-          // Position : sous la rangée, ou à gauche de la colonne.
-          ...(row ? { right: edge('right', side), top: `calc(${HUD_TOP} + ${8 + WIDTH + 6}px)` } : { right: edge('right', side + WIDTH + 6), ...vertical }),
-          // Colonne de 40 px, de la hauteur du panneau (en rangée : la place restante, entre 80 et 160 px), contenu centré.
-          width: 40, height: row ? Math.max(80, Math.min(160, free - WIDTH - 30)) : panelH, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5, py: 0.75,
-          // Couleurs de la navball, sans dégradé, gestes tactiles réservés.
-          bgcolor: C.bg, color: C.fg, backgroundImage: 'none', touchAction: 'none',
-        // Fin du style.
-        }}
+        className="g-paper fixed z-[20] w-10 flex flex-col items-center gap-1 py-1.5 [background-image:none] touch-none" style={{ ...(row ? { right: edge('right', side), top: `calc(${HUD_TOP} + ${8 + WIDTH + 6}px)` } : { right: edge('right', side + WIDTH + 6), ...vertical }), height: row ? Math.max(80, Math.min(160, free - WIDTH - 30)) : panelH, backgroundColor: C.bg, color: C.fg }}
       // Fin de la balise ouvrante.
       >
         {/* La valeur de la sensibilité, en petit, décorative. */}
-        <Box component="span" aria-hidden="true" sx={{ fontSize: 10, fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
+        <span aria-hidden="true" className="text-[10px] font-bold leading-none tabular-nums">
           {/* Le signe × suivi de la valeur au format français. */}
           ×{zoomSensitivity.toLocaleString('fr-FR')}
         {/* Fin de la valeur. */}
-        </Box>
+        </span>
         {/* La réglette (début de la balise). */}
         <Slider
           // Verticale.
@@ -332,41 +320,24 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
           // Au changement : enregistre la nouvelle sensibilité.
           onChange={(e, v) => setTiltZoomSensitivity(v)}
           // Prend la hauteur restante, en ambre, avec un curseur de 18 px.
-          sx={{ flex: 1, minHeight: 0, color: C.amber, '& .MuiSlider-thumb': { width: 18, height: 18 } }}
+          className="flex-1 min-h-0" thumbClassName="w-[18px] h-[18px]" style={{ '--color-primary': C.amber }}
         // Fin de la réglette.
         />
       {/* Fin de la carte de la réglette. */}
-      </Paper>
+      </div>
     // Fin du cas « pilotage ».
     )}
     {/* Carte de la navball (début de la balise). */}
-    <Paper
-      // Rendue en balise section.
-      component="section"
+    <section
       // Nom pour les lecteurs d'écran.
       aria-label="Navball, pilotage de la caméra"
-      // Ombre moyenne.
-      elevation={4}
       // Début du style.
-      sx={{
-        // Fixée au bord droit, au niveau du HUD.
-        position: 'fixed', zIndex: (t) => t.zIndex.hud, right: edge('right', side),
-        // Zoom : 97 px de haut, en bas à droite au-dessus de la barre d'outils ; la navball se pose 8 px au-dessus.
-        // Téléphone : pas de boutons +/−, la navball est centrée dans la zone libre du bord droit, entre le bandeau
-        // titre et les étages du bas (tiroir, bande des astres).
-        // Le placement vertical calculé plus haut.
-        ...vertical,
-        // Colonne de 48 px (en rangée sur un téléphone à court de hauteur) ; ce qui dépasse est masqué.
-        width: row ? 'auto' : WIDTH, display: 'flex', flexDirection: row ? 'row' : 'column', overflow: 'hidden',
-        // Couleurs de la navball, sans dégradé.
-        bgcolor: C.bg, color: C.fg, backgroundImage: 'none',
-      // Fin du style.
-      }}
+      className={`g-paper fixed z-[20] ${row ? 'w-auto' : 'w-12'} flex ${row ? 'flex-row' : 'flex-col'} overflow-hidden [background-image:none]`} style={{ right: edge('right', side), ...vertical, backgroundColor: C.bg, color: C.fg }}
     // Fin de la balise ouvrante.
     >
       {/* Dessin pensé pour un grand canevas : rendu à 420 px puis réduit (le glisser suit la réduction). */}
       {/* La case de la boule (début de la balise). */}
-      <Box
+      <div
         // Référence pour l'écouteur de molette.
         ref={ballRef}
         // Début du glisser.
@@ -380,44 +351,36 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
         // Infobulle d'aide.
         title="Glisser : cap (horizontal) et inclinaison (vertical) · molette : cap"
         // Début du style.
-        sx={{
-          // Carré de 48 px, ce qui dépasse est masqué, curseur en main ouverte, gestes tactiles réservés.
-          position: 'relative', width: WIDTH, height: WIDTH, overflow: 'hidden', cursor: 'grab', touchAction: 'none',
-          // Pendant l'appui : curseur en main fermée.
-          '&:active': { cursor: 'grabbing' },
-        // Fin du style.
-        }}
+        className="relative w-12 h-12 overflow-hidden cursor-grab touch-none active:cursor-grabbing"
       // Fin de la balise ouvrante.
       >
         {/* Navball d'origine (version GitHub), entière, sans effet ajouté. */}
         {/* Le dessin d'origine, réduit depuis son coin supérieur gauche, sans capter les clics. */}
-        <Box sx={{ width: DESIGN, transform: `scale(${BALL_SCALE})`, transformOrigin: 'top left', position: 'absolute', top: BALL_OFFSET, left: BALL_OFFSET, pointerEvents: 'none' }}>
+        <div className="w-105 [transform-origin:top_left] absolute top-0 left-0 pointer-events-none" style={{ transform: `scale(${BALL_SCALE})` }}>
           {/* La navball, avec l'attitude courante. */}
           <Navball attitude={attitude} size={DESIGN - 32} />
         {/* Fin du dessin. */}
-        </Box>
+        </div>
       {/* Fin de la case de la boule. */}
-      </Box>
+      </div>
       {/* Filet de séparation. */}
-      <Divider sx={{ borderColor: C.line }} />
+      <hr className="g-divider" style={{ borderColor: C.line }} />
       {/* Infobulle du verrou, placée à gauche. */}
       <Tooltip title={lockHint} placement="left">
         {/* Balise span : l'infobulle fonctionne même quand le bouton est désactivé. */}
         <span>
           {/* Le bouton du verrou (début de la balise). */}
-          <ButtonBase
+          <button type="button"
             // Nom, état enfoncé, désactivation sans boussole, et action au clic.
             aria-label={lockHint} aria-pressed={locked} disabled={!compass} onClick={onLock}
             // Taille, police et graisse du bouton…
-            sx={{ width: btnW, height: btnH, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 700, fontFamily: C.display,
-              // … et ses couleurs : ambre s'il est verrouillé, transparent sinon, avec un fond de survol.
-              color: locked ? C.bg : C.fg, bgcolor: locked ? C.amber : 'transparent', '&:hover': { bgcolor: locked ? C.amber : 'rgba(255,255,255,.08)' } }}
+            className="g-base grid place-items-center text-[13px] font-bold hover:bg-white/8" style={{ width: btnW, height: btnH, fontFamily: C.display, color: locked ? C.bg : C.fg, backgroundColor: locked ? C.amber : undefined }}
           // Fin de la balise ouvrante.
           >
             {/* Un cadenas s'il est verrouillé, la lettre N sinon. */}
-            {locked ? <LockIcon sx={{ fontSize: 16, display: 'block' }} /> : 'N'}
+            {locked ? <LockIcon className="text-[16px] block" /> : 'N'}
           {/* Fin du bouton du verrou. */}
-          </ButtonBase>
+          </button>
         {/* Fin de la balise span. */}
         </span>
       {/* Fin de l'infobulle. */}
@@ -429,25 +392,23 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
         // Début du rendu du bouton.
         return (
           // Conteneur du bouton.
-          <Box key={id}>
+          <div key={id}>
             {/* Filet de séparation. */}
-            <Divider sx={{ borderColor: C.line }} />
+            <hr className="g-divider" style={{ borderColor: C.line }} />
             {/* Le bouton du mode (début de la balise). */}
-            <ButtonBase
+            <button type="button"
               // Nom, infobulle, état enfoncé, et action au clic.
               aria-label={hint} title={hint} aria-pressed={on} onClick={() => onMode(id)}
               // Taille du bouton…
-              sx={{ width: btnW, height: btnH, display: 'grid', placeItems: 'center', fontSize: 14, lineHeight: 1,
-                // … et ses couleurs : ambre s'il est actif, transparent sinon, avec un fond de survol.
-                bgcolor: on ? C.amber : 'transparent', '&:hover': { bgcolor: on ? C.amber : 'rgba(255,255,255,.08)' } }}
+              className="g-base grid place-items-center text-[14px] leading-none hover:bg-white/8" style={{ width: btnW, height: btnH, backgroundColor: on ? C.amber : undefined }}
             // Fin de la balise ouvrante.
             >
               {/* L'icône du mode. */}
-              <Icon sx={{ fontSize: 16, display: 'block' }} />
+              <Icon className="text-[16px] block" />
             {/* Fin du bouton du mode. */}
-            </ButtonBase>
+            </button>
           {/* Fin du conteneur. */}
-          </Box>
+          </div>
         // Fin du rendu du bouton.
         );
       // Fin des boutons de mode.
@@ -455,40 +416,35 @@ export function NavballPilote({ hud, engine, locked = false, onRecalibrate, onSt
       {/* « Ma position » (si le rappel existe) : dernière case de la colonne, en icône (début). */}
       {onMyPosition && (
         // Conteneur du bouton.
-        <Box>
+        <div>
           {/* Filet de séparation. */}
-          <Divider sx={{ borderColor: C.line }} />
+          <hr className="g-divider" style={{ borderColor: C.line }} />
           {/* Infobulle, placée à gauche. */}
           <Tooltip title={positionHint} placement="left">
             {/* Balise span : l'infobulle fonctionne même quand le bouton est désactivé. */}
             <span>
               {/* Le bouton (début de la balise). */}
-              <ButtonBase
+              <button type="button"
                 // Nom, état enfoncé pendant le suivi, coupé pendant l'attente, et action au clic.
                 aria-label="Ma position" aria-pressed={Boolean(positionLive)} disabled={Boolean(positionWaiting)} onClick={onMyPosition}
                 // Taille du bouton et taille de l'icône…
-                sx={{ width: btnW, height: btnH, display: 'grid', placeItems: 'center', fontSize: 17, lineHeight: 1,
-                  // … ses couleurs : ambre pendant le suivi, transparent sinon, avec un fond de survol…
-                  color: positionLive ? C.bg : C.fg, bgcolor: positionLive ? C.amber : 'transparent',
-                  '&:hover': { bgcolor: positionLive ? C.amber : 'rgba(255,255,255,.08)' },
-                  // … et estompé pendant l'attente.
-                  '&.Mui-disabled': { color: C.fg, opacity: 0.45 } }}
+                className="g-base grid place-items-center text-[17px] leading-none hover:bg-white/8 disabled:opacity-45" style={{ width: btnW, height: btnH, color: positionLive ? C.bg : C.fg, backgroundColor: positionLive ? C.amber : undefined }}
               // Fin de la balise ouvrante.
               >
                 {/* L'icône de position, décorative (le nom est porté par aria-label). */}
-                <MyLocationIcon sx={{ fontSize: 17, display: 'block' }} />
+                <MyLocationIcon className="text-[17px] block" />
               {/* Fin du bouton. */}
-              </ButtonBase>
+              </button>
             {/* Fin de la balise span. */}
             </span>
           {/* Fin de l'infobulle. */}
           </Tooltip>
         {/* Fin du conteneur. */}
-        </Box>
+        </div>
       // Fin de « Ma position ».
       )}
     {/* Fin de la carte de la navball. */}
-    </Paper>
+    </section>
     {/* Fin du fragment. */}
     </>
   // Fin du rendu.

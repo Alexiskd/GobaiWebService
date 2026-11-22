@@ -1,11 +1,9 @@
 // Section « Charge électrique du Soleil selon sa température » de l'onglet « Théorie quantique » : la charge nette
 // (minuscule) et la charge ionisée totale (immense, mais équilibrée), avec les formules et les valeurs calculées.
-// Composants MUI.
-import { Box } from '@mui/material';
 // Calculs de la charge du Soleil.
 import { CONSTANTES, LIGNES_SYNTHESE, SEUIL_IONISATION, qCouronne, qIonisee, qNette, rapportVitesses, tauxIonisation } from './chargeSoleil.js';
 // Briques de style communes de la fenêtre Node.
-import { Chiffre, Fiche, Formule, GrilleChiffres, MONO, Note, Precision, SousTitre } from '../node/nodeUi.jsx';
+import { Chiffre, Fiche, Formule, GrilleChiffres, Note, Precision, SousTitre } from '../node/nodeUi.jsx';
 // Écriture scientifique française.
 import { scientific } from '@/Engine/AstreSolideEngine/BodyEngine/planetData';
 
@@ -21,7 +19,7 @@ export function ChargeSoleil() {
   const q = qIonisee();
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Chiffres clés. */}
       <GrilleChiffres>
         <Chiffre libelle="Charge nette statique" valeur={`+${qNette().toFixed(0)} C`} detail="indépendante de la température" />
@@ -56,7 +54,7 @@ export function ChargeSoleil() {
       <Formule>{'x² / (1 − x) = (1/n) · (2π m_e k_B T / h²)^(3/2) · exp(−χ_H / k_B T)\nQ₊ = x · e · (M☉/m_p) · (X + Y/2 + Z/2)     et −Q₊ pour les électrons'}</Formule>
       <Fiche
         label="Taux d’ionisation de l’hydrogène selon la température, à la densité de la photosphère"
-        sx={{ mt: 1, maxWidth: 420 }}
+        className="mt-2 max-w-105"
         colonnes={[{ titre: 'Température (K)' }, { titre: 'Taux d’ionisation x', align: 'right' }]}
         lignes={SEUIL_IONISATION.map(([T, x]) => [milliers(T), x < 0.01 ? scientific(x, 1) : virgule(x, 3)])}
       />
@@ -71,10 +69,10 @@ export function ChargeSoleil() {
       <Fiche
         label="Synthèse des trois charges du Soleil"
         fixe
-        colonnes={[{ titre: 'Grandeur', largeur: '34%' }, { titre: 'Formule', cache: true, sx: { fontFamily: MONO, fontSize: '0.75rem' } }, { titre: 'Valeur', align: 'right', largeur: '34%' }]}
+        colonnes={[{ titre: 'Grandeur', largeur: '34%' }, { titre: 'Formule', cache: true, className: 'font-mono text-[0.75rem]' }, { titre: 'Valeur', align: 'right', largeur: '34%' }]}
         lignes={LIGNES_SYNTHESE.map((l) => [
           l.grandeur, l.formule,
-          <Box key={l.grandeur}><strong>{l.valeur > 1e6 ? scientific(l.valeur, 3) : virgule(l.valeur, 1)} {l.unite}</strong><Precision>{l.note}</Precision></Box>,
+          <div key={l.grandeur}><strong>{l.valeur > 1e6 ? scientific(l.valeur, 3) : virgule(l.valeur, 1)} {l.unite}</strong><Precision>{l.note}</Precision></div>,
         ])}
       />
       <Note>
@@ -82,7 +80,7 @@ export function ChargeSoleil() {
         Le Soleil est donc quasi neutre — au contraire d’un noyau d’atome, dont toute la charge est positive : c’est une
         différence de fond avec le « noyau » de la théorie.
       </Note>
-    </Box>
+    </div>
   );
 // Fin de ChargeSoleil.
 }
