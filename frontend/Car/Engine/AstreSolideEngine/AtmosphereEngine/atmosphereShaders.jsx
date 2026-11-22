@@ -120,7 +120,7 @@ export const earthCloudFragmentShader = [
   'float dc=dot(normalize(vN),sunV)+.05;',
   // Lumière du Soleil atténuée et rougie par l'air (un peu au-delà de Lambert : la lumière diffuse dans le nuage), lumière
   // du ciel, et lueur de la nuit (3 %), en lumière linéaire.
-  'vec3 E=sunTransmit(dc)*(.85*max(dc,0.)+.15*smoothstep(-.05,.35,dc))*smoothstep(-.03,.01,dc)+skyLight(dc)+vec3(.00045);',
+  'vec3 E=sunTransmit(dc)*(.85*max(dc,0.)+.15*smoothstep(-.05,.35,dc))*smoothstep(-.06,.16,dc)+skyLight(dc)+twilight(dc)+vec3(.00045);',
   // Vue de la pollution lumineuse : toute la Terre de nuit, les nuages ne gardent que la lueur de la nuit.
   'E=mix(E,vec3(.00045),lightView);',
   // Couleur finale : blanc, éclairé (ramené à l'écran) selon le réglage de l'ombre ; opacité égale à la couverture. Fin de la fonction principale.

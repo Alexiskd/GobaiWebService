@@ -83,9 +83,11 @@ export const EARTH_LIGHT_GLSL = [
   'vec3 sunTransmit(float d){return exp(-EARTH_TAU*(airMass(d)-1.));}',
   // skyLight : lumière du ciel, nulle 6° sous l'horizon, entière à 24° de hauteur.
   'vec3 skyLight(float d){float t=clamp((d+.1)/.5,0.,1.);return SKY_LIGHT*t*t;}',
+  // twilight : bande bleue du crépuscule autour du terminateur (référence : fond d'écran iOS), qui adoucit le passage jour / nuit.
+  'vec3 twilight(float d){return vec3(.004,.018,.05)*exp(-d*d/.012);}',
   // earthIrradiance : éclairement en lumière linéaire ; d = hauteur du Soleil (sphère), dt = son angle avec la pente du
   // terrain. La lumière directe s'éteint quand le Soleil passe sous l'horizon du lieu.
-  'vec3 earthIrradiance(float d,float dt){return sunTransmit(d)*max(dt,0.)*smoothstep(-.03,.01,d)+skyLight(d);}',
+  'vec3 earthIrradiance(float d,float dt){return sunTransmit(d)*max(dt,0.)*smoothstep(-.06,.16,d)+skyLight(d)+twilight(d);}',
   // oceanGlint : reflet du Soleil sur l'eau, en lumière linéaire ; N normale, V vers la caméra, L vers le Soleil,
   // d = N·L, mu = N·V. Microfacettes GGX, ombrage de Smith (Schlick), Fresnel de Schlick (2 % de face).
   'vec3 oceanGlint(vec3 N,vec3 V,vec3 L,float d,float mu){if(d<=0.||mu<=0.)return vec3(0.);vec3 H=normalize(L+V);',
@@ -95,5 +97,16 @@ export const EARTH_LIGHT_GLSL = [
   'float F=.02+.98*pow(1.-max(dot(V,H),0.),5.);float k=.5*sqrt(GLINT_A2);float G=(mu/(mu*(1.-k)+k))*(d/(d*(1.-k)+k));',
   // Reflet, atténué par l'air traversé comme la lumière directe.
   'return sunTransmit(d)*(3.14159265*D*F*G/(4.*max(mu,.05)));}',
+  // earthGrade : colorimétrie de la Terre (référence : fond d'écran iOS) ; c = couleur de l'image (0 … 1), wm = part de mer.
+  // Mer : bleu profond, plus clair sur les hauts-fonds (luminosité de l'image). Terre : désaturée, sombre ; déserts
+  // virés au brun chaud ; glace et neige blanches, neutres, légèrement froides.
+  'vec3 earthGrade(vec3 c,float wm){float l=dot(c,vec3(.299,.587,.114));vec3 land=mix(vec3(l),c,.62);',
+  // Chaleur des déserts : rouge nettement au-dessus du bleu, luminosité moyenne.
+  'float warm=smoothstep(.03,.18,c.r-c.b)*smoothstep(.12,.35,l);land=mix(land,land*vec3(1.16,1.,.78)+vec3(.02,.008,0.),warm*.6);',
+  // Glace : clair et peu saturé, ramené sur un blanc neutre un peu froid ; puis assombrissement général des terres.
+  'float ice=smoothstep(.55,.8,l)*(1.-smoothstep(.08,.2,max(c.r,max(c.g,c.b))-min(c.r,min(c.g,c.b))));land=mix(land,vec3(l*1.08+.04)*vec3(.97,.99,1.),ice);land*=.88;',
+  // Mer : dégradé du bleu profond au bleu des hauts-fonds, avec un peu de la teinte d'origine.
+  'vec3 ocean=mix(vec3(.015,.065,.17),vec3(.04,.22,.38),smoothstep(.12,.45,l));ocean=mix(ocean,ocean*(.7+.9*c),.35);',
+  'return mix(land,ocean,wm);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
 ].join('\n');
