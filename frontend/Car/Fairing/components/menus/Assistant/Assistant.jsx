@@ -12,7 +12,7 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 import { RAIL_W, STRIP_H, TITLE_H, edge } from '@/Fairing/theme/layout';
 import { MQ, safe } from '@/Fairing/theme/mediaQueries';
 import { AutoAwesomeIcon, CheckIcon, CloseIcon, LogoutIcon, SendIcon } from '../../ui/icons.jsx';
-import { BillingScreen, LoginScreen } from './AssistantGate.jsx';
+import { BillingScreen, LoginScreen, MobileLoginBar } from './AssistantGate.jsx';
 import { ProviderLogo } from './ProviderLogo.jsx';
 import { C, SANS, SERIF, WRAP, visuallyHidden } from './assistantTheme.js';
 
@@ -122,12 +122,12 @@ function MobileBar({ session, text, setText, busy, send, error, onLogout }) {
       }}
     >
       {(account || error) && (
-        <Box sx={{ pointerEvents: 'auto', width: '100%', maxWidth: 560, mx: 'auto', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 0.5, px: 1.5, py: 1, borderRadius: '16px', bgcolor: 'rgba(31, 30, 29, 0.94)', border: `1px solid ${C.border}` }}>
+        <Box sx={{ pointerEvents: 'auto', width: '100%', maxWidth: 440, mx: 'auto', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 0.5, px: 1.5, py: 1, borderRadius: '16px', bgcolor: 'rgba(31, 30, 29, 0.94)', border: `1px solid ${C.border}` }}>
           {error && <Typography role="alert" sx={{ ...WRAP, fontFamily: SANS, fontSize: 13.5, lineHeight: 1.4, color: C.error }}>{error}</Typography>}
           {account && (
             <Stack direction="row" useFlexGap spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5 }}>
               <Typography sx={{ ...WRAP, flex: '1 1 120px', fontFamily: SANS, fontSize: 13.5, color: C.text }}>Connecté à {p.label}</Typography>
-              <ButtonBase onClick={onLogout} sx={{ flex: 'none', display: 'flex', gap: 0.5, minHeight: 44, px: 1.25, borderRadius: '12px', border: `1px solid ${C.border}`, color: C.text, fontFamily: SANS, fontSize: 14 }}>
+              <ButtonBase onClick={onLogout} sx={{ flex: 'none', display: 'flex', gap: 0.5, minHeight: 32, px: 1.25, borderRadius: '12px', border: `1px solid ${C.border}`, color: C.text, fontFamily: SANS, fontSize: 14 }}>
                 <LogoutIcon sx={{ fontSize: 17 }} /> Se déconnecter
               </ButtonBase>
             </Stack>
@@ -139,16 +139,16 @@ function MobileBar({ session, text, setText, busy, send, error, onLogout }) {
         onSubmit={(e) => { e.preventDefault(); if (canSend) send(); }}
         sx={{
           pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 0.5,
-          width: '100%', maxWidth: 560, mx: 'auto', boxSizing: 'border-box',
-          minHeight: 52, pl: 0.5, pr: 0.75, py: 0.75,
-          borderRadius: '26px', fontFamily: SANS, color: C.text,
+          width: '100%', maxWidth: 440, mx: 'auto', boxSizing: 'border-box',
+          minHeight: 40, pl: 0.4, pr: 0.5, py: 0.4,
+          borderRadius: '20px', fontFamily: SANS, color: C.text,
           bgcolor: 'rgba(31, 30, 29, 0.88)', backdropFilter: 'blur(14px) saturate(140%)', WebkitBackdropFilter: 'blur(14px) saturate(140%)',
-          border: `1px solid ${focused ? C.muted : C.border}`, boxShadow: '0 8px 28px rgba(0, 0, 0, 0.45)', transition: 'border-color 120ms',
+          border: `1px solid ${focused ? C.muted : C.border}`, boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)', transition: 'border-color 120ms',
         }}
       >
         {/* Le logo du fournisseur : cible de 44 px, ouvre la ligne du compte. */}
-        <ButtonBase type="button" onClick={() => setAccount((v) => !v)} aria-expanded={account} aria-label={`Compte ${p.label}`} sx={{ flex: 'none', width: 44, height: 44, borderRadius: '50%' }}>
-          <ProviderLogo provider={session.provider} size={22} />
+        <ButtonBase type="button" onClick={() => setAccount((v) => !v)} aria-expanded={account} aria-label={`Compte ${p.label}`} sx={{ flex: 'none', width: 32, height: 32, borderRadius: '50%' }}>
+          <ProviderLogo provider={session.provider} size={18} />
         </ButtonBase>
         {/* Le champ : une à trois lignes, 16 px pour que Safari ne zoome pas au focus. */}
         <InputBase
@@ -162,7 +162,7 @@ function MobileBar({ session, text, setText, busy, send, error, onLogout }) {
           enterKeyHint="send"
           inputProps={{ 'aria-label': 'Message pour l’assistant', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
           sx={{
-            flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, py: 0.25,
+            flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, py: 0,
             '& textarea': { overflowWrap: 'anywhere', p: 0 },
             '& textarea::placeholder': { color: C.muted, opacity: 1 },
           }}
@@ -172,12 +172,12 @@ function MobileBar({ session, text, setText, busy, send, error, onLogout }) {
           disabled={!canSend}
           aria-label={busy ? 'L’assistant répond' : 'Envoyer'}
           sx={{
-            flex: 'none', width: 44, height: 44, borderRadius: '50%',
+            flex: 'none', width: 32, height: 32, borderRadius: '50%',
             bgcolor: canSend ? C.accent : C.row, color: canSend ? '#1f1e1d' : C.muted,
             transition: 'background-color 120ms', '&:active': { transform: 'scale(0.94)' },
           }}
         >
-          {busy ? <CircularProgress size={18} sx={{ color: C.accent }} /> : <SendIcon sx={{ fontSize: 20 }} />}
+          {busy ? <CircularProgress size={16} sx={{ color: C.accent }} /> : <SendIcon sx={{ fontSize: 17 }} />}
         </ButtonBase>
       </Box>
     </Box>
@@ -338,6 +338,18 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
     return <MobileBar session={session} text={text} setText={setText} busy={busy} send={send} error={last?.error ? last.text : ''} onLogout={() => logout()} />;
   }
 
+  // Téléphone, connexion ou vérification de la clé : la même pilule que la saisie (choix Claude / Mistral, puis clé d'API).
+  if (bare && hud && (gate === 'login' || gate === 'checking')) {
+    return (
+      <MobileLoginBar
+        initialError={loginError}
+        checkingLabel={gate === 'checking' ? `Vérification de votre clé ${PROVIDERS[session.provider]?.label}…` : ''}
+        onConnected={() => setLoginError('')}
+        onBilling={(b) => { setLoginError(''); setBilling(b); }}
+      />
+    );
+  }
+
   const gateBody = gate === 'billing' ? (
     <BillingScreen
       provider={billing.provider}
@@ -473,7 +485,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
     </Paper>
   );
 
-  // Téléphone, connexion ou facturation : la carte se pose dans le dock du bas, à la place de la barre de saisie.
+  // Téléphone, facturation : la carte se pose dans le dock du bas, à la place de la barre de saisie.
   // Marges latérales écartées des bords et des zones de sécurité (encoche en paysage), comme la barre de saisie.
   if (bare && hud) {
     return (
