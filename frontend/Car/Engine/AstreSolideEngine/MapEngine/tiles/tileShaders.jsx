@@ -256,10 +256,12 @@ export const tileFragmentShader = [
   'vec4 b=texture2D(map,baseRect.xy+vUv*baseRect.zw);vec3 col=clamp(b.rgb*colGain+colOff,0.,1.);vec4 o=texture2D(ovMap,ovRect.xy+vUv*ovRect.zw);',
   // Upscale (Terre, vue spatiale) : quand l'image est agrandie à l'écran (plus d'1,5 pixel d'écran par pixel d'image,
   // c'est le cas du dernier niveau de zoom vu de loin), l'interpolation bilinéaire en losanges est remplacée par une
-  // interpolation lissée (courbe de Hermite sur la partie fractionnaire), suivie d'un renfort des contours (masque flou)
-  // d'autant plus fort que l'agrandissement est grand. Image de 256 px de côté, comme la lecture des pentes plus bas.
-  'if(surfModel>.5){vec2 up=(baseRect.xy+vUv*baseRect.zw)*256.;float ppt=1./max(length(fwidth(up)),1e-4);if(ppt>1.5){vec2 uf=fract(up-.5),ui=floor(up-.5)+.5;vec2 uq=(ui+uf*uf*(3.-2.*uf))/256.;vec3 sm=clamp(texture2D(map,uq).rgb*colGain+colOff,0.,1.);float ue=1./256.;',
-  'vec3 bl=clamp(.25*(texture2D(map,uq+vec2(ue,0.)).rgb+texture2D(map,uq-vec2(ue,0.)).rgb+texture2D(map,uq+vec2(0.,ue)).rgb+texture2D(map,uq-vec2(0.,ue)).rgb)*colGain+colOff,0.,1.);col=clamp(sm+(sm-bl)*.7*smoothstep(1.5,6.,ppt),0.,1.);}}',
+  // interpolation lissée (courbe de Hermite sur la partie fractionnaire : une seule lecture). Le renfort des contours
+  // (masque flou) ne s'ajoute qu'à partir de 2,5 pixels d'écran par pixel d'image, avec deux lectures en diagonale
+  // seulement (quatre auparavant) : moins de lectures de texture par pixel, donc plus d'images par seconde sur téléphone.
+  // Image de 256 px de côté, comme la lecture des pentes plus bas.
+  'if(surfModel>.5){vec2 up=(baseRect.xy+vUv*baseRect.zw)*256.;float ppt=1./max(length(fwidth(up)),1e-4);if(ppt>1.5){vec2 uf=fract(up-.5),ui=floor(up-.5)+.5;vec2 uq=(ui+uf*uf*(3.-2.*uf))/256.;col=clamp(texture2D(map,uq).rgb*colGain+colOff,0.,1.);',
+  'if(ppt>2.5){float ue=1./256.;vec3 bl=clamp(.5*(texture2D(map,uq+vec2(ue,ue)).rgb+texture2D(map,uq-vec2(ue,ue)).rgb)*colGain+colOff,0.,1.);col=clamp(col+(col-bl)*.7*smoothstep(2.5,6.,ppt),0.,1.);}}}',
   // Puis accorde ses couleurs sur celles du niveau le plus grossier de la couche : même teinte à tous les niveaux de zoom.
   'col=clamp(col*lvGain+lvOff,0.,1.);',
   // Fondu enchaîné (≈ 180 ms) : la tuile fine apparaît par-dessus la portion agrandie de son ancêtre.
