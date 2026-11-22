@@ -13,7 +13,7 @@ import { LIGHTS_MOSAIC_PX, LIGHTS_PAD, NIGHT_LIGHTS_KEY, NightLightsSource, asse
 // Importe xyzToLonLat, la conversion d'un point en longitude et latitude, depuis mercator.
 import { xyzToLonLat } from '../mercator.jsx';
 // Importe TileLayer, la couche de tuiles, depuis tileLayer.
-import { TileLayer } from './tileLayer.jsx';
+import { RELIEF_MAX_KM, TileLayer } from './tileLayer.jsx';
 // Importe backdropScale, le rayon de la sphère de fond sous la carte, depuis tileGeometry.
 import { backdropScale } from './tileGeometry.jsx';
 import { applyBackdropMeshScale } from '../hex/backdropMeshScale.js';
@@ -159,6 +159,8 @@ export class TileManager {
     if (this.lightsSource && this.uniforms.lightsOn.value > 0) this.loadLightsMosaic();
     // Relief coupé pour l'instant.
     this.reliefOn = false;
+    // Dernier réglage demandé du relief ; la Terre (lighting « earth ») ne l'affiche qu'à 1 km d'altitude ou moins.
+    this.reliefAsk = { on: false, exaggeration: 1 }; this.reliefNear = true; this.reliefCapKm = body.lighting === 'earth' ? RELIEF_MAX_KM : Infinity;
     // Dernière mesure de la hauteur du sol : instant et valeur.
     this.reliefProbe = { at: 0, floor: 0 };
     // Vecteur de travail.
@@ -211,6 +213,9 @@ export class TileManager {
    */
   // setRelief : règle le relief ; actif et sans exagération par défaut (début).
   setRelief({ on = true, exaggeration = 1 } = {}) {
+    // Garde le réglage demandé ; facteur d'altitude : 1 si la caméra est assez basse, 0 sinon (relief masqué).
+    this.reliefAsk = { on, exaggeration };
+    const k = this.reliefNear ? 1 : 0;
     // Le relief de l'astre.
     const r = this.relief;
     // État précédent.
@@ -218,18 +223,18 @@ export class TileManager {
     // Actif seulement si l'astre a un relief.
     this.reliefOn = Boolean(on && r);
     // Exagération : celle demandée pour un relief Terrarium actif, sinon 0.
-    this.uniforms.reliefExag.value = this.reliefOn && r.kind === 'terrarium' ? exaggeration : 0;
+    this.uniforms.reliefExag.value = this.reliefOn && r.kind === 'terrarium' ? exaggeration * k : 0;
     // Ombrage des pentes : celui du réglage pour un relief Terrarium actif, sinon 0.
-    this.uniforms.reliefShade.value = this.reliefOn && r.kind === 'terrarium' ? r.shade : 0;
+    this.uniforms.reliefShade.value = this.reliefOn && r.kind === 'terrarium' ? r.shade * k : 0;
     // Relief estimé : sa force pour un relief par l'image actif. Un relief Terrarium peut aussi en porter un
     // (`imageStrength`, Mars et Mercure) : il reste alors actif en permanence, le shader ne s'en servant que là où
     // aucune altitude n'est affichée — relief en volume coupé, ou tuile d'altitude pas encore arrivée.
     this.uniforms.reliefImg.value = r?.kind === 'terrarium' && r.imageStrength
-      ? r.imageStrength
-      : this.reliefOn && r.kind === 'image' ? r.strength : 0;
+      ? r.imageStrength * k
+      : this.reliefOn && r.kind === 'image' ? r.strength * k : 0;
     // Fond des océans : actif avec un relief Terrarium actif et une source des fonds. Altitudes signées (la Lune) :
     // même passage du shader sans source des fonds, les valeurs négatives de la tuile creusent alors la surface.
-    this.uniforms.oceanOn.value = this.reliefOn && r.kind === 'terrarium' && (this.oceanSource || r.signed) ? 1 : 0;
+    this.uniforms.oceanOn.value = this.reliefOn && r.kind === 'terrarium' && (this.oceanSource || r.signed) ? k : 0;
     // Remet à zéro la mesure de la hauteur du sol.
     this.reliefProbe = { at: 0, floor: 0 };
     // Relief en volume allumé ou coupé : les tuiles affichées sont reconstruites (maillage à plat, sans tuiles
@@ -699,6 +704,11 @@ export class TileManager {
     const viewportH = engine.H * (engine.dprMax || engine.renderer.getPixelRatio());
     // Met à jour la couche avec la vue.
     b.layer.update({ cam: cl, fwd, up, aspect: cam.aspect, fovY, viewportH, inFrustum, planes });
+    // Relief de la Terre : visible seulement à 1 km d'altitude ou moins (marge de 10 % avant de le masquer, pas de
+    // clignotement à la limite) ; les réglages reprennent aussitôt, rien n'est reconstruit.
+    b.layer.reliefCapKm = this.reliefCapKm;
+    const near = this.reliefNear ? b.layer.altKm <= this.reliefCapKm * 1.1 : b.layer.altKm <= this.reliefCapKm;
+    if (near !== this.reliefNear) { this.reliefNear = near; if (this.reliefOn) this.setRelief(this.reliefAsk); }
     // Garde la vue pour l'état publié.
     this.view = { cam: cl, fovY, aspect: cam.aspect };
 
