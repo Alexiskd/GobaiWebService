@@ -38,6 +38,9 @@ const RELIEF_PRIORITY = 1e9;                           // les tuiles d'altitude 
 // Accentuation de l'ombrage des fonds marins, partagée.
 const OCEAN_BOOST = { value: OCEAN_SHADE_BOOST };       // accentuation de l'ombrage des fonds marins, partagée
 // Réglage partagé à zéro, pour un astre sans relief.
+/** Altitude de la caméra (km) au-delà de laquelle la Terre n'affiche plus de relief : le relief ne se voit qu'à partir de 1 km. */
+// Déclare et exporte l'altitude limite du relief de la Terre : 1 km.
+export const RELIEF_MAX_KM = 1;
 const RELIEF_OFF = { value: 0 };                       // astre sans relief : réglages partagés à zéro
 // Côté des images de lumières par défaut (en pixels), si l'astre n'en fournit pas.
 const LIGHTS_SIZE_DEFAULT = { value: new THREE.Vector2(256, 256) };
@@ -176,6 +179,8 @@ export class TileLayer {
   }) {
     // Paliers de zoom (table du serveur) : rayon de l'astre, appareil, palier en cours et budget de tuiles.
     this.radiusKm = radiusKm; this.device = device; this.tier = null; this.budget = Infinity;
+    // Altitude de la caméra (km) et altitude au-delà de laquelle les altitudes du relief ne sont plus chargées (posée par le gestionnaire).
+    this.altKm = 0; this.reliefCapKm = Infinity;
     // Garde le nombre d'envois par image.
     this.uploadsPerFrame = uploadsPerFrame;
     // Mouvement : vue de l'image précédente, fin du mouvement en cours, état à la dernière sélection.
@@ -377,6 +382,8 @@ export class TileLayer {
     // En mouvement ?
     const moving = now < this.movingUntil;
     // Palier de zoom d'après la distance affichée (altitude de la caméra en km), si la source donne des paliers.
+    // Altitude de la caméra au-dessus du sol, en km.
+    this.altKm = this.radiusKm > 0 ? (Math.hypot(view.cam[0], view.cam[1], view.cam[2]) - 1) * this.radiusKm : 0;
     this.tier = this.radiusKm > 0 ? tierFor(this.source.info?.tiers, (Math.hypot(view.cam[0], view.cam[1], view.cam[2]) - 1) * this.radiusKm) : null;
     // Budget de tuiles du palier, pour cet appareil et le mode économie d'énergie (sans palier : aucune limite).
     this.budget = tileBudget(this.tier, this.device());
@@ -1293,6 +1300,8 @@ export class TileLayer {
     const src = this.reliefSource;
     // Tuile sans relief, déjà servie, demandée ou en échec, ou source absente ou en panne : rien.
     if (!e.lifted || e.hMap || e.hRequested || e.hFailed || !src || src.broken) return;
+    // Caméra trop haute (la Terre n'affiche son relief qu'à 1 km ou moins, avec une marge de 10 %) : pas de tuile d'altitude.
+    if (this.altKm > this.reliefCapKm * 1.1) return;
     // Demande notée.
     e.hRequested = true;
     // Réglage du relief.
