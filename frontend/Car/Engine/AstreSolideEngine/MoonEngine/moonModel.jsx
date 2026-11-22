@@ -116,7 +116,7 @@ export async function loadMoonModel(url, radius, uniforms = null, { maxRms = Inf
   const loader = new GLTFLoader();
   // Modèles compressés (Draco, meshopt) : décodeurs chargés seulement si le fichier en a besoin.
   // Décodeur Draco, avec l'adresse de ses fichiers.
-  const draco = new DRACOLoader().setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.4.1/');
+  const draco = new DRACOLoader().setDecoderPath('/api/fonts/draco/');
   // Le branche sur le chargeur.
   loader.setDRACOLoader(draco);
   // Branche aussi le décodeur meshopt.

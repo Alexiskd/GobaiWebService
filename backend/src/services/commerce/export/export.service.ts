@@ -14,6 +14,8 @@ import { MosaicService } from './mosaic.service';
 import { buildGlb, sphereMesh } from './glb';
 // Imagerie de la Terre (satellite HD et fonds GEBCO, sans passer par HTTP).
 import { EarthImageryService } from '../../map-tiles/earth/earth-imagery.service';
+// Plafond des exports vendus : aucune image d'une source non commerciale n'y entre.
+import { maxCommercialEarthZoom } from '../../map-tiles/earth/earth-licences';
 // Modèle d'adresse des altitudes Terrarium et table des fonds marins (mentions).
 import { SEAFLOOR_BY_ID, TERRARIUM } from '../../map-tiles/earth/earth-seafloor';
 // Régions actives du Soleil (NOAA SWPC, NASA DONKI).
@@ -153,7 +155,7 @@ export class ExportService {
     // Finesse inconnue : refus, en listant les valeurs acceptées.
     if (!grid) throw new BadRequestException(`Finesse inconnue. Valeurs acceptées : ${Object.keys(MESH).join(', ')}.`);
     // La Terre, sans couche imposée, quand son imagerie est là : satellite HD (niveau 4 au plus), et ses océans si demandé.
-    if (body.key === 'terre' && !layerId && this.earth) return this.earthModel(body, grid, Math.min(zoom, EARTH_MAX_ZOOM), oceans, exaggeration);
+    if (body.key === 'terre' && !layerId && this.earth) return this.earthModel(body, grid, Math.min(zoom, EARTH_MAX_ZOOM, maxCommercialEarthZoom()), oceans, exaggeration);
     // Le Soleil, sans couche imposée : plasma lumineux, et ses éruptions si demandé.
     if (body.key === SUN_KEY && !layerId) return this.sunModel(body, grid, quality, eruptions);
     // Les tuiles assemblées, si l'astre en a.

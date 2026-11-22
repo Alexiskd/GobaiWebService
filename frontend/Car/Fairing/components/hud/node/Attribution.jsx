@@ -28,6 +28,7 @@ import { API_GROUPS, countApis } from './apiList.js';
 import { apiState, getApiBlockState, refreshServerBlocked, setApiBlocked, subscribe } from '@/Engine/shared/lib/app/apiBlock';
 // Importe les briques de style communes de la fenêtre.
 import { Carte, Chiffre, Etiquette, Fiche, GrilleChiffres, Note, Precision, Section } from './nodeUi.jsx';
+import { LiensLegaux } from '../../ui/LiensLegaux.jsx';
 
 // Calculé à chaque lecture : des satellites peuvent être ajoutés après le chargement.
 // satelliteTiles : les astres tuilés qui sont des satellites ou des géantes gazeuses.
@@ -446,6 +447,8 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
           {/* Panneau de l'onglet, relié à son onglet pour l'accessibilité, limité en largeur pour la lecture. */}
           <div role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`} className="max-w-220 mx-auto min-w-0">
             {contenu}
+            {/* Mentions légales, confidentialité et CGV : visibles quel que soit l'onglet. */}
+            <LiensLegaux className="mt-8 text-soft" />
             {/* Rappel du raccourci clavier, sur ordinateur seulement. */}
             {!compact && <Note className="mt-8 text-[0.78rem]">Touche S pour ouvrir ou fermer cette fenêtre.</Note>}
           </div>

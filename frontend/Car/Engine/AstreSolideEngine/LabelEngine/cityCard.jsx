@@ -1,5 +1,3 @@
-// Importe loadWorldCityStats, les statistiques mondiales d'une ville.
-import { loadWorldCityStats } from './worldCityStats.jsx';
 // Importe translateCity, la traduction du nom local et de la région.
 import { translateCity } from './cityTranslate.jsx';
 
@@ -64,8 +62,6 @@ export class CityCard {
     this.anchor = null;
     // Ville affichée : aucune.
     this.city = null;
-    // Statistiques mondiales : aucune.
-    this.world = null;
     // Traduction : aucune.
     this.translation = null;
     // Fiche fermée.
@@ -87,12 +83,8 @@ export class CityCard {
     this.city = city;
     // Garde l'étiquette.
     this.anchor = anchor;
-    // Oublie les statistiques d'une autre ville.
-    if (this.world?.city !== city) this.world = null;
     // Oublie la traduction d'une autre ville.
     if (this.translation?.city !== city) this.translation = null;
-    // Lance le chargement des statistiques, sans l'attendre.
-    void this.loadWorld(city);
     // Lance le chargement de la traduction.
     void this.loadTranslation(city);
     // Programme l'ouverture (début).
@@ -118,26 +110,6 @@ export class CityCard {
     // Fin : après 120 ms.
     }, 120);
   // Fin de show.
-  }
-
-  /** Complète la fiche avec Worldometer dès que le cache local répond, si elle est déjà ouverte. */
-  // loadWorld, asynchrone : charge les statistiques mondiales (début).
-  async loadWorld(city) {
-    // Attend les statistiques.
-    const stats = await loadWorldCityStats(city);
-    // Aucune, ou ville changée : abandon.
-    if (!stats || this.city !== city) return;
-    // Les garde, avec leur ville.
-    this.world = { city, ...stats };
-    // Si la fiche est ouverte (début).
-    if (this.open) {
-      // Reconstruit le contenu.
-      this.render(city);
-      // La replace.
-      this.place();
-    // Fin de ce cas.
-    }
-  // Fin de loadWorld.
   }
 
   /** Complète la fiche avec la traduction française du nom local et de la région, si elle est ouverte. */
@@ -272,16 +244,14 @@ export class CityCard {
   render(c) {
     // Fragment où le contenu est assemblé.
     const frag = document.createDocumentFragment();
-    // Statistiques mondiales, si elles sont celles de cette ville.
-    const world = this.world?.city === c ? this.world : null;
     // Traduction, si elle est celle de cette ville.
     const translation = this.translation?.city === c ? this.translation : null;
-    // Population : celle des statistiques, sinon celle de la ville.
-    const pop = world?.pop ?? c.pop;
-    // Superficie : de la même façon.
-    const area = world?.areaKm2 ?? c.areaKm2;
-    // Densité : celle des statistiques, sinon population divisée par superficie, sinon 0.
-    const density = world?.density ?? (pop > 0 && area > 0 ? Math.round(pop / area) : 0);
+    // Population de la ville (Natural Earth).
+    const pop = c.pop;
+    // Superficie de la ville.
+    const area = c.areaKm2;
+    // Densité : population divisée par superficie, sinon 0.
+    const density = pop > 0 && area > 0 ? Math.round(pop / area) : 0;
     // Titre : le nom français, sinon le nom.
     const title = c.nameFr || c.name;
     // En-tête.
@@ -338,14 +308,6 @@ export class CityCard {
       line.appendChild(node('span', null, 'habitants · agglomération'));
       // Ajoute la ligne.
       frag.appendChild(line);
-      // Avec des statistiques mondiales (début).
-      if (world) {
-        // Ajoute la source :
-        frag.appendChild(node('p', 'cc-src',
-          // avec l'année de l'estimation si elle est connue.
-          world.year ? `Source : worldometers.info · estimation ${world.year}` : 'Source : worldometers.info'));
-      // Fin de ce cas.
-      }
     // Fin du cas de la population.
     }
 
@@ -420,8 +382,6 @@ export class CityCard {
     const foot = node('div', 'cc-foot');
     // Sources : Natural Earth d'abord.
     const sources = ['Natural Earth'];
-    // Worldometer, avec des statistiques.
-    if (world) sources.push('Worldometer');
     // MyMemory, avec une traduction.
     if (translation) sources.push('MyMemory');
     // Texte des sources.
