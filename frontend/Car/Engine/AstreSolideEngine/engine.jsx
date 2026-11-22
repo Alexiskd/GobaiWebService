@@ -550,7 +550,7 @@ export class SolarEngine {
     this.power = renderProfile();
     // Profil de l'appareil, gardé : this.power devient celui du rythme maximal dans le système d'une planète (applySystemView).
     this.basePower = this.power;
-    // Planète du système affiché sur téléphone : aucune.
+    // Planète du système affiché (la caméra est dans sa sphère de Hill) : aucune.
     this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
     const r = new THREE.WebGLRenderer({ antialias: this.power.antialias, logarithmicDepthBuffer: true, powerPreference: 'high-performance', stencil: false, preserveDrawingBuffer: false, alpha: this.embed });
@@ -3795,13 +3795,17 @@ export class SolarEngine {
       const coreState = this.getCoreEffectiveState(tb.id);
       const focused = tb.focus === this.focus;
       const layer = tb.tiles.base?.layer;
+      // Astre hors du périvolume de l'astre zoomé (voir applySystemView) : ses tuiles sont déchargées, GPU et RAM.
+      const outsidePerivolume = !focused && Boolean(this.systemHost) && this.isTargetHidden(this.focusTargets[tb.focus]);
       if (layer && this.coreTileMemoryPolicy) {
         const state = focused ? 'ACTIVE' : coreState;
-        const profile = this.coreTileMemoryPolicy.profile(state, {
-          gpuBase: layer.baseCapacity,
-          ramBase: layer.baseRamCapacity,
-          wantedCount: layer.wantedKeys?.size ?? 0,
-        });
+        const profile = outsidePerivolume
+          ? { gpuCapacity: 1, ramCapacity: 0, preserveWanted: false }
+          : this.coreTileMemoryPolicy.profile(state, {
+            gpuBase: layer.baseCapacity,
+            ramBase: layer.baseRamCapacity,
+            wantedCount: layer.wantedKeys?.size ?? 0,
+          });
         tb.tiles.setCoreMemoryProfile(profile);
       }
       if (tiled.has(tb.id) && this.coreActivityPolicy.shouldUpdateTiles({ state: coreState, focused })) {
@@ -3979,38 +3983,51 @@ export class SolarEngine {
   }
 
   /**
-   * Téléphone : la caméra est-elle dans le système de la planète ciblée (sa sphère de Hill, voir systemView.jsx) ?
-   * Le Soleil n'a pas de système ; en mode économie d'énergie, rien ne change. À l'entrée ou à la sortie : applySystemView.
+   * Tous les appareils : la caméra est-elle dans le système de la planète ciblée (sa sphère de Hill, voir systemView.jsx) ?
+   * Dedans, les astres hors de ce périvolume ne sont plus chargés ni dessinés. Le Soleil n'a pas de système.
+   * À l'entrée ou à la sortie : applySystemView.
    */
   // updateSystemView : suit l'entrée et la sortie du système d'une planète (début).
   updateSystemView() {
-    // Ordinateur : toujours le rendu complet, rien à faire.
-    if (!this.basePower.handheld) return;
-    // Planète du système de la cible (aucune pour le Soleil, ni en économie d'énergie).
-    const host = this.saving ? null : systemHostOf(this.focusTarget(), this.earth);
+    // Planète du système de la cible (aucune pour le Soleil).
+    const host = systemHostOf(this.focusTarget(), this.earth);
     // Rayon de son système : sa sphère de Hill, d'après sa distance au Soleil et sa masse.
     const radius = host ? hillRadius(host.group.position.distanceTo(this.sunMesh.position), bodyMassKg(bodyId(host.def), host.def.radius * EARTH_RADIUS_KM)) : 0;
     // Caméra dedans (marge de sortie si elle y était déjà) : ce système ; sinon aucun.
     const next = host && insideSystem(this.cam.position.distanceTo(host.group.position), radius, host === this.systemHost) ? host : null;
     // Changement : l'applique.
     if (next !== this.systemHost) this.applySystemView(next);
+    // Profil de rendu : suit le système affiché, et l'économie d'énergie qui peut changer à tout moment.
+    this.syncSystemProfile();
   // Fin de updateSystemView.
   }
 
+  /** Profil de rendu : rythme maximal dans un système sur téléphone (hors économie d'énergie), sinon celui de l'appareil. */
+  // syncSystemProfile : accorde le profil de rendu au système affiché (début).
+  syncSystemProfile() {
+    // Rythme maximal seulement sur téléphone, dans un système, hors économie d'énergie.
+    const want = this.systemHost && this.basePower.handheld && !this.saving ? SYSTEM_PROFILE : this.basePower;
+    // Déjà le bon : rien à faire.
+    if (this.power === want) return;
+    // Change de profil.
+    this.power = want;
+    // Rythme d'images du nouveau profil.
+    this.refreshFrameMs(performance.now());
+  // Fin de syncSystemProfile.
+  }
+
   /**
-   * Entre dans le système de `host` (ou en sort avec null) : rythme d'images maximal sans ralenti au repos, et seuls
-   * cette planète, ses satellites et le Soleil restent dessinés.
+   * Entre dans le système de `host` (ou en sort avec null) : seuls cette planète, ses satellites et le Soleil restent
+   * chargés et dessinés (le rythme d'images maximal sur téléphone : voir syncSystemProfile).
    */
   // applySystemView : applique ou retire la vue d'un système planétaire (début).
   applySystemView(host) {
     // Garde la planète du système.
     this.systemHost = host;
-    // Profil : rythme maximal dans un système, sinon celui de l'appareil.
-    this.power = host ? SYSTEM_PROFILE : this.basePower;
-    // Astres hors du système : plus dessinés (ou de nouveau tous à la sortie).
+    // Astres hors du système : plus chargés ni dessinés (ou de nouveau tous à la sortie).
     this.applyBodyVisibility();
-    // Rythme d'images du nouveau profil.
-    this.refreshFrameMs(performance.now());
+    // Profil de rendu du nouveau système.
+    this.syncSystemProfile();
   // Fin de applySystemView.
   }
 
