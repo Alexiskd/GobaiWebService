@@ -115,6 +115,8 @@ import { dragRadPerPx, dragStep } from './InputEngine/touchMath.jsx';
 import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './PerfEngine/powerSaver.jsx';
 // Importe PerfProbe, la sonde de performance.
 import { FpsMeter, PerfProbe } from './PerfEngine/perfProbe.jsx';
+// Importe le module de qualité du rendu (mesures, profils et surchauffe : engines/render-quality).
+import { createRenderQualityModule } from '../../engines/render-quality/index.js';
 import { SystemRegistry } from '../SystemeEngine/core/system/SystemRegistry.js';
 import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
 import { CoreActivityPolicy } from '../SystemeEngine/core/system/CoreActivityPolicy.js';
@@ -565,6 +567,10 @@ export class SolarEngine {
     this.frameMs = this.power.frameMs; // durée visée d'une image (0 = sans limite), voir refreshFrameMs
     // Compteur d'images par seconde, à zéro.
     this.fps = 0; this.fpsTarget = 0; this.fpsMeter = new FpsMeter(); // compteur d'images par seconde, voir countFps
+    // Qualité du rendu : reçoit chaque image et chaque sonde, publie un relevé par seconde (engines/render-quality).
+    this.renderQualityModule = createRenderQualityModule();
+    // Son service, point d'entrée unique des mesures et (aux lots suivants) des budgets.
+    this.renderQuality = this.renderQualityModule.service;
     // Pas d'écran de chargement par-dessus.
     this.covered = false;              // écran de chargement par-dessus la scène (setCovered)
     // Pas d'économie d'énergie.
@@ -3734,6 +3740,8 @@ export class SolarEngine {
     const dt = clamp(rawDt, 0, 100); // retour d'onglet : pas de saut
     // Compte les images par seconde.
     this.countFps(now);
+    // Qualité du rendu : une image de plus dans la fenêtre d'une seconde (aucune allocation).
+    this.renderQuality.recordFrame(now, rawDt);
     // Moniteur CPU / GPU (voir perfProbe.jsx) : créé à la première image, quand le moteur de rendu existe.
     const probe = this.perfProbe || (this.perfProbe = new PerfProbe(this.renderer.getContext()));
     // Début de la mesure de l'image.
@@ -3859,6 +3867,8 @@ export class SolarEngine {
     }
     // Transmet les mesures au HUD, s'il y en a.
     if (perf) this.hud.set({ perf });
+    // Qualité du rendu : garde la dernière sonde (appels de dessin, triangles, textures, géométries).
+    if (perf) this.renderQuality.recordPerf(perf);
     // L'image suivante est demandée par la boucle de rendu de l'application.
   // Fin de frame.
   }
@@ -5040,6 +5050,8 @@ export class SolarEngine {
     renderLoop.unregister('astre-solide');
     // Libère la sonde de performance.
     this.perfProbe?.dispose();
+    // Libère le module de qualité du rendu.
+    this.renderQualityModule?.dispose();
     // N'écoute plus la visibilité de l'onglet.
     document.removeEventListener('visibilitychange', this.onVisibility);
     // Débranche les entrées.
