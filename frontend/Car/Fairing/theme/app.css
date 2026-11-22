@@ -89,6 +89,8 @@
   ::selection { background: rgba(139, 174, 255, 0.34); color: var(--color-ink); }
   * { scrollbar-color: color-mix(in srgb, var(--color-soft) 40%, transparent) transparent; }
   *:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  /* Un clic souris ou un toucher ne dessine pas de contour de focus : seul le clavier le fait apparaître. */
+  *:focus:not(:focus-visible) { outline: none; }
   /* Les icônes et images en ligne restent en ligne (le préflight Tailwind les passe en bloc). */
   svg, img { display: inline-block; }
   button, [role="button"] { cursor: pointer; }
@@ -130,6 +132,9 @@
   .t-caption { font-size: 0.72rem; line-height: 1.45; letter-spacing: 0.01em; font-weight: 400; }
   .t-overline { font-size: 0.67rem; line-height: 1.5; font-weight: 700; letter-spacing: 0.13em; text-transform: uppercase; }
   .t-button { font-size: 0.84rem; font-weight: 680; letter-spacing: 0.005em; }
+  /* Finitions de lecture : titres équilibrés sur leurs lignes, paragraphes sans ligne orpheline (ignoré si non pris en charge). */
+  .t-h1, .t-h2, .t-h3, .t-h4, .t-h5, .t-h6 { text-wrap: balance; }
+  .t-body1, .t-body2 { text-wrap: pretty; }
 
   /* Surfaces : panneau opaque à filet fin (plus de flou d'arrière-plan). */
   .g-paper {

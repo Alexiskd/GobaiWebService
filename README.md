@@ -2,6 +2,13 @@
 
 Go白ناन्टех is a browser-based solar-system scene with a NestJS API and a React/Three.js frontend.
 
+## Documentation
+
+- `ARCHITECTURE.md` : organisation du dépôt (Engine, Fairing, Computing, Transmission).
+- `docs/architecture/` : lots de travail, arborescence des moteurs, historique d'affichage des astres, édition statique.
+- `docs/astronomie/` : catalogues externes, résolution croisée, satellites et périvolumes.
+- `docs/mobile/` et `docs/terre/` : audits de l'interface mobile et de la Terre (couche unique, KTX2).
+
 ## Fusion avec l'édition statique (20 novembre 2026)
 
 Le dépôt réunit désormais deux historiques : GobaiWebService (API NestJS, `backend/`) et static-gobai (frontend
