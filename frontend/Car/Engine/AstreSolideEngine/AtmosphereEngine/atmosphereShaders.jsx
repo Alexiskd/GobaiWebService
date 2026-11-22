@@ -2,6 +2,8 @@
 // three.js : atmosphere.jsx en fait des matériaux, et le banc d'essai peut les compiler seuls.
 // Importe le code GLSL des nuages de la Terre et de Vénus, depuis atmosphereClouds.
 import { EARTH_CLOUDS_GLSL, VENUS_CLOUDS_GLSL } from './atmosphereClouds.jsx';
+// Importe le code GLSL des cumulonimbus, depuis cumulonimbus.
+import { CUMULONIMBUS_GLSL } from './cumulonimbus.jsx';
 // Importe le code GLSL de la diffusion et ses variables uniformes, depuis atmosphereScatter.
 import { SCATTER_GLSL, SCATTER_UNIFORMS_GLSL } from './atmosphereScatter.jsx';
 // Importe la plus grande vitesse de vent codée, depuis weatherFlow.
@@ -69,6 +71,8 @@ export const earthCloudFragmentShader = [
   'varying vec3 vN;varying vec3 vV;varying vec3 vP;',
   // Le code GLSL des nuages simulés de la Terre.
   EARTH_CLOUDS_GLSL,
+  // Le code GLSL des cumulonimbus (tours et enclumes, théorie de Bergeron), qui réutilise le bruit ci-dessus.
+  CUMULONIMBUS_GLSL,
   // Le modèle d'éclairage de la Terre, le même que celui du sol (surfaceLight.jsx).
   EARTH_LIGHT_GLSL,
   // Point d'où vient l'air arrivé en `p` après `s` secondes de vent : on remonte le vent local (vers l'est, vers le nord).
@@ -80,6 +84,8 @@ export const earthCloudFragmentShader = [
   'vec3 e=vec3(p.z,0.,-p.x);float l=length(e);if(l<1e-5)return p;e/=l;vec3 n=cross(p,e);',
   // Renvoie le point reculé le long du vent, de s secondes, la distance étant divisée par le rayon de la Terre en mètres. Fin de advect.
   'return normalize(p-(e*w.x+n*w.y)*(s/6371000.));}',
+  // Fonction cbAt : les cumulonimbus au point p, entraînés par le vent comme la couverture (mélange des deux copies).
+  'vec2 cbAt(vec3 p){return flowOn>.5?mix(cumulonimbus(advect(p,flow.x)),cumulonimbus(advect(p,flow.y)),flow.z):cumulonimbus(p);}',
   // Fonction coverAt : la couverture nuageuse au point p (début).
   'float coverAt(vec3 p){float cover;',
   // Nuages réels : carte mondiale (longitude Est positive, comme les tuiles), affinée par un grain pour ne pas voir
@@ -113,6 +119,11 @@ export const earthCloudFragmentShader = [
   'vec3 p=normalize(vP);',
   // Couverture : avec l'animation, mélange des deux copies déplacées par le vent ; sinon couverture du point lui-même.
   'float cover=flowOn>.5?mix(coverAt(advect(p,flow.x)),coverAt(advect(p,flow.y)),flow.z):coverAt(p);',
+  // Cumulonimbus : densité et part de glace ; ils s'ajoutent à la couverture (le plus épais des deux l'emporte).
+  'vec2 cb=cbAt(p);cover=max(cover,cb.x);',
+  // Teinte : blanc partout, sauf dans les cumulonimbus où elle va du gris-bleu des flancs (gouttelettes encore liquides)
+  // au blanc pur du sommet et de l'enclume (glace), selon la part de glace.
+  'vec3 tint=mix(vec3(1.),mix(vec3(.66,.71,.82),vec3(1.),cb.y),smoothstep(.05,.4,cb.x));',
   // Applique l'opacité et le fondu ; un fragment presque transparent n'est pas dessiné.
   'cover*=opacity*fade;if(cover<.004)discard;',
   // Éclairement, avec le même modèle que le sol : hauteur du Soleil, relevée de 0,05 (≈ 3°) parce que le sommet des
@@ -124,7 +135,7 @@ export const earthCloudFragmentShader = [
   // Vue de la pollution lumineuse : toute la Terre de nuit, les nuages ne gardent que la lueur de la nuit.
   'E=mix(E,vec3(.00045),lightView);',
   // Couleur finale : blanc, éclairé (ramené à l'écran) selon le réglage de l'ombre ; opacité égale à la couverture. Fin de la fonction principale.
-  'gl_FragColor=vec4(mix(vec3(1.),pow(E,vec3(.4545)),shade),cover);}',
+  'gl_FragColor=vec4(tint*mix(vec3(1.),pow(E,vec3(.4545)),shade),cover);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
 ].join('\n');
 
