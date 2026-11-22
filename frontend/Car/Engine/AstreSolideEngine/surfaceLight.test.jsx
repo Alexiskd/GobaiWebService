@@ -74,7 +74,10 @@ test('modèle de la Terre : sol, nuages et coquille branchés', () => {
 test('le modèle de Jupiter définit jupiterGrade et jupiterLight et le shader des tuiles les utilise', async () => {
   const { JUPITER_LIGHT_GLSL } = await import('./surfaceLight.jsx');
   const { tileFragmentShader } = await import('./MapEngine/tiles/tileShaders.jsx');
-  const src = JUPITER_LIGHT_GLSL.join('\n');
+  // Texte et non tableau : inséré tel quel dans le shader, sans virgule entre les fonctions.
+  assert.equal(typeof JUPITER_LIGHT_GLSL, 'string');
+  const src = JUPITER_LIGHT_GLSL;
+  assert.ok(!/\}\s*,\s*vec3 jupiter/.test(tileFragmentShader), 'virgule entre les fonctions');
   assert.ok(src.includes('vec3 jupiterGrade(vec3 c)') && src.includes('vec3 jupiterLight(vec3 g,float d,float mu)'));
   assert.ok(tileFragmentShader.includes('uniform float gasModel;') && tileFragmentShader.includes('jupiterLight(jupiterGrade(col),d,mu)'));
   // Le halo bleu du modèle général et le modèle de la Terre ne s'appliquent pas à Jupiter.
