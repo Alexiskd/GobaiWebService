@@ -14,6 +14,8 @@ import {
   buildCellMesh, cellBox, cellKeyOf, cellOutside, cellTiles, cellUVs, clipCellToTile, fallbackLevels, cellZoom, hexCell, hexChildren, hexRoots, selectHexCells, tilesForBox,
 // Fin de la liste : le module hexCells.
 } from './hexCells.jsx';
+// Importe les plans d'un polygone convexe, pour tester les morceaux de cellules.
+import { polyPlanes } from './hexRegions.jsx';
 
 // dot : produit scalaire de deux vecteurs.
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -31,7 +33,11 @@ function rng(seed) {
 }
 /** Le point p est-il dans la cellule ? (sa cellule de même fréquence a le même centre) */
 // inside : vrai quand un point est dans une cellule, c'est-à-dire quand sa cellule de même fréquence a le même centre.
-const inside = (cell, p) => near(cellCenterOf(p, cell.f), cell.center, 1e-9 / cell.f);
+// Un point est dans une cellule entière s'il est plus près de son centre que de tout autre centre de sa fréquence ; dans un
+// morceau de cellule (voir hexRegions.jsx), s'il est en plus dans l'un des polygones du morceau.
+const inside = (cell, p) => near(cellCenterOf(p, cell.f), (cell.hex || cell).center, 1e-9 / cell.f)
+  // Morceau : le point doit aussi être dans l'un de ses polygones convexes.
+  && (!cell.polys || cell.polys.some((poly) => polyPlanes(poly).every((n) => n[0] * p[0] + n[1] * p[1] + n[2] * p[2] >= -1e-9)));
 
 // Test : les cellules du niveau 0.
 test('niveau 0 : 42 cellules, 12 pentagones, contour qui alterne coins et milieux', () => {

@@ -15,6 +15,8 @@ import { buildHexGrid, cellCenterOf, facesContaining, ICOSA_FACES } from './hexG
 import { lonLatToXYZ, MAX_LATITUDE, xyzToLonLat } from '../mercator.jsx';
 // Importe MERCATOR, la projection, depuis projection.
 import { MERCATOR } from '../projection.jsx';
+// Importe la découpe exacte d'un enfant au contour de sa mère, et les polygones d'une cellule ou d'un morceau.
+import { partsOf } from './hexRegions.jsx';
 
 // RAD : le nombre de radians dans un degré.
 const RAD = Math.PI / 180;
@@ -174,16 +176,18 @@ const CELL_CACHE_MAX = 6000;
 const cellCache = new Map();
 // childrenOf : les enfants d'une cellule, gardés en cache (début).
 function childrenOf(cell) {
+  // Un morceau a les enfants de sa cellule entière.
+  const hex = cell.hex || cell;
   // Enfants déjà calculés.
-  let kids = cellCache.get(cell.key);
+  let kids = cellCache.get(hex.key);
   // Sinon (début).
   if (!kids) {
     // Cache plein : il est vidé.
     if (cellCache.size >= CELL_CACHE_MAX) cellCache.clear();
     // Calcule les enfants.
-    kids = hexChildren(cell);
+    kids = hexChildren(hex);
     // Les range dans le cache.
-    cellCache.set(cell.key, kids);
+    cellCache.set(hex.key, kids);
   // Fin de ce cas.
   }
   // Les renvoie.
@@ -317,8 +321,9 @@ function selectAt(view, opts, limit) {
     const px = ((2 * cell.bound) / near) * pxPerUnit;
     // Trop large, sous le niveau maximal, et des images plus fines existent (début).
     if (px > cellPx && cell.level < maxLevel && (!canRefine || canRefine(cell, near))) {
-      // Examine ses enfants.
-      for (const kid of childrenOf(cell)) visit(kid);
+      // Examine ses enfants, chacun coupé au contour exact de cette cellule (l'enfant entier ou un morceau) :
+      // aucun ne déborde sur une voisine. Découpes faites une fois, gardées sur la cellule.
+      for (const part of partsOf(cell, childrenOf(cell))) visit(part);
     // Sinon (début).
     } else {
       // Retient la cellule, avec sa distance et sa distance utile.
@@ -493,8 +498,15 @@ export function buildCellMesh(cell, minSegments = 1) {
   const n = Math.max(1, Math.min(12, Math.max(Math.floor(minSegments), Math.ceil(cell.rho / RAD))));
   // Le centre et le contour.
   const { center, ring } = cell;
+  // Grands triangles à redécouper : l'éventail du centre vers le contour (cellule entière), ou, pour un morceau de
+  // cellule (voir hexRegions.jsx), un éventail par polygone convexe du morceau, depuis son premier sommet.
+  const fans = [];
+  // Un morceau : ses polygones.
+  if (cell.polys) for (const poly of cell.polys) for (let k = 1; k + 1 < poly.length; k++) fans.push([poly[0], poly[k], poly[k + 1]]);
+  // Une cellule entière : du centre vers chaque côté du contour.
+  else for (let s = 0; s < ring.length; s++) fans.push([center, ring[s], ring[(s + 1) % ring.length]]);
   // Nombre de petits triangles.
-  const tris = ring.length * n * n;
+  const tris = fans.length * n * n;
   // Tableaux des positions, des normales et des longitudes/latitudes.
   const positions = new Float32Array(tris * 9), normals = new Float32Array(tris * 9), lonLat = new Float64Array(tris * 6);
   // Indices d'écriture.
@@ -515,10 +527,8 @@ export function buildCellMesh(cell, minSegments = 1) {
     lonLat[q++] = lat;
   // Fin de put.
   };
-  // Pour chaque côté du contour (début).
-  for (let s = 0; s < ring.length; s++) {
-    // Le triangle : le centre et deux points voisins du contour.
-    const A = center, B = ring[s], C = ring[(s + 1) % ring.length];
+  // Pour chaque grand triangle (début).
+  for (const [A, B, C] of fans) {
     // at : point du triangle à a pas vers B et b pas vers C, sur la sphère.
     const at = (a, b) => norm(mix3(A, B, C, n - a - b, a, b));
     // Pour chaque rangée (début).
@@ -533,7 +543,7 @@ export function buildCellMesh(cell, minSegments = 1) {
       }
     // Fin de la boucle des rangées.
     }
-  // Fin de la boucle des côtés.
+  // Fin de la boucle des grands triangles.
   }
   // Renvoie le maillage.
   return { center, positions, normals, lonLat, count: tris * 3 };
