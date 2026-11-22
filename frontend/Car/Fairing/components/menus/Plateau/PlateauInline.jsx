@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect et useState.
 import { useEffect, useState } from 'react';
-// Importe de MUI Box, CircularProgress, Stack et Typography.
-import { Box, CircularProgress, Stack, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { CircularProgress } from '@/Fairing/kit';
 // Importe buildGlobeCanvas, qui assemble la carte du globe.
 import { buildGlobeCanvas } from '@/Engine/TextureEngine/globeTexture';
 // Importe useViewport, qui donne la catégorie d'écran.
@@ -57,27 +57,27 @@ export function PlateauInline({ engine, bodyId, baseKey }) {
   // Début du rendu.
   return (
     // Section du panneau : hauteur contenue, le plateau s'adapte à son conteneur.
-    <Box sx={{ position: 'relative', height: compact ? 220 : 280, mt: 1.5, overflow: 'hidden' }}>
+    <div className={`relative ${compact ? 'h-55' : 'h-70'} mt-3 overflow-hidden`}>
       {/* Le globe tournant, monté dès que le composant l'est. */}
       <PlateauTournant globe={globe} />
       {/* Tant que la carte n'est pas prête (début). */}
       {state !== 'ready' && (
         // Bloc de message, centré en haut, sans capter les clics.
-        <Stack spacing={1} sx={{ alignItems: 'center', position: 'absolute', top: 16, left: 0, right: 0, pointerEvents: 'none' }}>
+        <div className="flex flex-col gap-2 items-center absolute top-4 left-0 right-0 pointer-events-none">
           {/* La roue de chargement, pendant le chargement. */}
           {state === 'loading' && <CircularProgress size={20} />}
           {/* Le message (début de la balise). */}
-          <Typography variant="caption" color="text.secondary">
+          <span className="t-caption text-soft">
             {/* « Chargement… » ou « Aucun fond de carte actif ». */}
             {state === 'loading' ? 'Chargement du fond de carte…' : 'Aucun fond de carte actif sur cet astre.'}
           {/* Fin du message. */}
-          </Typography>
+          </span>
         {/* Fin du bloc. */}
-        </Stack>
+        </div>
       // Fin du cas.
       )}
     {/* Fin de la section. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de PlateauInline.

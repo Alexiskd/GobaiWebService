@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect, useMemo et useState.
 import { useEffect, useMemo, useState } from 'react';
-// Importe de MUI les composants de liste, Paper (carte) et TextField (champ).
-import { List, ListItem, ListItemButton, ListItemText, Paper, TextField } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { List, ListItem, ListItemButton, ListItemText, TextField } from '@/Fairing/kit';
 // Importe coords, qui met en forme des coordonnées.
 import { coords } from '@/Engine/shared/lib/format';
 // Importe la largeur de vue d'une adresse et fold, qui normalise un texte pour la comparaison.
@@ -134,7 +134,7 @@ export function PlaceSearch({ places, onPick, placeholder = 'Rechercher un lieu�
       {/* S'il y a une requête (début). */}
       {q && (
         // Carte à contour, transparente, haute de 280 px au plus, qui défile.
-        <Paper variant="outlined" sx={{ mt: 1, bgcolor: 'transparent', backdropFilter: 'none', maxHeight: 280, overflowY: 'auto' }}>
+        <div className="g-paper g-paper-outlined mt-2 bg-transparent max-h-70 overflow-y-auto">
           {/* Liste dense, sans marge intérieure. */}
           <List dense disablePadding>
             {/* Une entrée par résultat (début). */}
@@ -173,7 +173,7 @@ export function PlaceSearch({ places, onPick, placeholder = 'Rechercher un lieu�
           {/* Fin de la liste. */}
           </List>
         {/* Fin de la carte. */}
-        </Paper>
+        </div>
       // Fin de la zone des résultats.
       )}
     {/* Fin du fragment. */}

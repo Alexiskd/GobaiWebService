@@ -3,7 +3,7 @@ import { iconKind } from './iconKind.js';
 
 /**
  * Icône d'une action de la barre d'outils, dessinée selon sa nature (voir iconKind) :
- *  - un composant d'icône MUI (ui/icons) : instancié à la taille demandée, il hérite de la couleur du bouton ;
+ *  - un composant d'icône du kit (ui/icons) : instancié à la taille demandée, il hérite de la couleur du bouton ;
  *  - un élément React déjà construit : rendu tel quel ;
  *  - un objet { img } : une image du dossier public, à la même taille ;
  *  - un caractère : rendu tel quel, pour les libellés qui ne sont pas des icônes (la lettre « N »).
@@ -17,7 +17,7 @@ export function iconNode(icon, size = 18) {
       // Le composant, nommé pour être employé comme balise.
       const Icon = icon;
       // Rendu en bloc.
-      return <Icon sx={{ fontSize: size, display: 'block' }} />;
+      return <Icon className="block" style={{ fontSize: size }} />;
     // Fin du cas « composant ».
     }
     // Une image du dossier public : une balise img de cette taille, sans texte alternatif (décorative).

@@ -1,7 +1,5 @@
 // Importe useEffect de React.
 import { useEffect } from 'react';
-// Importe de MUI Box et Paper.
-import { Box, Paper } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe les mises en forme de distance, de latitude et de longitude, le nombre de décimales et l'échelle arrondie.
@@ -15,6 +13,7 @@ import { getZones, subscribeZones } from '@/Fairing/hooks/useZones';
 // Importe safe, qui donne une marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe les icônes des quatre coins et du réticule.
+import { cx } from '@/Fairing/kit';
 import { MyLocationIcon, NorthEastIcon, NorthWestIcon, SouthEastIcon, SouthWestIcon } from '../ui/icons.jsx';
 
 // Cadre GPS de la Terre : coordonnées des quatre coins de la zone visible, centre (réticule), barre d'échelle et
@@ -23,8 +22,6 @@ import { MyLocationIcon, NorthEastIcon, NorthWestIcon, SouthEastIcon, SouthWestI
 
 // Icône de chaque coin : nord-ouest, nord-est, sud-ouest, sud-est.
 const ARROWS = { nw: NorthWestIcon, ne: NorthEastIcon, sw: SouthWestIcon, se: SouthEastIcon };
-// Style des flèches : à la taille du texte de la pastille, alignées sur la ligne.
-const ARROW_SX = { fontSize: 'inherit', verticalAlign: '-0.15em' };
 // Variable CSS de la marge basse du cadre.
 const BOTTOM = 'var(--gps-bottom, 0px)';
 // Variable CSS de la marge haute du cadre.
@@ -56,35 +53,22 @@ const POSITION_COMPACT = {
 
 /** Pastille de coordonnées : police à chasse fixe, chiffres alignés, au-dessus de la scène et sous les panneaux. */
 // Déclare le composant Chip : styles, contenu et autres propriétés.
-function Chip({ sx, children, ...rest }) {
+function Chip({ className, style, children, ...rest }) {
   // Début du rendu.
   return (
     // Carte de la pastille (début de la balise).
-    <Paper
-      // Ombre légère.
-      elevation={2}
+    <div
       // Les autres propriétés reçues.
       {...rest}
       // Début du style.
-      sx={{
-        // Fixée, sans capter les clics, contenu aligné sur la ligne de base.
-        position: 'fixed', zIndex: 26, pointerEvents: 'none', display: 'flex', alignItems: 'baseline', gap: '5px',
-        // Petites marges, coins arrondis, une seule ligne, chiffres de largeur fixe.
-        px: 0.75, py: 0.25, borderRadius: 1, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
-        // Police à chasse fixe, petite taille.
-        fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace', fontSize: 11.5, lineHeight: 1.35,
-        // Symboles en gras, couleur primaire.
-        '& b': { fontWeight: 700, color: 'primary.main' },
-        // Styles supplémentaires passés par l'appelant.
-        ...sx,
-      // Fin du style.
-      }}
+      className={cx('g-paper fixed z-26 pointer-events-none flex items-baseline gap-[5px] px-1.5 py-0.5 rounded-[6px] whitespace-nowrap tabular-nums font-mono text-[11.5px] leading-[1.35] shadow-none [&_b]:font-bold [&_b]:text-primary', className)}
+      style={style}
     // Fin de la balise ouvrante.
     >
       {/* Le contenu. */}
       {children}
     {/* Fin de la carte. */}
-    </Paper>
+    </div>
   // Fin du rendu.
   );
 // Fin de Chip.
@@ -93,7 +77,7 @@ function Chip({ sx, children, ...rest }) {
 // Déclare le composant Corner : le coin, le nombre de décimales et le mode compact.
 function Corner({ corner, digits, compact }) {
   // Style de la pastille (début de l'objet).
-  const sx = {
+  const style = {
     // La position du coin : sur téléphone, contre les zones du titre et du dock ; sinon contre les bords.
     ...(compact ? POSITION_COMPACT : POSITION)[corner.id],
     // En mode compact : sur deux lignes, alignées du côté du coin, en plus petit.
@@ -105,7 +89,7 @@ function Corner({ corner, digits, compact }) {
   // Si le coin tombe hors de l'astre.
   if (corner.lat === null) {
     // Pastille « espace », avec la flèche du coin.
-    return <Chip sx={sx} aria-hidden="true"><Arrow sx={ARROW_SX} /><Box component="span" sx={{ color: 'text.secondary' }}>espace</Box></Chip>;
+    return <Chip style={style} aria-hidden="true"><Arrow className="[font-size:inherit] [vertical-align:-0.15em]" /><span className="text-soft">espace</span></Chip>;
   // Fin du cas.
   }
   // Latitude et longitude mises en forme.
@@ -113,15 +97,15 @@ function Corner({ corner, digits, compact }) {
   // Début du rendu.
   return (
     // La pastille, cachée aux lecteurs d'écran.
-    <Chip sx={sx} aria-hidden="true">
+    <Chip style={style} aria-hidden="true">
       {/* En mode compact (début). */}
       {compact ? (
         // Deux lignes : la flèche et la latitude, puis la longitude.
-        <><span><Arrow sx={ARROW_SX} /> {lat}</span><span>{lon}</span></>
+        <><span><Arrow className="[font-size:inherit] [vertical-align:-0.15em]" /> {lat}</span><span>{lon}</span></>
       // Sinon (début).
       ) : (
         // Une ligne : la flèche, puis la latitude et la longitude.
-        <><Arrow sx={ARROW_SX} /><span>{lat}, {lon}</span></>
+        <><Arrow className="[font-size:inherit] [vertical-align:-0.15em]" /><span>{lat}, {lon}</span></>
       // Fin du choix.
       )}
     {/* Fin de la pastille. */}
@@ -192,19 +176,11 @@ export function GpsFrame({ hud, engine }) {
         <>
           {/* Réticule du centre de l'écran. */}
           {/* Le réticule (début de la balise). */}
-          <Box
+          <div
             // Caché aux lecteurs d'écran.
             aria-hidden="true"
             // Début du style.
-            sx={{
-              // Carré de 18 px centré sur l'écran, sans capter les clics.
-              position: 'fixed', zIndex: 23, left: '50%', top: '50%', width: 18, height: 18, m: '-9px 0 0 -9px', pointerEvents: 'none',
-              // Une croix blanche : deux traits de 1,5 px.
-              background: 'linear-gradient(#fff, #fff) center / 1.5px 100% no-repeat, linear-gradient(#fff, #fff) center / 100% 1.5px no-repeat',
-              // Liseré noir pour rester lisible sur fond clair.
-              filter: 'drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000)',
-            // Fin du style.
-            }}
+            className="fixed z-23 left-1/2 top-1/2 w-4.5 h-4.5 m-[-9px_0_0_-9px] pointer-events-none [background:linear-gradient(#fff,#fff)_center_/_1.5px_100%_no-repeat,linear-gradient(#fff,#fff)_center_/_100%_1.5px_no-repeat] [filter:drop-shadow(0_0_1px_#000)_drop-shadow(0_0_1px_#000)]"
           // Fin du réticule.
           />
           {/* La pastille du centre (début de la balise). */}
@@ -214,29 +190,23 @@ export function GpsFrame({ hud, engine }) {
             // Non annoncée à chaque changement.
             aria-live="off"
             // Début du style.
-            sx={{
-              // En bas à gauche, au-dessus de la marge basse.
-              bottom: compact ? `calc(${HUD_BOTTOM} + 44px)` : `calc(${BOTTOM} + 74px)`, left: `calc(${safe('left')} + 5px)`,
-              // Passe à la ligne au besoin, jamais plus large que l'écran, plus petite en mode compact.
-              flexWrap: 'wrap', maxWidth: 'calc(100vw - 10px)', ...(compact && { fontSize: 10.5 }),
-            // Fin du style.
-            }}
+            className={`flex-wrap max-w-[calc(100vw_-_10px)] ${compact ? 'text-[10.5px]' : ''}`} style={{ bottom: compact ? `calc(${HUD_BOTTOM} + 44px)` : `calc(${BOTTOM} + 74px)`, left: `calc(${safe('left')} + 5px)` }}
           // Fin de la balise ouvrante.
           >
             {/* Le réticule du centre. */}
-            <MyLocationIcon sx={{ fontSize: 13 }} />
+            <MyLocationIcon className="text-[13px]" />
             {/* Les coordonnées du centre. */}
             <span>{formatLat(gps.center.lat, digits)}, {formatLon(gps.center.lon, digits)}</span>
             {/* Si l'échelle est connue (début). */}
             {scale && (
               // Bloc de l'échelle, avec son infobulle.
-              <Box component="span" title="Échelle au centre de l’écran" sx={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <span title="Échelle au centre de l’écran" className="inline-flex items-center gap-[5px]">
                 {/* La barre d'échelle : un trait ouvert vers le haut, de la largeur calculée. */}
-                <Box component="i" sx={{ display: 'inline-block', height: 6, border: '1.5px solid', borderTop: 0, borderColor: 'text.primary' }} style={{ width: `${Math.round(scale.px)}px` }} />
+                <i className="inline-block h-1.5 border-[1.5px] border-t-0 border-ink" style={{ width: `${Math.round(scale.px)}px` }} />
                 {/* La longueur représentée. */}
                 {scale.label}
               {/* Fin du bloc de l'échelle. */}
-              </Box>
+              </span>
             // Fin du cas.
             )}
             {/* L'altitude, si elle est connue, jamais négative. */}

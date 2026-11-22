@@ -57,34 +57,12 @@ export const FADE_ATTR = 'data-theme-fade';
 // Attribut qui désigne la scène 3D.
 export const SCENE_ATTR = 'data-scene';
 
-// Réglages du fondu : sa durée, à vitesse constante.
-const fade = { animationDuration: `${THEME_FADE_MS}ms`, animationTimingFunction: 'linear' };
-
 /**
- * Styles globaux du fondu.
+ * Styles du fondu : ils sont dans la feuille `theme/app.css` (section « Fondu du changement de thème »), avec la
+ * même durée que THEME_FADE_MS (600 ms) et les mêmes attributs que FADE_ATTR et SCENE_ATTR ci-dessus.
  *
  * La scène 3D ne doit jamais être figée : une photo de l'écran entier arrêterait la rotation des astres pendant le
  * fondu. Quand le navigateur sait nommer les éléments tout seul (`match-element`), chaque élément du HUD est donc
  * photographié et fondu à part, et la page elle-même (la scène) reste en direct, sans photo : les astres continuent de
  * tourner et leur ombre se fond dans le moteur. Sinon, repli sur le fondu de la page entière.
  */
-// Styles globaux du fondu :
-export const themeTransitionStyles = {
-  // fondu de la page entière ;
-  '::view-transition-old(root), ::view-transition-new(root)': fade,
-  // si le navigateur sait nommer les éléments tout seul :
-  '@supports (view-transition-name: match-element)': {
-    // chaque élément du HUD reçoit son propre calque ;
-    [`html[${FADE_ATTR}] [${SCENE_ATTR}] ~ *`]: { viewTransitionName: 'match-element', viewTransitionClass: 'hud' },
-    // l'ancienne image de la page n'est pas montrée ;
-    '::view-transition-old(root)': { display: 'none' },
-    // la nouvelle n'est pas animée ;
-    '::view-transition-new(root)': { animation: 'none' },
-    // durée du groupe des éléments du HUD ;
-    '::view-transition-group(*.hud)': { animationDuration: `${THEME_FADE_MS}ms` },
-    // fondu de chaque élément du HUD.
-    '::view-transition-old(*.hud), ::view-transition-new(*.hud)': fade,
-  // Fin du cas.
-  },
-// Fin des styles.
-};

@@ -1,7 +1,5 @@
 // Importe de React les crochets useEffect, useRef et useState.
 import { useEffect, useRef, useState } from 'react';
-// Importe de MUI Box (conteneur) et Typography (texte).
-import { Box, Typography } from '@mui/material';
 // Importe le badge « En direct ».
 import { LiveBadge } from './LiveBadge.jsx';
 // Importe les calculs de la progression : vitesses maximales de la vidéo, avance de la barre, vitesse de fin, vitesse de lecture.
@@ -204,33 +202,19 @@ export function LoadingScreen({ step, label, onDone, onReveal, children }) {
   // Début du rendu.
   return (
     // Fond de l'écran de chargement (début de la balise).
-    <Box
+    <div
       // Rôle d'état pour les lecteurs d'écran.
       role="status"
       // Changements annoncés sans interrompre la lecture en cours.
       aria-live="polite"
       // Début du style.
-      sx={{
-        // Couvre toute la fenêtre, au-dessus des fenêtres modales, fond noir, sans débordement.
-        position: 'fixed', inset: 0, zIndex: (t) => t.zIndex.modal + 30, overflow: 'hidden', bgcolor: '#000',
-        // Fond visible tant que la vidéo n'est pas arrivée (ou si elle est injoignable) : lueurs bleue et ambrée de l'app.
-        // Deux halos en dégradé radial : un bleu en haut à gauche et (ligne suivante) un ambré en bas à droite.
-        backgroundImage: `radial-gradient(60% 50% at 18% 12%, rgba(0, 0, 255, 0.22), transparent 70%),
-          radial-gradient(70% 60% at 85% 100%, rgba(240, 178, 74, 0.16), transparent 70%)`,
-        // Transparent et sans interaction pendant le fondu de sortie.
-        opacity: leaving ? 0 : 1, pointerEvents: leaving ? 'none' : 'auto',
-        // Transition d'opacité de la durée du fondu.
-        transition: `opacity ${FADE_MS}ms ease`,
-      // Fin du style.
-      }}
+      className={`fixed inset-0 z-[1330] overflow-hidden bg-[#000] [background-image:radial-gradient(60%_50%_at_18%_12%,rgba(0,0,255,0.22),transparent_70%),radial-gradient(70%_60%_at_85%_100%,rgba(240,178,74,0.16),transparent_70%)] ${leaving ? 'opacity-0' : 'opacity-100'} ${leaving ? 'pointer-events-none' : 'pointer-events-auto'}`} style={{ transition: `opacity ${FADE_MS}ms ease` }}
     // Fin de la balise ouvrante.
     >
       {/* S'il y a une vidéo (début). */}
       {src && (
         // La vidéo (début de la balise).
-        <Box
-          // Rendue en balise video.
-          component="video"
+        <video
           // Référence pour la piloter.
           ref={videoRef}
           // Adresse de la vidéo.
@@ -248,45 +232,33 @@ export function LoadingScreen({ step, label, onDone, onReveal, children }) {
           // Première image chargée : la vidéo peut apparaître.
           onLoadedData={() => setVideoReady(true)}
           // Couvre tout l'écran en le remplissant ; apparaît en fondu de 500 ms quand elle est prête.
-          sx={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: videoReady ? 1 : 0, transition: 'opacity 500ms ease' }}
+          className={`absolute inset-0 w-full h-full object-cover ${videoReady ? 'opacity-100' : 'opacity-0'} [transition:opacity_500ms_ease]`}
         // Fin de la vidéo.
         />
       // Fin du cas « vidéo ».
       )}
       {/* Voile : garde la Lune visible au centre, assombrit les bords pour le texte. */}
       {/* Voile en dégradé radial : transparent au centre, sombre sur les bords. */}
-      <Box sx={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 90% at 50% 40%, rgba(0,0,0,0) 35%, rgba(0,0,0,0.72) 100%)' }} />
+      <div className="absolute inset-0 [background:radial-gradient(120%_90%_at_50%_40%,rgba(0,0,0,0)_35%,rgba(0,0,0,0.72)_100%)]" />
 
       {/* Si un contenu est fourni (début). */}
       {children && (
         // Il est centré sur tout l'écran.
-        <Box sx={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', p: 2 }}>{children}</Box>
+        <div className="absolute inset-0 grid place-items-center p-4">{children}</div>
       // Fin du contenu.
       )}
 
       {/* Carte de chargement : même verre sombre que les panneaux de l'app. */}
       {/* La carte de chargement (début de la balise). */}
-      <Box
+      <div
         // Début du style.
-        sx={{
-          // Centrée horizontalement, à 28 px du bas, au-dessus de la zone de sécurité.
-          position: 'absolute', left: '50%', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 28px)', transform: 'translateX(-50%)',
-          // Large de 560 px au plus, marge intérieure selon l'écran, coins arrondis.
-          width: 'min(560px, calc(100% - 28px))', p: { xs: 2, sm: 2.5 }, borderRadius: '16px',
-          // Fond sombre translucide, bordure fine, flou d'arrière-plan.
-          bgcolor: 'rgba(9, 13, 22, 0.72)', border: '1px solid rgba(160, 180, 220, 0.16)', backdropFilter: 'blur(14px)',
-          // Ombre portée.
-          boxShadow: '0 18px 60px rgba(0, 0, 0, 0.55)',
-        // Fin du style.
-        }}
+        className="absolute left-1/2 bottom-[calc(env(safe-area-inset-bottom,0px)_+_28px)] [transform:translateX(-50%)] w-[min(560px,calc(100%_-_28px))] p-4 min-[600px]:p-5 rounded-[16px] bg-[color:rgba(9,13,22,0.72)] border border-[color:rgba(160,180,220,0.16)] [box-shadow:0_18px_60px_rgba(0,0,0,0.55)]"
       // Fin de la balise ouvrante.
       >
         {/* Ligne du logo et du nom. */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
+        <div className="flex items-center gap-3.5">
           {/* Le logo (début de la balise). */}
-          <Box
-            // Rendu en balise img.
-            component="img"
+          <img
             // Adresse du logo (le paramètre v force le rechargement).
             src="/logo.webp?v=4"
             // Texte alternatif vide : image décorative.
@@ -294,90 +266,72 @@ export function LoadingScreen({ step, label, onDone, onReveal, children }) {
             // Non déplaçable.
             draggable={false}
             // Large de 72 ou 96 px selon l'écran, proportions gardées.
-            sx={{ width: { xs: 72, sm: 96 }, height: 'auto', flex: 'none', objectFit: 'contain' }}
+            className="w-18 min-[600px]:w-24 h-auto flex-none object-contain"
           // Fin du logo.
           />
           {/* Le nom de l'application (début de la balise). */}
-          <Typography
-            // Rendu en paragraphe.
-            component="p"
+          <p
             // Jamais traduit.
             translate="no"
             // Ligne flexible qui passe à la ligne, taille selon l'écran, demi-gras, encre claire.
-            sx={{ m: 0, minWidth: 0, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: '0.3em', fontSize: { xs: '1.15rem', sm: '1.4rem' }, fontWeight: 600, lineHeight: 1.2, color: INK }}
+            className="t-body1 m-0 min-w-0 flex items-center flex-wrap gap-x-[0.3em] text-[1.15rem] min-[600px]:text-[1.4rem] font-semibold leading-[1.2] text-[#e8edf8]"
           // Fin de la balise ouvrante.
           >
             {/* Le symbole ∞ en bleu de la marque, deux fois plus grand, décoratif. */}
-            <Box component="span" aria-hidden="true" sx={{ color: BRAND_BLUE, fontSize: '2em', lineHeight: 0.8, fontWeight: 700 }}>∞</Box>
+            <span aria-hidden="true" className="text-[#0000FF] text-[2em] leading-[0.8] font-bold">∞</span>
             {/* Le nom de l'application. */}
             Go白ناन्टех
             {/* La suite du nom, en encre atténuée, décorative. */}
-            <Box component="span" aria-hidden="true" sx={{ color: DIM, fontWeight: 400 }}>α΄一하나א</Box>
+            <span aria-hidden="true" className="text-[#8b97b3] font-normal">α΄一하나א</span>
             {/* Le badge « En direct ». */}
-            <LiveBadge sx={{ ml: '0.2em' }} />
+            <LiveBadge className="ml-[0.2em]" />
           {/* Fin du nom. */}
-          </Typography>
+          </p>
         {/* Fin de la ligne du logo et du nom. */}
-        </Box>
+        </div>
 
         {/* Astres de la Navigation : chaque pastille s'allume à sa couleur quand la barre l'atteint. */}
         {/* La rangée de pastilles (début de la balise). */}
-        <Box
+        <div
           // Référence pour les allumer.
           ref={orbsRef}
           // Cachée aux lecteurs d'écran.
           aria-hidden="true"
           // Début du style.
-          sx={{
-            // Pastilles réparties sur toute la largeur, avec des marges.
-            display: 'flex', justifyContent: 'space-between', mt: 2, mb: 1, px: '2px',
-            // Style de chaque pastille (début).
-            '& > span': {
-              // Rond de 10 px, presque éteint, légèrement réduit.
-              width: 10, height: 10, borderRadius: '50%', opacity: 0.22, transform: 'scale(0.8)',
-              // Reflet clair sur la couleur de l'astre (variable --c).
-              background: 'radial-gradient(circle at 32% 28%, rgba(255,255,255,.8), transparent 22%), var(--c)',
-              // Transitions d'opacité, de taille (avec rebond) et de halo.
-              transition: 'opacity .3s ease, transform .3s cubic-bezier(.3,1.6,.5,1), box-shadow .3s ease',
-            // Fin du style d'une pastille.
-            },
-            // Pastille allumée : opaque, à taille réelle, avec un halo de sa couleur.
-            '& > span[data-on]': { opacity: 1, transform: 'scale(1)', boxShadow: '0 0 10px var(--c)' },
-          // Fin du style.
-          }}
+          className="flex justify-between mt-4 mb-2 px-[2px] [&_>_span]:w-2.5 [&_>_span]:h-2.5 [&_>_span]:rounded-full [&_>_span]:opacity-22 [&_>_span]:[transform:scale(0.8)] [&_>_span]:[background:radial-gradient(circle_at_32%_28%,rgba(255,255,255,.8),transparent_22%),var(--c)] [&_>_span]:[transition:opacity_.3s_ease,transform_.3s_cubic-bezier(.3,1.6,.5,1),box-shadow_.3s_ease] [&_>_span[data-on]]:opacity-100 [&_>_span[data-on]]:[transform:scale(1)] [&_>_span[data-on]]:[box-shadow:0_0_10px_var(--c)]"
         // Fin de la balise ouvrante.
         >
           {/* Une pastille par couleur, qui reçoit sa couleur dans la variable --c. */}
           {BODY_COLORS.map((c) => <span key={c} style={{ '--c': c }} />)}
         {/* Fin de la rangée de pastilles. */}
-        </Box>
+        </div>
 
         {/* Barre : le dégradé parcourt les couleurs des astres ; il est découvert, pas étiré. */}
         {/* Le rail de la barre : 6 px de haut, arrondi, gris-bleu translucide. */}
-        <Box sx={{ position: 'relative', height: 6, borderRadius: 99, bgcolor: 'rgba(160, 180, 220, 0.2)' }}>
+        <div className="relative h-1.5 rounded-full bg-[color:rgba(160,180,220,0.2)]">
           {/* Le remplissage (début de la balise). */}
-          <Box
+          <div
             // Référence pour le découvrir.
             ref={fillRef}
             // Couvre le rail avec le dégradé des astres ; entièrement rogné au départ.
-            sx={{ position: 'absolute', inset: 0, borderRadius: 99, background: SPECTRUM, clipPath: 'inset(0 100% 0 0 round 99px)', willChange: 'clip-path' }}
+            className="absolute inset-0 rounded-full [clip-path:inset(0_100%_0_0_round_99px)] [will-change:clip-path]" style={{ background: SPECTRUM }}
           // Fin du remplissage.
           />
         {/* Fin du rail. */}
-        </Box>
+        </div>
 
         {/* Ligne du libellé et du pourcentage, aux deux extrémités. */}
-        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2, mt: 1.25 }}>
+        <div className="flex items-baseline justify-between gap-4 mt-2.5">
           {/* Le libellé de l'étape, en encre atténuée. */}
-          <Typography variant="body2" sx={{ color: DIM }}>{label}</Typography>
+          <p className="t-body2 text-[#8b97b3]">{label}</p>
           {/* Le pourcentage, en ambre, gras, à chiffres de largeur fixe ; « 0 % » au départ. */}
-          <Typography ref={percentRef} variant="body2" sx={{ color: SUN, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>0 %</Typography>
+          <p ref={percentRef} className="t-body2 text-[#f0b24a] font-bold tabular-nums">0 %</p>
         {/* Fin de la ligne. */}
-        </Box>
+        </div>
 
         {/* Étapes du démarrage : une coche par étape finie. */}
         {/* Liste des étapes, sans puces, cachée aux lecteurs d'écran. */}
-        <Box component="ul" aria-hidden="true" sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', listStyle: 'none', p: 0, m: 0, mt: 1 }}>
+        <ul aria-hidden="true" className="flex gap-4 flex-wrap list-none p-0 m-0 mt-2">
           {/* Une entrée par étape (le libellé est renommé name). */}
           {STEPS.map(({ id, label: name }) => {
             // L'étape est-elle finie ?
@@ -385,49 +339,37 @@ export function LoadingScreen({ step, label, onDone, onReveal, children }) {
             // Début du rendu de l'entrée.
             return (
               // L'entrée (début de la balise).
-              <Box
-                // Rendue en balise li.
-                component="li"
+              <li
                 // Clé unique : l'identifiant de l'étape.
                 key={id}
                 // Coche et nom côte à côte, en petit ; encre claire si l'étape est finie, atténuée sinon.
-                sx={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: 12, color: done ? INK : DIM, transition: 'color .3s ease' }}
+                className={`inline-flex items-center gap-[6px] text-[12px] ${done ? 'text-[#e8edf8]' : 'text-[#8b97b3]'} [transition:color_.3s_ease]`}
               // Fin de la balise ouvrante.
               >
                 {/* La coche (début de la balise). */}
-                <Box
-                  // Rendue en balise span.
-                  component="span"
+                <span
                   // Début du style.
-                  sx={{
-                    // Rond de 14 px, contenu centré, petit caractère.
-                    width: 14, height: 14, borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: 10, lineHeight: 1,
-                    // Bordure et fond ambrés si l'étape est finie ; bordure grise et fond transparent sinon ; signe noir.
-                    border: `1px solid ${done ? SUN : 'rgba(160, 180, 220, 0.4)'}`, color: '#000', bgcolor: done ? SUN : 'transparent',
-                    // Transition des couleurs de fond et de bordure.
-                    transition: 'background-color .3s ease, border-color .3s ease',
-                  // Fin du style.
-                  }}
+                  className={`w-3.5 h-3.5 rounded-full grid place-items-center text-[10px] leading-none text-[#000] ${done ? 'bg-[#f0b24a]' : 'bg-transparent'} [transition:background-color_.3s_ease,border-color_.3s_ease]`} style={{ border: `1px solid ${done ? SUN : 'rgba(160, 180, 220, 0.4)'}` }}
                 // Fin de la balise ouvrante.
                 >
                   {/* La coche si l'étape est finie, rien sinon. */}
-                  {done ? <CheckIcon sx={{ fontSize: 11 }} /> : ''}
+                  {done ? <CheckIcon className="text-[11px]" /> : ''}
                 {/* Fin de la coche. */}
-                </Box>
+                </span>
                 {/* Le nom de l'étape. */}
                 {name}
               {/* Fin de l'entrée. */}
-              </Box>
+              </li>
             // Fin du rendu de l'entrée.
             );
           // Fin des entrées.
           })}
         {/* Fin de la liste des étapes. */}
-        </Box>
+        </ul>
       {/* Fin de la carte de chargement. */}
-      </Box>
+      </div>
     {/* Fin du fond. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de LoadingScreen.

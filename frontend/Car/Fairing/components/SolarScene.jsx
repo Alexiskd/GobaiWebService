@@ -1,9 +1,5 @@
 // Importe de React les crochets useCallback, useEffect, useMemo, useRef, useState et useSyncExternalStore.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-// Importe de MUI Box (conteneur), IconButton (bouton à icône) et Typography (texte).
-import { Box, IconButton, Typography } from '@mui/material';
-// Importe safe, la marge de sécurité de l'écran.
-import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe bodyId, qui donne l'identifiant d'un astre.
 import { bodyId } from '@/Engine/AstreSolideEngine/LabelEngine/bodyPlaces';
 // Importe les astres enlevés par défaut, la visibilité par défaut, le test de famille masquée et la famille d'une planète.
@@ -29,8 +25,6 @@ import { useToasts } from '@/Fairing/hooks/useToasts';
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe la navball de pilotage.
 import { NavballPilote } from './hud/NavballPilote/index.js';
-// Importe le cadre des coordonnées GPS.
-import { GpsFrame } from './hud/GpsFrame.jsx';
 // Importe le cadre de la visionneuse LiDAR HD de l'IGN.
 import { LidarFrame } from './hud/LidarFrame.jsx';
 // Importe le bandeau du haut.
@@ -685,24 +679,16 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Début du rendu.
   return (
     // Conteneur racine, qui couvre la fenêtre et porte la taille d'écran en attribut.
-    <Box data-vp={viewport.size} sx={{ position: 'fixed', inset: 0 }}>
+    <div data-vp={viewport.size} className="fixed inset-0">
       {/* Scène 3D : le moteur y ajoute son canvas WebGL, plein écran sous tout le HUD. */}
       {/* Le conteneur de la scène 3D (début de la balise). */}
-      <Box
+      <div
         // Référence donnée au moteur.
         ref={containerRef}
         // Marqueur data-scene.
         data-scene
         // Début du style.
-        sx={{
-          // Couvre tout le conteneur racine.
-          position: 'absolute', inset: 0,
-          // Le canvas du moteur : plein écran, sans geste tactile du navigateur, curseur en main ouverte.
-          '& > canvas': { display: 'block', position: 'fixed', inset: 0, width: '100%', height: '100%', touchAction: 'none', cursor: 'grab' },
-          // Pendant l'appui : curseur en main fermée.
-          '& > canvas:active': { cursor: 'grabbing' },
-        // Fin du style.
-        }}
+        className="absolute inset-0 [&_>_canvas]:block [&_>_canvas]:fixed [&_>_canvas]:inset-0 [&_>_canvas]:w-full [&_>_canvas]:h-full [&_>_canvas]:touch-none [&_>_canvas]:cursor-grab [&_>_canvas:active]:cursor-grabbing"
       // Fin du conteneur de la scène.
       />
 
@@ -857,7 +843,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
         // Message plein écran.
         <FullScreenMessage>
           {/* Le texte de l'erreur, en rouge. */}
-          <Typography color="error">{error}</Typography>
+          <p className="t-body1 text-error">{error}</p>
         {/* Fin du message. */}
         </FullScreenMessage>
       // Fin du cas d'erreur.
@@ -866,21 +852,15 @@ export function SolarScene({ data, onSettled, covered = false }) {
 
       {/* Cadre blanc autour de la fenêtre, au-dessus de tout, sans bloquer les clics. */}
       {/* Le cadre blanc (début de la balise). */}
-      <Box
+      <div
         // Caché aux lecteurs d'écran.
         aria-hidden
         // Début du style.
-        sx={{
-          // Couvre la fenêtre, tout au-dessus, sans capter les clics.
-          position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none',
-          // Bordure blanche de 3 px, comprise dans la taille.
-          border: '3px solid #fff', boxSizing: 'border-box',
-        // Fin du style.
-        }}
+        className="fixed inset-0 z-9999 pointer-events-none border-[3px] border-[#fff] box-border"
       // Fin du cadre.
       />
     {/* Fin du conteneur racine. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de SolarScene.

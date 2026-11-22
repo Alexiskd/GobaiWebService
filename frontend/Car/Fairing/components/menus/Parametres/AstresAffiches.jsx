@@ -1,5 +1,5 @@
-// Importe de MUI Box, ToggleButton (bouton à bascule) et Typography.
-import { Box, ToggleButton, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { ToggleButton } from '@/Fairing/kit';
 // Importe la liste des familles d'astres.
 import { BODY_KINDS } from '@/Engine/AstreSolideEngine/BodyEngine/bodyKinds';
 // Importe Hint, la note d'aide.
@@ -14,11 +14,11 @@ export function AstresAffiches({ kinds = {}, onKind }) {
   // Début du rendu.
   return (
     // Conteneur au rôle de groupe.
-    <Box role="group" aria-label="Astres affichés" sx={{ mb: 2 }}>
+    <div role="group" aria-label="Astres affichés" className="mb-4">
       {/* Le titre. */}
-      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2.2 }}>Astres affichés</Typography>
+      <span className="t-overline text-soft block leading-[2.2]">Astres affichés</span>
       {/* Grille des boutons : une colonne sur très petit écran, deux sinon. */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 1 }}>
+      <div className="grid grid-cols-[1fr] min-[600px]:grid-cols-[1fr_1fr] gap-2">
         {/* Un bouton par famille (début). */}
         {BODY_KINDS.map(({ id, label, hint }) => {
           // Famille affichée, sauf si elle est explicitement à faux.
@@ -38,25 +38,19 @@ export function AstresAffiches({ kinds = {}, onKind }) {
               // Nom pour les lecteurs d'écran, avec l'état et l'effet d'un appui.
               aria-label={`${label} : ${shown ? 'affichés, appuyer pour les enlever' : 'enlevés, appuyer pour les remettre'}`}
               // Début du style.
-              sx={{
-                // Contenu en colonne, aligné à gauche.
-                display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25,
-                // Marges, texte à gauche ; estompé si la famille est enlevée.
-                px: 1.5, py: 1, textAlign: 'left', lineHeight: 1.25, opacity: shown ? 1 : 0.72,
-              // Fin du style.
-              }}
+              className={`flex flex-col items-start gap-0.5 px-3 py-2 text-left leading-[1.25] ${shown ? 'opacity-100' : 'opacity-72'}`}
             // Fin de la balise ouvrante.
             >
               {/* Première ligne : nom et état aux deux extrémités. */}
-              <Box component="span" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%' }}>
+              <span className="flex items-center justify-between gap-2 w-full">
                 {/* Le nom, barré si la famille est enlevée. */}
-                <Box component="span" sx={{ textDecoration: shown ? 'none' : 'line-through' }}>{label}</Box>
+                <span className={`${shown ? 'no-underline' : 'line-through'}`}>{label}</span>
                 {/* L'état : « Affichés » ou « Enlevés ». */}
-                <Box component="span" aria-hidden="true" sx={{ fontSize: '0.75rem', opacity: 0.85 }}>{shown ? 'Affichés' : 'Enlevés'}</Box>
+                <span aria-hidden="true" className="text-[0.75rem] opacity-85">{shown ? 'Affichés' : 'Enlevés'}</span>
               {/* Fin de la première ligne. */}
-              </Box>
+              </span>
               {/* Le texte d'aide de la famille, en petit. */}
-              <Box component="span" sx={{ fontSize: '0.72rem', fontFamily: 'system-ui, sans-serif', letterSpacing: 0, opacity: 0.8 }}>{hint}</Box>
+              <span className="text-[0.72rem] [font-family:system-ui,sans-serif] tracking-[0px] opacity-80">{hint}</span>
             {/* Fin du bouton. */}
             </ToggleButton>
           // Fin du rendu du bouton.
@@ -64,11 +58,11 @@ export function AstresAffiches({ kinds = {}, onKind }) {
         // Fin des boutons.
         })}
       {/* Fin de la grille. */}
-      </Box>
+      </div>
       {/* Note d'aide. */}
       <Hint>Appuyez sur une famille pour l’enlever de la scène ou la remettre. Les satellites disparaissent avec leur planète.</Hint>
     {/* Fin du conteneur. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de AstresAffiches.

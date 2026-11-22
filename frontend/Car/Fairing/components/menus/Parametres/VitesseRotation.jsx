@@ -1,5 +1,5 @@
-// Importe de MUI Box, ToggleButton, ToggleButtonGroup et Typography.
-import { Box, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { ToggleButton, ToggleButtonGroup } from '@/Fairing/kit';
 // Importe Hint, la note d'aide.
 import { Hint } from '../../ui/Hint.jsx';
 
@@ -26,9 +26,9 @@ export function VitesseRotation({ speed = 1, onSpeed, rotating = true }) {
   // Début du rendu.
   return (
     // Conteneur au rôle de groupe.
-    <Box role="group" aria-label="Vitesse de rotation" sx={{ mb: 2 }}>
+    <div role="group" aria-label="Vitesse de rotation" className="mb-4">
       {/* Le titre. */}
-      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2.2 }}>Vitesse de rotation</Typography>
+      <span className="t-overline text-soft block leading-[2.2]">Vitesse de rotation</span>
       {/* Le groupe de boutons (début de la balise). */}
       <ToggleButtonGroup
         // Un seul choix à la fois.
@@ -48,11 +48,11 @@ export function VitesseRotation({ speed = 1, onSpeed, rotating = true }) {
         {/* Un bouton par vitesse (début). */}
         {ROTATION_SPEEDS.map(({ value, label, mark }) => (
           // Le bouton, nommé par son libellé et son multiplicateur.
-          <ToggleButton key={value} value={value} aria-label={`${label} (${mark})`} sx={{ flexDirection: 'column', gap: 0.25, py: 0.75, lineHeight: 1.2 }}>
+          <ToggleButton key={value} value={value} aria-label={`${label} (${mark})`} className="flex-col gap-0.5 py-1.5 leading-[1.2]">
             {/* Le libellé. */}
-            <Box component="span">{label}</Box>
+            <span>{label}</span>
             {/* Le multiplicateur, en petit. */}
-            <Box component="span" sx={{ fontSize: '0.72rem', opacity: 0.8, fontVariantNumeric: 'tabular-nums' }}>{mark}</Box>
+            <span className="text-[0.72rem] opacity-80 tabular-nums">{mark}</span>
           {/* Fin du bouton. */}
           </ToggleButton>
         // Fin des boutons.
@@ -70,7 +70,7 @@ export function VitesseRotation({ speed = 1, onSpeed, rotating = true }) {
       {/* Fin de la note. */}
       </Hint>
     {/* Fin du conteneur. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de VitesseRotation.

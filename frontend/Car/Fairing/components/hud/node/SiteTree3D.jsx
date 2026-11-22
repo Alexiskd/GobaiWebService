@@ -3,8 +3,6 @@
 // projection en perspective qui tourne lentement. Glisser fait tourner l'arbre ; cliquer une page l'ouvre.
 // Importe de React les crochets useEffect, useMemo et useRef.
 import { useEffect, useMemo, useRef } from 'react';
-// Importe Box, le conteneur de MUI.
-import { Box } from '@mui/material';
 // Importe la disposition harmonieuse.
 import { harmoniser } from '@/Engine/shared/lib/harmonie3d';
 // Importe l'arborescence du site.
@@ -208,12 +206,12 @@ export function SiteTree3D() {
   // Début du rendu.
   return (
     // Conteneur : donne la couleur du texte au canevas.
-    <Box sx={{ color: 'text.primary' }}>
+    <div className="text-ink">
       {/* Canevas : couleur d'accent du thème, hauteur fixe, glissement au doigt réservé à la rotation. */}
-      <Box component="canvas" ref={ref} role="img" aria-label="Arborescence du site en 3D : glisser pour tourner, cliquer une page pour l’ouvrir"
-        sx={{ display: 'block', width: '100%', height: { xs: 300, sm: 380 }, color: 'primary.main', touchAction: 'none', cursor: 'grab' }} />
+      <canvas ref={ref} role="img" aria-label="Arborescence du site en 3D : glisser pour tourner, cliquer une page pour l’ouvrir"
+        className="block w-full h-75 min-[600px]:h-95 text-primary touch-none cursor-grab" />
     {/* Fin du conteneur. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de SiteTree3D.

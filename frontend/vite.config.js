@@ -2,13 +2,15 @@
 import { defineConfig } from 'vite';
 // Importe le module React de Vite.
 import react from '@vitejs/plugin-react';
+// Importe le module Tailwind CSS de Vite : compile la feuille de style de l'interface au build.
+import tailwindcss from '@tailwindcss/vite';
 // Importe les outils d'adresses de fichiers de Node.
 import { fileURLToPath, URL } from 'node:url';
 
 // Déclare et exporte la configuration (début).
 export default defineConfig({
-  // Modules : React.
-  plugins: [react()],
+  // Modules : React et Tailwind CSS.
+  plugins: [react(), tailwindcss()],
   // Construction (début).
   build: {
     // Seuil de l'avertissement de taille des fichiers produits : 2 500 ko (500 ko par défaut). Les fichiers sont déjà
@@ -31,8 +33,8 @@ export default defineConfig({
           if (!id.includes('/node_modules/')) return;
           // three.js : fichier « three-vendor ».
           if (id.includes('/node_modules/three/')) return 'three-vendor';
-          // MUI et Emotion : fichier « ui-vendor ».
-          if (id.includes('/node_modules/@mui/') || id.includes('/node_modules/@emotion/')) return 'ui-vendor';
+          // Base UI, son moteur de placement et les icônes : fichier « ui-vendor ».
+          if (id.includes('/node_modules/@base-ui/') || id.includes('/node_modules/@floating-ui/') || id.includes('/node_modules/react-icons/')) return 'ui-vendor';
           // React, React DOM et scheduler : fichier « react-vendor ».
           if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/scheduler/')) return 'react-vendor';
         // Fin de manualChunks.

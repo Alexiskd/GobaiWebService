@@ -1,5 +1,5 @@
-// Importe de MUI Box, Icon, IconButton, Paper et Typography, pour le cadre, ses boutons et ses textes.
-import { Box, Icon, IconButton, Paper, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { IconButton } from '@/Fairing/kit';
 // Importe safe, qui donne une marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe les icônes d'ouverture dans un onglet et de fermeture.
@@ -23,40 +23,24 @@ export function LidarFrame({ url, onClose }) {
   // Début du rendu.
   return (
     // Le panneau du cadre (début de la balise).
-    <Paper
+    <div
       // Marqueur de test.
       data-lidar-frame
       // Début du style.
-      sx={{
-        // Par-dessus la scène, sous les panneaux du haut, fixé en bas de la fenêtre.
-        position: 'fixed', zIndex: 24,
-        // Les marges de sécurité de l'écran, en bas au-dessus du cadre GPS.
-        left: `calc(${safe('left')} + 8px)`, right: `calc(${safe('right')} + 8px)`,
-        bottom: `calc(${safe('bottom')} + 8px)`,
-        // La hauteur du cadre, sans déborder.
-        height: HEIGHT, display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        // Coins arrondis et ombre légère.
-        borderRadius: 1.5, elevation: 2,
-      // Fin du style.
-      }}
+      className="g-paper fixed z-24 h-[clamp(220px,46vh,480px)] flex flex-col overflow-hidden rounded-[12px]" style={{ left: `calc(${safe('left')} + 8px)`, right: `calc(${safe('right')} + 8px)`, bottom: `calc(${safe('bottom')} + 8px)` }}
     // Fin des propriétés du panneau.
     >
       {/* La barre de titre : le nom de la visionneuse et ses deux boutons. */}
       {/* La barre de titre (début de la balise). */}
-      <Box
+      <div
         // Début du style.
-        sx={{
-          // Une seule ligne, titre à gauche, boutons à droite, fond légèrement plus sombre.
-          display: 'flex', alignItems: 'center', gap: 1, px: 1, py: 0.5, flex: '0 0 auto',
-          bgcolor: 'rgba(255, 255, 255, 0.06)', borderBottom: 1, borderColor: 'divider',
-        // Fin du style.
-        }}
+        className="flex items-center gap-2 px-2 py-1 flex-[0_0_auto] bg-[color:rgba(255,255,255,0.06)] border-b border-line"
       // Fin de la barre de titre.
       >
         {/* Le titre du cadre. */}
-        <Typography variant="caption" sx={{ fontWeight: 600, userSelect: 'none', flex: 1 }}>
+        <span className="t-caption font-semibold select-none flex-1">
           Visionneuse LiDAR HD (IGN)
-        </Typography>
+        </span>
         {/* Ouvrir la visionneuse dans un onglet : reprend la même adresse que l'iframe. */}
         <IconButton
           // Marqueur de test.
@@ -67,7 +51,7 @@ export function LidarFrame({ url, onClose }) {
           size="small" aria-label="Ouvrir la visionneuse dans un onglet" title="Ouvrir dans un onglet"
         >
           {/* L'icône d'ouverture dans un onglet. */}
-          <Icon fontSize="small"><OpenInNewIcon fontSize="small" /></Icon>
+          <OpenInNewIcon fontSize="small" />
         </IconButton>
         {/* Fermer le cadre : il se rouvrira à la prochaine entrée dans la zone. */}
         <IconButton
@@ -79,19 +63,15 @@ export function LidarFrame({ url, onClose }) {
           size="small" aria-label="Fermer la visionneuse" title="Fermer"
         >
           {/* L'icône de fermeture. */}
-          <Icon fontSize="small"><CloseIcon fontSize="small" /></Icon>
+          <CloseIcon fontSize="small" />
         </IconButton>
       {/* Fin de la barre de titre. */}
-      </Box>
+      </div>
       {/* L'iframe de la visionneuse : toute la place restante du cadre. */}
       {/* L'iframe (début de la balise). */}
-      <Box
+      <div
         // Début du style.
-        sx={{
-          // Remplit le cadre sous la barre de titre.
-          flex: 1, minHeight: 0, bgcolor: 'rgba(0, 0, 0, 0.4)',
-        // Fin du style.
-        }}
+        className="flex-1 min-h-0 bg-[color:rgba(0,0,0,0.4)]"
       // Début de l'iframe.
       >
         {/* La visionneuse de l'IGN, à l'adresse recalculée depuis la caméra. */}
@@ -106,9 +86,9 @@ export function LidarFrame({ url, onClose }) {
           allowFullScreen
         />
       {/* Fin de l'iframe. */}
-      </Box>
+      </div>
     {/* Fin du panneau. */}
-    </Paper>
+    </div>
   // Fin du rendu.
   );
 // Fin de LidarFrame.

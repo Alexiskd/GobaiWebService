@@ -7,8 +7,6 @@
  *    navigation). En largeur suffisante (paysage, tablette étroite), les deux surfaces se partagent une rangée.
  * Les zones laissent passer les gestes vers la scène partout où elles n'ont rien à afficher (pointer-events).
  */
-// Composant de mise en page de MUI.
-import { Box } from '@mui/material';
 // Marges de sécurité.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Limite de la zone du titre.
@@ -27,37 +25,27 @@ export function MobileTopBar({ children, actions, status }) {
   // Début du rendu.
   return (
     // Zone du haut (début de la balise).
-    <Box
+    <div
       // Mesurée.
       ref={ref}
       // Repère du diagnostic et des tests.
       data-zone="top"
       // Début du style.
-      sx={{
-        // Fixée en haut, sur toute la largeur, au-dessus de la scène.
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: (t) => t.zIndex.hud,
-        // Marges : sécurité de l'écran plus 6 px.
-        pt: `calc(${safe('top')} + 6px)`, pl: `calc(${safe('left')} + 6px)`, pr: `calc(${safe('right')} + 6px)`,
-        // Colonne : la rangée du titre, puis celle des indicateurs.
-        display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '6px',
-        // Les gestes passent vers la scène, sauf sur les éléments eux-mêmes.
-        pointerEvents: 'none', '& > * > *': { pointerEvents: 'auto' },
-      // Fin du style.
-      }}
+      className="fixed top-0 left-0 right-0 z-[20] flex flex-col items-stretch gap-[6px] pointer-events-none [&_>_*_>_*]:pointer-events-auto" style={{ paddingTop: `calc(${safe('top')} + 6px)`, paddingLeft: `calc(${safe('left')} + 6px)`, paddingRight: `calc(${safe('right')} + 6px)` }}
     // Fin de la balise ouvrante.
     >
       {/* Rangée du titre : le bandeau prend la place, ses boutons restent à droite. */}
-      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, minWidth: 0 }}>
+      <div className="flex items-start gap-2 min-w-0">
         {/* Le bandeau titre, qui se réduit (son texte passe à la ligne) pour laisser la place aux boutons. */}
-        <Box sx={{ flex: '0 1 auto', minWidth: 0, display: 'flex' }}>{children}</Box>
+        <div className="flex-[0_1_auto] min-w-0 flex">{children}</div>
         {/* Les boutons, poussés à droite. */}
-        {actions && <Box sx={{ ml: 'auto', display: 'flex', gap: 1, flex: 'none' }}>{actions}</Box>}
+        {actions && <div className="ml-auto flex gap-2 flex-none">{actions}</div>}
       {/* Fin de la rangée du titre. */}
-      </Box>
+      </div>
       {/* Rangée des indicateurs, s'il y en a : à la ligne, les uns à côté des autres, sans capter les gestes. */}
-      {status && <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: '6px', '&:empty': { display: 'none' }, '& > *': { pointerEvents: 'none' } }}>{status}</Box>}
+      {status && <div className="flex flex-wrap items-start gap-[6px] empty:hidden *:pointer-events-none">{status}</div>}
     {/* Fin de la zone du haut. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de MobileTopBar.
@@ -79,51 +67,31 @@ export function MobileDock({ surfaces, base }) {
   // Début du rendu.
   return (
     // Le dock (début de la balise).
-    <Box
+    <div
       // Mesuré.
       ref={ref}
       // Repère du diagnostic et des tests.
       data-zone="bottom"
       // Début du style.
-      sx={{
-        // Fixé en bas, sur toute la largeur, au-dessus du clavier s'il est ouvert.
-        position: 'fixed', left: 0, right: 0, bottom: keyboard > 0 ? `${keyboard}px` : 0, zIndex: (t) => t.zIndex.toolbar,
-        // Colonne posée en bas, jamais plus haute que l'espace sous la zone du titre.
-        display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', maxHeight: `calc(100dvh - ${HUD_TOP} - ${keyboard}px - 8px)`,
-        // Les gestes passent vers la scène, sauf sur les éléments eux-mêmes.
-        pointerEvents: 'none',
-        // Transition douce quand le clavier s'ouvre.
-        transition: 'bottom 160ms ease-out',
-      // Fin du style.
-      }}
+      className="fixed left-0 right-0 z-[40] flex flex-col justify-end pointer-events-none [transition:bottom_160ms_ease-out]" style={{ bottom: keyboard > 0 ? `${keyboard}px` : 0, maxHeight: `calc(100dvh - ${HUD_TOP} - ${keyboard}px - 8px)` }}
     // Fin de la balise ouvrante.
     >
       {/* Les surfaces (début de la balise). */}
-      <Box
+      <div
         // Repère.
         data-dock="surfaces"
         // Début du style.
-        sx={{
-          // Peuvent se réduire (le tiroir défile alors à l'intérieur), les unes au-dessus des autres, écartées de 8 px.
-          flex: '0 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1, pb: 1,
-          // Les gestes passent, sauf sur chaque surface.
-          pointerEvents: 'none', '& > *': { pointerEvents: 'auto' },
-          // Écran large : une seule rangée, posée en bas, chaque surface de largeur égale.
-          [WIDE]: { flexDirection: 'row', alignItems: 'flex-end', px: `calc(${safe('left')} + 8px)`, '& > *': { pointerEvents: 'auto', flex: '1 1 0', minWidth: 0 } },
-          // Vide : rien.
-          '&:empty': { display: 'none' },
-        // Fin du style.
-        }}
+        className="flex-[0_1_auto] min-h-0 flex flex-col gap-2 pb-2 pointer-events-none *:pointer-events-auto min-[700px]:flex-row min-[700px]:items-end min-[700px]:px-[calc(var(--safe-left,env(safe-area-inset-left,0px))_+_8px)] min-[700px]:*:pointer-events-auto min-[700px]:*:flex-[1_1_0] min-[700px]:*:min-w-0 empty:hidden"
       // Fin de la balise ouvrante.
       >
         {/* Les surfaces. */}
         {surfaces}
       {/* Fin des surfaces. */}
-      </Box>
+      </div>
       {/* La base : bande des astres et navigation, jamais réduites. */}
-      <Box ref={baseRef} data-dock="base" sx={{ flex: 'none', pointerEvents: 'auto' }}>{base}</Box>
+      <div ref={baseRef} data-dock="base" className="flex-none pointer-events-auto">{base}</div>
     {/* Fin du dock. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de MobileDock.

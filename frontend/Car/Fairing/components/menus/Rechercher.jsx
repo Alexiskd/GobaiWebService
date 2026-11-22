@@ -1,7 +1,7 @@
 // Importe de React les crochets useEffect, useMemo, useRef et useState.
 import { useEffect, useMemo, useRef, useState } from 'react';
-// Importe de MUI Box, Button, Dialog, IconButton, InputBase (champ nu), les éléments de liste et Stack.
-import { Box, Button, Dialog, IconButton, InputBase, List, ListItem, ListItemButton, ListItemText, Stack } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Button, Dialog, IconButton, InputBase, List, ListItem, ListItemButton, ListItemText } from '@/Fairing/kit';
 // Importe searchPlaces, la recherche distante de lieux.
 import { searchPlaces } from '@/Computing/api';
 // Importe useViewport, qui donne la catégorie d'écran.
@@ -15,14 +15,14 @@ import { altitudeForView, formatLatLon, parseLatLon } from '@/Engine/AstreSolide
 // Importe l'icône de fermeture.
 import { CloseIcon, HomeIcon, LocationCityIcon, MyLocationIcon, PlaceIcon, PublicIcon } from '../ui/icons.jsx';
 
-/** Icône d'un résultat de recherche : la clé rendue par `resultIcon` devient une icône MUI. */
+/** Icône d'un résultat de recherche : la clé rendue par `resultIcon` devient une icône du kit. */
 const RESULT_ICONS = { astre: PublicIcon, ville: LocationCityIcon, lieu: PlaceIcon, adresse: HomeIcon, coordonnees: MyLocationIcon };
 /** L'icône d'un type de résultat, dessinée à la taille de la ligne. */
 const resultIconNode = (type) => {
   // Le composant d'icône de ce type, celui d'un lieu à défaut.
   const Icon = RESULT_ICONS[resultIcon(type)] ?? PlaceIcon;
   // Rendue à 20 px.
-  return <Icon sx={{ fontSize: 20 }} />;
+  return <Icon className="text-[20px]" />;
 // Fin de resultIconNode.
 };
 
@@ -207,7 +207,7 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
     setQuery('');
     // Revient au premier résultat.
     setActive(0);
-    // Le dialogue MUI bloque déjà le défilement de la page ; le focus va au champ une fois la fenêtre montée.
+    // La fenêtre du kit (Base UI) bloque déjà le défilement de la page ; le focus va au champ une fois la fenêtre montée.
     // Donne le focus au champ, juste après le montage de la fenêtre.
     const t = setTimeout(() => inputRef.current?.focus(), 0);
     // Nettoyage : annule ce délai.
@@ -258,9 +258,9 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
   // nothing : fabrique le message « aucun résultat », avec son dessin (début).
   const nothing = (text) => (
     // La ligne, non cliquable, en colonne centrée.
-    <ListItem aria-disabled="true" sx={{ flexDirection: 'column', alignItems: 'center', gap: 1.5, py: 4, textAlign: 'center' }}>
+    <ListItem aria-disabled="true" className="flex-col items-center gap-3 py-8 text-center">
       {/* Le dessin (svg), en couleur secondaire, décoratif. */}
-      <Box component="svg" viewBox="0 0 96 64" aria-hidden="true" sx={{ width: 96, height: 64, color: 'text.secondary', opacity: 0.8 }}>
+      <svg viewBox="0 0 96 64" aria-hidden="true" className="w-24 h-16 text-soft opacity-80">
         {/* L'anneau de la planète, en entier, atténué. */}
         <ellipse cx="48" cy="34" rx="40" ry="9" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5" />
         {/* Le disque de la planète, en aplat léger. */}
@@ -276,9 +276,9 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
         {/* Une étoile. */}
         <circle cx="70" cy="56" r="1.2" fill="currentColor" />
       {/* Fin du dessin. */}
-      </Box>
+      </svg>
       {/* Le message. */}
-      <ListItemText secondary={text} sx={{ m: 0 }} />
+      <ListItemText secondary={text} className="m-0" />
     {/* Fin de la ligne. */}
     </ListItem>
   // Fin de nothing.
@@ -300,14 +300,12 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
       maxWidth="sm"
       // Nom pour les lecteurs d'écran.
       aria-label="Rechercher"
-      // Alignée en haut de l'écran, sauf en mode compact.
-      sx={{ '& .MuiDialog-container': { alignItems: compact ? 'stretch' : 'flex-start' } }}
       // Décalée de 14 % de la hauteur de l'écran, sauf en mode compact.
-      slotProps={{ paper: { sx: compact ? {} : { mt: '14vh' } } }}
+      paperClassName={compact ? undefined : 'mt-[14vh] mb-auto'}
     // Fin de la balise ouvrante.
     >
       {/* Ligne du champ et du bouton de fermeture, soulignée d'un filet. */}
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}>
+      <div className="flex flex-row gap-2 items-center px-4 py-2 border-b border-line">
         {/* Le champ de saisie (début de la balise). */}
         <InputBase
           // Référence pour le focus.
@@ -325,7 +323,7 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
           // Texte indicatif, selon la recherche mondiale et la taille de l'écran.
           placeholder={worldSearch ? (compact ? 'Adresse, ville, planète, GPS…' : 'Une adresse, une ville du monde, une planète ou des coordonnées GPS…') : 'Une ville, une planète ou des coordonnées GPS…'}
           // Texte un peu plus grand.
-          sx={{ fontSize: '1.05rem', py: 1 }}
+          className="text-[1.05rem] py-2"
           // Réglages des éléments internes (début).
           slotProps={{
             // Attributs de la balise input (début).
@@ -354,9 +352,9 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
         // Fin du choix.
         )}
       {/* Fin de la ligne. */}
-      </Stack>
+      </div>
       {/* La liste des résultats, de hauteur limitée hors mode compact. */}
-      <List id="palette-list" role="listbox" ref={listRef} dense sx={{ maxHeight: compact ? 'none' : '46vh', overflowY: 'auto', p: 0.75 }}>
+      <List id="palette-list" role="listbox" ref={listRef} dense className={`${compact ? 'max-h-none' : 'max-h-[46vh]'} overflow-y-auto p-1.5`}>
         {/* Une ligne par résultat (début). */}
         {results.map((r, n) => (
           // La ligne (début de la balise).
@@ -376,12 +374,12 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
             // Au clic : choisit ce résultat.
             onClick={() => choose(r)}
             // Coins arrondis, 44 px de haut au moins.
-            sx={{ borderRadius: 1.5, gap: 1.25, minHeight: 44 }}
+            className="rounded-[12px] gap-2.5 min-h-11"
           // Fin de la balise ouvrante.
           >
             {/* Vignette du type de résultat : largeur fixe, les noms restent alignés. */}
             {/* La vignette du type, de largeur fixe. */}
-            <Box component="span" aria-hidden="true" sx={{ flex: 'none', width: 24, display: 'grid', placeItems: 'center', color: 'text.secondary' }}>{resultIconNode(r.type)}</Box>
+            <span aria-hidden="true" className="flex-none w-6 grid place-items-center text-soft">{resultIconNode(r.type)}</span>
             {/* Les textes (début de la balise). */}
             <ListItemText
               // Le nom.
@@ -389,9 +387,9 @@ export function Rechercher({ open, onClose, cities, worldCities = [], bodyNames,
               // Le sous-titre.
               secondary={r.sub}
               // Nom et sous-titre aux deux extrémités.
-              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 1.5, my: 0.25, minWidth: 0 }}
+              className="flex justify-between items-baseline gap-3 my-0.5 min-w-0"
               // Sous-titre aligné à droite, sur 55 % de la largeur au plus.
-              slotProps={{ secondary: { sx: { textAlign: 'right', flex: 'none', maxWidth: '55%' } } }}
+              slotProps={{ secondary: { className: 'text-right flex-none max-w-[55%]' } }}
             // Fin des textes.
             />
           {/* Fin de la ligne. */}

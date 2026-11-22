@@ -1,6 +1,7 @@
 // Documentation et photos de l'astre visé, dans le panneau Caractéristiques et informations.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Box, ButtonBase, Collapse, Link, Stack, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Collapse, Link } from '@/Fairing/kit';
 import { get, resolveApiUrl } from '@/Computing/api/client';
 import { ALL_SATELLITES, MOON, PLANETS, SUN } from '@/Engine/SystemeEngine/astronomy/data/bodies.data';
 import { DOCUMENTS } from '../Donnees/data/index.js';
@@ -33,12 +34,12 @@ function useCollection() {
 /** Avertissement sur les incertitudes scientifiques, en tête de la documentation. */
 export function UncertaintyNote() {
   return (
-    <Box role="note" sx={{ display: 'flex', gap: 1, alignItems: 'flex-start', p: 1.25, mb: 1.25, borderRadius: 2, border: 1, borderColor: 'warning.main', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(224,178,90,.10)' : 'rgba(224,178,90,.16)') }}>
-      <Box aria-hidden="true" sx={{ flex: 'none', width: 20, height: 20, mt: '1px', borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'warning.main', color: '#1a1408', fontSize: 13, fontWeight: 700 }}>!</Box>
-      <Typography variant="body2" sx={{ lineHeight: 1.5, overflowWrap: 'anywhere' }}>
+    <div role="note" className="flex gap-2 items-start p-2.5 mb-2.5 rounded-[10px] border border-warning bg-warning/12">
+      <div aria-hidden="true" className="flex-none w-5 h-5 mt-[1px] rounded-full grid place-items-center bg-warning text-[#1a1408] text-[13px] font-bold">!</div>
+      <p className="t-body2 leading-[1.5] [overflow-wrap:anywhere]">
         Ces informations peuvent être faussées par les incertitudes scientifiques : mesures approchées, valeurs révisées au fil des observations et des missions, modèles simplifiés.
-      </Typography>
-    </Box>
+      </p>
+    </div>
   );
 }
 
@@ -57,21 +58,21 @@ function Photos({ name }) {
   const shown = all ? items : items.slice(0, 6);
   return (
     <Section title={`Photos · ${items.length}`}>
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 0.75 }}>
+      <div className="grid grid-cols-3 gap-1.5">
         {shown.map((item, i) => (
-          <ButtonBase key={item.id} onClick={() => setOpen(i)} aria-label={`Agrandir : ${item.title}`}
-            sx={{ position: 'relative', aspectRatio: '1', borderRadius: 1.5, overflow: 'hidden', border: 1, borderColor: 'divider', bgcolor: 'action.hover' }}>
-            <Box component="img" src={item.thumbUrl} alt="" loading="lazy" decoding="async" sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <button type="button" key={item.id} onClick={() => setOpen(i)} aria-label={`Agrandir : ${item.title}`}
+            className="g-base relative aspect-[1] rounded-[12px] overflow-hidden border border-line bg-hover">
+            <img src={item.thumbUrl} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover block" />
             {item.kind === 'video' && (
-              <Box aria-hidden="true" sx={{ position: 'absolute', inset: 0, m: 'auto', width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', bgcolor: 'rgba(0,0,0,.6)', color: '#fff', fontSize: 13, pl: '2px' }}>▶</Box>
+              <div aria-hidden="true" className="absolute inset-0 m-auto w-8 h-8 rounded-full grid place-items-center bg-[color:rgba(0,0,0,.6)] text-[#fff] text-[13px] pl-[2px]">▶</div>
             )}
-          </ButtonBase>
+          </button>
         ))}
-      </Box>
+      </div>
       {items.length > shown.length && (
-        <ButtonBase onClick={() => setAll(true)} sx={{ mt: 1, minHeight: 36, px: 1.5, borderRadius: 999, border: 1, borderColor: 'divider', fontSize: 13, '@media (pointer: coarse)': { minHeight: 44 } }}>
+        <button type="button" onClick={() => setAll(true)} className="g-base mt-2 min-h-9 px-3 rounded-full border border-line text-[13px] pointer-coarse:min-h-11">
           Toutes les photos ({items.length})
-        </ButtonBase>
+        </button>
       )}
       {open != null && items[open] && (
         <div className="gobai-gallery">
@@ -87,26 +88,26 @@ function PdfMoon({ entry }) {
   const [open, setOpen] = useState(false);
   const doc = entry.doc;
   return (
-    <Box sx={{ borderTop: 1, borderColor: 'divider' }}>
-      <ButtonBase onClick={() => setOpen((v) => !v)} aria-expanded={open}
-        sx={{ width: '100%', minHeight: 40, '@media (pointer: coarse)': { minHeight: 44 }, display: 'flex', alignItems: 'center', gap: 1, px: 0.5, textAlign: 'left', justifyContent: 'flex-start' }}>
-        <Typography sx={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 600, overflowWrap: 'anywhere' }}>
-          {entry.name} <Typography component="span" variant="caption" color="text.secondary">· {doc.designation} · {doc.physical?.size}</Typography>
-        </Typography>
+    <div className="border-t border-line">
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
+        className="g-base w-full min-h-10 pointer-coarse:min-h-11 flex items-center gap-2 px-1 text-left justify-start">
+        <p className="t-body1 flex-1 min-w-0 text-[14px] font-semibold [overflow-wrap:anywhere]">
+          {entry.name} <span className="t-caption text-soft">· {doc.designation} · {doc.physical?.size}</span>
+        </p>
         {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-      </ButtonBase>
+      </button>
       <Collapse in={open} unmountOnExit>
-        <Box sx={{ pb: 1.5 }}>
+        <div className="pb-3">
           <Facts items={entry.facts.filter((f) => f.term !== 'Type')} />
-          <Typography variant="body2" sx={{ mt: 1, lineHeight: 1.55 }}>{doc.summary}</Typography>
-          <Stack direction="row" useFlexGap spacing={1.5} sx={{ mt: 1, flexWrap: 'wrap' }}>
-            <Link href={doc.source} target="_blank" rel="noreferrer" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, fontSize: 13 }}>Wikipédia <OpenInNewIcon sx={{ fontSize: 14 }} /></Link>
-            <Link href={doc.file} target="_blank" rel="noreferrer" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, fontSize: 13 }}>PDF <OpenInNewIcon sx={{ fontSize: 14 }} /></Link>
-            <Link href={doc.file} download sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, fontSize: 13 }}><DownloadIcon sx={{ fontSize: 14 }} /> Télécharger</Link>
-          </Stack>
-        </Box>
+          <p className="t-body2 mt-2 leading-[1.55]">{doc.summary}</p>
+          <div className="flex flex-row gap-3 mt-2 flex-wrap">
+            <Link href={doc.source} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[13px]">Wikipédia <OpenInNewIcon className="text-[14px]" /></Link>
+            <Link href={doc.file} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[13px]">PDF <OpenInNewIcon className="text-[14px]" /></Link>
+            <Link href={doc.file} download className="inline-flex items-center gap-1 text-[13px]"><DownloadIcon className="text-[14px]" /> Télécharger</Link>
+          </div>
+        </div>
       </Collapse>
-    </Box>
+    </div>
   );
 }
 
@@ -140,9 +141,9 @@ export function BodyDocumentation({ name, shownTerms = [], note = true, plateau 
       )}
       {pdfMoons.length > 0 && (
         <Section title={`Petits satellites documentés · ${pdfMoons.length}`}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+          <span className="t-caption text-soft block mb-1">
             Fiches établies à partir de documents PDF ; ces satellites ne sont pas dans la scène 3D.
-          </Typography>
+          </span>
           {pdfMoons.map((e) => <PdfMoon key={e.id} entry={e} />)}
         </Section>
       )}

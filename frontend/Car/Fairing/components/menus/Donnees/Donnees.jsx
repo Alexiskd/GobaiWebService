@@ -1,6 +1,9 @@
 // Fenêtre plein écran « Données » : en-tête, barre de navigation à onglets, puis le contenu de l'onglet choisi.
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Box, ButtonBase, CircularProgress, Dialog, IconButton, Tooltip, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { CircularProgress, Dialog, IconButton, Tooltip } from '@/Fairing/kit';
+// Importe les conversions des valeurs de style calculées au rendu.
+import { sp } from '@/Fairing/kit/sx';
 import { CloseIcon, PsychologyIcon, ScienceIcon } from '../../ui/icons.jsx';
 
 // Chargées à l'ouverture de leur onglet seulement : rien de tout cela n'alourdit le démarrage de la scène 3D.
@@ -44,20 +47,16 @@ function DonneesNav({ tab, onChange }) {
   useEffect(() => { refs.current[tab]?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' }); }, [tab]);
 
   return (
-    <Box
+    <div
       role="tablist"
       aria-label="Vues de la fenêtre Données"
       onKeyDown={onKeyDown}
-      sx={{
-        display: 'flex', gap: 0.5, p: 0.5, mx: 'auto', width: { xs: '100%', sm: 'auto' }, maxWidth: '100%',
-        overflowX: 'auto', scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
-        border: `1px solid ${V.line}`, borderRadius: 999, bgcolor: V.panel,
-      }}
+      className="flex gap-1 p-1 mx-auto w-full min-[600px]:w-auto max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden rounded-full" style={{ border: `1px solid ${V.line}`, backgroundColor: V.panel }}
     >
       {DONNEES_TABS.map(({ id, name, short, Icon }) => {
         const active = tab === id;
         return (
-          <ButtonBase
+          <button type="button"
             key={id}
             ref={(el) => { refs.current[id] = el; }}
             role="tab"
@@ -67,24 +66,16 @@ function DonneesNav({ tab, onChange }) {
             aria-controls={`donnees-panel-${id}`}
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(id)}
-            sx={{
-              flex: { xs: '1 0 auto', sm: 'none' }, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.75,
-              minHeight: { xs: 44, sm: 38 }, px: { xs: 1.25, sm: 2 }, borderRadius: 999, whiteSpace: 'nowrap',
-              fontFamily: V.font, fontSize: { xs: 14, sm: 14.5 }, fontWeight: active ? 600 : 500, lineHeight: 1.2,
-              color: active ? V.void : V.muted, bgcolor: active ? V.ink : 'transparent',
-              transition: 'background-color .15s, color .15s',
-              '&:hover': active ? {} : { color: V.ink, bgcolor: 'rgba(255,255,255,.06)' },
-              '&.Mui-focusVisible': { outline: `2px solid ${V.ink}`, outlineOffset: 2 },
-            }}
+            className={`g-base flex-[1_0_auto] min-[600px]:flex-none flex items-center justify-center gap-1.5 min-h-11 min-[600px]:min-h-9.5 px-2.5 min-[600px]:px-4 rounded-full whitespace-nowrap text-[14px] min-[600px]:text-[14.5px] ${active ? 'font-semibold' : 'font-medium'} leading-[1.2] [transition:background-color_.15s,color_.15s] focus-visible:outline-2 focus-visible:outline-[#e8e9f0] focus-visible:outline-offset-2 ${active ? 'text-[#07080d] bg-[#e8e9f0]' : 'text-[#8a8fa6] hover:text-[#e8e9f0] hover:bg-white/6'}`} style={{ fontFamily: V.font }}
           >
-            <Icon sx={{ fontSize: 18, flex: 'none' }} aria-hidden="true" />
+            <Icon className="text-[18px] flex-none" aria-hidden="true" />
             {/* Nom complet sur ordinateur, nom court sur téléphone ; le nom complet est lu par les lecteurs d'écran (aria-label). */}
-            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>{name}</Box>
-            <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>{short}</Box>
-          </ButtonBase>
+            <span className="hidden min-[600px]:inline">{name}</span>
+            <span className="inline min-[600px]:hidden">{short}</span>
+          </button>
         );
       })}
-    </Box>
+    </div>
   );
 }
 
@@ -111,56 +102,49 @@ export function Donnees({ open, onClose }) {
       onClose={(event, reason) => onClose?.(event, reason)}
       fullScreen
       aria-label="Données"
-      slotProps={{ paper: { sx: { bgcolor: V.void, color: V.ink, backgroundImage: 'none', backdropFilter: 'none', fontFamily: V.font } } }}
+      paperClassName="bg-[#07080d] text-[#e8e9f0]" paperStyle={{ fontFamily: V.font }}
     >
       {/* En-tête fixe : titre, description de l'onglet, fermeture ; puis la barre de navigation. */}
-      <Box
-        component="header"
-        sx={{
-          flex: 'none', display: 'flex', flexDirection: 'column', gap: { xs: 1.25, sm: 1.5 },
-          pt: `calc(${safe('top')} + 12px)`, pb: 1.5,
-          pl: `calc(${safe('left')} + 16px)`, pr: `calc(${safe('right')} + 16px)`,
-          borderBottom: `1px solid ${V.line}`,
-          bgcolor: 'rgba(7, 8, 13, 0.92)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-        }}
+      <header
+        className="flex-none flex flex-col gap-2.5 min-[600px]:gap-3 pb-3 bg-[color:rgba(7,8,13,0.92)]" style={{ paddingTop: `calc(${safe('top')} + 12px)`, paddingLeft: `calc(${safe('left')} + 16px)`, paddingRight: `calc(${safe('right')} + 16px)`, borderBottom: `1px solid ${V.line}` }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, maxWidth: 1400, width: '100%', mx: 'auto', minWidth: 0 }}>
-          <Box sx={{ flex: '1 1 auto', minWidth: 0 }}>
-            <Typography component="h2" sx={{ fontFamily: V.font, fontWeight: 700, fontSize: { xs: 22, sm: 26 }, lineHeight: 1.15, letterSpacing: '-0.01em', color: V.ink }}>
+        <div className="flex items-center gap-3 max-w-350 w-full mx-auto min-w-0">
+          <div className="flex-auto min-w-0">
+            <h2 className="t-body1 font-bold text-[22px] min-[600px]:text-[26px] leading-[1.15] tracking-[-0.01em]" style={{ fontFamily: V.font, color: V.ink }}>
               Données
-            </Typography>
-            <Typography sx={{ mt: 0.25, fontFamily: V.font, fontSize: 13.5, lineHeight: 1.35, color: V.muted, overflowWrap: 'anywhere' }}>
+            </h2>
+            <p className="t-body1 mt-0.5 text-[13.5px] leading-[1.35] [overflow-wrap:anywhere]" style={{ fontFamily: V.font, color: V.muted }}>
               {current.hint}
-            </Typography>
-          </Box>
+            </p>
+          </div>
           <Tooltip title="Fermer">
             <IconButton onClick={() => onClose?.()} aria-label="Fermer la fenêtre Données"
-              sx={{ flex: 'none', width: 44, height: 44, color: V.ink, border: `1px solid ${V.line}`, '&:hover': { bgcolor: 'rgba(255,255,255,.06)' } }}>
+              className="flex-none w-11 h-11 hover:bg-[color:rgba(255,255,255,.06)]" style={{ color: V.ink, border: `1px solid ${V.line}` }}>
               <CloseIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-        </Box>
-        <Box sx={{ maxWidth: 1400, width: '100%', mx: 'auto', display: 'flex' }}>
+        </div>
+        <div className="max-w-350 w-full mx-auto flex">
           <DonneesNav tab={tab} onChange={changeTab} />
-        </Box>
-      </Box>
+        </div>
+      </header>
 
       {/* Contenu de l'onglet : seule partie qui défile. */}
-      <Box
+      <div
         ref={scrollRef}
         role="tabpanel"
         id={`donnees-panel-${tab}`}
         aria-labelledby={`donnees-tab-${tab}`}
-        sx={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', pb: safe('bottom'), pl: safe('left'), pr: safe('right') }}
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain" style={{ paddingBottom: sp(safe('bottom')), paddingLeft: sp(safe('left')), paddingRight: sp(safe('right')) }}
       >
         {open && (
-          <Suspense fallback={<Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}><CircularProgress sx={{ color: V.muted }} /></Box>}>
-            <Box sx={{ maxWidth: 980, mx: 'auto', px: { xs: 2, sm: 3 }, py: 3, color: 'text.primary' }}>
+          <Suspense fallback={<div className="grid place-items-center py-20"><CircularProgress style={{ color: V.muted }} /></div>}>
+            <div className="max-w-245 mx-auto px-4 min-[600px]:px-6 py-6 text-ink">
               {tab === 'theorie' ? <TheorieQuantique /> : <FluxCognitif />}
-            </Box>
+            </div>
           </Suspense>
         )}
-      </Box>
+      </div>
     </Dialog>
   );
 }

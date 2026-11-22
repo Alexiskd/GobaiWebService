@@ -3,8 +3,9 @@
 // L'onglet déroule : l'échelle complète des neuf niveaux, l'analogie atome ↔ système solaire mise en nombres, la loi
 // en n² des couches confrontée aux orbites réelles, le tableau périodique avec le « Solarium » (119), l'assemblage
 // « SoaCen », le tableau hypothétique des systèmes proches, la charge du Soleil et les caractéristiques d'un élément.
-// Composants MUI.
-import { Box, Typography } from '@mui/material';
+// Composants du kit d'interface.
+// Importe les conversions des valeurs de style calculées au rendu.
+import { tok } from '@/Fairing/kit/sx';
 // Données et calculs de la théorie.
 import {
   ELEMENTS, SOLARIUM, MOLECULE, COUCHES, ORBITES, MASSE_SOLEIL_KG, AUTEUR, DISTANCE_PROXIMA_AL, EXCEPTIONS_COUCHES,
@@ -66,25 +67,25 @@ function Case({ e, x, y, fond, texte }) {
   // Les lignes de la répartition par couches.
   const lignes = lignesCouches(e.couches);
   // Couleur des textes : celle de la surbrillance, ou la couleur courante sinon.
-  const couleurTexte = texte ? { fill: texte } : { fill: 'currentColor' };
+  const couleurTexte = { fill: tok(texte || 'currentColor') };
   // Début du rendu.
   return (
     // Le groupe de la case.
     <g>
       {/* Le rectangle de la case. */}
-      <Box component="rect" x={x} y={y} width={CASE_L} height={CASE_H} rx={4} sx={fond ? { fill: fond, stroke: texte, strokeWidth: 1.5 } : { fill: (t) => t.palette.action.hover, stroke: (t) => t.palette.divider, strokeWidth: 1 }} />
+      <rect x={x} y={y} width={CASE_L} height={CASE_H} rx={4} className={fond ? '[stroke-width:1.5]' : 'fill-hover stroke-line [stroke-width:1]'} style={fond ? { fill: tok(fond), stroke: tok(texte) } : undefined} />
       {/* Le numéro atomique, en haut à gauche, en petits caractères. */}
-      <Box component="text" x={x + 4} y={y + 10} fontSize="7.5" sx={couleurTexte}>{e.z}</Box>
+      <text x={x + 4} y={y + 10} fontSize="7.5" style={couleurTexte}>{e.z}</text>
       {/* Le symbole, centré, en gras (« So » pour le Solarium). */}
-      <Box component="text" x={x + CASE_L / 2} y={y + 22} fontSize="11" fontWeight="700" textAnchor="middle" sx={couleurTexte}>{e.symbole}</Box>
+      <text x={x + CASE_L / 2} y={y + 22} fontSize="11" fontWeight="700" textAnchor="middle" style={couleurTexte}>{e.symbole}</text>
       {/* Le nom de l'élément, quand il en a un (ex. « Solarium »), sous le symbole. */}
-      {e.nom && <Box component="text" x={x + CASE_L / 2} y={y + 31} fontSize="6.5" textAnchor="middle" sx={couleurTexte}>{e.nom}</Box>}
+      {e.nom && <text x={x + CASE_L / 2} y={y + 31} fontSize="6.5" textAnchor="middle" style={couleurTexte}>{e.nom}</text>}
       {/* La masse atomique, quand elle est définie (Solarium : 1,00 M☉), sous le nom. */}
-      {e.masse && <Box component="text" x={x + CASE_L / 2} y={y + 40} fontSize="6.5" fontWeight="600" textAnchor="middle" sx={couleurTexte}>{e.masse}</Box>}
+      {e.masse && <text x={x + CASE_L / 2} y={y + 40} fontSize="6.5" fontWeight="600" textAnchor="middle" style={couleurTexte}>{e.masse}</text>}
       {/* La répartition par couches, en bas de case, sur une ou deux lignes. */}
       {lignes.map((ligne, i) => (
         // Une ligne de la répartition.
-        <Box key={i} component="text" x={x + CASE_L / 2} y={y + CASE_H - 9 + i * 8} fontSize="6" textAnchor="middle" sx={couleurTexte}>{ligne}</Box>
+        <text key={i} x={x + CASE_L / 2} y={y + CASE_H - 9 + i * 8} fontSize="6" textAnchor="middle" style={couleurTexte}>{ligne}</text>
       // Fin des lignes.
       ))}
       {/* Infobulle : numéro, symbole, nom, masse et répartition complète, pour les lecteurs d'écran et le survol. */}
@@ -108,13 +109,11 @@ function TableauPeriodique() {
   // Début du rendu.
   return (
     // Le dessin (début de la balise).
-    <Box
-      // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
-      component="svg" viewBox={`0 0 ${LARG_TABLE} ${HAUT_TABLE}`} role="img"
+    <svg viewBox={`0 0 ${LARG_TABLE} ${HAUT_TABLE}`} role="img"
       // Description pour les lecteurs d'écran : les 118 éléments, les couches par case, et le Solarium.
       aria-label={`Tableau périodique des 118 éléments connus, avec la répartition des électrons par couche atomique en bas de chaque case, plus le Solarium (119, période 8, groupe 1)`}
       // Toute la largeur, hauteur proportionnelle, couleur secondaire pour les textes.
-      sx={{ display: 'block', width: '100%', height: 'auto', color: 'text.secondary', mt: 1 }}
+      className="block w-full h-auto text-soft mt-2"
     // Fin de la balise ouvrante.
     >
       {/* Une case par élément connu, avec ses couches atomiques (début). */}
@@ -126,9 +125,9 @@ function TableauPeriodique() {
       // Fin des cases.
       })}
       {/* La case du Solarium, en surbrillance primaire. */}
-      <Case e={SOLARIUM} x={so.x} y={so.y} fond={(t) => t.palette.primary.main} texte={(t) => t.palette.primary.contrastText} />
+      <Case e={SOLARIUM} x={so.x} y={so.y} fond="primary.main" texte="primary.contrastText" />
     {/* Fin du dessin. */}
-    </Box>
+    </svg>
   // Fin du rendu.
   );
 // Fin de TableauPeriodique.
@@ -147,20 +146,18 @@ function MoleculeSoaCen() {
   // Début du rendu.
   return (
     // Le dessin (début de la balise).
-    <Box
-      // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
-      component="svg" viewBox="0 0 560 300" role="img"
+    <svg viewBox="0 0 560 300" role="img"
       // Description pour les lecteurs d'écran : l'assemblage SoaCen et ses deux atomes.
       aria-label={`Assemblage SoaCen : Solarium (Soleil, So, 119) et aCen (Alpha Centauri / Proxima Centauri, 120) reliés par une liaison simple avec une paire d'électrons partagée`}
       // Toute la largeur, hauteur proportionnelle, couleur secondaire.
-      sx={{ display: 'block', width: '100%', maxWidth: 520, height: 'auto', mx: 'auto', color: 'text.secondary', mt: 1 }}
+      className="block w-full max-w-130 h-auto mx-auto text-soft mt-2"
     // Fin de la balise ouvrante.
     >
       {/* La liaison, avec la paire d'électrons partagée au milieu (début). */}
       <line x1={atomes[0].x + 26} y1={my} x2={atomes[1].x - 26} y2={my} stroke="currentColor" strokeWidth="2" />
       {/* Les deux électrons partagés, au milieu de la liaison. */}
-      <Box component="circle" cx={mx} cy={my - 7} r="4" sx={{ fill: (t) => t.palette.primary.main }} />
-      <Box component="circle" cx={mx} cy={my + 7} r="4" sx={{ fill: (t) => t.palette.primary.main }} />
+      <circle cx={mx} cy={my - 7} r="4" className="fill-primary" />
+      <circle cx={mx} cy={my + 7} r="4" className="fill-primary" />
       {/* La formule, au-dessus de la liaison. */}
       <text x={mx} y={my - 46} fontSize="15" fontWeight="700" textAnchor="middle" fill="currentColor">{MOLECULE.nom}</text>
       {/* Un atome par noyau (début). */}
@@ -171,11 +168,11 @@ function MoleculeSoaCen() {
           <circle cx={x} cy={y} r="38" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.2" />
           <circle cx={x} cy={y} r="52" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="1" strokeDasharray="3 4" />
           {/* Le noyau, en surbrillance : primaire pour le Solarium, secondaire pour le Proximium. */}
-          <Box component="circle" cx={x} cy={y} r="26" sx={{ fill: (t) => (i === 0 ? t.palette.primary.main : t.palette.secondary.main) }} />
+          <circle cx={x} cy={y} r="26" className={i === 0 ? 'fill-primary' : 'fill-secondary'} />
           {/* Le symbole de l'atome (So, aCen), au centre du noyau. */}
-          <Box component="text" x={x} y={y - 1} fontSize="12" fontWeight="700" textAnchor="middle" sx={{ fill: (t) => (i === 0 ? t.palette.primary.contrastText : t.palette.secondary.contrastText) }}>{MOLECULE.symboles[i]}</Box>
+          <text x={x} y={y - 1} fontSize="12" fontWeight="700" textAnchor="middle" className={i === 0 ? 'fill-on-primary' : 'fill-on-secondary'}>{MOLECULE.symboles[i]}</text>
           {/* Le numéro atomique, sous le symbole. */}
-          <Box component="text" x={x} y={y + 12} fontSize="8.5" textAnchor="middle" sx={{ fill: (t) => (i === 0 ? t.palette.primary.contrastText : t.palette.secondary.contrastText) }}>{e.z}</Box>
+          <text x={x} y={y + 12} fontSize="8.5" textAnchor="middle" className={i === 0 ? 'fill-on-primary' : 'fill-on-secondary'}>{e.z}</text>
           {/* Le nom du noyau, sous l'atome. */}
           <text x={x} y={y + 72} fontSize="11" fontWeight="600" textAnchor="middle" fill="currentColor">{`${label} · ${e.nom}`}</text>
         {/* Fin du groupe. */}
@@ -183,7 +180,7 @@ function MoleculeSoaCen() {
       // Fin des atomes.
       ))}
     {/* Fin du dessin. */}
-    </Box>
+    </svg>
   // Fin du rendu.
   );
 // Fin de MoleculeSoaCen.
@@ -198,13 +195,11 @@ function AtomeSolaire() {
   // Début du rendu.
   return (
     // Le dessin (début de la balise).
-    <Box
-      // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
-      component="svg" viewBox="0 0 560 460" role="img"
+    <svg viewBox="0 0 560 460" role="img"
       // Description pour les lecteurs d'écran : le Soleil au noyau et les planètes de Mercure à Neptune.
       aria-label="Schéma de l'analogie : le Soleil au centre du noyau, et Mercure, Vénus, Terre, Mars, Jupiter, Saturne, Uranus et Neptune sur les couches K à R"
       // Toute la largeur, hauteur proportionnelle, couleur secondaire.
-      sx={{ display: 'block', width: '100%', maxWidth: 480, height: 'auto', mx: 'auto', color: 'text.secondary', mt: 1 }}
+      className="block w-full max-w-120 h-auto mx-auto text-soft mt-2"
     // Fin de la balise ouvrante.
     >
       {/* Une orbite par couche, de K (la plus proche) à R (la plus lointaine) (début). */}
@@ -220,7 +215,7 @@ function AtomeSolaire() {
             {/* Le cercle de l'orbite, en trait fin. */}
             <circle cx={CX} cy={CY} r={r} fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.2" />
             {/* La planète, un point sur l'orbite, en couleur primaire. */}
-            <Box component="circle" cx={CX + r * Math.cos(a)} cy={CY + r * Math.sin(a)} r="4.5" sx={{ fill: (t) => t.palette.primary.main }} />
+            <circle cx={CX + r * Math.cos(a)} cy={CY + r * Math.sin(a)} r="4.5" className="fill-primary" />
             {/* L'étiquette de la couche et de la planète, en haut de l'orbite. */}
             <text x={CX} y={CY - r - 4} fontSize="11" fontWeight="600" textAnchor="middle" fill="currentColor">{`${c.couche} · ${c.planete}`}</text>
           {/* Fin du groupe. */}
@@ -231,13 +226,13 @@ function AtomeSolaire() {
       {/* Le noyau : le Soleil (début). */}
       <g>
         {/* Le disque du noyau, en couleur primaire. */}
-        <Box component="circle" cx={CX} cy={CY} r="20" sx={{ fill: (t) => t.palette.primary.main }} />
+        <circle cx={CX} cy={CY} r="20" className="fill-primary" />
         {/* Le nom du Soleil, au centre du noyau. */}
-        <Box component="text" x={CX} y={CY + 3.5} fontSize="9.5" fontWeight="700" textAnchor="middle" sx={{ fill: (t) => t.palette.primary.contrastText }}>Soleil</Box>
+        <text x={CX} y={CY + 3.5} fontSize="9.5" fontWeight="700" textAnchor="middle" className="fill-on-primary">Soleil</text>
       {/* Fin du noyau. */}
       </g>
     {/* Fin du dessin. */}
-    </Box>
+    </svg>
   // Fin du rendu.
   );
 // Fin de AtomeSolaire.
@@ -254,7 +249,7 @@ function AnalogieChiffree() {
   const lignes = comparaisonAtomeSysteme();
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Chiffres clés de l'atome d'hydrogène. */}
       <GrilleChiffres>
         <Chiffre libelle="Rayon de Bohr a₀" valeur={`${scientific(rayonBohr(), 3)} m`} detail="a₀ = 4π ε₀ ħ² / (m_e e²)" />
@@ -262,7 +257,7 @@ function AnalogieChiffree() {
         <Chiffre libelle="Force électrique / gravité" valeur={scientific(rapportForces(), 2)} detail="e² / (4π ε₀ G m_p m_e), entre proton et électron" />
         <Chiffre libelle="Masse du Soleil" valeur={`${scientific(MASSE_SOLEIL_KG, 3)} kg`} detail={`${pourcent(lignes[1].systeme)} de la masse du système`} />
       </GrilleChiffres>
-      <Formule sx={{ mt: 1.5 }}>{'r_n = n² · a₀        E_n = −13,6 eV / n²        L = n · ħ'}</Formule>
+      <Formule className="mt-3">{'r_n = n² · a₀        E_n = −13,6 eV / n²        L = n · ħ'}</Formule>
       <Note>
         Le modèle de Bohr (1913) donne à l’électron des orbites de rayon n² a₀ et d’énergie −13,6 eV / n² : c’est lui qui
         fonde l’image « atome = système solaire ». Il est tenu par la force électrique, {scientific(rapportForces(), 1)} fois
@@ -283,7 +278,7 @@ function AnalogieChiffree() {
         centre, et son voisin le plus proche (Proxima, à {virgule(DISTANCE_PROXIMA_AL)} années-lumière) est{' '}
         {Math.round(lignes[3].rapport).toLocaleString('fr-FR')} fois plus éloigné, à l’échelle, que deux atomes liés.
       </Note>
-    </Box>
+    </div>
   );
 // Fin de AnalogieChiffree.
 }
@@ -295,9 +290,9 @@ function CouchesEtOrbites() {
   const terre = ORBITES[2];
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Le dessin de l'analogie. */}
-      <Carte sx={{ bgcolor: 'transparent' }}><AtomeSolaire /></Carte>
+      <Carte className="bg-transparent"><AtomeSolaire /></Carte>
       {/* La loi en n² face aux orbites réelles. */}
       <SousTitre>La loi en n² de Bohr face aux orbites réelles</SousTitre>
       <Fiche
@@ -322,7 +317,7 @@ function CouchesEtOrbites() {
         colonnes={[{ titre: 'Planète' }, { titre: 'Vitesse (km/s)', align: 'right', cache: true }, { titre: 'λ = h / mv (m)', align: 'right' }, { titre: 'n = L / ħ', align: 'right' }]}
         lignes={ORBITES.map((o) => [o.planete, virgule(o.vitesse / 1000, 1), scientific(o.lambda, 1), scientific(o.nQuantique, 1)])}
       />
-      <Formule sx={{ mt: 1.5 }}>{'v = √(G M☉ / a)     λ = h / (m v)     n = m √(G M☉ a) / ħ     a_g = ħ² / (G M☉ m²)'}</Formule>
+      <Formule className="mt-3">{'v = √(G M☉ / a)     λ = h / (m v)     n = m √(G M☉ a) / ħ     a_g = ħ² / (G M☉ m²)'}</Formule>
       <Note>
         En appliquant la règle de Bohr L = n ħ à la Terre, on trouve n ≈ {scientific(terre.nQuantique, 1)} : les niveaux
         voisins sont si serrés que l’orbite paraît parfaitement continue (principe de correspondance). Sa longueur d’onde
@@ -330,7 +325,7 @@ function CouchesEtOrbites() {
         a_g ≈ {scientific(rayonBohrGravitationnel(terre.masse), 1)} m — bien plus petit que tout ce qui est mesurable.
         Une planète est donc un objet classique : c’est la limite quantitative de l’analogie.
       </Note>
-    </Box>
+    </div>
   );
 // Fin de CouchesEtOrbites.
 }
@@ -342,14 +337,14 @@ export function TheorieQuantique() {
   const exceptions = Object.keys(EXCEPTIONS_COUCHES).length;
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Introduction : l'idée de la théorie, et sa mise en garde. */}
-      <Typography component="h2" variant="h4" sx={{ mt: 0.5 }}>La matière, d’échelle en échelle</Typography>
-      <Typography variant="body1" sx={{ mt: 1, maxWidth: '78ch', lineHeight: 1.65 }}>
+      <h2 className="t-h4 mt-1">La matière, d’échelle en échelle</h2>
+      <p className="t-body1 mt-2 max-w-[78ch] leading-[1.65]">
         Selon la théorie Gobai Space, la matière se répète de l’infiniment petit à l’infiniment grand : les particules
         seraient des astres, l’atome un système solaire — le Soleil pour noyau, les planètes pour électrons — et la
         molécule une constellation. Cette page pose l’échelle complète, puis met chaque étage de l’analogie en nombres.
-      </Typography>
+      </p>
       <Alerte titre="Analogie spéculative">
         Ce n’est pas un modèle scientifique établi. Tous les calculs ci-dessous sont exacts et vérifiables ; ils servent
         justement à mesurer où l’analogie tient et où elle casse. Les planètes ne sont pas des électrons.
@@ -368,7 +363,7 @@ export function TheorieQuantique() {
       </Section>
 
       <Section numero={4} titre="Tableau périodique théorique et Solarium" sousTitre="Les 118 éléments, leurs électrons par couche, et l’élément 119 de la théorie.">
-        <Carte sx={{ bgcolor: 'transparent', p: { xs: 0.5, sm: 1 } }}><TableauPeriodique /></Carte>
+        <Carte className="bg-transparent p-1 min-[600px]:p-2"><TableauPeriodique /></Carte>
         <Note>
           Les deux lignes du bas sont le bloc f (lanthanides et actinides). En bas de chaque case : les électrons par
           couche (K, L, M…), par exemple le fer (26) : 2, 8, 14, 2. Les {exceptions} éléments qui dérogent à la règle de
@@ -381,7 +376,7 @@ export function TheorieQuantique() {
       </Section>
 
       <Section numero={5} titre={`L’assemblage ${MOLECULE.nom} (${MOLECULE.formule})`} sousTitre="Niveau 3 de l’échelle : des atomes-systèmes reliés, comme les étoiles d’une constellation.">
-        <Carte sx={{ bgcolor: 'transparent' }}><MoleculeSoaCen /></Carte>
+        <Carte className="bg-transparent"><MoleculeSoaCen /></Carte>
         <Note>
           <strong>{MOLECULE.nom}</strong> réunit le <strong>Solarium</strong> (So, 119 — le Soleil) et <strong>aCen</strong>{' '}
           (Alpha Centauri, qui contient Proxima Centauri), reliés par une liaison simple. Dans l’analogie, la « liaison »
@@ -418,10 +413,10 @@ export function TheorieQuantique() {
       </Section>
 
       {/* Signature de la théorie. */}
-      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 4, textAlign: 'right' }}>
+      <p className="t-body2 text-soft italic mt-8 text-right">
         Théorie quantique Gobai Space — signée {AUTEUR}
-      </Typography>
-    </Box>
+      </p>
+    </div>
   );
 // Fin de TheorieQuantique.
 }

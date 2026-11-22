@@ -1,5 +1,7 @@
-// Importe de MUI Box, Checkbox (case à cocher), les éléments de liste, Paper et Typography.
-import { Box, Checkbox, List, ListItem, ListItemButton, ListItemText, Paper, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Checkbox, List, ListItem, ListItemButton, ListItemText } from '@/Fairing/kit';
+// Importe les conversions des valeurs de style calculées au rendu.
+import { tok } from '@/Fairing/kit/sx';
 // Importe Hint, la note d'aide.
 import { Hint } from '../../ui/Hint.jsx';
 
@@ -7,7 +9,7 @@ import { Hint } from '../../ui/Hint.jsx';
 // Déclare le composant Dot : la couleur et l'indicateur « estompé ».
 const Dot = ({ color, dim }) => (
   // Rond de 10 px à la couleur de l'astre (gris à défaut), estompé si demandé.
-  <Box aria-hidden="true" sx={{ width: 10, height: 10, borderRadius: '50%', flex: 'none', bgcolor: color || 'text.disabled', opacity: dim ? 0.35 : 1 }} />
+  <div aria-hidden="true" className={`w-2.5 h-2.5 rounded-full flex-none ${dim ? 'opacity-35' : 'opacity-100'}`} style={{ backgroundColor: tok(color || 'text.disabled') }} />
 // Fin de Dot.
 );
 
@@ -22,11 +24,11 @@ export function AllerAUnAstre({ bodies = [], focus, onPick, onShown }) {
   // Début du rendu.
   return (
     // Conteneur au rôle de groupe.
-    <Box role="group" aria-label="Astres">
+    <div role="group" aria-label="Astres">
       {/* Le titre. */}
-      <Typography variant="overline" color="text.secondary" sx={{ display: 'block', lineHeight: 2.2 }}>Astres</Typography>
+      <span className="t-overline text-soft block leading-[2.2]">Astres</span>
       {/* Carte à contour, transparente. */}
-      <Paper variant="outlined" sx={{ bgcolor: 'transparent', backdropFilter: 'none', overflow: 'hidden' }}>
+      <div className="g-paper g-paper-outlined bg-transparent overflow-hidden">
         {/* Liste dense, sans marge. */}
         <List dense disablePadding>
           {/* Un élément par astre (début). */}
@@ -46,13 +48,13 @@ export function AllerAUnAstre({ bodies = [], focus, onPick, onShown }) {
                 // Sans marge intérieure.
                 disablePadding
                 // En retrait pour un satellite.
-                sx={{ pl: body.satellite ? 2.5 : 0 }}
+                className={`${body.satellite ? 'pl-5' : 'pl-0'}`}
               // Fin de la balise ouvrante.
               >
                 {/* Pour le Soleil (début). */}
                 {isSun ? (
                   // Un espace vide à la place de la case.
-                  <Box aria-hidden="true" sx={{ width: 38, flex: 'none' }} />
+                  <div aria-hidden="true" className="w-9.5 flex-none" />
                 // Sinon (début).
                 ) : (
                   // La case à cocher (début de la balise).
@@ -68,7 +70,7 @@ export function AllerAUnAstre({ bodies = [], focus, onPick, onShown }) {
                     // Nom pour les lecteurs d'écran : « Enlever » ou « Remettre », suivi du nom.
                     slotProps={{ input: { 'aria-label': `${shown ? 'Enlever' : 'Remettre'} ${body.name}` } }}
                     // Taille fixe et marges.
-                    sx={{ flex: 'none', ml: 0.5, p: 0.75 }}
+                    className="flex-none ml-2.5 mr-1.5"
                   // Fin de la case.
                   />
                 // Fin du choix.
@@ -86,7 +88,7 @@ export function AllerAUnAstre({ bodies = [], focus, onPick, onShown }) {
                   // Au clic : va à l'astre.
                   onClick={() => onPick(body.index)}
                   // Espacement et marges.
-                  sx={{ gap: 1.25, pl: 0.75, pr: 1.5 }}
+                  className="gap-2.5 pl-1.5 pr-3"
                 // Fin de la balise ouvrante.
                 >
                   {/* La pastille, estompée si l'astre est enlevé. */}
@@ -96,19 +98,11 @@ export function AllerAUnAstre({ bodies = [], focus, onPick, onShown }) {
                     // Son texte.
                     primary={body.name}
                     // Style du texte (début).
-                    slotProps={{ primary: { variant: 'body2', sx: {
-                      // Demi-gras si l'astre est visé.
-                      fontWeight: current ? 600 : 400,
-                      // Couleur secondaire pour un satellite.
-                      color: body.satellite ? 'text.secondary' : 'text.primary',
-                      // Barré si l'astre est enlevé.
-                      textDecoration: shown ? 'none' : 'line-through',
-                    // Fin du style.
-                    } } }}
+                    slotProps={{ primary: { className: `text-[0.84rem] ${current ? 'font-semibold' : 'font-normal'} ${body.satellite ? 'text-soft' : 'text-ink'} ${shown ? '' : 'line-through'}` } }}
                   // Fin du nom.
                   />
                   {/* Le numéro de l'astre, en police à chasse fixe. */}
-                  <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{body.number}</Typography>
+                  <span className="t-caption text-soft [font-family:monospace] whitespace-nowrap">{body.number}</span>
                 {/* Fin du bouton. */}
                 </ListItemButton>
               {/* Fin de l'élément. */}
@@ -120,11 +114,11 @@ export function AllerAUnAstre({ bodies = [], focus, onPick, onShown }) {
         {/* Fin de la liste. */}
         </List>
       {/* Fin de la carte. */}
-      </Paper>
+      </div>
       {/* Note d'aide. */}
       <Hint>Décochez un astre pour l’enlever de la scène, recochez-le pour le remettre. Appuyez sur son nom pour y aller.</Hint>
     {/* Fin du conteneur. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de AllerAUnAstre.

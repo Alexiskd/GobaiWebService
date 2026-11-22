@@ -1,5 +1,5 @@
-// Importe de MUI Divider (filet), Paper (carte), Stack (pile) et useMediaQuery (largeur de l'écran).
-import { Divider, Paper, Stack, useMediaQuery } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { useMediaQuery } from '@/Fairing/kit';
 // Importe safe, qui donne une marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe Readout, l'indicateur de zoom.
@@ -22,14 +22,12 @@ export function DesktopToolbar({ hud, actions }) {
     .filter((list) => list.length);
   // Écran de moins de 1 200 px (petit portable, tablette en paysage) : toutes les actions en icônes, avec leur
   // infobulle, pour que la barre tienne entière.
-  const narrow = useMediaQuery('(max-width: 1200px)', { noSsr: true });
+  const narrow = useMediaQuery('(max-width: 1200px)');
 
   // Début du rendu.
   return (
     // Carte de la barre (début de la balise).
-    <Paper
-      // Ombre marquée.
-      elevation={6}
+    <div
       // Rôle de barre d'outils.
       role="toolbar"
       // Nom pour les lecteurs d'écran.
@@ -37,15 +35,7 @@ export function DesktopToolbar({ hud, actions }) {
       // Marqueur de l'élément d'interface « toolbar ».
       data-hud="toolbar"
       // Début du style.
-      sx={{
-        // Fixée, au niveau des barres d'outils, centrée horizontalement.
-        position: 'fixed', zIndex: (t) => t.zIndex.toolbar, left: '50%', transform: 'translateX(-50%)',
-        // À 8 px au-dessus de la marge de sécurité du bas ; jamais plus large que l'écran, défile horizontalement au besoin.
-        bottom: `calc(${safe('bottom')} + 8px)`, maxWidth: 'calc(100vw - 28px)', overflowX: 'auto',
-        // Éléments en ligne, centrés verticalement, peu espacés ; barre de défilement cachée.
-        display: 'flex', alignItems: 'center', gap: 0.25, p: 0.5, scrollbarWidth: 'none',
-      // Fin du style.
-      }}
+      className="g-paper g-elev fixed z-[40] left-1/2 -translate-x-1/2 max-w-[calc(100vw_-_28px)] overflow-x-auto flex items-center gap-0.5 p-1 rounded-[14px] [scrollbar-width:none]" style={{ bottom: `calc(${safe('bottom')} + 8px)` }}
     // Fin de la balise ouvrante.
     >
       {/* L'indicateur de zoom, à gauche. */}
@@ -53,17 +43,17 @@ export function DesktopToolbar({ hud, actions }) {
       {/* Un bloc par groupe (début). */}
       {groups.map((list) => (
         // Ligne du bloc, au rôle de groupe, nommée en clair pour les lecteurs d'écran.
-        <Stack key={list[0].group} direction="row" spacing={0.25} role="group" aria-label={GROUP_LABELS[list[0].group] || list[0].group} sx={{ alignItems: 'center' }}>
+        <div key={list[0].group} role="group" aria-label={GROUP_LABELS[list[0].group] || list[0].group} className="flex flex-row gap-0.5 items-center">
           {/* Filet vertical qui sépare du bloc précédent. */}
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.25, my: 0.5 }} />
+          <div role="separator" aria-orientation="vertical" className="g-divider-v mx-1 my-1.5" />
           {/* Un bouton par action, en version ordinateur (en icône seule sur un écran de moins de 1 200 px). */}
           {list.map((a) => <ToolbarButton key={a.id} action={narrow ? { ...a, iconOnly: true } : a} compact={false} />)}
         {/* Fin de la ligne du groupe. */}
-        </Stack>
+        </div>
       // Fin des blocs.
       ))}
     {/* Fin de la carte. */}
-    </Paper>
+    </div>
   // Fin du rendu.
   );
 // Fin de DesktopToolbar.

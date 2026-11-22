@@ -1,5 +1,3 @@
-// Importe de MUI Box, Paper (carte) et Typography (texte).
-import { Box, Paper, Typography } from '@mui/material';
 
 /**
  * Mot d'excuse affiché à la place de l'app sur un téléphone en dessous de l'iPhone 15 ou de son équivalent
@@ -10,52 +8,43 @@ export function AppareilNonCompatible() {
   // Début du rendu.
   return (
     // Fond de l'écran (début de la balise).
-    <Box
-      // Rendu en balise main.
-      component="main"
+    <main
       // Début du style.
-      sx={{
-        // Couvre toute la fenêtre, contenu centré, marge intérieure, fond noir.
-        position: 'fixed', inset: 0, display: 'grid', placeItems: 'center', p: 3, bgcolor: '#000',
-        // Deux halos en dégradé radial : un bleu en haut à gauche et (ligne suivante) un doré en bas à droite.
-        backgroundImage: `radial-gradient(60% 50% at 18% 12%, rgba(0, 0, 255, 0.22), transparent 70%),
-          radial-gradient(70% 60% at 85% 100%, rgba(240, 178, 74, 0.16), transparent 70%)`,
-      // Fin du style.
-      }}
+      className="fixed inset-0 grid place-items-center p-6 bg-[#000] [background-image:radial-gradient(60%_50%_at_18%_12%,rgba(0,0,255,0.22),transparent_70%),radial-gradient(70%_60%_at_85%_100%,rgba(240,178,74,0.16),transparent_70%)]"
     // Fin de la balise ouvrante.
     >
       {/* Carte à contour au rôle d'alerte : largeur maximale de 420 px, texte centré, fond sombre translucide, texte clair. */}
-      <Paper variant="outlined" role="alert" sx={{ maxWidth: 420, p: 3, textAlign: 'center', bgcolor: 'rgba(9, 13, 22, 0.88)', color: '#e8edf8', borderColor: 'rgba(232, 237, 248, 0.2)' }}>
+      <div role="alert" className="g-paper g-paper-outlined max-w-105 p-6 text-center bg-[color:rgba(9,13,22,0.88)] text-[#e8edf8] border-[color:rgba(232,237,248,0.2)]">
         {/* Titre de niveau 1, jamais traduit, en gras. */}
-        <Typography component="h1" variant="h6" translate="no" sx={{ fontWeight: 700, mb: 2 }}>
+        <h1 translate="no" className="t-h6 font-bold mb-4">
           {/* Le nom de l'application. */}
           Go白ناन्टех
         {/* Fin du titre. */}
-        </Typography>
+        </h1>
         {/* Premier paragraphe. */}
-        <Typography variant="body1" sx={{ mb: 1.5 }}>
+        <p className="t-body1 mb-3">
           {/* Le mot d'excuse. */}
           Désolé pour la gêne occasionnée.
         {/* Fin du premier paragraphe. */}
-        </Typography>
+        </p>
         {/* Deuxième paragraphe, en gris-bleu. */}
-        <Typography variant="body2" sx={{ mb: 1.5, color: '#8b97b3' }}>
+        <p className="t-body2 mb-3 text-[#8b97b3]">
           {/* Les téléphones acceptés (texte sur deux lignes). */}
           Sur téléphone, le site est accessible avec un iPhone 15 ou plus récent, un Samsung Galaxy équivalent ou plus
           récent, et les modèles équivalents des autres marques.
         {/* Fin du deuxième paragraphe. */}
-        </Typography>
+        </p>
         {/* Troisième paragraphe, en gris-bleu. */}
-        <Typography variant="body2" sx={{ color: '#8b97b3' }}>
+        <p className="t-body2 text-[#8b97b3]">
           {/* La raison du refus et la solution proposée (texte sur deux lignes). */}
           Votre appareil n’est pas assez récent pour afficher le système solaire en 3D sans surchauffer. Vous pouvez
           ouvrir le site depuis un ordinateur ou un téléphone plus récent.
         {/* Fin du troisième paragraphe. */}
-        </Typography>
+        </p>
       {/* Fin de la carte. */}
-      </Paper>
+      </div>
     {/* Fin du fond. */}
-    </Box>
+    </main>
   // Fin du rendu.
   );
 // Fin de AppareilNonCompatible.

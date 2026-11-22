@@ -2,8 +2,10 @@
 import { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
 // Arborescence des astres (Soleil → Planètes / Planètes naines → planète → satellites).
 import { navTree, pathTo } from './navTree.js';
-// Importe de MUI Box, ButtonBase (bouton nu), Chip (pastille cliquable), Paper et Stack.
-import { Box, ButtonBase, Chip, Paper, Stack } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Chip } from '@/Fairing/kit';
+// Importe les conversions des valeurs de style calculées au rendu.
+import { sz } from '@/Fairing/kit/sx';
 // Importe le crochet de déplacement des panneaux.
 import { useHudDraggable } from '@/Fairing/hooks/useHudDraggable';
 // Importe useViewport, qui donne la catégorie d'écran.
@@ -11,79 +13,34 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe la largeur du rail, la hauteur de la bande et edge, la distance à un bord.
 import { RAIL_BOTTOM, RAIL_TOP, RAIL_W, STRIP_H, edge } from '@/Fairing/theme/layout';
 // Importe MQ (requêtes média, dont l'écran tactile) et safe, qui donne une marge de sécurité de l'écran.
-import { MQ, safe } from '@/Fairing/theme/mediaQueries';
+import { safe } from '@/Fairing/theme/mediaQueries';
 
 /** Pastille de l'astre, à sa couleur : reflet en haut à gauche, ombre vers le bas. */
 // Déclare le composant Orb : reçoit la couleur et la taille (14 px par défaut).
 const Orb = ({ color, size = 14 }) => (
   // La pastille (début de la balise).
-  <Box
+  <div
     // Cachée aux lecteurs d'écran.
     aria-hidden="true"
-    // Classe utilisée par la surbrillance.
-    className="nav-orb"
-    // Variable CSS --orb : la couleur de l'astre.
-    style={{ '--orb': color }}
     // Début du style.
-    sx={{
-      // Rond de la taille demandée, qui ne se déforme pas.
-      position: 'relative', width: size, height: size, borderRadius: '50%', flex: 'none', display: 'inline-block',
-      // Fond : un reflet clair en haut à gauche et (ligne suivante) un dégradé de la couleur vers une teinte sombre.
-      background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,.8), transparent 22%),
-        radial-gradient(circle at 35% 30%, ${color}, color-mix(in srgb, ${color}, #101522 45%))`,
-      // Transition de la taille (avec rebond) et de la luminosité ; ni halo, ni anneau irisé, ni éclat (feuille de route 3.1).
-      transition: 'box-shadow .25s ease, filter .25s ease, transform .25s cubic-bezier(.3,1.6,.5,1)',
-    // Fin du style.
-    }}
+    className="nav-orb relative rounded-full flex-none inline-block [transition:box-shadow_.25s_ease,filter_.25s_ease,transform_.25s_cubic-bezier(.3,1.6,.5,1)]" style={{ '--orb': color, width: sz(size), height: sz(size), background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,.8), transparent 22%),
+        radial-gradient(circle at 35% 30%, ${color}, color-mix(in srgb, ${color}, #101522 45%))` }}
   // Fin de la pastille.
   />
 // Fin de Orb.
 );
 
-/**
- * Surbrillance de la sphère quand le curseur (ou le focus clavier) passe sur la ligne : liseré blanc fin, un peu
- * plus lumineuse et agrandie. À étaler dans le `sx` du bouton qui contient l'`Orb`.
- */
-// Déclare orbHover, le style de surbrillance (début de l'objet).
-const orbHover = {
-  // Au survol ou au focus clavier du bouton, pour sa pastille (début).
-  '&:hover .nav-orb, &.Mui-focusVisible .nav-orb': {
-    // Un liseré blanc fin, sans lueur.
-    boxShadow: '0 0 0 1px rgba(255,255,255,.85)',
-    // Un peu plus lumineuse.
-    filter: 'brightness(1.2)',
-    // Agrandie de 20 %.
-    transform: 'scale(1.2)',
-  // Fin de la surbrillance.
-  },
-  // Si l'utilisateur a demandé moins de mouvement (début).
-  '@media (prefers-reduced-motion: reduce)': {
-    // Pour la même pastille (début).
-    '&:hover .nav-orb, &.Mui-focusVisible .nav-orb': {
-      // Pas d'agrandissement.
-      transform: 'none',
-    // Fin du cas.
-    },
-  // Fin de la règle.
-  },
-// Fin de l'objet.
-};
+// Le survol d'une ligne ou d'une pastille agrandit et éclaire sa pastille d'astre (`.nav-orb`) : voir theme/app.css.
 
 /** Trait de l'arborescence horizontale (téléphone) : relie deux astres ; `knot` = nœud au départ d'une branche. */
 // Déclare le composant Link : largeur (10 px par défaut) et nœud (non par défaut).
 const Link = ({ width = 10, knot = false }) => (
   // Le trait (début de la balise).
-  <Box
+  <div
     // Caché aux lecteurs d'écran.
     aria-hidden="true"
     // Début du style.
-    sx={{
-      // Trait de 1 px de haut, de la largeur demandée ; plus marqué s'il porte un nœud.
-      position: 'relative', flex: 'none', width, height: '1px', bgcolor: knot ? 'text.disabled' : 'divider',
-      // Avec nœud : un petit rond de 7 px au départ du trait.
-      ...(knot && { '&::before': { content: '""', position: 'absolute', left: -3, top: -3, width: 7, height: 7, borderRadius: '50%', bgcolor: 'text.disabled' } }),
-    // Fin du style.
-    }}
+    className={`relative flex-none h-[1px] ${knot ? 'bg-faint' : 'bg-line'} ${knot ? 'before:absolute before:-left-0.75 before:-top-0.75 before:w-1.75 before:h-1.75 before:rounded-full before:bg-faint' : ''}`}
   // Fin du trait.
   />
 // Fin de Link.
@@ -91,11 +48,7 @@ const Link = ({ width = 10, knot = false }) => (
 
 /** Flèche de dépliage, tournée quand la branche est ouverte ; place gardée quand il n'y a rien à déplier. */
 const Chevron = ({ open, show = true, size = 20 }) => (
-  <Box component="span" aria-hidden="true" sx={{
-    flex: 'none', width: 14, color: 'text.secondary', fontSize: size, lineHeight: 1, textAlign: 'center',
-    transition: 'transform .18s ease', transform: open ? 'rotate(90deg)' : 'none', visibility: show ? 'visible' : 'hidden',
-    '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
-  }}>›</Box>
+  <span aria-hidden="true" className={`flex-none w-3.5 text-soft leading-none text-center [transition:transform_.18s_ease] ${open ? '[transform:rotate(90deg)]' : '[transform:none]'} ${show ? 'visible' : 'invisible'} motion-reduce:[transition:none]`} style={{ fontSize: size }}>›</span>
 );
 
 /**
@@ -173,36 +126,30 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect, onMo
           key={b.index ?? b.id}
           ref={current ? activeRef : undefined}
           icon={b.color ? <Orb color={b.color} size={small ? 10 : 12} /> : undefined}
-          label={<>{b.name}{more && <Box component="span" aria-hidden="true" sx={{ ml: 0.75, fontSize: 17, lineHeight: 1 }}>›</Box>}</>}
+          label={<>{b.name}{more && <span aria-hidden="true" className="ml-1.5 text-[17px] leading-none">›</span>}</>}
           clickable
           color={current ? 'primary' : 'default'}
           variant={current ? 'filled' : 'outlined'}
           aria-current={current ? 'true' : undefined}
           onClick={onClick}
-          sx={{ flex: 'none', height: 44, borderRadius: 5.5, scrollSnapAlign: 'center', '& .MuiChip-icon': { ml: 1.25 }, ...orbHover }}
+          className="nav-chip flex-none h-11 rounded-full snap-center [&_.g-chip-icon]:ml-2.5"
         />
       );
     };
     return (
-      <Paper
-        component="nav"
-        square
+      <nav
         aria-label="Astres"
         data-hud="nav-strip"
-        sx={{
-          position: 'relative', height: STRIP_H + 4, boxSizing: 'border-box', pl: safe('left'), pr: safe('right'),
-          borderTop: 1, borderColor: 'divider', overflowX: 'auto', overflowY: 'hidden',
-          scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' }, scrollSnapType: 'x proximity',
-        }}
+        className="g-paper rounded-none relative box-border border-t border-line overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [scroll-snap-type:x_proximity]" style={{ height: sz(STRIP_H + 4), paddingLeft: safe('left'), paddingRight: safe('right') }}
       >
-        <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', height: '100%', px: 1, width: 'max-content' }}>
+        <div className="flex flex-row gap-1.5 items-center h-full px-2 w-max">
           {up && (
             <Chip
               label="‹"
               clickable
               aria-label={up === 'racine' ? 'Revenir au Soleil' : 'Revenir aux planètes'}
               onClick={() => setLevel(up)}
-              sx={{ flex: 'none', height: 44, minWidth: 44, borderRadius: 5.5, fontSize: 22, '& .MuiChip-label': { px: 1.25 } }}
+              className="flex-none h-11 min-w-11 rounded-full text-[22px] [&_.g-chip-label]:px-2.5"
             />
           )}
           {level === 'racine' && (
@@ -212,9 +159,9 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect, onMo
                 <Fragment key={b.id}>
                   {(i > 0 || tree.sun) && <Link />}
                   <Chip
-                    label={<>{b.name} <Box component="span" sx={{ opacity: 0.7, fontVariantNumeric: 'tabular-nums' }}>{b.planets.length}</Box><Box component="span" aria-hidden="true" sx={{ ml: 0.75, fontSize: 17, lineHeight: 1 }}>›</Box></>}
+                    label={<>{b.name} <span className="opacity-70 tabular-nums">{b.planets.length}</span><span aria-hidden="true" className="ml-1.5 text-[17px] leading-none">›</span></>}
                     clickable variant="outlined" onClick={() => setLevel(b.id)}
-                    sx={{ flex: 'none', height: 44, borderRadius: 5.5 }}
+                    className="flex-none h-11 rounded-full"
                   />
                 </Fragment>
               ))}
@@ -232,130 +179,107 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect, onMo
           {planet && (
             <>
               {chip(planet, { onClick: () => onSelect(planet.index, { planetOnly: true }) })}
-              <Stack direction="row" role="group" aria-label={`Satellites de ${planet.name}`} spacing={0.5}
-                sx={{ alignItems: 'center', flex: 'none', height: 44, pl: 1, pr: 0.75, borderRadius: 5.5, border: 1, borderColor: 'divider', bgcolor: 'action.hover' }}>
+              <div role="group" aria-label={`Satellites de ${planet.name}`}
+                className="flex flex-row gap-1 items-center flex-none h-11 pl-2 pr-1.5 rounded-full border border-line bg-hover">
                 {planet.moons.map((m) => (
                   <Fragment key={m.index}>
                     <Link width={12} knot />
                     {chip(m, { small: true, onClick: () => onSelect(m.index) })}
                   </Fragment>
                 ))}
-              </Stack>
+              </div>
             </>
           )}
-        </Stack>
-      </Paper>
+        </div>
+      </nav>
     );
   }
 
   // Ordinateur : rail de gauche, ajusté à la fenêtre (voir RAIL_W, RAIL_TOP, RAIL_BOTTOM dans theme/layout).
-  const short = '@media (max-height: 760px)';
-  const row = (depth, current) => ({
-    width: '100%', minHeight: 36, [MQ.coarse]: { minHeight: 44 }, [short]: { minHeight: 30 },
-    display: 'flex', alignItems: 'center', gap: 1, pl: `${8 + depth * 14}px`, pr: 1.25, py: '3px',
-    border: '1px solid transparent', borderRadius: '20px', color: 'text.primary', fontSize: depth >= 3 ? 13 : 14, lineHeight: 1.3, textAlign: 'left',
-    '&:hover': { bgcolor: 'action.hover' },
-    ...(current && { bgcolor: 'action.selected', borderColor: 'divider', '&:hover': { bgcolor: 'action.focus' } }),
-    ...orbHover,
-  });
-  const name = (text) => <Box component="span" sx={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{text}</Box>;
-  const count = (n) => <Box component="span" aria-hidden="true" sx={{ flex: 'none', fontSize: 11, color: 'text.disabled', fontVariantNumeric: 'tabular-nums' }}>{n}</Box>;
+  // Les lignes de l'arbre portent la classe `nav-row` (theme/app.css) ; leur retrait suit `--depth`.
+  const depth = (n) => ({ '--depth': n });
+  const name = (text) => <span className="flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{text}</span>;
+  const count = (n) => <span aria-hidden="true" className="flex-none text-[11px] text-faint tabular-nums">{n}</span>;
   const sunOpen = open.has('soleil');
 
   return (
-    <Paper
-      component="nav"
-      elevation={4}
+    <nav
       aria-label="Navigation du système solaire"
       ref={drag.ref}
-      style={drag.style}
-      sx={{
-        position: 'fixed', zIndex: (t) => t.zIndex.hud, left: edge('left'),
-        top: edge('top', RAIL_TOP), bottom: edge('bottom', RAIL_BOTTOM), height: 'fit-content', my: 'auto',
-        maxHeight: `calc(100dvh - ${safe('top')} - ${safe('bottom')} - ${RAIL_TOP + RAIL_BOTTOM}px)`,
-        width: RAIL_W, maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 28px)`, boxSizing: 'border-box',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        borderRadius: '0 16px 16px 0',
-        bgcolor: (t) => (t.palette.mode === 'dark' ? '#0d1a3c' : '#c9ced6'),
-        border: 1, borderColor: 'divider',
-      }}
+      className="g-paper bg-nav fixed z-[20] h-fit my-auto box-border flex flex-col overflow-hidden rounded-[0_12px_12px_0] border border-line" style={{ ...drag.style, left: edge('left'), top: edge('top', RAIL_TOP), bottom: edge('bottom', RAIL_BOTTOM), maxHeight: `calc(100dvh - ${safe('top')} - ${safe('bottom')} - ${RAIL_TOP + RAIL_BOTTOM}px)`, width: sz(RAIL_W), maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 28px)`,  }}
     >
       {/* En-tête (poignée de déplacement) : toujours visible, l'arborescence défile dessous. */}
-      <Box
+      <div
         {...drag.handleProps}
-        sx={{
-          flex: 'none', display: 'flex', alignItems: 'center', gap: 1.25, px: 2.25, pt: 1.75, pb: 1.25,
-          color: 'text.secondary', fontSize: 14, fontWeight: 600, borderBottom: 1, borderColor: 'divider',
-          cursor: 'grab', userSelect: 'none', touchAction: 'none', [short]: { pt: 1.25, pb: 0.75 },
-        }}
+        className="flex-none flex items-center gap-2.5 px-4.5 pt-3.5 pb-2.5 text-soft text-[14px] font-semibold border-b border-line cursor-grab select-none touch-none"
       >
-        <Box component="span" aria-hidden="true" sx={{ color: 'text.disabled', fontSize: 20, lineHeight: 1 }}>⠿</Box>
-        <Box component="span" sx={{ flex: 1, minWidth: 0 }}>Navigation</Box>
-      </Box>
+        <span aria-hidden="true" className="text-faint text-[20px] leading-none">⠿</span>
+        <span className="flex-1 min-w-0">Navigation</span>
+      </div>
 
-      <Box role="tree" aria-label="Astres" sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', scrollbarWidth: 'thin', p: '6px 6px 10px' }}>
+      <div role="tree" aria-label="Astres" className="flex-auto min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:thin] p-[6px_6px_10px]">
         {/* Le Soleil, racine : l'appui le vise et déplie ou replie les branches. */}
         {tree.sun && (
-          <ButtonBase
+          <button type="button"
             role="treeitem" aria-level={1} aria-expanded={sunOpen} aria-current={focus === tree.sun.index ? 'true' : undefined}
             ref={focus === tree.sun.index ? activeRef : undefined}
             onClick={() => { if (focus === tree.sun.index) toggle('soleil'); else { onSelect(tree.sun.index); setOpen((p) => new Set(p).add('soleil')); } }}
-            sx={{ ...row(0, focus === tree.sun.index), fontWeight: 600, fontSize: 15 }}
+            className="g-base nav-row font-semibold text-[15px]" style={depth(0)}
           >
             <Chevron open={sunOpen} />
             <Orb color={tree.sun.color} size={16} />
             {name(tree.sun.name)}
-          </ButtonBase>
+          </button>
         )}
         {(sunOpen || !tree.sun) && tree.branches.map((branch) => {
           const bOpen = open.has(branch.id);
           return (
-            <Box key={branch.id}>
+            <div key={branch.id}>
               {/* Branche : se déplie sans rien viser. */}
-              <ButtonBase role="treeitem" aria-level={2} aria-expanded={bOpen} onClick={() => toggle(branch.id)}
-                sx={{ ...row(1, false), color: 'text.secondary', fontSize: 12, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase' }}>
+              <button type="button" role="treeitem" aria-level={2} aria-expanded={bOpen} onClick={() => toggle(branch.id)}
+                className="g-base nav-row text-soft text-[12px] font-bold tracking-[.06em] uppercase" style={depth(1)}>
                 <Chevron open={bOpen} />
                 {name(branch.name)}
                 {count(branch.planets.length)}
-              </ButtonBase>
+              </button>
               {bOpen && branch.planets.map((planet) => {
                 const current = focus === planet.index;
                 const pOpen = planet.moons.length > 0 && open.has(planet.index);
                 return (
-                  <Box key={planet.index}>
-                    <ButtonBase role="treeitem" aria-level={3} aria-expanded={planet.moons.length ? pOpen : undefined}
+                  <div key={planet.index}>
+                    <button type="button" className="g-base nav-row" style={depth(2)} role="treeitem" aria-level={3} aria-expanded={planet.moons.length ? pOpen : undefined}
                       aria-current={current ? 'true' : undefined} ref={current ? activeRef : undefined}
                       onClick={() => { pickPlanet(planet); if (!current && planet.moons.length) setOpen((p) => new Set(p).add(planet.index)); }}
-                      title={planet.name} sx={row(2, current)}>
+                      title={planet.name}>
                       <Chevron open={pOpen} show={planet.moons.length > 0} />
                       <Orb color={planet.color} size={14} />
                       {name(planet.name)}
                       {planet.moons.length > 0 && count(planet.moons.length)}
-                    </ButtonBase>
+                    </button>
                     {pOpen && (
                       // Système à nombreux satellites : sa liste défile dans sa zone, bornée à 40 % de la hauteur.
-                      <Box role="group" aria-label={`Satellites de ${planet.name}`}
-                        sx={{ ml: '38px', borderLeft: 1, borderColor: 'divider', maxHeight: 'min(360px, 40dvh)', overflowY: 'auto', overscrollBehavior: 'contain', scrollbarWidth: 'thin' }}>
+                      <div role="group" aria-label={`Satellites de ${planet.name}`}
+                        className="ml-[38px] border-l border-line max-h-[min(360px,40dvh)] overflow-y-auto overscroll-contain [scrollbar-width:thin]">
                         {planet.moons.map((moon) => {
                           const mCurrent = focus === moon.index;
                           return (
-                            <ButtonBase key={moon.index} role="treeitem" aria-level={4} aria-current={mCurrent ? 'true' : undefined}
+                            <button type="button" key={moon.index} role="treeitem" aria-level={4} aria-current={mCurrent ? 'true' : undefined}
                               ref={mCurrent ? activeRef : undefined} onClick={() => onSelect(moon.index)} title={moon.name}
-                              sx={{ ...row(0, false), pl: 1.25, borderRadius: '9px', fontSize: 13, ...(mCurrent && { bgcolor: 'rgba(65, 112, 180, .2)' }) }}>
+                              className={`g-base nav-row pl-2.5 rounded-[8px] text-[13px] ${mCurrent ? 'bg-selected' : ''}`}>
                               <Orb color={moon.color} size={12} />
                               {name(moon.name)}
-                            </ButtonBase>
+                            </button>
                           );
                         })}
-                      </Box>
+                      </div>
                     )}
-                  </Box>
+                  </div>
                 );
               })}
-            </Box>
+            </div>
           );
         })}
-      </Box>
-    </Paper>
+      </div>
+    </nav>
   );
 });

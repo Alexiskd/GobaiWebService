@@ -1,4 +1,7 @@
 // Point d'entrée de l'application Gobai en mode site statique.
+// Importe la feuille de style de l'interface (Tailwind CSS, compilée au build) et celle des éléments du moteur 3D.
+import './Fairing/theme/app.css';
+import './Fairing/theme/scene.css';
 import { createRoot } from 'react-dom/client';
 import App from './Fairing/App.jsx';
 import { removeSeoShell, setAppRoot, unmountApp } from './Engine/shared/lib/app/appRoot.jsx';

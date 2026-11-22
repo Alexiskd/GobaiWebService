@@ -1,7 +1,5 @@
 // Importe de React les crochets useEffect et useState.
 import { useEffect, useState } from 'react';
-// Importe de MUI Box et Typography.
-import { Box, Typography } from '@mui/material';
 // Briques de style communes de la fenêtre Node.
 import { Carte, Chiffre, Formule, GrilleChiffres, Note, Section } from '../node/nodeUi.jsx';
 // Importe plusieurs éléments du module fluxCognitif (début de la liste).
@@ -48,13 +46,11 @@ function Courbe({ now, nowValue }) {
   // Début du rendu.
   return (
     // Le dessin (début de la balise).
-    <Box
-      // Rendu en balise svg, avec son repère de coordonnées et le rôle d'image.
-      component="svg" viewBox={`0 0 ${W} ${H}`} role="img"
+    <svg viewBox={`0 0 ${W} ${H}`} role="img"
       // Description pour les lecteurs d'écran, avec les valeurs de départ et d'arrivée.
       aria-label={`Courbe du flux cognitif mondial de 2024 à 2046, en pensées par jour : de ${points[0][1].toFixed(2).replace('.', ',')} à ${points[points.length - 1][1].toFixed(2).replace('.', ',')} × 10¹³`}
       // Toute la largeur, hauteur proportionnelle, couleur secondaire.
-      sx={{ display: 'block', width: '100%', height: 'auto', color: 'text.secondary', mt: 1 }}
+      className="block w-full h-auto text-soft mt-2"
     // Fin de la balise ouvrante.
     >
       {/* Une graduation verticale par valeur (début). */}
@@ -76,16 +72,16 @@ function Courbe({ now, nowValue }) {
       // Fin des graduations horizontales.
       ))}
       {/* La courbe, en couleur primaire, sans remplissage. */}
-      <Box component="path" d={path} fill="none" strokeWidth="2.5" strokeLinejoin="round" sx={{ stroke: (t) => t.palette.primary.main }} />
+      <path d={path} fill="none" strokeWidth="2.5" strokeLinejoin="round" className="stroke-primary" />
       {/* Maintenant : repère vertical et point sur la courbe. */}
       {/* Trait vertical en pointillés à l'instant présent. */}
       <line x1={px(nx)} x2={px(nx)} y1={TOP} y2={H - BOTTOM} stroke="currentColor" strokeOpacity="0.45" strokeDasharray="3 4" />
       {/* Point sur la courbe à l'instant présent, cerclé de la couleur du fond. */}
-      <Box component="circle" cx={px(nx)} cy={py(ny)} r="5" sx={{ fill: (t) => t.palette.primary.main, stroke: (t) => t.palette.background.paper }} strokeWidth="2" />
+      <circle cx={px(nx)} cy={py(ny)} r="5" className="fill-primary stroke-surface" strokeWidth="2" />
       {/* Le mot « maintenant », à côté du point. */}
       <text x={px(nx) + 9} y={py(ny) + 16} fontSize="11" fill="currentColor">maintenant</text>
     {/* Fin du dessin. */}
-    </Box>
+    </svg>
   // Fin du rendu.
   );
 // Fin de Courbe.
@@ -107,17 +103,17 @@ export function FluxCognitif() {
   const growth = populationGrowthPerSecond(ms);
   // Début du rendu.
   return (
-    <Box>
+    <div>
       {/* Le compteur de population, en grand. */}
-      <Carte accent="primary.main" sx={{ mt: 0.5 }}>
-        <Typography variant="overline" color="text.secondary" component="h3" sx={{ display: 'block', lineHeight: 1.6 }}>Population mondiale en direct</Typography>
-        <Typography component="p" aria-live="off" sx={{ fontSize: { xs: 30, sm: 40 }, fontWeight: 700, fontVariantNumeric: 'tabular-nums', lineHeight: 1.15, letterSpacing: '-0.02em' }}>
+      <Carte accent="primary.main" className="mt-1">
+        <h3 className="t-overline text-soft block leading-[1.6]">Population mondiale en direct</h3>
+        <p aria-live="off" className="t-body1 text-[30px] min-[600px]:text-[40px] font-bold tabular-nums leading-[1.15] tracking-[-0.02em]">
           {entier(flux.population)}
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: '78ch' }}>
+        </p>
+        <p className="t-body2 text-soft mt-1 max-w-[78ch]">
           Estimation : + {growth.toFixed(1).replace('.', ',')} personne{growth >= 2 ? 's' : ''} par seconde, par interpolation des
           projections des Nations unies (World Population Prospects 2024). Personne ne compte les habitants en temps réel.
-        </Typography>
+        </p>
       </Carte>
 
       <Section numero={1} titre="La relation" sousTitre="Ce n’est pas une constante : le flux suit la population.">
@@ -127,7 +123,7 @@ export function FluxCognitif() {
           par jour et par personne (Tseng et Poppenk, Université Queen’s, 2020).
         </Note>
         {/* Les trois valeurs du flux. */}
-        <GrilleChiffres sx={{ mt: 1.5 }}>
+        <GrilleChiffres className="mt-3">
           <Chiffre libelle="Pensées par seconde" valeur={scientific(flux.parSeconde, 3)} detail={entier(flux.parSeconde)} />
           <Chiffre libelle="Pensées par jour" valeur={scientific(flux.parJour, 3)} detail={entier(flux.parJour)} />
           <Chiffre libelle="Pensées par an" valeur={scientific(flux.parAn, 3)} detail={entier(flux.parAn)} />
@@ -135,13 +131,13 @@ export function FluxCognitif() {
       </Section>
 
       <Section numero={2} titre="La courbe de F(t)" sousTitre="Pensées par jour, × 10¹³, de 2024 à 2046.">
-        <Carte sx={{ bgcolor: 'transparent' }}><Courbe now={decimalYear(ms)} nowValue={flux.parJour} /></Carte>
+        <Carte className="bg-transparent"><Courbe now={decimalYear(ms)} nowValue={flux.parJour} /></Carte>
         <Note>
           Ordre de grandeur : la mesure de 6 200 transitions de pensée par jour porte sur des adultes éveillés, et elle est
           appliquée ici à toute la population.
         </Note>
       </Section>
-    </Box>
+    </div>
   );
 // Fin de FluxCognitif.
 }

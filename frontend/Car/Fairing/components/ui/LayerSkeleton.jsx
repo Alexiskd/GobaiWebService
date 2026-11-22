@@ -1,5 +1,5 @@
-// Importe de MUI Box (conteneur) et Skeleton (forme grise de chargement).
-import { Box, Skeleton } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Skeleton } from '@/Fairing/kit';
 
 /**
  * Squelette de chargement d'une liste de fonds de carte : la silhouette des lignes à venir (pastille, nom,
@@ -10,27 +10,27 @@ export function LayerSkeleton({ rows = 3, label = 'Chargement des fonds de carte
   // Début du rendu.
   return (
     // Conteneur au rôle d'état, nommé par le libellé et signalé « occupé » aux lecteurs d'écran.
-    <Box role="status" aria-label={label} aria-busy="true">
+    <div role="status" aria-label={label} aria-busy="true">
       {/* Crée autant de lignes que demandé (i : numéro de la ligne). */}
       {Array.from({ length: rows }, (_, i) => (
         // Une ligne : pastille et textes côte à côte, alignés en haut, avec les marges d'une vraie ligne.
-        <Box key={i} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, px: 1.5, py: 1.25 }}>
+        <div key={i} className="flex items-start gap-3 px-3 py-2.5">
           {/* Pastille ronde de 18 px, qui ne se déforme pas, légèrement descendue. */}
-          <Skeleton variant="circular" width={18} height={18} sx={{ flex: 'none', mt: 0.25 }} />
+          <Skeleton variant="circular" width={18} height={18} className="flex-none mt-0.5" />
           {/* Colonne des textes, qui prend la largeur restante. */}
-          <Box sx={{ flex: 1, minWidth: 0 }}>
+          <div className="flex-1 min-w-0">
             {/* Faux nom : largeur de 62 %, réduite de 9 points à chaque ligne. */}
-            <Skeleton variant="text" width={`${62 - i * 9}%`} sx={{ fontSize: '0.95rem' }} />
+            <Skeleton variant="text" width={`${62 - i * 9}%`} className="text-[0.95rem]" />
             {/* Fausse description : largeur de 88 %, réduite de 7 points à chaque ligne, en plus petit. */}
-            <Skeleton variant="text" width={`${88 - i * 7}%`} sx={{ fontSize: '0.75rem' }} />
+            <Skeleton variant="text" width={`${88 - i * 7}%`} className="text-[0.75rem]" />
           {/* Fin de la colonne des textes. */}
-          </Box>
+          </div>
         {/* Fin de la ligne. */}
-        </Box>
+        </div>
       // Fin de la création des lignes.
       ))}
     {/* Fin du conteneur. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de LayerSkeleton.

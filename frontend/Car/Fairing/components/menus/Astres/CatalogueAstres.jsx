@@ -1,7 +1,9 @@
 // Importe de React les crochets useEffect, useMemo et useState.
 import { useEffect, useMemo, useState } from 'react';
-// Importe de MUI Box, Checkbox, Chip, CircularProgress, Stack et Typography.
-import { Alert, Box, Button, Checkbox, Chip, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Alert, Button, Checkbox, Chip, CircularProgress, TextField } from '@/Fairing/kit';
+// Importe les conversions des valeurs de style calculées au rendu.
+import { tok } from '@/Fairing/kit/sx';
 // Importe la lecture du listing d'affichage des astres.
 import { fetchBodyListing } from '@/Computing/api';
 // Importe Group, le groupe de réglages.
@@ -110,13 +112,13 @@ export function CatalogueAstres({
     // Début du rendu de la ligne.
     return (
       // Une ligne en pile horizontale, avec un retrait pour un satellite.
-      <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1.5, py: 1, pl: indent ? 4 : 1.5 }}>
+      <div className={`flex flex-row gap-2 items-center px-3 py-2 ${indent ? 'pl-8' : 'pl-3'}`}>
         {/* La pastille de la couleur de l'astre, si le listing en donne une. */}
-        <Box aria-hidden="true" sx={{ width: 10, height: 10, borderRadius: '50%', flex: 'none', bgcolor: color || 'text.disabled' }} />
+        <div aria-hidden="true" className="w-2.5 h-2.5 rounded-full flex-none" style={{ backgroundColor: tok(color || 'text.disabled') }} />
         {/* Le nom, cliquable s'il correspond à un astre de la scène : il y emmène la caméra. */}
-        <Typography
+        <p
           // Le nom prend toute la largeur restante.
-          sx={{ flex: 1, fontSize: 14, cursor: body ? 'pointer' : 'default', '&:hover': body ? { textDecoration: 'underline' } : {} }}
+          className={`t-body1 flex-1 text-[14px] ${body ? 'cursor-pointer hover:underline' : 'cursor-default'}`}
           // Au clic : va à l'astre, puis signale la fin.
           onClick={body ? () => { onSelect?.(body.index); onDone?.(); } : undefined}
         // Fin de la balise ouvrante.
@@ -124,14 +126,14 @@ export function CatalogueAstres({
           {/* Le nom tel que le serveur l'écrit. */}
           {name}
         {/* Fin du nom. */}
-        </Typography>
+        </p>
         {/* Les étiquettes de l'astre, telles que le listing les justifie. */}
-        {badges.map((b) => <Chip key={b} size="small" variant="outlined" label={b} sx={{ height: 20, fontSize: 11 }} />)}
+        {badges.map((b) => <Chip key={b} size="small" variant="outlined" label={b} className="h-5 text-[11px]" />)}
         {/* La case d'affichage, seulement pour un astre de la scène autre que le Soleil (indice 0). */}
         {body && body.index !== 0 && (
           <Checkbox
             // Petite taille, sans marge.
-            size="small" sx={{ p: 0.25 }}
+            size="small" className="p-0.5"
             // Cochée quand l'astre n'est pas enlevé.
             checked={!body.hidden}
             // Au changement : affiche ou enlève l'astre.
@@ -142,7 +144,7 @@ export function CatalogueAstres({
           />
         )}
       {/* Fin de la ligne. */}
-      </Stack>
+      </div>
     // Fin du rendu.
     );
   // Fin de Line.
@@ -162,40 +164,40 @@ export function CatalogueAstres({
       {/* Tant que le listing n'est pas arrivé et qu'il n'y a pas d'erreur : la roue de chargement (début). */}
       {!listing && !error && (
         // Ligne centrée.
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', justifyContent: 'center', py: 2 }}>
+        <div className="flex flex-row gap-2 items-center justify-center py-4">
           {/* La roue. */}
           <CircularProgress size={16} />
           {/* Le texte d'attente. */}
-          <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>Lecture du listing des astres…</Typography>
+          <p className="t-body1 text-[13px] text-soft">Lecture du listing des astres…</p>
         {/* Fin de la ligne. */}
-        </Stack>
+        </div>
       )}
       {/* En cas d'échec : le message et un bouton de relecture (début). */}
       {error && (
         // Ligne du message.
-        <Stack direction="row" spacing={1} sx={{ alignItems: 'center', px: 1.5, py: 1.5 }}>
+        <div className="flex flex-row gap-2 items-center px-3 py-3">
           {/* Le message, qui cite la cause. */}
-          <Typography sx={{ flex: 1, fontSize: 13, color: 'text.secondary' }}>Listing des astres indisponible : {error}</Typography>
+          <p className="t-body1 flex-1 text-[13px] text-soft">Listing des astres indisponible : {error}</p>
           {/* La pastille de relecture : incrémente le compteur, ce qui redemande le listing. */}
           <Chip size="small" variant="outlined" clickable label="Réessayer" onClick={() => setReload((n) => n + 1)} />
         {/* Fin de la ligne. */}
-        </Stack>
+        </div>
       )}
       {/* Le listing reçu : une ligne par planète, suivie de ses satellites naturels en retrait (début). */}
       {listing?.planets.map((planet) => (
         // Un fragment par planète, repéré par son nom.
-        <Box key={planet.name}>
+        <div key={planet.name}>
           {/* La planète : sa couleur, son nom, et l'étiquette « naine » quand le serveur la marque ainsi. */}
           <Line name={planet.name} color={planet.color} badges={planet.dwarf ? ['naine'] : []} indent={false} />
           {/* Ses satellites naturels, en retrait. */}
           {planet.satellites.map((sat) => <Line key={sat.name} name={sat.name} color={sat.color} badges={[]} indent />)}
         {/* Fin de la planète. */}
-        </Box>
+        </div>
       ))}
       {/* Fin du listing. */}
-      <Box sx={{ mt: 2, pt: 1.5, borderTop: 1, borderColor: 'divider' }}>
-        <Typography sx={{ px: 1.5, pb: 1, fontSize: 14, fontWeight: 600 }}>Systèmes extrasolaires</Typography>
-        <Stack direction="row" spacing={1} sx={{ px: 1.5, pb: 1 }}>
+      <div className="mt-4 pt-3 border-t border-line">
+        <p className="t-body1 px-3 pb-2 text-[14px] font-semibold">Systèmes extrasolaires</p>
+        <div className="flex flex-row gap-2 px-3 pb-2">
           <TextField
             size="small" fullWidth value={interstellarQuery}
             onChange={(event) => setInterstellarQuery(event.target.value)}
@@ -206,20 +208,20 @@ export function CatalogueAstres({
           <Button size="small" variant="contained" disabled={interstellarBusy || !interstellarQuery.trim()} onClick={loadInterstellar}>
             {interstellarBusy ? <CircularProgress size={18} color="inherit" /> : 'Rechercher'}
           </Button>
-        </Stack>
-        {interstellarError && <Alert severity="warning" sx={{ mx: 1.5, mb: 1, fontSize: 12 }}>{interstellarError}</Alert>}
+        </div>
+        {interstellarError && <Alert severity="warning" className="mx-3 mb-2 text-[12px]">{interstellarError}</Alert>}
         {interstellarSystems.map((system) => (
-          <Stack key={system.id} direction="row" spacing={1} sx={{ alignItems: 'center', px: 1.5, py: 0.75 }}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: 13, fontWeight: 500 }}>{system.name}</Typography>
-              <Typography sx={{ fontSize: 11, color: 'text.secondary' }}>
+          <div key={system.id} className="flex flex-row gap-2 items-center px-3 py-1.5">
+            <div className="flex-1 min-w-0">
+              <p className="t-body1 text-[13px] font-medium">{system.name}</p>
+              <p className="t-body1 text-[11px] text-soft">
                 {system.distanceLightYears?.toFixed(2)} années-lumière · {system.state || 'chargement'}
-              </Typography>
-            </Box>
+              </p>
+            </div>
             <Chip size="small" clickable color="primary" label="Voir" onClick={() => focusInterstellar(system.id)} />
-          </Stack>
+          </div>
         ))}
-      </Box>
+      </div>
     {/* Fin du groupe. */}
     </Group>
   // Fin du rendu.

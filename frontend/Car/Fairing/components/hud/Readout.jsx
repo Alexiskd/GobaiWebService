@@ -1,5 +1,3 @@
-// Importe de MUI Stack (pile) et Typography (texte).
-import { Stack, Typography } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
@@ -23,15 +21,15 @@ export function Readout({ hud }) {
   // Début du rendu.
   return (
     // Ligne horizontale, non annoncée par les lecteurs d'écran, sur une seule ligne.
-    <Stack direction="row" spacing={1.5} aria-live="off" sx={{ px: 1, alignItems: 'center', whiteSpace: 'nowrap', minWidth: 0 }}>
+    <div aria-live="off" className="flex flex-row gap-3 px-2 items-center whitespace-nowrap min-w-0">
       {/* Le texte du zoom, coupé par des points de suspension s'il déborde, en chiffres de largeur fixe. */}
-      <Typography variant="caption" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', fontVariantNumeric: 'tabular-nums' }}>{zoomText}</Typography>
+      <span className="t-caption overflow-hidden text-ellipsis tabular-nums">{zoomText}</span>
       {/* Le niveau d'échelle, s'il existe, avec une infobulle. */}
-      {scaleText && <Typography variant="caption" color="text.secondary" title="Niveau d’échelle de la vue" sx={{ flex: 'none' }}>{scaleText}</Typography>}
+      {scaleText && <span title="Niveau d’échelle de la vue" className="t-caption text-soft flex-none">{scaleText}</span>}
       {/* Le niveau de la carte, s'il est connu, hors mode compact. */}
-      {tileZoom !== null && !compact && <Typography variant="caption" color="text.secondary">carte niveau {tileZoom}</Typography>}
+      {tileZoom !== null && !compact && <span className="t-caption text-soft">carte niveau {tileZoom}</span>}
     {/* Fin de la ligne. */}
-    </Stack>
+    </div>
   // Fin du rendu.
   );
 // Fin de Readout.

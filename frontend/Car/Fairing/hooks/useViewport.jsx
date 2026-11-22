@@ -1,59 +1,40 @@
-// Importe useMediaQuery de MUI, qui indique si une requête média CSS est satisfaite.
-import { useMediaQuery } from '@mui/material';
-// Importe useMemo de React, pour mémoriser un résultat calculé.
+// Importe useMediaQuery du kit : vrai quand une requête média est satisfaite.
+import { useMediaQuery } from '@/Fairing/kit';
+// Importe useMemo, qui garde le même objet tant que rien ne change.
 import { useMemo } from 'react';
-// Importe QUERIES, la table des requêtes média de l'application.
+// Importe les requêtes média de l'interface.
 import { QUERIES } from '@/Fairing/theme/mediaQueries';
 
-// Catégories d’écran (voir `QUERIES`) :
-//  - xs  ≤ 480 px   : téléphone portrait
-//  - sm  ≤ 720 px   : grand téléphone / petite tablette  → mode « compact »
-//  - md  ≤ 1024 px  : tablette
-//  - lg  ≤ 1440 px  : ordinateur portable
-//  - xl  > 1440 px  : grand écran / TV
-// En mode compact : pas de glisser-déposer des panneaux, panneau d’infos en tiroir bas,
-// toutes les actions dans la feuille du bouton ⋯ (en haut à droite), qui monte du bas de l'écran, palette plein écran, sources repliables.
-
-/** Catégorie d'écran courante (MUI `useMediaQuery`) ; ne re-rend que lorsque la catégorie change. */
+/**
+ * Catégorie d'écran : taille (xs à xl), mode compact (téléphone, ou écran bas et tactile), tablette, pointeur
+ * tactile, écran bas, paysage. L'objet renvoyé ne change que lorsqu'une de ces valeurs change.
+ */
 // Déclare et exporte le crochet useViewport.
 export function useViewport() {
-  // Options de useMediaQuery : pas de rendu côté serveur, la valeur réelle est lue dès le premier rendu.
-  const opts = { noSsr: true };
-  // xs : vrai sur un téléphone en portrait.
-  const xs = useMediaQuery(QUERIES.xs, opts);
-  // sm : vrai sur un grand téléphone ou une petite tablette.
-  const sm = useMediaQuery(QUERIES.sm, opts);
-  // md : vrai sur une tablette.
-  const md = useMediaQuery(QUERIES.md, opts);
-  // lg : vrai sur un ordinateur portable.
-  const lg = useMediaQuery(QUERIES.lg, opts);
-  // coarse : vrai si le pointeur est imprécis (doigt).
-  const coarse = useMediaQuery(QUERIES.coarse, opts);
-  // short : vrai si l'écran est peu haut.
-  const short = useMediaQuery(QUERIES.short, opts);
-  // landscape : vrai si l'écran est en mode paysage.
-  const landscape = useMediaQuery(QUERIES.landscape, opts);
-  // Mémorise l'objet renvoyé : il ne change que si l'une des réponses change.
+  // Les largeurs.
+  const xs = useMediaQuery(QUERIES.xs);
+  const sm = useMediaQuery(QUERIES.sm);
+  const md = useMediaQuery(QUERIES.md);
+  const lg = useMediaQuery(QUERIES.lg);
+  // Pointeur tactile, écran bas, paysage.
+  const coarse = useMediaQuery(QUERIES.coarse);
+  const short = useMediaQuery(QUERIES.short);
+  const landscape = useMediaQuery(QUERIES.landscape);
+  // Calcul mémorisé de la catégorie.
   return useMemo(() => {
-    // Catégorie d'écran : la première requête satisfaite, de la plus petite à la plus grande ; « xl » sinon.
+    // Taille : la première requête satisfaite.
     const size = xs ? 'xs' : sm ? 'sm' : md ? 'md' : lg ? 'lg' : 'xl';
-    // Début de l'objet renvoyé.
+    // Renvoie la catégorie.
     return {
-      // La catégorie d'écran.
       size,
-      // Mode compact : écran de taille sm (ou moins), ou écran peu haut et tactile.
+      // Compact : petit écran, ou écran bas et tactile (téléphone en paysage).
       compact: sm || (short && coarse),
-      // Vrai si la catégorie est celle des tablettes.
       tablet: size === 'md',
-      // Pointeur imprécis (doigt).
       coarse,
-      // Écran peu haut.
       short,
-      // Écran en paysage.
       landscape,
-    // Fin de l'objet renvoyé.
     };
-  // Fin du calcul mémorisé ; dépendances : toutes les réponses des requêtes média.
+  // Fin du calcul ; dépendances : les sept requêtes.
   }, [xs, sm, md, lg, coarse, short, landscape]);
 // Fin de useViewport.
 }

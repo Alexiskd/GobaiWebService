@@ -1,6 +1,9 @@
 // Fenêtre de l'assistant : connexion avec la clé de l'utilisateur (Claude ou Mistral), puis conversation qui pilote l'interface.
 import { useEffect, useRef, useState } from 'react';
-import { Box, ButtonBase, Chip, CircularProgress, InputBase, Paper, Popper, Stack, TextField, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Chip, CircularProgress, InputBase, Popper, TextField } from '@/Fairing/kit';
+// Importe les conversions des valeurs de style calculées au rendu.
+import { sz } from '@/Fairing/kit/sx';
 // Session de l'assistant (fournisseur et clé, gardés dans ce navigateur seulement).
 import { PROVIDERS, clearSession, isVerified, markVerified } from '@/Engine/shared/lib/app/assistantSession';
 import { useAssistantSession } from '@/Fairing/hooks/useAssistantSession';
@@ -10,11 +13,11 @@ import { askAssistant, connectAssistant } from '@/Computing/api/assistant';
 import { collectInventory } from '@/Engine/shared/lib/app/domInventory';
 import { useViewport } from '@/Fairing/hooks/useViewport';
 import { RAIL_W, STRIP_H, TITLE_H, edge } from '@/Fairing/theme/layout';
-import { MQ, safe } from '@/Fairing/theme/mediaQueries';
+import { safe } from '@/Fairing/theme/mediaQueries';
 import { AutoAwesomeIcon, CheckIcon, CloseIcon, LogoutIcon, SendIcon } from '../../ui/icons.jsx';
 import { BillingScreen, LoginScreen, MobileLoginBar } from './AssistantGate.jsx';
 import { ProviderLogo } from './ProviderLogo.jsx';
-import { C, SANS, SERIF, WRAP, visuallyHidden } from './assistantTheme.js';
+import { C } from './assistantTheme.js';
 
 /** Questions proposées : un appui les envoie dans la conversation. */
 const SUGGESTIONS = [
@@ -33,50 +36,32 @@ const KEY_REFUSED = 'Votre clé a été refusée (invalide ou révoquée). Recon
 
 /** Un message : celui de l'utilisateur dans une pastille grise à droite, la réponse à nu, en empattements. */
 const Bubble = ({ from, error, done, children }) => (
-  <Box
-    sx={from === 'user'
-      ? { alignSelf: 'flex-end', maxWidth: '85%', minWidth: 0, flex: 'none', px: 1.5, py: 0.9, borderRadius: '14px', bgcolor: C.row }
-      : { alignSelf: 'stretch', minWidth: 0, flex: 'none', px: 0.5, py: 0.25, ...(error ? { pl: 1.25, borderLeft: `2px solid ${C.error}` } : {}) }}
+  <div
+    className={`${from === 'user' ? 'self-end max-w-[85%] min-w-0 flex-none px-3 py-[7.2px] rounded-[14px] bg-[#30302e]' : `self-stretch min-w-0 flex-none px-1 py-0.5 ${error ? 'pl-2.5' : ''}`}`} style={{ ...(from === 'user' ? {  } : { ...(error ? { borderLeft: `2px solid ${C.error}` } : {  }) }) }}
   >
-    <Typography component="span" sx={visuallyHidden}>{from === 'user' ? 'Vous : ' : 'Assistant : '}</Typography>
+    <span className="sr-only">{from === 'user' ? 'Vous : ' : 'Assistant : '}</span>
     {children && (
-      <Typography lang="fr" sx={{ ...WRAP, whiteSpace: 'pre-wrap', color: error ? C.error : C.text, fontFamily: from === 'user' ? SANS : SERIF, fontSize: from === 'user' ? 14 : 15, lineHeight: 1.5 }}>
+      <p lang="fr" className={`t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] whitespace-pre-wrap ${error ? 'text-[#e5867a]' : 'text-[#eceae3]'} ${from === 'user' ? 'font-sys' : 'font-serif'} ${from === 'user' ? 'text-[14px]' : 'text-[15px]'} leading-[1.5]`}>
         {children}
-      </Typography>
+      </p>
     )}
     {done?.length > 0 && (
-      <Stack direction="row" useFlexGap spacing={0.5} sx={{ flexWrap: 'wrap', mt: children ? 0.75 : 0 }} aria-label="Actions effectuées">
-        {done.map((label, i) => <Chip key={i} size="small" variant="outlined" icon={<CheckIcon />} label={label} sx={chipWrap} />)}
-      </Stack>
+      <div className={`flex flex-row gap-1 flex-wrap ${children ? 'mt-1.5' : 'mt-0'}`} aria-label="Actions effectuées">
+        {done.map((label, i) => <Chip key={i} size="small" variant="outlined" icon={<CheckIcon />} label={label} className="text-[#a3a097] border-[#3b3a37] font-sys h-auto min-h-6 max-w-full items-start py-0.5 [&_.g-chip-label]:whitespace-normal [&_.g-chip-label]:[overflow-wrap:anywhere] [&_.g-chip-label]:leading-[1.35] [&_.g-chip-label]:py-0.5 [&_.g-chip-icon]:mt-[3px]" />)}
+      </div>
     )}
-  </Box>
+  </div>
 );
-
-/** Étiquette dont le texte passe sur plusieurs lignes : hauteur libre, libellé coupé proprement, coche alignée en haut. */
-const chipWrap = {
-  color: C.muted, borderColor: C.border, fontFamily: SANS, height: 'auto', minHeight: 24, maxWidth: '100%', alignItems: 'flex-start', py: 0.25,
-  '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.35, py: '2px' },
-  '& .MuiChip-icon': { mt: '3px' },
-};
 
 /** Ligne cliquable, comme une entrée de menu : texte à gauche, fond gris au survol et au clavier. */
 const Row = ({ children, ...props }) => (
-  <ButtonBase
+  <button type="button"
     {...props}
-    sx={{
-      justifyContent: 'flex-start', textAlign: 'left', width: '100%', px: 1.25, py: 0.8, borderRadius: '8px',
-      display: 'flex', flex: 'none', minWidth: 0, whiteSpace: 'normal', ...WRAP,
-      color: C.text, fontFamily: SANS, fontSize: 14, lineHeight: 1.35,
-      '&:hover, &.Mui-focusVisible': { bgcolor: C.row },
-      '&.Mui-disabled': { color: C.muted },
-    }}
+    className="g-base justify-start text-left w-full px-2.5 py-[6.4px] rounded-[8px] flex flex-none min-w-0 whitespace-normal min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] text-[#eceae3] font-sys text-[14px] leading-[1.35] hover:bg-[#30302e] focus-visible:bg-[#30302e] disabled:text-[#a3a097]"
   >
     {children}
-  </ButtonBase>
+  </button>
 );
-
-/** Petit bouton carré de l'en-tête (fermer) : 28 px, 44 px sur écran tactile. */
-const headerButton = { flex: 'none', width: 28, height: 28, borderRadius: '8px', color: C.muted, '&:hover, &.Mui-focusVisible': { bgcolor: C.row, color: C.text }, [MQ.coarse]: { width: 44, height: 44 } };
 
 /**
  * Bandeau du fournisseur connecté, sous l'en-tête : logo, « Connecté à Claude », modèle, et « Se déconnecter ».
@@ -85,18 +70,18 @@ const headerButton = { flex: 'none', width: 28, height: 28, borderRadius: '8px',
 function ConnectedBar({ session, onLogout }) {
   const p = PROVIDERS[session.provider];
   return (
-    <Stack direction="row" useFlexGap spacing={1} sx={{ flex: 'none', alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5, px: 1.5, py: 0.75, borderBottom: `1px solid ${C.border}`, bgcolor: C.field }}>
-      <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', flex: '1 1 140px', minWidth: 0 }}>
+    <div className="flex flex-row gap-2 flex-none items-center flex-wrap gap-y-1 px-3 py-1.5 bg-[#262624]" style={{ borderBottom: `1px solid ${C.border}` }}>
+      <div className="flex flex-row gap-1.5 items-center flex-[1_1_140px] min-w-0">
         <ProviderLogo provider={session.provider} size={18} />
-        <Typography sx={{ ...WRAP, fontFamily: SANS, fontSize: 13, lineHeight: 1.35, color: C.text }}>
+        <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13px] leading-[1.35] text-[#eceae3]">
           Connecté à {p.label}
-          {session.model && <Box component="span" sx={{ display: 'block', fontSize: 11.5, color: C.muted }}>{session.model}</Box>}
-        </Typography>
-      </Stack>
-      <ButtonBase onClick={onLogout} sx={{ flex: 'none', display: 'flex', gap: 0.5, alignItems: 'center', minHeight: 32, px: 1, borderRadius: '8px', color: C.muted, fontFamily: SANS, fontSize: 13, '&:hover, &.Mui-focusVisible': { bgcolor: C.row, color: C.text }, [MQ.coarse]: { minHeight: 44 } }}>
-        <LogoutIcon sx={{ fontSize: 16 }} /> Se déconnecter
-      </ButtonBase>
-    </Stack>
+          {session.model && <span className="block text-[11.5px] text-[#a3a097]">{session.model}</span>}
+        </p>
+      </div>
+      <button type="button" onClick={onLogout} className="g-base flex-none flex gap-1 items-center min-h-8 px-2 rounded-[8px] text-[#a3a097] font-sys text-[13px] hover:bg-[#30302e] focus-visible:bg-[#30302e] hover:text-[#eceae3] focus-visible:text-[#eceae3] pointer-coarse:min-h-11">
+        <LogoutIcon className="text-[16px]" /> Se déconnecter
+      </button>
+    </div>
   );
 }
 
@@ -111,45 +96,32 @@ function MobileBar({ session, text, setText, busy, send, error, onLogout }) {
   const canSend = !busy && Boolean(text.trim());
   const p = PROVIDERS[session.provider];
   return (
-    <Box
-      component="section"
+    <section
       aria-label="Assistant"
       data-assistant-panel=""
-      sx={{
-        position: 'relative', display: 'flex', flexDirection: 'column', gap: 0.75,
-        pl: `calc(${safe('left')} + 10px)`, pr: `calc(${safe('right')} + 10px)`, '@media (min-width: 700px)': { pl: 0, pr: `calc(${safe('right')} + 8px)` },
-        pointerEvents: 'none',
-      }}
+      className="relative flex flex-col gap-1.5 pointer-events-none pl-[calc(var(--safe-left,env(safe-area-inset-left,0px))_+_10px)] pr-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_10px)] min-[700px]:pl-0 min-[700px]:pr-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_8px)]"
     >
       {(account || error) && (
-        <Box sx={{ pointerEvents: 'auto', width: '100%', maxWidth: 440, mx: 'auto', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 0.5, px: 1.5, py: 1, borderRadius: '16px', bgcolor: 'rgba(31, 30, 29, 0.94)', border: `1px solid ${C.border}` }}>
-          {error && <Typography role="alert" sx={{ ...WRAP, fontFamily: SANS, fontSize: 13.5, lineHeight: 1.4, color: C.error }}>{error}</Typography>}
+        <div className="pointer-events-auto w-full max-w-110 mx-auto box-border flex flex-col gap-1 px-3 py-2 rounded-[16px] bg-[color:rgba(31,30,29,0.94)]" style={{ border: `1px solid ${C.border}` }}>
+          {error && <p role="alert" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13.5px] leading-[1.4] text-[#e5867a]">{error}</p>}
           {account && (
-            <Stack direction="row" useFlexGap spacing={1} sx={{ alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5 }}>
-              <Typography sx={{ ...WRAP, flex: '1 1 120px', fontFamily: SANS, fontSize: 13.5, color: C.text }}>Connecté à {p.label}</Typography>
-              <ButtonBase onClick={onLogout} sx={{ flex: 'none', display: 'flex', gap: 0.5, minHeight: 32, px: 1.25, borderRadius: '12px', border: `1px solid ${C.border}`, color: C.text, fontFamily: SANS, fontSize: 14 }}>
-                <LogoutIcon sx={{ fontSize: 17 }} /> Se déconnecter
-              </ButtonBase>
-            </Stack>
+            <div className="flex flex-row gap-2 items-center flex-wrap gap-y-1">
+              <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] flex-[1_1_120px] font-sys text-[13.5px] text-[#eceae3]">Connecté à {p.label}</p>
+              <button type="button" onClick={onLogout} className="g-base flex-none flex gap-1 min-h-8 px-2.5 rounded-[12px] text-[#eceae3] font-sys text-[14px]" style={{ border: `1px solid ${C.border}` }}>
+                <LogoutIcon className="text-[17px]" /> Se déconnecter
+              </button>
+            </div>
           )}
-        </Box>
+        </div>
       )}
-      <Box
-        component="form"
+      <form
         onSubmit={(e) => { e.preventDefault(); if (canSend) send(); }}
-        sx={{
-          pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: 0.5,
-          width: '100%', maxWidth: 440, mx: 'auto', boxSizing: 'border-box',
-          minHeight: 40, pl: 0.4, pr: 0.5, py: 0.4,
-          borderRadius: '20px', fontFamily: SANS, color: C.text,
-          bgcolor: 'rgba(31, 30, 29, 0.88)', backdropFilter: 'blur(14px) saturate(140%)', WebkitBackdropFilter: 'blur(14px) saturate(140%)',
-          border: `1px solid ${focused ? C.muted : C.border}`, boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)', transition: 'border-color 120ms',
-        }}
+        className="pointer-events-auto flex items-center gap-1 w-full max-w-110 mx-auto box-border min-h-10 pl-[3.2px] pr-1 py-[3.2px] rounded-[20px] font-sys text-[#eceae3] bg-[color:rgba(31,30,29,0.88)] [box-shadow:0_4px_16px_rgba(0,0,0,0.4)] [transition:border-color_120ms]" style={{ border: `1px solid ${focused ? C.muted : C.border}` }}
       >
         {/* Le logo du fournisseur : cible de 44 px, ouvre la ligne du compte. */}
-        <ButtonBase type="button" onClick={() => setAccount((v) => !v)} aria-expanded={account} aria-label={`Compte ${p.label}`} sx={{ flex: 'none', width: 32, height: 32, borderRadius: '50%' }}>
+        <button type="button" onClick={() => setAccount((v) => !v)} aria-expanded={account} aria-label={`Compte ${p.label}`} className="g-base flex-none w-8 h-8 rounded-full">
           <ProviderLogo provider={session.provider} size={18} />
-        </ButtonBase>
+        </button>
         {/* Le champ : une à trois lignes, 16 px pour que Safari ne zoome pas au focus. */}
         <InputBase
           multiline maxRows={3} fullWidth
@@ -161,26 +133,18 @@ function MobileBar({ session, text, setText, busy, send, error, onLogout }) {
           placeholder={busy ? 'L’assistant répond…' : `Demander à ${p.label}…`}
           enterKeyHint="send"
           inputProps={{ 'aria-label': 'Message pour l’assistant', maxLength: MAX_CHARS, autoCapitalize: 'sentences' }}
-          sx={{
-            flex: '1 1 auto', minWidth: 0, color: C.text, fontFamily: SANS, fontSize: 16, lineHeight: 1.35, py: 0,
-            '& textarea': { overflowWrap: 'anywhere', p: 0 },
-            '& textarea::placeholder': { color: C.muted, opacity: 1 },
-          }}
+          className="flex-auto min-w-0 text-[#eceae3] font-sys text-[16px] leading-[1.35] py-0 [&_textarea]:[overflow-wrap:anywhere] [&_textarea]:p-0 [&_textarea::placeholder]:text-[#a3a097] [&_textarea::placeholder]:opacity-100"
         />
-        <ButtonBase
+        <button
           type="submit"
           disabled={!canSend}
           aria-label={busy ? 'L’assistant répond' : 'Envoyer'}
-          sx={{
-            flex: 'none', width: 32, height: 32, borderRadius: '50%',
-            bgcolor: canSend ? C.accent : C.row, color: canSend ? '#1f1e1d' : C.muted,
-            transition: 'background-color 120ms', '&:active': { transform: 'scale(0.94)' },
-          }}
+          className={`g-base flex-none w-8 h-8 rounded-full ${canSend ? 'bg-[#d97757]' : 'bg-[#30302e]'} ${canSend ? 'text-[#1f1e1d]' : 'text-[#a3a097]'} [transition:background-color_120ms] active:[transform:scale(0.94)]`}
         >
-          {busy ? <CircularProgress size={16} sx={{ color: C.accent }} /> : <SendIcon sx={{ fontSize: 17 }} />}
-        </ButtonBase>
-      </Box>
-    </Box>
+          {busy ? <CircularProgress size={16} className="text-[#d97757]" /> : <SendIcon className="text-[17px]" />}
+        </button>
+      </form>
+    </section>
   );
 }
 
@@ -325,9 +289,9 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
   const shift = shifted ? (compact ? `${STRIP_H}px` : `(${RAIL_W} + 12px)`) : '0px';
   const placed = hud
     ? (compact
-      ? { position: 'fixed', left: 0, right: 0, bottom: `calc(${shift} + ${safe('bottom')})`, pb: shifted ? 0 : safe('bottom'), zIndex: (t) => t.zIndex.toolbar - 5 }
-      : { position: 'fixed', left: `calc(${edge('left')} + ${shift})`, top: '50%', transform: 'translateY(-50%)', zIndex: (t) => t.zIndex.hud })
-    : (anchored ? {} : { position: 'fixed', left: edge('left', 8), bottom: `calc(${barH}px + ${safe('bottom')} + 16px)`, zIndex: (t) => t.zIndex.toolbar + 5 });
+      ? { position: 'fixed', left: 0, right: 0, bottom: `calc(${shift} + ${safe('bottom')})`, paddingBottom: shifted ? 0 : safe('bottom'), zIndex: 35 }
+      : { position: 'fixed', left: `calc(${edge('left')} + ${shift})`, top: '50%', transform: 'translateY(-50%)', zIndex: 20 })
+    : (anchored ? {} : { position: 'fixed', left: edge('left', 8), bottom: `calc(${barH}px + ${safe('bottom')} + 16px)`, zIndex: 45 });
 
   // Ce que montre la fenêtre : connexion, facturation, vérification en cours, ou conversation.
   const gate = billing ? 'billing' : !session ? 'login' : checking ? 'checking' : null;
@@ -367,85 +331,74 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       onBilling={(b) => { setLoginError(''); setBilling(b); }}
     />
   ) : gate === 'checking' ? (
-    <Stack direction="row" spacing={1} role="status" sx={{ alignItems: 'center', px: 1.5, py: 2 }}>
-      <CircularProgress size={16} sx={{ color: C.accent }} />
-      <Typography sx={{ ...WRAP, fontFamily: SANS, fontSize: 14, color: C.muted }}>Vérification de votre clé {PROVIDERS[session.provider]?.label}…</Typography>
-    </Stack>
+    <div role="status" className="flex flex-row gap-2 items-center px-3 py-4">
+      <CircularProgress size={16} className="text-[#d97757]" />
+      <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[14px] text-[#a3a097]">Vérification de votre clé {PROVIDERS[session.provider]?.label}…</p>
+    </div>
   ) : null;
 
   const panel = (
-    <Paper
-      component="section"
-      elevation={8}
+    <section
       aria-label="Assistant"
       data-assistant-panel=""
-      sx={{
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        bgcolor: C.panel, color: C.text, backgroundImage: 'none', border: `1px solid ${C.border}`, borderRadius: '14px', fontFamily: SANS,
-        // Largeur : sur téléphone (dock), toute la largeur utile, 560 px au plus ; celle du rail en position « hud » ; 340 px sinon.
-        width: bare && hud ? '100%' : compact ? 'min(360px, calc(100vw - 16px))' : hud ? RAIL_W : 340,
-        maxWidth: bare && hud ? 560 : 'calc(100vw - 16px)', minWidth: 0, boxSizing: 'border-box',
-        ...(bare && hud ? { mx: 'auto' } : {}),
-        maxHeight: compact ? `min(520px, 62dvh, calc(100dvh - ${reserved}px - 24px))` : `min(520px, calc(100dvh - ${reserved}px - 96px))`,
-        ...(bare && hud ? {} : placed),
-      }}
+      className={`g-paper g-elev flex flex-col overflow-hidden bg-[#1f1e1d] text-[#eceae3] [background-image:none] rounded-[14px] font-sys ${bare && hud ? 'max-w-140' : 'max-w-[calc(100vw_-_16px)]'} min-w-0 box-border ${bare && hud ? 'mx-auto' : ''}`} style={{ border: `1px solid ${C.border}`, width: sz(bare && hud ? '100%' : compact ? 'min(360px, calc(100vw - 16px))' : hud ? RAIL_W : 340), maxHeight: sz(compact ? `min(520px, 62dvh, calc(100dvh - ${reserved}px - 24px))` : `min(520px, calc(100dvh - ${reserved}px - 96px))`), ...(bare && hud ? null : placed) }}
     >
       {/* En-tête : logo du fournisseur connecté (l'astre filant sinon), titre, Astres, fermer. Passe à la ligne au besoin. */}
-      <Stack direction="row" useFlexGap spacing={1} sx={{ alignItems: 'center', flex: 'none', flexWrap: 'wrap', rowGap: 0.75, px: 1.5, py: 1.1, borderBottom: `1px solid ${C.border}` }}>
-        {session && !gate ? <ProviderLogo provider={session.provider} size={20} /> : <AutoAwesomeIcon sx={{ width: 20, height: 20, flex: 'none', color: C.accent }} />}
-        <Typography component="h2" noWrap sx={{ flex: '1 1 auto', minWidth: 0, fontFamily: SERIF, fontSize: 19, lineHeight: 1.2, color: C.text }}>Assistant</Typography>
+      <div className="flex flex-row gap-2 items-center flex-none flex-wrap gap-y-1.5 px-3 py-[8.8px]" style={{ borderBottom: `1px solid ${C.border}` }}>
+        {session && !gate ? <ProviderLogo provider={session.provider} size={20} /> : <AutoAwesomeIcon className="w-5 h-5 flex-none text-[#d97757]" />}
+        <h2 className="t-body1 truncate flex-auto min-w-0 font-serif text-[19px] leading-[1.2] text-[#eceae3]">Assistant</h2>
         {onNavigator && (
           <Chip
             size="small" variant="outlined" clickable label="Astres" onClick={onNavigator} title="Arborescence des astres"
-            sx={{ flex: 'none', color: C.muted, borderColor: C.border, fontFamily: SANS, '&:hover': { bgcolor: C.row, color: C.text }, [MQ.coarse]: { height: 44, borderRadius: '22px' } }}
+            className="flex-none text-[#a3a097] border-[#3b3a37] font-sys hover:bg-[#30302e] hover:text-[#eceae3] pointer-coarse:h-11 pointer-coarse:rounded-[22px]"
           />
         )}
-        <ButtonBase onClick={onClose} aria-label="Fermer" sx={headerButton}>
-          <CloseIcon sx={{ fontSize: 16 }} />
-        </ButtonBase>
-      </Stack>
+        <button type="button" onClick={onClose} aria-label="Fermer" className="g-base flex-none w-7 h-7 rounded-[8px] text-[#a3a097] hover:bg-[#30302e] focus-visible:bg-[#30302e] hover:text-[#eceae3] focus-visible:text-[#eceae3] pointer-coarse:w-11 pointer-coarse:h-11">
+          <CloseIcon className="text-[16px]" />
+        </button>
+      </div>
 
       {gate ? (
         // Connexion, facturation ou vérification : à la place de la conversation, qui reste masquée. Défile si besoin.
-        <Box sx={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain' }}>{gateBody}</Box>
+        <div className="flex-auto min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">{gateBody}</div>
       ) : (
         <>
           <ConnectedBar session={session} onLogout={() => logout()} />
           {/* Zone de conversation : seule partie qui rétrécit quand la place manque ; elle défile. */}
-          <Box sx={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 1, p: 1.25, minHeight: 0, overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain' }}>
-            <Stack spacing={1} sx={{ flex: 'none', minWidth: 0 }} aria-live="polite">
+          <div className="flex-auto flex flex-col gap-2 p-2.5 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+            <div className="flex flex-col gap-2 flex-none min-w-0" aria-live="polite">
               {messages.length === 0 ? (
-                <Box sx={{ textAlign: 'center', px: 1, py: 1.5 }}>
-                  <Typography sx={{ ...WRAP, fontFamily: SERIF, fontSize: 18, lineHeight: 1.3, color: C.text }}>Posez une question ou demandez une action</Typography>
-                  <Typography sx={{ ...WRAP, mt: 0.75, fontFamily: SANS, fontSize: 13, lineHeight: 1.45, color: C.muted }}>
+                <div className="text-center px-2 py-3">
+                  <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-serif text-[18px] leading-[1.3] text-[#eceae3]">Posez une question ou demandez une action</p>
+                  <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] mt-1.5 font-sys text-[13px] leading-[1.45] text-[#a3a097]">
                     Les réponses sont générées par une IA et peuvent contenir des erreurs.
-                  </Typography>
-                </Box>
+                  </p>
+                </div>
               ) : (
                 messages.map((m, i) => <Bubble key={i} from={m.from} error={m.error} done={m.done}>{m.text}</Bubble>)
               )}
               {busy && (
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', flex: 'none', alignSelf: 'flex-start', px: 1 }}>
-                  <CircularProgress size={14} sx={{ color: C.accent }} />
-                  <Typography sx={{ fontFamily: SANS, fontSize: 13, color: C.muted }}>L’assistant répond…</Typography>
-                </Stack>
+                <div className="flex flex-row gap-2 items-center flex-none self-start px-2">
+                  <CircularProgress size={14} className="text-[#d97757]" />
+                  <p className="t-body1 font-sys text-[13px] text-[#a3a097]">L’assistant répond…</p>
+                </div>
               )}
-              <Box ref={endRef} />
-            </Stack>
+              <div ref={endRef} />
+            </div>
             {messages.length === 0 && (
-              <Stack spacing={0.25} sx={{ flex: 'none' }}>
+              <div className="flex flex-col gap-0.5 flex-none">
                 {SUGGESTIONS.map((s) => <Row key={s} disabled={busy} onClick={() => send(s)}>{s}</Row>)}
-              </Stack>
+              </div>
             )}
             {messages.length === 0 && (
-              <Typography sx={{ ...WRAP, flex: 'none', fontFamily: SANS, fontSize: 11.5, lineHeight: 1.45, color: C.muted }}>
+              <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] flex-none font-sys text-[11.5px] leading-[1.45] text-[#a3a097]">
                 Vos messages sont envoyés à l’API {PROVIDERS[session.provider].label} avec votre clé, via le serveur de Gobai Space qui ne la garde pas. N’y mettez pas d’informations personnelles.
-              </Typography>
+              </p>
             )}
-          </Box>
+          </div>
           {/* Zone de saisie. */}
-          <Box sx={{ flex: 'none', px: 1.25, py: 1, borderTop: `1px solid ${C.border}` }}>
-            <Stack component="form" direction="row" spacing={1} onSubmit={(e) => { e.preventDefault(); send(); }} sx={{ alignItems: 'flex-end' }}>
+          <div className="flex-none px-2.5 py-2" style={{ borderTop: `1px solid ${C.border}` }}>
+            <form onSubmit={(e) => { e.preventDefault(); send(); }} className="flex flex-row gap-2 items-end">
               <TextField
                 size="small" fullWidth multiline maxRows={4}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); send(); } }}
@@ -453,45 +406,30 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
                 onChange={(e) => setText(e.target.value)}
                 placeholder={`Demander à ${PROVIDERS[session.provider].label}…`}
                 slotProps={{ htmlInput: { 'aria-label': 'Message pour l’assistant', maxLength: MAX_CHARS } }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    bgcolor: C.field, color: C.text, borderRadius: '12px', fontFamily: SANS, fontSize: compact ? 16 : 14, lineHeight: 1.4, py: '9px',
-                    '& fieldset': { borderColor: C.border },
-                    '&:hover fieldset': { borderColor: C.muted },
-                    '&.Mui-focused fieldset': { borderColor: C.muted, borderWidth: 1 },
-                  },
-                  '& textarea::placeholder': { color: C.muted, opacity: 1 },
-                  '& textarea': { overflowWrap: 'anywhere' },
-                  minWidth: 0,
-                }}
+                className={`min-w-0 font-sys leading-[1.4] ${compact ? 'text-[16px]' : 'text-[14px]'} [&_.g-field-box]:bg-[#262624] [&_.g-field-box]:border-[#3b3a37] [&_.g-field-box]:rounded-[12px] [&_.g-field-box:hover]:border-[#a3a097] [&_.g-field-box:focus-within]:border-[#a3a097] [&_.g-field-box:focus-within]:shadow-none [&_textarea]:text-[#eceae3] [&_textarea]:py-[9px] [&_textarea]:[overflow-wrap:anywhere] [&_textarea::placeholder]:text-[#a3a097] [&_textarea::placeholder]:opacity-100`}
               />
-              <ButtonBase
+              <button
                 type="submit"
                 disabled={busy || !text.trim()}
                 aria-label="Envoyer"
-                sx={{
-                  flex: 'none', width: 40, height: 40, borderRadius: '12px', bgcolor: C.accent, color: '#1f1e1d',
-                  '&:hover, &.Mui-focusVisible': { bgcolor: '#e08a6d' },
-                  '&.Mui-disabled': { bgcolor: C.row, color: C.muted },
-                  [MQ.coarse]: { width: 44, height: 44 },
-                }}
+                className="g-base flex-none w-10 h-10 rounded-[12px] bg-[#d97757] text-[#1f1e1d] hover:bg-[#e08a6d] focus-visible:bg-[#e08a6d] disabled:bg-[#30302e] disabled:text-[#a3a097] pointer-coarse:w-11 pointer-coarse:h-11"
               >
-                <SendIcon sx={{ fontSize: 20 }} />
-              </ButtonBase>
-            </Stack>
-          </Box>
+                <SendIcon className="text-[20px]" />
+              </button>
+            </form>
+          </div>
         </>
       )}
-    </Paper>
+    </section>
   );
 
   // Téléphone, facturation : la carte se pose dans le dock du bas, à la place de la barre de saisie.
   // Marges latérales écartées des bords et des zones de sécurité (encoche en paysage), comme la barre de saisie.
   if (bare && hud) {
     return (
-      <Box sx={{ position: 'relative', pl: `calc(${safe('left')} + 10px)`, pr: `calc(${safe('right')} + 10px)`, '@media (min-width: 700px)': { pl: 0, pr: `calc(${safe('right')} + 8px)` } }}>
+      <div className="relative pl-[calc(var(--safe-left,env(safe-area-inset-left,0px))_+_10px)] pr-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_10px)] min-[700px]:pl-0 min-[700px]:pr-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_8px)]">
         {panel}
-      </Box>
+      </div>
     );
   }
   if (!anchored) return panel;
@@ -500,8 +438,7 @@ export function Assistant({ open, anchorEl, onClose, onAction, onNavigator, plac
       open
       anchorEl={anchorEl}
       placement={compact ? 'bottom-end' : 'top-start'}
-      modifiers={[{ name: 'offset', options: { offset: [0, 10] } }, { name: 'flip', options: { padding: 8 } }, { name: 'preventOverflow', options: { padding: 8, altAxis: true, tether: false } }]}
-      sx={{ zIndex: (t) => t.zIndex.toolbar + 5 }}
+      className="z-[45]"
     >
       {panel}
     </Popper>

@@ -1,5 +1,3 @@
-// Importe les composants MUI utilisés ici.
-import { Box, Typography } from '@mui/material';
 // Importe le calcul des largeurs des tuiles (module sans JSX, testé à part).
 import { largeurs } from './factsLayout.js';
 
@@ -16,38 +14,32 @@ export function Facts({ items }) {
   // La largeur de chaque tuile, calculée une fois pour la liste.
   const large = largeurs(items);
   return (
-    <Box
-      component="dl"
-      sx={{ m: 0, display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 0.75 }}
+    <dl
+      className="m-0 grid grid-cols-2 gap-1.5"
     >
       {items.map((item, i) => (
-        <Box
+        <div
           key={item.term}
-          sx={{
-            minWidth: 0, px: 1.25, py: 1, borderRadius: 2,
-            border: 1, borderColor: 'divider', bgcolor: 'action.hover',
-            // Une caractéristique longue prend les deux colonnes ; une tuile seule sur sa ligne aussi.
-            gridColumn: large[i] ? '1 / -1' : undefined,
-          }}
+          className={`min-w-0 px-2.5 py-2 rounded-[16px] border border-line bg-hover ${large[i] ? 'col-[1_/_-1]' : ''}`}
         >
           {/* Le terme : petites capitales, couleur atténuée. */}
-          <Typography component="dt" sx={{ fontSize: 10.5, lineHeight: 1.3, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: 'text.secondary', overflowWrap: 'anywhere' }}>
+          <dt className="t-body1 text-[10.5px] leading-[1.3] font-bold tracking-[0.07em] uppercase text-soft [overflow-wrap:anywhere]">
             {item.term}
-          </Typography>
-          <Box component="dd" sx={{ m: 0, mt: 0.4 }}>
+          </dt>
+          <dd className="m-0 mt-[3.2px]">
             {/* La valeur : en gras, chiffres de même largeur pour que les valeurs en direct ne tremblent pas. */}
-            <Typography sx={{ fontSize: 14.5, lineHeight: 1.3, fontWeight: 600, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}>
+            <p className="t-body1 text-[14.5px] leading-[1.3] font-semibold tabular-nums [overflow-wrap:anywhere]">
               {item.value}
-            </Typography>
+            </p>
             {/* La note éventuelle, sous la valeur. */}
             {item.note && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, lineHeight: 1.35, overflowWrap: 'anywhere' }}>
+              <span className="t-caption text-soft block mt-0.5 leading-[1.35] [overflow-wrap:anywhere]">
                 {item.note}
-              </Typography>
+              </span>
             )}
-          </Box>
-        </Box>
+          </dd>
+        </div>
       ))}
-    </Box>
+    </dl>
   );
 }

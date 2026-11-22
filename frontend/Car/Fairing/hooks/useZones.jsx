@@ -32,7 +32,7 @@ export function setZone(name, px) {
   if (zones[name] === v) return;
   // Gardée.
   zones[name] = v;
-  // Variable CSS sur la page (lue par les sx des composants).
+  // Variable CSS sur la page (lue par les styles des composants).
   if (typeof document !== 'undefined') {
     // Nom de la variable : --hud-top, --hud-bottom, --dock-base.
     const css = name === 'base' ? '--dock-base' : `--hud-${name}`;

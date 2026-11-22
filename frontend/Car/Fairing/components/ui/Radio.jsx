@@ -1,7 +1,7 @@
 // Importe useState de React.
 import { useState } from 'react';
-// Importe de MUI Box, CircularProgress (roue de chargement), FormControlLabel, IconButton, Radio (renommé MuiRadio), Tooltip et Typography.
-import { Box, CircularProgress, FormControlLabel, IconButton, Radio as MuiRadio, Tooltip, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { CircularProgress, FormControlLabel, IconButton, Radio as RadioInput, Tooltip } from '@/Fairing/kit';
 // Importe le téléchargement d'une couche et le calcul du nom du fichier.
 import { downloadLayer, layerFileName } from '@/Engine/AstreSolideEngine/layerDownload';
 // Importe l'icône de téléchargement.
@@ -33,7 +33,7 @@ export function DownloadButton({ layerId, body, label }) {
       {/* Balise span : l'infobulle fonctionne même quand le bouton est désactivé. */}
       <span>
         {/* Petit bouton, désactivé pendant le téléchargement, rouge en cas d'erreur. */}
-        <IconButton size="small" aria-label={title} disabled={state === 'loading'} onClick={run} color={state === 'error' ? 'error' : 'default'} sx={{ mt: 0.75, mr: 0.5 }}>
+        <IconButton size="small" aria-label={title} disabled={state === 'loading'} onClick={run} color={state === 'error' ? 'error' : 'default'} className="mt-1.5 mr-1">
           {/* Roue de chargement pendant le téléchargement, icône sinon. */}
           {state === 'loading' ? <CircularProgress size={18} /> : <DownloadIcon fontSize="small" />}
         {/* Fin du bouton. */}
@@ -56,27 +56,27 @@ export function Radio({ name, checked, onChange, label, description, source, dow
   // Début du rendu.
   return (
     // Ligne : option et bouton côte à côte, alignés en haut, avec fond de survol.
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', '&:hover': { bgcolor: 'action.hover' } }}>
+    <div className="flex items-start hover:bg-hover">
       {/* Libellé cliquable qui englobe le bouton radio (début de la balise). */}
       <FormControlLabel
         // Le libellé gère lui-même sa typographie.
         disableTypography
         // Style : aucune marge, prend la largeur restante, aligné en haut.
-        sx={{ m: 0, px: 1, py: 0.5, flex: 1, minWidth: 0, alignItems: 'flex-start' }}
-        // La commande : petit bouton radio MUI, état converti en booléen.
-        control={<MuiRadio size="small" name={name} checked={Boolean(checked)} onChange={onChange} sx={{ mt: 0.25 }} />}
+        className="m-0 px-2 py-1 flex-1 min-w-0 items-start"
+        // La commande : bouton radio natif du kit, état converti en booléen.
+        control={<RadioInput size="small" name={name} checked={Boolean(checked)} onChange={onChange} className="mt-0.5" />}
         // Le libellé (début).
         label={(
           // Conteneur des textes.
-          <Box sx={{ py: 0.75, minWidth: 0 }}>
+          <div className="py-1.5 min-w-0">
             {/* Le nom, en demi-gras si l'option est choisie. */}
-            <Typography variant="body2" sx={{ fontWeight: checked ? 600 : 400 }}>{label}</Typography>
+            <p className={`t-body2 ${checked ? 'font-semibold' : 'font-normal'}`}>{label}</p>
             {/* Si une description est donnée : en petit, couleur secondaire. */}
-            {description && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{description}</Typography>}
+            {description && <span className="t-caption text-soft block">{description}</span>}
             {/* Si une source est donnée : en petit, en italique, précédée de « Source : ». */}
-            {source && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>Source : {source}</Typography>}
+            {source && <span className="t-caption text-soft block italic">Source : {source}</span>}
           {/* Fin du conteneur des textes. */}
-          </Box>
+          </div>
         // Fin du libellé.
         )}
       // Fin de la balise FormControlLabel.
@@ -86,7 +86,7 @@ export function Radio({ name, checked, onChange, label, description, source, dow
       {/* Action libre à droite (bouton propre à l'option), si elle est donnée. */}
       {action}
     {/* Fin de la ligne. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de Radio.

@@ -1,5 +1,3 @@
-// Importe de MUI Box et Typography.
-import { Box, Typography } from '@mui/material';
 // Importe le bouton de téléchargement d'une couche.
 import { DownloadButton } from '../../ui/Radio.jsx';
 // Importe layerSource, qui donne la source d'une couche.
@@ -20,21 +18,21 @@ export function EntreeTerre({ layer }) {
   // Début du rendu.
   return (
     // Ligne : textes à gauche, bouton de téléchargement à droite.
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', px: 1, py: 0.5 }}>
+    <div className="flex items-start px-2 py-1">
       {/* Les textes. */}
-      <Box sx={{ py: 0.75, flex: 1, minWidth: 0 }}>
+      <div className="py-1.5 flex-1 min-w-0">
         {/* Le nom, en demi-gras. */}
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>Terre</Typography>
+        <p className="t-body2 font-semibold">Terre</p>
         {/* La description de la couche, en petit, couleur secondaire. */}
-        {layer.description && <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{layer.description}</Typography>}
+        {layer.description && <span className="t-caption text-soft block">{layer.description}</span>}
         {/* Ses sources, en italique, précédées de « Sources : ». */}
-        {layerSource(layer) && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>Sources : {layerSource(layer)}</Typography>}
+        {layerSource(layer) && <span className="t-caption text-soft block italic">Sources : {layerSource(layer)}</span>}
       {/* Fin des textes. */}
-      </Box>
+      </div>
       {/* Le seul bouton de téléchargement de la couche fusionnée. */}
       <DownloadButton layerId={layer.id} body="Terre" label="couche fusionnée" />
     {/* Fin de la ligne. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de EntreeTerre.

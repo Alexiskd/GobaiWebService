@@ -1,5 +1,5 @@
-// Importe de MUI Alert (message d'alerte) et Stack (pile).
-import { Alert, Stack } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Alert } from '@/Fairing/kit';
 // Importe safe, qui donne une marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe la limite basse de la zone du titre du téléphone.
@@ -7,7 +7,7 @@ import { HUD_TOP } from '@/Fairing/theme/layout';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 
-// Correspondance entre le ton d'un message et la gravité MUI.
+// Correspondance entre le ton d'un message et la gravité de l'avertissement.
 const SEVERITY = { warn: 'warning', error: 'error', info: 'info', ok: 'success' };
 
 /** Messages éphémères, empilés en haut au centre (au-dessus des panneaux et des dialogues). */
@@ -18,27 +18,13 @@ export function Toasts({ toasts, onDismiss }) {
   // Début du rendu.
   return (
     // Pile des messages (début de la balise).
-    <Stack
-      // Espacement entre les messages.
-      spacing={1}
+    <div
       // Rôle d'état pour les lecteurs d'écran.
       role="status"
       // Changements annoncés sans interrompre la lecture en cours.
       aria-live="polite"
       // Début du style.
-      sx={{
-        // Fixée, au niveau des messages, centrée horizontalement.
-        position: 'fixed', zIndex: (t) => t.zIndex.snackbar, left: '50%', transform: 'translateX(-50%)',
-        // Position du haut : sur téléphone, 8 px sous la zone du titre (jamais sur le bandeau ni ses boutons) ; sur
-        // ordinateur, sous le bandeau GPS et la marge de sécurité, plus 14 px.
-        top: compact ? `calc(${HUD_TOP} + 8px)` : `calc(var(--gps-top, 0px) + ${safe('top')} + 14px)`,
-        // Largeur bornée à l'écran (ces deux réglages étaient restés en commentaire à la fin de la ligne précédente :
-        // la pile n'avait pas de largeur maximale et captait les gestes posés sur la scène).
-        width: 'min(440px, calc(100vw - 28px))',
-        // Les gestes passent à travers la pile (chaque message reste cliquable pour sa croix).
-        pointerEvents: 'none', '& > *': { pointerEvents: 'auto' },
-      // Fin du style.
-      }}
+      className="flex flex-col gap-2 fixed z-[1400] left-1/2 [transform:translateX(-50%)] w-[min(440px,calc(100vw_-_28px))] pointer-events-none *:pointer-events-auto" style={{ top: compact ? `calc(${HUD_TOP} + 8px)` : `calc(var(--gps-top, 0px) + ${safe('top')} + 14px)` }}
     // Fin de la balise ouvrante.
     >
       {/* Un message d'alerte par entrée (début). */}
@@ -56,7 +42,7 @@ export function Toasts({ toasts, onDismiss }) {
           // Texte du bouton de fermeture pour les lecteurs d'écran.
           closeText="Fermer le message"
           // Reçoit les clics et coupe les mots trop longs ; sans ombre, comme les autres panneaux.
-          sx={{ pointerEvents: 'auto', overflowWrap: 'anywhere' }}
+          className="pointer-events-auto [overflow-wrap:anywhere]"
         // Fin de la balise ouvrante.
         >
           {/* Le texte du message. */}
@@ -66,7 +52,7 @@ export function Toasts({ toasts, onDismiss }) {
       // Fin des messages.
       ))}
     {/* Fin de la pile. */}
-    </Stack>
+    </div>
   // Fin du rendu.
   );
 // Fin de Toasts.

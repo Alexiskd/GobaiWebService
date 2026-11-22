@@ -4,17 +4,5 @@ export { default } from "./Navball.jsx";
 // Réexporte tout ce que le module renderer exporte.
 export * from "./renderer.js";
 
-// Réexporte quelques éléments du module tokens (début de la liste).
-export {
-  // C.
-  C,
-  // Le style des libellés.
-  labelSx,
-  // Le style des réglettes.
-  sliderSx,
-  // Le style des boutons.
-  buttonSx,
-  // Le style des touches de clavier.
-  kbdSx
-// Fin de la liste ; module d'origine.
-} from "./tokens.js";
+// Réexporte les jetons de couleur du module tokens.
+export { C } from "./tokens.js";

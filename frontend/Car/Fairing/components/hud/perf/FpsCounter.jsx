@@ -1,8 +1,8 @@
-// Importe Box, le conteneur de MUI.
-import { Box } from '@mui/material';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
+// Importe tok, qui donne la variable CSS d'une couleur nommée.
+import { tok } from '@/Fairing/kit/sx';
 import { useViewport } from '@/Fairing/hooks/useViewport';
 
 /**
@@ -32,11 +32,11 @@ export function FpsCounter({ hud }) {
   // Début du rendu.
   return (
     // Texte en ligne, d'un seul tenant, rôle d'état, nom complet pour les lecteurs d'écran, jamais traduit.
-    <Box component="span" role="status" aria-label={`${fps} images par seconde`} title={low ? `Image la plus lente : ${low} FPS · rythme visé : ${target} FPS` : undefined} translate="no" sx={{ whiteSpace: 'nowrap', '& b': { fontWeight: 700, color: fpsColor(fps, target) } }}>
+    <span role="status" aria-label={`${fps} images par seconde`} title={low ? `Image la plus lente : ${low} FPS · rythme visé : ${target} FPS` : undefined} translate="no" className="whitespace-nowrap">
       {/* Séparateur, nombre (gras, coloré selon la fluidité) et unité. */}
-      {' · '}<b>{fps}</b> FPS
+      {' · '}<b className="font-bold" style={{ color: tok(fpsColor(fps, target)) }}>{fps}</b> FPS
     {/* Fin du texte. */}
-    </Box>
+    </span>
   // Fin du rendu.
   );
 // Fin de FpsCounter.

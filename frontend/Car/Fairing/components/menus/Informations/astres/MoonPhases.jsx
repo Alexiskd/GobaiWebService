@@ -1,5 +1,5 @@
-// Importe de MUI les éléments de liste et Typography.
-import { List, ListItem, ListItemText, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { List, ListItem, ListItemText } from '@/Fairing/kit';
 // Importe Hint, la note d'aide.
 import { Hint } from '../../../ui/Hint.jsx';
 // Importe Section, la section d'un panneau.
@@ -31,7 +31,7 @@ export function MoonPhases({ phases }) {
           // L'élément, de clé unique, avec une action secondaire à droite (début).
           <ListItem key={p.utc} disableGutters secondaryAction={(
             // La date de la phase, dans une balise time.
-            <Typography component="time" variant="body2" color="text.secondary" dateTime={p.utc}>{dateLabel(p.utc)}</Typography>
+            <time className="t-body2 text-soft" dateTime={p.utc}>{dateLabel(p.utc)}</time>
           // Fin de l'action secondaire et de la balise ouvrante.
           )}>
             {/* Le nom de la phase. */}

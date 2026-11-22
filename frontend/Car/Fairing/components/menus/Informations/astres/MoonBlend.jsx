@@ -4,8 +4,8 @@
 // à créer, en fabrication, ou enregistrée dans BP et téléchargeable.
 // Hooks de React.
 import { useCallback, useEffect, useState } from 'react';
-// Composants MUI.
-import { CircularProgress, IconButton, Tooltip } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { CircularProgress, IconButton, Tooltip } from '@/Fairing/kit';
 // Appels de l'API et base des routes.
 import { API_BASE, get, post } from '../../../../../Computing/api/client.jsx';
 // Groupe, note et option, comme la box des fonds de carte.
@@ -84,16 +84,16 @@ export function MoonBlend() {
           description={describe(v)}
           source="LOLA (relief) · NASA SVS + Kaguya (carte réelle) · BP"
           action={v.building ? (
-            <CircularProgress size={18} sx={{ mt: 1.5, mr: 1.25 }} aria-label="Fabrication en cours" />
+            <CircularProgress size={18} className="mt-3 mr-2.5" aria-label="Fabrication en cours" />
           ) : v.stored ? (
             <Tooltip title={`Télécharger le blend « ${LABELS[v.exaggeration]} » (.glb)`}>
-              <IconButton size="small" component="a" href={`${API_BASE}/tiles/moon-blend/${v.exaggeration}/model.glb`} download aria-label="Télécharger le blend" sx={{ mt: 0.75, mr: 0.5 }}>
+              <IconButton size="small" component="a" href={`${API_BASE}/tiles/moon-blend/${v.exaggeration}/model.glb`} download aria-label="Télécharger le blend" className="mt-1.5 mr-1">
                 <DownloadIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           ) : (
             <Tooltip title="Créer ce blend et l’enregistrer dans BP">
-              <IconButton size="small" onClick={() => build(v.exaggeration)} aria-label="Créer le blend" sx={{ mt: 0.75, mr: 0.5 }}>
+              <IconButton size="small" onClick={() => build(v.exaggeration)} aria-label="Créer le blend" className="mt-1.5 mr-1">
                 <PlayArrowIcon fontSize="small" />
               </IconButton>
             </Tooltip>

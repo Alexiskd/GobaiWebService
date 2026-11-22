@@ -5,7 +5,7 @@
 // Affichage dans deux onglets à feuille ; Données et Node sont des boutons directs de la barre du bas.
 /** Boutons masqués de la barre : voir hiddenActions. Les anciennes composantes masquées (Tuile 3D, Modéliser, Lunes) ont été supprimées. */
 /**
- * Icônes : des composants Material de MUI, nommés dans ui/icons. Elles héritent de la couleur et de la taille du
+ * Icônes : le jeu Lucide (kit/icons), nommées dans ui/icons. Elles héritent de la couleur et de la taille du
  * bouton, donc un bouton enfoncé, coupé ou survolé se dessine tout seul — ce que les emoji ne faisaient pas.
  * Icône du bouton « Mistral » : le composant Material AutoAwesomeIcon. Une icône peut donc être un
  * composant, un objet { img } ou un caractère ; les boutons la dessinent avec `iconNode`.

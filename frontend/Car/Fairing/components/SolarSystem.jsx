@@ -1,7 +1,7 @@
 // Importe de React les crochets useCallback et useState.
 import { useCallback, useState } from 'react';
-// Importe de MUI Alert (message d'alerte), Box, Button et Typography.
-import { Alert, Box, Button, Typography } from '@mui/material';
+// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { Alert, Button } from '@/Fairing/kit';
 // Importe useSolarData, qui charge les données de la scène.
 import { useSolarData } from '@/Fairing/hooks/useSolarData';
 // Importe SolarScene, la scène 3D et son interface.
@@ -15,11 +15,11 @@ export function FullScreenMessage({ children }) {
   // Début du rendu.
   return (
     // Conteneur qui couvre la fenêtre, au-dessus des fenêtres modales, contenu centré, sur la couleur de fond du thème.
-    <Box sx={{ position: 'fixed', inset: 0, zIndex: (t) => t.zIndex.modal + 20, display: 'grid', placeItems: 'center', bgcolor: 'background.default', p: 2 }}>
+    <div className="fixed inset-0 z-[1320] grid place-items-center bg-bg p-4">
       {/* Le contenu. */}
       {children}
     {/* Fin du conteneur. */}
-    </Box>
+    </div>
   // Fin du rendu.
   );
 // Fin de FullScreenMessage.
@@ -68,19 +68,19 @@ export function SolarSystem() {
               // Style à contour.
               variant="outlined"
               // Large de 480 px au plus, sur le fond des panneaux, avec flou d'arrière-plan.
-              sx={{ maxWidth: 480, bgcolor: 'var(--panel, rgba(9, 13, 22, 0.88))', backdropFilter: 'blur(14px)' }}
+              className="max-w-120"
               // Action : le bouton « Réessayer », qui relance le chargement.
               action={<Button color="inherit" size="small" onClick={retry}>Réessayer</Button>}
             // Fin de la balise ouvrante.
             >
               {/* Première ligne : l'API est injoignable, avec le message de l'erreur. */}
-              <Typography variant="body2">Impossible de joindre l’API : {error}.</Typography>
+              <p className="t-body2">Impossible de joindre l’API : {error}.</p>
               {/* Seconde ligne, en couleur secondaire (début de la balise). */}
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              <p className="t-body2 text-soft mt-1">
                 {/* Le conseil : lancer le backend avec la commande indiquée, puis réessayer. */}
-                Lancez le backend (<Box component="code">npm run dev:api</Box>, port 3001), puis réessayez.
+                Lancez le backend (<code>npm run dev:api</code>, port 3001), puis réessayez.
               {/* Fin de la seconde ligne. */}
-              </Typography>
+              </p>
             {/* Fin du message d'alerte. */}
             </Alert>
           // Fin du cas d'erreur.
