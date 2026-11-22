@@ -56,6 +56,7 @@ import { MoonReliefService } from '../services/map-tiles/moon/moon-relief.servic
 import { BodyReliefService } from '../services/map-tiles/bodies/body-relief.service';
 // Importe le blend de la Lune.
 import { MoonBlendService } from '../services/map-tiles/moon/moon-blend.service';
+import { EarthKtx2Service } from '../services/map-tiles/earth/earth-ktx2.service';
 // Service du modèle 3D de la Lune.
 import { MoonModelService } from '../services/map-tiles/moon/moon-model.service';
 // Service des modèles 3D des autres astres.
@@ -118,6 +119,8 @@ export class TilesController {
     private readonly bodyRelief: BodyReliefService,
     // Le blend de la Lune.
     private readonly moonBlend: MoonBlendService,
+    // Les tuiles KTX2 de la Terre vue de loin, enregistrées dans BP.
+    private readonly earthKtx2: EarthKtx2Service,
     // Le modèle 3D de la Lune.
     private readonly moonModel: MoonModelService,
     // Les modèles 3D des autres astres.
@@ -633,6 +636,28 @@ export class TilesController {
     // Envoie la tuile : cache long (une semaine) si elle vient de la source préférée, cache court (dix minutes) si elle vient d'une source de repli ; l'en-tête X-Tile-Source nomme la source.
     sendTile(req, res, tile, tile.preferred ? EARTH_TILE : EARTH_FALLBACK_TILE, { 'X-Tile-Source': tile.source });
   // Fin de earthTile.
+  }
+
+  // Route GET /api/v1/tiles/earth-ktx2/status : tuiles KTX2 de la Terre enregistrées dans BP.
+  @Get('earth-ktx2/status')
+  @ApiOperation({ summary: 'Tuiles KTX2 de la Terre : enregistrées dans BP', description: 'Nombre de tuiles préconverties par couche (sentinel2, gibs) et par niveau (0 à 6), taille totale.' })
+  @ApiOkResponse({ description: '{ database, total, bytes, layers: { couche: { niveau: nombre } } }' })
+  async earthKtx2Status(@Res() res: TileResponse): Promise<void> {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(Buffer.from(JSON.stringify(await this.earthKtx2.status()), 'utf8'));
+  }
+
+  // Route GET /api/v1/tiles/earth-ktx2/:layer/:z/:x/:y : une tuile KTX2 lue dans BP (y peut porter le suffixe .ktx2).
+  @Get('earth-ktx2/:layer/:z/:x/:y')
+  @SkipThrottle()
+  @ApiOperation({ summary: 'Tuile KTX2 de la Terre (niveaux 0 à 6)', description: 'Tuile préconvertie en KTX2 (compressée dans la mémoire graphique), lue dans BP. 404 si elle n’y est pas : l’application prend alors la tuile JPEG du fournisseur.' })
+  @ApiOkResponse({ description: 'Fichier .ktx2 (image/ktx2).' })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiNotFoundResponse({ type: ApiErrorDto })
+  async earthKtx2Tile(@Param('layer') layer: string, @Param('z') z: string, @Param('x') x: string, @Param('y') y: string, @Req() req: TileRequest, @Res() res: TileResponse): Promise<void> {
+    const body = await this.earthKtx2.tile(layer, Number(z), Number(x), Number(String(y).replace(/\.ktx2$/, '')));
+    sendTile(req, res, { body, contentType: 'image/ktx2' }, { maxAge: 604_800 });
   }
 
   // Route GET /api/v1/tiles/moon-blend/status : variantes du blend de la Lune enregistrées dans BP.
