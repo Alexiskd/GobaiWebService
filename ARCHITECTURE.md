@@ -1,4 +1,4 @@
-# Gobai Space — architecture Car / Fairing / Computing / Transmission
+# Go白ناन्टех — architecture Engine / Fairing / Computing / Transmission
 
 ```text
 frontend/
@@ -26,8 +26,9 @@ frontend/
     │   ├── StarEngine/                  Étoiles, systèmes stellaires, ciel
     │   ├── TextureEngine/               Textures et mosaïques de surface
     │   ├── EruptionEngine/              Volcanisme et surfaces actives
+    │   ├── ItineraireEngine/            Itinéraires : un moteur par moyen de locomotion (vol en 3D, sol en 2D)
     │   └── shared/                      Bibliothèques transverses (lib/app, lib/device) et i18n
-    ├── Fairing/                         Interface React, HUD (hud/node, hud/perf, hud/recherche), menus, scène, thème, hooks
+    ├── Fairing/                         Interface React, kit (Tailwind + Base UI), HUD (hud/node, hud/perf, hud/recherche), menus, scène, thème, hooks, diagnostic
     ├── Computing/                       Iframing et API
     │   ├── embed/                       Point d'entrée de la page d'embarquement (iframe)
     │   └── api/                         Client HTTP et adaptateurs de l'API (le serveur est dans backend/)
