@@ -72,7 +72,7 @@ export function HudTop({ hud }) {
         // Contenu en ligne, centré verticalement.
         display: 'flex', alignItems: 'center',
         // Espacement et marges intérieures, réduits en mode compact.
-        gap: compact ? 1 : 1.5, px: compact ? 1.25 : 1.75, py: compact ? 0.5 : 1,
+        gap: compact ? 1 : 1.5, px: compact ? 1.25 : 1.75, py: compact ? 0.25 : 0.5,
         // Curseur en main et gestes réservés au déplacement, sauf en mode compact ; texte non sélectionnable.
         cursor: compact ? 'default' : 'grab', userSelect: 'none', touchAction: compact ? 'auto' : 'none',
       // Fin du style.
@@ -116,7 +116,7 @@ export function HudTop({ hud }) {
       {/* Zone des textes. */}
       <Box sx={{ minWidth: 0 }}>
         {/* Le titre de niveau 1, jamais traduit, plus petit en mode compact. */}
-        <Typography component="h1" translate="no" variant={compact ? 'subtitle1' : 'h6'} sx={{ fontWeight: 600, lineHeight: 1.2, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: '0.3em' }}>
+        <Typography component="h1" translate="no" variant={compact ? 'subtitle1' : 'h6'} sx={{ fontWeight: 600, lineHeight: 1.1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: '0.3em' }}>
           {/* Le symbole ∞ en bleu, agrandi, décoratif. */}
           <Box component="span" aria-hidden="true" sx={{ color: '#0000FF', fontSize: compact ? '1.9em' : '2.2em', lineHeight: 0.8, fontWeight: 700 }}>∞</Box>
           {/* Le nom de l'application, suivi d'une espace. */}
@@ -131,7 +131,7 @@ export function HudTop({ hud }) {
         {/* Fin du titre. */}
         </Typography>
         {/* La date, en petit, en chiffres de largeur fixe. */}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontVariantNumeric: 'tabular-nums' }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>
           {/* La date. */}
           {date}
           {/* Le compteur d'images par seconde, à la suite (ordinateur ; rien sur téléphone). */}
@@ -139,7 +139,7 @@ export function HudTop({ hud }) {
         {/* Fin de la ligne de la date. */}
         </Typography>
         {/* Le texte de l'astre visé, s'il existe, hors mode compact. */}
-        {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontVariantNumeric: 'tabular-nums' }}>{focusText}</Typography>}
+        {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>{focusText}</Typography>}
       {/* Fin de la zone des textes. */}
       </Box>
     {/* Fin du bandeau. */}
