@@ -79,10 +79,11 @@ export class PositionController {
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Vols et trains entre deux lieux de la Terre',
-    description: 'Vols : prix récents d’Aviasales (Travelpayouts) entre les aéroports les plus proches, avec lien de réservation. '
-      + 'Trains : horaires de l’API SNCF, avec lien vers SNCF Connect. Aucune clé à fournir : celles du serveur sont utilisées.',
+    description: 'Vols : prix en direct de Duffel, sinon prix récents d’Aviasales (Travelpayouts), entre les aéroports les plus proches, '
+      + 'avec lien de réservation. Trains : horaires de l’API SNCF (lien vers SNCF Connect), et sites de billets de train des pays '
+      + 'du trajet (Trainline, Omio, Rail Europe, Trip.com, 12Go). Aucune clé à fournir : celles du serveur sont utilisées.',
   })
-  @ApiOkResponse({ description: '{ date, flights: { status, offers | message, source }, trains: { status, offers | message, source } }' })
+  @ApiOkResponse({ description: '{ date, flights: { status, offers | message, source }, trains: { status, offers | message, source }, trainPartners: [{ id, name, coverage, url }] }' })
   @ApiBadRequestResponse({ type: ApiErrorDto })
   @ApiTooManyRequestsResponse({ type: ApiErrorDto })
   tickets(@Body() body: TicketsRequestDto): Promise<TicketsResult> {

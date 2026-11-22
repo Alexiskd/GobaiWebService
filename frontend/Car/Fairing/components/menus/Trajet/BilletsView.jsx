@@ -129,8 +129,24 @@ export function BilletsView({ a, b }) {
             ))}
           </Mode>
 
+          {/* Trains hors SNCF : sites de billets des pays du trajet, horaires et prix affichés chez eux. */}
+          {state.data.trainPartners?.length > 0 && (
+            <section aria-label="Autres sites de billets de train" className="flex flex-col gap-2">
+              <h3 className="t-subtitle2 font-semibold m-0">Billets de train dans les pays du trajet</h3>
+              <div className="flex flex-row gap-2 flex-wrap">
+                {state.data.trainPartners.map((p) => (
+                  <Link key={p.id} href={p.url} target="_blank" rel="noopener sponsored" underline="none"
+                    className="flex flex-col px-3 py-2 border border-line rounded-[12px] hover:bg-hover">
+                    <span className="t-body2 font-semibold">{p.name}</span>
+                    <span className="t-caption text-soft">{p.coverage}</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
           <div className="flex flex-row gap-2 flex-wrap">
-            <Chip size="small" variant="outlined" label="Prix des vols : recherches récentes, à confirmer à la réservation" />
+            <Chip size="small" variant="outlined" label="Prix à confirmer à la réservation" />
           </div>
         </div>
       )}

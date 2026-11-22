@@ -1,10 +1,11 @@
 // Vols et trains : lecture des réponses, aéroport le plus proche, liens de réservation.
 import {
-  MAX_OFFERS, aviasalesUrl, nearestAirport, navitiaDate, parisNow, parseAirports, parseFlights, parseTrainJourneys, toNavitiaDate,
+  MAX_OFFERS, aviasalesSearchUrl, aviasalesUrl, isoDurationMinutes, nearestAirport, navitiaDate, parisNow, parseAirports, parseDuffelOffers,
+  parseFlights, parseTrainJourneys, toNavitiaDate, trainPartnersFor,
 } from './transport';
 
 const AIRPORTS = parseAirports([
-  { code: 'CDG', city_code: 'PAR', name: 'Charles de Gaulle', coordinates: { lat: 49.0097, lon: 2.5479 }, flightable: true, iata_type: 'airport' },
+  { code: 'CDG', city_code: 'PAR', country_code: 'FR', name: 'Charles de Gaulle', coordinates: { lat: 49.0097, lon: 2.5479 }, flightable: true, iata_type: 'airport' },
   { code: 'NCE', city_code: 'NCE', name: 'Nice Côte d’Azur', coordinates: { lat: 43.6584, lon: 7.2159 }, flightable: true, iata_type: 'airport' },
   { code: 'XPG', city_code: 'PAR', name: 'Gare du Nord', coordinates: { lat: 48.88, lon: 2.355 }, flightable: true, iata_type: 'railway' },
   { code: 'ZZZ', name: 'Fermé', coordinates: { lat: 48.9, lon: 2.3 }, flightable: false },
@@ -70,5 +71,51 @@ describe('parisNow', () => {
     // 22 nov. 2026 à 23 h 30 UTC = 23 nov. à 0 h 30 à Paris (UTC+1).
     expect(parisNow(Date.UTC(2026, 10, 22, 23, 30))).toEqual({ date: '2026-11-23', dateTime: '2026-11-23T00:30' });
     expect(toNavitiaDate('2026-11-23T00:30')).toBe('20261123T003000');
+  });
+});
+
+describe('Duffel', () => {
+  it('lit les durées ISO 8601', () => {
+    expect(isoDurationMinutes('PT2H35M')).toBe(155);
+    expect(isoDurationMinutes('P1DT3H')).toBe(1620);
+    expect(isoDurationMinutes('x')).toBe(0);
+  });
+
+  it('fabrique le lien de recherche Aviasales du trajet', () => {
+    expect(aviasalesSearchUrl('PAR', 'NCE', '2026-12-05T07:00:00', 'm')).toBe('https://www.aviasales.com/search/PAR0512NCE1?marker=m');
+  });
+
+  it('lit les offres Duffel, triées par prix', () => {
+    const offers = parseDuffelOffers({
+      data: {
+        offers: [
+          { total_amount: '210.40', total_currency: 'EUR', owner: { iata_code: 'AF' }, slices: [{ duration: 'PT3H10M', segments: [
+            { departing_at: '2026-12-05T07:00:00', origin: { iata_code: 'CDG' }, destination: { iata_code: 'LYS' }, marketing_carrier: { iata_code: 'AF' }, marketing_carrier_flight_number: '7640' },
+            { departing_at: '2026-12-05T09:00:00', origin: { iata_code: 'LYS' }, destination: { iata_code: 'NCE' }, marketing_carrier: { iata_code: 'AF' }, marketing_carrier_flight_number: '7700' },
+          ] }] },
+          { total_amount: '64.99', total_currency: 'eur', owner: { iata_code: 'U2' }, slices: [{ duration: 'PT1H30M', segments: [
+            { departing_at: '2026-12-05T09:10:00', origin: { iata_code: 'ORY' }, destination: { iata_code: 'NCE' }, marketing_carrier: { iata_code: 'U2' }, marketing_carrier_flight_number: '4011' },
+          ] }] },
+        ],
+      },
+    }, 'm');
+    expect(offers.map((o) => o.price)).toEqual([64.99, 210.4]);
+    expect(offers[0]).toMatchObject({ currency: 'EUR', airline: 'U2', transfers: 0, durationMinutes: 90, originAirport: 'ORY', destinationAirport: 'NCE' });
+    expect(offers[1]).toMatchObject({ transfers: 1, destinationAirport: 'NCE', bookingUrl: 'https://www.aviasales.com/search/CDG0512NCE1?marker=m' });
+    expect(parseDuffelOffers({ errors: [] }, 'm')).toEqual([]);
+  });
+});
+
+describe('sites de billets de train', () => {
+  it('choisit les sites selon les pays du trajet', () => {
+    expect(trainPartnersFor(['FR', 'IT'], {}).map((p) => p.id)).toEqual(['trainline', 'omio', 'raileurope']);
+    expect(trainPartnersFor(['TH', 'VN'], {}).map((p) => p.id)).toEqual(['12go']);
+    expect(trainPartnersFor(['CN'], {}).map((p) => p.id)).toEqual(['tripcom', '12go']);
+    expect(trainPartnersFor([], {})).toEqual([]);
+  });
+
+  it('prend le lien d’affiliation de l’environnement, en https seulement', () => {
+    expect(trainPartnersFor(['DE'], { TRAIN_LINK_OMIO: 'https://omio.sjv.io/abc' }).find((p) => p.id === 'omio')?.url).toBe('https://omio.sjv.io/abc');
+    expect(trainPartnersFor(['DE'], { TRAIN_LINK_OMIO: 'javascript:alert(1)' }).find((p) => p.id === 'omio')?.url).toBe('https://www.omio.com/');
   });
 });
