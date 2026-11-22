@@ -79,7 +79,13 @@ test('le modèle de Jupiter définit jupiterGrade et jupiterLight et le shader d
   const src = JUPITER_LIGHT_GLSL;
   assert.ok(!/\}\s*,\s*vec3 jupiter/.test(tileFragmentShader), 'virgule entre les fonctions');
   assert.ok(src.includes('vec3 jupiterGrade(vec3 c)') && src.includes('vec3 jupiterLight(vec3 g,float d,float mu)'));
-  assert.ok(tileFragmentShader.includes('uniform float gasModel;') && tileFragmentShader.includes('jupiterLight(jupiterGrade(col),d,mu)'));
+  assert.ok(tileFragmentShader.includes('uniform float gasModel;') && tileFragmentShader.includes('jupiterLight(jg,d,mu)'));
   // Le halo bleu du modèle général et le modèle de la Terre ne s'appliquent pas à Jupiter.
   assert.ok(tileFragmentShader.includes('surfModel<.5&&gasModel<.5') && tileFragmentShader.includes('else if(surfModel>.5)'));
+});
+
+// Jupiter : couleur retouchée même sans ombre, et détail fin qui commence plus tôt que pour les autres astres.
+test('Jupiter : colorimétrie sans ombre et détail fin anticipé', () => {
+  assert.ok(tileFragmentShader.includes('vec3 jg=jupiterGrade(col);base=mix(mix(jg,jupiterLight(jg,d,mu),shade)'));
+  assert.ok(tileFragmentShader.includes('smoothstep(lnat-2.-2.*step(.5,gasModel),lnat-step(.5,gasModel),L)'));
 });

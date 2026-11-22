@@ -98,7 +98,7 @@ const detailShader = [
   // Niveau de base des octaves, sa partie entière et sa partie fractionnaire ; somme du bruit à 0.
   'float b=lod-6.;float l0=floor(b),fr=b-l0;float n=0.;',
   // Pour quatre octaves : son niveau et son poids, en cloche, annulé tant que l'image réelle est assez fine.
-  'for(int k=0;k<4;k++){float fk=float(k);float L=l0+fk;float w=sin(3.14159265*(fk+1.-fr)*.25);w*=w*smoothstep(lnat-2.,lnat,L);',
+  'for(int k=0;k<4;k++){float fk=float(k);float L=l0+fk;float w=sin(3.14159265*(fk+1.-fr)*.25);w*=w*smoothstep(lnat-2.-2.*step(.5,gasModel),lnat-step(.5,gasModel),L);',
   // Octave de poids négligeable : sautée ; sinon, nombre de cellules par tuile et période du bruit.
   'if(w<.001)continue;float s=exp2(L-tileCoord.z);float per=exp2(clamp(L+1.,4.,10.));',
   // Position du point dans le treillis de l'astre, les indices étant réduits modulo 1024.
@@ -355,8 +355,8 @@ export const tileFragmentShader = [
   'vec3 nv=(col*vec3(.024,.034,.06)+vec3(0.,.0015,.004))*3.;',
   // Couleur de base : sans ombre l'image brute, avec ombre l'éclairage de la Terre, en vue de nuit la nuit. Fin du modèle de la Terre.
   'base=mix(mix(col,eb,shade),nv,lv);}',
-  // Modèle de Jupiter : couleur retouchée et éclairée en lumière diffuse ; sans ombre, l'image brute ; en vue de nuit, la nuit.
-  'if(gasModel>.5){base=mix(mix(col,jupiterLight(jupiterGrade(col),d,mu),shade),col*vec3(.07,.1,.18)+vec3(0.,.002,.005),lv);}',
+  // Modèle de Jupiter : couleur retouchée (même sans ombre) et éclairée en lumière diffuse avec l'ombre ; en vue de nuit, la nuit.
+  'if(gasModel>.5){vec3 jg=jupiterGrade(col);base=mix(mix(jg,jupiterLight(jg,d,mu),shade),col*vec3(.07,.1,.18)+vec3(0.,.002,.005),lv);}',
   // Lumières de la nuit : elles s'allument quand le Soleil passe sous l'horizon du lieu (d < 0,02) et brillent pleinement
   // à 10° dessous (d < −0,17), en suivant le terminateur. Rien de jour, rien sans ombre. Vue de la pollution lumineuse :
   // allumées partout, moitié plus vives.
