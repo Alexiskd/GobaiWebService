@@ -254,6 +254,12 @@ export const tileFragmentShader = [
   // (soleil de l'ombrage à 45°) → facteur 1 ; pentes éclairées plus claires, pentes à l'ombre plus sombres.
   // Lit l'image, corrige ses couleurs par le gain et le décalage, et lit le calque.
   'vec4 b=texture2D(map,baseRect.xy+vUv*baseRect.zw);vec3 col=clamp(b.rgb*colGain+colOff,0.,1.);vec4 o=texture2D(ovMap,ovRect.xy+vUv*ovRect.zw);',
+  // Upscale (Terre, vue spatiale) : quand l'image est agrandie à l'écran (plus d'1,5 pixel d'écran par pixel d'image,
+  // c'est le cas du dernier niveau de zoom vu de loin), l'interpolation bilinéaire en losanges est remplacée par une
+  // interpolation lissée (courbe de Hermite sur la partie fractionnaire), suivie d'un renfort des contours (masque flou)
+  // d'autant plus fort que l'agrandissement est grand. Image de 256 px de côté, comme la lecture des pentes plus bas.
+  'if(surfModel>.5){vec2 up=(baseRect.xy+vUv*baseRect.zw)*256.;float ppt=1./max(length(fwidth(up)),1e-4);if(ppt>1.5){vec2 uf=fract(up-.5),ui=floor(up-.5)+.5;vec2 uq=(ui+uf*uf*(3.-2.*uf))/256.;vec3 sm=clamp(texture2D(map,uq).rgb*colGain+colOff,0.,1.);float ue=1./256.;',
+  'vec3 bl=clamp(.25*(texture2D(map,uq+vec2(ue,0.)).rgb+texture2D(map,uq-vec2(ue,0.)).rgb+texture2D(map,uq+vec2(0.,ue)).rgb+texture2D(map,uq-vec2(0.,ue)).rgb)*colGain+colOff,0.,1.);col=clamp(sm+(sm-bl)*.7*smoothstep(1.5,6.,ppt),0.,1.);}}',
   // Puis accorde ses couleurs sur celles du niveau le plus grossier de la couche : même teinte à tous les niveaux de zoom.
   'col=clamp(col*lvGain+lvOff,0.,1.);',
   // Fondu enchaîné (≈ 180 ms) : la tuile fine apparaît par-dessus la portion agrandie de son ancêtre.
@@ -329,13 +335,14 @@ export const tileFragmentShader = [
   // Modèle général : halo bleu au limbe, côté jour, seulement avec atmosphère.
   'if(surfModel<.5){float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);}',
   // Modèle de la Terre (début) : couleur de la surface en lumière linéaire.
-  'else{vec3 cl=pow(col,vec3(2.2));',
+  // Eau : part de mer du point, lue dans le masque mondial ; sans masque, estimée d'après la couleur (bleu dominant, sombre).
+  'else{float wm=wOn>.5?texture2D(wMap,globalRect.xy+vUv*globalRect.zw).r:smoothstep(.0,.08,col.b-max(col.r*1.1,col.g*.95))*(1.-smoothstep(.35,.5,dot(col,vec3(.299,.587,.114))));',
+  // Colorimétrie de la Terre appliquée à la couleur de surface, puis passage en lumière linéaire.
+  'vec3 cl=pow(earthGrade(col,wm),vec3(2.2));',
   // Normale du terrain : la sphère inclinée par la pente du relief (vers l'est et le nord), selon la force de l'ombrage.
   'vec3 Nt=rlW>0.?normalize(N-(rlS.x*normalize(vE)+rlS.y*normalize(vNo))*rlW):N;',
   // Éclairement : Soleil sur la pente, atténué par l'air, et lumière du ciel ; plus la faible lueur de la nuit.
-  'vec3 E=earthIrradiance(d,dot(Nt,sunV))+pow(vec3(.024,.034,.06),vec3(2.2));',
-  // Eau : part de mer du point, lue dans le masque mondial.
-  'float wm=wOn>.5?texture2D(wMap,globalRect.xy+vUv*globalRect.zw).r:0.;',
+  'vec3 E=earthIrradiance(d,dot(Nt,sunV))+pow(vec3(.05,.075,.13),vec3(2.2));',
   // Lumière renvoyée : la surface éclairée, plus le reflet du Soleil là où il y a de l'eau (rien à calculer sur terre).
   'vec3 o=cl*E;if(wm>.01)o+=oceanGlint(N,V,sunV,d,mu)*wm;',
   // Ramenée à l'écran, avec le léger fond bleuté de la nuit.
