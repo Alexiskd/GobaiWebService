@@ -1,40 +1,34 @@
 /**
- * Registre des moteurs de locomotion de l'itinéraire. Chaque moyen a son moteur :
+ * Registre des moteurs de locomotion de l'itinéraire, construits depuis la table modeTable.js :
  *  - 3D (véhicules volants) : avion, hélicoptère, fusée, drone, ballon, planeur, autre-vol ;
  *  - 2D (véhicules qui roulent, marchent, glissent ou naviguent) : marche, course, vélo, trottinette, moto, voiture, bus,
  *    tramway, métro, train, bateau, ski, cheval, autre-sol.
  * Les identifiants sont ceux que renvoie le backend (POST /position/itineraire, champ `mode`).
  */
-import { marche } from './engines/sol/marche.js';
-import { course } from './engines/sol/course.js';
-import { velo } from './engines/sol/velo.js';
-import { trottinette } from './engines/sol/trottinette.js';
-import { moto } from './engines/sol/moto.js';
-import { voiture } from './engines/sol/voiture.js';
-import { bus } from './engines/sol/bus.js';
-import { tramway } from './engines/sol/tramway.js';
-import { metro } from './engines/sol/metro.js';
-import { train } from './engines/sol/train.js';
-import { bateau } from './engines/sol/bateau.js';
-import { ski } from './engines/sol/ski.js';
-import { cheval } from './engines/sol/cheval.js';
-import { autreSol } from './engines/sol/autreSol.js';
-import { avion } from './engines/vol/avion.js';
-import { helicoptere } from './engines/vol/helicoptere.js';
-import { fusee } from './engines/vol/fusee.js';
-import { drone } from './engines/vol/drone.js';
-import { ballon } from './engines/vol/ballon.js';
-import { planeur } from './engines/vol/planeur.js';
-import { autreVol } from './engines/vol/autreVol.js';
+// Importe la fabrique du moteur au sol (2D).
+import { createGroundEngine } from './groundEngine.js';
+// Importe la fabrique du moteur volant (3D).
+import { createFlightEngine } from './flightEngine.js';
+// Importe la table des moyens : une ligne de données par moyen.
+import { FLIGHT_MODES, GROUND_MODES } from './modeTable.js';
 
-/** Tous les moteurs, par identifiant. */
-export const ENGINES = Object.freeze({
-  marche, course, velo, trottinette, moto, voiture, bus, tramway, metro, train, bateau, ski, cheval, 'autre-sol': autreSol,
-  avion, helicoptere, fusee, drone, ballon, planeur, 'autre-vol': autreVol,
-});
+/**
+ * Moteur mutable : une seule définition, réglée par une ligne de la table. La catégorie choisit le calcul
+ * (tracé au sol en 2D, ou trajectoire en altitude en 3D) ; la ligne donne le style, la vitesse et le profil.
+ */
+export const createModeEngine = (row, category) => (category === 'vol' ? createFlightEngine(row) : createGroundEngine(row));
+
+/** Tous les moteurs, par identifiant : construits une fois depuis la table. */
+export const ENGINES = Object.freeze(Object.fromEntries([
+  // Les moyens au sol, chacun réglé par sa ligne.
+  ...GROUND_MODES.map((row) => [row.id, createModeEngine(row, 'sol')]),
+  // Les moyens volants, chacun réglé par sa ligne.
+  ...FLIGHT_MODES.map((row) => [row.id, createModeEngine(row, 'vol')]),
+// Fin des moteurs.
+]));
 
 /** Moteur d'un moyen : le sien, sinon le moteur générique de sa catégorie (au sol par défaut). */
-export const engineFor = (mode, category = 'sol') => ENGINES[mode] ?? (category === 'vol' ? autreVol : autreSol);
+export const engineFor = (mode, category = 'sol') => ENGINES[mode] ?? ENGINES[category === 'vol' ? 'autre-vol' : 'autre-sol'];
 
 const isGeo = (p) => Boolean(p) && Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180;
 

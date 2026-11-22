@@ -26,7 +26,7 @@ frontend/
     │   ├── StarEngine/                  Étoiles, systèmes stellaires, ciel
     │   ├── TextureEngine/               Textures et mosaïques de surface
     │   ├── EruptionEngine/              Volcanisme et surfaces actives
-    │   ├── ItineraireEngine/            Itinéraires : un moteur par moyen de locomotion (vol en 3D, sol en 2D)
+    │   ├── ItineraireEngine/            Itinéraires : un moteur mutable + une table des moyens (vol 3D, sol 2D)
     │   └── shared/                      Bibliothèques transverses (lib/app, lib/device) et i18n
     ├── engines/                         Engines transverses
     │   └── render-quality/              Qualité du rendu, FPS et surchauffe : metrics/ · profiles/ · thermal/

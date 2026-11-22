@@ -4,10 +4,10 @@ Modélise l'itinéraire renvoyé par `POST /api/v1/position/itineraire` (voir `b
 Le modèle de l'utilisateur (Claude ou Mistral, avec sa clé) découpe le trajet A → B en **étapes** ; chaque étape a un
 moyen de locomotion (`mode`) et **son moteur** :
 
-| Dimension | Moteurs (`engines/`) |
+| Dimension | Moyens (lignes de `modeTable.js`) |
 |---|---|
-| **3D** — véhicules volants (`engines/vol/`) | `avion`, `helicoptere`, `fusee`, `drone`, `ballon`, `planeur`, `autre-vol` |
-| **2D** — véhicules qui roulent, marchent, glissent ou naviguent (`engines/sol/`) | `marche`, `course`, `velo`, `trottinette`, `moto`, `voiture`, `bus`, `tramway`, `metro`, `train`, `bateau`, `ski`, `cheval`, `autre-sol` |
+| **3D** — véhicules volants (`FLIGHT_MODES`) | `avion`, `helicoptere`, `fusee`, `drone`, `ballon`, `planeur`, `autre-vol` |
+| **2D** — véhicules qui roulent, marchent, glissent ou naviguent (`GROUND_MODES`) | `marche`, `course`, `velo`, `trottinette`, `moto`, `voiture`, `bus`, `tramway`, `metro`, `train`, `bateau`, `ski`, `cheval`, `autre-sol` |
 
 Un moyen que le backend ne connaît pas (« tuk-tuk », « jetpack »…) prend le moteur générique de sa catégorie
 (`autre-sol` ou `autre-vol`).
@@ -16,7 +16,9 @@ Un moyen que le backend ne connaît pas (« tuk-tuk », « jetpack »…) prend 
 - `geo.js` — géométrie sphérique pure : distance, grand cercle, cap, rééchantillonnage, lissage, projection.
 - `groundEngine.js` — fabrique des moteurs 2D : tracé lissé selon le moyen, rééchantillonné, avec arrêts (bus, tram, métro, train).
 - `flightEngine.js` — fabrique des moteurs 3D : grand cercle et profil d'altitude propre au véhicule (montée, croisière, descente ; arc de fusée).
-- `engines/sol/*.js`, `engines/vol/*.js` — un fichier par moyen de locomotion (style ou profil seulement).
+- `modeTable.js` — une ligne de données par moyen de locomotion (style, vitesse, profil d'altitude) ; le moteur
+  mutable `createModeEngine` (dans `modes.js`) devient le moteur d'un moyen à partir de sa ligne. Ajouter un moyen =
+  ajouter une ligne.
 - `modes.js` — registre, `modelSegment`, `modelItinerary`, `locate` (position sur l'ensemble au fil du temps).
 - `render2d.js` — rendu canvas 2D (carte, tracés, arrêts, A et B, véhicule).
 - `render3d.js` — rendu three.js (globe, trace au sol, trajectoire en altitude exagérée, véhicule ; glisser = tourner, molette = zoom).
