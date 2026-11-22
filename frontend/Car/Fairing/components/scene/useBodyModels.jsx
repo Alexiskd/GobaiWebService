@@ -9,24 +9,6 @@ import { API_BASE, get } from '../../../Computing/api/client.jsx';
 const MOON_BLEND_NEAR = ['moon', 'earth'];
 
 /**
- * Affiche dans la console du navigateur si BP est branchée et quels blends y sont enregistrés (une ligne par
- * variante : enregistré, taille, date, fabrication en cours, erreur). Renvoie le nombre de blends enregistrés.
- */
-export function logMoonBlend(status) {
-  // Base non branchée : un avertissement.
-  if (!status?.database) { console.warn('[Blend Lune] BP non branchée au backend (DATABASE_URL absent) : aucun blend.'); return 0; }
-  // Une ligne par variante.
-  const rows = (status.variants || []).map((v) => ({
-    relief: `×${v.exaggeration}`, enBase: v.stored, taille: v.size ? `${(v.size / 1e6).toFixed(1)} Mo` : '—',
-    date: v.createdAt ?? '—', fabrication: v.building, erreur: v.error ?? '',
-  }));
-  const n = rows.filter((r) => r.enBase).length;
-  console.info(`[Blend Lune] BP branchée : ${n} blend(s) en base de données.`);
-  console.table(rows);
-  return n;
-}
-
-/**
  * Blend de la Lune à charger, d'après GET /tiles/moon-blend/status : le relief réel (×1) s'il est dans BP, sinon la
  * première variante enregistrée ; null si aucune ne l'est (la Lune garde alors ses tuiles seules).
  */
@@ -78,13 +60,13 @@ export function useBodyModels({ engine, currentBodyId }) {
       // Lit les variantes enregistrées, puis charge la meilleure s'il y en a une.
       get('/tiles/moon-blend/status')
         .then((status) => {
-          // Console : état de BP et de chaque blend, puis celui qui est importé.
-          logMoonBlend(status);
+          // Le meilleur blend enregistré, ou rien.
           const url = pickMoonBlend(status);
+          // Charge ce modèle s'il existe.
           return url ? engine.loadMoonModel(resolveApiUrl(url)) : null;
         })
-        .then((info) => { if (info) console.info('[Blend Lune] modèle importé depuis BP :', info); })
-        .catch((e) => console.warn('[Blend Lune] échec :', e?.message || e));
+        // Échec : rien ne change, sans message (aucun log en console).
+        .catch(() => {});
     }
   // Fin de l'effet ; dépendances : le moteur et l'astre ciblé.
   }, [engine, currentBodyId]);

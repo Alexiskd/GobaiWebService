@@ -64,12 +64,10 @@ let bridge = null;
   bridge = createEmbedBridge({ engine });
   // L'hôte sait que le globe est prêt.
   bridge.sendReady();
-// Toute erreur d'ouverture est signalée à l'hôte, puis écrite en console.
+// Toute erreur d'ouverture est signalée à l'hôte (aucun log en console).
 })().catch((e) => {
   // Le message lisible de l'erreur.
   const message = e?.message || String(e);
-  // Écrit aussi en console, pour le débogage.
-  console.error('Gobai embed :', message);
   // L'hôte peut afficher sa propre erreur ; le pont n'existe peut-être pas encore, on poste à froid.
   window.parent?.postMessage({ source: 'gobai-embed', type: 'gobai:error', message }, '*');
 // Fin du démarrage.

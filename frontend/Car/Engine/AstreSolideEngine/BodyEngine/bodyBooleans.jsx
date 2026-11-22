@@ -34,12 +34,3 @@ export function bodyBooleans(bodies = [], availability = [], hidden = []) {
   });
 // Fin de bodyBooleans.
 }
-
-/** Affiche le tableau dans la console (une seule fois, à l'ouverture de l'application). */
-// Déclare et exporte logBodyBooleans : reçoit les lignes.
-export function logBodyBooleans(rows) {
-  // Affiche un tableau dans la console : une ligne par astre, trois colonnes (règle ESLint désactivée par la ligne suivante).
-  // eslint-disable-next-line no-console
-  console.table(Object.fromEntries(rows.map(({ astre, trek, jpl, affiche }) => [astre, { 'NASA Trek': trek, 'NASA JPL': jpl, 'Affiché': affiche }])));
-// Fin de logBodyBooleans.
-}
