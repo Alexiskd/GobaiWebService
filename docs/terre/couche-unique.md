@@ -121,14 +121,14 @@ affichée : l'altitude de la caméra en km. Chaque palier fixe le niveau de tuil
 
 | Palier | Jusqu'à | Niveau max | Tuiles ordinateur / téléphone | Océans | Côtes | Routes | Noms | Carte marine |
 |---|---|---|---|---|---|---|---|---|
-| Rue | 0,4 km | 19 | 280 / 210 | relief | oui | oui | oui | GEBCO |
-| Quartier | 3 km | 19 | 280 / 210 | relief | oui | oui | oui | GEBCO |
-| Ville | 40 km | 17 | 280 / 210 | relief | oui | oui | oui | GEBCO |
-| Région | 400 km | 14 | 260 / 200 | relief | oui | oui | oui | fondu NOAA → GEBCO |
-| Pays | 2 500 km | 10 | 220 / 170 | teinte | oui | non | oui | fondu NOAA → GEBCO |
-| Continent | 9 000 km | 8 | 180 / 140 | teinte | oui | non | oui | NOAA |
-| Planète (un palier tous les 10 000 km) | 10 000 à 300 000 km | 6 à 4 | 240 / 180 à 160 / 120 | teinte | non | non | non | NOAA |
-| Espace | au-delà | 3 | 85 / 85 | teinte | non | non | non | NOAA |
+| Rue | 0,4 km | 19 | 560 / 420 | relief | oui | oui | oui | GEBCO |
+| Quartier | 3 km | 19 | 560 / 420 | relief | oui | oui | oui | GEBCO |
+| Ville | 40 km | 17 | 560 / 420 | relief | oui | oui | oui | GEBCO |
+| Région | 400 km | 14 | 520 / 400 | relief | oui | oui | oui | fondu NOAA → GEBCO |
+| Pays | 2 500 km | 10 | 440 / 340 | teinte | oui | non | oui | fondu NOAA → GEBCO |
+| Continent | 9 000 km | 8 | 360 / 280 | teinte | oui | non | oui | NOAA |
+| Planète (un palier tous les 10 000 km) | 10 000 à 300 000 km | 6 à 4 | 480 / 360 à 320 / 240 | teinte | non | non | non | NOAA |
+| Espace | au-delà | 3 | 170 / 170 | teinte | non | non | non | NOAA |
 
 - Le navigateur prend les paliers dans la table ; sans table, rien ne change (aucune limite).
 - Budget : les tuiles les plus prioritaires (centre de l'écran d'abord) ; les autres cellules gardent un niveau moins
