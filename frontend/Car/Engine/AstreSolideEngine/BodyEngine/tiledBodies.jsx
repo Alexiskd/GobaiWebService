@@ -77,8 +77,9 @@ export const TILED_BODIES = [
     // tous les appareils. Rien n'est gardé sur le disque du navigateur.
     // Préchargement prédictif comme la Lune : les tuiles de la zone vers laquelle la caméra se dirige sont chargées
     // d'avance, et celles qui sortent de l'écran restent en mémoire (300 images) pour revenir sans réseau.
-    // Niveaux 0 à 3 gardés en mémoire, préchargement actif, 300 images en mémoire vive.
-    pinnedMaxZoom: 3, prefetch: true, ramCapacity: 300,
+    // Niveaux 0 à 3 gardés en mémoire, préchargement actif, 800 images en mémoire vive (300 avant) : la zone prédite et
+    // les tuiles sorties de l'écran restent disponibles sur une plus grande étendue.
+    pinnedMaxZoom: 3, prefetch: true, ramCapacity: 800,
     // Couche unique : tuiles chargées chez leurs fournisseurs (plusieurs serveurs, HTTP/2), le reste relayé par l'API :
     // 16 tuiles en parallèle au lieu de 6.
     // Seize téléchargements simultanés.
