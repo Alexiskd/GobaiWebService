@@ -259,6 +259,8 @@ export const TILED_BODIES = [
     airless: false, overlayMode: 'blend',
     // Niveaux 0 et 1 gardés en mémoire, pas de préchargement.
     pinnedMaxZoom: 1, prefetch: false,
+    // Jupiter seule : modèle de couleur et de lumière photoréaliste (surfaceLight.jsx, JUPITER_LIGHT_GLSL).
+    ...(id === 'jupiter' ? { lighting: 'jupiter' } : {}),
   // Fin du traitement d'une géante.
   })),
 // Fin de la liste.

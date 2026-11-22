@@ -52,8 +52,8 @@ test('modèle général : les mêmes formules qu’avant, dans les tuiles et la 
   assert.ok(GENERIC_LIGHT_GLSL.includes('mix(smoothstep(-.12,.22,d),smoothstep(-.02,.04,d),airless)'));
   // Couleur éclairée.
   assert.ok(GENERIC_LIGHT_GLSL.includes('mix(col*(.38+.72*m0),col*min(1.4,.04+2.*m0/(m0+mu+.001)),airless)'));
-  // Halo bleu du limbe gardé pour le modèle général seulement.
-  assert.ok(tileFragmentShader.includes("if(surfModel<.5){float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);}"));
+  // Halo bleu du limbe gardé pour le modèle général seulement (ni la Terre ni Jupiter).
+  assert.ok(tileFragmentShader.includes("if(surfModel<.5&&gasModel<.5){float fr=pow(1.-mu,3.);base+=vec3(.25,.5,1.)*fr*(.04+.96*dayV)*.65*sh*(1.-airless);}"));
 // Fin du test.
 });
 
@@ -68,4 +68,15 @@ test('modèle de la Terre : sol, nuages et coquille branchés', () => {
   // Coquille : la part du fond qui traverse l'air sert d'opacité en perspective aérienne.
   assert.ok(shellFragmentShader.includes('gl_FragColor=vec4(c,aerial>.5?tv:1.);'));
 // Fin du test.
+});
+
+// Modèle de Jupiter : les deux fonctions GLSL existent, sont appelées avec la bonne signature et sont reliées au shader.
+test('le modèle de Jupiter définit jupiterGrade et jupiterLight et le shader des tuiles les utilise', async () => {
+  const { JUPITER_LIGHT_GLSL } = await import('./surfaceLight.jsx');
+  const { tileFragmentShader } = await import('./MapEngine/tiles/tileShaders.jsx');
+  const src = JUPITER_LIGHT_GLSL.join('\n');
+  assert.ok(src.includes('vec3 jupiterGrade(vec3 c)') && src.includes('vec3 jupiterLight(vec3 g,float d,float mu)'));
+  assert.ok(tileFragmentShader.includes('uniform float gasModel;') && tileFragmentShader.includes('jupiterLight(jupiterGrade(col),d,mu)'));
+  // Le halo bleu du modèle général et le modèle de la Terre ne s'appliquent pas à Jupiter.
+  assert.ok(tileFragmentShader.includes('surfModel<.5&&gasModel<.5') && tileFragmentShader.includes('else if(surfModel>.5)'));
 });
