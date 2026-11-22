@@ -105,4 +105,5 @@ export { default as DragIndicatorIcon } from '@mui/icons-material/DragIndicator'
 export { default as SendIcon } from '@mui/icons-material/ArrowUpward';
 // Trajet : le bouton de la fenêtre de temps de trajet, et l'inversion du départ et de l'arrivée.
 export { default as RouteIcon } from '@mui/icons-material/Route';
+export { default as InfoIcon } from '@mui/icons-material/InfoOutlined';
 export { default as SwapVertIcon } from '@mui/icons-material/SwapVert';

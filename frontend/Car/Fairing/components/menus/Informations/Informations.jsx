@@ -243,6 +243,10 @@ function InformationsShell({ view, hud, layersOpen, onCloseLayers, menu, sun, cl
 export function Informations({ hud, data, worldCities, phases, handlers, layersOpen, onCloseLayers, sunFocused, plateau = null, ...menu }) {
   // Résout l'astre visé et son contenu.
   const view = useBodyView({ hud, data, worldCities, phases, handlers });
+  // Lit le mode compact.
+  const { compact } = useViewport();
+  // Téléphone : la fiche n'apparaît qu'après l'appui sur le bouton Informations de la barre d'outils.
+  if (compact && !layersOpen) return null;
   // Soleil ciblé : le panneau s'affiche tout seul, comme pour une planète (caractéristiques et grandeurs en direct).
   // Sans astre ciblé, il s'ouvre aussi à la demande depuis la barre d'outils (et se referme par sa croix).
   // Sans astre visé, si le Soleil est visé ou si les informations sont demandées.

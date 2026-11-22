@@ -712,6 +712,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
         // Trajet : ouvre ou ferme la fenêtre de temps de trajet.
         onTrip={() => panels.toggle('trip')}
         tripOpen={panels.panel === 'trip'}
+        // Informations : ouvre ou ferme la fiche de l'astre focus.
+        onInfos={() => panels.toggle('layers')}
+        infosOpen={panels.layersOpen}
         // Galerie : ouvre la fenêtre.
         onStore={() => setStoreOpen(true)}
         onGallery={() => setGalleryOpen(true)}
