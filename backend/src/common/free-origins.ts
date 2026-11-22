@@ -1,11 +1,12 @@
 /**
- * Sites partenaires autorisés à utiliser l'API sans payer : les routes payantes les laissent passer sans jeton. Ils ne
+ * Sites partenaires reconnus (plus aucune route payante depuis le 22 novembre 2026 : seul `normalizeOrigin` sert, à
+ * common/cors.ts ; le reste est gardé pour une future liste de partenaires). Ils ne
  * sont PAS dans les origines CORS (réservées au frontend, voir common/cors.ts). Liste par défaut, plus la variable
  * FREE_API_ORIGINS (séparées par des virgules).
  */
 import type { Request } from 'express';
 
-/** Sites partenaires autorisés à utiliser les routes payantes sans jeton (en plus de FREE_API_ORIGINS). */
+/** Sites partenaires reconnus (en plus de FREE_API_ORIGINS). */
 export const FREE_API_ORIGINS_DEFAULT = ['https://baibai-qp76.onrender.com'];
 
 /** Origine normalisée (schéma + hôte + port, en minuscules), ou null si l'adresse est illisible. */

@@ -28,8 +28,6 @@ import { androidAssetLinks } from './common/android-asset-links';
 import { publicUrl } from './common/public-url';
 // Branche la documentation Swagger sur /api/docs.
 import { setupOpenApi } from './modules/openapi';
-// Verrou payant devant la documentation (/api/docs, /api/docs-json) : même clé que les exports.
-import { docsPaywall } from './common/docs-paywall';
 // Pages des astres pour le référencement : recherche d'une page d'après l'adresse, et rendus HTML, Markdown et llms-full.txt.
 import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderLlmsFull } from './services/core/data/body-pages';
 // Service du balisage SEO (table seo_tags) : titre et description de chaque page, lus en base s'ils y sont rangés.
@@ -129,7 +127,7 @@ async function bootstrap() {
   const config = loadConfiguration();
 
   // Secret de signature des sessions et des clés d'API, résolu AVANT la création de l'application : les
-  // services le lisent dans process.env dès leur constructeur (contributions.service, jwt.guard), donc il doit
+  // services le lisent dans process.env dès leur constructeur (contributions.service), donc il doit
   // y être posé maintenant. Ce secret n'est jamais écrit dans le dépôt : il vient de la variable
   // d'environnement, sinon de la base, sinon il est tiré pour la durée du processus.
   // Le magasin de secrets, ou null sans base configurée.
@@ -141,7 +139,7 @@ async function bootstrap() {
   // Le magasin ne sert qu'au démarrage : on referme sa connexion.
   await secretStore?.close().catch(() => undefined);
   // Le journal dit d'où vient le secret — jamais sa valeur.
-  if (source === 'éphémère') console.warn('Secret   : tiré au hasard pour ce processus (ni SESSION_SECRET, ni DATABASE_URL) : sessions et clés d’API perdues au redémarrage');
+  if (source === 'éphémère') console.warn('Secret   : tiré au hasard pour ce processus (ni SESSION_SECRET, ni DATABASE_URL) : sessions perdues au redémarrage');
   // Posé à la main, ou gardé en base.
   else console.log(`Secret   : ${source === 'environnement' ? 'SESSION_SECRET de l’environnement' : 'gardé en base (table app_secrets)'}`);
 
@@ -167,8 +165,6 @@ async function bootstrap() {
   // Adresse publique : https://www.gobaispace.com en ligne, localhost en développement.
   // Adresse publique du service d'après le port configuré.
   const url = publicUrl(config.port);
-  // Verrou payant devant la documentation : posé avant de la monter, pour qu'aucune requête ne l'atteigne sans jeton.
-  app.use(docsPaywall);
   // Monte la documentation Swagger, avec cette adresse comme serveur proposé pour essayer les requêtes.
   setupOpenApi(app, url);
   // Ouvre le port et attend que le serveur écoute.

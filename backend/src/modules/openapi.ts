@@ -27,9 +27,6 @@ const TAGS: [string, string][] = [
   ['Villes', 'Villes du globe avec recherche.'],
   ['Lieux', 'Recherche de lieux et noms de villes.'],
   ['Position', 'Position GPS sur la Terre ou la Lune, temps de trajet (durée seule) et itinéraire par étapes (un moyen de locomotion par étape).'],
-  // Les exports payants.
-  ['Boutique', 'Catalogue des exports payants, paiement et jeton d’accès.'],
-  ['Exports', 'Modèle 3D complet d’un astre, tuiles assemblées et calcul d’orbite ; jeton d’accès requis.'],
   // Le site.
   ['Contributions', 'Placements LiDAR proposés par les visiteurs, comptes et votes.'],
   ['Galerie', 'Photos et vidéos de la galerie.'],
@@ -66,11 +63,8 @@ export function buildOpenApiDocument(app: INestApplication, serverUrl: string = 
         'partir d’éléments orbitaux versionnés dans le dépôt, sans appeler de service d’éphémérides. Chaque',
         'instantané porte son époque, son échelle de temps, son centre, son repère, ses unités et sa précision.',
         '',
-        '**Authentification** : les contributions, l’administration des API externes et les exports payants en',
-        'demandent une ; tout le reste est ouvert en lecture. Les exports se paient sur `/store` et s’ouvrent avec',
-        'le jeton JWT obtenu, présenté dans l’en-tête `Authorization: Bearer`. Cette documentation elle-même est',
-        'payante : elle demande le jeton de l’article « all » (« Tout le catalogue »), présenté de la même façon,',
-        'ou en paramètre d’adresse `?key=` pour l’ouvrir directement dans un navigateur.',
+        '**Authentification** : les contributions et l’administration des API externes en demandent une ; tout',
+        'le reste est ouvert en lecture. Cette documentation est libre d’accès.',
       ].join('\n'),
     )
     .setVersion('2.1')
@@ -82,13 +76,6 @@ export function buildOpenApiDocument(app: INestApplication, serverUrl: string = 
     )
     // Session du navigateur : cookie HttpOnly posé à la connexion.
     .addCookieAuth('gobai_session', { type: 'apiKey', in: 'cookie', description: 'Cookie de session HttpOnly posé par /contributions/session/login.' }, 'web-session')
-    // Clé d'API achetée : le jeton JWT délivré par /store/orders/{id}/claim, qui ouvre les routes /export. Il
-    // voyage dans le même en-tête que la session, mais ce n'est pas le même jeton : celui-ci porte les droits
-    // payés et la date d'expiration de l'achat.
-    .addBearerAuth(
-      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'Clé d’API achetée dans la boutique : jeton JWT portant les droits payés. Obtenue par /store/orders/{id}/claim ou /store/licences.' },
-      'cle-api',
-    )
     // Clé d'administration : déconnecte une API externe sur le serveur.
     .addApiKey(
       { type: 'apiKey', name: 'x-admin-token', in: 'header', description: 'Clé d’administration du serveur (variable API_ADMIN_TOKEN).' },

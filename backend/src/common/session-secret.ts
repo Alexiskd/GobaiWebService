@@ -1,8 +1,8 @@
 /**
- * Secret de signature des sessions et des clés d'API : résolu une fois au démarrage, jamais écrit dans le dépôt.
+ * Secret de signature des sessions : résolu une fois au démarrage, jamais écrit dans le dépôt.
  *
- * Ce secret signe deux choses : les sessions des comptes, et les clés d'API vendues dans la boutique. Qui le
- * connaît peut donc fabriquer une clé valable sans payer — c'est pourquoi il n'a sa place ni dans le code, ni
+ * Ce secret signe les sessions des comptes. Qui le connaît peut donc se faire passer pour n'importe quel compte —
+ * c'est pourquoi il n'a sa place ni dans le code, ni
  * dans un fichier versionné, ni dans cette conversation.
  *
  * Trois sources, dans cet ordre :
@@ -16,7 +16,7 @@
  *      pas au redémarrage, et le journal le dit.
  *
  * Le secret résolu est reposé dans `process.env.SESSION_SECRET`, pour que tous les lecteurs existants
- * (jwt.guard, contributions.service) le trouvent là où ils le cherchent déjà, sans rien changer chez eux.
+ * (contributions.service) le trouvent là où ils le cherchent déjà, sans rien changer chez eux.
  */
 import { randomBytes } from 'node:crypto';
 
@@ -29,7 +29,7 @@ export const SECRET_BYTES = 48;
 /** Un secret neuf, imprévisible. */
 export const newSecret = (): string => randomBytes(SECRET_BYTES).toString('base64url');
 
-/** D'où vient le secret retenu : utile au journal, et au diagnostic de la boutique. */
+/** D'où vient le secret retenu : utile au journal. */
 export type SecretSource = 'environnement' | 'base' | 'éphémère';
 
 /** Le magasin durable des secrets : la base de données, ou une doublure dans les tests. */

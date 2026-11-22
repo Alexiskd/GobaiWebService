@@ -31,34 +31,8 @@ services:
       - key: NASA_API_KEY
         # Valeur saisie dans le tableau de bord.
         sync: false
-      # Prix des exports par astre, en centimes (1 500 € par défaut).
-      - key: PRICE_BODY_CENTS
-        # Valeur saisie dans le tableau de bord.
-        sync: false
-      # Prix spécial de l'export de la Terre, en centimes (100 000 € par défaut).
-      - key: PRICE_EARTH_CENTS
-        sync: false
-      # Prix d'une heure de calcul d'orbite, par astre (1 000 € par défaut).
-      - key: PRICE_ORBIT_HOUR_CENTS
-        # Valeur saisie dans le tableau de bord.
-        sync: false
-      # Prix des tuiles de tous les astres.
-      - key: PRICE_TILES_CENTS
-        # Valeur saisie dans le tableau de bord.
-        sync: false
-      # Prix de l'ensemble du catalogue.
-      - key: PRICE_ALL_CENTS
-        # Valeur saisie dans le tableau de bord.
-        sync: false
-      # Secret de signature des sessions ET des clés d'API achetées. Sans lui : chaque redémarrage déconnecte
-      # tout le monde, et un paiement abouti ne peut délivrer aucune clé — la boutique reste donc fermée.
+      # Secret de signature des sessions des comptes : tiré au hasard par Render, jamais écrit dans le dépôt.
       - key: SESSION_SECRET
-        # Valeur tirée au hasard par Render, qui la garde : personne n'a à manipuler ce secret, ni à le coller
-        # dans le tableau de bord. Et si cette variable reste vide, le serveur se débrouille seul : il tire un
-        # secret au premier démarrage et le range dans sa base (table app_secrets), d'où il le relit ensuite —
-        # les sessions et les clés d'API tiennent donc d'un redéploiement à l'autre sans que personne s'en
-        # occupe. Ce secret n'est jamais écrit dans le dépôt : il signe les clés d'API vendues, donc qui le
-        # connaît pourrait en fabriquer une sans payer.
         generateValue: true
       # API externes déconnectées : hôtes séparés par des virgules (ex. eonet.gsfc.nasa.gov,api.open-meteo.com). Vide : aucune.
       - key: BLOCKED_API_HOSTS
@@ -68,8 +42,8 @@ services:
       - key: API_ADMIN_TOKEN
         # Valeur saisie dans le tableau de bord.
         sync: false
-      # Clé secrète Stripe (sk_test_… en mode test, sk_live_… pour de vrais paiements) : elle ouvre les dons et
-      # la boutique. Le serveur vérifie sa forme au démarrage et refuse une clé publique pk_… par erreur.
+      # Clé secrète Stripe (sk_test_… en mode test, sk_live_… pour de vrais paiements) : elle ouvre les dons.
+      # Le serveur vérifie sa forme au démarrage et refuse une clé publique pk_… par erreur.
       - key: STRIPE_SECRET_KEY
         # Valeur saisie dans le tableau de bord, jamais dans le dépôt : c'est la seule clé de ce service qui
         # peut déplacer de l'argent.

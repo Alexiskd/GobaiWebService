@@ -20,8 +20,7 @@ Computing, Transmission — voir `ARCHITECTURE.md`).
   lectures replient sur les contrats embarqués : le site reste publiable seul en Static Site.
 - **Habillage des astres** rebranché sur le serveur : disponibilité des cartes Trek, villes,
   relief et couleur de la Lune, blend de la Lune (BP), phases de la Lune, blocage d'API côté serveur.
-- **Exports** : les routes `/store` et `/export` et le paiement Stripe restent servis par le backend ; l'interface
-  n'a plus de fenêtre Boutique ni de compte.
+- **Exports** : la vente des exports (routes `/store` et `/export`) est supprimée depuis le 22 novembre 2026.
 - **Assistant** : connexion obligatoire avec la clé d'API de l'utilisateur, chez Claude ou chez Mistral, gardée dans
   son navigateur ; le serveur relaie (`/assistant`) sans jamais garder la clé, par une interface commune aux deux.
 - **Galerie (PostgreSQL)** : servie par `/galerie`. Le module de dons (`/donations`, Stripe) reste dans le backend,
@@ -255,17 +254,9 @@ The OpenAPI document is built from the controllers themselves and served at `/ap
 
 One thing the documentation now states plainly rather than hides: `GET /api/v1/sun/:body` still calls JPL Horizons at request time. It is the last route that depends on an external ephemeris service.
 
-## Paid exports: JWT and Stripe (14 November 2026)
+## Paid exports: removed (22 November 2026)
 
-Browsing the site stays free and untouched. What is sold is *retrieval*: the complete 3D model of a body, its tiles assembled into one image, and the orbit API. None of the routes the browser uses to draw the map were put behind payment.
-
-- **JWT (RFC 7519), implemented in `common/jwt.ts`.** HS256 over `node:crypto`, no dependency. Standard claims — `iss`, `sub`, `aud`, `exp`, `nbf`, `iat`, `jti` — plus a `scope` array carrying what was bought. The pitfalls are handled explicitly and tested: the algorithm is pinned to HS256 so a token announcing `none` or `RS256` is refused rather than letting the attacker pick how his own signature is checked; the signature is compared in constant time; `exp`/`nbf` get a 60-second clock skew; `iss` and `aud` are enforced. The payload is signed, not encrypted — it is readable by the bearer, so nothing secret goes in it.
-- **A guard, not a global lock.** `@RequiresScope('body:mars')` on a route; the scope may be derived from the path. Routes without the decorator are untouched, so the guard cannot silently close the public API. Without `SESSION_SECRET` the paid routes close rather than open.
-- **Stripe Checkout, reusing the donations client.** `GET /store/catalogue`, `POST /store/orders`, `POST /store/orders/{id}/claim`. The product id is written into Stripe's `client_reference_id` at payment time, so the claim step reads what was actually paid for instead of trusting the browser — without it, three products sharing a price would be interchangeable. Payment is verified against Stripe, never against the return URL.
-- **What the exports actually produce.** `GET /export/bodies/{body}/model.glb` writes a glTF 2.0 binary by hand: a spheroid at true scale in kilometres (Mars comes out 3 389.5 units of radius, Saturn flattened by 9.8 %), textured with the body's tiles. The mosaic is *not* reprojected; instead the sphere's texture coordinates follow the tile grid's own projection, so a Web Mercator mosaic lands correctly, with the caps beyond 85.05° stretched from the last row — the standard compromise, documented. `GET /export/bodies/{body}/tiles.jpg` returns the assembled image, and `GET /export/orbits` the positions, velocities and osculating elements from the same local model the scene uses.
-- **Prices.** 1 500 € per body (100 000 € for Earth), 1 999 € for all tiles, and 4 999 € for everything. Body prices are configurable with `PRICE_BODY_CENTS` and `PRICE_EARTH_CENTS`; orbit calculation remains separately rented by the hour.
-
-**Licences of what is sold (22 November 2026).** Showing an image on the free site and reselling it in a paid export are two different uses. `backend/src/services/map-tiles/earth/earth-licences.ts` declares the licence of every Earth imagery source and whether it allows commercial reuse; a source whose licence has not been checked counts as non-commercial. Earth exports are capped below the first zoom level of any non-commercial source (`maxCommercialEarthZoom`), so none of their images can end up in a sold file — guarded by `earth-licences.spec.ts`. Sentinel-2 cloudless is used in its 2016 edition only (CC BY 4.0); later EOX editions are CC BY-NC-SA and must not be added. Exports carry every attribution in the GLB `copyright` field and the `X-Attribution` header. Buyers accept the CGV (`/legal/cgv.html`) on the Stripe page.
+The sale of exports (store, JWT access keys, paid `/export` routes, paid API documentation) has been removed. Nothing is sold on gobaispace.com any more: the site and its API documentation are free. The paid product is the game, sold on its own site, which reads its data from this API.
 
 ## The last JPL dependency, and orbits by the hour (14 November 2026)
 

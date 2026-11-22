@@ -11,7 +11,7 @@ import { ContributionsService } from '../services/content/contributions/contribu
   controllers: [ContributionsController],
   // Le service du module.
   providers: [ContributionsService],
-  // Exporté : la boutique s'en sert pour reconnaître le compte connecté, qui est le même pour tout le site.
+  // Exporté : le service des comptes, partagé avec les autres modules.
   exports: [ContributionsService],
 // Fin de la déclaration.
 })
