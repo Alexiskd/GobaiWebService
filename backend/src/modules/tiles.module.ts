@@ -96,7 +96,7 @@ import { EphemerisModule } from './ephemeris.module';
     { provide: BodyModelService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new BodyModelService(config) },
   // Fin de la liste des services.
   ],
-  // Le service des couches sert aussi aux exports payants (module de la boutique).
+  // Le service des couches, partagé avec les autres modules.
   exports: [TilesService],
 // Fin de la déclaration.
 })

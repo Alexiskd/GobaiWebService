@@ -1,12 +1,11 @@
-// Liens vers les pages légales (mentions légales, confidentialité, CGV), servies en pages statiques sous /legal/.
+// Liens vers les pages légales (mentions légales, confidentialité), servies en pages statiques sous /legal/.
 // Affichés dans la fenêtre Node (un clic depuis la barre d'outils) et sur l'écran des appareils non compatibles,
 // pour qu'ils restent accessibles directement et en permanence (loi LCEN, art. 6 III).
 
-/** Les trois pages légales, dans l'ordre d'affichage. */
+/** Les deux pages légales, dans l'ordre d'affichage. */
 export const LIENS_LEGAUX = [
   { href: '/legal/mentions-legales.html', label: 'Mentions légales' },
   { href: '/legal/confidentialite.html', label: 'Confidentialité' },
-  { href: '/legal/cgv.html', label: 'CGV' },
 ];
 
 /** Ligne de liens légaux, séparés par des points ; s'ouvrent dans un nouvel onglet pour ne pas quitter la scène. */

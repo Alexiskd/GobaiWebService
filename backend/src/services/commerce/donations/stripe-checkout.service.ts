@@ -43,14 +43,6 @@ export const CHECKOUT_TTL_MS = 31 * 60 * 1000;
 // Adresse de l'API de Stripe.
 const API = 'https://api.stripe.com/v1';
 
-/**
- * Texte affiché sur la page Stripe d'un achat, au-dessus du bouton « Payer ». Payer vaut acceptation des CGV et
- * demande d'exécution immédiate : le contenu numérique est livré tout de suite, le droit de rétractation tombe.
- */
-export const PURCHASE_TERMS =
-  "En cliquant sur « Payer », vous acceptez les conditions générales de vente (https://www.gobaispace.com/legal/cgv.html), " +
-  "vous demandez l'accès immédiat au contenu numérique acheté et vous reconnaissez renoncer ainsi à votre droit de rétractation.";
-
 // Déclare et exporte la classe StripeCheckoutService (début).
 export class StripeCheckoutService {
   // Constructeur (début) :
@@ -93,9 +85,6 @@ export class StripeCheckoutService {
       submit_type: reference ? 'pay' : 'donate',
       // la référence de ce qui est acheté, enregistrée par Stripe et non modifiable ensuite,
       ...(reference ? { client_reference_id: reference } : {}),
-      // pour un achat : l'acceptation des CGV et la demande d'exécution immédiate (contenu numérique, art. L221-28 13°
-      // du Code de la consommation), affichées au-dessus du bouton « Payer »,
-      ...(reference ? { 'custom_text[submit][message]': PURCHASE_TERMS } : {}),
       // la page en français,
       locale: 'fr',
       // l'adresse de retour après paiement,

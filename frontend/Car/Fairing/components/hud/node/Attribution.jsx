@@ -447,7 +447,7 @@ export function Attribution({ hud, moonReal = false, extra = '', open = false, o
           {/* Panneau de l'onglet, relié à son onglet pour l'accessibilité, limité en largeur pour la lecture. */}
           <div role="tabpanel" id={`node-panel-${tab}`} aria-labelledby={`node-tab-${tab}`} className="max-w-220 mx-auto min-w-0">
             {contenu}
-            {/* Mentions légales, confidentialité et CGV : visibles quel que soit l'onglet. */}
+            {/* Mentions légales et confidentialité : visibles quel que soit l'onglet. */}
             <LiensLegaux className="mt-8 text-soft" />
             {/* Rappel du raccourci clavier, sur ordinateur seulement. */}
             {!compact && <Note className="mt-8 text-[0.78rem]">Touche S pour ouvrir ou fermer cette fenêtre.</Note>}
