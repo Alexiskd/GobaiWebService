@@ -96,7 +96,7 @@ const PLANET_TIERS: EarthTier[] = Array.from({ length: PLANET_MAX_KM / PLANET_ST
   // Distance jusqu'à laquelle ce palier s'applique.
   const km = (i + 1) * PLANET_STEP_KM;
   // Niveau le plus fin et budget de tuiles (ordinateur, téléphone) selon la distance.
-  const [maxZoom, desktop, phone] = km <= 50_000 ? [6, 240, 180] : km <= 150_000 ? [5, 200, 150] : [4, 160, 120];
+  const [maxZoom, desktop, phone] = km <= 50_000 ? [6, 480, 360] : km <= 150_000 ? [5, 400, 300] : [4, 320, 240];
   // Le palier.
   return {
     id: `planete-${km}`, label: `Planète ${km.toLocaleString('fr-FR')} km`, maxKm: km, source: 'NASA GIBS, Sentinel-2', maxZoom,
@@ -114,21 +114,21 @@ const PLANET_TIERS: EarthTier[] = Array.from({ length: PLANET_MAX_KM / PLANET_ST
 // Déclare et exporte les paliers (début de la liste).
 export const EARTH_TIERS: EarthTier[] = [
   // Rue : jusqu'à 0,4 km ; orthophotos nationales jusqu'au niveau 19 ; tout le détail.
-  { id: 'rue', label: 'Rue', maxKm: 0.4, source: 'orthophotos nationales', maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
+  { id: 'rue', label: 'Rue', maxKm: 0.4, source: 'orthophotos nationales', maxZoom: 19, maxTiles: { desktop: 560, phone: 420 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
   // Quartier : jusqu'à 3 km ; niveau 19.
-  { id: 'quartier', label: 'Quartier', maxKm: 3, source: 'orthophotos nationales', maxZoom: 19, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
+  { id: 'quartier', label: 'Quartier', maxKm: 3, source: 'orthophotos nationales', maxZoom: 19, maxTiles: { desktop: 560, phone: 420 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
   // Ville : jusqu'à 40 km ; niveau 17.
-  { id: 'ville', label: 'Ville', maxKm: 40, source: 'orthophotos nationales', maxZoom: 17, maxTiles: { desktop: 280, phone: 210 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
+  { id: 'ville', label: 'Ville', maxKm: 40, source: 'orthophotos nationales', maxZoom: 17, maxTiles: { desktop: 560, phone: 420 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'gebco' } },
   // Région : jusqu'à 400 km ; niveau 14 ; orthophotos nationales vues de loin, sinon Sentinel-2.
-  { id: 'region', label: 'Région', maxKm: 400, source: 'orthophotos nationales (vue de loin), sinon Sentinel-2', maxZoom: 14, maxTiles: { desktop: 260, phone: 200 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'fondu' } },
+  { id: 'region', label: 'Région', maxKm: 400, source: 'orthophotos nationales (vue de loin), sinon Sentinel-2', maxZoom: 14, maxTiles: { desktop: 520, phone: 400 }, details: { oceans: 'relief', coasts: true, roads: true, names: true, marine: 'fondu' } },
   // Pays : jusqu'à 2 500 km ; niveau 10 ; Sentinel-2.
-  { id: 'pays', label: 'Pays', maxKm: 2500, source: 'Sentinel-2', maxZoom: 10, maxTiles: { desktop: 220, phone: 170 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'fondu' } },
+  { id: 'pays', label: 'Pays', maxKm: 2500, source: 'Sentinel-2', maxZoom: 10, maxTiles: { desktop: 440, phone: 340 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'fondu' } },
   // Continent : jusqu'à 9 000 km ; niveau 8 ; Sentinel-2.
-  { id: 'continent', label: 'Continent', maxKm: 9000, source: 'Sentinel-2', maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'noaa' } },
+  { id: 'continent', label: 'Continent', maxKm: 9000, source: 'Sentinel-2', maxZoom: 8, maxTiles: { desktop: 360, phone: 280 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'noaa' } },
   // Planète : un palier tous les 10 000 km, de 10 000 à 300 000 km (voir PLANET_TIERS) ; NASA GIBS et Sentinel-2.
   ...PLANET_TIERS,
   // Espace : au-delà ; la mosaïque instantanée seule (niveaux 0 à 3).
-  { id: 'espace', label: 'Espace', maxKm: null, source: 'mosaïque instantanée', maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
+  { id: 'espace', label: 'Espace', maxKm: null, source: 'mosaïque instantanée', maxZoom: 3, maxTiles: { desktop: 170, phone: 170 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
 // Fin des paliers.
 ];
 
