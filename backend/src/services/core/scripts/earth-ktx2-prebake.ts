@@ -150,7 +150,7 @@ async function main() {
           if (has.rowCount) { skipped++; }
           else {
             // Téléchargement, décodage, conversion, enregistrement.
-            const jpeg = await download(EARTH_SOURCE_BY_ID.get(layer as 'sentinel2' | 'gibs')!.urls(z, x, y));
+            const jpeg = await download(EARTH_SOURCE_BY_ID.get(layer as 'sentinel2' | 'gibs')!.urls(z, x, y, ''));
             if (!jpeg) throw new Error('téléchargement impossible');
             const ktx2 = await toKtx2(dir, await sharp(jpeg).png().toBuffer());
             await pool.query('INSERT INTO earth_ktx2 (layer, z, x, y, data, size) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING', [layer, z, x, y, ktx2, ktx2.length]);
