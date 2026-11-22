@@ -9,19 +9,11 @@ import {
 // Fin de la liste ; module d'origine.
 } from '@/Engine/shared/i18n/i18nMath';
 
-// Clé du stockage local où est gardé le choix de langue.
-const STORAGE_KEY = 'gobai.lang';
 // Identifiant de la balise link de la police.
 const FONT_LINK_ID = 'i18n-font';
 // Identifiant de la balise style du texte bidirectionnel.
 const BIDI_STYLE_ID = 'i18n-bidi';
 
-// Déclare readChoice, qui lit le choix de langue enregistré.
-const readChoice = () => {
-  // Décode le JSON enregistré (null par défaut) ; null si le stockage ou le décodage échoue.
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null'); } catch { return null; }
-// Fin de readChoice.
-};
 // navLanguages : langues préférées du navigateur ; liste vide hors navigateur, sinon la liste complète, sinon la langue unique.
 const navLanguages = () => (typeof navigator === 'undefined' ? [] : navigator.languages?.length ? navigator.languages : [navigator.language]);
 
@@ -102,13 +94,13 @@ function applyDocument({ code, script }) {
 }
 
 /**
- * Langue de l'interface : choix enregistré, sinon langue du navigateur. Pilote la traduction de toute la page.
+ * Langue de l'interface : celle du navigateur, appliquée automatiquement (plus de sélecteur de langue). Pilote la traduction de toute la page.
  * Renvoie la sélection effective, l'état de la traduction, le référentiel (chargé à la demande) et le sélecteur.
  */
 // Déclare et exporte le crochet useInterfaceLanguage.
 export function useInterfaceLanguage() {
-  // État : le choix enregistré, lu au premier rendu.
-  const [choice, setChoice] = useState(readChoice); // { code3, country, script } | null (langue du navigateur)
+  // Plus de choix manuel : la langue du navigateur s'applique toujours.
+  const choice = null;
   // État : le référentiel des langues, null tant qu'il n'est pas chargé.
   const [data, setData] = useState(null);
   // État : vrai si le chargement du référentiel a échoué.
@@ -204,21 +196,6 @@ export function useInterfaceLanguage() {
   // Fin de l'effet ; dépendances : la langue affichée, la sélection, la chaîne et le référentiel.
   }, [active, effective, chain, data]);
 
-  // setLanguage : enregistre le choix de langue ; début de la fonction mémorisée.
-  const setLanguage = useCallback((next) => {
-    // Met l'état à jour.
-    setChoice(next);
-    // Début du bloc protégé : le stockage peut être indisponible.
-    try {
-      // S'il y a un choix, l'enregistre en JSON.
-      if (next) localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      // Sinon (retour à la langue du navigateur), supprime l'entrée.
-      else localStorage.removeItem(STORAGE_KEY);
-    // Une erreur de stockage est ignorée.
-    } catch { /* stockage indisponible : choix gardé pour la session */ }
-  // Fin de setLanguage ; fonction stable.
-  }, []);
-
   /** Nom affiché d'un code de traduction (« en » → anglais). */
   // nameOf : nom d'une langue à partir de son code ; début de la fonction mémorisée.
   const nameOf = useCallback((code) => {
@@ -235,6 +212,6 @@ export function useInterfaceLanguage() {
 
   // Renvoie le choix, la sélection effective, la chaîne, l'état, le référentiel, le drapeau d'erreur, l'état de
   // la traduction du DOM et les trois fonctions.
-  return { choice, effective, chain, status, data, dataError, ensureData, setLanguage, nameOf, domTranslation };
+  return { choice, effective, chain, status, data, dataError, ensureData, nameOf, domTranslation };
 // Fin de useInterfaceLanguage.
 }

@@ -4,17 +4,17 @@ import { useCallback, useEffect, useState } from 'react';
 /**
  * Gestion centralisée des fenêtres : une seule ouverte à la fois, jamais deux fenêtres superposées (sur téléphone, où
  * elles couvrent tout l'écran, une seconde fenêtre cacherait la première sans moyen d'y revenir).
- * Fenêtres : 'layers' (informations), 'search', 'help', 'sources', 'settings', 'language', 'gallery',
- * 'plateau', 'store' (Boutique), 'trip' (temps de trajet). Les surfaces du HUD qui ne couvrent rien (l'assistant, l'arborescence des astres) restent
+ * Fenêtres : 'layers' (informations), 'search', 'sources', 'settings', 'gallery',
+ * 'plateau', 'trip' (temps de trajet). Les surfaces du HUD qui ne couvrent rien (l'assistant, l'arborescence des astres) restent
  * à part : elles se rangent dans les zones de l'écran (voir theme/layout).
- * Raccourcis : Ctrl K ou / (recherche), ? (aide), S (Node), L (informations), Échap (fermer).
+ * Raccourcis : Ctrl K ou / (recherche), S (Node), L (informations), Échap (fermer).
  * La barre d'outils n'a plus de bouton Informations : les cartes de l'astre sont rendues avec ses caractéristiques,
  * et la touche L reste le moyen de déplier le panneau et d'y descendre (ou d'ouvrir celui du Soleil, sans astre visé).
  */
 // Déclare et exporte le crochet usePanels : reçoit le mode compact.
 export function usePanels({ compact }) {
   // État : le panneau ouvert, aucun au départ.
-  const [panel, setPanel] = useState(null); // 'layers' | 'search' | 'help' | 'sources' | null
+  const [panel, setPanel] = useState(null); // 'layers' | 'search' | 'sources' | null
 
   // Vrai si le panneau d'informations est ouvert.
   const layersOpen = panel === 'layers'; // sans astre ciblé : Informations sur le Soleil
@@ -42,8 +42,6 @@ export function usePanels({ compact }) {
       if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
       // Barre oblique : ouvre la recherche.
       if (e.key === '/') { e.preventDefault(); setPanel('search'); }
-      // Point d'interrogation : ouvre ou ferme l'aide.
-      else if (e.key === '?') setPanel((p) => (p === 'help' ? null : 'help'));
       // S : ouvre ou ferme les sources.
       else if (e.key.toLowerCase() === 's') setPanel((p) => (p === 'sources' ? null : 'sources'));
       // L : ouvre ou ferme les informations.

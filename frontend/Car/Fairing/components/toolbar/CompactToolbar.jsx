@@ -2,8 +2,6 @@
 import { useRef, useState } from 'react';
 // Importe les composants MUI de la boîte, du bouton nu, du panneau et du texte.
 import { Box, ButtonBase, Paper, Typography } from '@mui/material';
-// Importe useHud, la lecture de l'état du moteur.
-import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe iconNode, le dessin d'une icône.
 import { iconNode } from './iconNode.jsx';
 // Importe les icônes des quatre espaces.
@@ -118,78 +116,11 @@ function ActionTile({ action, onPick, anchorRef }) {
 // Fin de ActionTile.
 }
 
-// Composant PerformancePanel : les mesures du moteur en direct (début).
-function PerformancePanel({ hud }) {
-  // Images par seconde.
-  const fps = useHud(hud, (s) => s.fps ?? 0);
-  // Mesures de performance.
-  const perf = useHud(hud, (s) => s.perf ?? null);
-  // metric : met un nombre en forme, une décimale au plus ; un tiret sans valeur.
-  const metric = (value) => value == null ? '—' : Number(value).toLocaleString('fr-FR', { maximumFractionDigits: 1 });
-  // Lignes du tableau (début).
-  const rows = [
-    // Images par seconde.
-    { label: 'FPS', value: fps ? String(fps) : 'Mesure en cours', detail: 'Images par seconde' },
-    // Temps de calcul du moteur par image, et sa part du temps d'une image.
-    { label: 'CPU', value: perf ? `${metric(perf.cpuMs)} ms` : '—', detail: perf ? `${metric(perf.cpuPct)} % du temps image` : 'Calcul moteur / image' },
-    // Temps de la carte graphique, quand le navigateur le mesure.
-    { label: 'GPU', value: perf?.gpuMs != null ? `${metric(perf.gpuMs)} ms` : 'Non mesurable', detail: perf?.gpuPct != null ? `${metric(perf.gpuPct)} % du temps image` : 'Selon le navigateur' },
-    // Appels de rendu et triangles.
-    { label: 'Dessins', value: perf ? metric(perf.calls) : '—', detail: perf ? `${metric(perf.triangles)} triangles` : 'Appels de rendu' },
-    // Mémoire JavaScript, textures et maillages.
-    { label: 'Mémoire', value: perf?.heapMb != null ? `${metric(perf.heapMb)} Mo JS` : 'Non exposée', detail: perf ? `${metric(perf.textures)} textures · ${metric(perf.geometries)} maillages` : 'Textures et géométries' },
-  // Fin des lignes.
-  ];
-  // Rendu (début).
-  return (
-    // Panneau.
-    <Paper elevation={0} sx={{ mt: 1.5, p: 1.5, borderRadius: 3, bgcolor: 'rgba(85, 130, 190, .10)', border: 1, borderColor: 'divider' }}>
-      {/* Ligne de titre (début). */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.25 }}>
-        {/* Titre « Performances en direct ». */}
-        <Typography sx={{ fontSize: 13, fontWeight: 800 }}>Performances en direct</Typography>
-        {/* Mention « Moteur 3D ». */}
-        <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>Moteur 3D</Typography>
-      {/* Fin de la ligne de titre. */}
-      </Box>
-      {/* Grille de deux colonnes (début). */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1 }}>
-        {/* Pour chaque ligne (début) : */}
-        {rows.map((row) => (
-          // sa case (début),
-          <Box key={row.label} sx={{ minWidth: 0, p: 1, borderRadius: 2, bgcolor: 'background.paper' }}>
-            {/* son libellé, */}
-            <Typography sx={{ fontSize: 10, color: 'text.secondary', fontWeight: 700 }}>{row.label}</Typography>
-            {/* sa valeur, */}
-            <Typography sx={{ fontSize: 15, fontWeight: 800, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' }}>{row.value}</Typography>
-            {/* son détail. */}
-            <Typography sx={{ fontSize: 9, lineHeight: 1.3, color: 'text.secondary' }}>{row.detail}</Typography>
-          {/* Fin de la case. */}
-          </Box>
-        // Fin de la boucle.
-        ))}
-      {/* Fin de la grille. */}
-      </Box>
-      {/* Note (début). */}
-      <Typography sx={{ mt: 1, fontSize: 10, lineHeight: 1.4, color: 'text.secondary' }}>
-        {/* Le texte : ce que mesurent les valeurs CPU et GPU. */}
-        CPU = temps de calcul du moteur par image, pas le pourcentage global du processeur. La mesure GPU dépend du navigateur.
-      {/* Fin de la note. */}
-      </Typography>
-    {/* Fin du panneau. */}
-    </Paper>
-  // Fin du rendu.
-  );
-// Fin de PerformancePanel.
-}
-
 /** Navigation mobile en quatre espaces ; les actions existantes restent les mêmes. */
-// Déclare et exporte le composant CompactToolbar, avec les actions et l'état du moteur (début).
-export function CompactToolbar({ actions, hud }) {
+// Déclare et exporte le composant CompactToolbar, avec les actions (début).
+export function CompactToolbar({ actions }) {
   // État : l'espace ouvert, aucun au départ.
   const [active, setActive] = useState(null);
-  // État : le panneau des performances, fermé au départ.
-  const [performanceOpen, setPerformanceOpen] = useState(false);
   // Référence de la barre, pour ancrer les menus.
   const anchorRef = useRef(null);
   // L'espace ouvert.
@@ -301,44 +232,6 @@ export function CompactToolbar({ actions, hud }) {
             {selected ? TITLES[selected.id] : ''}
           {/* Fin du titre. */}
           </Typography>
-          {/* Dans l'espace « Menu », avec les réglages (début). */}
-          {selected?.id === 'menu' && (
-            // Bloc des performances (début).
-            <Box sx={{ px: 1, mb: 1 }}>
-              {/* Bouton du gestionnaire de performances (début). */}
-              <ButtonBase
-                // Au clic : ouvre ou referme le panneau.
-                onClick={() => setPerformanceOpen((open) => !open)}
-                // État ouvert, pour les lecteurs d'écran.
-                aria-expanded={performanceOpen}
-                // Style (début) :
-                sx={{
-                  // sur toute la largeur, contenu réparti ;
-                  width: '100%', display: 'flex', justifyContent: 'space-between', textAlign: 'left',
-                  // marges, coins arrondis ; fond marqué quand le panneau est ouvert.
-                  p: 1.25, borderRadius: 2.5, bgcolor: performanceOpen ? 'action.selected' : 'action.hover',
-                // Fin du style.
-                }}
-              // Fin des réglages du bouton.
-              >
-                {/* Textes (début). */}
-                <Box>
-                  {/* Titre. */}
-                  <Typography sx={{ fontSize: 13, fontWeight: 700 }}>Gestionnaire de performances</Typography>
-                  {/* Sous-titre. */}
-                  <Typography sx={{ fontSize: 10, color: 'text.secondary' }}>FPS · CPU · GPU · mémoire</Typography>
-                {/* Fin des textes. */}
-                </Box>
-                {/* « Masquer » ou « Afficher ». */}
-                <Typography sx={{ fontSize: 12, fontWeight: 700 }}>{performanceOpen ? 'Masquer' : 'Afficher'}</Typography>
-              {/* Fin du bouton. */}
-              </ButtonBase>
-              {/* Le panneau, quand il est ouvert. */}
-              {performanceOpen && <PerformancePanel hud={hud} />}
-            {/* Fin du bloc. */}
-            </Box>
-          // Fin du cas « Données ».
-          )}
           {/* S'il y a des actions (début). */}
           {items.length ? (
             // Grille des tuiles (début).

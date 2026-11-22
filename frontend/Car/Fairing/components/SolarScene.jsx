@@ -21,8 +21,6 @@ import { useInterfaceLanguage } from '@/Fairing/hooks/useInterfaceLanguage';
 import { useSolarEngine } from '@/Fairing/hooks/useSolarEngine';
 // Importe le lecteur et l'abonnement du mode économie d'énergie.
 import { getPowerSaving, setPowerSaving, subscribePowerSaving } from '@/Engine/shared/lib/device/powerSaving';
-// Importe la préparation et l'exécution du partage de la vue.
-import { shareData, shareView } from '@/Engine/shared/lib/app/share';
 // Importe le crochet des couches de tuiles.
 import { useTileLayers } from '@/Fairing/hooks/useTileLayers';
 // Importe le crochet des messages temporaires.
@@ -53,21 +51,14 @@ import { ZoomPad } from './hud/ZoomPad.jsx';
 import { FullScreenMessage } from './SolarSystem.jsx';
 // Importe la barre d'outils.
 import { Toolbar } from './toolbar/Toolbar.jsx';
-// Importe la fenêtre d'aide.
-import { Aide } from './menus/Aide.jsx';
 // La fenêtre de temps de trajet entre deux positions (Terre, Lune).
 import { Trajet } from './menus/Trajet/Trajet.jsx';
 // Importe le menu de l'assistant.
 import { Assistant } from './menus/Assistant/Assistant.jsx';
-// Importe la fenêtre de la langue.
-import { Langue } from './menus/Langue.jsx';
 // Importe le plateau tournant en ligne, posé dans le panneau d'informations (plus de fenêtre séparée).
 import { PlateauInline } from './menus/Plateau/PlateauInline.jsx';
 // Importe la fenêtre Données (flux cognitif et théorie quantique).
 import { Donnees } from './menus/Donnees/Donnees.jsx';
-// Importe la boutique des exports et le test du retour de la page de paiement Stripe.
-import { Boutique } from './menus/Boutique/Boutique.jsx';
-import { hasPurchaseReturn } from '@/Computing/api/store';
 // Importe le panneau d'informations.
 import { Informations } from './menus/Informations/Informations.jsx';
 // Importe la fenêtre de recherche.
@@ -228,14 +219,12 @@ export function SolarScene({ data, onSettled, covered = false }) {
 
   // Messages temporaires : liste, ajout et retrait.
   const { toasts, push, dismiss } = useToasts();
-  // Son des clics : état et bascule.
-  const [sound, toggleSound] = useBubbleSound();
-  // Langue de l'interface.
-  const language = useInterfaceLanguage();
+  // Son des clics : toujours actif (aucun bouton pour le couper).
+  useBubbleSound();
+  // Langue de l'interface : celle du navigateur, appliquée automatiquement.
+  useInterfaceLanguage();
   // Fenêtres : une seule ouverte à la fois, gérées en un seul endroit (voir scene/usePanels).
   const panels = usePanels({ compact });
-  // Langue : ouverte ou non, et son ouverture (le même nom qu'avant pour les appels existants).
-  const languageOpen = panels.panel === 'language'; const setLanguageOpen = (on) => panels.show('language', on);
   // Fenêtre Données : ouverte ou non, et son ouverture.
   const galleryOpen = panels.panel === 'gallery'; const setGalleryOpen = (on) => panels.show('gallery', on);
   // Paramètres : ouverts ou non, et leur ouverture.
@@ -251,8 +240,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const [navigatorOpen, setNavigatorOpen] = useState(false);
   // Rail de navigation déplacé à la main (ordinateur) : l'assistant n'a plus à s'en écarter.
   const [navigatorMoved, setNavigatorMoved] = useState(false);
-  // La boutique des exports.
-  const storeOpen = panels.panel === 'store'; const setStoreOpen = (on) => panels.show('store', on);
   // Touche P (Données), sauf pendant une saisie.
   // Effet exécuté une seule fois : un raccourci clavier.
   useEffect(() => {
@@ -379,17 +366,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         : planet ? bodyId(planet) : null;
   // Nom de l'astre visé, null pour le Soleil.
   const currentBodyName = focus === 0 ? null : bodyNames[focus];
-  // Partager la vue : l'adresse de la page suit déjà l'astre affiché (useSiteAddress).
-  // shareCurrentView : partage la vue ; début de la fonction asynchrone mémorisée.
-  const shareCurrentView = useCallback(async () => {
-    // Lance le partage avec le nom de l'astre et l'adresse de la page.
-    const result = await shareView(shareData({ bodyName: currentBodyName, url: window.location.href }));
-    // Lien copié : le dit pendant 4 secondes.
-    if (result === 'copied') push('Lien copié dans le presse-papiers.', 'info', 4000);
-    // Échec : le dit pendant 6 secondes.
-    else if (result === 'failed') push('Partage impossible sur ce navigateur.', 'error', 6000);
-  // Fin de shareCurrentView ; dépendances : le nom de l'astre et push.
-  }, [currentBodyName, push]);
   // Lit dans le HUD la ville survolée.
   const cityFocus = useHud(hud, (s) => s.cityFocus);
 
@@ -410,8 +386,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
   const myPosition = useMyPosition({ showPosition: actions.showPosition, goPlace: actions.pickPlace, push });
   // Nuages LiDAR sur le globe.
   const lidarGlobe = useLidarGlobe(engine);
-  // Au retour de Stripe après un achat d'export : rouvre la boutique, qui délivre la clé.
-  useEffect(() => { if (hasPurchaseReturn()) panels.setPanel('store'); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Adresse d'une fenêtre (https://www.gobaispace.com/galerie, /node) : ouverte dès l'arrivée.
   // Même liste que WINDOW_PAGES dans backend/src/services/core/data/body-pages.ts.
   // Effet exécuté une seule fois : ouvre la fenêtre demandée par l'adresse.
@@ -449,12 +423,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
         galerie: () => setGalleryOpen(true),
         // Les paramètres.
         parametres: () => setSettingsOpen(true),
-        // La langue.
-        langue: () => setLanguageOpen(true),
         // La recherche.
         recherche: () => panels.setPanel('search'),
-        // L'aide.
-        aide: () => panels.setPanel('help'),
         // Les sources.
         node: () => panels.setPanel('sources'),
         // Les informations.
@@ -696,16 +666,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onToggleTilt={() => camera.setTilt((v) => !v)}
         // Verrouillage : transmis au moteur.
         onToggleLock={(on) => engine?.setViewLock(on)}
-        // Vue globale.
-        onReset={actions.resetView}
-        // Aide : ouvre la fenêtre d'aide.
-        onHelp={() => panels.setPanel('help')}
-        // Son actif ou non.
-        sound={sound}
-        // Bascule du son.
-        onToggleSound={toggleSound}
-        // Langue : ouvre la fenêtre.
-        onLanguage={() => setLanguageOpen(true)}
         // Sources : ouvre la fenêtre.
         onSources={() => panels.setPanel('sources')}
         // Dons : ouvre la fenêtre.
@@ -716,14 +676,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onInfos={() => panels.toggle('layers')}
         infosOpen={panels.layersOpen}
         // Galerie : ouvre la fenêtre.
-        onStore={() => setStoreOpen(true)}
         onGallery={() => setGalleryOpen(true)}
         // Paramètres : ouvre la fenêtre.
         onSettings={() => setSettingsOpen(true)}
-        // Partager la vue.
-        onShare={shareCurrentView}
-        // Nom de la langue en cours (dans sa propre langue, sinon son nom courant), vide si elle est inconnue.
-        languageLabel={language.effective ? (language.effective.entry.autonym || language.effective.entry.name) : ''}
       // Fin de la barre d'outils.
       />
   // Fin de la constante.
@@ -853,13 +808,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onPickBody={revealAndFocus}
       // Fin de la fenêtre de recherche.
       />
-      {/* La fenêtre d'aide. */}
-      <Aide open={panels.panel === 'help'} onClose={panels.closePanel} />
       {/* La fenêtre de don. */}
       {/* La fenêtre de temps de trajet : se connecte à l'assistant (clé de l'utilisateur) pour les trajets hors Apollo. */}
       <Trajet open={panels.panel === 'trip'} onClose={panels.closePanel} onOpenAssistant={() => setAssistantOpen(true)} />
-      {/* La fenêtre de la langue. */}
-      <Langue open={languageOpen} onClose={() => setLanguageOpen(false)} language={language} />
       {/* La fenêtre des paramètres (début de la balise). */}
       <Parametres
         // Ouverte ou non.
@@ -900,7 +851,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
       {/* La galerie. */}
       <Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} />
-      <Boutique open={storeOpen} onClose={() => setStoreOpen(false)} />
 
       {/* Pendant le chargement, l'écran Artemis II (SolarSystem) couvre la scène ; ici, seulement l'échec du moteur. */}
       {/* Si le moteur n'existe pas et qu'il y a une erreur (début). */}
