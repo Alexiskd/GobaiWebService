@@ -67,7 +67,7 @@ describe('table de priorité des sources de la Terre', () => {
     // Les paliers de la table sont ceux du serveur, et le chargement est limité au champ de la caméra.
     expect([plan.tiers, plan.fieldOnly]).toEqual([EARTH_TIERS, true]);
     // Du plus proche au plus lointain.
-    expect(EARTH_TIERS.map((t) => t.id)).toEqual(['rue', 'quartier', 'ville', 'region', 'pays', 'continent', 'planete', 'espace']);
+    expect(EARTH_TIERS.map((t) => t.id)).toEqual(['rue', 'quartier', 'ville', 'region', 'pays', 'continent', ...Array.from({ length: 30 }, (_, i) => `planete-${(i + 1) * 10_000}`), 'espace']);
     // Distances croissantes, le dernier sans limite.
     for (let i = 1; i < EARTH_TIERS.length - 1; i++) expect(EARTH_TIERS[i].maxKm!).toBeGreaterThan(EARTH_TIERS[i - 1].maxKm!);
     // Le dernier palier n'a pas de limite.

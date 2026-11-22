@@ -82,6 +82,29 @@ export interface EarthTier {
 // Fin de EarthTier.
 }
 
+/** Pas entre deux paliers de la vue de loin (km) et distance jusqu'à laquelle ils s'appliquent (km). */
+// Déclare le pas des paliers de la vue de loin : 10 000 km, jusqu'à 300 000 km.
+const PLANET_STEP_KM = 10_000, PLANET_MAX_KM = 300_000;
+
+/**
+ * Paliers « Planète » : un tous les 10 000 km, de 10 000 à 300 000 km. Le niveau de tuile le plus fin et le budget
+ * baissent avec la distance (6 jusqu'à 50 000 km, 5 jusqu'à 150 000 km, 4 au-delà), sans jamais passer sous le niveau 4
+ * de la mosaïque, ni sous 85 tuiles.
+ */
+// Déclare les paliers de la vue de loin, construits d'après le pas (début).
+const PLANET_TIERS: EarthTier[] = Array.from({ length: PLANET_MAX_KM / PLANET_STEP_KM }, (_, i) => {
+  // Distance jusqu'à laquelle ce palier s'applique.
+  const km = (i + 1) * PLANET_STEP_KM;
+  // Niveau le plus fin et budget de tuiles (ordinateur, téléphone) selon la distance.
+  const [maxZoom, desktop, phone] = km <= 50_000 ? [6, 240, 180] : km <= 150_000 ? [5, 200, 150] : [4, 160, 120];
+  // Le palier.
+  return {
+    id: `planete-${km}`, label: `Planète ${km.toLocaleString('fr-FR')} km`, maxKm: km, source: 'NASA GIBS, Sentinel-2', maxZoom,
+    maxTiles: { desktop, phone }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' },
+  };
+// Fin de la construction.
+});
+
 /**
  * Paliers de zoom, du plus proche au plus lointain. Les distances sont celles des niveaux d'échelle affichés (Rue,
  * Quartier, Ville, Région, Pays, Continent, Planète). Le niveau le plus fin de chaque palier est celui qu'il faut au
@@ -102,8 +125,8 @@ export const EARTH_TIERS: EarthTier[] = [
   { id: 'pays', label: 'Pays', maxKm: 2500, source: 'Sentinel-2', maxZoom: 10, maxTiles: { desktop: 220, phone: 170 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'fondu' } },
   // Continent : jusqu'à 9 000 km ; niveau 8 ; Sentinel-2.
   { id: 'continent', label: 'Continent', maxKm: 9000, source: 'Sentinel-2', maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'noaa' } },
-  // Planète : jusqu'à 120 000 km ; niveau 6 ; NASA GIBS et Sentinel-2.
-  { id: 'planete', label: 'Planète', maxKm: 300_000, source: 'NASA GIBS, Sentinel-2', maxZoom: 6, maxTiles: { desktop: 240, phone: 180 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
+  // Planète : un palier tous les 10 000 km, de 10 000 à 300 000 km (voir PLANET_TIERS) ; NASA GIBS et Sentinel-2.
+  ...PLANET_TIERS,
   // Espace : au-delà ; la mosaïque instantanée seule (niveaux 0 à 3).
   { id: 'espace', label: 'Espace', maxKm: null, source: 'mosaïque instantanée', maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
 // Fin des paliers.
