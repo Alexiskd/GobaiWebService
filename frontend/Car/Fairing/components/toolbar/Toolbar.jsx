@@ -22,8 +22,8 @@ export function Toolbar({
   onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onToggleAuto, onToggleTilt, onToggleLock,
   // Affichage Schwarzschild : son état et son rappel (à côté du bouton Ombre).
   schwarzschild, onToggleSchwarzschild,
-  // Les sources, la galerie et les paramètres.
-  onSources, onGallery, onSettings, onContribute,
+  // Les sources (Node, avec les paramètres) et la galerie.
+  onSources, onGallery, onContribute,
   // Fenêtre Trajet : son rappel et son état.
   onTrip, tripOpen,
   // Informations de l'astre focus : rappel et état.
@@ -55,7 +55,7 @@ export function Toolbar({
     // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre). Le plateau
     // tournant et le moniteur de performance ne sont plus dans la barre : le premier vit dans le panneau
     // d'informations, le second a été retiré.
-    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onToggleAuto, onToggleTilt, onSources, onGallery, onSettings, onContribute, onTrip, tripOpen, onInfos, infosOpen,
+    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onToggleAuto, onToggleTilt, onSources, onGallery, onContribute, onTrip, tripOpen, onInfos, infosOpen,
     // Affichage Schwarzschild : l'état et le rappel passés à la liste.
     schwarzschild, onToggleSchwarzschild,
     // L'arborescence des astres, et le moniteur de performance hors téléphone.

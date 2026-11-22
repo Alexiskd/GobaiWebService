@@ -1,8 +1,8 @@
 // Actions de la barre d’outils. Sur petit écran, elles sont toutes dans le menu du bouton ⋯ (« Plus »), en haut à
 // droite, séparées par bloc ; `primary` repère les actions principales.
 // `group` = bloc de la barre ordinateur, séparés par un trait vertical, dans l'ordre de TOOLBAR_GROUPS :
-// explorer, affichage, données, assistant, réglages, infos. Sur téléphone, PHONE_TAB range ces blocs dans les quatre
-// onglets du bas (Explorer, Affichage, Données, Menu).
+// explorer, affichage, données, assistant, Node (qui porte les paramètres). Sur téléphone, PHONE_TAB range Explorer et
+// Affichage dans deux onglets à feuille ; Données et Node sont des boutons directs de la barre du bas.
 /** Boutons masqués de la barre : voir hiddenActions. Les anciennes composantes masquées (Tuile 3D, Modéliser, Lunes) ont été supprimées. */
 /**
  * Icônes : des composants Material de MUI, nommés dans ui/icons. Elles héritent de la couleur et de la taille du
@@ -16,8 +16,8 @@ import { HIDDEN } from './hiddenActions.js';
 import {
   // Recherche, ombre, rotation, vue 3/4 et verrouillage.
   SearchIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
-  // Contribution, sources, galerie et paramètres.
-  AddLocationIcon, CopyrightIcon, ScienceIcon, SettingsIcon,
+  // Contribution, sources et galerie.
+  AddLocationIcon, CopyrightIcon, ScienceIcon,
   // Arborescence des astres et icône de l'assistant.
   AccountTreeIcon, AutoAwesomeIcon, RouteIcon, InfoIcon,
 // Fin de la liste ; module des icônes.
@@ -32,13 +32,11 @@ const assistantIcon = (provider) => PROVIDER_MARKS[provider] ?? AutoAwesomeIcon;
 const PROVIDER_NAMES = { claude: 'Claude', mistral: 'Mistral' };
 
 /** Blocs de la barre ordinateur, dans l'ordre d'affichage. */
-export const TOOLBAR_GROUPS = ['explore', 'display', 'data', 'assistant', 'settings', 'info'];
+export const TOOLBAR_GROUPS = ['explore', 'display', 'data', 'assistant', 'info'];
 /** Nom de chaque bloc, lu par les lecteurs d'écran. */
-export const GROUP_LABELS = { explore: 'Explorer', display: 'Affichage', data: 'Données', assistant: 'Assistant', settings: 'Réglages', info: 'Infos' };
-/** Blocs repliés dans le bouton « Menu » quand la barre ordinateur ne tient pas dans l'écran. */
-export const FOLDABLE_GROUPS = new Set(['settings', 'info']);
-/** Onglet du téléphone de chaque bloc : quatre onglets pour six blocs. */
-export const PHONE_TAB = { explore: 'explore', assistant: 'explore', display: 'display', data: 'data', settings: 'menu', info: 'menu' };
+export const GROUP_LABELS = { explore: 'Explorer', display: 'Affichage', data: 'Données', assistant: 'Assistant', info: 'Node' };
+/** Onglet du téléphone de chaque bloc qui ouvre une feuille ; Données et Node sont des boutons directs de la barre. */
+export const PHONE_TAB = { explore: 'explore', assistant: 'explore', display: 'display' };
 
 // Déclare et exporte toolbarActions (début de la liste des paramètres).
 export function toolbarActions({
@@ -47,7 +45,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onToggleAuto, onToggleTilt, onSources, onGallery, onSettings, onContribute, onTrip, tripOpen, onInfos, infosOpen,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onToggleAuto, onToggleTilt, onSources, onGallery, onContribute, onTrip, tripOpen, onInfos, infosOpen,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -109,12 +107,9 @@ export function toolbarActions({
     // Assistant : petit menu déroulant qui s'ouvre au-dessus du bouton (l'événement du clic donne son point d'ancrage).
     // Assistant (Claude côté serveur, Mistral avec une clé du navigateur), enfoncé quand son menu est ouvert.
     { id: 'assistant', group: 'assistant', icon: assistantIcon(assistantProvider), label: 'Assistant', primary: true, pressed: assistantOpen, onClick: onAssistant, title: PROVIDER_NAMES[assistantProvider] ? `Assistant (connecté à ${PROVIDER_NAMES[assistantProvider]}) : poser une question sur le système solaire` : 'Assistant : se connecter avec sa clé Claude ou Mistral' },
-    // ── Bloc « settings » — Réglages : paramètres.
-    // Paramètres (si le rappel existe) : icône seule.
-    onSettings && { id: 'settings', group: 'settings', icon: SettingsIcon, label: 'Paramètres', iconOnly: true, onClick: onSettings, title: 'Paramètres : repères du système solaire, étoiles, aller à un astre' },
-    // ── Bloc « info » — Infos : sources du site.
+    // ── Bloc « info » — Node : sources du site, avec les paramètres.
     // Node Open Source (si le rappel existe) : icône seule — ce dont le site est fait.
-    onSources && { id: 'sources', group: 'info', icon: CopyrightIcon, label: 'Node Open Source', short: 'Node', iconOnly: true, onClick: onSources, title: 'Node Open Source : dépendances, sources des données et services utilisés (S)' },
+    onSources && { id: 'sources', group: 'info', icon: CopyrightIcon, label: 'Node Open Source', short: 'Node', iconOnly: true, onClick: onSources, title: 'Node Open Source : paramètres, dépendances, sources des données et services utilisés (S)' },
   // Fin du tableau : retire les entrées absentes et les boutons masqués.
   ].filter((a) => a && !HIDDEN.has(a.id));
 // Fin de toolbarActions.
