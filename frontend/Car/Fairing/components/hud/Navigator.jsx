@@ -11,7 +11,7 @@ import { useHudDraggable } from '@/Fairing/hooks/useHudDraggable';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 // Importe la largeur du rail, la hauteur de la bande et edge, la distance à un bord.
-import { RAIL_BOTTOM, RAIL_TOP, RAIL_W, STRIP_H, edge } from '@/Fairing/theme/layout';
+import { RAIL_BOTTOM, RAIL_TOP, RAIL_W, edge } from '@/Fairing/theme/layout';
 // Importe MQ (requêtes média, dont l'écran tactile) et safe, qui donne une marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 
@@ -140,9 +140,9 @@ export const Navigator = memo(function Navigator({ bodies, focus, onSelect, onMo
       <nav
         aria-label="Astres"
         data-hud="nav-strip"
-        className="g-paper rounded-none relative box-border border-t border-line overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [scroll-snap-type:x_proximity]" style={{ height: sz(STRIP_H + 4), paddingLeft: safe('left'), paddingRight: safe('right') }}
+        className="m-strip"
       >
-        <div className="flex flex-row gap-1.5 items-center h-full px-2 w-max">
+        <div className="m-strip-row">
           {up && (
             <Chip
               label="‹"

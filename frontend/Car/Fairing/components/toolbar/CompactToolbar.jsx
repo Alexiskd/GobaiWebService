@@ -1,6 +1,5 @@
-// Importe les hooks useRef et useState de React.
-import { useRef, useState } from 'react';
-import { sp } from '@/Fairing/kit/sx';
+// Importe de React memo (rendu évité quand rien ne change) et les crochets d'état, de référence et de mémoire.
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 // Importe iconNode, le dessin d'une icône.
 import { iconNode } from './iconNode.jsx';
 // Importe les icônes des deux espaces à feuille.
@@ -9,8 +8,6 @@ import { ExploreIcon, ShadowIcon } from '../ui/icons.jsx';
 import { PHONE_TAB } from './toolbarActions.jsx';
 // Importe FeuilleActions, la feuille qui monte du bas de l'écran.
 import { FeuilleActions } from '../ui/FeuilleActions.jsx';
-// Importe safe, la marge de sécurité de l'écran.
-import { safe } from '@/Fairing/theme/mediaQueries';
 
 // Les deux espaces de la navigation qui ouvrent une feuille (début).
 const TABS = [
@@ -33,56 +30,44 @@ const TITLES = {
 // Fin des titres.
 };
 
-// Composant ActionTile : la tuile d'une action, avec la fonction de choix et la référence d'ancrage (début).
-function ActionTile({ action, onPick, anchorRef }) {
+/**
+ * Tuile d'une action dans la feuille : une pastille d'icône et son libellé (classes `m-tile…` de theme/app.css).
+ * Mémorisée : la feuille se redessine quand on la tire, pas ses tuiles.
+ */
+// Déclare ActionTile : l'action, la fermeture de la feuille et la référence d'ancrage.
+const ActionTile = memo(function ActionTile({ action, onPick, anchorRef }) {
   // État enfoncé : indéfini pour une action sans bascule, sinon un booléen.
   const pressed = action.pressed === undefined ? undefined : Boolean(action.pressed);
-  // Rendu (début).
+  // Rend la tuile.
   return (
-    // Bouton (début).
-    <button type="button"
-      // Nom pour les lecteurs d'écran.
+    <button
+      type="button"
+      className="m-tile"
       aria-label={action.label}
-      // État enfoncé, pour les lecteurs d'écran.
       aria-pressed={pressed}
-      // Coupé si l'action l'est.
       disabled={action.disabled}
-      // Marque les actions sans son.
+      // Marque les actions sans son de clic.
       data-no-sound={action.noSound ? '' : undefined}
-      // Au clic (début) :
-      onClick={() => {
-        // lance l'action, ancrée sur la barre,
-        action.onClick?.({ currentTarget: anchorRef.current });
-        // puis referme la feuille.
-        onPick();
-      // Fin du clic.
-      }}
-      // Style (début) :
-      className={`g-base flex flex-col items-center justify-start gap-1.5 min-w-0 min-h-20.5 p-2 rounded-[24px] text-ink ${pressed ? 'bg-selected' : 'bg-transparent'} active:bg-hover disabled:opacity-40`}
-    // Fin des réglages du bouton.
+      // Au clic : lance l'action, ancrée sur la barre, puis referme la feuille.
+      onClick={() => { action.onClick?.({ currentTarget: anchorRef.current }); onPick(); }}
     >
-      {/* Pastille de l'icône (début) : */}
-      <div className={`w-12 h-12 grid place-items-center rounded-[17px] ${pressed ? 'bg-primary' : 'bg-hover'} ${pressed ? 'text-on-primary' : 'text-ink'} text-[22px]`}>
-        {/* L'icône de l'action. */}
-        {iconNode(action.icon, 22)}
-      {/* Fin de la pastille. */}
-      </div>
-      {/* Libellé (début) : */}
-      <span className={`t-body1 text-[11px] leading-[1.2] ${pressed ? 'font-bold' : 'font-medium'} text-center max-w-full [overflow-wrap:anywhere] line-clamp-2 overflow-hidden`}>
-        {/* Le libellé court, sinon le libellé. */}
-        {action.short || action.label}
-      {/* Fin du libellé. */}
-      </span>
-    {/* Fin du bouton. */}
+      {/* Pastille de l'icône. */}
+      <span className="m-tile-icon" aria-hidden="true">{iconNode(action.icon, 22)}</span>
+      {/* Libellé court, sinon le libellé ; deux lignes au plus. */}
+      <span className="m-tile-label">{action.short || action.label}</span>
     </button>
-  // Fin du rendu.
   );
 // Fin de ActionTile.
-}
+});
 
-/** Navigation mobile : deux espaces à feuille (Explorer, Affichage) et deux boutons directs (Données, Node). */
-// Déclare et exporte le composant CompactToolbar, avec les actions (début).
-export function CompactToolbar({ actions }) {
+/**
+ * Navigation du téléphone : une barre flottante de quatre boutons. Explorer et Affichage ouvrent une feuille
+ * d'actions ; Données et Node ouvrent directement leur fenêtre.
+ * Aucun style n'est calculé au rendu (classes `m-nav…`), et le composant est mémorisé : il ne se redessine que si
+ * la liste des actions change.
+ */
+// Déclare et exporte CompactToolbar, avec les actions.
+export const CompactToolbar = memo(function CompactToolbar({ actions }) {
   // État : l'espace ouvert, aucun au départ.
   const [active, setActive] = useState(null);
   // Référence de la barre, pour ancrer les menus.
@@ -90,120 +75,57 @@ export function CompactToolbar({ actions }) {
   // L'espace ouvert.
   const selected = TABS.find((tab) => tab.id === active);
   // Les actions de cet espace, dans l'ordre de la barre.
-  const items = actions.filter((action) => PHONE_TAB[action.group] === active);
+  const items = useMemo(() => actions.filter((action) => PHONE_TAB[action.group] === active), [actions, active]);
+  // Les actions directes (celles qui existent), qui ouvrent leur fenêtre sans feuille.
+  const direct = useMemo(() => DIRECT_IDS.map((id) => actions.find((a) => a.id === id)).filter(Boolean), [actions]);
+  // close : referme la feuille ; fonction stable, pour que les tuiles mémorisées ne se redessinent pas.
+  const close = useCallback(() => setActive(null), []);
 
-  // close : referme la feuille.
-  const close = () => setActive(null);
-  // toggle : ouvre un espace, ou le referme s'il est déjà ouvert.
-  const toggle = (id) => setActive((current) => current === id ? null : id);
-
-  // Boutons de la barre (début) : d'abord les espaces à feuille…
-  const entries = [
-    ...TABS.map((tab) => ({ key: tab.id, label: tab.label, title: tab.title, icon: tab.icon, sheet: true, isActive: active === tab.id, onClick: () => toggle(tab.id) })),
-    // … puis les actions directes (celles qui existent), qui ouvrent leur fenêtre sans passer par une feuille.
-    ...DIRECT_IDS.map((id) => actions.find((a) => a.id === id)).filter(Boolean).map((a) => ({
-      key: a.id, label: a.short || a.label, title: a.label, icon: a.icon, sheet: false, isActive: Boolean(a.pressed),
-      onClick: () => { setActive(null); a.onClick?.({ currentTarget: anchorRef.current }); },
-    })),
-  // Fin des boutons de la barre.
-  ];
-
-  // Rendu (début).
+  // Rendu.
   return (
-    // Fragment (début).
     <>
-      {/* Barre de navigation (début). */}
-      <nav
-        // Sa référence.
-        ref={anchorRef}
-        // Rôle de navigation.
-        role="navigation"
-        // Nom pour les lecteurs d'écran.
-        aria-label="Navigation principale"
-        // Repère pour le reste de l'interface.
-        data-hud="mobile-navigation"
-        // Style (début) :
-        className="g-paper g-elev relative grid gap-0 pt-1.5 border-t border-line rounded-[18px_18px_0_0] bg-[color:rgba(7,13,27,0.94)] text-[#E7EEFC]" style={{ gridTemplateColumns: `repeat(${entries.length}, minmax(0, 1fr))`, paddingLeft: `calc(6px + ${safe('left')})`, paddingRight: `calc(6px + ${safe('right')})`, paddingBottom: sp('calc(6px + ' + safe('bottom') + ')') }}
-      // Fin des réglages de la barre.
-      >
-        {/* Pour chaque bouton (début). */}
-        {entries.map((tab) => {
-          // Est-il ouvert ?
-          const { isActive } = tab;
-          // Rendu (début).
-          return (
-            // Bouton de l'espace (début).
-            <button type="button"
-              // Sa clé.
-              key={tab.key}
-              // Nom pour les lecteurs d'écran.
-              aria-label={tab.title}
-              // État ouvert, pour les lecteurs d'écran (seulement pour les espaces à feuille).
-              aria-expanded={tab.sheet ? isActive : undefined}
-              // Lien avec la feuille, quand elle est ouverte.
-              aria-controls={tab.sheet && isActive ? 'gobai-mobile-actions' : undefined}
-              // Au clic : ouvre ou referme l'espace, ou ouvre directement la fenêtre.
-              onClick={tab.onClick}
-              // Style (début) :
-              className={`g-base min-w-0 min-h-13 px-0.5 py-1 flex flex-col gap-[3.2px] [@media(max-height:500px)]:min-h-11 [@media(max-height:500px)]:flex-row [@media(max-height:500px)]:gap-1.5 [@media(max-height:500px)]:py-0.5 rounded-[20px] ${isActive ? 'text-[#B9D7FF]' : 'text-[color:rgba(226,235,250,.68)]'} ${isActive ? 'bg-[color:rgba(88,145,220,.16)]' : 'bg-transparent'}`}
-            // Fin des réglages du bouton.
-            >
-              {/* Son icône. */}
-              <span aria-hidden="true" className="flex text-[21px] leading-[1.1]">{iconNode(tab.icon, 21)}</span>
-              {/* Son libellé (début). */}
-              <span className={`t-body1 text-[10px] leading-[1.15] ${isActive ? 'font-bold' : 'font-medium'}`}>
-                {/* Le texte. */}
-                {tab.label}
-              {/* Fin du libellé. */}
-              </span>
-            {/* Fin du bouton. */}
-            </button>
-          // Fin du rendu.
-          );
-        // Fin de la boucle.
-        })}
-      {/* Fin de la barre. */}
+      {/* Barre de navigation flottante. */}
+      <nav ref={anchorRef} className="m-nav" aria-label="Navigation principale" data-hud="mobile-navigation">
+        {/* Les espaces à feuille : un clic ouvre l'espace, ou le referme s'il est ouvert. */}
+        {TABS.map((tab) => (
+          <button
+            type="button" key={tab.id} className="m-nav-btn" aria-label={tab.title}
+            aria-expanded={active === tab.id} aria-controls={active === tab.id ? 'gobai-mobile-actions' : undefined}
+            data-active={active === tab.id ? '' : undefined}
+            onClick={() => setActive((current) => (current === tab.id ? null : tab.id))}
+          >
+            <span className="m-nav-icon" aria-hidden="true">{iconNode(tab.icon, 20)}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+        {/* Les boutons directs : referment la feuille ouverte et ouvrent leur fenêtre. */}
+        {direct.map((a) => (
+          <button
+            type="button" key={a.id} className="m-nav-btn" aria-label={a.label} data-active={a.pressed ? '' : undefined}
+            onClick={() => { setActive(null); a.onClick?.({ currentTarget: anchorRef.current }); }}
+          >
+            <span className="m-nav-icon" aria-hidden="true">{iconNode(a.icon, 20)}</span>
+            <span>{a.short || a.label}</span>
+          </button>
+        ))}
       </nav>
 
       {/* Feuille des actions : ouverte quand un espace est choisi. */}
       <FeuilleActions open={Boolean(selected)} onClose={close} label={selected?.title || 'Navigation'}>
-        {/* Son contenu (début). */}
         <div id="gobai-mobile-actions" className="pt-0.5 pb-2">
-          {/* Titre (début). */}
-          <h2 className="t-body1 px-2 pb-3 text-[15px] font-bold tracking-[0.2px]">
-            {/* Le titre de l'espace. */}
-            {selected ? TITLES[selected.id] : ''}
-          {/* Fin du titre. */}
-          </h2>
-          {/* S'il y a des actions (début). */}
+          {/* Titre de l'espace. */}
+          <h2 className="m-sheet-title">{selected ? TITLES[selected.id] : ''}</h2>
           {items.length ? (
-            // Grille des tuiles (début).
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(76px,1fr))] gap-1">
-              {/* Pour chaque action (début) : */}
-              {items.map((action) => (
-                // sa tuile.
-                <ActionTile key={action.id} action={action} onPick={close} anchorRef={anchorRef} />
-              // Fin de la boucle.
-              ))}
-            {/* Fin de la grille. */}
+            // Grille des tuiles.
+            <div className="m-tiles">
+              {items.map((action) => <ActionTile key={action.id} action={action} onPick={close} anchorRef={anchorRef} />)}
             </div>
-          // Sinon, si un espace est ouvert (début).
           ) : selected ? (
-            // Message (début).
-            <p className="t-body1 text-soft px-2 py-4 text-[13px]">
-              {/* Le texte : aucune action dans cet espace. */}
-              Aucune action disponible dans cet espace pour le moment.
-            {/* Fin du message. */}
-            </p>
-          // Sinon : rien.
+            <p className="t-body2 text-soft px-2 py-4">Aucune action disponible dans cet espace pour le moment.</p>
           ) : null}
-        {/* Fin du contenu. */}
         </div>
-      {/* Fin de la feuille. */}
       </FeuilleActions>
-    {/* Fin du fragment. */}
     </>
-  // Fin du rendu.
   );
 // Fin de CompactToolbar.
-}
+});

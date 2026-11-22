@@ -114,7 +114,7 @@ export function FeuilleActions({ open, onClose, label, children }) {
           // Ferme la feuille.
           onClick={onClose}
           // Posé sur la feuille, à 4 px du haut et à 6 px du bord droit (marge de sécurité comprise), au-dessus du contenu.
-          className="absolute top-1 z-1 w-11 h-11" style={{ right: `calc(${safe('right')} + 6px)` }}
+          className="absolute top-1 z-1 w-11 h-11 right-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_6px)]"
         // Fin de la balise ouvrante.
         >
           {/* La croix. */}
@@ -122,7 +122,7 @@ export function FeuilleActions({ open, onClose, label, children }) {
         {/* Fin du bouton Fermer. */}
         </IconButton>
         {/* Zone de contenu : défile verticalement sans entraîner la page, avec la marge de sécurité du bas. */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3" style={{ paddingBottom: `calc(${safe('bottom')} + 12px)` }}>
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 pb-[calc(var(--safe-bottom,env(safe-area-inset-bottom,0px))_+_12px)]">
           {/* Le contenu de la feuille. */}
           {children}
         {/* Fin de la zone de contenu. */}

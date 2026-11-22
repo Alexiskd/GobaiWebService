@@ -50,13 +50,15 @@ export function HudTop({ hud }) {
       // Propriétés de la poignée : tout le bandeau se saisit.
       {...drag.handleProps}
       // Début du style.
-      className={`g-paper ${compact ? 'relative' : 'fixed z-[20] right-auto'} flex items-center ${compact ? 'gap-2' : 'gap-3'} ${compact ? 'px-2.5' : 'px-3.5'} ${compact ? 'py-0.5' : 'py-1'} ${compact ? 'cursor-default' : 'cursor-grab'} select-none ${compact ? 'touch-auto' : 'touch-none'}`} style={{ ...drag.style, ...(compact ? {  } : { top: edge('top', 12), left: edge('left', 14), maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 98px - ${PANEL_W})` }) }}
+      className={compact ? 'm-title' : 'g-paper fixed z-[20] right-auto flex items-center gap-3 px-3.5 py-1 cursor-grab select-none touch-none'}
+      // Téléphone : aucun style calculé (classe `m-title`). Ordinateur : la position, déplaçable.
+      style={compact ? undefined : { ...drag.style, top: edge('top', 12), left: edge('left', 14), maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 98px - ${PANEL_W})` }}
     // Fin de la balise ouvrante.
     >
       {/* Emblème seul : l'image a de larges marges transparentes (27 % à gauche, 20 % à droite), rognées ici pour que
           l'espace bord gauche → logo soit exactement celui du texte → bord droit (le `px` du bandeau). */}
       {/* Cadre de l'emblème : largeur selon l'écran, proportions de l'emblème, ce qui dépasse est masqué. */}
-      <div className={`${compact ? 'w-7.5' : 'w-[clamp(38px,3.6vw,56px)]'} flex-none overflow-hidden`} style={{ aspectRatio: `${LOGO.w} / ${LOGO.h}` }}>
+      <div className={`${compact ? 'w-6.5' : 'w-[clamp(38px,3.6vw,56px)]'} flex-none overflow-hidden`} style={{ aspectRatio: `${LOGO.w} / ${LOGO.h}` }}>
         {/* L'image du logo (début de la balise). */}
         <img
           // Adresse du logo (le paramètre v force le rechargement).
@@ -100,8 +102,8 @@ export function HudTop({ hud }) {
         <span className="t-caption text-soft block mt-0 leading-[1.2] tabular-nums">
           {/* La date. */}
           {date}
-          {/* Le compteur d'images par seconde, à la suite (ordinateur ; rien sur téléphone). */}
-          <FpsCounter hud={hud} />
+          {/* Le compteur d'images par seconde, à la suite. Pas monté sur téléphone : aucun abonnement inutile aux FPS. */}
+          {!compact && <FpsCounter hud={hud} />}
         {/* Fin de la ligne de la date. */}
         </span>
         {/* Le texte de l'astre visé, s'il existe, hors mode compact. */}

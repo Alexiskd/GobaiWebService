@@ -7,8 +7,6 @@
  *    navigation). En largeur suffisante (paysage, tablette étroite), les deux surfaces se partagent une rangée.
  * Les zones laissent passer les gestes vers la scène partout où elles n'ont rien à afficher (pointer-events).
  */
-// Marges de sécurité.
-import { safe } from '@/Fairing/theme/mediaQueries';
 // Limite de la zone du titre.
 import { HUD_TOP } from '@/Fairing/theme/layout';
 // Mesure des zones et hauteur du clavier.
@@ -31,11 +29,11 @@ export function MobileTopBar({ children, actions, status }) {
       // Repère du diagnostic et des tests.
       data-zone="top"
       // Début du style.
-      className="fixed top-0 left-0 right-0 z-[20] flex flex-col items-stretch gap-[6px] pointer-events-none [&_>_*_>_*]:pointer-events-auto" style={{ paddingTop: `calc(${safe('top')} + 6px)`, paddingLeft: `calc(${safe('left')} + 6px)`, paddingRight: `calc(${safe('right')} + 6px)` }}
+      className="m-top"
     // Fin de la balise ouvrante.
     >
       {/* Rangée du titre : le bandeau prend la place, ses boutons restent à droite. */}
-      <div className="flex items-start gap-2 min-w-0">
+      <div className="m-top-row">
         {/* Le bandeau titre, qui se réduit (son texte passe à la ligne) pour laisser la place aux boutons. */}
         <div className="flex-[0_1_auto] min-w-0 flex">{children}</div>
         {/* Les boutons, poussés à droite. */}
@@ -73,7 +71,7 @@ export function MobileDock({ surfaces, base }) {
       // Repère du diagnostic et des tests.
       data-zone="bottom"
       // Début du style.
-      className="fixed left-0 right-0 z-[40] flex flex-col justify-end pointer-events-none [transition:bottom_160ms_ease-out]" style={{ bottom: keyboard > 0 ? `${keyboard}px` : 0, maxHeight: `calc(100dvh - ${HUD_TOP} - ${keyboard}px - 8px)` }}
+      className="m-dock" style={keyboard > 0 ? { bottom: `${keyboard}px`, maxHeight: `calc(100dvh - ${HUD_TOP} - ${keyboard}px - 8px)` } : undefined}
     // Fin de la balise ouvrante.
     >
       {/* Les surfaces (début de la balise). */}
