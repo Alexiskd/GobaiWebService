@@ -17,8 +17,9 @@ export const EARTH_KTX2_LAYERS = ['sentinel2', 'gibs'] as const;
 // Déclare et exporte le niveau maximal.
 export const EARTH_KTX2_MAX_ZOOM = 6;
 
-// Schéma de la table : une ligne par tuile, clé (couche, niveau, colonne, ligne).
-const SCHEMA = `
+/** Schéma de la table : une ligne par tuile, clé (couche, niveau, colonne, ligne) ; réutilisé par le script de préconversion. */
+// Déclare et exporte le schéma de la table.
+export const EARTH_KTX2_SCHEMA = `
   CREATE TABLE IF NOT EXISTS earth_ktx2 (
     layer TEXT NOT NULL,
     z SMALLINT NOT NULL,
@@ -74,7 +75,7 @@ export class EarthKtx2Service implements OnModuleInit, OnModuleDestroy {
   // Crée la table au premier besoin.
   private ensureSchema(): Promise<void> {
     if (!this.pool) return Promise.reject(new NotFoundException('Base BP non branchée (DATABASE_URL absent).'));
-    this.schemaReady ??= this.pool.query(SCHEMA).then(() => undefined);
+    this.schemaReady ??= this.pool.query(EARTH_KTX2_SCHEMA).then(() => undefined);
     this.schemaReady.catch(() => { this.schemaReady = null; });
     return this.schemaReady;
   }
