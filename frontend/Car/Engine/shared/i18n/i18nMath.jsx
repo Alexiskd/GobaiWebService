@@ -421,6 +421,6 @@ export function fontUrl(script) {
   // Police de l'écriture.
   const family = NOTO_FONTS[script];
   // Son adresse chez Google Fonts, ou un texte vide.
-  return family ? `https://fonts.googleapis.com/css2?family=${family.replace(/ /g, '+')}:wght@400;600&display=swap` : '';
+  return family ? `/api/fonts/css2?family=${family.replace(/ /g, '+')}:wght@400;600&display=swap` : '';
 // Fin de fontUrl.
 }

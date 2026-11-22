@@ -73,12 +73,8 @@
     <!-- Couleur de la barre du navigateur. -->
     <meta name="theme-color" content="#0d1a3a" />
     <!-- Les données du noyau sont embarquées dans le bundle statique : aucun endpoint API ne doit être préchargé ici. -->
-    <!-- Connexion ouverte d'avance vers Google Fonts. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <!-- Connexion ouverte d'avance vers les fichiers des polices. -->
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Feuille de style de la police Google Sans. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&display=swap" />
+    <!-- Feuille de style de la police Google Sans, relayée par notre serveur : le navigateur ne contacte pas Google (RGPD). -->
+    <link rel="stylesheet" href="/api/fonts/css2?family=Google+Sans:wght@400;500;600;700&display=swap" />
     <!-- Connexion ouverte d'avance vers le studio de visualisation de la NASA. -->
     <link rel="preconnect" href="https://svs.gsfc.nasa.gov" crossorigin />
 

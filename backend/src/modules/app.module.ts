@@ -17,6 +17,8 @@ import { APP_CONFIG, ConfigModule } from './config.module';
 import type { AppConfig } from '../common/configuration';
 // Contrôleur de supervision : la route /api/health que Render interroge.
 import { HealthController } from '../controllers/health.controller';
+// Importe le relais des polices (aucun appel du navigateur vers Google).
+import { FontsController } from '../controllers/fonts.controller';
 // Module des astres (Soleil, planètes, satellites : tailles, rotation, éléments orbitaux).
 import { BodiesModule } from './bodies.module';
 // Module des frontières des pays et des littoraux.
@@ -124,7 +126,7 @@ import { SeoModule } from './seo.module';
   // Fin de la liste des modules importés.
   ],
   // Seul contrôleur déclaré directement par le module racine : la supervision.
-  controllers: [HealthController, ExportAccessController],
+  controllers: [HealthController, ExportAccessController, FontsController],
   // Enregistre ThrottlerGuard comme garde globale : la limite de débit s'applique à toutes les routes.
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 // Fin de la déclaration.

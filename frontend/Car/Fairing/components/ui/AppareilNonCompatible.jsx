@@ -1,3 +1,5 @@
+// Importe les liens vers les pages légales.
+import { LiensLegaux } from './LiensLegaux.jsx';
 
 /**
  * Mot d'excuse affiché à la place de l'app sur un téléphone en dessous de l'iPhone 15 ou de son équivalent
@@ -41,6 +43,8 @@ export function AppareilNonCompatible() {
           ouvrir le site depuis un ordinateur ou un téléphone plus récent.
         {/* Fin du troisième paragraphe. */}
         </p>
+        {/* Pages légales, accessibles même sans l'app. */}
+        <LiensLegaux className="justify-center mt-4 text-[#8b97b3]" />
       {/* Fin de la carte. */}
       </div>
     {/* Fin du fond. */}

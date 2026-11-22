@@ -636,4 +636,28 @@
   <!-- Fin de la page. -->
   </url>
 <!-- Fin du plan du site. -->
+  <!-- Page légale : Mentions légales (début). -->
+  <url>
+    <loc>https://www.gobaispace.com/legal/mentions-legales.html</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page légale : Politique de confidentialité (début). -->
+  <url>
+    <loc>https://www.gobaispace.com/legal/confidentialite.html</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  <!-- Fin de la page. -->
+  </url>
+  <!-- Page légale : Conditions générales de vente (début). -->
+  <url>
+    <loc>https://www.gobaispace.com/legal/cgv.html</loc>
+    <lastmod>2026-11-22</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.2</priority>
+  <!-- Fin de la page. -->
+  </url>
 </urlset>

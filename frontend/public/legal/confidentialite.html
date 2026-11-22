@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Politique de confidentialité — Go白ناन्टех</title>
+  <meta name="description" content="Données personnelles traitées par gobaispace.com, finalités, durées, destinataires et droits (RGPD)." />
+  <link rel="canonical" href="https://www.gobaispace.com/legal/confidentialite.html" />
+  <link rel="stylesheet" href="/legal/legal.css" />
+</head>
+<body>
+<main>
+  <nav class="retour"><a href="/">← Retour au système solaire 3D</a> · <a href="/legal/mentions-legales.html">Mentions légales</a> · <a href="/legal/cgv.html">CGV</a></nav>
+  <h1>Politique de confidentialité</h1>
+  <p class="maj">Dernière mise à jour : 22 novembre 2026</p>
+
+  <h2>Responsable du traitement</h2>
+  <p>
+    Alexis Bouvet-Mallet, éditeur du site (voir les <a href="/legal/mentions-legales.html">mentions légales</a>).
+    Contact : <a href="mailto:alexis_bouvet@icloud.com">alexis_bouvet@icloud.com</a>.
+  </p>
+
+  <h2>Le principe</h2>
+  <p>
+    Le site se consulte sans compte. Il n'utilise ni publicité, ni outil de mesure d'audience, ni cookie de traçage :
+    aucun bandeau de consentement n'est donc nécessaire. Seules les données décrites ci-dessous sont traitées.
+  </p>
+
+  <h2>Données traitées</h2>
+  <table>
+    <tr><th>Données</th><th>Pourquoi</th><th>Base légale</th><th>Durée</th></tr>
+    <tr>
+      <td>Adresse IP, date, page demandée (journaux techniques du serveur)</td>
+      <td>Faire fonctionner le site et le protéger des abus (limite de débit)</td>
+      <td>Intérêt légitime</td>
+      <td>Durée de conservation des journaux de l'hébergeur ; la limite de débit n'est gardée qu'en mémoire, quelques minutes</td>
+    </tr>
+    <tr>
+      <td>Compte de contributeur : pseudonyme, empreinte du mot de passe (jamais le mot de passe lui-même), fichiers et votes</td>
+      <td>Permettre de contribuer et de voter</td>
+      <td>Exécution du service demandé</td>
+      <td>Jusqu'à la suppression du compte, sur demande</td>
+    </tr>
+    <tr>
+      <td>Cookie de session <code>gobai_session</code> (HttpOnly)</td>
+      <td>Rester connecté à son compte</td>
+      <td>Cookie strictement nécessaire, exempté de consentement</td>
+      <td>Durée de la session</td>
+    </tr>
+    <tr>
+      <td>Achats : produit, montant, date, identifiant de paiement Stripe, adresse du site autorisé à appeler l'API</td>
+      <td>Délivrer l'achat, tenir la comptabilité</td>
+      <td>Exécution du contrat, obligation légale</td>
+      <td>10 ans (pièces comptables)</td>
+    </tr>
+    <tr>
+      <td>Position GPS de l'appareil (« Ma position », lieu « Maison », boussole)</td>
+      <td>Afficher votre position sur la carte, calculer un temps de trajet</td>
+      <td>Consentement (autorisation demandée par le navigateur)</td>
+      <td>Gardée sur votre appareil ; envoyée au serveur seulement pour un calcul de trajet, sans être enregistrée</td>
+    </tr>
+    <tr>
+      <td>Clé d'API Claude ou Mistral, et messages envoyés à l'assistant</td>
+      <td>Faire fonctionner l'assistant avec votre propre compte</td>
+      <td>Exécution du service demandé</td>
+      <td>La clé reste dans votre navigateur ; le serveur la relaie sans l'enregistrer</td>
+    </tr>
+    <tr>
+      <td>Réglages de l'interface (stockage local du navigateur)</td>
+      <td>Retrouver vos réglages</td>
+      <td>Stockage strictement nécessaire au service demandé</td>
+      <td>Sur votre appareil, jusqu'à ce que vous l'effaciez</td>
+    </tr>
+  </table>
+  <p>Les paiements (achats et dons) sont traités par <strong>Stripe</strong> : le site ne voit jamais vos coordonnées bancaires.</p>
+
+  <h2>Destinataires et services tiers</h2>
+  <ul>
+    <li><strong>Render</strong> (hébergeur, États-Unis) : héberge le serveur et la base de données.</li>
+    <li><strong>Stripe</strong> : paiements.</li>
+    <li><strong>Anthropic</strong> ou <strong>Mistral AI</strong> : seulement si vous utilisez l'assistant, avec votre clé et sous leurs propres conditions.</li>
+    <li>
+      <strong>Fournisseurs d'images et de données</strong> (NASA, IGN, EOX, NOAA, GEBCO, USGS, instituts géographiques
+      nationaux, OpenFreeMap, MyMemory pour la traduction…) : pour afficher la carte rapidement, votre navigateur charge
+      certaines tuiles directement chez eux, ce qui leur transmet votre adresse IP. La liste complète est dans la fenêtre
+      <strong>Node</strong>, onglet « Services (API) ».
+    </li>
+  </ul>
+  <p>
+    Les polices et le décodeur des modèles 3D sont relayés par notre serveur : votre navigateur ne contacte pas Google.
+    Certains destinataires sont situés hors de l'Union européenne ; les transferts s'appuient sur les garanties
+    contractuelles (clauses contractuelles types de la Commission européenne) proposées par ces prestataires.
+  </p>
+
+  <h2>Vos droits</h2>
+  <p>
+    Vous pouvez demander l'accès, la rectification, l'effacement ou la portabilité de vos données, vous opposer à un
+    traitement ou en demander la limitation, en écrivant à <a href="mailto:alexis_bouvet@icloud.com">alexis_bouvet@icloud.com</a>.
+    Réponse sous un mois. Vous pouvez aussi saisir la <a href="https://www.cnil.fr/fr/plaintes" rel="noopener">CNIL</a>.
+  </p>
+</main>
+</body>
+</html>
