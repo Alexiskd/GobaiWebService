@@ -9,5 +9,5 @@
 - `StarEngine/` — étoiles, systèmes stellaires et ciel.
 - `TextureEngine/` — textures et mosaïques de surface.
 - `EruptionEngine/` — surfaces stellaires, volcans et phénomènes éruptifs.
-- `ItineraireEngine/` — modélisation d'un itinéraire : un moteur par moyen de locomotion, 3D pour les véhicules volants, 2D pour ceux qui roulent, marchent ou naviguent.
+- `ItineraireEngine/` — modélisation d'un itinéraire : un moteur mutable réglé par une table des moyens de locomotion, 3D pour les véhicules volants, 2D pour ceux qui roulent, marchent ou naviguent.
 - `shared/` — bibliothèques transverses et internationalisation.

@@ -1,6 +1,6 @@
 /**
  * Fabrique des moteurs « sol » (modélisation 2D) : tout ce qui marche, roule, glisse ou navigue en suivant le sol ou l'eau.
- * Chaque moyen de locomotion (engines/sol/*.js) donne seulement son style ; le calcul du tracé est commun :
+ * Chaque moyen de locomotion (une ligne de GROUND_MODES, modeTable.js) donne seulement son style ; le calcul du tracé est commun :
  * les points de l'étape sont lissés (selon le moyen : un train n'a pas la même courbe qu'un piéton), puis
  * rééchantillonnés à intervalles réguliers pour que l'animation avance à vitesse constante.
  */
