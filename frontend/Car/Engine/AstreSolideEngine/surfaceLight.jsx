@@ -132,5 +132,5 @@ export const JUPITER_LIGHT_GLSL = [
   'vec3 o=cl*ill*ld*1.15+vec3(.62,.68,.78)*pow(1.-mu,2.5)*.1*ill+vec3(.002,.0015,.001);',
   // Retour à l'écran.
   'return pow(o,vec3(.4545));}',
-// Fin du tableau.
-];
+// Fin du tableau : les lignes sont jointes par des retours à la ligne (comme les deux autres modèles).
+].join('\n');
