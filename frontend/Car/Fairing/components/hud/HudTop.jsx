@@ -72,7 +72,7 @@ export function HudTop({ hud }) {
         // Contenu en ligne, centré verticalement.
         display: 'flex', alignItems: 'center',
         // Espacement et marges intérieures, réduits en mode compact.
-        gap: compact ? 1 : 1.5, px: compact ? 1.25 : 1.75, py: compact ? 0.5 : 1,
+        gap: compact ? 1 : 1.5, px: compact ? 1.25 : 1.75, py: compact ? 0.25 : 0.5,
         // Curseur en main et gestes réservés au déplacement, sauf en mode compact ; texte non sélectionnable.
         cursor: compact ? 'default' : 'grab', userSelect: 'none', touchAction: compact ? 'auto' : 'none',
       // Fin du style.
@@ -82,7 +82,7 @@ export function HudTop({ hud }) {
       {/* Emblème seul : l'image a de larges marges transparentes (27 % à gauche, 20 % à droite), rognées ici pour que
           l'espace bord gauche → logo soit exactement celui du texte → bord droit (le `px` du bandeau). */}
       {/* Cadre de l'emblème : largeur selon l'écran, proportions de l'emblème, ce qui dépasse est masqué. */}
-      <Box sx={{ width: compact ? 40 : 'clamp(52px, 5vw, 76px)', aspectRatio: `${LOGO.w} / ${LOGO.h}`, flex: 'none', overflow: 'hidden' }}>
+      <Box sx={{ width: compact ? 30 : 'clamp(38px, 3.6vw, 56px)', aspectRatio: `${LOGO.w} / ${LOGO.h}`, flex: 'none', overflow: 'hidden' }}>
         {/* L'image du logo (début de la balise). */}
         <Box
           // Rendue en balise img.
@@ -116,7 +116,7 @@ export function HudTop({ hud }) {
       {/* Zone des textes. */}
       <Box sx={{ minWidth: 0 }}>
         {/* Le titre de niveau 1, jamais traduit, plus petit en mode compact. */}
-        <Typography component="h1" translate="no" variant={compact ? 'subtitle1' : 'h6'} sx={{ fontWeight: 600, lineHeight: 1.2, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: '0.3em' }}>
+        <Typography component="h1" translate="no" variant={compact ? 'subtitle1' : 'h6'} sx={{ fontWeight: 600, lineHeight: 1.1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: '0.3em' }}>
           {/* Le symbole ∞ en bleu, agrandi, décoratif. */}
           <Box component="span" aria-hidden="true" sx={{ color: '#0000FF', fontSize: compact ? '1.9em' : '2.2em', lineHeight: 0.8, fontWeight: 700 }}>∞</Box>
           {/* Le nom de l'application, suivi d'une espace. */}
@@ -130,14 +130,8 @@ export function HudTop({ hud }) {
           <Box component="span" translate="yes" sx={{ color: 'background.paper', fontWeight: 400 }}>: système solaire 3D</Box>
         {/* Fin du titre. */}
         </Typography>
-        {/* La description du site, sous le titre : une ligne, coupée par des points de suspension si la place manque. */}
-        <Typography variant="caption" color="text.secondary" translate="yes" noWrap sx={{ display: 'block', mt: 0.25 }}>
-          {/* Le texte de la description. */}
-          Explorez le système solaire en 3D, en direct
-        {/* Fin de la description. */}
-        </Typography>
         {/* La date, en petit, en chiffres de largeur fixe. */}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontVariantNumeric: 'tabular-nums' }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>
           {/* La date. */}
           {date}
           {/* Le compteur d'images par seconde, à la suite (ordinateur ; rien sur téléphone). */}
@@ -145,7 +139,7 @@ export function HudTop({ hud }) {
         {/* Fin de la ligne de la date. */}
         </Typography>
         {/* Le texte de l'astre visé, s'il existe, hors mode compact. */}
-        {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontVariantNumeric: 'tabular-nums' }}>{focusText}</Typography>}
+        {focusText && !compact && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>{focusText}</Typography>}
       {/* Fin de la zone des textes. */}
       </Box>
     {/* Fin du bandeau. */}
