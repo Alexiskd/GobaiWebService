@@ -130,14 +130,8 @@ export function HudTop({ hud }) {
           <Box component="span" translate="yes" sx={{ color: 'background.paper', fontWeight: 400 }}>: système solaire 3D</Box>
         {/* Fin du titre. */}
         </Typography>
-        {/* La description du site, sous le titre : une ligne, coupée par des points de suspension si la place manque. */}
-        <Typography variant="caption" color="text.secondary" translate="yes" noWrap sx={{ display: 'block', mt: 0.25 }}>
-          {/* Le texte de la description. */}
-          Explorez le système solaire en 3D, en direct
-        {/* Fin de la description. */}
-        </Typography>
         {/* La date, en petit, en chiffres de largeur fixe. */}
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontVariantNumeric: 'tabular-nums' }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25, fontVariantNumeric: 'tabular-nums' }}>
           {/* La date. */}
           {date}
           {/* Le compteur d'images par seconde, à la suite (ordinateur ; rien sur téléphone). */}
