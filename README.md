@@ -20,15 +20,16 @@ Computing, Transmission — voir `ARCHITECTURE.md`).
   lectures replient sur les contrats embarqués : le site reste publiable seul en Static Site.
 - **Habillage des astres** rebranché sur le serveur : disponibilité des cartes Trek, villes,
   relief et couleur de la Lune, blend de la Lune (BP), phases de la Lune, blocage d'API côté serveur.
-- **Exports** : la Boutique (`Fairing/components/menus/Boutique`) et le compte (`useCompte`, `CompteBox`) sont de
-  retour, avec les routes `/store` et `/export` et le paiement Stripe.
+- **Exports** : les routes `/store` et `/export` et le paiement Stripe restent servis par le backend ; l'interface
+  n'a plus de fenêtre Boutique ni de compte.
 - **Assistant** : connexion obligatoire avec la clé d'API de l'utilisateur, chez Claude ou chez Mistral, gardée dans
   son navigateur ; le serveur relaie (`/assistant`) sans jamais garder la clé, par une interface commune aux deux.
-- **Dons (Stripe) et galerie (PostgreSQL)** : mêmes composantes, de nouveau servies par `/donations` et `/galerie`.
+- **Galerie (PostgreSQL)** : servie par `/galerie`. Le module de dons (`/donations`, Stripe) reste dans le backend,
+  sans composante dans l'interface.
 - **Déploiement** : inchangé, un seul service web (`render.yaml`, `npm run build` puis `npm start`).
 
-`frontend/Car/Computing/api` (petite API NestJS de l'édition statique) reste dans le dépôt mais n'est pas déployée :
-le service en ligne est `backend/`. Les mentions `frontend/src/…` plus bas dans ce fichier datent d'avant la fusion.
+`frontend/Car/Computing/api` ne contient plus que les adaptateurs client : l'API n'est servie que par `backend/`.
+Les mentions `frontend/src/…` plus bas dans ce fichier datent d'avant la fusion.
 
 ## Relief de Mars et de Mercure (20 novembre 2026)
 

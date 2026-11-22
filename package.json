@@ -1,5 +1,5 @@
 {
-  "name": "gobaidex",
+  "name": "gobai-web-service",
   "version": "2.0.0",
   "private": true,
   "description": "Go白ناन्टех : site React/Vite et API NestJS déployés en un seul service web (l'API sert le site compilé)",
