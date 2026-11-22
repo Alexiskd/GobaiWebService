@@ -28,6 +28,7 @@ import { MoonReliefService } from '../services/map-tiles/moon/moon-relief.servic
 import { BodyReliefService } from '../services/map-tiles/bodies/body-relief.service';
 // Blend de la Lune : modèle 3D complet (carte réelle + relief) enregistré dans BP.
 import { MoonBlendService } from '../services/map-tiles/moon/moon-blend.service';
+import { EarthKtx2Service } from '../services/map-tiles/earth/earth-ktx2.service';
 // Service du modèle 3D de la Lune (GLB), téléchargé une fois et relayé.
 import { MoonModelService } from '../services/map-tiles/moon/moon-model.service';
 // Service des modèles 3D des autres astres (GLB), sur le même principe.
@@ -87,6 +88,8 @@ import { EphemerisModule } from './ephemeris.module';
     { provide: BodyReliefService, useFactory: () => new BodyReliefService() },
     // Blend de la Lune : relief, tuiles Kaguya et couleurs SVS.
     { provide: MoonBlendService, inject: [MoonReliefService, MoonTileCacheService, MoonColorService], useFactory: (r: MoonReliefService, t: MoonTileCacheService, c: MoonColorService) => new MoonBlendService(r, t, c) },
+    // Tuiles KTX2 de la Terre vue de loin, lues dans BP (DATABASE_URL de l'environnement).
+    { provide: EarthKtx2Service, useFactory: () => new EarthKtx2Service() },
     // Modèle 3D de la Lune : fabrique qui lui passe la configuration (adresse du modèle).
     { provide: MoonModelService, inject: [APP_CONFIG], useFactory: (config: AppConfig) => new MoonModelService(config) },
     // Modèles 3D des astres : fabrique qui lui passe la configuration.
