@@ -8,6 +8,7 @@ import { PositionController } from '../controllers/position.controller';
 import { AssistantService } from '../services/content/assistant/assistant.service';
 // Service de position GPS et de temps de trajet.
 import { PositionService } from '../services/locations/position/position.service';
+import { TransportService } from '../services/locations/transport/transport.service';
 
 // Ouvre la déclaration du module.
 @Module({
@@ -16,7 +17,11 @@ import { PositionService } from '../services/locations/position/position.service
   // Routes du module : celles du contrôleur de position.
   controllers: [PositionController],
   // Services que le module fabrique : PositionService, construit avec le service de l'assistant.
-  providers: [{ provide: PositionService, inject: [AssistantService], useFactory: (a: AssistantService) => new PositionService(a) }],
+  providers: [
+    { provide: PositionService, inject: [AssistantService], useFactory: (a: AssistantService) => new PositionService(a) },
+    // Vols et trains : clés lues dans l'environnement.
+    { provide: TransportService, useFactory: () => new TransportService() },
+  ],
 // Fin de la déclaration.
 })
 // Classe du module de position, importée par le module racine.

@@ -48,5 +48,14 @@ services:
         # Valeur saisie dans le tableau de bord, jamais dans le dépôt : c'est la seule clé de ce service qui
         # peut déplacer de l'argent.
         sync: false
+      # Vols (fenêtre Trajet) : jeton de l'API de données Aviasales, programme d'affiliation Travelpayouts.
+      - key: TRAVELPAYOUTS_TOKEN
+        sync: false
+      # Identifiant d'affilié Travelpayouts ajouté aux liens de réservation des vols (commission).
+      - key: TRAVELPAYOUTS_MARKER
+        sync: false
+      # Trains (fenêtre Trajet) : clé de l'API SNCF (https://numerique.sncf.com/startup/api/token-developpeur/).
+      - key: SNCF_API_KEY
+        sync: false
       # Assistant : aucune clé côté serveur, chaque utilisateur se connecte avec la sienne (Claude ou Mistral).
       # PORT est fourni par Render. Les autres variables (tuiles…) : voir backend/.env.example.
