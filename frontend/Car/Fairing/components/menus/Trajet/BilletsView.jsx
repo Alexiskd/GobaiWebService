@@ -6,8 +6,11 @@ import { Alert, Button, Chip, CircularProgress, Link, TextField } from '@/Fairin
 import { fetchTickets } from '@/Computing/api';
 import { formatDuration } from '@/Engine/shared/lib/app/trajet';
 
-/** Date du jour + n jours, au format AAAA-MM-JJ. */
-const dayPlus = (n) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10);
+/** Date du jour + n jours, au format AAAA-MM-JJ, dans le fuseau de l'appareil (pas en UTC : à 0 h 30 à Paris, c'est déjà demain). */
+const dayPlus = (n) => {
+  const d = new Date(Date.now() + n * 86400_000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 /** Heure lisible d'une date ISO (« 07:45 »), sans conversion de fuseau : l'heure locale du départ. */
 const hhmm = (iso) => (typeof iso === 'string' && /T(\d{2}:\d{2})/.exec(iso)?.[1]) || '';
@@ -56,7 +59,7 @@ function Offre({ main, sub, right, href, cta }) {
 
 /** `a`, `b` : les deux lieux de la Terre du trajet. */
 export function BilletsView({ a, b }) {
-  const [date, setDate] = useState(() => dayPlus(7));
+  const [date, setDate] = useState(() => dayPlus(0));
   const [state, setState] = useState({ status: 'idle', data: null, error: null });
   const ctrl = useRef(null);
 
@@ -126,8 +129,24 @@ export function BilletsView({ a, b }) {
             ))}
           </Mode>
 
+          {/* Trains hors SNCF : sites de billets des pays du trajet, horaires et prix affichés chez eux. */}
+          {state.data.trainPartners?.length > 0 && (
+            <section aria-label="Autres sites de billets de train" className="flex flex-col gap-2">
+              <h3 className="t-subtitle2 font-semibold m-0">Billets de train dans les pays du trajet</h3>
+              <div className="flex flex-row gap-2 flex-wrap">
+                {state.data.trainPartners.map((p) => (
+                  <Link key={p.id} href={p.url} target="_blank" rel="noopener sponsored" underline="none"
+                    className="flex flex-col px-3 py-2 border border-line rounded-[12px] hover:bg-hover">
+                    <span className="t-body2 font-semibold">{p.name}</span>
+                    <span className="t-caption text-soft">{p.coverage}</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
           <div className="flex flex-row gap-2 flex-wrap">
-            <Chip size="small" variant="outlined" label="Prix des vols : recherches récentes, à confirmer à la réservation" />
+            <Chip size="small" variant="outlined" label="Prix à confirmer à la réservation" />
           </div>
         </div>
       )}

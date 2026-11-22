@@ -13,7 +13,7 @@
 export interface LatLon { lat: number; lon: number; name?: string }
 
 /** Un aéroport, tel que le publie Travelpayouts (data/airports.json). */
-export interface Airport { code: string; cityCode: string; name: string; lat: number; lon: number }
+export interface Airport { code: string; cityCode: string; countryCode: string; name: string; lat: number; lon: number }
 
 /** Un vol proposé. */
 export interface FlightOffer {
@@ -81,7 +81,8 @@ export function parseAirports(raw: unknown): Airport[] {
     if (o.flightable !== true || (o.iata_type && o.iata_type !== 'airport')) continue;
     if (typeof o.code !== 'string' || !/^[A-Z]{3}$/.test(o.code) || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
     const cityCode = typeof o.city_code === 'string' && /^[A-Z]{3}$/.test(o.city_code) ? o.city_code : o.code;
-    out.push({ code: o.code, cityCode, name: typeof o.name === 'string' ? o.name : o.code, lat, lon });
+    const countryCode = typeof o.country_code === 'string' && /^[A-Z]{2}$/.test(o.country_code) ? o.country_code : '';
+    out.push({ code: o.code, cityCode, countryCode, name: typeof o.name === 'string' ? o.name : o.code, lat, lon });
   }
   return out;
 }
@@ -135,6 +136,15 @@ export function navitiaDate(v: unknown): string {
   return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}` : '';
 }
 
+/** Date et heure de Paris à un instant donné : { date: « 2026-11-23 », dateTime: « 2026-11-23T00:05 » }. */
+export function parisNow(ms: number = Date.now()): { date: string; dateTime: string } {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(ms)).map((p) => [p.type, p.value]));
+  const date = `${parts.year}-${parts.month}-${parts.day}`;
+  return { date, dateTime: `${date}T${parts.hour}:${parts.minute}` };
+}
+
 /** Date ISO (« 2026-11-23 » ou « 2026-11-23T08:00 ») → format Navitia « 20261123T080000 ». */
 export function toNavitiaDate(iso: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/.exec(iso);
@@ -170,4 +180,87 @@ export function parseTrainJourneys(raw: unknown): TrainJourney[] {
     });
   }
   return out.slice(0, MAX_OFFERS);
+}
+
+// ── Vols en direct : Duffel ─────────────────────────────────────────────────────────────────────────────
+
+/** Durée ISO 8601 (« PT2H35M », « P1DT3H ») → minutes ; 0 si illisible. */
+export function isoDurationMinutes(v: unknown): number {
+  const m = typeof v === 'string' ? /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?$/.exec(v) : null;
+  return m ? (Number(m[1] ?? 0) * 24 + Number(m[2] ?? 0)) * 60 + Number(m[3] ?? 0) : 0;
+}
+
+/**
+ * Lien de recherche Aviasales pour un trajet et une date : « /search/PAR0512NCE1 » (origine, jour, mois, destination,
+ * un adulte), avec l'identifiant d'affilié. Sert de lien de réservation aux vols trouvés en direct par Duffel.
+ */
+export function aviasalesSearchUrl(origin: string, destination: string, date: string, marker: string): string {
+  const m = /^\d{4}-(\d{2})-(\d{2})/.exec(date);
+  return aviasalesUrl(m ? `/search/${origin}${m[2]}${m[1]}${destination}1` : '/', marker);
+}
+
+/** Lit la réponse de POST /air/offer_requests?return_offers=true (Duffel, version v2). */
+export function parseDuffelOffers(raw: unknown, marker: string): FlightOffer[] {
+  const offers = ((raw as Record<string, unknown> | null)?.data as Record<string, unknown> | undefined)?.offers;
+  if (!Array.isArray(offers)) return [];
+  const out: FlightOffer[] = [];
+  for (const o of offers as Record<string, unknown>[]) {
+    const price = Number(o?.total_amount);
+    const slice = Array.isArray(o?.slices) ? (o.slices as Record<string, unknown>[])[0] : undefined;
+    const segments = Array.isArray(slice?.segments) ? (slice!.segments as Record<string, unknown>[]) : [];
+    const first = segments[0];
+    const last = segments[segments.length - 1];
+    if (!Number.isFinite(price) || price <= 0 || !first || typeof first.departing_at !== 'string') continue;
+    const code = (x: unknown) => String((x as Record<string, unknown> | undefined)?.iata_code ?? '');
+    const origin = code(first.origin);
+    const destination = code(last.destination);
+    out.push({
+      price,
+      currency: String(o.total_currency ?? 'EUR').toUpperCase(),
+      airline: code(first.marketing_carrier) || code(o.owner),
+      flightNumber: String(first.marketing_carrier_flight_number ?? ''),
+      originAirport: origin,
+      destinationAirport: destination,
+      departureAt: first.departing_at,
+      transfers: Math.max(0, segments.length - 1),
+      durationMinutes: isoDurationMinutes(slice?.duration),
+      bookingUrl: aviasalesSearchUrl(origin, destination, first.departing_at, marker),
+    });
+  }
+  return out.sort((x, y) => x.price - y.price).slice(0, MAX_OFFERS);
+}
+
+// ── Trains hors SNCF : liens de réservation affiliés, choisis selon les pays du trajet ─────────────────────
+
+/** Un site de billets de train proposé pour le trajet. */
+export interface TrainPartner { id: string; name: string; coverage: string; url: string }
+
+/** Pays d'Europe (codes ISO 3166-1 alpha-2) : Trainline, Omio et RailEurope. */
+const EUROPE = new Set(('AD AL AT BA BE BG BY CH CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU LV MC MD ME MK MT NL NO PL PT RO RS '
+  + 'SE SI SK SM UA VA XK').split(' '));
+
+/**
+ * Sites partenaires. Chaque adresse se remplace par le lien d'affiliation généré dans Travelpayouts (ou chez le
+ * partenaire), par une variable d'environnement : sans elle, c'est la page d'accueil du site, sans commission.
+ */
+export const TRAIN_PARTNERS = [
+  { id: 'trainline', name: 'Trainline', coverage: 'Europe · 45 pays', env: 'TRAIN_LINK_TRAINLINE', url: 'https://www.thetrainline.com/', match: (c: string) => EUROPE.has(c) },
+  { id: 'omio', name: 'Omio', coverage: 'Europe et États-Unis', env: 'TRAIN_LINK_OMIO', url: 'https://www.omio.com/', match: (c: string) => EUROPE.has(c) || c === 'US' },
+  { id: 'raileurope', name: 'Rail Europe', coverage: 'Europe', env: 'TRAIN_LINK_RAILEUROPE', url: 'https://www.raileurope.com/', match: (c: string) => EUROPE.has(c) },
+  { id: 'tripcom', name: 'Trip.com', coverage: 'Chine, Corée du Sud, Royaume-Uni, Europe', env: 'TRAIN_LINK_TRIPCOM', url: 'https://www.trip.com/trains/', match: (c: string) => c === 'CN' || c === 'KR' || c === 'GB' },
+  { id: '12go', name: '12Go', coverage: 'Asie et plus de 100 pays', env: 'TRAIN_LINK_12GO', url: 'https://12go.asia/', match: (c: string) => !EUROPE.has(c) && c !== 'US' },
+] as const;
+
+/**
+ * Sites de billets de train utiles pour un trajet entre deux pays : ceux qui couvrent le pays de départ ou d'arrivée.
+ * La France est déjà couverte par l'API SNCF : elle n'ajoute rien de plus que les partenaires européens.
+ */
+export function trainPartnersFor(countries: string[], env: Record<string, string | undefined> = process.env): TrainPartner[] {
+  const known = countries.filter((c) => /^[A-Z]{2}$/.test(c));
+  if (!known.length) return [];
+  return TRAIN_PARTNERS.filter((p) => known.some((c) => p.match(c))).map((p) => {
+    const custom = env[p.env]?.trim();
+    const url = custom && /^https:\/\//.test(custom) ? custom : p.url;
+    return { id: p.id, name: p.name, coverage: p.coverage, url };
+  });
 }

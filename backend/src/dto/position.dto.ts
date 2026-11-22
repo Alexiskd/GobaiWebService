@@ -54,7 +54,7 @@ export class TicketsRequestDto {
   @ValidateNested() @Type(() => PositionPointDto)
   b!: PositionPointDto;
 
-  @ApiPropertyOptional({ example: '2026-12-05', description: 'Date de départ (AAAA-MM-JJ). Par défaut : dans 7 jours.' })
+  @ApiPropertyOptional({ example: '2026-12-05', description: 'Date de départ (AAAA-MM-JJ). Par défaut : aujourd’hui (heure de Paris).' })
   @IsOptional() @IsString()
   date?: string;
 }
