@@ -9,6 +9,7 @@ import { useAssistantSession } from '@/Fairing/hooks/useAssistantSession';
 import { useViewport } from '@/Fairing/hooks/useViewport';
 import { PanelHeader } from '../../ui/PanelHeader.jsx';
 import { RouteIcon, SwapVertIcon } from '../../ui/icons.jsx';
+import { BilletsView } from './BilletsView.jsx';
 import { ItineraireView } from './ItineraireView.jsx';
 import { PointPicker } from './PointPicker.jsx';
 
@@ -185,6 +186,8 @@ export function Trajet({ open, onClose, onOpenAssistant }) {
               </Alert>
             )}
             {itin.data && <ItineraireView itinerary={itin.data} />}
+            {/* Vols et billets de train du trajet, avec un lien de réservation par proposition. */}
+            {onEarth && <BilletsView a={a} b={b} />}
           </div>
 
           <span className="t-caption text-soft">

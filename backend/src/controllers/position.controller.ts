@@ -1,5 +1,5 @@
 // Outils NestJS : corps et en-tête de la requête, contrôleur, routes, en-tête de réponse, code de réponse.
-import { Body, Controller, Get, Header, Headers, HttpCode, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, Headers, HttpCode, Post } from '@nestjs/common';
 // Limite de débit propre à une route.
 import { Throttle } from '@nestjs/throttler';
 // Documentation Swagger.
@@ -10,9 +10,11 @@ import {
 // Forme commune des erreurs.
 import { ApiErrorDto } from '../dto/api-error.dto';
 // Formes échangées.
-import { ItineraryDto, MoonSitesDto, TripDto, TripRequestDto } from '../dto/position.dto';
+import { ItineraryDto, MoonSitesDto, TicketsRequestDto, TripDto, TripRequestDto } from '../dto/position.dto';
 // Service de position et de temps de trajet.
 import { PositionService } from '../services/locations/position/position.service';
+import { normalizePoint } from '../services/locations/position/position';
+import { TicketsResult, TransportService } from '../services/locations/transport/transport.service';
 
 /** En-tête de la clé d'API de l'utilisateur, le même que celui de l'assistant : jamais dans l'adresse ni dans le corps. */
 const KEY_HEADER = 'x-assistant-key';
@@ -29,7 +31,7 @@ const KEY_HEADER = 'x-assistant-key';
 @ApiTags('Position')
 @Controller('position')
 export class PositionController {
-  constructor(private readonly position: PositionService) {}
+  constructor(private readonly position: PositionService, private readonly transport: TransportService) {}
 
   @Get('lune')
   @Header('Cache-Control', 'public, max-age=86400')
@@ -69,5 +71,24 @@ export class PositionController {
   @ApiBadGatewayResponse({ type: ApiErrorDto })
   itinerary(@Body() body: TripRequestDto, @Headers(KEY_HEADER) key: string): ReturnType<PositionService['itinerary']> {
     return this.position.itinerary(body.provider, key, body.a, body.b);
+  }
+
+  @Post('billets')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'Vols et trains entre deux lieux de la Terre',
+    description: 'Vols : prix récents d’Aviasales (Travelpayouts) entre les aéroports les plus proches, avec lien de réservation. '
+      + 'Trains : horaires de l’API SNCF, avec lien vers SNCF Connect. Aucune clé à fournir : celles du serveur sont utilisées.',
+  })
+  @ApiOkResponse({ description: '{ date, flights: { status, offers | message, source }, trains: { status, offers | message, source } }' })
+  @ApiBadRequestResponse({ type: ApiErrorDto })
+  @ApiTooManyRequestsResponse({ type: ApiErrorDto })
+  tickets(@Body() body: TicketsRequestDto): Promise<TicketsResult> {
+    const a = normalizePoint(body.a);
+    const b = normalizePoint(body.b);
+    if (!a || !b || a.body !== 'earth' || b.body !== 'earth') throw new BadRequestException('Vols et trains : deux lieux de la Terre attendus.');
+    return this.transport.tickets(a, b, body.date);
   }
 }

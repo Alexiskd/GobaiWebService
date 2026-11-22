@@ -5,7 +5,7 @@
  * autres trajets : estimés par le modèle de l'utilisateur (Claude ou Mistral) avec SA clé, envoyée dans l'en-tête
  * `X-Assistant-Key` comme pour l'assistant. Les refus arrivent typés (`AssistantError.code`, voir assistant.jsx).
  */
-import { get } from './client.jsx';
+import { get, post } from './client.jsx';
 import { callWithKey } from './assistant.jsx';
 
 /** Sites d'alunissage Apollo : { items: [{ id, name, lat, lon, info }] }. */
@@ -24,3 +24,10 @@ export const computeTrip = (provider, key, a, b, signal) => callWithKey('positio
  * waypoints, minutes, km, altitudeKm? }], provider, model }. Le moteur de chaque `mode` le modélise (Engine/ItineraireEngine).
  */
 export const computeItinerary = (provider, key, a, b, signal) => callWithKey('position/itineraire', { provider, key, body: { a, b }, signal });
+
+/**
+ * Vols et trains entre deux lieux de la Terre { body: 'earth', lat, lon, name? }, pour une date (AAAA-MM-JJ, facultative).
+ * Sans clé de l'utilisateur : le serveur utilise les siennes. Renvoie { date, flights, trains } ; chacun vaut
+ * { status: 'ok', offers, source, note? } ou { status: 'non-configure' | 'aucun' | 'erreur', message, source }.
+ */
+export const fetchTickets = (a, b, date, signal) => post('/position/billets', { a, b, ...(date ? { date } : {}) }, { signal });

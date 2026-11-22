@@ -44,6 +44,21 @@ export class TripRequestDto {
   b!: PositionPointDto;
 }
 
+/** Corps de POST position/billets : deux lieux de la Terre et une date de départ. */
+export class TicketsRequestDto {
+  @ApiProperty({ type: PositionPointDto, description: 'Départ (Terre).' })
+  @ValidateNested() @Type(() => PositionPointDto)
+  a!: PositionPointDto;
+
+  @ApiProperty({ type: PositionPointDto, description: 'Arrivée (Terre).' })
+  @ValidateNested() @Type(() => PositionPointDto)
+  b!: PositionPointDto;
+
+  @ApiPropertyOptional({ example: '2026-12-05', description: 'Date de départ (AAAA-MM-JJ). Par défaut : dans 7 jours.' })
+  @IsOptional() @IsString()
+  date?: string;
+}
+
 /** Un site d'alunissage proposé comme position sur la Lune. */
 export class MoonSiteDto {
   @ApiProperty({ example: 'apollo-11' }) id!: string;
