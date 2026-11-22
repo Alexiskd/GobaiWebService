@@ -1,12 +1,10 @@
-// Importe de React les crochets useCallback, useEffect, useRef et useState.
-import { useCallback, useEffect, useRef, useState } from 'react';
+// Importe de React le crochet useEffect.
+import { useEffect } from 'react';
 
 // Son synthétisé avec la Web Audio API (aucun fichier audio à charger) : une note sinusoïdale
 // très courte dont la hauteur monte brusquement, comme une bulle qui éclate.
-// Joué sur tout élément cliquable de l’interface, coupé via le bouton « Son » de la barre.
+// Joué sur tout élément cliquable de l’interface ; toujours actif (aucun bouton pour le couper).
 
-// Clé du stockage local où est gardée la préférence de son.
-const SOUND_STORAGE_KEY = 'gobai:sound';
 // Liste des sélecteurs CSS des éléments considérés comme cliquables (début du tableau).
 const CLICKABLE = [
   // Les boutons.
@@ -108,29 +106,13 @@ function playBubble() {
 // Fin de playBubble.
 }
 
-// Déclare readSoundPref, qui lit la préférence de son enregistrée.
-const readSoundPref = () => {
-  // Son actif sauf si la valeur enregistrée vaut « off » ; si le stockage est inaccessible, son actif.
-  try { return localStorage.getItem(SOUND_STORAGE_KEY) !== 'off'; } catch { return true; }
-// Fin de readSoundPref.
-};
-
-/** Écoute tous les clics de la page et joue la bulle sur les éléments cliquables. Renvoie [actif, basculer]. */
+/** Écoute tous les clics de la page et joue la bulle sur les éléments cliquables. Le son est toujours actif. */
 // Déclare et exporte le crochet useBubbleSound.
 export function useBubbleSound() {
-  // État : son actif ou non, initialisé avec la préférence enregistrée.
-  const [enabled, setEnabled] = useState(readSoundPref);
-  // Référence qui garde la valeur courante, lisible depuis l'écouteur sans le recréer.
-  const enabledRef = useRef(enabled);
-  // Met la référence à jour à chaque rendu.
-  enabledRef.current = enabled;
-
   // Effet exécuté une seule fois : pose l'écouteur de clics.
   useEffect(() => {
     // Déclare onClick, appelé à chaque clic dans la page.
     const onClick = (event) => {
-      // Si le son est coupé, on ne fait rien.
-      if (!enabledRef.current) return;
       // Cherche l'élément cliquable le plus proche de la cible du clic, si cette cible est bien un élément.
       const target = event.target instanceof Element ? event.target.closest(CLICKABLE) : null;
       // Rien à faire si aucun élément cliquable n'est trouvé, ou s'il est dans une zone marquée data-no-sound.
@@ -148,23 +130,5 @@ export function useBubbleSound() {
     return () => document.removeEventListener('click', onClick, true);
   // Fin de l'effet ; aucune dépendance : une seule exécution.
   }, []);
-
-  // toggle : active ou coupe le son ; début de la fonction mémorisée.
-  const toggle = useCallback(() => {
-    // Calcule le nouvel état, inverse de l'état courant.
-    const next = !enabledRef.current;
-    // Met tout de suite la référence à jour.
-    enabledRef.current = next;
-    // Met l'état à jour, ce qui déclenche un nouveau rendu.
-    setEnabled(next);
-    // Enregistre la préférence (« on » ou « off ») ; une erreur de stockage est ignorée.
-    try { localStorage.setItem(SOUND_STORAGE_KEY, next ? 'on' : 'off'); } catch { /* stockage indisponible */ }
-    // Si le son vient d'être activé, joue une bulle.
-    if (next) playBubble(); // confirme que le son est réactivé
-  // Fin de toggle ; fonction stable.
-  }, []);
-
-  // Renvoie l'état du son et la fonction de bascule.
-  return [enabled, toggle];
 // Fin de useBubbleSound.
 }

@@ -30,19 +30,10 @@ export { default as CameraIcon } from '@mui/icons-material/Videocam';
 // Orientation verrouillée, et relâchée.
 export { default as LockIcon } from '@mui/icons-material/Lock';
 export { default as LockOpenIcon } from '@mui/icons-material/LockOpen';
-// Son des clics, activé et coupé.
-export { default as VolumeUpIcon } from '@mui/icons-material/VolumeUp';
-export { default as VolumeOffIcon } from '@mui/icons-material/VolumeOff';
-// Langue de l'interface.
-export { default as TranslateIcon } from '@mui/icons-material/Translate';
 // Contribuer : poser un relevé LiDAR sur le globe.
 export { default as AddLocationIcon } from '@mui/icons-material/AddLocation';
 // Sources et mentions d'origine.
 export { default as CopyrightIcon } from '@mui/icons-material/Copyright';
-// Aide et raccourcis clavier.
-export { default as HelpIcon } from '@mui/icons-material/Help';
-// Partager la vue.
-export { default as ShareIcon } from '@mui/icons-material/Share';
 // Galerie d'images.
 export { default as GalleryIcon } from '@mui/icons-material/Collections';
 // Moniteur de performance.
@@ -67,7 +58,6 @@ export { default as SouthEastIcon } from '@mui/icons-material/SouthEast';
 // Étape franchie, et fermeture.
 export { default as AutoAwesomeIcon } from '@mui/icons-material/AutoAwesome';
 // Icône de la boutique des exports.
-export { default as StoreIcon } from '@mui/icons-material/ShoppingCart';
 export { default as CheckIcon } from '@mui/icons-material/Check';
 export { default as CloseIcon } from '@mui/icons-material/Close';
 // Lecture d'une vidéo de la galerie, et arrêt d'un téléchargement.

@@ -11,7 +11,7 @@ import { ALL_SATELLITES, MOON, PLANETS, SUN } from '../../core/data/bodies.data'
 export const BODY_NAMES: string[] = [SUN.name, ...PLANETS.map((p) => p.name), MOON.name, ...ALL_SATELLITES.map((s) => s.name)];
 
 // Fenêtres que l'assistant peut ouvrir ; « as const » fige la liste et ses valeurs exactes pour TypeScript.
-export const WINDOWS = ['galerie', 'parametres', 'recherche', 'aide', 'node', 'langue', 'informations'] as const;
+export const WINDOWS = ['galerie', 'parametres', 'recherche', 'node', 'informations'] as const;
 /**
  * Interrupteurs que l'assistant peut actionner : tous ceux de la fenêtre Paramètres et de la barre d'outils. Même
  * liste que la table du navigateur (frontend scene/assistantActions.jsx) ; chacun correspond à un interrupteur que
@@ -124,7 +124,7 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
   // Fin de l'outil.
   }),
   // Outil « vue_globale » : revient à la vue d'ensemble ; aucun paramètre.
-  tool('vue_globale', 'Revient à la vue d’ensemble du système solaire (bouton « Vue globale »).'),
+  tool('vue_globale', 'Revient à la vue d’ensemble du système solaire (touche 0 du pavé numérique).'),
   // Outil « agir_sur_un_element » : clique un élément de la page, désigné par son identifiant d'inventaire.
   tool('agir_sur_un_element', 'Agit directement sur un élément de la page : le navigateur le clique réellement. '
     + 'Donne l’identifiant d’un élément de l’inventaire reçu avec le message (e1, e2…), jamais un identifiant '

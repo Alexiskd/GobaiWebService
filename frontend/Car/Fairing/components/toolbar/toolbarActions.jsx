@@ -14,11 +14,10 @@
 import { HIDDEN } from './hiddenActions.js';
 // Importe les icônes employées par la barre.
 import {
-  // Recherche, vue d'ensemble, ombre, rotation, vue 3/4 et verrouillage.
-  SearchIcon, PublicIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
-  // Son, langue, contribution, sources, aide, partage, galerie, performances, don et paramètres.
-  VolumeUpIcon, VolumeOffIcon, TranslateIcon, AddLocationIcon, CopyrightIcon, HelpIcon, ShareIcon,
-  ScienceIcon, StoreIcon, SettingsIcon,
+  // Recherche, ombre, rotation, vue 3/4 et verrouillage.
+  SearchIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
+  // Contribution, sources, galerie et paramètres.
+  AddLocationIcon, CopyrightIcon, ScienceIcon, SettingsIcon,
   // Arborescence des astres et icône de l'assistant.
   AccountTreeIcon, AutoAwesomeIcon, RouteIcon, InfoIcon,
 // Fin de la liste ; module des icônes.
@@ -46,9 +45,9 @@ export function toolbarActions({
   // Le verrouillage et son rappel.
   lock, onToggleLock,
   // Les états affichés par les boutons.
-  auto, tilt, sound,
+  auto, tilt,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen, onInfos, infosOpen,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onToggleAuto, onToggleTilt, onSources, onGallery, onSettings, onContribute, onTrip, tripOpen, onInfos, infosOpen,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -57,7 +56,7 @@ export function toolbarActions({
 }) {
   // Renvoie la liste des actions (début du tableau).
   return [
-    // ── Bloc « explore » — Explorer : chercher, naviguer entre les astres, revenir à la vue d’ensemble.
+    // ── Bloc « explore » — Explorer : chercher, naviguer entre les astres.
     // Rechercher : action principale du groupe « explore », avec son raccourci Ctrl K.
     { id: 'search', group: 'explore', icon: SearchIcon, label: 'Rechercher', primary: true, onClick: onSearch, title: 'Rechercher une ville ou un astre (Ctrl K)', kbd: 'Ctrl K' },
     // Astres : ouvre ou ferme l'arborescence des astres (bande du dock sur téléphone, rail sur ordinateur), qui
@@ -68,8 +67,6 @@ export function toolbarActions({
     // Informations : ouvre la fiche de l'astre focus (description, caractéristiques, cartes). Sur téléphone, c'est le
     // seul moyen de l'ouvrir : le tiroir n'est plus posé tout seul sur l'écran. Même effet que la touche L.
     onInfos && { id: 'infos', group: 'explore', icon: InfoIcon, label: 'Informations', iconOnly: true, pressed: infosOpen, onClick: onInfos, title: 'Informations : description et caractéristiques de l’astre focus (L)' },
-    // Vue globale : retour à la vue d'ensemble.
-    { id: 'reset', group: 'explore', icon: PublicIcon, label: 'Vue globale', short: 'Global', primary: true, onClick: onReset, title: 'Retour à la vue d’ensemble (0 du pavé numérique)' },
     // ── Bloc « display » — Affichage : éclairage, relativité, mouvements automatiques de la caméra.
     // Ombre : bouton à bascule comme « Vue 3/4 ». Enfoncé = face des astres opposée au Soleil dans l'ombre et interface
     // bleu nuit ; relâché = astres entièrement éclairés et interface gris doux.
@@ -102,31 +99,20 @@ export function toolbarActions({
         : `Verrouiller la vue sur ${lock.name}, l’astre le plus proche de ${lock.focusName} (astre focus)`,
     // Fin de l'objet.
     },
-    // ── Bloc « data » — Données : documents et images, contributions LiDAR, exports payants.
+    // ── Bloc « data » — Données : documents et images, contributions LiDAR.
     // Données (si le rappel existe) : icône seule.
     onGallery && { id: 'gallery', group: 'data', icon: ScienceIcon, label: 'Données', iconOnly: true, onClick: onGallery, title: 'Données : flux cognitif et théorie quantique (P)' },
     // Contribuer : placer une dalle LiDAR sur le globe et voter sur le placement des autres.
     onContribute && { id: 'contribute', group: 'data', icon: AddLocationIcon, label: 'Contribuer', onClick: onContribute, title: 'Contribuer : placer un relevé LiDAR sur le globe et voter sur les placements' },
-    // Boutique des exports : modèle 3D d'un astre, ses tuiles, son orbite (paiement Stripe côté serveur).
-    onStore && { id: 'store', group: 'data', icon: StoreIcon, label: 'Exports', onClick: onStore, title: 'Boutique : exporter le modèle 3D d’un astre, ses tuiles ou son orbite' },
     // ── Bloc « assistant » — Assistant : questions sur le système solaire.
     // « Ma position » n'est plus ici : elle est posée sous la navball, en icône (hud/NavballPilote).
     // Assistant : petit menu déroulant qui s'ouvre au-dessus du bouton (l'événement du clic donne son point d'ancrage).
     // Assistant (Claude côté serveur, Mistral avec une clé du navigateur), enfoncé quand son menu est ouvert.
     { id: 'assistant', group: 'assistant', icon: assistantIcon(assistantProvider), label: 'Assistant', primary: true, pressed: assistantOpen, onClick: onAssistant, title: PROVIDER_NAMES[assistantProvider] ? `Assistant (connecté à ${PROVIDER_NAMES[assistantProvider]}) : poser une question sur le système solaire` : 'Assistant : se connecter avec sa clé Claude ou Mistral' },
-    // ── Bloc « settings » — Réglages : langue, son, paramètres (le moniteur de performance se règle dans Paramètres).
-    // Langue (si le rappel existe) : icône seule, libellé avec la langue en cours si elle est connue.
-    onLanguage && { id: 'lang', group: 'settings', icon: TranslateIcon, label: languageLabel ? `Langue : ${languageLabel}` : 'Langue', short: 'Langue', iconOnly: true, onClick: onLanguage, title: 'Langue de l’interface' },
-    // Son (si le rappel existe) : icône seule du groupe « help », enfoncée si le son est actif, sans son de clic.
-    onToggleSound && { id: 'sound', group: 'settings', icon: sound ? VolumeUpIcon : VolumeOffIcon, label: sound ? 'Son activé' : 'Son coupé', short: 'Son', iconOnly: true, pressed: sound, noSound: true, onClick: onToggleSound, title: sound ? 'Couper le son des clics' : 'Activer le son des clics' },
+    // ── Bloc « settings » — Réglages : paramètres.
     // Paramètres (si le rappel existe) : icône seule.
     onSettings && { id: 'settings', group: 'settings', icon: SettingsIcon, label: 'Paramètres', iconOnly: true, onClick: onSettings, title: 'Paramètres : repères du système solaire, étoiles, aller à un astre' },
-    // ── Bloc « info » — Infos : aide, partage, sources du site, don.
-    // Aide (si le rappel existe) : icône seule, raccourcis clavier.
-    onHelp && { id: 'help', group: 'info', icon: HelpIcon, label: 'Aide', iconOnly: true, onClick: onHelp, title: 'Raccourcis clavier (?)' },
-    // Partager : feuille de partage du téléphone, ou copie du lien de la vue sur ordinateur.
-    // Partager (si le rappel existe) : icône seule.
-    onShare && { id: 'share', group: 'info', icon: ShareIcon, label: 'Partager', iconOnly: true, onClick: onShare, title: 'Partager cette vue (lien de l’astre affiché)' },
+    // ── Bloc « info » — Infos : sources du site.
     // Node Open Source (si le rappel existe) : icône seule — ce dont le site est fait.
     onSources && { id: 'sources', group: 'info', icon: CopyrightIcon, label: 'Node Open Source', short: 'Node', iconOnly: true, onClick: onSources, title: 'Node Open Source : dépendances, sources des données et services utilisés (S)' },
   // Fin du tableau : retire les entrées absentes et les boutons masqués.

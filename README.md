@@ -127,7 +127,7 @@ The Earth has a single imagery layer, `earth-hd`, zoomable to level 19 everywher
 
 ## Interface language
 
-The **Langue** button (next to sound and help) translates the whole interface. Default: the browser language.
+The interface language is the browser language, applied automatically (there is no language button). Click sounds are always on (there is no sound button).
 
 - Language list: all ISO 639-3 languages (~7,900, SIL via `wooorm/iso-639-3`), languages per country and writing systems from Unicode CLDR, in `frontend/public/data/languages.json` (rebuild with `frontend/scripts/build-languages.mjs`).
 - Translation: MyMemory, from the browser, only for texts actually displayed, cached per language in `localStorage`. Numbers are stripped before sending, so live values (distances, times) never trigger new requests.

@@ -18,12 +18,12 @@ import { useAssistantSession } from '@/Fairing/hooks/useAssistantSession';
 export function Toolbar({
   // Le HUD et les états rotation et vue 3/4.
   hud, auto, tilt,
-  // Les rappels de recherche, d'assistant, d'ombre, de rotation, de vue 3/4, de verrouillage, de vue globale et d'aide, avec leurs états.
-  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onToggleAuto, onToggleTilt, onToggleLock, onReset, onHelp,
+  // Les rappels de recherche, d'assistant, d'ombre, de rotation, de vue 3/4 et de verrouillage, avec leurs états.
+  onSearch, onAssistant, assistantOpen, night, onToggleDayNight, onToggleAuto, onToggleTilt, onToggleLock,
   // Affichage Schwarzschild : son état et son rappel (à côté du bouton Ombre).
   schwarzschild, onToggleSchwarzschild,
-  // Le son (actif par défaut), la langue, les sources, la galerie, les paramètres et le partage.
-  sound = true, onToggleSound, onLanguage, languageLabel, onSources, onGallery, onSettings, onShare, onContribute, onStore,
+  // Les sources, la galerie et les paramètres.
+  onSources, onGallery, onSettings, onContribute,
   // Fenêtre Trajet : son rappel et son état.
   onTrip, tripOpen,
   // Informations de l'astre focus : rappel et état.
@@ -50,12 +50,12 @@ export function Toolbar({
     // Le verrouillage et son rappel.
     lock, onToggleLock,
     // Les états affichés par les boutons.
-    auto, tilt, sound,
+    auto, tilt,
     // Tous les autres rappels et libellés.
     // Le don est aussi dans la feuille « Menu » du téléphone (en plus du cœur de la zone du titre). Le plateau
     // tournant et le moniteur de performance ne sont plus dans la barre : le premier vit dans le panneau
     // d'informations, le second a été retiré.
-    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onReset, onToggleAuto, onToggleTilt, onToggleSound, onLanguage, languageLabel, onSources, onHelp, onStore, onGallery, onSettings, onShare, onContribute, onTrip, tripOpen, onInfos, infosOpen,
+    onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onToggleAuto, onToggleTilt, onSources, onGallery, onSettings, onContribute, onTrip, tripOpen, onInfos, infosOpen,
     // Affichage Schwarzschild : l'état et le rappel passés à la liste.
     schwarzschild, onToggleSchwarzschild,
     // L'arborescence des astres, et le moniteur de performance hors téléphone.
@@ -63,6 +63,6 @@ export function Toolbar({
   // Fin de l'appel.
   });
   // Petit écran : la barre compacte ; sinon : la barre de l'ordinateur.
-  return compact ? <CompactToolbar hud={hud} actions={actions} /> : <DesktopToolbar hud={hud} actions={actions} />;
+  return compact ? <CompactToolbar actions={actions} /> : <DesktopToolbar hud={hud} actions={actions} />;
 // Fin de Toolbar.
 }
