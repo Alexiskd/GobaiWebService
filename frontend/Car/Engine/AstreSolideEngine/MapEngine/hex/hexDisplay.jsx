@@ -327,8 +327,8 @@ export class HexDisplay {
       let set = waiting.get(cell.f);
       // Créé s'il manque.
       if (!set) waiting.set(cell.f, (set = new Set()));
-      // Y ajoute la cellule.
-      set.add(cell.key);
+      // Y ajoute la cellule entière (un morceau de cellule est retrouvé par la clé de sa cellule, voir hexRegions.jsx).
+      set.add(cell.hexKey ?? cell.key);
     // Fin de wait.
     };
     // Pour chaque cellule (début).
@@ -423,6 +423,8 @@ export class HexDisplay {
     const pair = {
       // Sa clé, son centre, son niveau, sa fréquence, les clés de sa cellule et de son image, ses calculs.
       key, mesh: null, center: info.mesh.center, level: cell.level, f: cell.f, cellKey: cell.key, entryKey: entry.key, info, used: 0,
+      // Clé de la cellule entière : celle de la cellule, ou de la cellule dont la paire est un morceau.
+      hexKey: cell.hexKey ?? cell.key,
       // Matériau opaque de la tuile.
       base: entry.mesh.material, // matériau opaque de la tuile carrée, repris à la fin d'un fondu
       // Pas encore dans l'affichage voulu.
@@ -513,7 +515,7 @@ export class HexDisplay {
       // Créé s'il manque.
       if (!set) current.set(cell.f, (set = new Set()));
       // Y ajoute la cellule.
-      set.add(cell.key);
+      set.add(cell.hexKey ?? cell.key); // cellule entière, morceau compris
     // Fin de la boucle.
     }
     // Paires qui partent et qui sont au-dessus d'une cellule voulue plus grande : elles s'effaceront en fondu.
@@ -536,7 +538,7 @@ export class HexDisplay {
       // Sa cellule est toujours voulue : c'est son image qui change, pas un zoom arrière (une cellule voisine plus
       // grande peut contenir son centre sans la remplacer).
       // Sa cellule est toujours voulue : suivante.
-      if (current.get(pair.f)?.has(pair.cellKey)) continue;
+      if (current.get(pair.f)?.has(pair.hexKey)) continue;
       // Pour chaque fréquence voulue (début).
       for (const [f, keys] of current) {
         // Fréquence aussi fine ou plus fine : suivante.
