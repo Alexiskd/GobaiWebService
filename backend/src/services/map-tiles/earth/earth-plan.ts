@@ -103,7 +103,7 @@ export const EARTH_TIERS: EarthTier[] = [
   // Continent : jusqu'à 9 000 km ; niveau 8 ; Sentinel-2.
   { id: 'continent', label: 'Continent', maxKm: 9000, source: 'Sentinel-2', maxZoom: 8, maxTiles: { desktop: 180, phone: 140 }, details: { oceans: 'teinte', coasts: true, roads: false, names: true, marine: 'noaa' } },
   // Planète : jusqu'à 120 000 km ; niveau 6 ; NASA GIBS et Sentinel-2.
-  { id: 'planete', label: 'Planète', maxKm: 120_000, source: 'NASA GIBS, Sentinel-2', maxZoom: 6, maxTiles: { desktop: 120, phone: 100 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
+  { id: 'planete', label: 'Planète', maxKm: 120_000, source: 'NASA GIBS, Sentinel-2', maxZoom: 6, maxTiles: { desktop: 240, phone: 180 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
   // Espace : au-delà ; la mosaïque instantanée seule (niveaux 0 à 3).
   { id: 'espace', label: 'Espace', maxKm: null, source: 'mosaïque instantanée', maxZoom: 3, maxTiles: { desktop: 85, phone: 85 }, details: { oceans: 'teinte', coasts: false, roads: false, names: false, marine: 'noaa' } },
 // Fin des paliers.
