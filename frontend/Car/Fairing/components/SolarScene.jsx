@@ -1,5 +1,5 @@
 // Importe de React les crochets useCallback, useEffect, useMemo, useRef, useState et useSyncExternalStore.
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 // Importe bodyId, qui donne l'identifiant d'un astre.
 import { bodyId } from '@/Engine/AstreSolideEngine/LabelEngine/bodyPlaces';
 // Importe les astres enlevés par défaut, la visibilité par défaut, le test de famille masquée et la famille d'une planète.
@@ -35,8 +35,8 @@ import { Parametres } from './menus/Parametres/Parametres.jsx';
 import { Navigator } from './hud/Navigator.jsx';
 // Importe l'affichage des messages temporaires.
 import { Toasts } from './hud/Toasts.jsx';
-// Importe la fenêtre des sources.
-import { Attribution } from './hud/node/Attribution.jsx';
+// Importe l'enveloppe des fenêtres chargées à la demande.
+import { LazyWindow } from './ui/LazyWindow.jsx';
 // Importe l'attribution du ciel.
 import { SKY_ATTRIBUTION } from '@/Engine/StarEngine/SkyEngine/skyLayer';
 // Importe le pavé de zoom.
@@ -45,14 +45,10 @@ import { ZoomPad } from './hud/ZoomPad.jsx';
 import { FullScreenMessage } from './SolarSystem.jsx';
 // Importe la barre d'outils.
 import { Toolbar } from './toolbar/Toolbar.jsx';
-// La fenêtre de temps de trajet entre deux positions (Terre, Lune).
-import { Trajet } from './menus/Trajet/Trajet.jsx';
 // Importe le menu de l'assistant.
 import { Assistant } from './menus/Assistant/Assistant.jsx';
 // Importe le plateau tournant en ligne, posé dans le panneau d'informations (plus de fenêtre séparée).
 import { PlateauInline } from './menus/Plateau/PlateauInline.jsx';
-// Importe la fenêtre Données (flux cognitif et théorie quantique).
-import { Donnees } from './menus/Donnees/Donnees.jsx';
 // Importe le panneau d'informations.
 import { Informations } from './menus/Informations/Informations.jsx';
 // Importe la fenêtre de recherche.
@@ -110,6 +106,14 @@ import { MobileDock, MobileTopBar } from './ui/MobileZones.jsx';
 
 // Scène complète : moteur 3D, calques, panneaux et barre d’outils.
 // La logique vit dans les hooks de `scene/` ; ce composant assemble et place les composantes.
+// Fenêtres fermées au démarrage : leur code est chargé à la première ouverture (voir LazyWindow).
+// La fenêtre des sources (Node).
+const Attribution = lazy(() => import('./hud/node/Attribution.jsx').then((m) => ({ default: m.Attribution })));
+// La fenêtre de temps de trajet entre deux positions (Terre, Lune).
+const Trajet = lazy(() => import('./menus/Trajet/Trajet.jsx').then((m) => ({ default: m.Trajet })));
+// La fenêtre Données (flux cognitif et théorie quantique).
+const Donnees = lazy(() => import('./menus/Donnees/Donnees.jsx').then((m) => ({ default: m.Donnees })));
+
 // Déclare et exporte le composant SolarScene : données, rappel « scène prête » et indicateur « couverte » (faux par défaut).
 export function SolarScene({ data, onSettled, covered = false }) {
   // Lit la catégorie d'écran.
@@ -743,8 +747,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
         </>
       // Fin du mode compact.
       )}
-      {/* La fenêtre des sources (début de la balise). */}
-      <Attribution
+      {/* La fenêtre des sources, chargée à sa première ouverture (début de la balise). */}
+      <LazyWindow open={panels.panel === 'sources' || settingsOpen}><Attribution
         // Le magasin du HUD.
         hud={hud}
         // Vrai si la Lune est en mode « Lune réelle ».
@@ -805,7 +809,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
         // Fermeture.
         onClose={panels.closePanel}
       // Fin de la fenêtre des sources.
-      />
+      /></LazyWindow>
       {/* Les messages temporaires. */}
       <Toasts toasts={toasts} onDismiss={dismiss} />
 
@@ -833,9 +837,9 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
       {/* La fenêtre de don. */}
       {/* La fenêtre de temps de trajet : se connecte à l'assistant (clé de l'utilisateur) pour les trajets hors Apollo. */}
-      <Trajet open={panels.panel === 'trip'} onClose={panels.closePanel} onOpenAssistant={() => setAssistantOpen(true)} />
+      <LazyWindow open={panels.panel === 'trip'}><Trajet open={panels.panel === 'trip'} onClose={panels.closePanel} onOpenAssistant={() => setAssistantOpen(true)} /></LazyWindow>
       {/* La galerie. */}
-      <Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} />
+      <LazyWindow open={galleryOpen}><Donnees open={galleryOpen} onClose={() => setGalleryOpen(false)} /></LazyWindow>
 
       {/* Pendant le chargement, l'écran Artemis II (SolarSystem) couvre la scène ; ici, seulement l'échec du moteur. */}
       {/* Si le moteur n'existe pas et qu'il y a une erreur (début). */}
