@@ -64,3 +64,37 @@ test('tuiles : filtrage anisotrope 16 sur tous les appareils, borné par la cart
   assert.equal(tileAnisotropy(DESKTOP_PROFILE, 0), 1);
 // Fin du test.
 });
+
+// Importe textureUploader, l'envoi immédiat des textures, depuis tileManager.
+import { textureUploader } from './tileManager.jsx';
+// Importe TileLayer, la couche de tuiles, depuis tileLayer.
+import { TileLayer } from './tileLayer.jsx';
+
+// Test : l'envoi immédiat des textures.
+test('tuiles : texture envoyée à la carte graphique dès sa création, une seule fois par image partagée', () => {
+  // Textures envoyées.
+  const sent = [];
+  // Faux moteur de rendu qui note chaque envoi.
+  const uploader = textureUploader({ initTexture: (t) => sent.push(t) });
+  // Moteur de rendu sans initTexture : pas d'envoi immédiat.
+  assert.equal(textureUploader({}), null);
+  // Couche minimale (début) :
+  const layer = new TileLayer({
+    // repère, source, variables partagées et envoi immédiat.
+    root: { add() {} }, source: { minZoom: 0, maxZoom: 5 }, uniforms: {}, initTexture: uploader,
+  // Fin de la couche.
+  });
+  // Fausse image de 256 px.
+  const img = { width: 256, height: 256 };
+  // Première texture : envoyée.
+  const t = layer.texture(img);
+  // Même image : la texture partagée, pas de second envoi.
+  assert.equal(layer.texture(img), t);
+  // Un seul envoi, de cette texture.
+  assert.deepEqual(sent, [t]);
+  // Un envoi qui échoue (contexte perdu) ne casse pas la mise en place.
+  const broken = new TileLayer({ root: { add() {} }, source: { minZoom: 0, maxZoom: 5 }, uniforms: {}, initTexture: () => { throw new Error('perdu'); } });
+  // La texture est quand même rendue.
+  assert.ok(broken.texture({ width: 256, height: 256 }));
+// Fin du test.
+});

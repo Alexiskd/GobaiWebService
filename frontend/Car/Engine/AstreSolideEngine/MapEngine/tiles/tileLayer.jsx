@@ -178,6 +178,8 @@ export class TileLayer {
     radiusKm = 0, device = () => ({ handheld: false, saving: false }),
     // Atlas multi-couches expérimental, désactivé par défaut ; instance de SatelliteTileAtlasPipeline.
     surfaceAtlasPipeline = null, bodyId = null,
+    // Envoi immédiat d'une texture à la carte graphique (renderer.initTexture), ou null : envoi au premier dessin.
+    initTexture = null,
   // Fin des réglages (début du constructeur).
   }) {
     // Paliers de zoom (table du serveur) : rayon de l'astre, appareil, palier en cours et budget de tuiles.
@@ -186,6 +188,9 @@ export class TileLayer {
     this.altKm = 0; this.reliefCapKm = Infinity;
     // Garde le nombre d'envois par image.
     this.uploadsPerFrame = uploadsPerFrame;
+    // Garde l'envoi immédiat des textures : la texture part à la carte graphique pendant la mise en place (comptée dans
+    // son budget), et non au premier dessin de la cellule, où elle faisait sauter une image.
+    this.initTexture = typeof initTexture === 'function' ? initTexture : null;
     // Mouvement : vue de l'image précédente, fin du mouvement en cours, état à la dernière sélection.
     this.prevFrameView = null; this.movingUntil = -Infinity; this.lastMoving = false;
     // Zoom rapide : instant où chaque niveau d'images est entré dans la vue.
@@ -1263,6 +1268,12 @@ export class TileLayer {
     t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping;
     // À envoyer à la carte graphique.
     t.needsUpdate = true;
+    // Envoi immédiat, si le moteur le permet (début de l'essai).
+    try {
+      // La texture et ses mipmaps partent maintenant, pendant la mise en place.
+      this.initTexture?.(t);
+    // Échec (contexte perdu) : l'envoi se fera au premier dessin, comme avant.
+    } catch { /* envoi différé au premier dessin */ }
     // La renvoie.
     return t;
   // Fin de texture.

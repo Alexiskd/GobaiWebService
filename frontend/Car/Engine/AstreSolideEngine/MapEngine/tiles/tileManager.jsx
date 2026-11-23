@@ -36,6 +36,16 @@ export function tileAnisotropy(power, gpuMax = 1) {
 // Fin de tileAnisotropy.
 }
 
+/** Envoi immédiat d'une texture à la carte graphique : `renderer.initTexture` lié au moteur de rendu, ou null. */
+// Déclare et exporte textureUploader : le moteur de rendu (début).
+export function textureUploader(renderer) {
+  // Moteur de rendu sans initTexture : null (envoi au premier dessin).
+  if (typeof renderer?.initTexture !== 'function') return null;
+  // Sinon : la fonction liée au moteur de rendu.
+  return (texture) => renderer.initTexture(texture);
+// Fin de textureUploader.
+}
+
 /**
  * Altitude minimale de la caméra au-dessus du sol quand une carte est affichée, en rayons terrestres : ≈ 5 m, pour
  * qu'environ 10 m de terrain tiennent dans la largeur de l'écran (zoom 22, images au-delà de leur niveau natif agrandies).
@@ -512,6 +522,8 @@ export class TileManager {
       uploadsPerFrame: 8,
       // Atlas expérimental partagé par le pipeline et identifiant scientifique de l'astre.
       surfaceAtlasPipeline: this.surfaceAtlasPipeline, bodyId: this.body.name,
+      // Envoi immédiat des textures à la carte graphique (three.js : renderer.initTexture), s'il existe.
+      initTexture: textureUploader(engine.renderer),
       // Rayon de l'astre en km : la distance affichée choisit le palier de zoom de la table du serveur.
       radiusKm: this.body.radiusKm || 0,
       // Appareil : tenu en main (budget du téléphone) et économie d'énergie (budget réduit), lus à chaque image.
