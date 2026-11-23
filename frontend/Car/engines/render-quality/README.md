@@ -14,6 +14,7 @@ ici au lieu de les calculer eux-mêmes.
 ## Relevé publié chaque seconde
 
 `fps`, `frameMs`, `worstMs`, `cpuMs`, `gpuMs`, `drawCalls`, `triangles`, `gpuMemory` (`textures`, `geometries`),
-`heapMb`. WebGL ne donne pas la mémoire GPU en octets : `gpuMemory` compte les textures et géométries chargées.
+`heapMb`, `tiles` (`uploadMs`, `tilesPerSec`, `queued`, `loading`, `wanted` : tuiles de la Terre). WebGL ne donne pas
+la mémoire GPU en octets : `gpuMemory` compte les textures et géométries chargées.
 
 Aucun affichage, aucun log console.

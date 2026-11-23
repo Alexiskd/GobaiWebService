@@ -47,3 +47,21 @@ test('relevé vide : mêmes champs qu’un relevé réel', () => {
   assert.deepEqual(Object.keys(EMPTY_METRICS).sort(), Object.keys(buildMetrics(0, null, null)).sort());
 // Fin du test.
 });
+
+// Importe les compteurs de tuiles.
+import { EMPTY_TILES, tileMetrics } from './metricsSnapshot.js';
+
+// Test : compteurs des tuiles de la Terre dans le relevé.
+test('relevé : compteurs des tuiles de la Terre, à zéro sans couche mesurée', () => {
+  // Sans mesure : compteurs vides.
+  assert.deepEqual({ ...buildMetrics(0, null, null).tiles }, { ...EMPTY_TILES });
+  // Avec une mesure : recopiée, figée.
+  const m = buildMetrics(1000, { fps: 60 }, null, { uploadMs: 1.2, tilesPerSec: 14, queued: 30, loading: 6, wanted: 120 });
+  // Valeurs recopiées.
+  assert.deepEqual({ ...m.tiles }, { uploadMs: 1.2, tilesPerSec: 14, queued: 30, loading: 6, wanted: 120 });
+  // Figées.
+  assert.ok(Object.isFrozen(m.tiles));
+  // Champ manquant : 0.
+  assert.equal(tileMetrics({ queued: 3 }).uploadMs, 0);
+// Fin du test.
+});

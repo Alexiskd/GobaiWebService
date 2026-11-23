@@ -65,3 +65,20 @@ test('service : arrêté, il ne publie plus rien', () => {
   assert.equal(count, 0);
 // Fin du test.
 });
+
+// Test : la mesure des tuiles passe dans le relevé de la seconde.
+test('service : la dernière mesure des tuiles est publiée avec le relevé', () => {
+  // Crée le module.
+  const { service, dispose } = createRenderQualityModule();
+  // Mesure des tuiles.
+  service.recordTiles({ uploadMs: 2, tilesPerSec: 8, queued: 4, loading: 2, wanted: 50 });
+  // Première image : ouvre la fenêtre.
+  service.recordFrame(0, 0);
+  // Une seconde à 20 ms : relevé publié.
+  for (let t = 20; t <= 1000; t += 20) service.recordFrame(t, 20);
+  // Les tuiles y sont.
+  assert.equal(service.getMetrics().tiles.wanted, 50);
+  // Libère.
+  dispose();
+// Fin du test.
+});

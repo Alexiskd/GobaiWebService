@@ -3869,6 +3869,8 @@ export class SolarEngine {
     if (perf) this.hud.set({ perf });
     // Qualité du rendu : garde la dernière sonde (appels de dessin, triangles, textures, géométries).
     if (perf) this.renderQuality.recordPerf(perf);
+    // Et la mesure des tuiles de la Terre (mises en place, file, téléchargements), si sa couche existe.
+    if (perf && this.tiles?.base?.layer) this.renderQuality.recordTiles(this.tiles.base.layer.qualityMetrics(now));
     // L'image suivante est demandée par la boucle de rendu de l'application.
   // Fin de frame.
   }
