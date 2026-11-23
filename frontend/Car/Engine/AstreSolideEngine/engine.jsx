@@ -119,6 +119,8 @@ import { FpsMeter, PerfProbe } from './PerfEngine/perfProbe.jsx';
 import { createRenderQualityModule } from '../../engines/render-quality/index.js';
 // Importe le globe CesiumJS des astres solides (engine astre-solide).
 import { AstreSolideGlobe } from '../../engines/astre-solide/index.js';
+// Importe la couche de pollution lumineuse (au-dessus du globe CesiumJS, sous les nuages) et son calque.
+import { LightPollutionLayer, POLLUTION_LAYER } from '../../engines/pollution-lumineuse/index.js';
 // Importe la traduction du repère terrestre de CesiumJS (ECEF) vers le repère des tuiles de la Terre.
 import { ecefToTilesLocal } from '../../engines/astre-solide/astre-solide.camera-math.js';
 import { SystemRegistry } from '../SystemeEngine/core/system/SystemRegistry.js';
@@ -901,6 +903,9 @@ export class SolarEngine {
     this.tiles = this.tiledById.earth.tiles;
     // Raccourci vers les tuiles de la Lune.
     this.moonTiles = this.tiledById.moon.tiles;
+    // Pollution lumineuse de la Terre : couche three.js rattachée au repère de ses tuiles, dessinée seulement au-dessus
+    // du globe CesiumJS (renderAtmosphereOverlay), sous les nuages ; mêmes réglages que les lumières des tuiles.
+    this.lightPollution = new LightPollutionLayer({ root: this.tiledById.earth.tiles.root, uniforms: this.tiledById.earth.tiles.uniforms });
   // Fin de initTiles.
   }
 
@@ -2942,20 +2947,23 @@ export class SolarEngine {
   }
 
   /**
-   * Atmosphère au-dessus du globe CesiumJS : le globe (le sol, ses tuiles) est dessiné par CesiumJS par-dessus la
-   * scène three.js ; l'atmosphère de l'astre (moteur d'atmosphère de three.js : diffusion, nuages simulés) est
-   * redessinée sur une couche transparente posée au-dessus du globe, avec la même caméra. Seuls les objets de
-   * l'atmosphère (calque ATMO_LAYER) y sont dessinés. `bodyId` null, ou atmosphère absente ou coupée dans
+   * Atmosphère et pollution lumineuse au-dessus du globe CesiumJS : le globe (le sol, ses tuiles) est dessiné par
+   * CesiumJS par-dessus la scène three.js ; l'atmosphère de l'astre (moteur d'atmosphère de three.js : diffusion, nuages simulés) est
+   * redessinée sur une couche transparente posée au-dessus du globe, avec la même caméra, après la pollution lumineuse
+   * de la Terre (engine pollution-lumineuse, sous les nuages). Seuls les objets de ces deux calques (ATMO_LAYER,
+   * POLLUTION_LAYER) y sont dessinés. `bodyId` null, ou atmosphère absente ou coupée dans
    * Paramètres : la couche est masquée.
    */
   // renderAtmosphereOverlay : l'astre et la caméra (début).
   renderAtmosphereOverlay(bodyId, cam) {
-    // Atmosphère de l'astre.
-    const atmo = bodyId ? this.atmospheres?.[bodyId] : null;
+    // Atmosphère de l'astre (affichée seulement si elle n'est pas coupée dans Paramètres).
+    const atmo = bodyId && this.atmospheres?.[bodyId]?.visible ? this.atmospheres[bodyId] : null;
+    // Pollution lumineuse : seulement sur la Terre, lumières de la nuit allumées.
+    const pollution = bodyId === 'earth' && this.lightPollution && this.tiledById?.earth?.tiles.uniforms.lightsOn.value > 0.5 ? this.lightPollution : null;
     // Couche existante.
     const layer = this.atmoOverlay;
-    // Sans atmosphère affichée (ou coupée dans Paramètres) : couche masquée.
-    if (!atmo || !atmo.visible) { if (layer) layer.canvas.style.display = 'none'; return; }
+    // Ni atmosphère ni pollution lumineuse : couche masquée.
+    if (!atmo && !pollution) { if (layer) layer.canvas.style.display = 'none'; return; }
     // Couche créée à la première atmosphère (début).
     if (!layer) {
       // Canevas transparent, plein cadre, qui laisse passer les gestes.
@@ -2982,15 +2990,29 @@ export class SolarEngine {
     const dpr = this.renderer.getPixelRatio();
     // Taille ou résolution changée : réglée.
     if (o.w !== this.W || o.h !== this.H || o.dpr !== dpr) { o.renderer.setPixelRatio(dpr); o.renderer.setSize(this.W, this.H, false); o.w = this.W; o.h = this.H; o.dpr = dpr; }
-    // Objets de l'atmosphère sur leur calque (une fois par atmosphère ; ils restent aussi sur le calque 0).
-    if (!atmo.userData.atmoLayer) { atmo.traverse((obj) => obj.layers.enable(ATMO_LAYER)); atmo.userData.atmoLayer = true; }
-    // L'atmosphère suit la caméra (dedans ou dehors, comme dans la boucle).
-    atmo.userData.track?.(cam.position);
+    // Atmosphère (début).
+    if (atmo) {
+      // Objets de l'atmosphère sur leur calque (une fois par atmosphère ; ils restent aussi sur le calque 0).
+      if (!atmo.userData.atmoLayer) { atmo.traverse((obj) => obj.layers.enable(ATMO_LAYER)); atmo.userData.atmoLayer = true; }
+      // L'atmosphère suit la caméra (dedans ou dehors, comme dans la boucle).
+      atmo.userData.track?.(cam.position);
+    // Fin de l'atmosphère.
+    }
+    // Pollution lumineuse (début).
+    if (pollution) {
+      // Mosaïque mondiale des lumières chargée (une fois) par les tuiles de la Terre.
+      this.tiledById.earth.tiles.loadLightsMosaic?.();
+      // Soleil vu de la Terre (repère de ses tuiles) et ombre de l'app.
+      pollution.update(this.solidBodyView('earth')?.sunDir, this.shadeNow ?? 1);
+    // Fin de la pollution lumineuse.
+    }
+    // Coque des lumières dessinée seulement ici, sur la Terre.
+    this.lightPollution?.setVisible(Boolean(pollution));
     // Calques de la caméra gardés.
     const mask = cam.layers.mask;
-    // Seul le calque de l'atmosphère.
-    cam.layers.set(ATMO_LAYER);
-    // Une image de l'atmosphère.
+    // Seuls les calques de l'atmosphère et de la pollution lumineuse (dessinée en premier, donc sous les nuages).
+    cam.layers.set(ATMO_LAYER); cam.layers.enable(POLLUTION_LAYER);
+    // Une image de la pollution lumineuse, de l'atmosphère et des nuages.
     o.renderer.render(this.scene, cam);
     // Calques de la caméra rendus.
     cam.layers.mask = mask;
@@ -5268,10 +5290,12 @@ export class SolarEngine {
   dispose() {
     // Moteur arrêté.
     this.stopped = true;
-    // Libère le globe CesiumJS de la Terre.
+    // Libère le globe CesiumJS des astres solides.
     this.solidGlobe?.dispose();
-// Couche d'atmosphère au-dessus du globe : moteur de rendu libéré, canevas retiré.
-if (this.atmoOverlay) { this.atmoOverlay.renderer.dispose(); this.atmoOverlay.canvas.remove(); this.atmoOverlay = null; }
+    // Couche d'atmosphère au-dessus du globe : moteur de rendu libéré, canevas retiré.
+    if (this.atmoOverlay) { this.atmoOverlay.renderer.dispose(); this.atmoOverlay.canvas.remove(); this.atmoOverlay = null; }
+    // Pollution lumineuse libérée.
+    this.lightPollution?.dispose(); this.lightPollution = null;
     // Détruit les gestionnaires du Core (les ressources graphiques historiques restent libérées par leur propriétaire).
     this.coreScheduler?.clear();
     this.coreResources?.disposeAll();
