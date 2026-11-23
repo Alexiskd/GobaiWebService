@@ -207,3 +207,22 @@ test('double-clic : la caméra avance vers la visée au rythme du zoom', () => {
   const w = panStep({ lon: 3.1, lat: 0 }, { lon: -3.1, lat: 0 }, 96);
   assert.ok(Math.abs(w.lon) > 3.1);
 });
+
+// Importe le test du ciel visible.
+import { skyVisible } from './astre-solide.camera-math.js';
+
+test('ciel visible : vue vers le sol de près, non ; vers l\'horizon ou de loin, oui', () => {
+  const R = 6371000, fovy = Math.PI / 3;
+  // À 2 km, regard vertical vers le sol : le sol remplit l'image.
+  const pos = { x: R + 2000, y: 0, z: 0 };
+  assert.equal(skyVisible({ position: pos, direction: { x: -1, y: 0, z: 0 }, up: { x: 0, y: 0, z: 1 }, fovy, aspect: 16 / 9, radiusM: R }), false);
+  // Regard horizontal : le ciel est visible.
+  assert.equal(skyVisible({ position: pos, direction: { x: 0, y: 1, z: 0 }, up: { x: 1, y: 0, z: 0 }, fovy, aspect: 16 / 9, radiusM: R }), true);
+  // À 20 000 km, regard vers le centre : le globe ne remplit pas l'image.
+  assert.equal(skyVisible({ position: { x: R + 2e7, y: 0, z: 0 }, direction: { x: -1, y: 0, z: 0 }, up: { x: 0, y: 0, z: 1 }, fovy, aspect: 1, radiusM: R }), true);
+  // Vue 3/4 à 60° du vertical, à 2 km : l'horizon est dans l'image.
+  const a = Math.PI / 3;
+  assert.equal(skyVisible({ position: pos, direction: { x: -Math.cos(a), y: Math.sin(a), z: 0 }, up: { x: Math.sin(a), y: Math.cos(a), z: 0 }, fovy, aspect: 1, radiusM: R }), true);
+  // Valeurs illisibles : ciel dessiné par prudence.
+  assert.equal(skyVisible({ position: { x: 0, y: 0, z: 0 }, direction: { x: 1, y: 0, z: 0 }, up: { x: 0, y: 0, z: 1 }, fovy, radiusM: R }), true);
+});

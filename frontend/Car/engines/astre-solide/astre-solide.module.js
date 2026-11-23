@@ -26,7 +26,7 @@ import { CesiumCamera } from './astre-solide.camera.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
 // Importe l'effacement de l'ancre du lien de vue.
 import { setViewHash } from './astre-solide.view-link.js';
-import { cesiumShade, pitchForTilt, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
+import { cesiumShade, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
 const HIDE_LABELS_CSS = '[data-astre-solide="on"] > .l, [data-astre-solide="on"] > .user-marker, [data-astre-solide="on"] > .city-card { display: none !important; }';
@@ -432,8 +432,13 @@ export class AstreSolideGlobe {
     if (!this.active || !this.engine.renderCesiumBackdrop) return;
     // Caméra du globe.
     const cam = this.viewer.camera;
+    // Rayon de l'astre (m).
+    const radiusM = this.body.radiusKm * 1000;
+    // Sol dans toute l'image (regard vers le sol, de près) : l'espace est caché par le globe, il n'est pas redessiné
+    // (une image complète de la scène three.js de moins) ; seule l'atmosphère l'est.
+    const space = skyVisible({ position: cam.positionWC, direction: cam.directionWC, up: cam.upWC, fovy: cam.frustum.fovy, aspect: cam.frustum.aspectRatio, radiusM });
     // Le moteur three.js dessine l'espace vu de cette caméra (repère de l'astre en mètres ; ouverture en radians).
-    this.engine.renderCesiumBackdrop({ bodyId: this.body.id, radiusM: this.body.radiusKm * 1000, position: cam.positionWC, direction: cam.directionWC, up: cam.upWC, fovy: cam.frustum.fovy });
+    this.engine.renderCesiumBackdrop({ bodyId: this.body.id, radiusM, position: cam.positionWC, direction: cam.directionWC, up: cam.upWC, fovy: cam.frustum.fovy, space });
   // Fin de drawBackdrop.
   }
 

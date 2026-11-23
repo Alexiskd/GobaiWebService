@@ -296,3 +296,43 @@ export function panStep(pos, goal, dtMs, tauMs = ZOOM_TAU_MS) {
   return { lon, lat: pos.lat + (goal.lat - pos.lat) * k };
 // Fin de panStep.
 }
+
+/**
+ * Le ciel (l'espace derrière le globe) est-il visible ? Vrai si l'un des quatre coins de l'image vise au-dessus de
+ * l'horizon de l'astre (sphère un peu réduite et marge de 1° : on préfère dessiner le ciel pour rien que le rater).
+ * Faux quand le sol remplit toute l'image : le fond spatial n'a pas besoin d'être redessiné.
+ * Vecteurs { x, y, z } dans le repère de l'astre (position en m, direction et haut unitaires), ouverture verticale en
+ * radians, rapport largeur / hauteur de l'image, rayon de l'astre en m.
+ */
+// Déclare et exporte skyVisible : la caméra et l'astre (début).
+export function skyVisible({ position: p, direction: d, up: u, fovy, aspect = 1, radiusM }) {
+  // Distance au centre.
+  const dist = Math.hypot(p.x, p.y, p.z);
+  // Valeurs illisibles : on dessine le ciel.
+  if (!(dist > 0) || !(radiusM > 0) || !Number.isFinite(fovy)) return true;
+  // Rayon un peu réduit (aplatissement, marge) ; caméra sous ce rayon : on dessine le ciel.
+  const r = radiusM * 0.995;
+  // Sous ce rayon : ciel dessiné.
+  if (dist <= r) return true;
+  // Verticale locale (vers le haut).
+  const n = { x: p.x / dist, y: p.y / dist, z: p.z / dist };
+  // Abaissement de l'horizon sous l'horizontale (radians), plus 1° de marge.
+  const dip = Math.acos(r / dist) + Math.PI / 180;
+  // Droite de l'image : direction × haut.
+  const rt = { x: d.y * u.z - d.z * u.y, y: d.z * u.x - d.x * u.z, z: d.x * u.y - d.y * u.x };
+  // Demi-ouvertures (tangentes) verticale et horizontale.
+  const ty = Math.tan(fovy / 2), tx = ty * aspect;
+  // Pour chaque coin de l'image (début).
+  for (const sy of [-1, 1]) for (const sx of [-1, 1]) {
+    // Rayon du coin.
+    const ray = { x: d.x + sy * ty * u.x + sx * tx * rt.x, y: d.y + sy * ty * u.y + sx * tx * rt.y, z: d.z + sy * ty * u.z + sx * tx * rt.z };
+    // Élévation du rayon au-dessus de l'horizontale locale.
+    const elev = Math.asin(Math.max(-1, Math.min(1, (ray.x * n.x + ray.y * n.y + ray.z * n.z) / Math.hypot(ray.x, ray.y, ray.z))));
+    // Au-dessus de l'horizon : ciel visible.
+    if (elev > -dip) return true;
+  // Fin des coins.
+  }
+  // Sol partout : pas de ciel.
+  return false;
+// Fin de skyVisible.
+}
