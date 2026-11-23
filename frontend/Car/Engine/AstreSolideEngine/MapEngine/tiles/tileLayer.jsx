@@ -70,6 +70,9 @@ function heightProbe() {
   return probe || null;
 // Fin de heightProbe.
 }
+/** Côté d'une image de tuile en pixels : largeur naturelle (image), largeur (canevas, ImageBitmap), sinon 256. */
+// Déclare et exporte imageSide : le côté d'une image, 256 par défaut.
+export const imageSide = (img) => img?.naturalWidth || img?.width || 256;
 // Gain de couleur neutre : 1, 1, 1.
 const COLOR_GAIN_NONE = new Float32Array([1, 1, 1]);   // image sans correction de couleur
 // Décalage de couleur neutre : 0, 0, 0.
@@ -995,6 +998,8 @@ export class TileLayer {
       uniforms: {
         // Image du fond.
         map: { value: map },
+        // Côté de l'image du fond en pixels (256 ou 512 selon le fournisseur ; 256 si inconnu) : grille de l'agrandissement lissé.
+        mapSize: { value: imageSide(base) },
         // Accord des couleurs de la source de l'image sur la mosaïque mondiale (voir TileSource, `__color`) : tableaux
         // partagés par toutes les tuiles de la source, mis à jour sur place quand la mesure s'affine.
         // Gain de couleur de l'image, ou neutre.
