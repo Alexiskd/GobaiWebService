@@ -206,7 +206,7 @@ test('shader : fondu en tramage de Bayer 4 × 4, couleur toujours opaque', () =>
   // Couleur finale opaque.
   assert.match(tileFragmentShader, /gl_FragColor=vec4\(base,1\.\);\}$/);
   // Même trame en JavaScript : 16 seuils distincts entre 0 et 1 sur un carré de 4 × 4 pixels.
-  const b2 = (x, y) => { x = Math.floor(x); y = Math.floor(y); return (x * 0.5 + y * y * 0.75) % 1; };
+  const b2 = (x, y) => { x = Math.floor(x) % 2; y = Math.floor(y) % 2; return (x * 0.5 + y * y * 0.75) % 1; };
   // Trame 4 × 4.
   const b4 = (x, y) => b2(0.5 * x, 0.5 * y) * 0.25 + b2(x, y) + 0.03125;
   // Seuils du carré.
@@ -215,5 +215,9 @@ test('shader : fondu en tramage de Bayer 4 × 4, couleur toujours opaque', () =>
   for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const v = b4(x + 0.5, y + 0.5); assert.ok(v > 0 && v < 1); seen.add(v.toFixed(5)); }
   // Seize seuils distincts : chaque palier d'opacité dessine un pixel de plus sur seize.
   assert.equal(seen.size, 16);
+  // Coordonnées ramenées modulo 2 dans le shader (précision sur les grands écrans).
+  assert.match(tileFragmentShader, /a=mod\(floor\(a\),2\.\)/);
+  // Même trame loin du coin de l'écran (pixel 2 556) qu'au coin : motif périodique de 4 pixels.
+  assert.equal(b4(2556.5, 1001.5), b4(0.5, 1.5));
 // Fin du test.
 });
