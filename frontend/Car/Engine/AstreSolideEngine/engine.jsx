@@ -119,6 +119,8 @@ import { FpsMeter, PerfProbe } from './PerfEngine/perfProbe.jsx';
 import { createRenderQualityModule } from '../../engines/render-quality/index.js';
 // Importe le globe CesiumJS de la Terre de près (engine cesium-earth).
 import { CesiumEarth } from '../../engines/cesium-earth/index.js';
+// Importe la traduction du repère terrestre de CesiumJS (ECEF) vers le repère des tuiles de la Terre.
+import { ecefToTilesLocal } from '../../engines/cesium-earth/cesium-earth.camera-math.js';
 import { SystemRegistry } from '../SystemeEngine/core/system/SystemRegistry.js';
 import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
 import { CoreActivityPolicy } from '../SystemeEngine/core/system/CoreActivityPolicy.js';
@@ -2832,6 +2834,55 @@ export class SolarEngine {
     // Le module décide : Terre ciblée, distance au centre, rayon, direction de la caméra.
     this.cesiumEarth.update({ earthFocused: this.focus === tb.focus, dist: local.length() * tb.radius, radius: tb.radius, camLocal: [local.x, local.y, local.z] });
   // Fin de updateCesiumEarth.
+  }
+
+  /**
+   * Fond spatial du globe CesiumJS (fond transparent) : dessine la scène three.js sans la Terre, vue de la caméra du
+   * globe. `position`, `direction` et `up` sont dans le repère terrestre de CesiumJS (ECEF, mètres), `fovy` est
+   * l'ouverture verticale en radians. La caméra three.js est remise en place ensuite (rien ne bouge dans la scène).
+   */
+  // renderCesiumBackdrop : la caméra du globe (début).
+  renderCesiumBackdrop({ position, direction, up, fovy }) {
+    // La Terre tuilée et son repère.
+    const tb = this.tiledById?.earth;
+    // Sans Terre, moteur arrêté ou en pause : rien.
+    if (!tb || this.stopped || this.paused || this.suspended) return;
+    // Repère des tuiles de la Terre (sphère de rayon 1, axe des pôles = +Y), matrices à jour.
+    const root = tb.tiles.root;
+    // Matrices du repère à jour.
+    root.updateWorldMatrix(true, false);
+    // Vecteurs de travail (créés une fois).
+    const v = this.backdropVecs || (this.backdropVecs = { pos: new THREE.Vector3(), dir: new THREE.Vector3(), up: new THREE.Vector3(), look: new THREE.Vector3(), savedPos: new THREE.Vector3(), savedQuat: new THREE.Quaternion(), savedUp: new THREE.Vector3() });
+    // Position de la caméra du globe dans la scène.
+    v.pos.fromArray(ecefToTilesLocal(position)); root.localToWorld(v.pos);
+    // Direction du regard dans la scène.
+    v.dir.fromArray(ecefToTilesLocal(direction, 1)).transformDirection(root.matrixWorld);
+    // Haut de l'image dans la scène.
+    v.up.fromArray(ecefToTilesLocal(up, 1)).transformDirection(root.matrixWorld);
+    // La caméra three.js.
+    const cam = this.cam;
+    // Garde son état : position, orientation, haut, ouverture.
+    v.savedPos.copy(cam.position); v.savedQuat.copy(cam.quaternion); v.savedUp.copy(cam.up); const savedFov = cam.fov;
+    // Même position, même haut, même regard que le globe.
+    cam.position.copy(v.pos); cam.up.copy(v.up); cam.lookAt(v.look.copy(v.pos).add(v.dir));
+    // Même ouverture verticale (degrés dans three.js).
+    if (Number.isFinite(fovy)) cam.fov = THREE.MathUtils.radToDeg(fovy);
+    // Projection recalculée.
+    cam.updateProjectionMatrix();
+    // La Terre de three.js (globe, carte, frontières, volcans, nuages) et ses tuiles sont cachées : le globe CesiumJS
+    // est la Terre ; seul l'espace autour est dessiné.
+    const earthWas = this.earth.group.visible, tilesWere = root.visible;
+    // Cachées.
+    this.earth.group.visible = false; root.visible = false;
+    // Une image de l'espace.
+    this.renderer.render(this.scene, cam);
+    // La Terre et ses tuiles reprennent leur état.
+    this.earth.group.visible = earthWas; root.visible = tilesWere;
+    // La caméra three.js reprend son état.
+    cam.position.copy(v.savedPos); cam.quaternion.copy(v.savedQuat); cam.up.copy(v.savedUp); cam.fov = savedFov;
+    // Projection d'origine.
+    cam.updateProjectionMatrix();
+  // Fin de renderCesiumBackdrop.
   }
 
   // setAutoRotate : active ou coupe la rotation automatique.

@@ -47,6 +47,9 @@ export async function createEarthViewer(container) {
     selectionIndicator: false, vrButton: false,
     // rendu à la demande : rien n'est dessiné quand rien ne bouge (téléphone : pas de chauffe) ;
     requestRenderMode: true, maximumRenderTimeChange: Infinity,
+    // fond spatial transparent : canevas WebGL avec canal alpha et pas de ciel étoilé de CesiumJS ; l'espace visible
+    // autour du globe est celui de la scène three.js (étoiles, Soleil, Lune, planètes), dessinée dessous.
+    contextOptions: { webgl: { alpha: true } }, skyBox: false,
   // Fin du globe.
   });
   // Pour chaque couche de la table, dans l'ordre d'empilement (début).
@@ -63,6 +66,13 @@ export async function createEarthViewer(container) {
     viewer.imageryLayers.add(new Cesium.ImageryLayer(provider, s.minimumTerrainLevel ? { minimumTerrainLevel: s.minimumTerrainLevel } : {}));
   // Fin de la boucle.
   }
+  // Fond de la scène transparent (début de l'espace : la scène three.js).
+  viewer.scene.backgroundColor = Cesium.Color.TRANSPARENT;
+  // Ni Soleil ni Lune de CesiumJS (sans ciel étoilé, CesiumJS peut ne pas les créer) : ceux de la scène three.js se
+  // voient par transparence (pas de doublon).
+  if (viewer.scene.sun) viewer.scene.sun.show = false;
+  // La Lune de CesiumJS, si elle existe : cachée.
+  if (viewer.scene.moon) viewer.scene.moon.show = false;
   // Le globe : jour et nuit d'après le Soleil à l'heure réelle, atmosphère.
   viewer.scene.globe.enableLighting = true;
   // Horloge du globe : l'heure réelle, qui avance.

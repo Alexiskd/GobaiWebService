@@ -3,7 +3,8 @@
  *
  * Le moteur three.js appelle `update` à chaque image et `onFocus` à chaque changement de cible. Quand le globe
  * CesiumJS a la main, il est posé par-dessus le canevas three.js (l'interface de l'app reste au-dessus) et la scène
- * three.js est mise en attente (`engine.cesiumHold`) : un seul moteur dessine à la fois.
+ * three.js est mise en attente (`engine.cesiumHold`). Le fond du globe est transparent : à chaque image du globe, la
+ * scène three.js redessine seulement l'espace (sans la Terre), vu de la caméra du globe (`drawBackdrop`).
  */
 
 // Importe les règles du passage.
@@ -101,6 +102,8 @@ export class CesiumEarth {
       this.viewer.camera.changed.addEventListener(() => this.onCameraChange());
       // Sensibilité du changement de caméra : 1 % (assez pour suivre le zoom).
       this.viewer.camera.percentageChanged = 0.01;
+      // Après chaque image du globe : la scène three.js redessine l'espace derrière, vu de la même caméra.
+      this.viewer.scene.postRender.addEventListener(() => this.drawBackdrop());
     // Fin de la création.
     }
     // Moteur détruit entre-temps : rien.
@@ -117,6 +120,8 @@ export class CesiumEarth {
     this.active = true;
     // Scène three.js en attente.
     this.engine.cesiumHold = true;
+    // Espace de la scène three.js dessiné tout de suite derrière le globe (sans attendre la première image du globe).
+    this.drawBackdrop();
     // HUD : distance, échelle et boussole du globe.
     this.camera.publishHud();
   // Fin de enter.
@@ -146,6 +151,21 @@ export class CesiumEarth {
     // Retour à la scène three.js au même endroit.
     this.leave({ lon: this.Cesium.Math.toDegrees(c.longitude), lat: this.Cesium.Math.toDegrees(c.latitude) });
   // Fin de watchExit.
+  }
+
+  /**
+   * Fond spatial : le globe a un fond transparent ; la scène three.js (étoiles, Soleil, Lune, planètes), sans la Terre,
+   * est redessinée dessous avec la position, le regard et l'ouverture de la caméra du globe.
+   */
+  // drawBackdrop : redessine l'espace de la scène three.js derrière le globe (début).
+  drawBackdrop() {
+    // Inactif, ou moteur sans fond : rien.
+    if (!this.active || !this.engine.renderCesiumBackdrop) return;
+    // Caméra du globe.
+    const cam = this.viewer.camera;
+    // Le moteur three.js dessine l'espace vu de cette caméra (repère ECEF, mètres ; ouverture verticale en radians).
+    this.engine.renderCesiumBackdrop({ position: cam.positionWC, direction: cam.directionWC, up: cam.upWC, fovy: cam.frustum.fovy });
+  // Fin de drawBackdrop.
   }
 
   /** Rend la main à la scène three.js (au-dessus du lieu donné, s'il y en a un). */

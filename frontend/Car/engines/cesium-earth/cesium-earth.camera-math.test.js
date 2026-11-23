@@ -37,3 +37,25 @@ test('cap ramené entre 0 et 360', () => {
   assert.equal(wrapHeading(-10), 350);
   assert.equal(wrapHeading(370), 10);
 });
+
+// Importe la traduction ECEF → repère des tuiles de three.js.
+import { EARTH_RADIUS_M, ecefToTilesLocal } from './cesium-earth.camera-math.js';
+// Importe la longitude et la latitude d'une direction du repère des tuiles.
+import { lonLatOf } from './cesium-earth.handoff.js';
+
+test('fond transparent : ECEF de CesiumJS → repère des tuiles three.js, même longitude et latitude', () => {
+  // Point au-dessus de Paris (2,35° E, 48,85° N), à 1 000 km d'altitude, en ECEF sphérique.
+  const lon = (2.35 * Math.PI) / 180, lat = (48.85 * Math.PI) / 180, r = EARTH_RADIUS_M + 1e6;
+  // Coordonnées ECEF.
+  const p = { x: r * Math.cos(lat) * Math.cos(lon), y: r * Math.cos(lat) * Math.sin(lon), z: r * Math.sin(lat) };
+  // Traduit.
+  const local = ecefToTilesLocal(p);
+  // Même lieu.
+  const ll = lonLatOf(local);
+  // Longitude et latitude retrouvées.
+  assert.ok(Math.abs(ll.lon - 2.35) < 1e-9 && Math.abs(ll.lat - 48.85) < 1e-9);
+  // Distance au centre en rayons terrestres.
+  assert.ok(Math.abs(Math.hypot(...local) - r / EARTH_RADIUS_M) < 1e-12);
+  // Une direction (échelle 1) garde sa longueur : le pôle Nord ECEF devient +Y.
+  assert.deepEqual(ecefToTilesLocal({ x: 0, y: 0, z: 1 }, 1), [0, 1, -0]);
+});

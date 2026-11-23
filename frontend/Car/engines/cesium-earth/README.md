@@ -13,5 +13,10 @@ dessine à la fois.
 | `cesium-earth.handoff.js` | Règles du passage (altitudes d'entrée, de sortie, de retour, réarmement). |
 | `cesium-earth.sources.js` | Imagerie ouverte, sans clé : NASA GIBS, Sentinel-2 cloudless (EOX), orthophotos IGN. |
 
+Fond spatial transparent : le globe CesiumJS n'a ni ciel étoilé, ni Soleil, ni Lune, et son canevas a un canal alpha.
+Après chaque image du globe, la scène three.js (étoiles, Soleil, Lune, planètes) est redessinée dessous, sans la Terre,
+vue de la caméra du globe (`CesiumEarth.drawBackdrop` → `engine.renderCesiumBackdrop`, repère ECEF traduit par
+`ecefToTilesLocal`).
+
 Sans Cesium ion ni aucune clé. Fichiers statiques de CesiumJS copiés dans `public/cesium` au build
 (`scripts/copie-cesium.mjs`).
