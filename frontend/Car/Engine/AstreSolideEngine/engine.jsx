@@ -1,7 +1,5 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
-// Importe le décalage du curseur du temps (borné, pas de 15 min).
-import { clampOffsetHours } from '../../engines/astre-solide/astre-solide.time.js';
 import { calculateOrbitPosition } from './OrbitEngine/orbitCalculation.jsx';
 // Importe LidarGlobe et pickEarthAt, les nuages LiDAR calés sur le globe et le point de la Terre sous un pixel.
 import { LidarGlobe, pickEarthAt } from './LidarEngine/lidarGlobe.jsx';
@@ -434,8 +432,6 @@ export class SolarEngine {
     this.simMs = Date.now();
     // Vitesse du temps : 1.
     this.speed = 1;
-    // Décalage de l'heure (ms) choisi au curseur du temps du globe de près (0 : maintenant).
-    this.timeOffsetMs = 0;
     // Instant de la dernière image.
     this.lastNow = performance.now();
     // Instant de la dernière mise à jour du HUD.
@@ -3107,36 +3103,6 @@ export class SolarEngine {
   // Fin de renderCesiumBackdrop.
   }
 
-  /**
-   * Curseur du temps : décalage de l'heure de l'app (heures, ±12 h, pas de 15 min). À vitesse 1, l'heure suit
-   * l'heure réelle décalée ; à une autre vitesse, l'heure simulée saute de la différence. Renvoie le décalage retenu.
-   */
-  // setTimeOffset : le décalage en heures (début).
-  setTimeOffset(hours) {
-    // Décalage borné et arrondi, en ms.
-    const ms = clampOffsetHours(hours) * 3600000;
-    // Autre vitesse que 1 : l'heure simulée saute de la différence.
-    if (this.speed !== 1) this.simMs += ms - this.timeOffsetMs;
-    // Gardé.
-    this.timeOffsetMs = ms;
-    // L'heure est appliquée tout de suite.
-    if (this.speed === 1) this.simMs = Date.now() + ms;
-    // Globe de près : la boucle three.js est en attente ; la rotation de la Terre et la direction du Soleil sont
-    // recalculées ici pour la nouvelle heure, puis données au globe (la nuit avance, les lumières s'allument).
-    if (this.cesiumHold) {
-      // Jour julien de l'heure choisie.
-      const jd = this.simMs / 864e5 + 2440587.5;
-      // Astres placés à cette heure (rotations propres comprises).
-      this.updateBodies(centuriesTT(this.simMs), jd - 2451545);
-      // Soleil du globe à jour, et une image.
-      this.solidGlobe?.syncSun(); this.solidGlobe?.viewer?.scene.requestRender();
-    // Fin du globe de près.
-    }
-    // Renvoie le décalage (heures).
-    return ms / 3600000;
-  // Fin de setTimeOffset.
-  }
-
   // setAutoRotate : active ou coupe la rotation automatique.
   setAutoRotate(on) { this.autoRotate = on; }
 
@@ -3172,25 +3138,6 @@ export class SolarEngine {
     // Vrai.
     return true;
   // Fin de openViewLink.
-  }
-
-  /**
-   * Va à une vue enregistrée (favori) : sur l'astre du globe de près, vol direct ; sinon l'astre de son chemin est
-   * ciblé puis la vue est ouverte comme un lien de vue.
-   */
-  // goToView : le chemin de l'astre (« /terre ») et la vue (début).
-  goToView(path, v) {
-    // Vue illisible : rien.
-    if (!v) return false;
-    // Nom de l'astre dans le chemin.
-    const slug = String(path ?? '').replace(/^\/+|\/+$/g, '');
-    // Globe de près sur le même astre (adresse identique) : vol direct.
-    if (this.cesiumHold && globalThis.location?.pathname === path) { this.solidGlobe.camera.flyToView(v); return true; }
-    // Sinon : l'astre du chemin, puis la vue.
-    if (slug) this.focusBySlug(slug);
-    // Ouverte comme un lien de vue.
-    return this.openViewLink(v);
-  // Fin de goToView.
   }
 
   /**
@@ -4149,7 +4096,7 @@ export class SolarEngine {
     // Adapte la résolution.
     this.adaptResolution(rawDt, now);
     // Instant simulé : l'heure réelle à vitesse 1, sinon le temps accéléré.
-    this.simMs = this.speed === 1 ? Date.now() + this.timeOffsetMs : this.simMs + dt * this.speed;
+    this.simMs = this.speed === 1 ? Date.now() : this.simMs + dt * this.speed;
 
     // Jour julien de l'instant simulé (UTC).
     const jd = this.simMs / 864e5 + 2440587.5;
@@ -5154,7 +5101,7 @@ export class SolarEngine {
     // Date simulée, en français,
     const date = HUD_DATE_FORMAT.format(this.simMs)
       // avec « temps réel » à vitesse 1.
-      + (this.speed === 1 && !this.timeOffsetMs ? ' · temps réel' : '');
+      + (this.speed === 1 ? ' · temps réel' : '');
 
     // Distance au Soleil en unités astronomiques : celle de la planète, ou de la Terre pour la Lune.
     const au = f.body ? Math.hypot(...f.body.ecl) : f.moon ? Math.hypot(...this.earth.ecl) : 0;
