@@ -3124,6 +3124,25 @@ export class SolarEngine {
   }
 
   /**
+   * Va à une vue enregistrée (favori) : sur l'astre du globe de près, vol direct ; sinon l'astre de son chemin est
+   * ciblé puis la vue est ouverte comme un lien de vue.
+   */
+  // goToView : le chemin de l'astre (« /terre ») et la vue (début).
+  goToView(path, v) {
+    // Vue illisible : rien.
+    if (!v) return false;
+    // Nom de l'astre dans le chemin.
+    const slug = String(path ?? '').replace(/^\/+|\/+$/g, '');
+    // Globe de près sur le même astre (adresse identique) : vol direct.
+    if (this.cesiumHold && globalThis.location?.pathname === path) { this.solidGlobe.camera.flyToView(v); return true; }
+    // Sinon : l'astre du chemin, puis la vue.
+    if (slug) this.focusBySlug(slug);
+    // Ouverte comme un lien de vue.
+    return this.openViewLink(v);
+  // Fin de goToView.
+  }
+
+  /**
    * Survole un lieu d'un astre tuilé (clic sur un nom, repère du catalogue). Altitude par défaut : `siteAltitudeKm`
    * du modèle (≈ 50 km pour la Lune, 200 à 300 km pour les planètes).
    */

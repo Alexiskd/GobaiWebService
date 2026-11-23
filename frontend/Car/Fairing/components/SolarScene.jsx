@@ -79,6 +79,8 @@ import { useBodyModels } from './scene/useBodyModels.jsx';
 import { usePanels } from './scene/usePanels.jsx';
 // Importe le crochet de l'adresse du site.
 import { useSiteAddress } from './scene/useSiteAddress.jsx';
+// Importe le panneau du globe de près (favoris de vues).
+import { GlobePanel } from './hud/GlobePanel.jsx';
 // Importe la traduction des actions de l'assistant.
 import { resolveAssistantAction } from './scene/assistantActions.jsx';
 // Lieux nommés de la Lune (sites d'alunissage, mers, cratères, régions) : la liste que l'assistant peut survoler.
@@ -127,7 +129,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Magasin du HUD, créé une seule fois (début de l'appel).
   const hud = useMemo(
     // Ses valeurs de départ : textes vides, texte d'aide du zoom, et tout le reste à null ou à 0.
-    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', zoomShort: '', scaleText: '', viewLink: '', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null, viewLock: null, fps: 0, perf: null }),
+    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', zoomShort: '', scaleText: '', viewLink: '', globeNear: false, cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null, viewLock: null, fps: 0, perf: null }),
     // Aucune dépendance.
     []
   // Fin de l'appel.
@@ -714,6 +716,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
       />
       {/* Le pavé de zoom. */}
       <ZoomPad onZoom={actions.zoom} />
+      {/* Le panneau du globe de près (favoris de vues). */}
+      <GlobePanel hud={hud} engine={engine} />
       {/* La barre d'outils (ordinateur). */}
       {!compact && toolbarEl}
       {/* Téléphone : les deux zones de commandes, où chaque élément a sa place et rien ne se recouvre. */}

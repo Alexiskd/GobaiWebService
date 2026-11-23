@@ -206,6 +206,8 @@ export class AstreSolideGlobe {
     this.viewer.scene.requestRender();
     // De près.
     this.active = true;
+    // HUD : globe de près (panneau du globe affiché).
+    this.engine.hud?.set({ globeNear: true });
     // Scène three.js en attente.
     this.engine.cesiumHold = true;
     // Horloge de la boucle du globe repartie de maintenant, ombre, Soleil et fond de carte réglés tout de suite.
@@ -256,8 +258,8 @@ export class AstreSolideGlobe {
     this.shadeApplied = undefined;
     // Retour à three.js : plus de lien de vue (ancre effacée, bouton du HUD masqué).
     if (globalThis.location?.hash?.startsWith('#vue=')) setViewHash('');
-    // Bouton du HUD masqué.
-    this.engine.hud?.set({ viewLink: '' });
+    // Bouton du HUD et panneau du globe masqués.
+    this.engine.hud?.set({ viewLink: '', globeNear: false });
     // Globe masqué (la superposition le réaffiche à la prochaine image three.js), sa boucle arrêtée, repères HTML de
     // la scène three.js rendus.
     this.container.style.display = 'none'; this.viewer.useDefaultRenderLoop = false; this.setLabelsHidden(false);
