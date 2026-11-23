@@ -17,6 +17,8 @@ import {
 const MAX_PAIRS = 900;         // maillages (cellule × image) gardés au plus ; au-delà, ceux qui ne servent plus sont détruits
 // Nombre maximal de cellules dont les calculs sont gardés : 1 500.
 const MAX_CELL_INFOS = 1500;   // cellules dont le maillage et les listes d'images sont gardés (hors GPU)
+// Nombre maximal de centres d'images gardés : 4 000.
+export const MAX_CENTERS = 4000;
 // Nombre maximal d'images par cellule : 24.
 const MAX_TILES_PER_CELL = 24; // au-delà (cellule polaire, très grande cellule), des images moins fines sont prises
 // Nombre de degrés dans un radian.
@@ -256,10 +258,13 @@ export class HexDisplay {
         if (known) { if (cell.d < known.d) known.d = cell.d; continue; }
         // Centre de l'image.
         let c = this.centers.get(t.key);
-        // S'il n'est pas connu (début).
-        if (!c) {
-          // Réserve de 4 000 centres pleine : vidée.
-          if (this.centers.size >= 4000) this.centers.clear();
+        // Connu : remis en fin de table (les plus récents en dernier).
+        if (c) { this.centers.delete(t.key); this.centers.set(t.key, c); }
+        // Sinon (début).
+        else {
+          // Réserve pleine : seuls les centres les moins récemment utilisés partent (avant : toute la réserve vidée,
+          // et tous les centres de la vue recalculés dans la même image).
+          dropOldest(this.centers, MAX_CENTERS - 1);
           // Le calcule.
           c = tileCenter(proj, t.z, t.x, t.y);
           // Le garde.
