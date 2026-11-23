@@ -117,6 +117,8 @@ import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProf
 import { FpsMeter, PerfProbe } from './PerfEngine/perfProbe.jsx';
 // Importe le module de qualité du rendu (mesures, profils et surchauffe : engines/render-quality).
 import { createRenderQualityModule } from '../../engines/render-quality/index.js';
+// Importe le globe CesiumJS de la Terre de près (engine cesium-earth).
+import { CesiumEarth } from '../../engines/cesium-earth/index.js';
 import { SystemRegistry } from '../SystemeEngine/core/system/SystemRegistry.js';
 import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
 import { CoreActivityPolicy } from '../SystemeEngine/core/system/CoreActivityPolicy.js';
@@ -453,6 +455,10 @@ export class SolarEngine {
     this.earth.group.add(this.volcanoes.root);
     // Nuages LiDAR calés par GPS.
     this.lidar = new LidarGlobe(this); // nuages LiDAR calés par GPS, sur la Terre
+    // La Terre de près est affichée par CesiumJS (engine cesium-earth) ; pendant ce temps, la scène three.js attend.
+    this.cesiumHold = false;
+    // Le passage entre la scène three.js et le globe CesiumJS.
+    this.cesiumEarth = new CesiumEarth(this);
     // Noms des pays posés à plat sur le globe, au milieu de chaque pays, visibles avant les villes.
     this.countryLabels = new CountryLabels({
       // Parent : celui du conteneur, ou la page.
@@ -2251,6 +2257,8 @@ export class SolarEngine {
       this.pilotTilt = null;
     // Fin de ce cas.
     }
+    // Une autre cible que la Terre : le globe CesiumJS rend la main à la scène three.js.
+    this.cesiumEarth?.onFocus(i === this.tiledById?.earth?.focus);
     // Garde la cible.
     this.focus = i;
     // Point de départ de la transition.
@@ -2792,6 +2800,20 @@ export class SolarEngine {
     // Renvoie les coordonnées.
     return geo;
   // Fin de gpsState.
+  }
+
+  /** Passe la main au globe CesiumJS quand la Terre est ciblée et la caméra proche (voir engines/cesium-earth). */
+  // updateCesiumEarth : à chaque image (début).
+  updateCesiumEarth() {
+    // La Terre tuilée.
+    const tb = this.tiledById?.earth;
+    // Sans Terre : rien.
+    if (!tb || !this.cesiumEarth) return;
+    // Position de la caméra dans le repère des tuiles de la Terre (sphère de rayon 1, axe des pôles = +Y).
+    const local = tb.tiles.root.worldToLocal(this.cam.position.clone());
+    // Le module décide : Terre ciblée, distance au centre, rayon, direction de la caméra.
+    this.cesiumEarth.update({ earthFocused: this.focus === tb.focus, dist: local.length() * tb.radius, radius: tb.radius, camLocal: [local.x, local.y, local.z] });
+  // Fin de updateCesiumEarth.
   }
 
   // setAutoRotate : active ou coupe la rotation automatique.
@@ -3726,7 +3748,7 @@ export class SolarEngine {
   // frame : une image (début).
   frame(now) {
     // Moteur arrêté, en pause (onglet caché) ou suspendu : rien.
-    if (this.stopped || this.paused || this.suspended) return;
+    if (this.stopped || this.paused || this.suspended || this.cesiumHold) return;
     // Temps écoulé depuis la dernière image.
     const rawDt = now - this.lastNow;
     // 50 images par seconde au plus (20 au repos sur téléphone) : les rappels en trop sont sautés, rien n'est calculé
@@ -3786,6 +3808,8 @@ export class SolarEngine {
     if (this.shouldUpdateCoreEngine('volcanoes', 'earth')) this.volcanoes.sync(this.earth.mesh.rotation.y);
     // Met à jour les nuages LiDAR.
     if (this.shouldUpdateCoreEngine('lidar', 'earth')) this.lidar.update(this.cam);
+    // Terre ciblée et caméra proche : le globe CesiumJS prend la main au même endroit (voir cesium-earth).
+    this.updateCesiumEarth();
     // Couche de tuiles de la Terre affichée, s'il y a une carte.
     const groundLayer = this.tiles.active ? this.tiles.base?.layer : null;
     // Niveau du sol dessiné sous la caméra : celui de la cellule hexagonale la plus proche (les cellules sont posées au
@@ -4988,6 +5012,8 @@ export class SolarEngine {
   dispose() {
     // Moteur arrêté.
     this.stopped = true;
+    // Libère le globe CesiumJS de la Terre.
+    this.cesiumEarth?.dispose();
     // Détruit les gestionnaires du Core (les ressources graphiques historiques restent libérées par leur propriétaire).
     this.coreScheduler?.clear();
     this.coreResources?.disposeAll();

@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "vite",
-    "dev": "vite",
-    "build": "node scripts/verifie-imports.mjs Car && vite build",
+    "start": "node scripts/copie-cesium.mjs && vite",
+    "dev": "node scripts/copie-cesium.mjs && vite",
+    "build": "node scripts/verifie-imports.mjs Car && node scripts/copie-cesium.mjs && vite build",
     "preview": "vite preview",
     "test": "node scripts/verifie-imports.mjs Car && tsx --test \"Car/**/*.test.jsx\" \"Car/**/*.test.js\"",
     "verifie:imports": "node scripts/verifie-imports.mjs Car",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
+    "cesium": "^1.123.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-icons": "5.7.0",

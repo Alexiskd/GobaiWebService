@@ -2,3 +2,5 @@
 node_modules
 # Site compilé.
 dist
+# Fichiers statiques de CesiumJS, copiés au build (scripts/copie-cesium.mjs).
+public/cesium

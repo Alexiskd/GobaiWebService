@@ -31,6 +31,8 @@ export default defineConfig({
         manualChunks(id) {
           // Hors des dépendances : choix automatique.
           if (!id.includes('/node_modules/')) return;
+          // CesiumJS : fichier « cesium-vendor », chargé seulement à la première approche de la Terre.
+          if (id.includes('/node_modules/cesium/') || id.includes('/node_modules/@cesium/')) return 'cesium-vendor';
           // three.js : fichier « three-vendor ».
           if (id.includes('/node_modules/three/')) return 'three-vendor';
           // Base UI, son moteur de placement et les icônes : fichier « ui-vendor ».
