@@ -1,5 +1,6 @@
 // Importe uploadShare, la part des envois de tuiles autorisée, depuis powerSaver.
 import { uploadShare } from '../../PerfEngine/powerSaver.jsx';
+
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe la source d'images des tuiles, le chargement d'une image (sans cache) et la limite par serveur, depuis tileSource.
@@ -21,6 +22,19 @@ import { applyBackdropMeshScale } from '../hex/backdropMeshScale.js';
 import { ROADS_LAYER_ID, RoadSource } from '../earth/roadSource.jsx';
 // Importe viewportBounds, les limites géographiques de la vue, depuis viewport.
 import { viewportBounds } from '../loading/viewport.jsx';
+
+/**
+ * Filtrage anisotrope des tuiles : `tileAnisotropy` du profil de l'appareil (16), sinon son `anisotropy`, sinon 16 ;
+ * jamais plus que la carte graphique (`gpuMax`), jamais moins de 1.
+ */
+// Déclare et exporte tileAnisotropy : le profil de l'appareil et le maximum de la carte graphique (début).
+export function tileAnisotropy(power, gpuMax = 1) {
+  // Valeur voulue : celle des tuiles, sinon celle du profil, sinon 16.
+  const wanted = power?.tileAnisotropy ?? power?.anisotropy ?? 16;
+  // Bornée entre 1 et le maximum de la carte graphique.
+  return Math.max(1, Math.min(wanted, gpuMax || 1));
+// Fin de tileAnisotropy.
+}
 
 /**
  * Altitude minimale de la caméra au-dessus du sol quand une carte est affichée, en rayons terrestres : ≈ 5 m, pour
@@ -470,8 +484,9 @@ export class TileManager {
       source,
       // Les variables uniformes partagées.
       uniforms: this.uniforms,
-      // Filtrage anisotrope : celui du profil (8), sans dépasser celui de la carte graphique.
-      maxAnisotropy: Math.min(engine.power?.anisotropy ?? 8, engine.renderer.capabilities.getMaxAnisotropy()),
+      // Filtrage anisotrope des tuiles : celui du profil (16 ; l'horizon et la vue 3/4 restent nets au lieu de baver),
+      // sans dépasser celui de la carte graphique.
+      maxAnisotropy: tileAnisotropy(engine.power, engine.renderer.capabilities.getMaxAnisotropy()),
       // Nombre de tuiles gardées : 260.
       capacity: 260,
       // Téléchargements simultanés : ceux de l'astre (davantage pour un astre servi en HTTP/2 par l'API), sinon 6.
