@@ -425,10 +425,18 @@ export class CesiumCamera {
     const cities = this.engine.worldCities;
     // Aucune : rien.
     if (!cities?.length) return '';
+    // Instant présent.
+    const now = performance.now();
+    // Calculé il y a moins de 250 ms : même texte (publishHud est appelé à chaque image en mouvement).
+    if (this.placeAt !== undefined && now - this.placeAt < 250) return this.placeLast;
+    // Noté.
+    this.placeAt = now;
     // Point du sol au centre de l'écran, en degrés.
     const c = this.Cesium.Cartographic.fromCartesian(this.center());
-    // Texte du lieu.
-    return placeText(cities, this.Cesium.Math.toDegrees(c.longitude), this.Cesium.Math.toDegrees(c.latitude), km);
+    // Texte du lieu, gardé.
+    this.placeLast = placeText(cities, this.Cesium.Math.toDegrees(c.longitude), this.Cesium.Math.toDegrees(c.latitude), km);
+    // Renvoyé.
+    return this.placeLast;
   // Fin de placeUnderView.
   }
 

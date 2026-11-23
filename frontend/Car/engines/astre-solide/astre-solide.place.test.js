@@ -1,7 +1,7 @@
 // Tests du nom du lieu sous la caméra du globe (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { COUNTRY_ABOVE_KM, FAR_KM, REGION_ABOVE_KM, distanceKm, nearestCity, placeText } from './astre-solide.place.js';
+import { COUNTRY_ABOVE_KM, FAR_KM, REGION_ABOVE_KM, cityIndex, distanceKm, nearestCity, placeText } from './astre-solide.place.js';
 
 const cities = [
   { name: 'Paris', country: 'France', region: 'Île-de-France', lon: 2.35, lat: 48.86 },
@@ -33,4 +33,12 @@ test('précision selon l\'altitude, noms français, sans doublon ni lieu lointai
   assert.ok(distanceKm(-40, 30, 2.35, 48.86) > FAR_KM);
   assert.equal(placeText(cities, -40, 30, 5), '');
   assert.equal(placeText(null, 0, 0, 5), '');
+});
+
+test('index des villes : calculé une fois par liste, même résultat que la distance', () => {
+  assert.equal(cityIndex(cities), cityIndex(cities));
+  for (const [lon, lat] of [[2.1, 49], [30, 31], [100, 0], [1.2, 49.5]]) {
+    const byDist = [...cities].sort((a, b) => distanceKm(lon, lat, a.lon, a.lat) - distanceKm(lon, lat, b.lon, b.lat))[0];
+    assert.equal(nearestCity(cities, lon, lat).city, byDist);
+  }
 });
