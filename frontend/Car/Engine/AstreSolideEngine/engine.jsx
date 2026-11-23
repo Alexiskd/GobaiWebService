@@ -215,7 +215,9 @@ const MODEL_POLAR_LIMIT = Math.sin(55 * D); // vue polaire : tuiles plutôt que 
 // Altitude minimale d'affichage des frontières.
 const BORDERS_MIN_ALTITUDE = 2.5e-4; // ≈ 1,6 km : plus bas, les frontières 1:50m s'écartent trop de l'imagerie
 // Mouvements lissés indépendants de la cadence (mêmes réglages qu'avant à 60 images/s, mais identiques à 30 ou 144).
-const ZOOM_TAU_MS = 96;          // lissage du zoom : ≈ 16 % du chemin restant par image à 60 i/s
+const ZOOM_TAU_MS = 96;
+// Calque three.js des objets de l'atmosphère redessinés au-dessus du globe CesiumJS (renderAtmosphereOverlay).
+const ATMO_LAYER = 5;          // lissage du zoom : ≈ 16 % du chemin restant par image à 60 i/s
 // Vitesse de la transition vers un astre.
 const FOCUS_RATE = 1.2;          // transition vers un astre : 0 → 1 en ≈ 0,83 s
 // Vitesse de la rotation automatique : 0,072 rad/s.
@@ -2839,7 +2841,7 @@ export class SolarEngine {
     // Sa description.
     const cfg = TILED_BODY_BY_ID[id];
     // Nom affiché (celui des données), rayon et air.
-    return { id, name: this.focusTargets?.[this.tiledById?.[id]?.focus]?.name ?? id, radiusKm: cfg?.radiusKm ?? 6371, airless: Boolean(cfg?.airless) };
+    return { id, name: this.focusTargets?.[this.tiledById?.[id]?.focus]?.name ?? id, radiusKm: cfg?.radiusKm ?? 6371, airless: Boolean(cfg?.airless), minAltitudeKm: cfg ? minAltitudeRadii(cfg) * cfg.radiusKm : 0 };
   // Fin de solidGlobeTarget.
   }
 
@@ -2872,8 +2874,10 @@ export class SolarEngine {
     if (!tb) return;
     // Position de la caméra dans le repère des tuiles de l'astre (sphère de rayon 1, axe des pôles = +Y).
     const local = tb.tiles.root.worldToLocal(this.cam.position.clone());
-    // Le module décide : astre ciblé, distance au centre, rayon, direction de la caméra.
-    this.solidGlobe.update({ focused: this.focus === tb.focus, dist: local.length() * tb.radius, radius: tb.radius, camLocal: [local.x, local.y, local.z] });
+    // Astre ciblé : la distance visée par le zoom three.js (pour que le zoom en cours continue dans le globe).
+    const focused = this.focus === tb.focus, dist = local.length() * tb.radius;
+    // Le module décide : astre ciblé, distance au centre et distance visée, rayon, direction de la caméra.
+    this.solidGlobe.update({ focused, dist, distGoal: focused ? this.distGoal : dist, radius: tb.radius, camLocal: [local.x, local.y, local.z] });
   // Fin de updateSolidGlobe.
   }
 
@@ -2938,6 +2942,64 @@ export class SolarEngine {
   }
 
   /**
+   * Atmosphère au-dessus du globe CesiumJS : le globe (le sol, ses tuiles) est dessiné par CesiumJS par-dessus la
+   * scène three.js ; l'atmosphère de l'astre (moteur d'atmosphère de three.js : diffusion, nuages simulés) est
+   * redessinée sur une couche transparente posée au-dessus du globe, avec la même caméra. Seuls les objets de
+   * l'atmosphère (calque ATMO_LAYER) y sont dessinés. `bodyId` null, ou atmosphère absente ou coupée dans
+   * Paramètres : la couche est masquée.
+   */
+  // renderAtmosphereOverlay : l'astre et la caméra (début).
+  renderAtmosphereOverlay(bodyId, cam) {
+    // Atmosphère de l'astre.
+    const atmo = bodyId ? this.atmospheres?.[bodyId] : null;
+    // Couche existante.
+    const layer = this.atmoOverlay;
+    // Sans atmosphère affichée (ou coupée dans Paramètres) : couche masquée.
+    if (!atmo || !atmo.visible) { if (layer) layer.canvas.style.display = 'none'; return; }
+    // Couche créée à la première atmosphère (début).
+    if (!layer) {
+      // Canevas transparent, plein cadre, qui laisse passer les gestes.
+      const canvas = document.createElement('canvas');
+      // Style : posé comme le canevas three.js, au-dessus du globe.
+      canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;';
+      // Son nom.
+      canvas.dataset.engine = 'atmosphere-overlay';
+      // Moteur de rendu transparent sur ce canevas.
+      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, logarithmicDepthBuffer: this.renderer.capabilities.logarithmicDepthBuffer });
+      // Fond transparent.
+      renderer.setClearColor(0x000000, 0);
+      // Gardée.
+      this.atmoOverlay = { canvas, renderer, w: 0, h: 0, dpr: 0 };
+    // Fin de la création.
+    }
+    // La couche.
+    const o = this.atmoOverlay;
+    // Posée juste au-dessus du globe CesiumJS (après son conteneur), sinon après le canevas three.js.
+    const anchor = this.solidGlobe?.container || this.canvas;
+    // Déplacée si besoin.
+    if (anchor.nextSibling !== o.canvas) anchor.after(o.canvas);
+    // Même résolution que le canevas three.js.
+    const dpr = this.renderer.getPixelRatio();
+    // Taille ou résolution changée : réglée.
+    if (o.w !== this.W || o.h !== this.H || o.dpr !== dpr) { o.renderer.setPixelRatio(dpr); o.renderer.setSize(this.W, this.H, false); o.w = this.W; o.h = this.H; o.dpr = dpr; }
+    // Objets de l'atmosphère sur leur calque (une fois par atmosphère ; ils restent aussi sur le calque 0).
+    if (!atmo.userData.atmoLayer) { atmo.traverse((obj) => obj.layers.enable(ATMO_LAYER)); atmo.userData.atmoLayer = true; }
+    // L'atmosphère suit la caméra (dedans ou dehors, comme dans la boucle).
+    atmo.userData.track?.(cam.position);
+    // Calques de la caméra gardés.
+    const mask = cam.layers.mask;
+    // Seul le calque de l'atmosphère.
+    cam.layers.set(ATMO_LAYER);
+    // Une image de l'atmosphère.
+    o.renderer.render(this.scene, cam);
+    // Calques de la caméra rendus.
+    cam.layers.mask = mask;
+    // Couche affichée.
+    o.canvas.style.display = 'block';
+  // Fin de renderAtmosphereOverlay.
+  }
+
+  /**
    * Fond spatial du globe CesiumJS de près (fond transparent) : dessine la scène three.js sans l'astre du globe, vue de
    * la caméra du globe. `position`, `direction` et `up` sont dans le repère de l'astre de CesiumJS (mètres), `fovy`
    * est l'ouverture verticale en radians. La caméra three.js est remise en place ensuite (rien ne bouge dans la scène).
@@ -2981,6 +3043,8 @@ export class SolarEngine {
     this.renderer.render(this.scene, cam);
     // L'astre reprend son état.
     restore();
+    // Atmosphère de l'astre par-dessus le globe, vue de la même caméra.
+    this.renderAtmosphereOverlay(bodyId, cam);
     // La caméra three.js reprend son état.
     cam.position.copy(v.savedPos); cam.quaternion.copy(v.savedQuat); cam.up.copy(v.savedUp); cam.fov = savedFov;
     // Projection d'origine.
@@ -4068,6 +4132,8 @@ export class SolarEngine {
     restoreBody?.();
     // Le globe dessine l'astre par-dessus l'image three.js, vu de la même caméra.
     if (bodyByCesium) this.solidGlobe.drawOverlay();
+    // Atmosphère de l'astre (moteur d'atmosphère three.js) posée par-dessus le globe, ou couche masquée.
+    this.renderAtmosphereOverlay(bodyByCesium ? solidId : null, this.cam);
     // Fin de la mesure du rendu.
     probe.renderEnd();
     // Fin de la mesure de l'image.
@@ -5204,6 +5270,8 @@ export class SolarEngine {
     this.stopped = true;
     // Libère le globe CesiumJS de la Terre.
     this.solidGlobe?.dispose();
+// Couche d'atmosphère au-dessus du globe : moteur de rendu libéré, canevas retiré.
+if (this.atmoOverlay) { this.atmoOverlay.renderer.dispose(); this.atmoOverlay.canvas.remove(); this.atmoOverlay = null; }
     // Détruit les gestionnaires du Core (les ressources graphiques historiques restent libérées par leur propriétaire).
     this.coreScheduler?.clear();
     this.coreResources?.disposeAll();

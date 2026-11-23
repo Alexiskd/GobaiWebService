@@ -155,8 +155,9 @@ export class AstreSolideGlobe {
   // ------------------------------------------------------------ passage de près
 
   /** À chaque image three.js : passe la main au globe quand la caméra s'approche de l'astre ciblé. */
-  // update : l'astre ciblé ou non, la distance de la caméra au centre et le rayon (unités de la scène), sa direction.
-  update({ focused, dist, radius, camLocal }) {
+  // update : l'astre ciblé ou non, la distance de la caméra au centre, la distance visée par le zoom et le rayon
+  // (unités de la scène), sa direction.
+  update({ focused, dist, distGoal = dist, radius, camLocal }) {
     // De près, en création ou sans astre : rien.
     if (this.active || this.pending || !this.body) return;
     // Altitude de la caméra, en km de l'astre.
@@ -165,8 +166,8 @@ export class AstreSolideGlobe {
     this.armed = rearm(this.armed, altKm, this.body.radiusKm);
     // Pas de passage : rien.
     if (!shouldEnter({ focused, altKm, armed: this.armed, radiusKm: this.body.radiusKm })) return;
-    // Passe la main au globe au même endroit.
-    this.enter({ ...lonLatOf(camLocal), altKm });
+    // Passe la main au globe au même endroit ; le zoom three.js en cours continue dans le globe (même altitude visée).
+    this.enter({ ...lonLatOf(camLocal), altKm, goalKm: altitudeKm(distGoal, radius, this.body.radiusKm) });
   // Fin de update.
   }
 
@@ -175,7 +176,7 @@ export class AstreSolideGlobe {
   onFocus(isBody) { if (this.active && !isBody) this.leave(); }
 
   // enter, asynchrone : le globe prend la main au-dessus de l'astre (début).
-  async enter({ lon, lat, altKm }) {
+  async enter({ lon, lat, altKm, goalKm }) {
     // Globe pas encore prêt : création (ou attente de celle en cours).
     if (!this.viewer && !(await this.ensureViewer())) return;
     // Moteur détruit entre-temps : rien.
@@ -203,6 +204,8 @@ export class AstreSolideGlobe {
     this.lastTick = performance.now(); this.shadeApplied = undefined; this.applyShade(); this.syncSun(); this.syncImagery();
     // Espace de la scène three.js dessiné tout de suite derrière le globe (sans attendre la première image du globe).
     this.drawBackdrop();
+    // Zoom three.js en cours (altitude visée plus basse) : il continue dans le globe, au même rythme.
+    if (goalKm > 0 && goalKm < altKm) this.camera.setAltitudeGoal(goalKm * 1000);
     // HUD : distance, échelle et boussole du globe.
     this.camera.publishHud();
   // Fin de enter.

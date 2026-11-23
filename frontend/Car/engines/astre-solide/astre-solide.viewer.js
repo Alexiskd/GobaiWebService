@@ -37,8 +37,8 @@ export function bodyEllipsoid(Cesium, { id, radiusKm }) {
 /**
  * Crée le globe d'un astre solide dans `container`. Renvoie { viewer, Cesium, ellipsoid }.
  * La Terre a ses couches d'imagerie ouvertes (astre-solide.sources.js) ; les autres astres reçoivent ensuite le fond
- * de carte de l'app (astre-solide.imagery.js, voir AstreSolideGlobe.syncImagery). Sans air (Lune, Mercure…) : ni
- * atmosphère autour du globe, ni voile au sol.
+ * de carte de l'app (astre-solide.imagery.js, voir AstreSolideGlobe.syncImagery). Seul le globe est dessiné ici :
+ * l'atmosphère vient de la scène three.js.
  * @param {HTMLElement} container
  * @param {{ id: string, radiusKm: number, airless?: boolean }} body
  */
@@ -92,13 +92,17 @@ export async function createSolidViewer(container, body) {
   if (viewer.scene.sun) viewer.scene.sun.show = false;
   // La Lune de CesiumJS, si elle existe : cachée.
   if (viewer.scene.moon) viewer.scene.moon.show = false;
-  // Astre sans air : ni atmosphère autour du globe, ni voile au sol.
-  if (body.airless) { if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = false; viewer.scene.globe.showGroundAtmosphere = false; }
+  // Seul le globe (le sol, ses tuiles) est dessiné par CesiumJS : ni atmosphère autour du globe, ni voile au sol, ni
+  // brouillard. L'atmosphère est celle de la scène three.js (moteur d'atmosphère), posée par-dessus le globe sur une
+  // couche à part (engine.renderAtmosphereOverlay).
+  if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = false;
+  // Pas de voile au sol.
+  viewer.scene.globe.showGroundAtmosphere = false;
+  // Pas de brouillard.
+  viewer.scene.fog.enabled = false;
   // Lumière du Soleil : une lumière directionnelle, orientée à chaque image d'après la scène three.js (même Soleil
-  // pour tous les astres, voir AstreSolideGlobe.syncSun) ; l'atmosphère suit cette lumière.
+  // pour tous les astres, voir AstreSolideGlobe.syncSun).
   viewer.scene.light = new Cesium.DirectionalLight({ direction: new Cesium.Cartesian3(-1, 0, 0) });
-  // Atmosphère éclairée par cette lumière (et non par le Soleil calculé pour la Terre).
-  viewer.scene.globe.dynamicAtmosphereLightingFromSun = false;
   // Le globe : jour et nuit d'après cette lumière.
   viewer.scene.globe.enableLighting = true;
   // Horloge du globe : l'heure de l'app, réglée à chaque image ; elle n'avance pas d'elle-même.

@@ -232,3 +232,27 @@ export function threeViewToCesium({ pos, dir, up }, { fovyDeg, aspect, viewportH
   return { position: tilesLocalToEcef(pos, radiusM), direction: tilesLocalToEcef(dir, 1), up: tilesLocalToEcef(up, 1), fov, aspect, near, far, inView };
 // Fin de threeViewToCesium.
 }
+
+/** Lissage du zoom de la scène three.js (ms) : ≈ 16 % du chemin restant par image à 60 images par seconde. */
+// Déclare et exporte la constante de temps du zoom : 96 ms.
+export const ZOOM_TAU_MS = 96;
+
+/**
+ * Zoom calé sur three.js : le zoom multiplie l'altitude VISÉE (pas l'altitude actuelle) par le facteur, comme
+ * `engine.zoom` (plusieurs crans de molette s'additionnent), bornée entre l'altitude minimale de l'astre et `maxM`.
+ */
+// Déclare et exporte zoomGoal : l'altitude visée (m), le facteur, les bornes (m).
+export const zoomGoal = (goalM, f, minM = MIN_ALTITUDE_M, maxM = 1e9) => Math.max(minM, Math.min(maxM, Math.max(goalM, minM) * f));
+
+/**
+ * Avance l'altitude vers l'altitude visée comme la distance de la caméra three.js : rapprochement géométrique
+ * (altitude × (visée / altitude)^(1 − e^(−dt/τ))), indépendant de la cadence ; dt borné à 100 ms.
+ */
+// Déclare et exporte easeAltitude : l'altitude actuelle, visée (m), le temps écoulé et la constante de temps (ms).
+export function easeAltitude(altM, goalM, dtMs, tauMs = ZOOM_TAU_MS) {
+  // Altitudes illisibles ou nulles : directement la visée.
+  if (!(altM > 0) || !(goalM > 0)) return goalM;
+  // Rapprochement géométrique, comme this.dist *= (distGoal / dist)^k dans three.js.
+  return altM * Math.pow(goalM / altM, 1 - Math.exp(-Math.min(Math.max(0, dtMs), 100) / tauMs));
+// Fin de easeAltitude.
+}

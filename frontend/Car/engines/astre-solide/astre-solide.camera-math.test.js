@@ -168,3 +168,19 @@ test('Terre toujours en CesiumJS : vue three.js traduite pour la caméra du glob
   // À 10 rayons sur un écran de 900 px : bien visible.
   assert.equal(threeViewToCesium({ pos: [10, 0, 0], dir: [-1, 0, 0], up: [0, 1, 0] }, { fovyDeg: 45, aspect: 1, viewportH: 900 }).inView, true);
 });
+
+// Importe le zoom calé sur three.js.
+import { ZOOM_TAU_MS, easeAltitude, zoomGoal } from './astre-solide.camera-math.js';
+
+test('zoom calé sur three.js : altitude visée multipliée, rapprochement lissé à 96 ms', () => {
+  // Deux crans de 0,65 à 1 000 km : 422,5 km visés (les crans s'additionnent sur la visée).
+  assert.ok(Math.abs(zoomGoal(zoomGoal(1e6, 0.65), 0.65) - 422500) < 1e-6);
+  // Jamais sous l'altitude minimale de l'astre.
+  assert.equal(zoomGoal(1000, 0.1, 500), 500);
+  // Une image de 16 ms : même part du chemin que three.js.
+  const k = 1 - Math.exp(-16 / ZOOM_TAU_MS);
+  assert.ok(Math.abs(easeAltitude(1e6, 5e5, 16) - 1e6 * Math.pow(0.5, k)) < 1e-6);
+  // Au bout d'une seconde, arrivé (à 0,1 % près).
+  let alt = 1e6; for (let t = 0; t < 1000; t += 16) alt = easeAltitude(alt, 5e5, 16);
+  assert.ok(Math.abs(alt - 5e5) / 5e5 < 1e-3);
+});
