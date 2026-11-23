@@ -244,6 +244,8 @@ export class AstreSolideGlobe {
     if (!this.active) return;
     // Plus de près, passage désarmé jusqu'à ce que la caméra three.js remonte.
     this.active = false; this.armed = false;
+    // L'ombre du bouton « Ombre » reviendra à la prochaine image de la superposition.
+    this.shadeApplied = undefined;
     // Globe masqué (la superposition le réaffiche à la prochaine image three.js), sa boucle arrêtée, repères HTML de
     // la scène three.js rendus.
     this.container.style.display = 'none'; this.viewer.useDefaultRenderLoop = false; this.setLabelsHidden(false);
@@ -386,11 +388,15 @@ export class AstreSolideGlobe {
   // Fin de tick.
   }
 
-  /** Bouton « Ombre » : l'intensité d'ombre de l'app (engine.shadeNow, avec son fondu) appliquée au globe. */
+  /**
+   * Bouton « Ombre » : l'intensité d'ombre de l'app (engine.shadeNow, avec son fondu) appliquée au globe. Zoomé sur
+   * l'astre (globe de près), l'ombre est coupée : le sol est entièrement éclairé.
+   */
   // applyShade : règle l'éclairage du globe (début).
   applyShade() {
-    // Intensité actuelle (ombre pleine si elle n'a jamais été réglée).
-    const v = this.engine.shadeNow ?? 1;
+    // Intensité : 0 quand on a zoomé sur l'astre (globe de près : sol entièrement éclairé, sans ombre jour/nuit) ;
+    // sinon celle du bouton « Ombre » (ombre pleine si elle n'a jamais été réglée).
+    const v = this.active ? 0 : (this.engine.shadeNow ?? 1);
     // Déjà appliquée : rien.
     if (v === this.shadeApplied) return;
     // Notée.

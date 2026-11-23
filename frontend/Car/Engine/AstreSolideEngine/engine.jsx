@@ -2958,8 +2958,9 @@ export class SolarEngine {
   renderAtmosphereOverlay(bodyId, cam) {
     // Atmosphère de l'astre (affichée seulement si elle n'est pas coupée dans Paramètres).
     const atmo = bodyId && this.atmospheres?.[bodyId]?.visible ? this.atmospheres[bodyId] : null;
-    // Pollution lumineuse : seulement sur la Terre, lumières de la nuit allumées.
-    const pollution = bodyId === 'earth' && this.lightPollution && this.tiledById?.earth?.tiles.uniforms.lightsOn.value > 0.5 ? this.lightPollution : null;
+    // Pollution lumineuse : seulement sur la Terre, lumières de la nuit allumées, et pas quand on a zoomé sur la Terre
+    // (globe de près : sol entièrement éclairé, ni ombre ni lumières de la nuit).
+    const pollution = bodyId === 'earth' && !this.cesiumHold && this.lightPollution && this.tiledById?.earth?.tiles.uniforms.lightsOn.value > 0.5 ? this.lightPollution : null;
     // Couche existante.
     const layer = this.atmoOverlay;
     // Ni atmosphère ni pollution lumineuse : couche masquée.
