@@ -54,7 +54,8 @@ export function HudTop({ hud }) {
       // Début du style. Grille à deux colonnes : l'emblème (colonne 1) et la ligne du titre (colonne 2) partagent la
       // rangée 1 et y sont centrés tous les deux : la ligne horizontale qui passe par le centre de l'image du logo
       // (moitié de sa hauteur) passe aussi par le centre du texte du titre. La date et l'astre visé vont dessous.
-      className={compact ? 'm-title grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0' : 'g-paper fixed z-[20] right-auto grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0 px-3.5 py-1 cursor-grab select-none touch-none'}
+      // Coins arrondis à 20 px (rounded-[20px]) sur ordinateur et téléphone, au lieu de 12 px (g-paper) et 14 px (m-title).
+      className={compact ? 'm-title rounded-[20px] grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0' : 'g-paper rounded-[20px] fixed z-[20] right-auto grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0 px-3.5 py-1 cursor-grab select-none touch-none'}
       // Téléphone : aucun style calculé (classe `m-title`). Ordinateur : la position, déplaçable.
       style={compact ? undefined : { ...drag.style, top: edge('top', 12), left: edge('left', 14), maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 98px - ${PANEL_W})` }}
     // Fin de la balise ouvrante.
