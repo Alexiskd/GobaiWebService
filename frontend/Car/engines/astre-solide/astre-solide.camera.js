@@ -5,7 +5,7 @@
  */
 
 // Importe les calculs de la caméra.
-import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, easeAltitude, keyMove, moveAngles, pitchForTilt, surfaceRotation, wrapHeading, zoomGoal } from './astre-solide.camera-math.js';
+import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, easeAltitude, keyMove, moveAngles, panGoal, panStep, pitchForTilt, surfaceRotation, wrapHeading, zoomGoal } from './astre-solide.camera-math.js';
 // Importe la mise en forme d'une distance (comme le HUD de three.js).
 import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
@@ -110,6 +110,29 @@ export class CesiumCamera {
   // Fin de zoom.
   }
 
+  /**
+   * Double-clic sur le sol (x, y en pixels de la fenêtre) : zoom du facteur f (comme la molette) et, en même temps,
+   * la caméra glisse pour amener le point cliqué au centre de l'écran. Ciel cliqué : zoom seul.
+   */
+  // zoomAt : le point cliqué et le facteur (début).
+  zoomAt(x, y, f) {
+    // Raccourcis.
+    const { Cesium, cam } = this, { scene } = this.viewer, rect = scene.canvas.getBoundingClientRect();
+    // Point du sol sous le curseur.
+    const hit = cam.pickEllipsoid(new Cesium.Cartesian2(x - rect.left, y - rect.top), scene.globe.ellipsoid);
+    // Trouvé : position visée de la caméra (le point cliqué au centre de l'écran).
+    if (hit) {
+      // Longitude et latitude du point cliqué, du point au centre et de la caméra (radians).
+      const t = Cesium.Cartographic.fromCartesian(hit), c = Cesium.Cartographic.fromCartesian(this.center()), p = cam.positionCartographic;
+      // Visée notée : zoomTick y amène la caméra.
+      this.panTo = panGoal({ lon: p.longitude, lat: p.latitude }, { lon: c.longitude, lat: c.latitude }, { lon: t.longitude, lat: t.latitude });
+    // Fin du point trouvé.
+    }
+    // Zoom (même altitude visée que la molette).
+    this.zoom(f);
+  // Fin de zoomAt.
+  }
+
   /** Altitude visée (m) reprise d'ailleurs, par exemple du zoom three.js en cours au moment du passage. */
   // setAltitudeGoal : l'altitude visée en mètres.
   setAltitudeGoal(m) { if (Number.isFinite(m) && m > 0) this.altGoal = Math.max(this.minAltitudeM, m); }
@@ -122,17 +145,20 @@ export class CesiumCamera {
     // Noté.
     this.lastZoomAt = now;
     // Pas de zoom en cours, globe sans la main (superposition) ou vol en cours : rien.
-    if (this.altGoal === undefined || !this.engine.cesiumHold || this.cam._currentFlight) { this.altGoal = undefined; return; }
+    if (this.altGoal === undefined || !this.engine.cesiumHold || this.cam._currentFlight) { this.altGoal = undefined; this.panTo = undefined; return; }
     // Position actuelle (longitude, latitude, altitude).
     const c = this.cam.positionCartographic;
     // Altitude suivante.
     const next = easeAltitude(Math.max(1e-3, c.height), this.altGoal, dt);
     // Arrivé (à 0,05 % près) : altitude visée exacte, zoom terminé.
     const done = Math.abs(next - this.altGoal) <= this.altGoal * 5e-4;
-    // Même point du sol, même cap, même inclinaison, nouvelle altitude.
-    this.cam.setView({ destination: this.Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, done ? this.altGoal : next, this.viewer.scene.globe.ellipsoid), orientation: { heading: this.cam.heading, pitch: this.cam.pitch, roll: this.cam.roll } });
+    // Double-clic : la caméra glisse vers le point visé au même rythme (exactement dessus à la fin du zoom) ;
+    // sinon, même point du sol.
+    const at = this.panTo ? (done ? this.panTo : panStep({ lon: c.longitude, lat: c.latitude }, this.panTo, dt)) : { lon: c.longitude, lat: c.latitude };
+    // Même cap, même inclinaison, nouvelle position.
+    this.cam.setView({ destination: this.Cesium.Cartesian3.fromRadians(at.lon, at.lat, done ? this.altGoal : next, this.viewer.scene.globe.ellipsoid), orientation: { heading: this.cam.heading, pitch: this.cam.pitch, roll: this.cam.roll } });
     // Zoom terminé : plus de visée.
-    if (done) this.altGoal = undefined;
+    if (done) { this.altGoal = undefined; this.panTo = undefined; }
     // Une image de plus.
     this.viewer.scene.requestRender();
   // Fin de zoomTick.

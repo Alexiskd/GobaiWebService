@@ -4,6 +4,8 @@
 
 // Importe le facteur de zoom d'un pincement et la détection des contacts périmés, depuis touchMath.
 import { pinchFactor, stalePointers } from './touchMath.jsx';
+// Importe les facteurs du double-clic (zoom vers le point cliqué du globe de près).
+import { DBLCLICK_IN, DBLCLICK_OUT } from '../../../engines/astre-solide/astre-solide.camera-math.js';
 
 // Déclare et exporte le facteur d'un zoom avant au clavier : 0,65.
 export const ZOOM_IN = 0.65;
@@ -207,6 +209,9 @@ export function bindInput(engine) {
   on(window, 'blur', releaseAll);
   // Et quand la page devient masquée.
   on(document, 'visibilitychange', () => { if (document.visibilityState === 'hidden') releaseAll(); });
+
+  // Double-clic sur la scène : zoom vers le point cliqué (globe de près) ; avec Maj, on s'en éloigne.
+  on(cv, 'dblclick', (e) => { if (!labelOf(e)) engine.zoomAt?.(e.clientX, e.clientY, e.shiftKey ? DBLCLICK_OUT : DBLCLICK_IN); });
 
   // Molette (sur la scène) et pincement du pavé tactile (Ctrl+molette, géré une seule fois au niveau fenêtre).
   // wheelZoom : zoome à la molette ou au pavé tactile (début).
