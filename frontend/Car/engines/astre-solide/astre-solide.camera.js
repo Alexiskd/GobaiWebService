@@ -8,6 +8,10 @@
 import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, easeAltitude, keyMove, moveAngles, panGoal, panStep, pitchForTilt, surfaceRotation, wrapHeading, zoomGoal } from './astre-solide.camera-math.js';
 // Importe la mise en forme d'une distance (comme le HUD de three.js).
 import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
+// Importe le lien de la vue (ancre de l'adresse).
+import { VIEW_LINK_MS, formatViewHash, setViewHash } from './astre-solide.view-link.js';
+// Importe le nom du lieu sous la caméra (ville, région, pays).
+import { placeText } from './astre-solide.place.js';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
 import { scaleLevel } from '../../Engine/AstreSolideEngine/CameraEngine/scaleLevels.jsx';
 
@@ -159,6 +163,10 @@ export class CesiumCamera {
     this.cam.setView({ destination: this.Cesium.Cartesian3.fromRadians(at.lon, at.lat, done ? this.altGoal : next, this.viewer.scene.globe.ellipsoid), orientation: { heading: this.cam.heading, pitch: this.cam.pitch, roll: this.cam.roll } });
     // Zoom terminé : plus de visée.
     if (done) { this.altGoal = undefined; this.panTo = undefined; }
+    // Zoom terminé à l'ouverture d'un lien de vue : la caméra prend exactement la vue du lien.
+    if (done && this.engine.pendingView) this.applyView(this.engine.pendingView);
+    // Lien trop ancien (le globe a mis trop longtemps) : oublié.
+    if (this.engine.pendingView && performance.now() > this.engine.pendingView.until) this.engine.pendingView = null;
     // Une image de plus.
     this.viewer.scene.requestRender();
   // Fin de zoomTick.
@@ -372,6 +380,58 @@ export class CesiumCamera {
   // Fin de setUserPosition.
   }
 
+  /** Vue d'un lien (latitude, longitude, altitude, cap, inclinaison) : la caméra s'y place, inclinaison gardée. */
+  // applyView : la vue (début).
+  applyView(v) {
+    // Vue lue : plus en attente.
+    this.engine.pendingView = null;
+    // Raccourci.
+    const { Cesium } = this;
+    // Position, cap et inclinaison du lien.
+    this.cam.setView({ destination: Cesium.Cartesian3.fromDegrees(v.lon, v.lat, Math.max(this.minAltitudeM, v.altM), this.viewer.scene.globe.ellipsoid), orientation: { heading: Cesium.Math.toRadians(v.heading), pitch: Cesium.Math.toRadians(v.pitch), roll: 0 } });
+    // L'inclinaison du lien reste (pas de vue 3/4 automatique jusqu'au prochain réglage).
+    this.pilotTilt = true;
+    // Une image.
+    this.viewer.scene.requestRender();
+  // Fin de applyView.
+  }
+
+  /** Lien de la vue : l'ancre de l'adresse suit la caméra du globe de près, au plus une fois par seconde. */
+  // scheduleViewLink : demandé à chaque changement de caméra (début).
+  scheduleViewLink() {
+    // Lien en cours d'ouverture, ou mise à jour déjà prévue : rien.
+    if ((this.engine.pendingView && performance.now() < this.engine.pendingView.until) || this.linkTimer) return;
+    // Mise à jour dans une seconde (début).
+    this.linkTimer = setTimeout(() => {
+      // Plus de mise à jour prévue.
+      this.linkTimer = null;
+      // Globe sans la main : pas de lien.
+      if (!this.engine.cesiumHold) return;
+      // Position de la caméra.
+      const p = this.cam.positionCartographic, deg = this.Cesium.Math.toDegrees;
+      // Ancre de la vue.
+      const hash = formatViewHash({ lat: deg(p.latitude), lon: deg(p.longitude), altM: p.height, heading: deg(this.cam.heading), pitch: deg(this.cam.pitch) });
+      // Adresse mise à jour, et publiée dans le HUD (bouton « Copier le lien »).
+      if (hash) { setViewHash(hash); this.engine.hud?.set({ viewLink: globalThis.location?.href ?? '' }); }
+    // Fin de la mise à jour.
+    }, VIEW_LINK_MS);
+  // Fin de scheduleViewLink.
+  }
+
+  /** Nom du lieu au centre de l'écran (altitude en km), ou chaîne vide sans ville chargée. */
+  // placeUnderView : l'altitude (début).
+  placeUnderView(km) {
+    // Villes Natural Earth du moteur (étiquettes) : sans elles, rien.
+    const cities = this.engine.worldCities;
+    // Aucune : rien.
+    if (!cities?.length) return '';
+    // Point du sol au centre de l'écran, en degrés.
+    const c = this.Cesium.Cartographic.fromCartesian(this.center());
+    // Texte du lieu.
+    return placeText(cities, this.Cesium.Math.toDegrees(c.longitude), this.Cesium.Math.toDegrees(c.latitude), km);
+  // Fin de placeUnderView.
+  }
+
   /** Publie dans le HUD la distance, l'échelle et la boussole, comme la scène three.js. */
   // publishHud : appelé à chaque changement de caméra (début).
   publishHud() {
@@ -387,8 +447,12 @@ export class CesiumCamera {
     const name = this.body.name ?? this.body.id;
     // Cap en radians.
     const heading = this.cam.heading;
-    // Publication : distance, échelle, boussole (nord de l'astre, à l'écran à −cap).
-    hud.set({ zoomText: `${name} · ${distance}`, zoomShort: distance, scaleText: scaleLevel(km, { earth: this.body.id === 'earth' }), compass: { angle: -heading, bearing: -heading, system: false } });
+    // Terre : lieu sous le point visé (ville, région, pays selon l'altitude), d'après les villes déjà chargées.
+    const place = this.body.id === 'earth' ? this.placeUnderView(km) : '';
+    // Publication : distance, lieu, échelle, boussole (nord de l'astre, à l'écran à −cap).
+    hud.set({ zoomText: place ? `${name} · ${distance} · ${place}` : `${name} · ${distance}`, zoomShort: distance, scaleText: scaleLevel(km, { earth: this.body.id === 'earth' }), compass: { angle: -heading, bearing: -heading, system: false } });
+    // Lien de la vue mis à jour.
+    this.scheduleViewLink();
   // Fin de publishHud.
   }
 // Fin de la classe CesiumCamera.

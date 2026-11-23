@@ -1,5 +1,7 @@
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
+// Importe de React le crochet useState.
+import { useState } from 'react';
 // Importe useViewport, qui donne la catégorie d'écran.
 import { useViewport } from '@/Fairing/hooks/useViewport';
 
@@ -18,6 +20,24 @@ export function Readout({ hud }) {
   const scaleText = useHud(hud, (s) => s.scaleText);
   // Lit le niveau de zoom de la carte, seulement si une couche de tuiles est affichée.
   const tileZoom = useHud(hud, (s) => (s.tiles && s.tiles.layerId ? s.tiles.zoom : null));
+  // Lit le lien de la vue du globe de près (vide hors du globe de près).
+  const viewLink = useHud(hud, (s) => s.viewLink);
+  // État : vrai juste après la copie du lien.
+  const [copied, setCopied] = useState(false);
+  // shareLink : partage (téléphone) ou copie le lien de la vue (début).
+  const shareLink = async () => {
+    // Début du bloc protégé : le partage peut être annulé, le presse-papiers refusé.
+    try {
+      // Téléphone avec partage natif : menu de partage.
+      if (compact && navigator.share) { await navigator.share({ title: document.title, url: viewLink }); return; }
+      // Sinon : copie dans le presse-papiers.
+      await navigator.clipboard.writeText(viewLink);
+      // « Lien copié » pendant 1,5 s.
+      setCopied(true); setTimeout(() => setCopied(false), 1500);
+    // Annulation ou refus : rien.
+    } catch { /* partage annulé ou presse-papiers indisponible */ }
+  // Fin de shareLink.
+  };
   // Début du rendu.
   return (
     // Ligne horizontale, non annoncée par les lecteurs d'écran, sur une seule ligne.
@@ -28,6 +48,8 @@ export function Readout({ hud }) {
       {scaleText && <span title="Niveau d’échelle de la vue" className="t-caption text-soft flex-none">{scaleText}</span>}
       {/* Le niveau de la carte, s'il est connu, hors mode compact. */}
       {tileZoom !== null && !compact && <span className="t-caption text-soft">carte niveau {tileZoom}</span>}
+      {/* Globe de près : bouton qui copie (ou partage) le lien de la vue. */}
+      {viewLink && <button type="button" onClick={shareLink} title="Copier le lien de cette vue" className="t-caption text-soft flex-none hover:underline">{copied ? 'Lien copié' : 'Copier le lien'}</button>}
     {/* Fin de la ligne. */}
     </div>
   // Fin du rendu.
