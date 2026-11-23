@@ -488,6 +488,38 @@
   }
   .g-live::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background-color: #ff3b30; animation: live-ring 1.8s ease-out infinite; }
 
+  /* Bandeau du titre (HudTop), ordinateur et téléphone : même habillage que la barre de navigation (.m-nav) — fond
+     panel, filet edge, rayon 18 px, ombre portée. Grille à deux colonnes : la tuile du logo et la ligne du nom partagent
+     la rangée 1 (leurs centres sont sur la même ligne horizontale), la date et l'astre visé passent dessous. */
+  .hud-title {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px; row-gap: 2px;
+    box-sizing: border-box; padding: 7px 14px 7px 7px; border: 1px solid var(--color-edge); border-radius: 18px;
+    background-color: var(--color-panel); color: var(--color-ink); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+    user-select: none; contain: layout style;
+  }
+  .hud-title[data-compact] { width: 100%; column-gap: 9px; padding: 6px 12px 6px 6px; }
+  /* Tuile du logo : carré arrondi surélevé, du même gabarit que les boutons de la barre d'outils (.tb-btn-icon). */
+  .hud-title-logo {
+    grid-column: 1; grid-row: 1; display: grid; place-items: center; box-sizing: border-box; width: 34px; height: 34px;
+    border: 1px solid var(--color-line); border-radius: 9px; background-color: var(--color-raised); overflow: hidden;
+  }
+  .hud-title[data-compact] .hud-title-logo { width: 32px; height: 32px; }
+  /* Ligne du nom : ∞, nom, suite du nom, puis le badge « En direct » poussé au bout de la ligne. */
+  .hud-title-name {
+    grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 7px; min-width: 0; margin: 0;
+    font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; white-space: nowrap;
+  }
+  .hud-title[data-compact] .hud-title-name { font-size: 14.5px; }
+  .hud-title-inf { color: #0000ff; font-size: 1.5em; line-height: 0.8; font-weight: 800; }
+  .hud-title-alt { color: var(--color-soft); font-weight: 400; }
+  .hud-title-name .g-live { margin-left: auto; }
+  /* Lignes d'information : date, images par seconde, astre visé. */
+  .hud-title-meta {
+    grid-column: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    color: var(--color-soft); font-size: 11.5px; line-height: 1.35; font-variant-numeric: tabular-nums;
+  }
+  .hud-title-meta[data-faint] { color: var(--color-faint); }
+
   /* Barre d'outils : bouton d'action (pastille d'icône, bouton à libellé, tuile du téléphone). */
   .tb-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; box-sizing: border-box;
@@ -517,11 +549,6 @@
   }
   .m-top > * > * { pointer-events: auto; }
   .m-top-row { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
-  .m-title {
-    position: relative; display: flex; align-items: center; gap: 8px; box-sizing: border-box; min-height: 40px; padding: 3px 12px 3px 8px;
-    border: 1px solid var(--color-edge); border-radius: 14px; background-color: var(--color-surface); color: var(--color-ink);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); user-select: none; contain: layout style;
-  }
   /* Zone du bas : les surfaces (Informations, assistant), puis la bande des astres et la navigation. */
   .m-dock {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; flex-direction: column; justify-content: flex-end;

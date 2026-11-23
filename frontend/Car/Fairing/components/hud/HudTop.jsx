@@ -1,7 +1,5 @@
 // Importe useSyncExternalStore de React.
 import { useSyncExternalStore } from 'react';
-// Importe les composants du kit d'interface (Tailwind CSS et Base UI).
-import { Typography } from '@/Fairing/kit';
 // Importe la valeur « nuit », le lecteur et l'abonnement du réglage jour/nuit.
 import { NIGHT, getDayNight, subscribeDayNight } from '@/Engine/shared/lib/device/dayNight';
 // Importe useHud, qui lit une valeur du magasin du HUD.
@@ -43,81 +41,74 @@ export function HudTop({ hud }) {
   const live = useSyncExternalStore(subscribeDayNight, getDayNight, getDayNight) === NIGHT;
   // Début du rendu.
   return (
-    // Le bandeau (début de la balise).
+    // Le bandeau (début de la balise) : habillage commun dans la classe `hud-title` (theme/app.css).
     <header
       // Marqueur de l'élément d'interface « title ».
       data-hud="title"
+      // Téléphone : variante pleine largeur (sélecteur `[data-compact]`).
+      data-compact={compact ? '' : undefined}
       // Référence pour le déplacement.
       ref={drag.ref}
       // Propriétés de la poignée : tout le bandeau se saisit.
       {...drag.handleProps}
-      // Début du style. Grille à deux colonnes : l'emblème (colonne 1) et la ligne du titre (colonne 2) partagent la
-      // rangée 1 et y sont centrés tous les deux : la ligne horizontale qui passe par le centre de l'image du logo
-      // (moitié de sa hauteur) passe aussi par le centre du texte du titre. La date et l'astre visé vont dessous.
-      // Téléphone : w-full, le bandeau occupe toute la largeur de l'écran.
-      // Coins arrondis à 20 px (rounded-[20px]) sur ordinateur et téléphone, au lieu de 12 px (g-paper) et 14 px (m-title).
-      className={compact ? 'm-title w-full rounded-[20px] grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-0' : 'g-paper rounded-[20px] fixed z-[20] right-auto grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0 px-3.5 py-1 cursor-grab select-none touch-none'}
-      // Téléphone : aucun style calculé (classe `m-title`). Ordinateur : la position, déplaçable.
+      // Téléphone : rien de plus. Ordinateur : position fixe, curseur de saisie, déplaçable.
+      className={compact ? 'hud-title' : 'hud-title fixed z-[20] right-auto cursor-grab touch-none'}
+      // Ordinateur : la position (déplaçable) et la largeur maximale.
       style={compact ? undefined : { ...drag.style, top: edge('top', 12), left: edge('left', 14), maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 98px - ${PANEL_W})` }}
     // Fin de la balise ouvrante.
     >
-      {/* Emblème seul : l'image a de larges marges transparentes (27 % à gauche, 20 % à droite), rognées ici pour que
-          l'espace bord gauche → logo soit exactement celui du texte → bord droit (le `px` du bandeau). */}
-      {/* Cadre de l'emblème : largeur selon l'écran, proportions de l'emblème, ce qui dépasse est masqué.
-          Colonne 1, rangée 1 : centré sur la ligne du titre seule. */}
-      <div className={`${compact ? 'w-6.5' : 'w-[clamp(38px,3.6vw,56px)]'} col-start-1 row-start-1 self-center flex-none overflow-hidden`} style={{ aspectRatio: `${LOGO.w} / ${LOGO.h}` }}>
-        {/* L'image du logo (début de la balise). */}
-        <img
-          // Adresse du logo (le paramètre v force le rechargement).
-          src="/logo.webp?v=4"
-          // Texte alternatif.
-          alt="Logo Go白ناन्टех"
-          // Jamais traduit.
-          translate="no"
-          // Largeur déclarée de l'image.
-          width={252}
-          // Hauteur déclarée de l'image.
-          height={138}
-          // Non déplaçable.
-          draggable={false}
-          // Décodage asynchrone.
-          decoding="async"
-          // Début du style.
-          className="block max-w-none h-auto" style={{ width: `${(LOGO.fullW / LOGO.w) * 100}%`, marginLeft: `${(-LOGO.x / LOGO.w) * 100}%`, marginTop: `${(-LOGO.y / LOGO.w) * 100}%` }}
-        // Fin de l'image.
-        />
-      {/* Fin du cadre de l'emblème. */}
+      {/* Tuile du logo (colonne 1, rangée 1) : son centre est sur la ligne médiane du nom. */}
+      <div className="hud-title-logo">
+        {/* Cadre de l'emblème : marges transparentes de l'image rognées, rognage vertical centré sur la moitié de sa hauteur. */}
+        <div className={`${compact ? 'w-[24px]' : 'w-[26px]'} overflow-hidden`} style={{ aspectRatio: `${LOGO.w} / ${LOGO.h}` }}>
+          {/* L'image du logo (début de la balise). */}
+          <img
+            // Adresse du logo (le paramètre v force le rechargement).
+            src="/logo.webp?v=4"
+            // Texte alternatif.
+            alt="Logo Go白ناन्टех"
+            // Jamais traduit.
+            translate="no"
+            // Largeur déclarée de l'image.
+            width={252}
+            // Hauteur déclarée de l'image.
+            height={138}
+            // Non déplaçable.
+            draggable={false}
+            // Décodage asynchrone.
+            decoding="async"
+            // Image agrandie et décalée pour ne montrer que l'emblème.
+            className="block max-w-none h-auto" style={{ width: `${(LOGO.fullW / LOGO.w) * 100}%`, marginLeft: `${(-LOGO.x / LOGO.w) * 100}%`, marginTop: `${(-LOGO.y / LOGO.w) * 100}%` }}
+          // Fin de l'image.
+          />
+        {/* Fin du cadre de l'emblème. */}
+        </div>
+      {/* Fin de la tuile du logo. */}
       </div>
-      {/* Le titre de niveau 1, jamais traduit, plus petit en mode compact. */}
-      <Typography component="h1" translate="no" variant={compact ? 'subtitle1' : 'h6'} className="col-start-2 row-start-1 self-center m-0 min-w-0 font-semibold leading-[1.1] flex items-center flex-wrap gap-x-[0.3em]">
-        {/* Le symbole ∞ en bleu, agrandi, décoratif. Sa boîte est ramenée à la hauteur d'une ligne du titre (h-[0.5em] à
-            2.2em ≈ 1.1em) et le glyphe déborde sans compter : la hauteur de la ligne du titre reste celle du texte,
-            son centre n'est pas décalé par le symbole. */}
-        <span aria-hidden="true" className={`text-[#0000FF] ${compact ? 'text-[1.9em] h-[0.58em]' : 'text-[2.2em] h-[0.5em]'} inline-flex items-center leading-none overflow-visible font-bold`}>∞</span>
-        {/* Le nom de l'application, suivi d'une espace. */}
-        Go白ناन्टех{' '}
-        {/* La suite du nom, hors mode compact, en couleur secondaire, décorative. */}
-        {!compact && <span aria-hidden="true" className="text-soft font-normal">α΄一하나א</span>}
-        {/* Le badge « En direct », masqué mais toujours à sa place hors mode nuit. */}
-        <LiveBadge className={`ml-[0.2em] ${live ? 'visible' : 'invisible'}`} />
-        {/* Sujet du site à côté de son nom, écrit dans le bleu du fond du bandeau (il suit le thème jour / nuit). */}
-        {/* Le sujet du site, à traduire, de la couleur du fond du bandeau. */}
-        {/* Sur téléphone, ce texte invisible passait à la ligne (flex-wrap) : le titre prenait deux lignes, dont une vide,
-            et le logo se centrait entre la ligne visible et la ligne vide. Il est donc retiré de la mise en page
-            (sr-only : toujours lu par les moteurs et les lecteurs d'écran, sans occuper de place). */}
-        <span translate="yes" className={compact ? 'sr-only' : 'text-surface font-normal'}>: système solaire 3D</span>
+      {/* Le titre de niveau 1 (colonne 2, rangée 1), jamais traduit. */}
+      <h1 translate="no" className="hud-title-name">
+        {/* Le symbole ∞ en bleu, décoratif. */}
+        <span aria-hidden="true" className="hud-title-inf">∞</span>
+        {/* Le nom de l'application. */}
+        <span>Go白ناन्टех</span>
+        {/* La suite du nom, hors téléphone, en couleur secondaire, décorative. */}
+        {!compact && <span aria-hidden="true" className="hud-title-alt">α΄一하나א</span>}
+        {/* Sujet du site : lu par les moteurs de recherche et les lecteurs d'écran, sans place à l'écran. */}
+        <span translate="yes" className="sr-only">: système solaire 3D</span>
+        {/* Le badge « En direct », au bout de la ligne ; masqué mais toujours à sa place hors mode nuit. */}
+        <LiveBadge className={live ? 'visible' : 'invisible'} />
       {/* Fin du titre. */}
-      </Typography>
-      {/* La date, en petit, en chiffres de largeur fixe, sous le titre. */}
-      <span className="col-start-2 t-caption text-soft block mt-0 leading-[1.2] tabular-nums">
+      </h1>
+      {/* La date, suivie du compteur d'images par seconde sur ordinateur. */}
+      <span className="hud-title-meta">
         {/* La date. */}
         {date}
-        {/* Le compteur d'images par seconde, à la suite. Pas monté sur téléphone : aucun abonnement inutile aux FPS. */}
+        {/* Le compteur d'images par seconde. Pas monté sur téléphone : aucun abonnement inutile aux FPS. */}
         {!compact && <FpsCounter hud={hud} />}
       {/* Fin de la ligne de la date. */}
       </span>
-      {/* Le texte de l'astre visé, s'il existe, hors mode compact. */}
-      {focusText && !compact && <span className="col-start-2 t-caption text-soft block leading-[1.2] tabular-nums">{focusText}</span>}
+      {/* Le texte de l'astre visé, s'il existe, hors téléphone, plus discret. */}
+      {focusText && !compact && <span className="hud-title-meta" data-faint="">{focusText}</span>}
     {/* Fin du bandeau. */}
     </header>
   // Fin du rendu.
