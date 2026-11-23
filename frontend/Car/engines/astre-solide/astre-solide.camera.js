@@ -400,20 +400,6 @@ export class CesiumCamera {
   // Fin de applyView.
   }
 
-  /** Favori ou lien de vue sur le même astre : vol jusqu'à la vue (position, cap, inclinaison gardée). */
-  // flyToView : la vue (début).
-  flyToView(v) {
-    // Raccourci.
-    const { Cesium } = this;
-    // Vue illisible : rien.
-    if (!v || ![v.lon, v.lat, v.altM].every(Number.isFinite)) return;
-    // L'inclinaison de la vue reste (pas de vue 3/4 automatique jusqu'au prochain réglage).
-    this.pilotTilt = true;
-    // Vol en 2 secondes (aucune animation si le système en demande moins).
-    this.cam.flyTo({ destination: Cesium.Cartesian3.fromDegrees(v.lon, v.lat, Math.max(this.minAltitudeM, v.altM), this.viewer.scene.globe.ellipsoid), orientation: { heading: Cesium.Math.toRadians(v.heading ?? 0), pitch: Cesium.Math.toRadians(v.pitch ?? -90), roll: 0 }, duration: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 2 });
-  // Fin de flyToView.
-  }
-
   /** Lien de la vue : l'ancre de l'adresse suit la caméra du globe de près, au plus une fois par seconde. */
   // scheduleViewLink : demandé à chaque changement de caméra (début).
   scheduleViewLink() {
