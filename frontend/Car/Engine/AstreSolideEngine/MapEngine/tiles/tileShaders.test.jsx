@@ -169,3 +169,30 @@ test('tuiles : en hexagones, pas de quadrillage carré construit ; en tuiles car
   assert.ok(sq.ready('3/1/2').mesh.geometry.getAttribute('position').count > 0);
 // Fin du test.
 });
+
+// Test : en hexagones, aucune matrice de maillage carré n'est recalculée.
+test('tuiles : en hexagones, les maillages carrés invisibles ne sont pas replacés', () => {
+  // Couche en hexagones.
+  const layer = new TileLayer({ root: { add() {}, remove() {} }, source: { minZoom: 0, maxZoom: 5, info: {} }, uniforms: {} });
+  // Une tuile.
+  layer.install({ key: '2/1/1', coord: { z: 2, x: 1, y: 1 }, base: { width: 256 } });
+  // Sa fiche.
+  const e = layer.ready('2/1/1');
+  // Écart entre niveaux changé (zoom).
+  layer.gap = 5e-7;
+  // Placement demandé.
+  layer.place(e);
+  // Rien n'a bougé : l'écart noté sur la tuile n'a pas changé.
+  assert.notEqual(e.gap, 5e-7);
+  // En tuiles carrées, le placement se fait.
+  const sq = new TileLayer({ root: { add() {}, remove() {} }, source: { minZoom: 0, maxZoom: 5, info: {} }, uniforms: {}, hex: false });
+  // Une tuile.
+  sq.install({ key: '2/1/1', coord: { z: 2, x: 1, y: 1 }, base: { width: 256 } });
+  // Écart changé.
+  sq.gap = 5e-7;
+  // Placement.
+  sq.place(sq.ready('2/1/1'));
+  // L'écart est noté.
+  assert.equal(sq.ready('2/1/1').gap, 5e-7);
+// Fin du test.
+});
