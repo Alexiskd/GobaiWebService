@@ -33,3 +33,12 @@ test('shader : agrandissement lissé sur la grille de l\'image (mapSize), plus a
   assert.doesNotMatch(tileFragmentShader, /\)\*256\.;float ppt=/);
 // Fin du test.
 });
+
+// Test : l'ombrage estimé d'après l'image suit aussi sa vraie taille.
+test('shader : ombrage par l\'image mesuré à 1,5 pixel de l\'image (mapSize)', () => {
+  // L'écart de mesure utilise la vraie taille.
+  assert.match(tileFragmentShader, /float e=1\.5\/mapSize;/);
+  // Plus d'écart de 1,5/256 en dur.
+  assert.doesNotMatch(tileFragmentShader, /1\.5\/256\./);
+// Fin du test.
+});
