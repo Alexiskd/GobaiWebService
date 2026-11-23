@@ -15,8 +15,6 @@ import { LIGHTS_MOSAIC_PX, LIGHTS_PAD, NIGHT_LIGHTS_KEY, NightLightsSource, asse
 import { xyzToLonLat } from '../mercator.jsx';
 // Importe TileLayer, la couche de tuiles, depuis tileLayer.
 import { RELIEF_MAX_KM, TileLayer } from './tileLayer.jsx';
-// Importe les réponses du profil d'affichage de l'astre (engine earth-globe) : affichage et plafond du relief.
-import { reliefCapKm, usesHexCells } from '../../../../engines/earth-globe/index.js';
 // Importe backdropScale, le rayon de la sphère de fond sous la carte, depuis tileGeometry.
 import { backdropScale } from './tileGeometry.jsx';
 import { applyBackdropMeshScale } from '../hex/backdropMeshScale.js';
@@ -187,8 +185,8 @@ export class TileManager {
     if (this.lightsSource && this.uniforms.lightsOn.value > 0) this.loadLightsMosaic();
     // Relief coupé pour l'instant.
     this.reliefOn = false;
-    // Dernier réglage demandé du relief ; plafond d'altitude : celui du profil de l'astre (Terre « Earth Maps » : aucun), sinon 1 km pour la Terre.
-    this.reliefAsk = { on: false, exaggeration: 1 }; this.reliefNear = true; this.reliefCapKm = reliefCapKm(body, body.lighting === 'earth' ? RELIEF_MAX_KM : Infinity);
+    // Dernier réglage demandé du relief ; la Terre (lighting « earth ») ne l'affiche qu'à 1 km d'altitude ou moins.
+    this.reliefAsk = { on: false, exaggeration: 1 }; this.reliefNear = true; this.reliefCapKm = body.lighting === 'earth' ? RELIEF_MAX_KM : Infinity;
     // Dernière mesure de la hauteur du sol : instant et valeur.
     this.reliefProbe = { at: 0, floor: 0 };
     // Vecteur de travail.
@@ -197,8 +195,8 @@ export class TileManager {
     // à plat, sans tuiles d'altitude à télécharger. Ombrage estimé d'après l'image (autres astres) : toujours actif.
     // Règle le relief : pour un relief Terrarium,
     this.setRelief(this.relief?.kind === 'terrarium'
-      // le choix gardé par l'utilisateur, sinon le défaut du profil de l'astre (Terre : allumé) ;
-      ? reliefChoice(readReliefChoice(), this.relief.exaggeration ?? 1, Boolean(body.reliefDefaultOn))
+      // le choix gardé par l'utilisateur, coupé par défaut ;
+      ? reliefChoice(readReliefChoice(), this.relief.exaggeration ?? 1, false)
       // sinon actif.
       : { on: true, exaggeration: this.relief?.exaggeration ?? 1 });
     // Numéro du type de détail simulé.
@@ -511,8 +509,6 @@ export class TileManager {
       ramCapacity: this.body.prefetch ? this.body.ramCapacity ?? 400 : 0,
       // Niveaux au-delà du niveau natif.
       overzoom: this.body.overzoom,
-      // Affichage : cellules hexagonales, ou arbre de tuiles carrées drapées sur le relief (profil « Earth Maps »).
-      hex: usesHexCells(this.body),
       // Relief en volume coupé : tuiles à plat (maillage simple), aucune tuile d'altitude ni de profondeur demandée.
       // Relief en volume, s'il est actif.
       relief: this.reliefOn && this.relief?.kind === 'terrarium' ? this.relief : null,
