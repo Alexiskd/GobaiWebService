@@ -5,7 +5,7 @@
  */
 
 // Importe les calculs de la caméra.
-import { MIN_ALTITUDE_M, clampPitch, moveAngles, pitchForTilt, wrapHeading, zoomStep } from './cesium-earth.camera-math.js';
+import { MIN_ALTITUDE_M, approachPitch, clampPitch, moveAngles, pitchForTilt, wrapHeading, zoomStep } from './cesium-earth.camera-math.js';
 // Importe la mise en forme d'une distance (comme le HUD de three.js).
 import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
@@ -28,6 +28,12 @@ export class CesiumCamera {
     this.userEntity = null;
     // Recalage du nord en cours (évite une boucle sur l'événement de changement).
     this.fixing = false;
+    // Inclinaison pilotée à la navball : elle remplace la vue 3/4 automatique jusqu'au prochain réglage de la vue.
+    this.pilotTilt = false;
+    // Instant de la dernière image, pour le lissage de la vue 3/4.
+    this.lastTiltAt = performance.now();
+    // Vue 3/4 automatique avancée avant chaque image du globe.
+    viewer.scene.preUpdate.addEventListener(() => this.autoTilt());
   // Fin du constructeur.
   }
 
@@ -101,6 +107,8 @@ export class CesiumCamera {
     if (!dh && !dp) return;
     // Cap et tangage actuels, en degrés.
     const h = this.Cesium.Math.toDegrees(this.cam.heading), p = this.Cesium.Math.toDegrees(this.cam.pitch);
+    // Une inclinaison pilotée remplace la vue 3/4 automatique.
+    if (dp) this.pilotTilt = true;
     // Nouveau cap (nord gardé si verrouillé) et nouveau tangage borné.
     this.orbit(this.engine.northLock ? 0 : wrapHeading(h + dh), clampPitch(p + dp));
   // Fin de pilot.
@@ -153,8 +161,12 @@ export class CesiumCamera {
   /** Vue 3/4 : regard incliné, sinon vertical. */
   // setTilt : l'état (début).
   setTilt(on) {
-    // Cap actuel gardé, tangage de la vue demandée.
-    this.orbit(this.engine.northLock ? 0 : this.Cesium.Math.toDegrees(this.cam.heading), pitchForTilt(on));
+    // La vue 3/4 automatique reprend la main sur l'inclinaison pilotée.
+    this.pilotTilt = false;
+    // Coupée : retour au regard vertical (active : autoTilt s'en charge en douceur).
+    if (!on) this.orbit(this.engine.northLock ? 0 : this.Cesium.Math.toDegrees(this.cam.heading), pitchForTilt(false, this.altitudeM));
+    // Une image, pour lancer le mouvement.
+    this.viewer.scene.requestRender();
   // Fin de setTilt.
   }
 
@@ -170,12 +182,33 @@ export class CesiumCamera {
       // au-dessus du lieu, jamais sous l'altitude minimale ;
       destination: Cesium.Cartesian3.fromDegrees(lon, lat, Math.max(MIN_ALTITUDE_M, altitudeM)),
       // cap au nord, tangage de la vue en cours ;
-      orientation: { heading: 0, pitch: Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn)), roll: 0 },
+      orientation: { heading: 0, pitch: Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn && !this.pilotTilt, altitudeM)), roll: 0 },
       // en 2 secondes (aucune animation si le système en demande moins).
       duration: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 2,
     // Fin du vol.
     });
   // Fin de flyTo.
+  }
+
+  /**
+   * Vue 3/4 automatique, comme three.js : à l'approche du sol, la caméra s'incline vers l'horizon (≈ 60° près du sol)
+   * autour du point visé, en douceur. Rien quand la vue 3/4 est coupée ou que la navball pilote l'inclinaison.
+   */
+  // autoTilt : avant chaque image du globe (début).
+  autoTilt() {
+    // Instant présent et temps écoulé.
+    const now = performance.now(), dt = Math.min(100, now - this.lastTiltAt);
+    // Gardé.
+    this.lastTiltAt = now;
+    // Vue 3/4 coupée, inclinaison pilotée ou vol en cours : rien.
+    if (!this.engine.tiltOn || this.pilotTilt || this.cam._currentFlight) return;
+    // Tangage actuel et tangage voulu, en degrés.
+    const current = this.Cesium.Math.toDegrees(this.cam.pitch), target = pitchForTilt(true, this.altitudeM);
+    // Déjà en place (à 0,05° près) : rien.
+    if (Math.abs(target - current) < 0.05) return;
+    // Un pas vers le tangage voulu, cap gardé (nord si verrouillé), autour du point visé.
+    this.orbit(this.engine.northLock ? 0 : this.Cesium.Math.toDegrees(this.cam.heading), approachPitch(current, target, dt));
+  // Fin de autoTilt.
   }
 
   /** Point bleu de la position de l'utilisateur ({ lat, lon }), ou null pour l'enlever. */
