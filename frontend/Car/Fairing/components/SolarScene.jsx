@@ -842,17 +842,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         </FullScreenMessage>
       // Fin du cas d'erreur.
       )}
-
-
-      {/* Cadre blanc autour de la fenêtre, au-dessus de tout, sans bloquer les clics. */}
-      {/* Le cadre blanc (début de la balise). */}
-      <div
-        // Caché aux lecteurs d'écran.
-        aria-hidden
-        // Début du style.
-        className="fixed inset-0 z-9999 pointer-events-none border-[3px] border-[#fff] box-border"
-      // Fin du cadre.
-      />
     {/* Fin du conteneur racine. */}
     </div>
   // Fin du rendu.
