@@ -8,6 +8,8 @@
 import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, easeAltitude, keyMove, moveAngles, panGoal, panStep, pitchForTilt, surfaceRotation, wrapHeading, zoomGoal } from './astre-solide.camera-math.js';
 // Importe la mise en forme d'une distance (comme le HUD de three.js).
 import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
+// Importe le nom du lieu sous la caméra (ville, région, pays).
+import { placeText } from './astre-solide.place.js';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
 import { scaleLevel } from '../../Engine/AstreSolideEngine/CameraEngine/scaleLevels.jsx';
 
@@ -372,6 +374,20 @@ export class CesiumCamera {
   // Fin de setUserPosition.
   }
 
+  /** Nom du lieu au centre de l'écran (altitude en km), ou chaîne vide sans ville chargée. */
+  // placeUnderView : l'altitude (début).
+  placeUnderView(km) {
+    // Villes Natural Earth du moteur (étiquettes) : sans elles, rien.
+    const cities = this.engine.worldCities;
+    // Aucune : rien.
+    if (!cities?.length) return '';
+    // Point du sol au centre de l'écran, en degrés.
+    const c = this.Cesium.Cartographic.fromCartesian(this.center());
+    // Texte du lieu.
+    return placeText(cities, this.Cesium.Math.toDegrees(c.longitude), this.Cesium.Math.toDegrees(c.latitude), km);
+  // Fin de placeUnderView.
+  }
+
   /** Publie dans le HUD la distance, l'échelle et la boussole, comme la scène three.js. */
   // publishHud : appelé à chaque changement de caméra (début).
   publishHud() {
@@ -387,8 +403,10 @@ export class CesiumCamera {
     const name = this.body.name ?? this.body.id;
     // Cap en radians.
     const heading = this.cam.heading;
-    // Publication : distance, échelle, boussole (nord de l'astre, à l'écran à −cap).
-    hud.set({ zoomText: `${name} · ${distance}`, zoomShort: distance, scaleText: scaleLevel(km, { earth: this.body.id === 'earth' }), compass: { angle: -heading, bearing: -heading, system: false } });
+    // Terre : lieu sous le point visé (ville, région, pays selon l'altitude), d'après les villes déjà chargées.
+    const place = this.body.id === 'earth' ? this.placeUnderView(km) : '';
+    // Publication : distance, lieu, échelle, boussole (nord de l'astre, à l'écran à −cap).
+    hud.set({ zoomText: place ? `${name} · ${distance} · ${place}` : `${name} · ${distance}`, zoomShort: distance, scaleText: scaleLevel(km, { earth: this.body.id === 'earth' }), compass: { angle: -heading, bearing: -heading, system: false } });
   // Fin de publishHud.
   }
 // Fin de la classe CesiumCamera.
