@@ -47,6 +47,8 @@ export function HudTop({ hud }) {
       data-hud="title"
       // Téléphone : variante pleine largeur (sélecteur `[data-compact]`).
       data-compact={compact ? '' : undefined}
+      // Ligne de l'astre visé affichée : une rangée de plus, tuile du logo agrandie (sélecteur `[data-focus]`).
+      data-focus={focusText && !compact ? '' : undefined}
       // Référence pour le déplacement.
       ref={drag.ref}
       // Propriétés de la poignée : tout le bandeau se saisit.
@@ -57,10 +59,10 @@ export function HudTop({ hud }) {
       style={compact ? undefined : { ...drag.style, top: edge('top', 12), left: edge('left', 14), maxWidth: `calc(100vw - ${safe('left')} - ${safe('right')} - 98px - ${PANEL_W})` }}
     // Fin de la balise ouvrante.
     >
-      {/* Tuile du logo (colonne 1, rangée 1) : son centre est sur la ligne médiane du nom. */}
+      {/* Tuile du logo (colonne 1, toutes les rangées) : à la taille maximale permise par le bandeau. */}
       <div className="hud-title-logo">
         {/* Cadre de l'emblème : marges transparentes de l'image rognées, rognage vertical centré sur la moitié de sa hauteur. */}
-        <div className={`${compact ? 'w-[24px]' : 'w-[26px]'} overflow-hidden`} style={{ aspectRatio: `${LOGO.w} / ${LOGO.h}` }}>
+        <div className="w-[80%] overflow-hidden" style={{ aspectRatio: `${LOGO.w} / ${LOGO.h}` }}>
           {/* L'image du logo (début de la balise). */}
           <img
             // Adresse du logo (le paramètre v force le rechargement).
