@@ -419,3 +419,35 @@ test('centres : réserve pleine, ceux de la vue restent ; jamais de vidage compl
   for (const [key, c] of mine) assert.equal(hex.centers.get(key), c);
 // Fin du test.
 });
+
+// Importe la limite des paires et la cible de l'élagage, depuis hexDisplay.
+import { MAX_PAIRS, PRUNE_TO } from './hexDisplay.jsx';
+
+// Test : élagage des paires, les moins récemment affichées d'abord.
+test('paires : élagage jusqu\'aux trois quarts, les plus anciennes d\'abord, jamais celles affichées', () => {
+  // Fausse couche.
+  const layer = fakeLayer();
+  // Affichage des cellules.
+  const hex = new HexDisplay(layer);
+  // Changement immédiat (pas de fondu).
+  hex.fadeMs = 0;
+  // Fausse paire : sa clé et son dernier affichage, sans maillage (rien à libérer).
+  const fake = (key, used) => ({ key, used, fx: null, mesh: null, entryKey: key, info: { pairs: new Map() } });
+  // 1 000 paires cachées, affichées pour la dernière fois aux instants 1 à 1 000.
+  for (let i = 1; i <= 1000; i++) hex.pairs.set(`p${i}`, fake(`p${i}`, i));
+  // Élagage à l'instant 2 000 (aucune n'est affichée maintenant).
+  hex.prune(2000);
+  // Il en reste les trois quarts de la limite.
+  assert.equal(hex.pairs.size, Math.floor(MAX_PAIRS * PRUNE_TO));
+  // Ce sont les plus récemment affichées : la plus ancienne gardée est la 326e.
+  assert.ok(!hex.pairs.has('p325') && hex.pairs.has('p326') && hex.pairs.has('p1000'));
+  // Une paire affichée maintenant n'est jamais détruite, même la plus ancienne.
+  hex.pairs.get('p326').used = 3000;
+  // Remplit à nouveau au-delà de la limite.
+  for (let i = 1001; i <= 1300; i++) hex.pairs.set(`p${i}`, fake(`p${i}`, i));
+  // Élagage à l'instant 3 000.
+  hex.prune(3000);
+  // La paire affichée est toujours là.
+  assert.ok(hex.pairs.has('p326'));
+// Fin du test.
+});

@@ -14,7 +14,9 @@ import {
 } from './hexCells.jsx';
 
 // Nombre maximal de maillages (cellule × image) gardés : 900.
-const MAX_PAIRS = 900;         // maillages (cellule × image) gardés au plus ; au-delà, ceux qui ne servent plus sont détruits
+export const MAX_PAIRS = 900;  // maillages (cellule × image) gardés au plus ; au-delà, les moins récemment affichés sont détruits
+// Après un élagage, il reste au plus les trois quarts de la limite.
+export const PRUNE_TO = 0.75;
 // Nombre maximal de cellules dont les calculs sont gardés : 1 500.
 const MAX_CELL_INFOS = 1500;   // cellules dont le maillage et les listes d'images sont gardés (hors GPU)
 // Nombre maximal de centres d'images gardés : 4 000.
@@ -859,11 +861,26 @@ export class HexDisplay {
   // Fin de remove.
   }
 
-  /** Détruit les paires qui ne sont pas affichées (appelé quand il y en a trop). */
+  /**
+   * Détruit des paires qui ne sont pas affichées (appelé quand il y en a trop) : les moins récemment affichées d'abord,
+   * jusqu'à redescendre aux trois quarts de la limite. Avant, TOUTES les paires cachées partaient d'un coup : au
+   * dézoom suivant, chaque cellule refaisait ses découpes et ses maillages (saccade), alors qu'elles venaient d'être
+   * affichées. La marge d'un quart évite d'élaguer à chaque image.
+   */
   // prune : détruit les paires inutiles (début).
   prune(stamp) {
-    // Chaque paire ni affichée ni en transition est détruite.
-    for (const pair of [...this.pairs.values()]) if (pair.used !== stamp && !pair.fx) this.remove(pair);
+    // Paires ni affichées ni en transition, des moins récemment affichées aux plus récentes.
+    const idle = [...this.pairs.values()].filter((pair) => pair.used !== stamp && !pair.fx).sort((a, b) => a.used - b.used);
+    // Nombre de paires à atteindre.
+    const target = Math.floor(MAX_PAIRS * PRUNE_TO);
+    // Les plus anciennes partent, jusqu'à la cible (début).
+    for (const pair of idle) {
+      // Cible atteinte : terminé.
+      if (this.pairs.size <= target) break;
+      // Détruit la paire.
+      this.remove(pair);
+    // Fin de la boucle.
+    }
   // Fin de prune.
   }
 
