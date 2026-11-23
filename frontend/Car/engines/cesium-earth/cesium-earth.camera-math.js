@@ -11,16 +11,39 @@ export const MIN_ALTITUDE_M = 10;
 export const PITCH_MIN_DEG = -90;
 // Tangage le plus proche de l'horizon.
 export const PITCH_MAX_DEG = -30;
-// Tangage de la vue 3/4 automatique.
-export const TILT_PITCH_DEG = -45;
+// Vue 3/4 automatique, comme three.js (CameraEngine/cameraTilt.jsx) : l'inclinaison commence à 1,32 rayon du centre,
+// elle est complète à 1,045 rayon, et vaut alors 1,05 radian (≈ 60°) depuis la verticale.
+export const TILT_START_RATIO = 1.32;
+// Distance au centre (en rayons) de l'inclinaison complète.
+export const TILT_FULL_RATIO = 1.045;
+// Inclinaison maximale depuis la verticale, en degrés.
+export const TILT_MAX_DEG = (1.05 * 180) / Math.PI;
+// Constante de temps du mouvement (ms) : l'inclinaison s'installe en douceur, comme dans three.js.
+export const TILT_RESPONSE_MS = 700;
 
 /** Borne un tangage (degrés) entre le regard vertical et 30° sous l'horizon. */
 // Déclare et exporte clampPitch : le tangage.
 export const clampPitch = (p) => Math.max(PITCH_MIN_DEG, Math.min(PITCH_MAX_DEG, p));
 
-/** Tangage de départ : vue 3/4 si elle est active, sinon regard vertical. */
-// Déclare et exporte pitchForTilt : la vue 3/4 active ou non.
-export const pitchForTilt = (tiltOn) => (tiltOn ? TILT_PITCH_DEG : PITCH_MIN_DEG);
+/** 0 loin du sol, 1 près du sol (courbe en S), d'après l'altitude (m) : même rampe que three.js. */
+// Déclare et exporte tiltEngagement : l'altitude en mètres.
+export function tiltEngagement(altitudeM) {
+  // Distance au centre, en rayons.
+  const ratio = 1 + altitudeM / EARTH_RADIUS_M;
+  // Avancement entre le début (0) et l'inclinaison complète (1), borné.
+  const x = Math.max(0, Math.min(1, (TILT_START_RATIO - ratio) / (TILT_START_RATIO - TILT_FULL_RATIO)));
+  // Courbe en S.
+  return x * x * (3 - 2 * x);
+// Fin de tiltEngagement.
+}
+
+/** Tangage voulu (degrés) : vue 3/4 automatique selon l'altitude si elle est active, sinon regard vertical. */
+// Déclare et exporte pitchForTilt : la vue 3/4 active ou non, l'altitude (m).
+export const pitchForTilt = (tiltOn, altitudeM) => (tiltOn ? clampPitch(PITCH_MIN_DEG + TILT_MAX_DEG * tiltEngagement(altitudeM)) : PITCH_MIN_DEG);
+
+/** Lissage exponentiel indépendant de la cadence (dt et tau en ms), comme approachTilt de three.js. */
+// Déclare et exporte approachPitch : tangage actuel, voulu, temps écoulé.
+export const approachPitch = (current, target, dtMs, tauMs = TILT_RESPONSE_MS) => current + (target - current) * (1 - Math.exp(-Math.max(0, dtMs) / tauMs));
 
 /**
  * Zoom three.js (facteur sur l'altitude : < 1 rapproche, > 1 éloigne) traduit en distance à parcourir (m) le long du

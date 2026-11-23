@@ -106,7 +106,7 @@ export class CesiumEarth {
     // Moteur détruit entre-temps : rien.
     if (this.engine.stopped) return;
     // Caméra du globe au même endroit, vue vers le sol.
-    this.viewer.camera.setView({ destination: this.Cesium.Cartesian3.fromDegrees(lon, lat, altKm * 1000), orientation: { heading: 0, pitch: this.Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn)), roll: 0 } });
+    this.viewer.camera.setView({ destination: this.Cesium.Cartesian3.fromDegrees(lon, lat, altKm * 1000), orientation: { heading: 0, pitch: this.Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn, altKm * 1000)), roll: 0 } });
     // Globe affiché, repères HTML de la scène three.js masqués.
     this.container.style.display = 'block'; hideLabelsRule(); this.setLabelsHidden(true);
     // Rendu du globe relancé.
