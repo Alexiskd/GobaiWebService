@@ -8,6 +8,19 @@
  * textures et de géométries chargées sur la carte graphique.
  */
 
+// Compteurs de tuiles vides : aucune couche de tuiles mesurée.
+export const EMPTY_TILES = Object.freeze({ uploadMs: 0, tilesPerSec: 0, queued: 0, loading: 0, wanted: 0 });
+
+/** Compteurs de tuiles figés, chaque champ manquant à 0. */
+// Déclare et exporte tileMetrics : la mesure de la couche de tuiles, ou null (début).
+export function tileMetrics(t) {
+  // Sans mesure : les compteurs vides.
+  if (!t) return EMPTY_TILES;
+  // Compteurs figés.
+  return Object.freeze({ uploadMs: t.uploadMs ?? 0, tilesPerSec: t.tilesPerSec ?? 0, queued: t.queued ?? 0, loading: t.loading ?? 0, wanted: t.wanted ?? 0 });
+// Fin de tileMetrics.
+}
+
 // Relevé vide : avant la première seconde mesurée.
 export const EMPTY_METRICS = Object.freeze({
   // Instant du relevé (ms), 0 = jamais mesuré.
@@ -30,6 +43,9 @@ export const EMPTY_METRICS = Object.freeze({
   gpuMemory: Object.freeze({ textures: 0, geometries: 0 }),
   // Mémoire JavaScript utilisée, en Mo (null hors Chrome).
   heapMb: null,
+  // Tuiles de la Terre : temps de mise en place par image (ms, envoi au GPU compris), tuiles mises en place par
+  // seconde, demandes en file, téléchargements en cours, tuiles voulues par la vue.
+  tiles: EMPTY_TILES,
 // Fin du relevé vide.
 });
 
@@ -38,8 +54,9 @@ export const EMPTY_METRICS = Object.freeze({
  * @param at instant du relevé (ms)
  * @param frames résumé de FrameWindow.record ({ fps, frameMs, worstMs })
  * @param perf dernière mesure de PerfProbe.frameEnd, ou null
+ * @param tiles dernière mesure de la couche de tuiles de la Terre (TileLayer.qualityMetrics), ou null
  */
-export function buildMetrics(at, frames, perf) {
+export function buildMetrics(at, frames, perf, tiles = null) {
   // Sonde absente : objet vide, pour lire chaque champ sans test.
   const p = perf || {};
   // Relevé figé (personne ne doit le modifier après publication).
@@ -64,6 +81,8 @@ export function buildMetrics(at, frames, perf) {
     gpuMemory: Object.freeze({ textures: p.textures ?? 0, geometries: p.geometries ?? 0 }),
     // Mémoire JavaScript, ou null.
     heapMb: p.heapMb ?? null,
+    // Compteurs des tuiles de la Terre.
+    tiles: tileMetrics(tiles),
   // Fin du relevé.
   });
 // Fin de buildMetrics.

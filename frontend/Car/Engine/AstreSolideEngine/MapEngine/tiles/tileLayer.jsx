@@ -1008,6 +1008,19 @@ export class TileLayer {
   // Fin de perfSnapshot.
   }
 
+  /**
+   * Mesure pour le service de qualité du rendu (engines/render-quality) : temps de mise en place par image (ms, envoi
+   * au GPU compris), tuiles mises en place par seconde, demandes en file, téléchargements en cours, tuiles voulues.
+   */
+  // qualityMetrics : la mesure de la couche (début).
+  qualityMetrics(now = performance.now()) {
+    // Compteurs de performance.
+    const p = this.perfSnapshot(now);
+    // La mesure.
+    return { uploadMs: p.uploadMs, tilesPerSec: p.tilesPerSec, queued: this.loader.queued, loading: this.loader.active, wanted: this.wantedCount };
+  // Fin de qualityMetrics.
+  }
+
   /** Avancement du préchargement en mémoire : { done, total }. */
   // preload : l'avancement du préchargement (début).
   get preload() {

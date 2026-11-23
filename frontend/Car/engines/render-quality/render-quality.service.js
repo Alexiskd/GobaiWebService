@@ -20,6 +20,8 @@ export class RenderQualityService {
     this.frameWindow = frameWindow || new FrameWindow();
     // Dernière sonde reçue du moteur (renderer.info, temps CPU et GPU).
     this.lastPerf = null;
+    // Dernière mesure de la couche de tuiles de la Terre.
+    this.lastTiles = null;
     // Dernier relevé publié.
     this.metrics = EMPTY_METRICS;
     // Abonnés au relevé de chaque seconde.
@@ -41,7 +43,7 @@ export class RenderQualityService {
     // Seconde pas encore écoulée : rien à publier.
     if (!frames) return;
     // Construit le relevé de la seconde.
-    this.metrics = buildMetrics(now, frames, this.lastPerf);
+    this.metrics = buildMetrics(now, frames, this.lastPerf, this.lastTiles);
     // Prévient chaque abonné.
     for (const listener of this.listeners) {
       // Un abonné en échec n'empêche pas les autres (et n'écrit rien en console).
@@ -56,6 +58,13 @@ export class RenderQualityService {
     // Garde la sonde si elle existe.
     if (perf) this.lastPerf = perf;
   // Fin de recordPerf.
+  }
+
+  /** Dernière mesure de la couche de tuiles de la Terre (TileLayer.qualityMetrics), deux fois par seconde. */
+  recordTiles(tiles) {
+    // Garde la mesure si elle existe.
+    if (tiles) this.lastTiles = tiles;
+  // Fin de recordTiles.
   }
 
   /** Dernier relevé publié (figé). */
