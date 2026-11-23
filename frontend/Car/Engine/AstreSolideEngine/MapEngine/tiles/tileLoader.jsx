@@ -1,5 +1,8 @@
 /**
- * File de chargement : au plus `concurrency` chargements simultanés, plus petite priorité d'abord.
+ * File de chargement : au plus `concurrency` chargements simultanés, plus petite priorité d'abord (à priorité égale,
+ * la plus ancienne demande d'abord). La file est un tas binaire : prendre la meilleure demande, en ajouter une,
+ * changer sa priorité ou l'annuler coûte O(log n) au lieu d'un parcours de toute la file (des centaines de demandes
+ * pendant un zoom, parcourues à chaque chargement terminé).
  * `load(key, run)` renvoie une promesse ; `cancel(key)` retire une demande pas encore démarrée.
  * `run(signal)` fait le vrai travail (charger une image) et doit respecter `signal.aborted`.
  */
@@ -11,8 +14,10 @@ export class TileLoader {
     this.concurrency = concurrency;
     // Nombre de chargements en cours : 0 au départ.
     this.active = 0;
-    // File des demandes pas encore démarrées.
-    this.queue = [];            // { key, priority, run, resolve, reject }
+    // File des demandes pas encore démarrées : tas binaire (la meilleure en tête), chaque entrée connaît sa place.
+    this.queue = [];            // { key, priority, seq, index, run, resolve, reject }
+    // Numéro d'ordre des demandes : départage les priorités égales (la plus ancienne d'abord).
+    this.seq = 0;
     // Table de toutes les demandes, par clé.
     this.pending = new Map();   // key → entrée (en file ou en cours)
   // Fin du constructeur.
@@ -32,20 +37,26 @@ export class TileLoader {
     const existing = this.pending.get(key);
     // S'il y en a une (début).
     if (existing) {
-      // Elle garde la plus petite des deux priorités.
-      existing.priority = Math.min(existing.priority, priority);
+      // Priorité plus petite et demande encore en file (début).
+      if (priority < existing.priority && !existing.started) {
+        // Elle la prend.
+        existing.priority = priority;
+        // Et remonte dans le tas.
+        this.up(existing.index);
+      // Sinon : elle garde la plus petite des deux.
+      } else existing.priority = Math.min(existing.priority, priority);
       // Renvoie la promesse déjà créée.
       return existing.promise;
     // Fin du cas d'une demande existante.
     }
     // Nouvelle entrée : pas encore démarrée, avec son contrôleur d'annulation.
-    const entry = { key, priority, run, started: false, ctrl: new AbortController() };
+    const entry = { key, priority, seq: this.seq++, index: -1, run, started: false, ctrl: new AbortController() };
     // Sa promesse, dont les fonctions de résolution et de rejet sont rangées dans l'entrée.
     entry.promise = new Promise((resolve, reject) => { entry.resolve = resolve; entry.reject = reject; });
     // Enregistre l'entrée dans la table.
     this.pending.set(key, entry);
-    // L'ajoute à la file.
-    this.queue.push(entry);
+    // L'ajoute au tas.
+    this.push(entry);
     // Lance les chargements possibles.
     this.pump();
     // Renvoie la promesse.
@@ -64,8 +75,8 @@ export class TileLoader {
     e.ctrl.abort();
     // Si elle n'a pas démarré (début).
     if (!e.started) {
-      // La retire de la file.
-      this.queue.splice(this.queue.indexOf(e), 1);
+      // La retire du tas, à sa place.
+      this.removeAt(e.index);
       // La retire de la table.
       this.pending.delete(key);
       // Rejette sa promesse avec une erreur nommée AbortError.
@@ -79,19 +90,109 @@ export class TileLoader {
   cancelAll() { [...this.pending.keys()].forEach((k) => this.cancel(k)); }
 
   /** Met à jour la priorité (distance) des demandes en file. */
-  // reprioritize : recalcule la priorité de chaque demande de la file avec la fonction reçue.
-  reprioritize(fn) { this.queue.forEach((e) => { e.priority = fn(e.key, e.priority); }); }
+  // reprioritize : recalcule la priorité de chaque demande de la file avec la fonction reçue (début).
+  reprioritize(fn) {
+    // Nouvelle priorité de chaque demande.
+    this.queue.forEach((e) => { e.priority = fn(e.key, e.priority); });
+    // Le tas est reconstruit en une passe, du dernier parent à la racine.
+    for (let i = (this.queue.length >> 1) - 1; i >= 0; i--) this.down(i);
+  // Fin de reprioritize.
+  }
+
+  // ---------------------------------------------------------------- tas binaire
+
+  // before : vrai si la demande a passe avant b (plus petite priorité, puis plus ancienne).
+  before(a, b) { return a.priority < b.priority || (a.priority === b.priority && a.seq < b.seq); }
+
+  // swap : échange deux places du tas et met à jour les places notées (début).
+  swap(i, j) {
+    // Les deux entrées.
+    const q = this.queue, a = q[i], b = q[j];
+    // Échange.
+    q[i] = b; q[j] = a;
+    // Places notées.
+    b.index = i; a.index = j;
+  // Fin de swap.
+  }
+
+  // up : fait remonter une entrée tant qu'elle passe avant son parent (début).
+  up(i) {
+    // Tant qu'elle n'est pas en tête (début).
+    while (i > 0) {
+      // Place du parent.
+      const parent = (i - 1) >> 1;
+      // Le parent passe déjà avant : terminé.
+      if (!this.before(this.queue[i], this.queue[parent])) return;
+      // Sinon : échange, et on continue depuis le parent.
+      this.swap(i, parent); i = parent;
+    // Fin de la boucle.
+    }
+  // Fin de up.
+  }
+
+  // down : fait descendre une entrée tant qu'un de ses enfants passe avant elle (début).
+  down(i) {
+    // Taille du tas.
+    const n = this.queue.length;
+    // Sans fin, jusqu'au retour (début).
+    for (;;) {
+      // Enfants gauche et droit, et meilleure des trois places.
+      const l = 2 * i + 1, r = l + 1;
+      // Meilleure place : la sienne au départ.
+      let best = i;
+      // Enfant gauche meilleur.
+      if (l < n && this.before(this.queue[l], this.queue[best])) best = l;
+      // Enfant droit meilleur.
+      if (r < n && this.before(this.queue[r], this.queue[best])) best = r;
+      // Elle est la meilleure : terminé.
+      if (best === i) return;
+      // Sinon : échange, et on continue plus bas.
+      this.swap(i, best); i = best;
+    // Fin de la boucle.
+    }
+  // Fin de down.
+  }
+
+  // push : ajoute une entrée au tas (début).
+  push(e) {
+    // Sa place : la dernière.
+    e.index = this.queue.length;
+    // Ajoutée au bout.
+    this.queue.push(e);
+    // Remonte à sa place.
+    this.up(e.index);
+  // Fin de push.
+  }
+
+  // removeAt : retire l'entrée d'une place du tas et la renvoie (début).
+  removeAt(i) {
+    // Le tas.
+    const q = this.queue;
+    // Entrée retirée.
+    const e = q[i];
+    // Dernière entrée.
+    const last = q.pop();
+    // Si l'entrée retirée n'était pas la dernière (début).
+    if (i < q.length) {
+      // La dernière prend sa place.
+      q[i] = last; last.index = i;
+      // Puis descend ou remonte selon sa priorité.
+      this.down(i); this.up(last.index);
+    // Fin de ce cas.
+    }
+    // L'entrée retirée n'a plus de place.
+    e.index = -1;
+    // La renvoie.
+    return e;
+  // Fin de removeAt.
+  }
 
   // pump : démarre des chargements tant qu'il reste de la place (début).
   pump() {
     // Tant que la limite n'est pas atteinte et que la file n'est pas vide (début).
     while (this.active < this.concurrency && this.queue.length) {
-      // Indice de la meilleure demande : la première au départ.
-      let best = 0;
-      // Parcourt la file et garde l'indice de la plus petite priorité.
-      for (let i = 1; i < this.queue.length; i++) if (this.queue[i].priority < this.queue[best].priority) best = i;
-      // Retire cette demande de la file.
-      const e = this.queue.splice(best, 1)[0];
+      // Retire la meilleure demande : la tête du tas.
+      const e = this.removeAt(0);
       // La marque comme démarrée.
       e.started = true;
       // Un chargement en cours de plus.
