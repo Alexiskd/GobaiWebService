@@ -317,8 +317,9 @@ export const tileFragmentShader = [
   's=vec2(mix(o10-o00,o11-o01,ofr.y),mix(o01-o00,o11-o10,ofr.x))*2.*oSlope*max(reliefExag,1.)*oBoost;}',
   // Garde la pente et la force de l'ombrage. Fin de ce cas.
   'rlS=s;rlW=reliefShade;}',
-  // Sans altitudes, avec l'ombrage par l'image : position dans l'image et pas de mesure.
-  'else if(reliefImg>0.){vec2 q=baseRect.xy+vUv*baseRect.zw;float e=1.5/256.;',
+  // Sans altitudes, avec l'ombrage par l'image : position dans l'image et pas de mesure (1,5 pixel de l'image, à sa
+  // vraie taille : sur une image de 512 px, l'écart de 1,5/256 lisait 3 pixels et effaçait les petits reliefs).
+  'else if(reliefImg>0.){vec2 q=baseRect.xy+vUv*baseRect.zw;float e=1.5/mapSize;',
   // Pente estimée par les différences de luminosité de part et d'autre du point.
   'vec2 s=vec2(dot(texture2D(map,q+vec2(e,0.)).rgb-texture2D(map,q-vec2(e,0.)).rgb,lw),dot(texture2D(map,q+vec2(0.,e)).rgb-texture2D(map,q-vec2(0.,e)).rgb,lw))*4.;',
   // Garde cette pente et sa force. Fin de ce cas.
