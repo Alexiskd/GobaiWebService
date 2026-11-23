@@ -552,6 +552,33 @@ test('zoom en cours : détecté quand l’altitude change, tenu 400 ms, pas pend
   const c = Math.cos(0.1), s = Math.sin(0.1);
   // Déplacement à la même altitude : pas de zoom.
   assert.equal(w.update([1.9 * c, 1.9 * s, 0], 516), false); // déplacement autour de l'astre, même altitude
+  // Plus de sens une fois le zoom fini.
+  assert.equal(w.direction, 0);
+// Fin du test.
+});
+
+// Test : le sens du zoom.
+test('zoom en cours : sens noté (avant ou arrière), oublié à la fin du zoom', () => {
+  // Détecteur de zoom.
+  const w = new ZoomWatch();
+  // Première image.
+  w.update([2, 0, 0], 0);
+  // L'altitude baisse : zoom avant.
+  w.update([1.8, 0, 0], 16);
+  // Sens avant.
+  assert.equal(w.direction, -1);
+  // Vrai pour zoomingIn.
+  assert.equal(w.zoomingIn, true);
+  // L'altitude remonte : zoom arrière.
+  w.update([2.2, 0, 0], 32);
+  // Sens arrière.
+  assert.equal(w.direction, 1);
+  // zoomingIn faux.
+  assert.equal(w.zoomingIn, false);
+  // 500 ms plus tard, immobile : plus de zoom, plus de sens.
+  w.update([2.2, 0, 0], 600);
+  // Aucun sens.
+  assert.equal(w.direction, 0);
 // Fin du test.
 });
 
