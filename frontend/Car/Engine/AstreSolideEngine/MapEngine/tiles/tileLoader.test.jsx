@@ -106,3 +106,48 @@ test('file : clés démarrées listées ; pendant un zoom, seules les images plu
   await Promise.all(p);
 // Fin du test.
 });
+
+// Importe le préchargement du centre en zoom avant, depuis tileLayer.
+import { CENTER_PREFETCH, centerChildren, TileLayer } from './tileLayer.jsx';
+
+// Test : enfants des tuiles du centre de l'écran.
+test('zoom avant : enfants des 8 tuiles les plus centrales du niveau le plus fin, sans dépasser le niveau maximal', () => {
+  // 12 tuiles du niveau 5 (priorité = rang), et 2 du niveau 4.
+  const wanted = [...Array.from({ length: 12 }, (_, i) => ({ z: 5, x: i, y: 3, p: 11 - i })), { z: 4, x: 0, y: 1, p: -5 }, { z: 4, x: 1, y: 1, p: -4 }];
+  // Enfants.
+  const kids = centerChildren(wanted, 10);
+  // 8 parents × 4 enfants.
+  assert.equal(kids.length, CENTER_PREFETCH * 4);
+  // Tous au niveau 6.
+  assert.ok(kids.every((k) => k.z === 6));
+  // Les premiers sont ceux du parent le plus central (x = 11, priorité 0), avec la priorité 0.
+  assert.deepEqual(kids.slice(0, 4).map((k) => [k.x >> 1, k.p]), [[11, 0], [11, 0], [11, 0], [11, 0]]);
+  // Au niveau maximal : aucun enfant.
+  assert.deepEqual(centerChildren(wanted, 5), []);
+  // Rien de voulu : rien.
+  assert.deepEqual(centerChildren([], 10), []);
+// Fin du test.
+});
+
+// Test : demandes vers la mémoire vive, jamais sans elle.
+test('zoom avant : enfants demandés seulement avec une mémoire vive, et pas ceux déjà connus', () => {
+  // Couche avec mémoire vive (début) :
+  const layer = new TileLayer({ root: { add() {} }, source: { minZoom: 0, maxZoom: 12, loadImage: () => new Promise(() => {}) }, uniforms: {}, ramCapacity: 50, prefetch: true });
+  // Une tuile voulue, au centre.
+  const wanted = [{ z: 3, x: 2, y: 2, p: 0 }];
+  // Un enfant déjà en mémoire vive.
+  layer.ram.set('4/4/4', {});
+  // Préchargement.
+  const keys = layer.prefetchCenter(wanted, 12, 0);
+  // Les trois autres enfants sont demandés.
+  assert.deepEqual([...keys].sort(), ['4/4/5', '4/5/4', '4/5/5']);
+  // Ils sont dans la file.
+  assert.ok([...keys].every((k) => layer.loader.has(k)));
+  // Sans mémoire vive : rien.
+  const noRam = new TileLayer({ root: { add() {} }, source: { minZoom: 0, maxZoom: 12 }, uniforms: {} });
+  // Aucune clé.
+  assert.equal(noRam.prefetchCenter(wanted, 12, 0).size, 0);
+  // Nettoyage : demandes annulées.
+  layer.loader.cancelAll();
+// Fin du test.
+});

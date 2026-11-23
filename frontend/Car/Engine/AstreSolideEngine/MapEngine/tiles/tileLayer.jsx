@@ -102,6 +102,27 @@ export function uploadAllowed(done, elapsedMs, maxCount, budgetMs) {
 // Fin de uploadAllowed.
 }
 
+/** Nombre de tuiles du centre de l'écran dont les enfants sont préchargés en zoom avant : 8 (32 images au plus). */
+// Déclare et exporte le nombre de tuiles centrales : 8.
+export const CENTER_PREFETCH = 8;
+
+/**
+ * Enfants (niveau suivant) des `count` tuiles les plus prioritaires (les plus au centre de l'écran) du niveau le plus
+ * fin voulu, sans dépasser `maxZoom`. Priorité de chaque enfant : le rang de son parent (0 = le plus central).
+ */
+// Déclare et exporte centerChildren : les tuiles voulues, le niveau maximal et le nombre de tuiles (début).
+export function centerChildren(wanted, maxZoom, count = CENTER_PREFETCH) {
+  // Niveau le plus fin voulu.
+  const finest = wanted.reduce((m, t) => Math.max(m, t.z), -1);
+  // Déjà au niveau maximal (ou rien de voulu) : aucun enfant.
+  if (finest < 0 || finest + 1 > maxZoom) return [];
+  // Tuiles de ce niveau, les plus prioritaires d'abord, `count` au plus.
+  const top = wanted.filter((t) => t.z === finest).sort((a, b) => (a.p ?? a.d) - (b.p ?? b.d)).slice(0, count);
+  // Enfants, avec le rang de leur parent pour priorité.
+  return top.flatMap((t, rank) => childrenOf(t).map((c) => ({ ...c, key: tileKey(c.z, c.x, c.y), p: rank, d: rank })));
+// Fin de centerChildren.
+}
+
 /**
  * Téléchargements en cours devenus inutiles : tuiles d'image (sans préfixe « ov: », « h: », « o: », « lt: »…) qui ne
  * sont ni voulues, ni en basse résolution, ni gardées pour l'astre entier, ni préchargées.
@@ -560,9 +581,10 @@ export class TileLayer {
     let prefetched = false;
     // Pendant un zoom (début).
     if (this.zooming) {
-      // Les demandes prédictives déjà en file (hors champ) sont abandonnées par l'annulation ci-dessous.
-      // Les demandes prédictives sont oubliées.
-      if (this.prefetchKeys.size) { this.prefetchKeys = new Set(); this.lastPredView = null; prefetched = true; }
+      // Les demandes prédictives déjà en file (hors champ) sont abandonnées par l'annulation ci-dessous. En zoom avant,
+      // elles sont remplacées, à chaque nouvelle sélection, par le niveau suivant du centre de l'écran (vers la
+      // mémoire vive) : quand la caméra y arrive, ces images passent à la carte graphique sans attendre le réseau.
+      if (reselect) { this.prefetchKeys = this.zoomWatch.zoomingIn ? this.prefetchCenter(wanted, opts.maxZoom, now) : new Set(); this.lastPredView = null; prefetched = true; }
     // Sinon, si le préchargement est actif, permis hors champ par la table, et la visée connue : il est calculé.
     } else if (this.prefetchOn && !this.source.info?.fieldOnly && view.fwd) prefetched = this.prefetch(view, opts, now);
 
@@ -760,6 +782,32 @@ export class TileLayer {
     // Vrai.
     return true;
   // Fin de prefetch.
+  }
+
+  /**
+   * Zoom avant : demande les enfants des tuiles les plus au centre de l'écran (niveau le plus fin voulu), vers la
+   * mémoire vive, avec la priorité du préchargement (après toutes les tuiles visibles). Sans mémoire vive, rien.
+   * @returns {Set<string>} clés demandées (gardées parmi les demandes prédictives : ni annulées, ni abandonnées)
+   */
+  // prefetchCenter : les tuiles voulues, le niveau maximal permis et l'instant présent (début).
+  prefetchCenter(wanted, maxZoom, now) {
+    // Clés demandées.
+    const keys = new Set();
+    // Sans mémoire vive : les images arrivées n'auraient nulle part où attendre.
+    if (!(this.ram.capacity > 0)) return keys;
+    // Pour chaque enfant à précharger (début).
+    for (const t of centerChildren(wanted, maxZoom)) {
+      // Déjà voulue, prête, en mémoire vive, arrivée, en file ou en échec récent : suivante.
+      if (this.wantedKeys.has(t.key) || this.ready(t.key) || this.ram.has(t.key) || this.arrivedKeys.has(t.key) || this.loader.has(t.key) || (this.failed.get(t.key) ?? 0) > now) continue;
+      // Gardée parmi les demandes prédictives.
+      keys.add(t.key);
+      // Demandée, après les tuiles visibles.
+      this.request(t.key, { ...t, p: PREFETCH_PRIORITY + t.p });
+    // Fin de la boucle.
+    }
+    // Renvoie les clés.
+    return keys;
+  // Fin de prefetchCenter.
   }
 
   /**
