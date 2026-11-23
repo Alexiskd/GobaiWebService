@@ -70,3 +70,39 @@ test('file : un seul chargement à la fois, toujours le plus prioritaire', async
   assert.deepEqual(started, ['a', 'b', 'c', 'd']);
 // Fin du test.
 });
+
+// Importe staleInFlight, le choix des téléchargements inutiles, depuis tileLayer.
+import { staleInFlight } from './tileLayer.jsx';
+
+// Test : les téléchargements en cours devenus inutiles.
+test('file : clés démarrées listées ; pendant un zoom, seules les images plus voulues sont abandonnées', async () => {
+  // Deux places.
+  const loader = new TileLoader(2);
+  // Demandes qui ne finissent pas d'elles-mêmes : elles attendent l'annulation.
+  const hang = (signal) => new Promise((_, reject) => {
+    // stop : rejet d'annulation.
+    const stop = () => reject(Object.assign(new Error('annulé'), { name: 'AbortError' }));
+    // Déjà annulée avant de démarrer : rejet immédiat ; sinon à l'annulation.
+    if (signal.aborted) stop(); else signal.addEventListener('abort', stop);
+  // Fin de la demande.
+  });
+  // Deux démarrées (5/1/1 et 6/2/2), une en file (7/4/4).
+  const p = ['5/1/1', '6/2/2', '7/4/4'].map((k, i) => loader.load(k, i, hang).catch((e) => e.name));
+  // Les deux premières sont en cours.
+  assert.deepEqual(loader.startedKeys().sort(), ['5/1/1', '6/2/2']);
+  // Ensembles de la couche : 6/2/2 est encore voulue.
+  const sets = { wantedKeys: new Set(['6/2/2']), lowKeys: new Set(), pinKeys: new Set(), prefetchKeys: new Set() };
+  // Inutiles : 5/1/1 seulement (les clés à préfixe, relief ou calque, ne sont jamais touchées).
+  assert.deepEqual(staleInFlight([...loader.startedKeys(), 'h:5/1/1', 'ov:5/1/1'], sets), ['5/1/1']);
+  // Abandon : la place se libère et 7/4/4 démarre.
+  loader.cancel('5/1/1');
+  // Le rejet est une annulation.
+  assert.equal(await p[0], 'AbortError');
+  // 7/4/4 a pris la place.
+  assert.deepEqual(loader.startedKeys().sort(), ['6/2/2', '7/4/4']);
+  // Nettoyage : tout est annulé.
+  loader.cancelAll();
+  // Attend les rejets.
+  await Promise.all(p);
+// Fin du test.
+});

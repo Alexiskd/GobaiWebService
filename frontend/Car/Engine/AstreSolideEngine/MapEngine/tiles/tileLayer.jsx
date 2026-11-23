@@ -101,6 +101,17 @@ export function uploadAllowed(done, elapsedMs, maxCount, budgetMs) {
 }
 
 /**
+ * Téléchargements en cours devenus inutiles : tuiles d'image (sans préfixe « ov: », « h: », « o: », « lt: »…) qui ne
+ * sont ni voulues, ni en basse résolution, ni gardées pour l'astre entier, ni préchargées.
+ */
+// Déclare et exporte staleInFlight : les clés en cours et les ensembles de la couche (début).
+export function staleInFlight(keys, { wantedKeys, lowKeys, pinKeys, prefetchKeys }) {
+  // Garde les clés d'images (sans « : ») qui ne servent plus.
+  return keys.filter((key) => !key.includes(':') && !wantedKeys.has(key) && !lowKeys.has(key) && !pinKeys.has(key) && !prefetchKeys.has(key));
+// Fin de staleInFlight.
+}
+
+/**
  * Priorités des tuiles arrivées remises à jour d'après la vue actuelle : une tuile demandée quand elle était au centre
  * de l'écran, puis repoussée au bord par un déplacement, ne passe plus devant celles qui sont maintenant au centre.
  * Une tuile absente de la table garde sa priorité d'origine.
@@ -564,6 +575,11 @@ export class TileLayer {
       }
     // Fin de ce cas.
     }
+    // Zoom en cours, nouvelle sélection : les téléchargements DÉJÀ PARTIS pour des niveaux traversés (plus voulus, ni en
+    // basse résolution, ni gardés) sont abandonnés. Ils occupaient les places de téléchargement (6 par astre) jusqu'au
+    // bout, pendant que les tuiles du niveau d'arrivée attendaient ; pendant un déplacement sans zoom, on les laisse
+    // finir (la vue peut revenir, l'image part en mémoire vive).
+    if (reselect && this.zooming) for (const key of staleInFlight(this.loader.startedKeys(), this)) this.loader.cancel(key);
 
     // 2. Mise en place de quelques tuiles arrivées
     // Les plus prioritaires d'abord ; une tuile arrivée mais plus voulue (la vue a bougé) reste en RAM (L2).
