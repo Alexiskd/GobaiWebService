@@ -490,26 +490,30 @@
 
   /* Bandeau du titre (HudTop), ordinateur et téléphone : même habillage que la barre de navigation (.m-nav) — fond
      panel, filet edge, rayon 18 px, ombre portée. Grille à deux colonnes : la tuile du logo et la ligne du nom partagent
-     la rangée 1 (leurs centres sont sur la même ligne horizontale), la date et l'astre visé passent dessous.
+     les rangées, le titre est en rangée 1, la date et l'astre visé passent dessous.
      Le logo reste à gauche ; la colonne 2 prend toute la largeur restante et son contenu (titre et badge, date, astre
      visé) y est centré horizontalement. */
   .hud-title {
-    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px; row-gap: 2px;
+    display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: 18px 16px; align-items: center;
+    column-gap: 10px; row-gap: 2px;
     box-sizing: border-box; padding: 7px 14px 7px 7px; border: 1px solid var(--color-edge); border-radius: 18px;
     background-color: var(--color-panel); color: var(--color-ink); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     user-select: none; contain: layout style;
   }
   .hud-title[data-compact] { width: 100%; column-gap: 9px; padding: 6px 12px 6px 6px; }
-  /* Tuile du logo : carré arrondi surélevé, du même gabarit que les boutons de la barre d'outils (.tb-btn-icon). */
+  /* Avec la ligne de l'astre visé : une rangée de plus. */
+  .hud-title[data-focus] { grid-template-rows: 18px 16px 16px; }
+  /* Tuile du logo : carré arrondi surélevé, à la taille maximale permise par le bandeau. Elle couvre toutes les
+     rangées (1 / -1) : son côté est la hauteur intérieure du bandeau (18 + 2 + 16 = 36 px, 54 px avec l'astre visé). */
   .hud-title-logo {
-    grid-column: 1; grid-row: 1; display: grid; place-items: center; box-sizing: border-box; width: 34px; height: 34px;
+    grid-column: 1; grid-row: 1 / -1; display: grid; place-items: center; box-sizing: border-box; width: 36px; height: 36px;
     border: 1px solid var(--color-line); border-radius: 9px; background-color: var(--color-raised); overflow: hidden;
   }
-  .hud-title[data-compact] .hud-title-logo { width: 32px; height: 32px; }
+  .hud-title[data-focus] .hud-title-logo { width: 54px; height: 54px; }
   /* Ligne du nom : ∞, nom, suite du nom, puis le badge « En direct » poussé au bout de la ligne. */
   .hud-title-name {
     grid-column: 2; grid-row: 1; display: flex; align-items: center; justify-content: center; gap: 7px; min-width: 0; margin: 0;
-    font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; white-space: nowrap;
+    font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 18px; white-space: nowrap;
   }
   .hud-title[data-compact] .hud-title-name { font-size: 14.5px; }
   .hud-title-inf { color: #0000ff; font-size: 1.5em; line-height: 0.8; font-weight: 800; }
@@ -518,7 +522,7 @@
   /* Lignes d'information : date, images par seconde, astre visé. */
   .hud-title-meta {
     grid-column: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center;
-    color: var(--color-soft); font-size: 11.5px; line-height: 1.35; font-variant-numeric: tabular-nums;
+    color: var(--color-soft); font-size: 11.5px; line-height: 16px; font-variant-numeric: tabular-nums;
   }
   .hud-title-meta[data-faint] { color: var(--color-faint); }
 
