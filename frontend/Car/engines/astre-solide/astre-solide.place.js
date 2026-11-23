@@ -31,23 +31,60 @@ export function distanceKm(lon1, lat1, lon2, lat2) {
 // Fin de distanceKm.
 }
 
-/** La ville la plus proche (et sa distance en km), ou null sans ville. */
+/** Index des villes : leurs directions unitaires (x, y, z) dans un seul tableau, calculé une fois par liste. */
+// Index déjà calculés, par liste de villes.
+const INDEX = new WeakMap();
+// Déclare et exporte cityIndex : la liste des villes (début).
+export function cityIndex(cities) {
+  // Déjà calculé : lui.
+  let idx = INDEX.get(cities);
+  // Trouvé : renvoyé.
+  if (idx) return idx;
+  // Trois nombres par ville (NaN pour une ville sans coordonnées lisibles).
+  const xyz = new Float64Array(cities.length * 3);
+  // Pour chaque ville (début).
+  cities.forEach((c, i) => {
+    // Coordonnées lisibles ?
+    const ok = Number.isFinite(c?.lon) && Number.isFinite(c?.lat);
+    // Latitude et longitude en radians.
+    const la = ok ? c.lat * RAD : NaN, lo = ok ? c.lon * RAD : NaN;
+    // Direction unitaire.
+    xyz[i * 3] = Math.cos(la) * Math.cos(lo); xyz[i * 3 + 1] = Math.cos(la) * Math.sin(lo); xyz[i * 3 + 2] = Math.sin(la);
+  // Fin de la boucle.
+  });
+  // Gardé et renvoyé.
+  idx = { xyz }; INDEX.set(cities, idx); return idx;
+// Fin de cityIndex.
+}
+
+/**
+ * La ville la plus proche (et sa distance en km), ou null sans ville. La plus proche est celle dont la direction a le
+ * plus grand produit scalaire avec celle du point : trois multiplications par ville, sans trigonométrie (index gardé).
+ */
 // Déclare et exporte nearestCity : les villes, la longitude et la latitude (degrés) (début).
 export function nearestCity(cities, lon, lat) {
-  // Meilleure ville et sa distance.
-  let best = null, bestKm = Infinity;
-  // Pour chaque ville aux coordonnées lisibles.
-  for (const c of cities ?? []) {
-    // Coordonnées illisibles : ignorée.
-    if (!Number.isFinite(c?.lon) || !Number.isFinite(c?.lat)) continue;
-    // Distance au point.
-    const d = distanceKm(lon, lat, c.lon, c.lat);
+  // Aucune ville : rien.
+  if (!Array.isArray(cities) || !cities.length) return null;
+  // Directions des villes.
+  const { xyz } = cityIndex(cities);
+  // Direction du point.
+  const la = lat * RAD, lo = lon * RAD, px = Math.cos(la) * Math.cos(lo), py = Math.cos(la) * Math.sin(lo), pz = Math.sin(la);
+  // Meilleure ville et son produit scalaire.
+  let best = -1, bestDot = -Infinity;
+  // Pour chaque ville (début).
+  for (let i = 0; i < cities.length; i++) {
+    // Produit scalaire (NaN pour une ville illisible : jamais retenue).
+    const d = xyz[i * 3] * px + xyz[i * 3 + 1] * py + xyz[i * 3 + 2] * pz;
     // Plus proche : gardée.
-    if (d < bestKm) { best = c; bestKm = d; }
+    if (d > bestDot) { bestDot = d; best = i; }
   // Fin de la boucle.
   }
-  // Renvoie la ville et sa distance.
-  return best ? { city: best, km: bestKm } : null;
+  // Aucune lisible : rien.
+  if (best < 0) return null;
+  // Renvoie la ville et sa distance exacte.
+  const city = cities[best];
+  // Distance sur la sphère.
+  return { city, km: distanceKm(lon, lat, city.lon, city.lat) };
 // Fin de nearestCity.
 }
 
