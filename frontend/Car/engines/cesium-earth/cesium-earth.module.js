@@ -10,6 +10,10 @@
 import { RETURN_KM, altitudeKm, lonLatOf, rearm, shouldEnter, shouldExit } from './cesium-earth.handoff.js';
 // Importe la création du globe.
 import { createEarthViewer } from './cesium-earth.viewer.js';
+// Importe la caméra du globe pilotée par les commandes de three.js (navball, zoom, verrous).
+import { CesiumCamera } from './cesium-earth.camera.js';
+// Importe le tangage de la vue 3/4.
+import { pitchForTilt } from './cesium-earth.camera-math.js';
 
 // Règle CSS : globe actif, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
 const HIDE_LABELS_CSS = '[data-cesium-earth="on"] > .l, [data-cesium-earth="on"] > .user-marker, [data-cesium-earth="on"] > .city-card { display: none !important; }';
@@ -38,6 +42,8 @@ export class CesiumEarth {
     this.active = false; this.armed = true; this.creating = null;
     // Globe et bibliothèque : pas encore chargés.
     this.viewer = null; this.Cesium = null;
+    // Caméra pilotée par les commandes de three.js : pas encore créée.
+    this.camera = null;
     // Conteneur du globe : pas encore créé.
     this.container = null;
   // Fin du constructeur.
@@ -89,8 +95,10 @@ export class CesiumEarth {
       } catch { this.creating = null; this.armed = false; div.remove(); this.container = null; return; }
       // Création terminée.
       this.creating = null;
-      // Retour à la scène three.js quand la caméra du globe s'éloigne.
-      this.viewer.camera.changed.addEventListener(() => this.watchExit());
+      // Caméra pilotée par les commandes de three.js.
+      this.camera = new CesiumCamera({ viewer: this.viewer, Cesium: this.Cesium, engine: this.engine });
+      // À chaque mouvement : verrou du nord, HUD, et retour à la scène three.js si la caméra s'éloigne.
+      this.viewer.camera.changed.addEventListener(() => this.onCameraChange());
       // Sensibilité du changement de caméra : 1 % (assez pour suivre le zoom).
       this.viewer.camera.percentageChanged = 0.01;
     // Fin de la création.
@@ -98,7 +106,7 @@ export class CesiumEarth {
     // Moteur détruit entre-temps : rien.
     if (this.engine.stopped) return;
     // Caméra du globe au même endroit, vue vers le sol.
-    this.viewer.camera.setView({ destination: this.Cesium.Cartesian3.fromDegrees(lon, lat, altKm * 1000), orientation: { heading: 0, pitch: -Math.PI / 2, roll: 0 } });
+    this.viewer.camera.setView({ destination: this.Cesium.Cartesian3.fromDegrees(lon, lat, altKm * 1000), orientation: { heading: 0, pitch: this.Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn)), roll: 0 } });
     // Globe affiché, repères HTML de la scène three.js masqués.
     this.container.style.display = 'block'; hideLabelsRule(); this.setLabelsHidden(true);
     // Rendu du globe relancé.
@@ -109,7 +117,22 @@ export class CesiumEarth {
     this.active = true;
     // Scène three.js en attente.
     this.engine.cesiumHold = true;
+    // HUD : distance, échelle et boussole du globe.
+    this.camera.publishHud();
   // Fin de enter.
+  }
+
+  // onCameraChange : la caméra du globe a bougé (début).
+  onCameraChange() {
+    // Inactif : rien.
+    if (!this.active) return;
+    // Verrou du nord actif : le nord reste en haut.
+    if (this.engine.northLock) this.camera.keepNorth();
+    // HUD à jour.
+    this.camera.publishHud();
+    // Retour à la scène three.js si la caméra s'est éloignée.
+    this.watchExit();
+  // Fin de onCameraChange.
   }
 
   // watchExit : la caméra du globe a bougé (début).

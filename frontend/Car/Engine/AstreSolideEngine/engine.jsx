@@ -2294,6 +2294,8 @@ export class SolarEngine {
   // f < 1 rapproche la caméra, f > 1 l'éloigne ; appliqué à l'altitude visée au-dessus de l'astre (cumulable).
   // De loin c'est la même chose que la distance ; de près, le zoom reste progressif jusqu'au sol (Terre comme Lune).
   zoom(f) {
+    // Globe CesiumJS actif : le zoom porte sur sa caméra.
+    if (this.cesiumHold) return this.cesiumEarth.camera.zoom(f);
     // Note l'activité.
     this.markActive();
     // Zoom avant sur l'astre : la rotation automatique de la caméra autour de lui s'arrête d'elle-même.
@@ -2407,6 +2409,8 @@ export class SolarEngine {
 
   // resetView : revient à la vue globale (début).
   resetView() {
+    // Globe CesiumJS actif : il rend d'abord la main à la scène three.js.
+    this.cesiumEarth?.leave();
     // Cible : le Soleil.
     this.setFocus(0);
     // Azimut d'origine.
@@ -2545,6 +2549,8 @@ export class SolarEngine {
    */
   // globeView : la vue du globe dans le repère fixe de l'astre (début).
   globeView() {
+    // Globe CesiumJS actif : la navball lit sa caméra.
+    if (this.cesiumHold) return this.cesiumEarth.camera.globeView();
     // La cible.
     const f = this.focusTarget();
     // Son maillage : tuilé, planète, Lune, satellite ou Soleil.
@@ -2579,6 +2585,8 @@ export class SolarEngine {
    */
   // pilot : pilote la caméra depuis la navball, en degrés (début).
   pilot({ dh = 0, dp = 0 } = {}) {
+    // Globe CesiumJS actif : la navball pilote sa caméra.
+    if (this.cesiumHold) return this.cesiumEarth.camera.pilot({ dh, dp });
     // Un mouvement : note l'activité.
     if (dh || dp) this.markActive();
     // Changement de cap (début).
@@ -2609,6 +2617,8 @@ export class SolarEngine {
   moveBy(right = 0, forward = 0) {
     // Aucun mouvement : rien.
     if (!right && !forward) return;
+    // Globe CesiumJS actif : le pilotage au téléphone déplace sa caméra.
+    if (this.cesiumHold) return this.cesiumEarth.camera.moveBy(right, forward);
     // Lâche les lieux suivis.
     this.releaseLocks();
     // Finesse du pas selon la proximité du sol.
@@ -2646,6 +2656,8 @@ export class SolarEngine {
   setNorthLock(on) {
     // Garde l'état.
     this.northLock = Boolean(on);
+    // Globe CesiumJS actif : le verrou s'applique à sa caméra.
+    if (this.cesiumHold) return this.cesiumEarth.camera.setNorthLock(this.northLock);
     // Recalage instantané : le cap saute directement sur le nord, sans transition.
     if (this.northLock && this.recalibrateNorth()) this.heading = this.headingGoal;
     // Renvoie l'état.
@@ -2655,6 +2667,8 @@ export class SolarEngine {
 
   // goCity : va à une ville de la liste (début).
   goCity(index) {
+    // Globe CesiumJS actif : sa caméra vole jusqu'à la ville (≈ 2,5 km d'altitude).
+    if (this.cesiumHold) { const c = this.cityItems?.[index]; return c ? this.cesiumEarth.camera.flyTo({ lon: c.lon, lat: c.lat, altitudeM: 2500 }) : undefined; }
     // Cible : la Terre.
     this.setFocus(this.earthFocus);
     // Distance voulue : plus près avec une carte.
@@ -2671,6 +2685,8 @@ export class SolarEngine {
    */
   // goTo : va à un lieu de la Terre (début).
   goTo({ name, lon, lat, altitudeM, follow = false, fly = false }) {
+    // Globe CesiumJS actif : sa caméra vole jusqu'au lieu.
+    if (this.cesiumHold) return this.cesiumEarth.camera.flyTo({ lon, lat, altitudeM: Number.isFinite(altitudeM) && altitudeM > 0 ? altitudeM : 2500 });
     // Cible : la Terre.
     this.setFocus(this.earthFocus);
     // Si une altitude est demandée (début).
@@ -2705,6 +2721,8 @@ export class SolarEngine {
   setUserPosition(position) {
     // Met à jour le point.
     this.userMarker.set(position);
+    // Le même point sur le globe CesiumJS, s'il existe.
+    this.cesiumEarth?.camera?.setUserPosition(position);
     // Caméra posée sur « Ma position » : elle suit l'utilisateur quand il se déplace.
     const lock = this.lockCity;
     // Latitude et longitude reçues.
@@ -2840,6 +2858,8 @@ export class SolarEngine {
    */
   // goToSite : survole un lieu d'un astre tuilé (début).
   goToSite(id, { lon, lat }, altitudeKm) {
+    // Globe CesiumJS actif et site de la Terre : sa caméra vole jusqu'au site.
+    if (this.cesiumHold && id === 'earth') return this.cesiumEarth.camera.flyTo({ lon, lat, altitudeM: (altitudeKm ?? TILED_BODY_BY_ID.earth.siteAltitudeKm) * 1000 });
     // L'astre.
     const tb = this.tiledById[id];
     // Inconnu ou sans cible : rien.
@@ -3333,6 +3353,8 @@ export class SolarEngine {
    */
   // setViewLock : verrouille la vue sur l'astre le plus proche, ou la rend (début).
   setViewLock(on) {
+    // Globe CesiumJS actif : le verrouillage sur l'astre le plus proche se fait dans la scène three.js.
+    if (on) this.cesiumEarth?.leave();
     // Note l'activité.
     this.markActive?.();
     // HUD à mettre à jour.
@@ -3380,7 +3402,7 @@ export class SolarEngine {
 
   /** Vue 3/4 automatique : inclinaison progressive près du sol (true par défaut), ou regard vertical (false). */
   // setTilt : active ou coupe la vue inclinée automatique.
-  setTilt(on) { this.tiltOn = on; this.pilotTilt = null; }
+  setTilt(on) { this.tiltOn = on; this.pilotTilt = null; if (this.cesiumHold) this.cesiumEarth.camera.setTilt(on); }
 
   /** Frontières et littoraux : polylignes [lon, lat, …] de GET /borders (remplacent les précédentes). */
   // setBorders : reçoit les frontières, les littoraux et les pays (début).
