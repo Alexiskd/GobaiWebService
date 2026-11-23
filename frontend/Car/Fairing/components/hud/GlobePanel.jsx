@@ -1,5 +1,5 @@
-// Importe de React les crochets useState et useCallback.
-import { useCallback, useState } from 'react';
+// Importe de React les crochets useCallback, useEffect et useState.
+import { useCallback, useEffect, useState } from 'react';
 // Importe useHud, qui lit une valeur du magasin du HUD.
 import { useHud } from '@/Engine/AstreSolideEngine/hudStore';
 // Importe useViewport, qui donne la catégorie d'écran.
@@ -8,11 +8,16 @@ import { useViewport } from '@/Fairing/hooks/useViewport';
 import { edge } from '@/Fairing/theme/layout';
 // Importe les favoris de vues (stockés dans le navigateur).
 import { addFavorite, readFavorites, removeFavorite, writeFavorites } from '@/engines/astre-solide/astre-solide.favorites.js';
+// Importe le curseur du kit.
+import { Slider } from '@/Fairing/kit';
+// Importe les bornes et le texte du curseur du temps.
+import { TIME_OFFSET_MAX_H, TIME_OFFSET_STEP_H, formatOffset } from '@/engines/astre-solide/astre-solide.time.js';
 // Importe la lecture d'une ancre de vue.
 import { parseViewHash } from '@/engines/astre-solide/astre-solide.view-link.js';
 
 /**
- * Panneau du globe de près (affiché seulement quand le globe CesiumJS a la main) : favoris de vues. Une étoile
+ * Panneau du globe de près (affiché seulement quand le globe CesiumJS a la main) : curseur du temps (±12 h, on voit
+ * la nuit avancer) et favoris de vues. Une étoile
  * enregistre la vue actuelle (son lien), la liste y revole en un clic ; la croix retire un favori.
  */
 // Déclare et exporte le composant GlobePanel : le magasin du HUD et le moteur.
@@ -29,6 +34,12 @@ export function GlobePanel({ hud, engine }) {
   const [favorites, setFavorites] = useState(() => readFavorites());
   // Liste ouverte ou non.
   const [open, setOpen] = useState(false);
+  // Décalage de l'heure (heures), repris du moteur.
+  const [offset, setOffset] = useState(() => (engine?.timeOffsetMs ?? 0) / 3600000);
+  // changeOffset : nouveau décalage, appliqué au moteur (début).
+  const changeOffset = (h) => setOffset(engine?.setTimeOffset(h) ?? h);
+  // En entrant ou en sortant du globe de près : décalage relu (il revient à 0 en sortant).
+  useEffect(() => { setOffset((engine?.timeOffsetMs ?? 0) / 3600000); }, [engine, near]);
   // save : remplace la liste et l'écrit (début).
   const save = useCallback((list) => { setFavorites(list); writeFavorites(undefined, list); }, []);
   // Globe de loin : rien.
@@ -60,6 +71,12 @@ export function GlobePanel({ hud, engine }) {
         {/* Ouvre ou ferme la liste. */}
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="t-caption text-soft px-2 py-1 rounded-[8px] hover:underline">Mes vues ({favorites.length})</button>
       {/* Fin de la ligne. */}
+      </div>
+      {/* Curseur du temps : −12 h à +12 h ; « maintenant » revient à l'heure réelle. */}
+      <div className="flex flex-row items-center gap-2 px-2">
+        <span className="t-caption text-soft flex-none">Heure</span>
+        <Slider value={offset} onChange={(_, v) => changeOffset(Array.isArray(v) ? v[0] : v)} min={-TIME_OFFSET_MAX_H} max={TIME_OFFSET_MAX_H} step={TIME_OFFSET_STEP_H} aria-label="Décalage de l'heure" className="flex-1 min-w-[120px]" />
+        <button type="button" onClick={() => changeOffset(0)} disabled={!offset} title="Revenir à l'heure réelle" className="t-caption tabular-nums flex-none w-[64px] text-right disabled:opacity-60">{formatOffset(offset)}</button>
       </div>
       {/* Liste des favoris (début). */}
       {open && (
