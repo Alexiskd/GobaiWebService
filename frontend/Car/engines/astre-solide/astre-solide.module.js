@@ -260,6 +260,8 @@ export class AstreSolideGlobe {
     if (globalThis.location?.hash?.startsWith('#vue=')) setViewHash('');
     // Bouton du HUD et panneau du globe masqués.
     this.engine.hud?.set({ viewLink: '', globeNear: false });
+    // Vol entre deux lieux en cours : arrêté.
+    this.camera?.stopRoute?.();
     // Curseur du temps : retour à l'heure réelle (il n'est réglable que de près).
     this.engine.setTimeOffset?.(0);
     // Globe masqué (la superposition le réaffiche à la prochaine image three.js), sa boucle arrêtée, repères HTML de
