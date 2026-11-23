@@ -8,6 +8,9 @@
 
 // Altitude (km) sous laquelle le globe CesiumJS prend la main.
 export const ENTER_KM = 20000;
+// Altitude (km) au-dessus de laquelle l'ombre et la pollution lumineuse sont pleines (≈ 6 rayons) ; elles baissent
+// ensuite en fondu jusqu'à ENTER_KM, où le globe prend la main sans ombre ni lumières de la nuit.
+export const FADE_KM = 38000;
 // Altitude (km) du globe CesiumJS au-dessus de laquelle on revient à la scène three.js.
 export const EXIT_KM = 30000;
 // Altitude (km) de la caméra three.js au retour.
@@ -29,6 +32,17 @@ export const EARTH_RADIUS_KM = 6371;
 /** Altitude de la Terre (km) ramenée à un astre de rayon `radiusKm` : même nombre de rayons. */
 // Déclare et exporte scaledKm : l'altitude terrestre et le rayon de l'astre (km).
 export const scaledKm = (km, radiusKm = EARTH_RADIUS_KM) => (km * radiusKm) / EARTH_RADIUS_KM;
+
+/** Fondu du zoom : 1 au-dessus de FADE_KM, 0 à ENTER_KM et dessous, linéaire entre les deux (altitudes de l'astre). */
+// Déclare et exporte zoomFade : l'altitude (km) et le rayon de l'astre (km).
+export const zoomFade = (altKm, radiusKm = EARTH_RADIUS_KM) => {
+  // Altitudes du début et de la fin du fondu, ramenées à l'astre.
+  const lo = scaledKm(ENTER_KM, radiusKm), hi = scaledKm(FADE_KM, radiusKm);
+  // Altitude inconnue : pas de fondu.
+  if (!Number.isFinite(altKm)) return 1;
+  // Part restante, entre 0 et 1.
+  return Math.min(1, Math.max(0, (altKm - lo) / (hi - lo)));
+};
 
 /** Le globe CesiumJS doit-il prendre la main ? Astre ciblé, passage armé, caméra sous l'altitude d'entrée. */
 // Déclare et exporte shouldEnter : l'astre ciblé, l'altitude, le passage armé et le rayon de l'astre (km).

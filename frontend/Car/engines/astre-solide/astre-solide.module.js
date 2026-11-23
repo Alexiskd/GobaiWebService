@@ -16,7 +16,7 @@
  */
 
 // Importe les règles du passage.
-import { RETURN_KM, altitudeKm, lonLatOf, rearm, scaledKm, shouldEnter, shouldExit } from './astre-solide.handoff.js';
+import { RETURN_KM, altitudeKm, zoomFade, lonLatOf, rearm, scaledKm, shouldEnter, shouldExit } from './astre-solide.handoff.js';
 // Importe la création du globe.
 import { createSolidViewer } from './astre-solide.viewer.js';
 // Importe le fournisseur d'images qui lit le fond de carte de l'app.
@@ -158,10 +158,16 @@ export class AstreSolideGlobe {
   // update : l'astre ciblé ou non, la distance de la caméra au centre, la distance visée par le zoom et le rayon
   // (unités de la scène), sa direction.
   update({ focused, dist, distGoal = dist, radius, camLocal }) {
-    // De près, en création ou sans astre : rien.
-    if (this.active || this.pending || !this.body) return;
+    // Sans astre : rien.
+    if (!this.body) return;
+    // De près : ni ombre ni pollution lumineuse (fondu terminé).
+    if (this.active) { this.zoomFade = 0; return; }
     // Altitude de la caméra, en km de l'astre.
     const altKm = altitudeKm(dist, radius, this.body.radiusKm);
+    // Fondu du zoom : l'ombre et la pollution lumineuse baissent en approchant de l'astre ciblé.
+    this.zoomFade = focused ? zoomFade(altKm, this.body.radiusKm) : 1;
+    // En création : rien de plus.
+    if (this.pending) return;
     // Réarme le passage si la caméra est assez haute.
     this.armed = rearm(this.armed, altKm, this.body.radiusKm);
     // Pas de passage : rien.
@@ -389,14 +395,14 @@ export class AstreSolideGlobe {
   }
 
   /**
-   * Bouton « Ombre » : l'intensité d'ombre de l'app (engine.shadeNow, avec son fondu) appliquée au globe. Zoomé sur
-   * l'astre (globe de près), l'ombre est coupée : le sol est entièrement éclairé.
+   * Bouton « Ombre » : l'intensité d'ombre de l'app (engine.shadeNow, avec son fondu) appliquée au globe. En zoomant
+   * sur l'astre, elle baisse en fondu (zoomFade) ; de près (globe de près), elle est coupée : sol entièrement éclairé.
    */
   // applyShade : règle l'éclairage du globe (début).
   applyShade() {
     // Intensité : 0 quand on a zoomé sur l'astre (globe de près : sol entièrement éclairé, sans ombre jour/nuit) ;
-    // sinon celle du bouton « Ombre » (ombre pleine si elle n'a jamais été réglée).
-    const v = this.active ? 0 : (this.engine.shadeNow ?? 1);
+    // sinon celle du bouton « Ombre » (ombre pleine si elle n'a jamais été réglée), baissée par le fondu du zoom.
+    const v = this.active ? 0 : (this.engine.shadeNow ?? 1) * (this.zoomFade ?? 1);
     // Déjà appliquée : rien.
     if (v === this.shadeApplied) return;
     // Notée.

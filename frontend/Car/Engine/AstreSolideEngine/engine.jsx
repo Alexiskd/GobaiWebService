@@ -3003,8 +3003,10 @@ export class SolarEngine {
     if (pollution) {
       // Mosaïque mondiale des lumières chargée (une fois) par les tuiles de la Terre.
       this.tiledById.earth.tiles.loadLightsMosaic?.();
-      // Soleil vu de la Terre (repère de ses tuiles) et ombre de l'app.
-      pollution.update(this.solidBodyView('earth')?.sunDir, this.shadeNow ?? 1);
+      // Fondu du zoom : seulement quand le globe est celui de la Terre.
+      const fade = this.solidGlobe?.body?.id === 'earth' ? (this.solidGlobe.zoomFade ?? 1) : 1;
+      // Soleil vu de la Terre (repère de ses tuiles), ombre de l'app et fondu du zoom.
+      pollution.update(this.solidBodyView('earth')?.sunDir, this.shadeNow ?? 1, fade);
     // Fin de la pollution lumineuse.
     }
     // Coque des lumières dessinée seulement ici, sur la Terre.
