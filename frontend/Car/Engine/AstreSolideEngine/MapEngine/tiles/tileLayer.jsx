@@ -1318,6 +1318,9 @@ export class TileLayer {
   /** Matrice de la tuile : échelle = rayon de son niveau, translation = centre · rayon (double précision côté JS). */
   // place : règle la matrice d'une tuile (début).
   place(e) {
+    // En cellules hexagonales, le maillage carré n'est jamais dessiné : rien à placer (pendant un zoom, l'écart entre
+    // niveaux change à chaque image, et toutes les matrices des tuiles affichées étaient recalculées pour rien).
+    if (this.hexOn) return;
     // Écart inchangé : rien à faire.
     if (e.gap === this.gap) return;
     // Le garde.
