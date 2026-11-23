@@ -2642,6 +2642,8 @@ export class SolarEngine {
   dragBy(dx, dy) {
     // Aucun mouvement : rien.
     if (!dx && !dy) return;
+    // Globe CesiumJS actif : sa caméra se déplace de la même façon (le sol suit le doigt).
+    if (this.cesiumHold) return this.cesiumEarth.camera.dragBy(dx, dy);
     // Pas de rotation correspondant aux pixels, vue inclinée comprise.
     const step = dragStep(dx, dy, dragRadPerPx(this.surfaceRatio(), this.cam.fov, this.H), this.tiltV || 0);
     // Nouvelle position sur la sphère.
@@ -3701,6 +3703,8 @@ export class SolarEngine {
 
   // selectAt : choisit l'astre sous un clic (début).
   selectAt(x, y) {
+    // Globe CesiumJS actif : la scène three.js n'est pas à l'écran, un clic n'y choisit rien.
+    if (this.cesiumHold) return false;
     // Placement d'un nuage LiDAR en cours : le clic donne la coordonnée GPS au lieu de choisir un astre.
     if (this.lidar?.handleClick(x, y)) return true;
     // Rectangle du canevas.

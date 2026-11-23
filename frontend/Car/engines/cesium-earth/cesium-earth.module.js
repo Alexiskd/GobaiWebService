@@ -78,8 +78,9 @@ export class CesiumEarth {
       const canvas = this.engine.canvas;
       // Nouveau conteneur.
       const div = document.createElement('div');
-      // Plein cadre, au-dessus du canevas, masqué pour l'instant.
-      div.style.cssText = 'position:absolute;inset:0;display:none;';
+      // Plein cadre, au-dessus du canevas, masqué pour l'instant. Il laisse passer les gestes : la souris, le doigt et
+      // la molette arrivent au canevas three.js, dont les commandes pilotent la caméra du globe (même déplacement).
+      div.style.cssText = 'position:absolute;inset:0;display:none;pointer-events:none;';
       // Son nom.
       div.dataset.engine = 'cesium-earth';
       // Posé après le canevas.

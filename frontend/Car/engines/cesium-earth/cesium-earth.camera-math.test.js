@@ -59,3 +59,63 @@ test('fond transparent : ECEF de CesiumJS → repère des tuiles three.js, même
   // Une direction (échelle 1) garde sa longueur : le pôle Nord ECEF devient +Y.
   assert.deepEqual(ecefToTilesLocal({ x: 0, y: 0, z: 1 }, 1), [0, 1, -0]);
 });
+
+// Importe les gestes du globe.
+import { KEY_ROTATE_SPEED, dragMove, keyMove, surfaceRotation } from './cesium-earth.camera-math.js';
+// Importe la conversion du glisser de three.js, pour comparer.
+import { dragRadPerPx, dragStep } from '../../Engine/AstreSolideEngine/InputEngine/touchMath.jsx';
+
+// rodrigues : tourne v de +a (sens direct) autour de l'axe unitaire k.
+const rodrigues = (v, k, a) => {
+  const c = Math.cos(a), s = Math.sin(a), d = k[0] * v[0] + k[1] * v[1] + k[2] * v[2];
+  const x = [k[1] * v[2] - k[2] * v[1], k[2] * v[0] - k[0] * v[2], k[0] * v[1] - k[1] * v[0]];
+  return [0, 1, 2].map((i) => v[i] * c + x[i] * s + k[i] * d * (1 - c));
+};
+
+test('gestes : glisser identique à la scène three.js (sol sous le doigt, vue 3/4)', () => {
+  // 1 000 km d'altitude, ouverture 45°, écran de 900 px, regard vertical.
+  const m = dragMove(30, -20, { altitudeM: 1e6, fovyRad: Math.PI / 4, viewportH: 900, pitchDeg: -90 });
+  // Même résultat que three.js.
+  const ref = dragStep(30, -20, dragRadPerPx(1e6 / EARTH_RADIUS_M, 45, 900), 0);
+  assert.ok(Math.abs(m.right - ref.right) < 1e-15 && Math.abs(m.forward - ref.forward) < 1e-15);
+  // Doigt vers la droite : la caméra part à gauche.
+  assert.ok(m.right < 0);
+  // Vue inclinée de 60° : déplacement vertical agrandi.
+  const tilted = dragMove(0, 10, { altitudeM: 1e6, fovyRad: Math.PI / 4, viewportH: 900, pitchDeg: -30 });
+  const flat = dragMove(0, 10, { altitudeM: 1e6, fovyRad: Math.PI / 4, viewportH: 900, pitchDeg: -90 });
+  assert.ok(tilted.forward > flat.forward * 1.9);
+});
+
+test('gestes : flèches maintenues, même vitesse que three.js, plus fines près du sol', () => {
+  // Haut et droite pendant 100 ms, à 1 000 km.
+  const m = keyMove({ up: true, right: true }, 100, 1e6);
+  // Pas attendu.
+  const step = 0.1 * KEY_ROTATE_SPEED * Math.min(1, (0.9 * 1e6) / EARTH_RADIUS_M);
+  assert.ok(Math.abs(m.forward - step) < 1e-15 && Math.abs(m.right - step) < 1e-15);
+  // Gauche et droite ensemble : rien horizontalement.
+  assert.equal(keyMove({ left: true, right: true }, 50, 1e6).right, 0);
+  // Retour d'onglet (dt énorme) : borné à 100 ms.
+  assert.equal(keyMove({ up: true }, 5000, 1e6).forward, step);
+});
+
+test('gestes : rotation qui déplace la caméra vers le haut et la droite de l\'écran posés sur le sol', () => {
+  // Caméra au-dessus de l'équateur, longitude 0, cap nord.
+  const p = { x: 7e6, y: 0, z: 0 };
+  // Vers le haut de l'écran (nord) de 0,1 rad.
+  const up = surfaceRotation(p, 0, 0, 0.1);
+  // CesiumJS tourne de −angle autour de l'axe : on applique +0,1 en sens direct.
+  const moved = rodrigues([1, 0, 0], up.axis, -up.angle);
+  // La caméra est montée vers le nord (z > 0) et n'a pas bougé en longitude.
+  assert.ok(Math.abs(moved[2] - Math.sin(0.1)) < 1e-12 && Math.abs(moved[1]) < 1e-12);
+  // Vers la droite de l'écran avec le cap nord : vers l'est (y > 0).
+  const right = surfaceRotation(p, 0, 0.1, 0);
+  assert.ok(rodrigues([1, 0, 0], right.axis, -right.angle)[1] > 0.09);
+  // Cap est (90°) : le haut de l'écran est l'est.
+  const east = surfaceRotation(p, Math.PI / 2, 0, 0.1);
+  assert.ok(rodrigues([1, 0, 0], east.axis, -east.angle)[1] > 0.09);
+  // Rien à faire : null.
+  assert.equal(surfaceRotation(p, 0, 0, 0), null);
+  // Au pôle exact : pas de NaN.
+  const pole = surfaceRotation({ x: 0, y: 0, z: 7e6 }, 0, 0, 0.1);
+  assert.ok(pole.axis.every(Number.isFinite));
+});

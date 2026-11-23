@@ -3,6 +3,9 @@
  * et du pilotage au téléphone). Fonctions pures, en degrés et en mètres.
  */
 
+// Importe la conversion du glisser de la scène three.js (angle par pixel, raccourci de la vue 3/4).
+import { dragRadPerPx, dragStep } from '../../Engine/AstreSolideEngine/InputEngine/touchMath.jsx';
+
 // Rayon moyen de la Terre, en mètres.
 export const EARTH_RADIUS_M = 6371000;
 // Altitude minimale de la caméra du globe : 10 m.
@@ -82,3 +85,73 @@ export const wrapHeading = (h) => ((h % 360) + 360) % 360;
  */
 // Déclare et exporte ecefToTilesLocal : x, y, z en ECEF et l'échelle (1 / rayon de la Terre en mètres par défaut).
 export const ecefToTilesLocal = ({ x, y, z }, scale = 1 / EARTH_RADIUS_M) => [x * scale, z * scale, -y * scale];
+
+
+/** Vitesse de rotation des flèches du clavier maintenues (rad/s), la même que dans la scène three.js. */
+// Déclare et exporte la vitesse des flèches : 1,1 rad/s.
+export const KEY_ROTATE_SPEED = 1.1;
+
+/**
+ * Glisser de (dx, dy) pixels traduit en déplacement sur la Terre, exactement comme dans la scène three.js : le sol
+ * reste sous le doigt (angle par pixel d'après l'altitude, l'ouverture verticale et la hauteur de l'écran), et la vue
+ * inclinée (3/4) agrandit le déplacement vertical. Renvoie { right, forward } en radians le long des axes de l'écran.
+ */
+// Déclare et exporte dragMove : le glisser et l'état de la caméra du globe (début).
+export function dragMove(dx, dy, { altitudeM, fovyRad, viewportH, pitchDeg = -90 }) {
+  // Angle par pixel : altitude en rayons terrestres, ouverture verticale en degrés, hauteur de l'écran.
+  const radPerPx = dragRadPerPx(Math.max(0, altitudeM) / EARTH_RADIUS_M, (fovyRad * 180) / Math.PI, viewportH);
+  // Inclinaison de la vue : 0 en regardant droit vers le sol (tangage −90°).
+  const tilt = ((pitchDeg + 90) * Math.PI) / 180;
+  // Même conversion que la scène three.js.
+  return dragStep(dx, dy, radPerPx, tilt);
+// Fin de dragMove.
+}
+
+/**
+ * Flèches maintenues : déplacement de cette image le long des axes de l'écran (radians), d'autant plus fin qu'on est
+ * près du sol (même facteur que la scène three.js : 0,9 × altitude / rayon, borné à 1), dt borné à 100 ms.
+ */
+// Déclare et exporte keyMove : les flèches enfoncées, le temps écoulé (ms) et l'altitude (m) (début).
+export function keyMove(keys, dtMs, altitudeM) {
+  // Finesse du pas selon la proximité du sol.
+  const k = Math.max(1e-9, Math.min(1, (0.9 * Math.max(0, altitudeM)) / EARTH_RADIUS_M));
+  // Pas de cette image.
+  const step = Math.min(Math.max(0, dtMs), 100) * 0.001 * KEY_ROTATE_SPEED * k;
+  // Droite moins gauche, haut moins bas.
+  return { right: ((keys?.right ? 1 : 0) - (keys?.left ? 1 : 0)) * step, forward: ((keys?.up ? 1 : 0) - (keys?.down ? 1 : 0)) * step };
+// Fin de keyMove.
+}
+
+/**
+ * Rotation de la caméra autour du centre de la Terre qui la déplace de `right` et `forward` radians le long des axes de
+ * l'écran posés sur le sol (comme moveOnSphere dans la scène three.js) : `up` = direction du cap sur le sol, `right`
+ * = sa droite. `p` : position de la caméra (ECEF), `heading` : cap en radians (0 = nord, sens horaire).
+ * Renvoie { axis, angle } pour `camera.rotate(axis, angle)` de CesiumJS (qui tourne de −angle autour de l'axe, sens
+ * direct), ou null s'il n'y a rien à faire.
+ */
+// Déclare et exporte surfaceRotation : la position, le cap et le déplacement (début).
+export function surfaceRotation(p, heading, right, forward) {
+  // Angle total parcouru sur la sphère.
+  const angle = Math.hypot(right, forward);
+  // Rien : null.
+  if (!(angle > 0)) return null;
+  // Normale au sol sous la caméra (direction du centre vers la caméra).
+  const r = Math.hypot(p.x, p.y, p.z) || 1, n = [p.x / r, p.y / r, p.z / r];
+  // Tangente est : pôle (+Z) × normale, normalisée (au pôle exact : l'axe X).
+  let e = [-n[1], n[0], 0]; const el = Math.hypot(e[0], e[1]); e = el > 1e-12 ? [e[0] / el, e[1] / el, 0] : [0, 1, 0];
+  // Tangente nord : normale × est.
+  const t = [n[1] * e[2] - n[2] * e[1], n[2] * e[0] - n[0] * e[2], n[0] * e[1] - n[1] * e[0]];
+  // Haut de l'écran posé sur le sol (cap) et sa droite.
+  const ch = Math.cos(heading), sh = Math.sin(heading);
+  // Haut : nord tourné du cap vers l'est.
+  const up = [0, 1, 2].map((i) => t[i] * ch + e[i] * sh);
+  // Droite : est tourné du cap vers le sud.
+  const rt = [0, 1, 2].map((i) => e[i] * ch - t[i] * sh);
+  // Direction du déplacement sur le sol.
+  const d = [0, 1, 2].map((i) => (rt[i] * right + up[i] * forward) / angle);
+  // Axe de la rotation directe qui amène la normale vers d : normale × d.
+  const axis = [n[1] * d[2] - n[2] * d[1], n[2] * d[0] - n[0] * d[2], n[0] * d[1] - n[1] * d[0]];
+  // camera.rotate tourne de −angle : on lui passe −angle.
+  return { axis, angle: -angle };
+// Fin de surfaceRotation.
+}
