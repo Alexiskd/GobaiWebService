@@ -28,6 +28,17 @@ export class TileLoader {
   /** Clés des demandes en file (pas encore démarrées). */
   // queuedKeys : la liste des clés de la file.
   queuedKeys() { return this.queue.map((e) => e.key); }
+  /** Clés des demandes déjà démarrées (téléchargement en cours). */
+  // startedKeys : la liste des clés en cours (début).
+  startedKeys() {
+    // Clés en cours.
+    const out = [];
+    // Toutes les demandes démarrées.
+    for (const e of this.pending.values()) if (e.started) out.push(e.key);
+    // Renvoie la liste.
+    return out;
+  // Fin de startedKeys.
+  }
   // queued : le nombre de demandes dans la file.
   get queued() { return this.queue.length; }
 
