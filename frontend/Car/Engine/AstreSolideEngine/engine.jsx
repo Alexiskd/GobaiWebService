@@ -3718,7 +3718,8 @@ export class SolarEngine {
 
   /** Noms des villes du monde : [{ name, lon, lat, pop, capital }] triés par population. */
   // setCityLabels : reçoit les villes du monde.
-  setCityLabels(cities) { this.worldLabels.setCities(cities); }
+  // Gardées aussi pour le nom du lieu sous la caméra du globe de près (HUD).
+  setCityLabels(cities) { this.worldCities = Array.isArray(cities) ? cities : []; this.worldLabels.setCities(cities); }
   // setCityLabelsVisible : affiche ou masque les noms des villes.
   setCityLabelsVisible(on) { this.worldLabels.setVisible(on); }
   // setCountryLabelsVisible : affiche ou masque les noms des pays.
