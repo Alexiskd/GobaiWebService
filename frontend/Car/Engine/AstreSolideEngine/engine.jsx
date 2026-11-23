@@ -3100,6 +3100,25 @@ export class SolarEngine {
   // ------------------------------------------------------------ Lune en direct
 
   /**
+   * Lien de vue (#vue=lat,lon,altitude,cap,inclinaison) sur l'astre ciblé : la caméra y va ; quand le globe de près
+   * a pris la main et fini son zoom, il prend exactement la vue du lien (CesiumCamera.applyView).
+   */
+  // openViewLink : la vue lue dans l'adresse (début).
+  openViewLink(v) {
+    // Astre tuilé ciblé.
+    const tb = Object.values(this.tiledById ?? {}).find((t) => t.focus === this.focus);
+    // Vue illisible ou astre sans carte : rien.
+    if (!v || !tb) return false;
+    // Vue en attente du globe de près, pendant 20 s au plus (si le globe ne prend pas la main, elle est oubliée).
+    this.pendingView = { ...v, until: performance.now() + 20000 };
+    // Vol jusqu'au lieu, à l'altitude du lien.
+    this.goToSite(tb.cfg.id, { lon: v.lon, lat: v.lat }, v.altM / 1000);
+    // Vrai.
+    return true;
+  // Fin de openViewLink.
+  }
+
+  /**
    * Survole un lieu d'un astre tuilé (clic sur un nom, repère du catalogue). Altitude par défaut : `siteAltitudeKm`
    * du modèle (≈ 50 km pour la Lune, 200 à 300 km pour les planètes).
    */

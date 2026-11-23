@@ -24,6 +24,8 @@ import { tileSourceImageryProvider } from './astre-solide.imagery.js';
 // Importe la caméra du globe pilotée par les commandes de three.js (navball, zoom, verrous).
 import { CesiumCamera } from './astre-solide.camera.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
+// Importe l'effacement de l'ancre du lien de vue.
+import { setViewHash } from './astre-solide.view-link.js';
 import { cesiumShade, pitchForTilt, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
@@ -252,6 +254,10 @@ export class AstreSolideGlobe {
     this.active = false; this.armed = false;
     // L'ombre du bouton « Ombre » reviendra à la prochaine image de la superposition.
     this.shadeApplied = undefined;
+    // Retour à three.js : plus de lien de vue (ancre effacée, bouton du HUD masqué).
+    if (globalThis.location?.hash?.startsWith('#vue=')) setViewHash('');
+    // Bouton du HUD masqué.
+    this.engine.hud?.set({ viewLink: '' });
     // Globe masqué (la superposition le réaffiche à la prochaine image three.js), sa boucle arrêtée, repères HTML de
     // la scène three.js rendus.
     this.container.style.display = 'none'; this.viewer.useDefaultRenderLoop = false; this.setLabelsHidden(false);

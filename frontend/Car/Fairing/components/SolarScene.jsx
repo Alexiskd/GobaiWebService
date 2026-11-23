@@ -127,7 +127,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Magasin du HUD, créé une seule fois (début de l'appel).
   const hud = useMemo(
     // Ses valeurs de départ : textes vides, texte d'aide du zoom, et tout le reste à null ou à 0.
-    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', zoomShort: '', scaleText: '', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null, viewLock: null, fps: 0, perf: null }),
+    () => createHudStore({ date: '', focusText: '', zoomText: 'Zoom · molette ou pincement', zoomShort: '', scaleText: '', viewLink: '', cityFocus: null, tiles: null, moonTiles: null, marsTiles: null, mercuryTiles: null, venusTiles: null, moonLive: null, bodyLive: null, compass: null, gps: null, viewLock: null, fps: 0, perf: null }),
     // Aucune dépendance.
     []
   // Fin de l'appel.
