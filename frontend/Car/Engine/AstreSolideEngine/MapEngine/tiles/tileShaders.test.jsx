@@ -98,3 +98,23 @@ test('tuiles : texture envoyée à la carte graphique dès sa création, une seu
   assert.ok(broken.texture({ width: 256, height: 256 }));
 // Fin du test.
 });
+
+// Importe le budget de mise en place, depuis tileLayer.
+import { UPLOAD_BUDGET_MS, uploadAllowed } from './tileLayer.jsx';
+
+// Test : le budget de mise en place par image.
+test('tuiles : mises en place bornées en nombre et en millisecondes, la première passe toujours', () => {
+  // Budgets : 2 ms sur téléphone, 4 ms sur ordinateur.
+  assert.deepEqual(UPLOAD_BUDGET_MS, { desktop: 4, handheld: 2 });
+  // La première passe même si le temps est déjà dépassé.
+  assert.equal(uploadAllowed(0, 50, 8, 2), true);
+  // Aucune permise : aucune.
+  assert.equal(uploadAllowed(0, 0, 0, 2), false);
+  // Sous le nombre et sous le budget : encore une.
+  assert.equal(uploadAllowed(3, 1.5, 8, 2), true);
+  // Budget de temps atteint : stop.
+  assert.equal(uploadAllowed(3, 2, 8, 2), false);
+  // Nombre atteint : stop.
+  assert.equal(uploadAllowed(8, 0.1, 8, 4), false);
+// Fin du test.
+});

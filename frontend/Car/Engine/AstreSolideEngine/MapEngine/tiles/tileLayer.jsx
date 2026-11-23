@@ -83,6 +83,23 @@ const PINNED_MAX_ZOOM = 2;      // par défaut : tuiles du monde entier jamais �
 const PRELOAD_PRIORITY = 1e6;   // après toutes les tuiles visibles ; niveaux bas d'abord
 // Envois de textures par image, au plus : 8.
 const UPLOADS_PER_FRAME = 8;    // envois de textures au GPU par image, au plus (réglable par couche)
+// Déclare et exporte le temps de mise en place permis par image (envoi à la carte graphique compris, voir initTexture) : 4 ms sur
+// ordinateur, 2 ms sur téléphone. La première tuile passe toujours, même si elle dépasse.
+export const UPLOAD_BUDGET_MS = { desktop: 4, handheld: 2 };
+
+/**
+ * Encore une mise en place cette image ? Oui pour la première ; ensuite tant que le nombre permis n'est pas atteint
+ * et que le temps déjà passé reste sous le budget (une grosse image de 512 px ne fait plus sauter d'image).
+ */
+// Déclare et exporte uploadAllowed : mises en place faites, temps passé (ms), nombre permis et budget (ms) (début).
+export function uploadAllowed(done, elapsedMs, maxCount, budgetMs) {
+  // La première passe toujours (la carte avance même sur un appareil lent).
+  if (done === 0) return maxCount > 0;
+  // Ensuite : sous le nombre permis et sous le budget de temps.
+  return done < maxCount && elapsedMs < budgetMs;
+// Fin de uploadAllowed.
+}
+
 // Délai avant un nouvel essai après un échec : 6 secondes.
 const RETRY_AFTER_MS = 6000;
 // Priorité du préchargement prédictif : 1e3.
@@ -534,8 +551,10 @@ export class TileLayer {
       const uploads = Math.max(1, Math.ceil(this.uploadsPerFrame * this.uploadShare));
       // Début de la mesure du temps d'envoi.
       const t0 = performance.now(), before = this.perf.installs;
-      // Tant qu'il en reste et que le quota n'est pas atteint (début).
-      for (let n = 0; n < uploads && this.arrived.length;) {
+      // Budget de temps de cette image : téléphone ou ordinateur.
+      const budgetMs = this.device().handheld ? UPLOAD_BUDGET_MS.handheld : UPLOAD_BUDGET_MS.desktop;
+      // Tant qu'il en reste, sous le quota et sous le budget de temps (début).
+      for (let n = 0; this.arrived.length && uploadAllowed(n, performance.now() - t0, uploads, budgetMs);) {
         // Prend la première.
         const a = this.arrived.shift();
         // Elle n'est plus en attente.
