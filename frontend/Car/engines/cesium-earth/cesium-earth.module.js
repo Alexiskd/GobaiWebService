@@ -5,6 +5,9 @@
  * CesiumJS a la main, il est posé par-dessus le canevas three.js (l'interface de l'app reste au-dessus) et la scène
  * three.js est mise en attente (`engine.cesiumHold`). Le fond du globe est transparent : à chaque image du globe, la
  * scène three.js redessine seulement l'espace (sans la Terre), vu de la caméra du globe (`drawBackdrop`).
+ *
+ * Le reste du temps, la Terre est quand même dessinée par CesiumJS, par-dessus la scène three.js (`overlayFrame`,
+ * `drawOverlay`) : la caméra du globe suit celle de three.js à chaque image, et la Terre de three.js est cachée.
  */
 
 // Importe les règles du passage.
@@ -13,8 +16,8 @@ import { RETURN_KM, altitudeKm, lonLatOf, rearm, shouldEnter, shouldExit } from 
 import { createEarthViewer } from './cesium-earth.viewer.js';
 // Importe la caméra du globe pilotée par les commandes de three.js (navball, zoom, verrous).
 import { CesiumCamera } from './cesium-earth.camera.js';
-// Importe le tangage de la vue 3/4 et les réglages de l'ombre du globe.
-import { cesiumShade, pitchForTilt } from './cesium-earth.camera-math.js';
+// Importe le tangage de la vue 3/4, les réglages de l'ombre du globe et la vue three.js traduite pour le globe.
+import { cesiumShade, pitchForTilt, threeViewToCesium } from './cesium-earth.camera-math.js';
 
 // Règle CSS : globe actif, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
 const HIDE_LABELS_CSS = '[data-cesium-earth="on"] > .l, [data-cesium-earth="on"] > .user-marker, [data-cesium-earth="on"] > .city-card { display: none !important; }';
@@ -54,7 +57,7 @@ export class CesiumEarth {
   // update : la Terre ciblée et la distance de la caméra au centre (unités de la scène), son rayon.
   update({ earthFocused, dist, radius, camLocal }) {
     // Globe actif ou en création : rien.
-    if (this.active || this.creating) return;
+    if (this.active || this.creating || this.pending) return;
     // Altitude de la caméra.
     const altKm = altitudeKm(dist, radius);
     // Réarme le passage si la caméra est assez haute.
@@ -70,10 +73,20 @@ export class CesiumEarth {
   // onFocus : vrai si la nouvelle cible est la Terre.
   onFocus(isEarth) { if (this.active && !isEarth) this.leave(); }
 
-  // enter, asynchrone : pose le globe au-dessus de la Terre (début).
-  async enter({ lon, lat, altKm }) {
-    // Premier passage : création du globe.
-    if (!this.viewer) {
+  /**
+   * Crée le globe une seule fois (CesiumJS n'est téléchargé qu'à ce moment-là). Renvoie vrai quand il est prêt, faux
+   * en cas d'échec (on reste alors sur la Terre de three.js).
+   */
+  // ensureViewer, asynchrone : le globe (début).
+  async ensureViewer() {
+    // Déjà prêt : vrai.
+    if (this.viewer) return true;
+    // Échec précédent : faux, sans réessayer.
+    if (this.failed) return false;
+    // Création déjà en cours : on l'attend.
+    if (this.pending) return this.pending;
+    // Création (début).
+    this.pending = (async () => {
       // Conteneur posé juste après le canevas three.js, à la même place.
       const canvas = this.engine.canvas;
       // Nouveau conteneur.
@@ -94,7 +107,7 @@ export class CesiumEarth {
         // Globe et bibliothèque.
         ({ viewer: this.viewer, Cesium: this.Cesium } = await this.creating);
       // Échec (CesiumJS indisponible) : on reste sur la scène three.js, passage désarmé.
-      } catch { this.creating = null; this.armed = false; div.remove(); this.container = null; return; }
+      } catch { this.creating = null; this.armed = false; this.failed = true; div.remove(); this.container = null; return false; }
       // Création terminée.
       this.creating = null;
       // Caméra pilotée par les commandes de three.js.
@@ -107,12 +120,28 @@ export class CesiumEarth {
       this.viewer.scene.postRender.addEventListener(() => this.drawBackdrop());
       // Avant chaque image du globe : heure de l'app, fondu de l'ombre et rotation automatique.
       this.viewer.scene.preUpdate.addEventListener(() => this.tick());
-    // Fin de la création.
-    }
+      // Prêt.
+      return true;
+      // Fin de la création.
+    })();
+    // Attend la fin de la création, puis l'oublie.
+    try { return await this.pending; } finally { this.pending = null; }
+  // Fin de ensureViewer.
+  }
+
+  // enter, asynchrone : pose le globe au-dessus de la Terre (début).
+  async enter({ lon, lat, altKm }) {
+    // Premier passage : création du globe (ou attente de celle en cours).
+    if (!this.viewer && !(await this.ensureViewer())) return;
     // Moteur détruit entre-temps : rien.
     if (this.engine.stopped) return;
-    // Caméra du globe au même endroit, vue vers le sol.
-    this.viewer.camera.setView({ destination: this.Cesium.Cartesian3.fromDegrees(lon, lat, altKm * 1000), orientation: { heading: 0, pitch: this.Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn, altKm * 1000)), roll: 0 } });
+    // La Terre était déjà dessinée par le globe au-dessus de three.js : sa caméra est déjà au même endroit, on la
+    // garde telle quelle (passage sans saut) ; sinon, caméra du globe au même endroit, vue vers le sol.
+    if (!this.overlayOn) this.viewer.camera.setView({ destination: this.Cesium.Cartesian3.fromDegrees(lon, lat, altKm * 1000), orientation: { heading: 0, pitch: this.Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn, altKm * 1000)), roll: 0 } });
+    // Plans proche et lointain d'origine de CesiumJS (la superposition les règle autour de la Terre).
+    this.viewer.camera.frustum.near = 1; this.viewer.camera.frustum.far = 5e8;
+    // La superposition est finie : le globe a la main.
+    this.overlayOn = false; this.engine.cesiumOverlayOn = false;
     // Globe affiché, repères HTML de la scène three.js masqués.
     this.container.style.display = 'block'; hideLabelsRule(); this.setLabelsHidden(true);
     // Rendu du globe relancé.
@@ -156,6 +185,62 @@ export class CesiumEarth {
     // Retour à la scène three.js au même endroit.
     this.leave({ lon: this.Cesium.Math.toDegrees(c.longitude), lat: this.Cesium.Math.toDegrees(c.latitude) });
   // Fin de watchExit.
+  }
+
+  // ------------------------------------------------------------ Terre toujours en CesiumJS
+
+  /**
+   * Superposition, à chaque image de three.js tant que le globe n'a pas la main : la Terre est dessinée par CesiumJS
+   * par-dessus la scène three.js, vue de la même caméra. `view` : vue de la caméra three.js dans le repère des tuiles
+   * de la Terre (engine.earthCameraView). Renvoie vrai si le globe dessine la Terre à cette image (la Terre de three.js
+   * est alors cachée), faux sinon (globe pas encore prêt, ou Terre hors de l'écran).
+   */
+  // overlayFrame : la vue de la caméra three.js (début).
+  overlayFrame(view) {
+    // Le globe a la main (vue de près) : il se dessine lui-même.
+    if (this.active) return false;
+    // Globe pas encore créé : création lancée (une fois), la Terre de three.js reste affichée en attendant.
+    if (!this.viewer) { if (!this.pending && !this.failed) this.ensureViewer(); return false; }
+    // Sans vue : superposition coupée.
+    if (!view) return this.hideOverlay();
+    // Vue traduite pour la caméra du globe.
+    const v = threeViewToCesium(view, view);
+    // Terre hors de l'écran : superposition coupée (rien à dessiner).
+    if (!v.inView) return this.hideOverlay();
+    // Bibliothèque et caméra du globe.
+    const { Cesium } = this, cam = this.viewer.camera;
+    // Même position, même regard, même haut que la caméra three.js.
+    cam.setView({ destination: new Cesium.Cartesian3(v.position.x, v.position.y, v.position.z), orientation: { direction: new Cesium.Cartesian3(v.direction.x, v.direction.y, v.direction.z), up: new Cesium.Cartesian3(v.up.x, v.up.y, v.up.z) } });
+    // Même ouverture et mêmes proportions ; plans qui encadrent la Terre.
+    cam.frustum.fov = v.fov; cam.frustum.aspectRatio = v.aspect; cam.frustum.near = v.near; cam.frustum.far = v.far;
+    // Globe affiché, s'il ne l'était pas.
+    if (!this.overlayOn) { this.container.style.display = 'block'; this.overlayOn = true; this.engine.cesiumOverlayOn = true; }
+    // Vrai : le globe dessine la Terre.
+    return true;
+  // Fin de overlayFrame.
+  }
+
+  /** Dessine le globe par-dessus l'image three.js qui vient d'être faite (heure de l'app, ombre à jour). */
+  // drawOverlay : une image du globe (début).
+  drawOverlay() {
+    // Superposition coupée : rien.
+    if (!this.overlayOn || this.active) return;
+    // Horloge du globe à l'heure de l'app (Soleil, jour et nuit).
+    this.viewer.clock.currentTime = this.Cesium.JulianDate.fromDate(new Date(this.engine.simMs ?? Date.now()), this.viewer.clock.currentTime);
+    // Ombre du globe (bouton « Ombre »).
+    this.applyShade();
+    // Image demandée (rendu à la demande), puis dessinée tout de suite.
+    this.viewer.scene.requestRender(); this.viewer.resize(); this.viewer.render();
+  // Fin de drawOverlay.
+  }
+
+  // hideOverlay : coupe la superposition et renvoie faux (début).
+  hideOverlay() {
+    // Si elle était active : globe masqué, Terre de three.js rendue.
+    if (this.overlayOn) { this.container.style.display = 'none'; this.overlayOn = false; this.engine.cesiumOverlayOn = false; }
+    // Faux : three.js dessine sa Terre.
+    return false;
+  // Fin de hideOverlay.
   }
 
   /**
@@ -224,7 +309,8 @@ export class CesiumEarth {
     if (!this.active) return;
     // Inactif, passage désarmé jusqu'à ce que la caméra three.js remonte.
     this.active = false; this.armed = false;
-    // Globe masqué, son rendu arrêté, repères HTML de la scène three.js rendus.
+    // Globe masqué (la superposition le réaffiche à la prochaine image three.js), sa boucle arrêtée, repères HTML de
+    // la scène three.js rendus.
     this.container.style.display = 'none'; this.viewer.useDefaultRenderLoop = false; this.setLabelsHidden(false);
     // Scène three.js relancée.
     this.engine.cesiumHold = false;

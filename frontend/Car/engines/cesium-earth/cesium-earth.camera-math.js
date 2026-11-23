@@ -187,3 +187,47 @@ export function cesiumShade(value) {
   return { enableLighting: v > 0, vertexShadowDarkness: 0.3 + 0.7 * (1 - v) };
 // Fin de cesiumShade.
 }
+
+/**
+ * Point (ou direction avec `scale = 1`) du repère des tuiles de la Terre de three.js (sphère de rayon 1, axe des pôles
+ * = +Y) traduit dans le repère terrestre de CesiumJS (ECEF : mètres, +Z = pôle Nord). Inverse de ecefToTilesLocal.
+ */
+// Déclare et exporte tilesLocalToEcef : [x, y, z] du repère des tuiles et l'échelle (rayon de la Terre en mètres).
+export const tilesLocalToEcef = ([x, y, z], scale = EARTH_RADIUS_M) => ({ x: x * scale, y: -z * scale, z: y * scale });
+
+/**
+ * Vue de la caméra three.js (repère des tuiles de la Terre : position en rayons terrestres, regard et haut unitaires)
+ * traduite pour la caméra du globe CesiumJS, qui dessine la Terre par-dessus la scène three.js :
+ * position, regard et haut en ECEF ; ouverture CesiumJS (horizontale si l'écran est plus large que haut, verticale
+ * sinon) ; plans proche et lointain qui encadrent la Terre ; `inView` faux si la Terre est hors de l'écran ou fait
+ * moins d'un pixel (`viewportH` : hauteur de l'écran en pixels).
+ */
+// Déclare et exporte threeViewToCesium : la vue three.js et l'ouverture verticale (degrés) et les proportions (début).
+export function threeViewToCesium({ pos, dir, up }, { fovyDeg, aspect, viewportH = 0 }) {
+  // Distance de la caméra au centre de la Terre, en rayons.
+  const d = Math.hypot(pos[0], pos[1], pos[2]) || 1e-9;
+  // Ouverture verticale en radians.
+  const fovy = (fovyDeg * Math.PI) / 180;
+  // Demi-diagonale de l'écran, en radians.
+  const halfDiag = Math.atan(Math.tan(fovy / 2) * Math.hypot(1, aspect));
+  // Angle entre le regard et le centre de la Terre.
+  const cosToCenter = -(dir[0] * pos[0] + dir[1] * pos[1] + dir[2] * pos[2]) / d;
+  // Rayon apparent de la Terre (dans la Terre : tout l'écran).
+  const angularRadius = d > 1 ? Math.asin(1 / d) : Math.PI;
+  // Rayon de la Terre à l'écran, en pixels (hauteur de l'écran connue) : sous 1 pixel, three.js la dessine (même
+  // image, sans faire tourner CesiumJS pour un point).
+  const radiusPx = viewportH > 0 ? (angularRadius / fovy) * viewportH : Infinity;
+  // La Terre touche l'écran (bord du disque dans la demi-diagonale) et fait au moins un pixel.
+  const inView = Math.acos(Math.max(-1, Math.min(1, cosToCenter))) - angularRadius < halfDiag && radiusPx >= 1;
+  // Ouverture CesiumJS : horizontale sur un écran plus large que haut.
+  const fov = aspect > 1 ? 2 * Math.atan(Math.tan(fovy / 2) * aspect) : fovy;
+  // Altitude de la caméra (m).
+  const altitudeM = (d - 1) * EARTH_RADIUS_M;
+  // Plan proche : la moitié de la distance au sommet de l'atmosphère (200 km), jamais sous 1 m.
+  const near = Math.max(1, 0.5 * (altitudeM - 2e5));
+  // Plan lointain : au-delà de la face cachée de la Terre.
+  const far = (d + 2) * EARTH_RADIUS_M;
+  // Renvoie la vue CesiumJS.
+  return { position: tilesLocalToEcef(pos), direction: tilesLocalToEcef(dir, 1), up: tilesLocalToEcef(up, 1), fov, aspect, near, far, inView };
+// Fin de threeViewToCesium.
+}
