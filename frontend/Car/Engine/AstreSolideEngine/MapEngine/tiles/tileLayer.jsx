@@ -32,6 +32,8 @@ import { keptKeys, offFieldKeys, tierFor, tileBudget, withinBudget } from '../lo
 import { ROADS_LAYER_ID } from '../earth/roadSource.jsx';
 // Importe HexDisplay, l'affichage en cellules hexagonales, depuis hexDisplay.
 import { HexDisplay } from '../hex/hexDisplay.jsx';
+// Importe tileCenter, le centre d'une image carrée sur la sphère, depuis hexCells.
+import { tileCenter } from '../hex/hexCells.jsx';
 
 // Priorité des tuiles d'altitude : 1e9, après toutes les images.
 const RELIEF_PRIORITY = 1e9;                           // les tuiles d'altitude passent après toutes les images (plus petite priorité d'abord)
@@ -1017,6 +1019,16 @@ export class TileLayer {
   // Fin de request.
   }
 
+  /** Géométrie vide partagée par les maillages carrés des tuiles (jamais dessinés en cellules hexagonales). */
+  // hiddenGeometry : la géométrie vide, créée à la première demande (début).
+  hiddenGeometry() {
+    // Créée une fois.
+    if (!this.emptyGeometry) this.emptyGeometry = new THREE.BufferGeometry();
+    // La renvoie.
+    return this.emptyGeometry;
+  // Fin de hiddenGeometry.
+  }
+
   // install : met une tuile en place sur la carte graphique (début).
   install({ key, coord, base, ov, overlay, baseRect = [0, 0, 1, 1], ovRect = [0, 0, 1, 1] }) {
     // Déjà prête : rien.
@@ -1027,31 +1039,48 @@ export class TileLayer {
     // Tuile soulevée par le relief : maillage plus fin et jupe plus profonde (les bords voisins diffèrent en hauteur).
     // Réglage du relief pour cette tuile.
     const lifted = this.reliefFor(coord);
-    // Maillage de la tuile :
-    const grid = buildTileGrid(coord.z, coord.x, coord.y, proj, lifted
-      // avec le relief, une jupe plus profonde et un maillage plus fin ;
-      ? { skirt: RELIEF_SKIRT * proj.groundSize(coord.z, 0), minSegments: lifted.segments }
-      // sinon, une jupe de 1,5 % de la taille de la tuile.
-      : { skirt: 0.015 * proj.groundSize(coord.z, 0) });
-    // Sommets relatifs au centre de la tuile : la position réelle est portée par la matrice (voir `place`).
-    // Géométrie.
-    const geometry = new THREE.BufferGeometry();
-    // Positions.
-    geometry.setAttribute('position', new THREE.BufferAttribute(grid.positions, 3));
-    // Normales.
-    geometry.setAttribute('normal', new THREE.BufferAttribute(grid.normals, 3));
-    // Coordonnées de texture.
-    geometry.setAttribute('uv', new THREE.BufferAttribute(grid.uvs, 2));
-    // Indices des triangles.
-    geometry.setIndex(new THREE.BufferAttribute(grid.indices, 1));
-    // Avec le relief (début).
-    if (lifted) {
-      // Les sommets montent dans le shader : le volume englobant est élargi d'autant, pour ne pas masquer un sommet visible.
-      // Calcule la sphère englobante.
-      geometry.computeBoundingSphere();
-      // L'élargit de dix fois la hauteur maximale du relief.
-      geometry.boundingSphere.radius += (MAX_HEIGHT_M * 10) / lifted.radiusM;
-    // Fin de ce cas.
+    // En cellules hexagonales, le maillage carré n'est jamais dessiné : seul son matériau sert (chaque cellule le
+    // reprend). Une géométrie vide, partagée par toutes les tuiles, remplace donc le quadrillage avec ses jupes : ni
+    // calcul de sommets à la mise en place, ni mémoire graphique pour un maillage invisible.
+    // Géométrie et centre de la tuile : pas encore connus.
+    let geometry, center;
+    // En hexagones (début).
+    if (this.hexOn) {
+      // La géométrie vide partagée.
+      geometry = this.hiddenGeometry();
+      // Centre de la tuile sur la sphère (placement de la matrice).
+      center = tileCenter(proj, coord.z, coord.x, coord.y);
+    // En tuiles carrées (début).
+    } else {
+      // Maillage de la tuile :
+      const grid = buildTileGrid(coord.z, coord.x, coord.y, proj, lifted
+        // avec le relief, une jupe plus profonde et un maillage plus fin ;
+        ? { skirt: RELIEF_SKIRT * proj.groundSize(coord.z, 0), minSegments: lifted.segments }
+        // sinon, une jupe de 1,5 % de la taille de la tuile.
+        : { skirt: 0.015 * proj.groundSize(coord.z, 0) });
+      // Sommets relatifs au centre de la tuile : la position réelle est portée par la matrice (voir `place`).
+      // Géométrie.
+      geometry = new THREE.BufferGeometry();
+      // Positions.
+      geometry.setAttribute('position', new THREE.BufferAttribute(grid.positions, 3));
+      // Normales.
+      geometry.setAttribute('normal', new THREE.BufferAttribute(grid.normals, 3));
+      // Coordonnées de texture.
+      geometry.setAttribute('uv', new THREE.BufferAttribute(grid.uvs, 2));
+      // Indices des triangles.
+      geometry.setIndex(new THREE.BufferAttribute(grid.indices, 1));
+      // Avec le relief (début).
+      if (lifted) {
+        // Les sommets montent dans le shader : le volume englobant est élargi d'autant, pour ne pas masquer un sommet visible.
+        // Calcule la sphère englobante.
+        geometry.computeBoundingSphere();
+        // L'élargit de dix fois la hauteur maximale du relief.
+        geometry.boundingSphere.radius += (MAX_HEIGHT_M * 10) / lifted.radiusM;
+      // Fin de ce cas.
+      }
+      // Centre du quadrillage.
+      center = grid.center;
+    // Fin du choix.
     }
 
     // Texture du fond.
@@ -1215,7 +1244,7 @@ export class TileLayer {
     // Fiche de la tuile (début).
     const entry = {
       // Sa clé, ses coordonnées, son maillage, ses textures, l'état du calque, son centre.
-      key, z: coord.z, x: coord.x, y: coord.y, mesh, map, ovMap, ovRequested: Boolean(ovMap), ovFailed: false, center: grid.center, gap: 0,
+      key, z: coord.z, x: coord.x, y: coord.y, mesh, map, ovMap, ovRequested: Boolean(ovMap), ovFailed: false, center, gap: 0,
       // Pour l'éviction vers la RAM (L2) et le fondu des enfants.
       // Ses images et leurs portions.
       baseImg: base, ovImg: ovMap ? ov : null, ovSource: ovMap ? overlay : null, baseRect, ovRect,
@@ -1854,8 +1883,8 @@ export class TileLayer {
     this.surfaceAtlasPipeline?.release(`tile:${e.key}`);
     // Retire son maillage du groupe.
     this.group.remove(e.mesh);
-    // Libère sa géométrie.
-    e.mesh.geometry.dispose();
+    // Libère sa géométrie, sauf la géométrie vide partagée des cellules hexagonales.
+    if (e.mesh.geometry !== this.emptyGeometry) e.mesh.geometry.dispose();
     // Libère son matériau.
     e.mesh.material.dispose();
     // Rend la texture du fond.
@@ -1893,6 +1922,8 @@ export class TileLayer {
     this.pinned.clear();
     // Libère la texture d'attente.
     this.placeholder.dispose();
+    // Libère la géométrie vide partagée des cellules hexagonales, si elle existe.
+    this.emptyGeometry?.dispose();
     // Retire le groupe du repère.
     this.root.remove(this.group);
   // Fin de dispose.
