@@ -134,3 +134,38 @@ test('tuiles : arrivées reclassées d\'après la vue actuelle avant la mise en 
   assert.deepEqual(order, ['B', 'C', 'A']);
 // Fin du test.
 });
+
+// Test : en hexagones, les maillages carrés invisibles partagent une géométrie vide.
+test('tuiles : en hexagones, pas de quadrillage carré construit ; en tuiles carrées, quadrillage complet', () => {
+  // Couche en hexagones (début) :
+  const hexLayer = new TileLayer({
+    // repère et source minimale (projection Mercator par défaut).
+    root: { add() {}, remove() {} }, source: { minZoom: 0, maxZoom: 5, info: {} }, uniforms: {},
+  // Fin de la couche.
+  });
+  // Fausse image.
+  const img = () => ({ width: 256, height: 256 });
+  // Deux tuiles mises en place.
+  hexLayer.install({ key: '3/1/2', coord: { z: 3, x: 1, y: 2 }, base: img() });
+  // Seconde tuile.
+  hexLayer.install({ key: '3/2/2', coord: { z: 3, x: 2, y: 2 }, base: img() });
+  // Leurs fiches.
+  const a = hexLayer.ready('3/1/2'), b = hexLayer.ready('3/2/2');
+  // Même géométrie, vide.
+  assert.equal(a.mesh.geometry, b.mesh.geometry);
+  // Sans sommets.
+  assert.equal(a.mesh.geometry.getAttribute('position'), undefined);
+  // Centre sur la sphère de rayon 1.
+  assert.ok(Math.abs(Math.hypot(...a.center) - 1) < 1e-9);
+  // Libérer une tuile ne détruit pas la géométrie partagée encore utilisée.
+  hexLayer.cache.delete('3/1/2');
+  // L'autre tuile la garde.
+  assert.equal(hexLayer.ready('3/2/2').mesh.geometry, hexLayer.emptyGeometry);
+  // Couche en tuiles carrées : quadrillage complet.
+  const sq = new TileLayer({ root: { add() {}, remove() {} }, source: { minZoom: 0, maxZoom: 5, info: {} }, uniforms: {}, hex: false });
+  // Une tuile.
+  sq.install({ key: '3/1/2', coord: { z: 3, x: 1, y: 2 }, base: img() });
+  // Elle a des sommets.
+  assert.ok(sq.ready('3/1/2').mesh.geometry.getAttribute('position').count > 0);
+// Fin du test.
+});
