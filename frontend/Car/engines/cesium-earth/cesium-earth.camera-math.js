@@ -155,3 +155,35 @@ export function surfaceRotation(p, heading, right, forward) {
   return { axis, angle: -angle };
 // Fin de surfaceRotation.
 }
+
+/** Vitesse de la rotation automatique autour de l'astre (rad/s), la même que dans la scène three.js. */
+// Déclare et exporte la vitesse de la rotation automatique : 0,072 rad/s.
+export const AUTO_ROTATE_SPEED = 0.072;
+
+/**
+ * Rotation automatique (bouton « Rotation ») : angle de cette image autour de l'axe des pôles, comme dans la scène
+ * three.js : vitesse × multiplicateur de Paramètres × temps écoulé, ralentie près du sol (altitude en rayons, bornée
+ * à 1). dt borné à 100 ms (retour d'onglet : pas de saut).
+ */
+// Déclare et exporte autoRotateAngle : le temps écoulé (ms), le multiplicateur et l'altitude (m).
+export function autoRotateAngle(dtMs, rotateSpeed = 1, altitudeM = EARTH_RADIUS_M) {
+  // Ralenti près du sol : altitude en rayons terrestres, entre 0 et 1.
+  const near = Math.max(0, Math.min(1, altitudeM / EARTH_RADIUS_M));
+  // Angle de cette image.
+  return AUTO_ROTATE_SPEED * (Number.isFinite(rotateSpeed) ? rotateSpeed : 1) * Math.min(Math.max(0, dtMs), 100) * 0.001 * near;
+// Fin de autoRotateAngle.
+}
+
+/**
+ * Bouton « Ombre » sur le globe : intensité de l'ombre (0 = Terre entièrement éclairée, 1 = face nuit dans l'ombre,
+ * fondu entre les deux) traduite en réglages du globe CesiumJS. À 0, l'éclairage est coupé ; au-dessus, l'obscurité
+ * de la face nuit (`vertexShadowDarkness`, 0,3 par défaut dans CesiumJS) va de 1 (aucune ombre) à 0,3.
+ */
+// Déclare et exporte cesiumShade : l'intensité de l'ombre (début).
+export function cesiumShade(value) {
+  // Intensité bornée entre 0 et 1 (1 si illisible).
+  const v = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
+  // Éclairage du Soleil seulement s'il y a de l'ombre ; obscurité de la face nuit selon l'intensité.
+  return { enableLighting: v > 0, vertexShadowDarkness: 0.3 + 0.7 * (1 - v) };
+// Fin de cesiumShade.
+}

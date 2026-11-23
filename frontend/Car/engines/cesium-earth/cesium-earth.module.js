@@ -13,8 +13,8 @@ import { RETURN_KM, altitudeKm, lonLatOf, rearm, shouldEnter, shouldExit } from 
 import { createEarthViewer } from './cesium-earth.viewer.js';
 // Importe la caméra du globe pilotée par les commandes de three.js (navball, zoom, verrous).
 import { CesiumCamera } from './cesium-earth.camera.js';
-// Importe le tangage de la vue 3/4.
-import { pitchForTilt } from './cesium-earth.camera-math.js';
+// Importe le tangage de la vue 3/4 et les réglages de l'ombre du globe.
+import { cesiumShade, pitchForTilt } from './cesium-earth.camera-math.js';
 
 // Règle CSS : globe actif, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
 const HIDE_LABELS_CSS = '[data-cesium-earth="on"] > .l, [data-cesium-earth="on"] > .user-marker, [data-cesium-earth="on"] > .city-card { display: none !important; }';
@@ -105,6 +105,8 @@ export class CesiumEarth {
       this.viewer.camera.percentageChanged = 0.01;
       // Après chaque image du globe : la scène three.js redessine l'espace derrière, vu de la même caméra.
       this.viewer.scene.postRender.addEventListener(() => this.drawBackdrop());
+      // Avant chaque image du globe : heure de l'app, fondu de l'ombre et rotation automatique.
+      this.viewer.scene.preUpdate.addEventListener(() => this.tick());
     // Fin de la création.
     }
     // Moteur détruit entre-temps : rien.
@@ -121,6 +123,8 @@ export class CesiumEarth {
     this.active = true;
     // Scène three.js en attente.
     this.engine.cesiumHold = true;
+    // Horloge de la boucle du globe repartie de maintenant, ombre du globe réglée tout de suite.
+    this.lastTick = performance.now(); this.shadeApplied = undefined; this.applyShade();
     // Espace de la scène three.js dessiné tout de suite derrière le globe (sans attendre la première image du globe).
     this.drawBackdrop();
     // HUD : distance, échelle et boussole du globe.
@@ -152,6 +156,50 @@ export class CesiumEarth {
     // Retour à la scène three.js au même endroit.
     this.leave({ lon: this.Cesium.Math.toDegrees(c.longitude), lat: this.Cesium.Math.toDegrees(c.latitude) });
   // Fin de watchExit.
+  }
+
+  /**
+   * Avant chaque image du globe (la scène three.js est en attente, sa boucle ne tourne pas) : l'heure de l'app avance
+   * comme dans three.js (heure réelle à vitesse 1, sinon temps accéléré) et règle le Soleil du globe ; le fondu du
+   * bouton « Ombre » avance ; la rotation automatique tourne la caméra à la même vitesse que dans three.js.
+   */
+  // tick : une image de la boucle du globe (début).
+  tick() {
+    // Inactif : rien.
+    if (!this.active) return;
+    // Le moteur, l'instant présent et le temps écoulé (borné à 100 ms).
+    const e = this.engine, now = performance.now(), dt = Math.min(100, Math.max(0, now - (this.lastTick ?? now)));
+    // Note l'instant.
+    this.lastTick = now;
+    // Heure de l'app : réelle à vitesse 1, sinon accélérée, comme dans la boucle de three.js.
+    e.simMs = e.speed === 1 || !Number.isFinite(e.simMs) ? Date.now() : e.simMs + dt * e.speed;
+    // Horloge du globe à cette heure (position du Soleil, jour et nuit).
+    this.viewer.clock.currentTime = this.Cesium.JulianDate.fromDate(new Date(e.simMs), this.viewer.clock.currentTime);
+    // Fondu du bouton « Ombre » (avancé ici tant que la boucle de three.js est en attente).
+    e.updateShadeFade?.(dt);
+    // Ombre du globe à jour.
+    this.applyShade();
+    // Rotation automatique, hors glisser.
+    if (e.autoRotate && !e.drag) this.camera.autoRotate(dt);
+  // Fin de tick.
+  }
+
+  /** Bouton « Ombre » : l'intensité d'ombre de l'app (engine.shadeNow, avec son fondu) appliquée au globe. */
+  // applyShade : règle l'éclairage du globe (début).
+  applyShade() {
+    // Intensité actuelle (ombre pleine si elle n'a jamais été réglée).
+    const v = this.engine.shadeNow ?? 1;
+    // Déjà appliquée : rien.
+    if (v === this.shadeApplied) return;
+    // Notée.
+    this.shadeApplied = v;
+    // Réglages du globe.
+    const g = this.viewer.scene.globe, s = cesiumShade(v);
+    // Éclairage du Soleil et obscurité de la face nuit.
+    g.enableLighting = s.enableLighting; g.vertexShadowDarkness = s.vertexShadowDarkness;
+    // Une image (le fond three.js, dont les autres astres, est redessiné avec la même ombre).
+    this.viewer.scene.requestRender();
+  // Fin de applyShade.
   }
 
   /**

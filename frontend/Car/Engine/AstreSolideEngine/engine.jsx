@@ -2876,7 +2876,13 @@ export class SolarEngine {
     const earthWas = this.earth.group.visible, tilesWere = root.visible;
     // Cachées.
     this.earth.group.visible = false; root.visible = false;
-    // Une image de l'espace.
+    // Une image de l'espace, comme dans la boucle (effacement manuel) : l'image est effacée, le ciel lointain
+    // (étoiles, Voie lactée, galaxies) est dessiné d'abord, puis la scène par-dessus. Sans cela, le fond restait noir
+    // ou gardait l'image précédente.
+    this.renderer.clear();
+    // Ciel lointain, vu de la caméra du globe.
+    this.sky.render(this.renderer, cam, 0);
+    // Scène (Soleil, Lune, planètes) par-dessus.
     this.renderer.render(this.scene, cam);
     // La Terre et ses tuiles reprennent leur état.
     this.earth.group.visible = earthWas; root.visible = tilesWere;
