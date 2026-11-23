@@ -74,3 +74,11 @@ export function moveAngles(right, forward, altitudeM) {
 /** Cap normalisé entre 0 et 360°. */
 // Déclare et exporte wrapHeading : le cap en degrés.
 export const wrapHeading = (h) => ((h % 360) + 360) % 360;
+
+/**
+ * Point du repère terrestre de CesiumJS (ECEF : mètres, +Z vers le pôle Nord, +X vers la longitude 0) traduit dans le
+ * repère des tuiles de la Terre de three.js (sphère de rayon 1, axe des pôles = +Y, longitude = atan2(−z, x)).
+ * Avec `scale = 1`, traduit une direction (sans changer d'unité).
+ */
+// Déclare et exporte ecefToTilesLocal : x, y, z en ECEF et l'échelle (1 / rayon de la Terre en mètres par défaut).
+export const ecefToTilesLocal = ({ x, y, z }, scale = 1 / EARTH_RADIUS_M) => [x * scale, z * scale, -y * scale];
