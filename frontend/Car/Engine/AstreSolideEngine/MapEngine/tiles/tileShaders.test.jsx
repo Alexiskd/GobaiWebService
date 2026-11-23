@@ -118,3 +118,19 @@ test('tuiles : mises en place bornées en nombre et en millisecondes, la premiè
   assert.equal(uploadAllowed(8, 0.1, 8, 4), false);
 // Fin du test.
 });
+
+// Importe refreshPriorities, le reclassement des tuiles arrivées, depuis tileLayer.
+import { refreshPriorities } from './tileLayer.jsx';
+
+// Test : les tuiles arrivées suivent la vue actuelle.
+test('tuiles : arrivées reclassées d\'après la vue actuelle avant la mise en place', () => {
+  // Trois tuiles arrivées : A était au centre (priorité 1), B au bord (9), C hors de la vue actuelle (5).
+  const arrived = [{ key: 'A', d: 1 }, { key: 'B', d: 9 }, { key: 'C', d: 5 }];
+  // La vue a tourné : B est au centre, A au bord ; C n'est plus voulue.
+  const priorities = new Map([['A', 8], ['B', 0.5]]);
+  // Reclassement puis tri.
+  const order = refreshPriorities(arrived, priorities).sort((p, q) => p.d - q.d).map((a) => a.key);
+  // B d'abord, puis C (priorité d'origine), puis A.
+  assert.deepEqual(order, ['B', 'C', 'A']);
+// Fin du test.
+});
