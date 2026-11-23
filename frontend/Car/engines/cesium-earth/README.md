@@ -13,6 +13,12 @@ dessine à la fois.
 | `cesium-earth.handoff.js` | Règles du passage (altitudes d'entrée, de sortie, de retour, réarmement). |
 | `cesium-earth.sources.js` | Imagerie ouverte, sans clé : NASA GIBS, Sentinel-2 cloudless (EOX), orthophotos IGN. |
 
+Terre toujours en CesiumJS : même quand la scène three.js a la main (au-dessus de 20 000 km), la Terre est dessinée
+par le globe CesiumJS, par-dessus la scène three.js. À chaque image three.js, la caméra du globe suit la caméra
+three.js (`engine.earthCameraView` → `CesiumEarth.overlayFrame` → `threeViewToCesium`), la Terre de three.js et ses
+tuiles sont cachées, puis le globe dessine une image (`drawOverlay`). Terre hors de l'écran ou sous 1 pixel : three.js
+la dessine. Les tuiles three.js de la Terre ne sont plus demandées tant que le globe la dessine.
+
 Fond spatial transparent : le globe CesiumJS n'a ni ciel étoilé, ni Soleil, ni Lune, et son canevas a un canal alpha.
 Après chaque image du globe, la scène three.js (étoiles, Soleil, Lune, planètes) est redessinée dessous, sans la Terre,
 vue de la caméra du globe (`CesiumEarth.drawBackdrop` → `engine.renderCesiumBackdrop`, repère ECEF traduit par

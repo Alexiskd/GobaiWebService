@@ -139,3 +139,32 @@ test('ombre du globe : coupée à 0, face nuit à l\'obscurité de CesiumJS à 1
   // Valeur illisible : ombre pleine.
   assert.equal(cesiumShade(undefined).enableLighting, true);
 });
+
+// Importe la vue de three.js traduite pour le globe.
+import { threeViewToCesium, tilesLocalToEcef } from './cesium-earth.camera-math.js';
+
+test('Terre toujours en CesiumJS : vue three.js traduite pour la caméra du globe', () => {
+  // Aller-retour ECEF → tuiles → ECEF.
+  const p = { x: 1.2e6, y: -3.4e6, z: 5.6e6 };
+  const back = tilesLocalToEcef(ecefToTilesLocal(p));
+  assert.ok(Math.abs(back.x - p.x) < 1e-6 && Math.abs(back.y - p.y) < 1e-6 && Math.abs(back.z - p.z) < 1e-6);
+  // Caméra à 10 rayons sur +X, regard vers la Terre, haut = pôle (+Y du repère des tuiles).
+  const v = threeViewToCesium({ pos: [10, 0, 0], dir: [-1, 0, 0], up: [0, 1, 0] }, { fovyDeg: 45, aspect: 2 });
+  // La Terre est à l'écran.
+  assert.equal(v.inView, true);
+  // Haut = pôle Nord ECEF, regard vers −X.
+  assert.deepEqual([v.up.x, v.up.y, v.up.z], [0, -0, 1]);
+  assert.equal(v.direction.x, -1);
+  // Ouverture horizontale sur un écran deux fois plus large que haut.
+  assert.ok(Math.abs(v.fov - 2 * Math.atan(Math.tan(Math.PI / 8) * 2)) < 1e-12);
+  // Plans qui encadrent la Terre.
+  assert.ok(v.near < 9 * EARTH_RADIUS_M && v.far > 11 * EARTH_RADIUS_M);
+  // Regard à l'opposé de la Terre : hors de l'écran.
+  assert.equal(threeViewToCesium({ pos: [10, 0, 0], dir: [1, 0, 0], up: [0, 1, 0] }, { fovyDeg: 45, aspect: 2 }).inView, false);
+  // Près du sol : plan proche d'au moins 1 m.
+  assert.equal(threeViewToCesium({ pos: [1.00001, 0, 0], dir: [-1, 0, 0], up: [0, 1, 0] }, { fovyDeg: 45, aspect: 1 }).near, 1);
+  // Terre minuscule (vue de très loin, moins d'un pixel) : three.js la dessine.
+  assert.equal(threeViewToCesium({ pos: [1e6, 0, 0], dir: [-1, 0, 0], up: [0, 1, 0] }, { fovyDeg: 45, aspect: 1, viewportH: 900 }).inView, false);
+  // À 10 rayons sur un écran de 900 px : bien visible.
+  assert.equal(threeViewToCesium({ pos: [10, 0, 0], dir: [-1, 0, 0], up: [0, 1, 0] }, { fovyDeg: 45, aspect: 1, viewportH: 900 }).inView, true);
+});

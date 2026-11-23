@@ -2839,6 +2839,40 @@ export class SolarEngine {
   }
 
   /**
+   * Vue de la caméra three.js dans le repère des tuiles de la Terre (sphère de rayon 1, axe des pôles = +Y) : position
+   * (en rayons terrestres), regard et haut unitaires, ouverture verticale (degrés) et proportions. Sert au globe
+   * CesiumJS, qui dessine la Terre par-dessus la scène three.js. null sans Terre tuilée.
+   */
+  // earthCameraView : la vue de la caméra (début).
+  earthCameraView() {
+    // La Terre tuilée.
+    const tb = this.tiledById?.earth;
+    // Sans Terre : null.
+    if (!tb) return null;
+    // Repère des tuiles, matrices à jour.
+    const root = tb.tiles.root;
+    // Matrices du repère à jour.
+    root.updateWorldMatrix(true, false);
+    // Vecteurs et matrice de travail (créés une fois).
+    const w = this.earthViewVecs || (this.earthViewVecs = { inv: new THREE.Matrix4(), pos: new THREE.Vector3(), dir: new THREE.Vector3(), up: new THREE.Vector3() });
+    // Passage de la scène au repère des tuiles.
+    w.inv.copy(root.matrixWorld).invert();
+    // Caméra et ses matrices à jour.
+    const cam = this.cam;
+    // Matrice de la caméra à jour.
+    cam.updateMatrixWorld();
+    // Position de la caméra dans le repère des tuiles.
+    w.pos.copy(cam.position).applyMatrix4(w.inv);
+    // Regard de la caméra dans le repère des tuiles.
+    cam.getWorldDirection(w.dir).transformDirection(w.inv);
+    // Haut de l'image dans le repère des tuiles.
+    w.up.set(0, 1, 0).applyQuaternion(cam.quaternion).transformDirection(w.inv);
+    // La vue.
+    return { pos: w.pos.toArray(), dir: w.dir.toArray(), up: w.up.toArray(), fovyDeg: cam.fov, aspect: cam.aspect, viewportH: this.H };
+  // Fin de earthCameraView.
+  }
+
+  /**
    * Fond spatial du globe CesiumJS (fond transparent) : dessine la scène three.js sans la Terre, vue de la caméra du
    * globe. `position`, `direction` et `up` sont dans le repère terrestre de CesiumJS (ECEF, mètres), `fovy` est
    * l'ouverture verticale en radians. La caméra three.js est remise en place ensuite (rien ne bouge dans la scène).
@@ -3927,7 +3961,9 @@ export class SolarEngine {
           });
         tb.tiles.setCoreMemoryProfile(profile);
       }
-      if (tiled.has(tb.id) && this.coreActivityPolicy.shouldUpdateTiles({ state: coreState, focused })) {
+      // Terre dessinée par CesiumJS par-dessus three.js : ses tuiles three.js ne sont plus demandées (réseau et
+      // carte graphique épargnés) ; celles déjà chargées restent pour le retour à la Terre de three.js.
+      if (tiled.has(tb.id) && !(tb.id === 'earth' && this.cesiumOverlayOn) && this.coreActivityPolicy.shouldUpdateTiles({ state: coreState, focused })) {
         tb.tiles.update();
       }
       // Le basculement modèle/tuiles reste évalué chaque image pour préserver la continuité visuelle.
@@ -3955,12 +3991,22 @@ export class SolarEngine {
 
     // Début de la mesure du rendu.
     probe.renderStart();
+    // Terre toujours en CesiumJS : la caméra du globe suit celle de three.js ; vrai si le globe dessine la Terre.
+    const earthByCesium = this.cesiumEarth?.overlayFrame(this.earthCameraView()) ?? false;
     // Efface l'image.
     this.renderer.clear();
     // Dessine le ciel lointain.
     this.sky.render(this.renderer, this.cam, dt);
+    // Terre de three.js (globe, carte, frontières, volcans) et ses tuiles cachées si le globe la dessine.
+    const earthWas = this.earth.group.visible, earthRoot = this.tiledById?.earth?.tiles.root, rootWas = earthRoot?.visible;
+    // Cachées le temps du rendu.
+    if (earthByCesium) { this.earth.group.visible = false; if (earthRoot) earthRoot.visible = false; }
     // Dessine la scène par-dessus.
     this.renderer.render(this.scene, this.cam);
+    // Elles reprennent leur état.
+    if (earthByCesium) { this.earth.group.visible = earthWas; if (earthRoot) earthRoot.visible = rootWas; }
+    // Le globe dessine la Terre par-dessus l'image three.js, vu de la même caméra.
+    if (earthByCesium) this.cesiumEarth.drawOverlay();
     // Fin de la mesure du rendu.
     probe.renderEnd();
     // Fin de la mesure de l'image.

@@ -151,6 +151,8 @@ export class CesiumCamera {
   /** Flèches du clavier maintenues (engine.keyRotate) : déplacement continu, comme dans la scène three.js. */
   // keysTick : avant chaque image du globe (début).
   keysTick() {
+    // Globe sans la main (superposition) : la caméra suit three.js, rien ici.
+    if (!this.engine.cesiumHold) { this.lastKeysAt = performance.now(); return; }
     // Instant présent et temps écoulé.
     const now = performance.now(), dt = now - this.lastKeysAt;
     // Note l'instant.
@@ -271,6 +273,8 @@ export class CesiumCamera {
     const now = performance.now(), dt = Math.min(100, now - this.lastTiltAt);
     // Gardé.
     this.lastTiltAt = now;
+    // Globe sans la main (superposition) : la caméra suit three.js, rien ici.
+    if (!this.engine.cesiumHold) return;
     // Vue 3/4 coupée, inclinaison pilotée ou vol en cours : rien.
     if (!this.engine.tiltOn || this.pilotTilt || this.cam._currentFlight) return;
     // Tangage actuel et tangage voulu, en degrés.
