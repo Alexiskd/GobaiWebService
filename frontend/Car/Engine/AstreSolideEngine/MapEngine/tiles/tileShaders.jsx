@@ -128,8 +128,9 @@ export const tileFragmentShader = [
   // Variable uniforme : l'opacité de la cellule.
   'uniform float alpha;',
   // bayer2 / bayer4 : seuils de la trame de Bayer 2 × 2 puis 4 × 4 (16 valeurs régulières entre 0 et 1), d'après la
-  // position du pixel à l'écran ; sans opérations sur les bits (GLSL ES 1.0).
-  'float bayer2(vec2 a){a=floor(a);return fract(a.x*.5+a.y*a.y*.75);}',
+  // position du pixel à l'écran ; sans opérations sur les bits (GLSL ES 1.0). Coordonnées ramenées modulo 2 avant le
+  // carré : sur un grand écran (2 556 px de haut sur iPhone), y² dépasserait la précision des flottants 32 bits.
+  'float bayer2(vec2 a){a=mod(floor(a),2.);return fract(a.x*.5+a.y*a.y*.75);}',
   // Trame 4 × 4 : la trame 2 × 2 des blocs de 2 pixels, affinée par celle des pixels ; décalée d'un demi-pas (1/32).
   'float bayer4(vec2 a){return bayer2(.5*a)*.25+bayer2(a)+.03125;}',
   // Côté de l'image du fond en pixels (256 ou 512 selon le fournisseur) : agrandissement lissé et ombrage par l'image.
