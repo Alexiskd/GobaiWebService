@@ -1,5 +1,5 @@
 // Copie les fichiers statiques de CesiumJS (Workers, ThirdParty, Assets, Widgets) dans public/cesium, avant le build :
-// CesiumJS les charge à l'exécution depuis CESIUM_BASE_URL (« /cesium », voir engines/cesium-earth). Sans le paquet
+// CesiumJS les charge à l'exécution depuis CESIUM_BASE_URL (« /cesium », voir engines/astre-solide). Sans le paquet
 // installé, le script s'arrête sans erreur (le globe CesiumJS reste alors désactivé, la scène three.js garde la Terre).
 import { cpSync, existsSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';

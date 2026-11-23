@@ -19,17 +19,28 @@ export const REARM_KM = 24000;
 // Déclare et exporte altitudeKm : la distance, le rayon et le rayon réel en km.
 export const altitudeKm = (dist, radius, radiusKm = 6371) => (dist / radius - 1) * radiusKm;
 
-/** Le globe CesiumJS doit-il prendre la main ? */
-// Déclare et exporte shouldEnter : la Terre ciblée, l'altitude, le passage armé.
-export const shouldEnter = ({ earthFocused, altKm, armed }) => Boolean(earthFocused && armed && altKm < ENTER_KM);
+/**
+ * Rayon de la Terre (km) : les altitudes ci-dessus sont celles de la Terre. Pour un autre astre solide, elles sont
+ * ramenées à son rayon (même nombre de rayons : 20 000 km sur la Terre = 3,14 rayons, soit 5 455 km sur la Lune).
+ */
+// Déclare et exporte le rayon de la Terre en km.
+export const EARTH_RADIUS_KM = 6371;
+
+/** Altitude de la Terre (km) ramenée à un astre de rayon `radiusKm` : même nombre de rayons. */
+// Déclare et exporte scaledKm : l'altitude terrestre et le rayon de l'astre (km).
+export const scaledKm = (km, radiusKm = EARTH_RADIUS_KM) => (km * radiusKm) / EARTH_RADIUS_KM;
+
+/** Le globe CesiumJS doit-il prendre la main ? Astre ciblé, passage armé, caméra sous l'altitude d'entrée. */
+// Déclare et exporte shouldEnter : l'astre ciblé, l'altitude, le passage armé et le rayon de l'astre (km).
+export const shouldEnter = ({ earthFocused, focused = earthFocused, altKm, armed, radiusKm = EARTH_RADIUS_KM }) => Boolean(focused && armed && altKm < scaledKm(ENTER_KM, radiusKm));
 
 /** Faut-il revenir à la scène three.js ? */
-// Déclare et exporte shouldExit : l'altitude de la caméra du globe.
-export const shouldExit = (altKm) => altKm > EXIT_KM;
+// Déclare et exporte shouldExit : l'altitude de la caméra du globe et le rayon de l'astre (km).
+export const shouldExit = (altKm, radiusKm = EARTH_RADIUS_KM) => altKm > scaledKm(EXIT_KM, radiusKm);
 
-/** Le passage se réarme-t-il ? Déjà armé, ou caméra three.js remontée au-dessus de REARM_KM. */
-// Déclare et exporte rearm : l'état et l'altitude.
-export const rearm = (armed, altKm) => armed || altKm > REARM_KM;
+/** Le passage se réarme-t-il ? Déjà armé, ou caméra three.js remontée au-dessus de l'altitude de réarmement. */
+// Déclare et exporte rearm : l'état, l'altitude et le rayon de l'astre (km).
+export const rearm = (armed, altKm, radiusKm = EARTH_RADIUS_KM) => armed || altKm > scaledKm(REARM_KM, radiusKm);
 
 /** Longitude et latitude (degrés) d'une direction du repère des tuiles de la Terre (axe des pôles = +Y). */
 // Déclare et exporte lonLatOf : la direction [x, y, z].

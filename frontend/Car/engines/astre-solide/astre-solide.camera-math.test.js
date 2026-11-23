@@ -1,7 +1,7 @@
 // Tests des calculs de la caméra du globe CesiumJS (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MIN_ALTITUDE_M, PITCH_MAX_DEG, PITCH_MIN_DEG, approachPitch, clampPitch, tiltEngagement, moveAngles, pitchForTilt, wrapHeading, zoomStep } from './cesium-earth.camera-math.js';
+import { MIN_ALTITUDE_M, PITCH_MAX_DEG, PITCH_MIN_DEG, approachPitch, clampPitch, tiltEngagement, moveAngles, pitchForTilt, wrapHeading, zoomStep } from './astre-solide.camera-math.js';
 
 test('zoom : facteur sur l\'altitude, jamais sous le plancher', () => {
   assert.equal(zoomStep(1000, 0.5), 500);
@@ -39,9 +39,9 @@ test('cap ramené entre 0 et 360', () => {
 });
 
 // Importe la traduction ECEF → repère des tuiles de three.js.
-import { EARTH_RADIUS_M, ecefToTilesLocal } from './cesium-earth.camera-math.js';
+import { EARTH_RADIUS_M, ecefToTilesLocal } from './astre-solide.camera-math.js';
 // Importe la longitude et la latitude d'une direction du repère des tuiles.
-import { lonLatOf } from './cesium-earth.handoff.js';
+import { lonLatOf } from './astre-solide.handoff.js';
 
 test('fond transparent : ECEF de CesiumJS → repère des tuiles three.js, même longitude et latitude', () => {
   // Point au-dessus de Paris (2,35° E, 48,85° N), à 1 000 km d'altitude, en ECEF sphérique.
@@ -61,7 +61,7 @@ test('fond transparent : ECEF de CesiumJS → repère des tuiles three.js, même
 });
 
 // Importe les gestes du globe.
-import { KEY_ROTATE_SPEED, dragMove, keyMove, surfaceRotation } from './cesium-earth.camera-math.js';
+import { KEY_ROTATE_SPEED, dragMove, keyMove, surfaceRotation } from './astre-solide.camera-math.js';
 // Importe la conversion du glisser de three.js, pour comparer.
 import { dragRadPerPx, dragStep } from '../../Engine/AstreSolideEngine/InputEngine/touchMath.jsx';
 
@@ -121,7 +121,7 @@ test('gestes : rotation qui déplace la caméra vers le haut et la droite de l\'
 });
 
 // Importe la rotation automatique et l'ombre du globe.
-import { AUTO_ROTATE_SPEED, autoRotateAngle, cesiumShade } from './cesium-earth.camera-math.js';
+import { AUTO_ROTATE_SPEED, autoRotateAngle, cesiumShade } from './astre-solide.camera-math.js';
 
 test('rotation automatique : même vitesse que three.js, multiplicateur, ralentie près du sol', () => {
   // Une seconde (bornée à 100 ms), multiplicateur 2, au-dessus d'un rayon terrestre : vitesse pleine.
@@ -141,7 +141,7 @@ test('ombre du globe : coupée à 0, face nuit à l\'obscurité de CesiumJS à 1
 });
 
 // Importe la vue de three.js traduite pour le globe.
-import { threeViewToCesium, tilesLocalToEcef } from './cesium-earth.camera-math.js';
+import { threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 test('Terre toujours en CesiumJS : vue three.js traduite pour la caméra du globe', () => {
   // Aller-retour ECEF → tuiles → ECEF.

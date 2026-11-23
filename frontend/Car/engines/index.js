@@ -4,4 +4,4 @@
 export * from './render-quality/index.js';
 
 // La Terre de près affichée par CesiumJS (passage depuis la scène three.js).
-export * from './cesium-earth/index.js';
+export * from './astre-solide/index.js';
