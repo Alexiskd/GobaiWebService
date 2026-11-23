@@ -5,7 +5,7 @@
  */
 
 // Importe les calculs de la caméra.
-import { MIN_ALTITUDE_M, approachPitch, clampPitch, moveAngles, pitchForTilt, wrapHeading, zoomStep } from './cesium-earth.camera-math.js';
+import { MIN_ALTITUDE_M, approachPitch, clampPitch, dragMove, keyMove, moveAngles, pitchForTilt, surfaceRotation, wrapHeading, zoomStep } from './cesium-earth.camera-math.js';
 // Importe la mise en forme d'une distance (comme le HUD de three.js).
 import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
@@ -24,6 +24,9 @@ export class CesiumCamera {
     this.cam = viewer.camera;
     // Altitude minimale de la caméra au-dessus de l'ellipsoïde.
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = MIN_ALTITUDE_M;
+    // Gestes propres à CesiumJS coupés : la souris, le doigt, la molette et le clavier passent par les mêmes
+    // commandes que la scène three.js (InputEngine/input.jsx → dragBy, zoom, flèches), pour le même déplacement.
+    viewer.scene.screenSpaceCameraController.enableInputs = false;
     // Point de l'utilisateur : pas encore posé.
     this.userEntity = null;
     // Recalage du nord en cours (évite une boucle sur l'événement de changement).
@@ -32,8 +35,10 @@ export class CesiumCamera {
     this.pilotTilt = false;
     // Instant de la dernière image, pour le lissage de la vue 3/4.
     this.lastTiltAt = performance.now();
-    // Vue 3/4 automatique avancée avant chaque image du globe.
-    viewer.scene.preUpdate.addEventListener(() => this.autoTilt());
+    // Instant de la dernière image, pour les flèches du clavier maintenues.
+    this.lastKeysAt = performance.now();
+    // Avant chaque image du globe : flèches du clavier maintenues, puis vue 3/4 automatique.
+    viewer.scene.preUpdate.addEventListener(() => { this.keysTick(); this.autoTilt(); });
   // Fin du constructeur.
   }
 
@@ -121,13 +126,62 @@ export class CesiumCamera {
     if (!right && !forward) return;
     // Angles de rotation autour du centre de la Terre.
     const a = moveAngles(right, forward, this.altitudeM);
-    // Vers la droite.
-    if (a.right) this.cam.rotateRight(a.right);
-    // Vers le haut de l'écran.
-    if (a.forward) this.cam.rotateUp(a.forward);
+    // Déplacement le long du sol, comme le glisser.
+    this.travel(a.right, a.forward);
+  // Fin de moveBy.
+  }
+
+  /**
+   * Glisser de la souris ou du doigt (pixels), comme dans la scène three.js : le sol suit le doigt, la vue 3/4
+   * agrandit le déplacement vertical.
+   */
+  // dragBy : le glisser en pixels (début).
+  dragBy(dx, dy) {
+    // Aucun mouvement : rien.
+    if (!dx && !dy) return;
+    // Canevas du globe (hauteur de l'écran).
+    const c = this.viewer.scene.canvas;
+    // Déplacement en radians, même conversion que three.js.
+    const m = dragMove(dx, dy, { altitudeM: this.altitudeM, fovyRad: this.cam.frustum.fovy, viewportH: c.clientHeight, pitchDeg: this.Cesium.Math.toDegrees(this.cam.pitch) });
+    // Déplacement le long du sol.
+    this.travel(m.right, m.forward);
+  // Fin de dragBy.
+  }
+
+  /** Flèches du clavier maintenues (engine.keyRotate) : déplacement continu, comme dans la scène three.js. */
+  // keysTick : avant chaque image du globe (début).
+  keysTick() {
+    // Instant présent et temps écoulé.
+    const now = performance.now(), dt = now - this.lastKeysAt;
+    // Note l'instant.
+    this.lastKeysAt = now;
+    // Pas de flèche enfoncée : rien.
+    const keys = this.engine.keyRotate;
+    // Aucune flèche : rien.
+    if (!keys || !(keys.left || keys.right || keys.up || keys.down)) return;
+    // Déplacement de cette image.
+    const m = keyMove(keys, dt, this.altitudeM);
+    // Le long du sol.
+    this.travel(m.right, m.forward);
+  // Fin de keysTick.
+  }
+
+  /**
+   * Déplace la caméra le long du sol de `right` et `forward` radians (axes de l'écran posés sur le sol, cap compris),
+   * en la tournant autour du centre de la Terre : même altitude, même cap et même inclinaison, comme moveOnSphere dans
+   * la scène three.js.
+   */
+  // travel : le déplacement en radians (début).
+  travel(right, forward) {
+    // Rotation qui fait ce déplacement.
+    const r = surfaceRotation(this.cam.positionWC, this.cam.heading, right, forward);
+    // Rien : rien.
+    if (!r) return;
+    // Rotation de la caméra autour du centre de la Terre.
+    this.cam.rotate(new this.Cesium.Cartesian3(r.axis[0], r.axis[1], r.axis[2]), r.angle);
     // Une image.
     this.viewer.scene.requestRender();
-  // Fin de moveBy.
+  // Fin de travel.
   }
 
   /** Verrou du nord : le nord en haut de l'écran tant qu'il est actif. Renvoie l'état. */
