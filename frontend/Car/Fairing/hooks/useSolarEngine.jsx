@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 // Importe tilesApi, le client de l'API des tuiles, transmis au moteur.
 import { tilesApi } from '@/Computing/api';
+// Importe la lecture du lien de vue (ancre #vue=…), sans charger le globe.
+import { parseViewHash } from '@/engines/astre-solide/astre-solide.view-link.js';
 
 /**
  * Crée le moteur 3D et le détruit au démontage.
@@ -41,6 +43,10 @@ export function useSolarEngine({ containerRef, data, labels, hud, engineRef }) {
         try { slug = decodeURIComponent(slug); } catch { slug = ''; }
         // S'il reste un nom simple (sans barre oblique), le moteur vise l'astre correspondant.
         if (slug && !slug.includes('/')) instance.focusBySlug(slug);
+        // Lien de vue (/terre#vue=48.99,2.09,2500,40,-35) : la caméra va à ce point de vue.
+        const view = parseViewHash(window.location.hash);
+        // Vue lue : le moteur y va.
+        if (view) instance.openViewLink(view);
         // Range l'instance dans la référence fournie par l'appelant.
         engineRef.current = instance;
         // Enregistre l'instance dans l'état, ce qui déclenche un nouveau rendu.
