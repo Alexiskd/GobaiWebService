@@ -507,7 +507,7 @@ export class HexDisplay {
   // au lieu de clignoter. Seul le demi-tour (zoom avant puis arrière) fait repartir un fondu en sens inverse, depuis
   // l'opacité atteinte.
   //
-  // Une paire en fondu est dessinée avec un matériau transparent qui partage les uniformes de sa tuile (mêmes
+  // Une paire en fondu est dessinée avec un matériau de fondu (opaque, tramé dans le shader) qui partage les uniformes de sa tuile (mêmes
   // réglages), sauf l'opacité. Ces matériaux resservent d'un fondu à l'autre (`pool`) : en créer un neuf par cellule à
   // chaque changement de niveau coûterait une image saccadée. À la fin la paire reprend le matériau opaque.
 
@@ -606,8 +606,8 @@ export class HexDisplay {
   // Fin de transition.
   }
 
-  /** Matériau transparent pour le fondu d'une paire : uniformes de sa tuile (partagés), opacité propre. */
-  // fadeMaterial : le matériau transparent du fondu d'une paire (début).
+  /** Matériau de fondu d'une paire (opaque, tramé dans le shader) : uniformes de sa tuile (partagés), opacité propre. */
+  // fadeMaterial : le matériau de fondu (tramé) d'une paire (début).
   fadeMaterial(pair, alpha) {
     // Matériau opaque de la tuile.
     const base = pair.base;
@@ -623,8 +623,8 @@ export class HexDisplay {
         vertexShader: base.vertexShader,
         // Même shader de fragment.
         fragmentShader: base.fragmentShader,
-        // Transparent.
-        transparent: true,
+        // Opaque : le fondu se fait en tramage dans le shader (des pixels non dessinés), pas par transparence.
+        transparent: false,
       // Fin du matériau.
       });
       // Mêmes extensions.

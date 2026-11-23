@@ -196,3 +196,24 @@ test('tuiles : en hexagones, les maillages carrés invisibles ne sont pas replac
   assert.equal(sq.ready('2/1/1').gap, 5e-7);
 // Fin du test.
 });
+
+// Test : fondu en tramage.
+test('shader : fondu en tramage de Bayer 4 × 4, couleur toujours opaque', () => {
+  // Trame déclarée.
+  assert.match(tileFragmentShader, /float bayer4\(vec2 a\)/);
+  // Pixels non dessinés selon la trame pendant un fondu.
+  assert.match(tileFragmentShader, /if\(alpha<\.999&&alpha<=bayer4\(gl_FragCoord\.xy\)\)discard;/);
+  // Couleur finale opaque.
+  assert.match(tileFragmentShader, /gl_FragColor=vec4\(base,1\.\);\}$/);
+  // Même trame en JavaScript : 16 seuils distincts entre 0 et 1 sur un carré de 4 × 4 pixels.
+  const b2 = (x, y) => { x = Math.floor(x); y = Math.floor(y); return (x * 0.5 + y * y * 0.75) % 1; };
+  // Trame 4 × 4.
+  const b4 = (x, y) => b2(0.5 * x, 0.5 * y) * 0.25 + b2(x, y) + 0.03125;
+  // Seuils du carré.
+  const seen = new Set();
+  // Pour chaque pixel du carré : seuil entre 0 et 1, noté.
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { const v = b4(x + 0.5, y + 0.5); assert.ok(v > 0 && v < 1); seen.add(v.toFixed(5)); }
+  // Seize seuils distincts : chaque palier d'opacité dessine un pixel de plus sur seize.
+  assert.equal(seen.size, 16);
+// Fin du test.
+});
