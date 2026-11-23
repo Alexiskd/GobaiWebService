@@ -156,6 +156,19 @@ export function refreshPriorities(arrived, priorities) {
 
 // Délai avant un nouvel essai après un échec : 6 secondes.
 const RETRY_AFTER_MS = 6000;
+// Tuile absente chez le fournisseur (réponse 404 ou 410 : elle n'existe pas à ce niveau) : nouvel essai après une
+// minute. Redemandée toutes les 6 secondes, elle prenait une place de téléchargement aux tuiles qui existent.
+const MISSING_RETRY_MS = 60000;
+
+/** Délai avant un nouvel essai d'une tuile en échec : une minute pour une tuile absente, 6 s pour une panne. */
+// Déclare et exporte retryDelayMs : l'erreur reçue (début).
+export function retryDelayMs(err) {
+  // Réponse « absente » du fournisseur : une minute.
+  if (err?.name === 'HttpError' && (err.status === 404 || err.status === 410)) return MISSING_RETRY_MS;
+  // Sinon (panne réseau, image illisible, serveur en erreur) : 6 secondes.
+  return RETRY_AFTER_MS;
+// Fin de retryDelayMs.
+}
 // Priorité du préchargement prédictif : 1e3.
 const PREFETCH_PRIORITY = 1e3;  // préchargement prédictif : après les tuiles visibles, avant le préchargement global
 // Calcul de la vue prédite toutes les 4 images.
@@ -1075,8 +1088,8 @@ export class TileLayer {
         else this.toRam(a);
       // Fin de l'arrivée.
       })
-      // En cas d'échec, hors annulation : nouvel essai dans 6 secondes.
-      .catch((e) => { if (e.name !== 'AbortError') this.failed.set(key, performance.now() + RETRY_AFTER_MS); });
+      // En cas d'échec, hors annulation : nouvel essai dans 6 secondes (une minute pour une tuile absente).
+      .catch((e) => { if (e.name !== 'AbortError') this.failed.set(key, performance.now() + retryDelayMs(e)); });
   // Fin de request.
   }
 

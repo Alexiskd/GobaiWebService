@@ -151,3 +151,21 @@ test('zoom avant : enfants demandés seulement avec une mémoire vive, et pas ce
   layer.loader.cancelAll();
 // Fin du test.
 });
+
+// Importe retryDelayMs, le délai avant un nouvel essai, depuis tileLayer.
+import { retryDelayMs } from './tileLayer.jsx';
+
+// Test : délai avant un nouvel essai.
+test('échec : une minute pour une tuile absente chez le fournisseur, 6 s pour une panne', () => {
+  // Tuile absente (404).
+  assert.equal(retryDelayMs({ name: 'HttpError', status: 404 }), 60000);
+  // Tuile supprimée (410).
+  assert.equal(retryDelayMs({ name: 'HttpError', status: 410 }), 60000);
+  // Serveur en erreur (503) : panne passagère.
+  assert.equal(retryDelayMs({ name: 'HttpError', status: 503 }), 6000);
+  // Panne réseau.
+  assert.equal(retryDelayMs({ name: 'NetworkError' }), 6000);
+  // Erreur inconnue.
+  assert.equal(retryDelayMs(new Error('Tuile illisible')), 6000);
+// Fin du test.
+});
