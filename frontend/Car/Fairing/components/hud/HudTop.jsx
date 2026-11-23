@@ -85,8 +85,10 @@ export function HudTop({ hud }) {
       </div>
       {/* Le titre de niveau 1, jamais traduit, plus petit en mode compact (colonne 2, rangée 1, à côté de l'emblème). */}
       <Typography component="h1" translate="no" variant={compact ? 'subtitle1' : 'h6'} className="col-start-2 row-start-1 self-center m-0 min-w-0 font-semibold leading-[1.1] flex items-center flex-wrap gap-x-[0.3em]">
-        {/* Le symbole ∞ en bleu, agrandi, décoratif. */}
-        <span aria-hidden="true" className={`text-[#0000FF] ${compact ? 'text-[1.9em]' : 'text-[2.2em]'} leading-[0.8] font-bold`}>∞</span>
+        {/* Le symbole ∞ en bleu, agrandi, décoratif. Sa boîte est ramenée à la hauteur d'une ligne du titre (h-[0.5em] à
+            2.2em ≈ 1.1em) et le glyphe déborde sans compter : la hauteur du titre reste celle du texte, si bien que le
+            centre du texte tombe exactement sur le centre du logo. */}
+        <span aria-hidden="true" className={`text-[#0000FF] ${compact ? 'text-[1.9em] h-[0.58em]' : 'text-[2.2em] h-[0.5em]'} inline-flex items-center leading-none overflow-visible font-bold`}>∞</span>
         {/* Le nom de l'application, suivi d'une espace. */}
         Go白ناन्टех{' '}
         {/* La suite du nom, hors mode compact, en couleur secondaire, décorative. */}
