@@ -5,7 +5,7 @@
  */
 
 // Importe les calculs de la caméra.
-import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, keyMove, moveAngles, pitchForTilt, surfaceRotation, wrapHeading, zoomStep } from './astre-solide.camera-math.js';
+import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, easeAltitude, keyMove, moveAngles, pitchForTilt, surfaceRotation, wrapHeading, zoomGoal } from './astre-solide.camera-math.js';
 // Importe la mise en forme d'une distance (comme le HUD de three.js).
 import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
@@ -25,8 +25,10 @@ export class CesiumCamera {
     // L'astre du globe (identifiant, nom, rayon) et son rayon en mètres : les pas, la vue 3/4 et la rotation
     // automatique sont réglés en rayons de l'astre, comme dans la scène three.js.
     this.body = body; this.radiusM = (body.radiusKm ?? 6371) * 1000;
+    // Altitude minimale de la caméra : celle de l'astre dans three.js (au moins 10 m).
+    this.minAltitudeM = Math.max(MIN_ALTITUDE_M, (body.minAltitudeKm ?? 0) * 1000);
     // Altitude minimale de la caméra au-dessus de l'ellipsoïde.
-    viewer.scene.screenSpaceCameraController.minimumZoomDistance = MIN_ALTITUDE_M;
+    viewer.scene.screenSpaceCameraController.minimumZoomDistance = Math.max(MIN_ALTITUDE_M, (body.minAltitudeKm ?? 0) * 1000);
     // Gestes propres à CesiumJS coupés : la souris, le doigt, la molette et le clavier passent par les mêmes
     // commandes que la scène three.js (InputEngine/input.jsx → dragBy, zoom, flèches), pour le même déplacement.
     viewer.scene.screenSpaceCameraController.enableInputs = false;
@@ -40,8 +42,8 @@ export class CesiumCamera {
     this.lastTiltAt = performance.now();
     // Instant de la dernière image, pour les flèches du clavier maintenues.
     this.lastKeysAt = performance.now();
-    // Avant chaque image du globe : flèches du clavier maintenues, puis vue 3/4 automatique.
-    viewer.scene.preUpdate.addEventListener(() => { this.keysTick(); this.autoTilt(); });
+    // Avant chaque image du globe : zoom lissé, flèches du clavier maintenues, puis vue 3/4 automatique.
+    viewer.scene.preUpdate.addEventListener(() => { this.zoomTick(); this.keysTick(); this.autoTilt(); });
   // Fin du constructeur.
   }
 
@@ -99,13 +101,41 @@ export class CesiumCamera {
   /** Boutons +/− et molette du HUD : facteur sur l'altitude (< 1 rapproche). */
   // zoom : le facteur (début).
   zoom(f) {
-    // Distance à parcourir le long du regard.
-    const step = zoomStep(this.altitudeM, f);
-    // Rapprocher ou éloigner.
-    if (step > 0) this.cam.zoomIn(step); else if (step < 0) this.cam.zoomOut(-step);
-    // Une image.
+    // Zoom calé sur three.js : l'altitude visée est multipliée par le facteur (bornée par l'altitude minimale de
+    // l'astre) ; la caméra s'en rapproche en douceur à chaque image (zoomTick), à la verticale du même point, avec
+    // le même cap et la même inclinaison.
+    this.altGoal = zoomGoal(this.altGoal ?? this.altitudeM, f, this.minAltitudeM);
+    // Une image (la boucle avance le zoom).
     this.viewer.scene.requestRender();
   // Fin de zoom.
+  }
+
+  /** Altitude visée (m) reprise d'ailleurs, par exemple du zoom three.js en cours au moment du passage. */
+  // setAltitudeGoal : l'altitude visée en mètres.
+  setAltitudeGoal(m) { if (Number.isFinite(m) && m > 0) this.altGoal = Math.max(this.minAltitudeM, m); }
+
+  /** Avance le zoom vers l'altitude visée, comme la distance de la caméra three.js (lissage de 96 ms). */
+  // zoomTick : avant chaque image du globe (début).
+  zoomTick() {
+    // Instant présent et temps écoulé.
+    const now = performance.now(), dt = now - (this.lastZoomAt ?? now);
+    // Noté.
+    this.lastZoomAt = now;
+    // Pas de zoom en cours, globe sans la main (superposition) ou vol en cours : rien.
+    if (this.altGoal === undefined || !this.engine.cesiumHold || this.cam._currentFlight) { this.altGoal = undefined; return; }
+    // Position actuelle (longitude, latitude, altitude).
+    const c = this.cam.positionCartographic;
+    // Altitude suivante.
+    const next = easeAltitude(Math.max(1e-3, c.height), this.altGoal, dt);
+    // Arrivé (à 0,05 % près) : altitude visée exacte, zoom terminé.
+    const done = Math.abs(next - this.altGoal) <= this.altGoal * 5e-4;
+    // Même point du sol, même cap, même inclinaison, nouvelle altitude.
+    this.cam.setView({ destination: this.Cesium.Cartesian3.fromRadians(c.longitude, c.latitude, done ? this.altGoal : next, this.viewer.scene.globe.ellipsoid), orientation: { heading: this.cam.heading, pitch: this.cam.pitch, roll: this.cam.roll } });
+    // Zoom terminé : plus de visée.
+    if (done) this.altGoal = undefined;
+    // Une image de plus.
+    this.viewer.scene.requestRender();
+  // Fin de zoomTick.
   }
 
   /** Navball : changement de cap (dh) et de tangage (dp), en degrés, autour du point visé. */
