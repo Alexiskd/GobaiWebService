@@ -127,6 +127,8 @@ export const tileFragmentShader = [
   // opaque et la valeur est ignorée.
   // Variable uniforme : l'opacité de la cellule.
   'uniform float alpha;',
+  // Côté de l'image du fond en pixels (256 ou 512 selon le fournisseur) : agrandissement lissé et ombrage par l'image.
+  'uniform float mapSize;',
   // Accord des couleurs entre les couches : gain et décalage par canal de la source de l'image (1 et 0 sans correction).
   // Variables uniformes : gain et décalage des couleurs, pour l'image et pour l'ancêtre.
   'uniform vec3 colGain;uniform vec3 colOff;uniform vec3 parGain;uniform vec3 parOff;',
@@ -261,9 +263,11 @@ export const tileFragmentShader = [
   // interpolation lissée (courbe de Hermite sur la partie fractionnaire : une seule lecture). Le renfort des contours
   // (masque flou) ne s'ajoute qu'à partir de 2,5 pixels d'écran par pixel d'image, avec deux lectures en diagonale
   // seulement (quatre auparavant) : moins de lectures de texture par pixel, donc plus d'images par seconde sur téléphone.
-  // Image de 256 px de côté, comme la lecture des pentes plus bas.
-  'if(surfModel>.5){vec2 up=(baseRect.xy+vUv*baseRect.zw)*256.;float ppt=1./max(length(fwidth(up)),1e-4);if(ppt>1.5){vec2 uf=fract(up-.5),ui=floor(up-.5)+.5;vec2 uq=(ui+uf*uf*(3.-2.*uf))/256.;col=clamp(texture2D(map,uq).rgb*colGain+colOff,0.,1.);',
-  'if(ppt>2.5){float ue=1./256.;vec3 bl=clamp(.5*(texture2D(map,uq+vec2(ue,ue)).rgb+texture2D(map,uq-vec2(ue,ue)).rgb)*colGain+colOff,0.,1.);col=clamp(col+(col-bl)*.7*smoothstep(2.5,6.,ppt),0.,1.);}}}',
+  // Grille des pixels de l'image à sa vraie taille (mapSize : 256 ou 512 px). Avec 256 fixe, une image de 512 px était
+  // lue sur une grille deux fois trop grosse : agrandie, elle perdait la moitié de sa netteté.
+  'if(surfModel>.5){vec2 up=(baseRect.xy+vUv*baseRect.zw)*mapSize;float ppt=1./max(length(fwidth(up)),1e-4);if(ppt>1.5){vec2 uf=fract(up-.5),ui=floor(up-.5)+.5;vec2 uq=(ui+uf*uf*(3.-2.*uf))/mapSize;col=clamp(texture2D(map,uq).rgb*colGain+colOff,0.,1.);',
+  // Renfort des contours : lectures en diagonale à un pixel de l'image, à sa vraie taille.
+  'if(ppt>2.5){float ue=1./mapSize;vec3 bl=clamp(.5*(texture2D(map,uq+vec2(ue,ue)).rgb+texture2D(map,uq-vec2(ue,ue)).rgb)*colGain+colOff,0.,1.);col=clamp(col+(col-bl)*.7*smoothstep(2.5,6.,ppt),0.,1.);}}}',
   // Puis accorde ses couleurs sur celles du niveau le plus grossier de la couche : même teinte à tous les niveaux de zoom.
   'col=clamp(col*lvGain+lvOff,0.,1.);',
   // Fondu enchaîné (≈ 180 ms) : la tuile fine apparaît par-dessus la portion agrandie de son ancêtre.
