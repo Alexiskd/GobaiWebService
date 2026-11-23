@@ -23,9 +23,11 @@ import { createSolidViewer } from './astre-solide.viewer.js';
 import { tileSourceImageryProvider } from './astre-solide.imagery.js';
 // Importe la caméra du globe pilotée par les commandes de three.js (navball, zoom, verrous).
 import { CesiumCamera } from './astre-solide.camera.js';
-// Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
 // Importe l'effacement de l'ancre du lien de vue.
 import { setViewHash } from './astre-solide.view-link.js';
+// Importe le relief en volume de la Terre (AWS Terrain Tiles).
+import { createTerrainProvider } from './astre-solide.terrain.js';
+// Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
 import { cesiumShade, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
@@ -150,7 +152,7 @@ export class AstreSolideGlobe {
     // Conteneur retiré.
     this.container?.remove();
     // Plus de globe.
-    this.viewer = null; this.container = null; this.camera = null; this.ellipsoid = null; this.imageryKey = null;
+    this.viewer = null; this.container = null; this.camera = null; this.ellipsoid = null; this.imageryKey = null; this.terrain = null; this.terrainKey = undefined;
   // Fin de destroyViewer.
   }
 
@@ -348,11 +350,41 @@ export class AstreSolideGlobe {
   }
 
   /**
-   * Fond de carte d'un astre autre que la Terre : celui choisi dans l'app (moteur : solidImagery), lu par CesiumJS
-   * avec le même découpage. Reposé seulement quand il change (un autre fond choisi dans le menu).
+   * Relief en volume de la Terre : suit le réglage « Relief » de l'app (allumé, éteint, exagération). Le fournisseur
+   * d'altitudes (AWS Terrain Tiles) n'est posé ou retiré que quand le réglage change.
    */
-  // syncImagery : pose le fond de carte de l'app sur le globe (début).
+  // syncTerrain : pose ou retire le relief du globe (début).
+  syncTerrain() {
+    // Sans globe : rien.
+    if (!this.viewer) return;
+    // Réglage « Relief » de l'app pour la Terre (seul astre au relief en volume dans le globe pour l'instant).
+    const r = this.body.id === 'earth' ? this.engine.solidRelief?.('earth') : null;
+    // Clé du réglage : « off » ou l'exagération.
+    const key = r?.on ? `on:${r.exaggeration}` : 'off';
+    // Inchangé : rien.
+    if (key === this.terrainKey) return;
+    // Relief allumé ou éteint avant et maintenant.
+    const wasOn = Boolean(this.terrainKey?.startsWith('on')), on = key !== 'off';
+    // Noté.
+    this.terrainKey = key;
+    // Fournisseur changé seulement si le relief s'allume ou s'éteint (créé une fois : ses tuiles restent en mémoire).
+    if (on !== wasOn) this.viewer.terrainProvider = on ? (this.terrain || (this.terrain = createTerrainProvider(this.Cesium, this.ellipsoid))) : new this.Cesium.EllipsoidTerrainProvider({ ellipsoid: this.ellipsoid });
+    // Exagération des altitudes (CesiumJS 1.116 et plus).
+    if ('verticalExaggeration' in this.viewer.scene) this.viewer.scene.verticalExaggeration = on ? r.exaggeration : 1;
+    // Une image.
+    this.viewer.scene.requestRender();
+  // Fin de syncTerrain.
+  }
+
+  /**
+   * Fond de carte d'un astre autre que la Terre : celui choisi dans l'app (moteur : solidImagery), lu par CesiumJS
+   * avec le même découpage. Reposé seulement quand il change (un autre fond choisi dans le menu). Relief : voir
+   * syncTerrain.
+   */
+  // syncImagery : pose le fond de carte de l'app sur le globe, et le relief (début).
   syncImagery() {
+    // Relief en volume (Terre) d'après le réglage de l'app.
+    this.syncTerrain();
     // La Terre garde ses couches ouvertes ; sans globe : rien.
     if (!this.viewer || this.body.id === 'earth') return;
     // Fond de carte de l'app pour cet astre (ou null).

@@ -152,6 +152,10 @@ export class CesiumCamera {
     if (this.altGoal === undefined || !this.engine.cesiumHold || this.cam._currentFlight) { this.altGoal = undefined; this.panTo = undefined; return; }
     // Position actuelle (longitude, latitude, altitude).
     const c = this.cam.positionCartographic;
+    // Relief en volume : la caméra reste au-dessus du sol (altitude du relief sous elle + l'altitude minimale).
+    const ground = this.viewer.scene.globe.getHeight?.(c);
+    // Visée relevée si elle passerait sous le relief.
+    if (Number.isFinite(ground) && ground > 0) this.altGoal = Math.max(this.altGoal, ground + this.minAltitudeM);
     // Altitude suivante.
     const next = easeAltitude(Math.max(1e-3, c.height), this.altGoal, dt);
     // Arrivé (à 0,05 % près) : altitude visée exacte, zoom terminé.

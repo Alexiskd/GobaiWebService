@@ -976,6 +976,23 @@ export class SolarEngine {
   }
 
   /**
+   * Réglage « Relief » de l'app pour un astre, lu par le globe CesiumJS (relief en volume de la Terre) :
+   * { on, exaggeration }, ou null si l'astre n'a pas de relief Terrarium.
+   */
+  // solidRelief : l'identifiant de l'astre (début).
+  solidRelief(id) {
+    // Gestionnaire des tuiles de l'astre.
+    const t = this.tiledById?.[id]?.tiles;
+    // Sans relief Terrarium : null.
+    if (t?.relief?.kind !== 'terrarium') return null;
+    // Réglage demandé (activé par défaut, comme les tuiles).
+    const ask = t.reliefAsk ?? { on: true, exaggeration: 1 };
+    // Renvoie le réglage.
+    return { on: Boolean(ask.on), exaggeration: Number.isFinite(ask.exaggeration) && ask.exaggeration > 0 ? ask.exaggeration : 1 };
+  // Fin de solidRelief.
+  }
+
+  /**
    * Pollution lumineuse de la Terre la nuit (atlas 2025 de David Lorenz, en couleurs naturelles) : allumée ou
    * coupée. Elle suit le Soleil d'elle-même (côté nuit du terminateur). Le choix est gardé dans le navigateur.
    */
