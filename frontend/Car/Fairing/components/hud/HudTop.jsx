@@ -95,7 +95,7 @@ export function HudTop({ hud }) {
         {!compact && <span aria-hidden="true" className="hud-title-alt">α΄一하나א</span>}
         {/* Sujet du site : lu par les moteurs de recherche et les lecteurs d'écran, sans place à l'écran. */}
         <span translate="yes" className="sr-only">: système solaire 3D</span>
-        {/* Le badge « En direct », au bout de la ligne ; masqué mais toujours à sa place hors mode nuit. */}
+        {/* Le badge « En direct », collé au nom ; masqué mais toujours à sa place hors mode nuit. */}
         <LiveBadge className={live ? 'visible' : 'invisible'} />
       {/* Fin du titre. */}
       </h1>
