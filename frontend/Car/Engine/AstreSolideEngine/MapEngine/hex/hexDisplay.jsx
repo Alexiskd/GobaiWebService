@@ -29,12 +29,13 @@ const RAD_TO_DEG = 180 / Math.PI;
 // Déclare et exporte la durée d'un fondu : 320 ms.
 export const FADE_MS = 320;
 /**
- * Fondus entre niveaux coupés : une image qui arrive est posée d'un coup, opaque, à ses vraies couleurs. Avec un
- * fondu, elle était d'abord transparente au-dessus du fond sombre de l'astre : un voile passait sur la carte à
- * chaque chargement. Le mécanisme reste en place (une durée non nulle le rallume).
+ * Fondus entre niveaux rallumés, sans voile : ils sont tramés (opaques, voir tileShaders.jsx) et ne se font que
+ * par-dessus une image déjà affichée (zoom avant, image plus fine de la même cellule, zoom arrière). Une image qui
+ * arrive sur une zone vide est posée d'un coup, à ses vraies couleurs. Avant, un fondu transparent au-dessus du fond
+ * sombre de l'astre faisait passer un voile sur la carte : c'est pour cela qu'ils avaient été coupés.
  */
-// Fondus entre niveaux : coupés.
-export const TILE_FADES = false;
+// Fondus entre niveaux : actifs.
+export const TILE_FADES = true;
 // Rang de dessin des cellules en fondu : −1 000.
 const FADE_ORDER = -1000;      // cellules en fondu : dessinées juste après les cartes opaques, avant nuages et atmosphère
 // Hauteurs pendant un fondu, en fraction de l'écart entre deux niveaux de cellules (jamais un niveau entier : une
@@ -571,6 +572,28 @@ export class HexDisplay {
       }
     // Fin de la boucle des paires.
     }
+    // Ce qui était affiché juste avant, par fréquence (clés des cellules entières) : une image ne se fond que par-dessus
+    // une image opaque. Une cellule qui apparaît sur une zone vide (premier chargement, bord de l'écran qui entre dans
+    // la vue) est posée d'un coup : jamais de fondu au-dessus du fond sombre de l'astre (le « voile »).
+    const before = new Map(); // fréquence → Set(clés des cellules affichées à l'image précédente)
+    // Pour chaque paire affichée jusque-là (début).
+    for (const pair of this.shown) {
+      // Ensemble de sa fréquence.
+      let set = before.get(pair.f);
+      // Créé s'il manque.
+      if (!set) before.set(pair.f, (set = new Set()));
+      // Y ajoute sa cellule entière.
+      set.add(pair.hexKey);
+    // Fin de la boucle.
+    }
+    // underneath : une image opaque était affichée sous cette paire (même cellule ou cellule plus grande qui la contient).
+    const underneath = (pair) => {
+      // Pour chaque fréquence affichée (début).
+      for (const [f, keys] of before) if (f <= pair.f && keys.has(f === pair.f ? pair.hexKey : cellKeyOf(pair.center, f))) return true;
+      // Aucune.
+      return false;
+    // Fin de underneath.
+    };
     // Cellules dont les nouvelles images sont posées d'un coup.
     const instant = new Set(); // cellules dont les nouvelles images sont posées d'un coup (sous un fondu sortant)
     // Hauteur de la vague.
@@ -585,6 +608,8 @@ export class HexDisplay {
       pair.on = true;
       // Sa cellule est recouverte : posée d'un coup ; suivante.
       if (covered.has(pair.cellKey)) { instant.add(pair.cellKey); this.settle(pair); continue; }
+      // Rien d'opaque dessous (zone vide) : posée d'un coup, sans fondu ; suivante.
+      if (!underneath(pair)) { this.settle(pair); continue; }
       // Première apparition de ce tour : choisit la hauteur de la vague suivante.
       if (!lift) lift = FADE_LIFT + (FADE_SPAN * (this.wave = (this.wave + 1) % FADE_WAVES)) / FADE_WAVES;
       // Lance son fondu d'apparition.
