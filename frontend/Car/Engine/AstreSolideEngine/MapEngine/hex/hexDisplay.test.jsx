@@ -363,3 +363,35 @@ test('fondu : « réduire les animations » → changement immédiat', () => {
   for (const p of hex.shown) { assert.ok(p.mesh.visible); assert.equal(p.mesh.material, p.base); }
 // Fin du test.
 });
+
+// Importe dropOldest, l'éviction des plus anciennes entrées, depuis hexDisplay.
+import { dropOldest } from './hexDisplay.jsx';
+
+// Test : réserve des calculs de cellules en « moins récemment utilisé ».
+test('cellules : réserve pleine, seules les plus anciennes partent ; une cellule revue est gardée', () => {
+  // Table de 5 entrées, a la plus ancienne.
+  const m = new Map([['a', 1], ['b', 2], ['c', 3], ['d', 4], ['e', 5]]);
+  // On n'en garde que 3.
+  dropOldest(m, 3);
+  // a et b sont parties.
+  assert.deepEqual([...m.keys()], ['c', 'd', 'e']);
+  // Affichage des cellules sur une fausse couche.
+  const hex = new HexDisplay(fakeLayer());
+  // Sélection pour une vue lointaine.
+  hex.select(viewAt(2), OPTS);
+  // Une cellule de la vue.
+  const cell = hex.cells[0];
+  // Ses calculs.
+  const info = hex.infos.get(cell.key);
+  // Réserve remplie de fausses cellules jusqu'à la limite.
+  for (let i = 0; hex.infos.size < 1500; i++) hex.infos.set(`faux${i}`, {});
+  // La cellule de la vue est revue : remise en fin de table.
+  assert.equal(hex.info(cell), info);
+  // Une nouvelle cellule entre : la réserve ne déborde pas…
+  hex.info({ ...cell, key: 'nouvelle' });
+  // … elle reste pleine (au lieu d'être vidée d'un coup)…
+  assert.equal(hex.infos.size, 1500);
+  // … et la cellule revue a gardé ses calculs.
+  assert.equal(hex.infos.get(cell.key), info);
+// Fin du test.
+});

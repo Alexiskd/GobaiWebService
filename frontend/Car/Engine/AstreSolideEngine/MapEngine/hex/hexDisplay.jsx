@@ -52,6 +52,16 @@ const HOLD_DROP = -0.3;
 const HOLD_TIME = 1.25;        // durée de garde de l'ancienne image, en durées de fondu (marge : elle part après la fin)
 // Nombre maximal de matériaux de fondu gardés : 128.
 const MAX_POOL = 128;          // matériaux de fondu gardés pour resservir
+/**
+ * Retire les plus anciennes entrées d'une table (ordre d'insertion : les plus anciennes en tête) jusqu'à n'en garder
+ * que `keep`. Sert de cache « moins récemment utilisé » : une entrée relue est remise en fin de table.
+ */
+// Déclare et exporte dropOldest : la table et le nombre d'entrées à garder (début).
+export function dropOldest(map, keep) {
+  // Tant qu'il y en a trop : la plus ancienne part.
+  for (const key of map.keys()) { if (map.size <= keep) break; map.delete(key); }
+// Fin de dropOldest.
+}
 /** Accélération puis ralenti (pas de départ ni d'arrêt brusque). */
 // Déclare et exporte fadeEase : la courbe douce t² × (3 − 2t).
 export const fadeEase = (t) => t * t * (3 - 2 * t);
@@ -140,10 +150,13 @@ export class HexDisplay {
   info(cell) {
     // Calculs déjà gardés pour cette cellule.
     let info = this.infos.get(cell.key);
-    // S'il n'y en a pas (début).
+    // Déjà gardés : remis en fin de table (les plus récents en dernier), et renvoyés.
+    if (info) { this.infos.delete(cell.key); this.infos.set(cell.key, info); return info; }
+    // Sinon (début).
     if (!info) {
-      // Réserve pleine : elle est vidée.
-      if (this.infos.size >= MAX_CELL_INFOS) this.infos.clear();
+      // Réserve pleine : seules les cellules les moins récemment vues partent (avant, toute la réserve était vidée
+      // d'un coup et chaque cellule de la vue refaisait son maillage et ses découpes : une image saccadée).
+      dropOldest(this.infos, MAX_CELL_INFOS - 1);
       // Cellule soulevée par le relief : maillage plus fin, comme les tuiles carrées.
       // Le maillage (plus fin avec le relief), l'emprise et deux tables vides.
       info = { mesh: buildCellMesh(cell, this.layer.reliefWanted ? 6 : 1), box: cellBox(cell), byZoom: new Map(), pairs: new Map(), rho: cell.rho };
