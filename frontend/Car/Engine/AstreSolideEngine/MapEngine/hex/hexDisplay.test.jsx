@@ -395,3 +395,27 @@ test('cellules : réserve pleine, seules les plus anciennes partent ; une cellul
   assert.equal(hex.infos.get(cell.key), info);
 // Fin du test.
 });
+
+// Importe MAX_CENTERS, la taille de la réserve des centres, depuis hexDisplay.
+import { MAX_CENTERS } from './hexDisplay.jsx';
+
+// Test : réserve des centres d'images en « moins récemment utilisé ».
+test('centres : réserve pleine, ceux de la vue restent ; jamais de vidage complet', () => {
+  // Affichage des cellules sur une fausse couche.
+  const hex = new HexDisplay(fakeLayer());
+  // Sélection pour une vue lointaine.
+  const wanted = hex.select(viewAt(2), OPTS);
+  // Centres de la vue.
+  const mine = new Map(wanted.map((t) => [t.key, hex.centers.get(t.key)]));
+  // Réserve remplie de faux centres, ajoutés après : ce sont eux les plus récents.
+  for (let i = 0; hex.centers.size < MAX_CENTERS; i++) hex.centers.set(`faux${i}`, [0, 0, 1]);
+  // Même vue : chaque centre est relu, donc remis en fin de table.
+  hex.select(viewAt(2), OPTS);
+  // Vue un peu plus proche : de nouvelles images entrent.
+  hex.select(viewAt(1), OPTS);
+  // La réserve ne déborde pas et n'a pas été vidée.
+  assert.equal(hex.centers.size, MAX_CENTERS);
+  // Les centres de la première vue sont toujours les mêmes objets (pas recalculés).
+  for (const [key, c] of mine) assert.equal(hex.centers.get(key), c);
+// Fin du test.
+});
