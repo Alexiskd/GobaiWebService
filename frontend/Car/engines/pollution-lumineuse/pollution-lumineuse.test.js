@@ -54,6 +54,9 @@ test('couche : coque sous les nuages, sur son propre calque, dessinée avant l\'
   layer.update([0, 1, 0], 0.4);
   assert.deepEqual(layer.uniforms.sunDir.value.toArray(), [0, 1, 0]);
   assert.equal(layer.uniforms.shade.value, 0.4);
+  assert.equal(layer.uniforms.intensity.value, 1);
+  layer.update([0, 1, 0], 0.4, 0.25);
+  assert.equal(layer.uniforms.intensity.value, 0.25);
   // Libération.
   layer.dispose();
   assert.equal(root.children.length, 0);

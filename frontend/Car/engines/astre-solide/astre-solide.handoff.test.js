@@ -46,3 +46,15 @@ test('astres solides : mêmes seuils en rayons que pour la Terre', () => {
   // Ancienne écriture (Terre) toujours valable.
   assert.equal(shouldEnter({ earthFocused: true, altKm: 19000, armed: true }), true);
 });
+
+// Importe le fondu du zoom.
+import { FADE_KM, zoomFade } from './astre-solide.handoff.js';
+
+test('fondu du zoom : plein au-dessus de FADE_KM, nul à ENTER_KM, ramené au rayon de l\'astre', () => {
+  assert.equal(zoomFade(FADE_KM + 1000), 1);
+  assert.equal(zoomFade(ENTER_KM), 0);
+  assert.equal(zoomFade(ENTER_KM - 5000), 0);
+  assert.equal(zoomFade((ENTER_KM + FADE_KM) / 2), 0.5);
+  assert.ok(Math.abs(zoomFade(scaledKm((ENTER_KM + FADE_KM) / 2, 1737), 1737) - 0.5) < 1e-9);
+  assert.equal(zoomFade(NaN), 1);
+});

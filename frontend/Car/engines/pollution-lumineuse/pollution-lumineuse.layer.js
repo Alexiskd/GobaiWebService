@@ -71,13 +71,16 @@ export class LightPollutionLayer {
    * Avant d'être dessinée : direction du Soleil dans le repère des tuiles et intensité de l'ombre (bouton « Ombre »).
    * @param {number[]} sunDir direction de la Terre vers le Soleil, repère des tuiles
    * @param {number} shade 0 (astres entièrement éclairés : pas de lumières) à 1 (face nuit dans l'ombre)
+   * @param {number} intensity 0 (lumières éteintes) à 1 (pleines) : fondu du zoom sur la Terre
    */
-  // update : le Soleil et l'ombre (début).
-  update(sunDir, shade = 1) {
+  // update : le Soleil, l'ombre et l'intensité (début).
+  update(sunDir, shade = 1, intensity = 1) {
     // Direction du Soleil, si elle est connue.
     if (sunDir) this.uniforms.sunDir.value.fromArray(sunDir);
     // Ombre.
     this.uniforms.shade.value = Number.isFinite(shade) ? shade : 1;
+    // Intensité (fondu du zoom), entre 0 et 1.
+    this.uniforms.intensity.value = Number.isFinite(intensity) ? Math.min(1, Math.max(0, intensity)) : 1;
   // Fin de update.
   }
 
