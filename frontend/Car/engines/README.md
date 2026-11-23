@@ -4,3 +4,4 @@ Engines qui servent tous les moteurs 3D de `Engine/` au lieu d'appartenir à un 
 
 - `render-quality/` — qualité du rendu, images par seconde et surchauffe : point d'entrée unique des budgets.
 - `astre-solide/` — les astres solides (Terre, Lune, Mars, Mercure, satellites à carte) dessinés par un globe CesiumJS, par-dessus la scène three.js ou de près (passage automatique, sans clé).
+- `pollution-lumineuse/` — les lumières de la nuit de la Terre (atlas 2025), en couche three.js posée au-dessus du globe CesiumJS et sous les nuages.
