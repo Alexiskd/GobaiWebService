@@ -100,6 +100,26 @@ export function uploadAllowed(done, elapsedMs, maxCount, budgetMs) {
 // Fin de uploadAllowed.
 }
 
+/**
+ * Priorités des tuiles arrivées remises à jour d'après la vue actuelle : une tuile demandée quand elle était au centre
+ * de l'écran, puis repoussée au bord par un déplacement, ne passe plus devant celles qui sont maintenant au centre.
+ * Une tuile absente de la table garde sa priorité d'origine.
+ */
+// Déclare et exporte refreshPriorities : les tuiles arrivées et la table clé → priorité de la vue actuelle (début).
+export function refreshPriorities(arrived, priorities) {
+  // Pour chaque tuile arrivée (début).
+  for (const a of arrived) {
+    // Sa priorité dans la vue actuelle.
+    const p = priorities.get(a.key);
+    // Connue : elle remplace l'ancienne.
+    if (p !== undefined) a.d = p;
+  // Fin de la boucle.
+  }
+  // Renvoie la liste, mise à jour sur place.
+  return arrived;
+// Fin de refreshPriorities.
+}
+
 // Délai avant un nouvel essai après un échec : 6 secondes.
 const RETRY_AFTER_MS = 6000;
 // Priorité du préchargement prédictif : 1e3.
@@ -307,6 +327,8 @@ export class TileLayer {
     this.arrivedKeys = new Set(); // arrivées en attente de mise en place : on ne les redemande pas
     // Clés des tuiles voulues.
     this.wantedKeys = new Set();
+    // Priorité de chaque tuile voulue (ou basse résolution) dans la vue actuelle : reclasse les tuiles arrivées.
+    this.priorities = new Map();
     // Clés des tuiles basse résolution demandées pour la vue en cours (affichées en attendant les tuiles fines).
     this.lowKeys = new Set();
     // Clés des premiers niveaux de l'astre entier, chargés avant tout le reste.
@@ -482,12 +504,14 @@ export class TileLayer {
       this.sweep = 0;
       // Clés voulues : un nouvel ensemble après une sélection, sinon le même.
       const wantedKeys = reselect ? new Set() : this.wantedKeys;
+      // Nouvelle sélection : la table des priorités repart de zéro.
+      if (reselect) this.priorities = new Map();
       // Pour chaque tuile voulue (début).
       for (const t of wanted) {
         // Sa clé, calculée une fois.
         const key = t.key ?? (t.key = tileKey(t.z, t.x, t.y));
-        // La note.
-        if (reselect) wantedKeys.add(key);
+        // La note, avec sa priorité dans cette vue.
+        if (reselect) { wantedKeys.add(key); this.priorities.set(key, t.p); }
         // Tuile déjà sur la carte graphique.
         const entry = this.ready(key);
         // Dans ce cas : suivante.
@@ -545,8 +569,8 @@ export class TileLayer {
     // Les plus prioritaires d'abord ; une tuile arrivée mais plus voulue (la vue a bougé) reste en RAM (L2).
     // S'il y a des tuiles arrivées (début).
     if (this.arrived.length) {
-      // Les plus prioritaires d'abord.
-      this.arrived.sort((p, q) => p.d - q.d);
+      // Priorités remises à jour d'après la vue actuelle, puis les plus prioritaires d'abord.
+      refreshPriorities(this.arrived, this.priorities).sort((p, q) => p.d - q.d);
       // Nombre d'envois permis à cette image, 1 au moins.
       const uploads = Math.max(1, Math.ceil(this.uploadsPerFrame * this.uploadShare));
       // Début de la mesure du temps d'envoi.
@@ -809,6 +833,8 @@ export class TileLayer {
     for (const t of low) {
       // Note sa clé.
       keys.add(t.key);
+      // Et sa priorité (basse résolution : avant les tuiles fines), sauf si la tuile est aussi voulue telle quelle.
+      if (!this.priorities.has(t.key)) this.priorities.set(t.key, t.p);
       // Déjà arrivée, en attente de mise en place : suivante.
       if (this.arrivedKeys.has(t.key)) continue;
       // Image déjà décodée en mémoire vive.
