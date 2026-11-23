@@ -1,5 +1,7 @@
 // Importe la distance minimale de la caméra quand des tuiles sont affichées, depuis tiles/tileManager.
 import { MIN_DISTANCE_WITH_TILES } from '../MapEngine/tiles/tileManager.jsx';
+// Importe l'application du profil d'affichage d'un astre (arbre de tuiles drapé sur le relief pour la Terre).
+import { withGlobeProfile } from '../../../engines/earth-globe/index.js';
 // Importe le réglage de la pollution lumineuse de la Terre (atlas 2025 de David Lorenz).
 import { EARTH_NIGHT_LIGHTS } from '../MapEngine/earth/nightLights.jsx';
 
@@ -263,8 +265,8 @@ export const TILED_BODIES = [
     ...(id === 'jupiter' ? { lighting: 'jupiter' } : {}),
   // Fin du traitement d'une géante.
   })),
-// Fin de la liste.
-];
+// Fin de la liste : chaque astre reçoit son profil d'affichage (engine earth-globe : la Terre en méthode « Earth Maps »).
+].map((cfg) => withGlobeProfile(cfg));
 
 // Déclare et exporte la table des astres cartographiés par identifiant.
 export const TILED_BODY_BY_ID = Object.fromEntries(TILED_BODIES.map((b) => [b.id, b]));
