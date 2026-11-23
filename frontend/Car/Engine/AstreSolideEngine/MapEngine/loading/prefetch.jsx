@@ -124,6 +124,8 @@ export class ZoomWatch {
     this.alt = 0;
     // Instant jusqu'auquel le zoom est tenu pour en cours : jamais.
     this.until = -Infinity;
+    // Sens du dernier zoom : −1 en avant (la caméra descend), +1 en arrière (elle monte), 0 aucun.
+    this.direction = 0;
   // Fin du constructeur.
   }
 
@@ -132,14 +134,27 @@ export class ZoomWatch {
   update(cam, t) {
     // Altitude de la caméra, jamais nulle.
     const alt = Math.max(len(cam) - 1, 1e-9);
-    // Si l'altitude a varié de plus que le seuil : le zoom est tenu pour en cours pendant la durée de maintien.
-    if (this.alt && Math.abs(alt - this.alt) / this.alt > this.rate) this.until = t + this.holdMs;
+    // Si l'altitude a varié de plus que le seuil : le zoom est tenu pour en cours pendant la durée de maintien, et son
+    // sens est noté (début).
+    if (this.alt && Math.abs(alt - this.alt) / this.alt > this.rate) {
+      // Zoom tenu pour en cours.
+      this.until = t + this.holdMs;
+      // Sens : en avant si l'altitude baisse, en arrière sinon.
+      this.direction = alt < this.alt ? -1 : 1;
+    // Fin de ce cas.
+    }
     // Mémorise l'altitude.
     this.alt = alt;
+    // Zoom fini : plus de sens.
+    if (t >= this.until) this.direction = 0;
     // Vrai tant que cet instant n'est pas dépassé.
     return t < this.until;
   // Fin de update.
   }
+
+  /** Vrai pendant un zoom en avant (la caméra se rapproche de l'astre). */
+  // zoomingIn : vrai si le zoom en cours va vers l'avant.
+  get zoomingIn() { return this.direction < 0; }
 // Fin de la classe ZoomWatch.
 }
 
