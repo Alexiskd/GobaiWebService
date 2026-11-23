@@ -34,8 +34,8 @@ export function MobileTopBar({ children, actions, status }) {
     >
       {/* Rangée du titre : le bandeau prend la place, ses boutons restent à droite. */}
       <div className="m-top-row">
-        {/* Le bandeau titre, qui se réduit (son texte passe à la ligne) pour laisser la place aux boutons. */}
-        <div className="flex-[0_1_auto] min-w-0 flex">{children}</div>
+        {/* Le bandeau titre, étiré sur toute la largeur de l'écran (moins les marges de sécurité et les boutons éventuels). */}
+        <div className="flex-[1_1_auto] min-w-0 flex">{children}</div>
         {/* Les boutons, poussés à droite. */}
         {actions && <div className="ml-auto flex gap-2 flex-none">{actions}</div>}
       {/* Fin de la rangée du titre. */}
