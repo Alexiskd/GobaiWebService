@@ -2301,6 +2301,10 @@ export class SolarEngine {
   // Fin de focusBySlug.
   }
 
+  /** Double-clic sur la scène (x, y en pixels de la fenêtre) : globe de près, zoom vers le point cliqué. */
+  // zoomAt : le point et le facteur ; rien hors du globe de près.
+  zoomAt(x, y, f) { if (this.cesiumHold) this.solidGlobe.camera.zoomAt(x, y, f); }
+
   // f < 1 rapproche la caméra, f > 1 l'éloigne ; appliqué à l'altitude visée au-dessus de l'astre (cumulable).
   // De loin c'est la même chose que la distance ; de près, le zoom reste progressif jusqu'au sol (Terre comme Lune).
   zoom(f) {

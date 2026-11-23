@@ -184,3 +184,26 @@ test('zoom calé sur three.js : altitude visée multipliée, rapprochement liss�
   let alt = 1e6; for (let t = 0; t < 1000; t += 16) alt = easeAltitude(alt, 5e5, 16);
   assert.ok(Math.abs(alt - 5e5) / 5e5 < 1e-3);
 });
+
+// Importe les calculs du double-clic.
+import { DBLCLICK_IN, DBLCLICK_OUT, panGoal, panStep } from './astre-solide.camera-math.js';
+
+test('double-clic : facteurs, point cliqué amené au centre, plus court chemin', () => {
+  assert.ok(DBLCLICK_IN < 1 && DBLCLICK_OUT > 1);
+  const g = panGoal({ lon: 0, lat: 0.1 }, { lon: 0.01, lat: 0.2 }, { lon: 0.03, lat: 0.25 });
+  assert.ok(Math.abs(g.lon - 0.02) < 1e-12); assert.ok(Math.abs(g.lat - 0.15) < 1e-12);
+  // À travers l'antiméridien : petit écart, pas un tour complet.
+  const a = panGoal({ lon: 3.1, lat: 0 }, { lon: 3.1, lat: 0 }, { lon: -3.1, lat: 0 });
+  assert.ok(Math.abs(Math.atan2(Math.sin(a.lon - 3.1), Math.cos(a.lon - 3.1)) - (2 * Math.PI - 6.2)) < 1e-9);
+  assert.equal(panGoal({ lon: 0, lat: 1.5 }, { lon: 0, lat: 0 }, { lon: 0, lat: 0.5 }).lat, Math.PI / 2);
+});
+
+test('double-clic : la caméra avance vers la visée au rythme du zoom', () => {
+  const p = panStep({ lon: 0, lat: 0 }, { lon: 0.1, lat: -0.1 }, 96);
+  assert.ok(Math.abs(p.lon - 0.1 * (1 - Math.exp(-1))) < 1e-12);
+  assert.ok(Math.abs(p.lat + 0.1 * (1 - Math.exp(-1))) < 1e-12);
+  assert.deepEqual(panStep({ lon: 0, lat: 0 }, { lon: 0.1, lat: 0.1 }, 0), { lon: 0, lat: 0 });
+  // À travers l'antiméridien : la caméra passe par ±π, pas par 0.
+  const w = panStep({ lon: 3.1, lat: 0 }, { lon: -3.1, lat: 0 }, 96);
+  assert.ok(Math.abs(w.lon) > 3.1);
+});

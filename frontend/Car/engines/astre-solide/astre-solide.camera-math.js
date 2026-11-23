@@ -256,3 +256,43 @@ export function easeAltitude(altM, goalM, dtMs, tauMs = ZOOM_TAU_MS) {
   return altM * Math.pow(goalM / altM, 1 - Math.exp(-Math.min(Math.max(0, dtMs), 100) / tauMs));
 // Fin de easeAltitude.
 }
+
+/** Double-clic : facteur sur l'altitude (moitié pour s'approcher, double avec Maj pour s'éloigner). */
+// Déclare et exporte les facteurs du double-clic.
+export const DBLCLICK_IN = 0.5;
+// Avec Maj : on s'éloigne.
+export const DBLCLICK_OUT = 2;
+
+/**
+ * Double-clic : déplacement de la caméra (radians) qui amène le point visé au centre de l'écran, d'après le point
+ * au centre et le point cliqué (longitude, latitude en radians). La longitude prend le plus court chemin.
+ */
+// Déclare et exporte panGoal : la caméra, le point au centre et le point cliqué (début).
+export function panGoal(cam, center, target) {
+  // Écart de longitude ramené entre −π et π (plus court chemin, y compris à travers l'antiméridien).
+  const dLon = Math.atan2(Math.sin(target.lon - center.lon), Math.cos(target.lon - center.lon));
+  // Latitude visée, bornée aux pôles.
+  const lat = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, cam.lat + (target.lat - center.lat)));
+  // Longitude visée, ramenée entre −π et π.
+  const lon = Math.atan2(Math.sin(cam.lon + dLon), Math.cos(cam.lon + dLon));
+  // Renvoie la position visée de la caméra.
+  return { lon, lat };
+// Fin de panGoal.
+}
+
+/**
+ * Avance la caméra vers la position visée au même rythme que le zoom (part 1 − e^(−dt/τ) du chemin restant) ;
+ * la longitude prend le plus court chemin. dt borné à 100 ms.
+ */
+// Déclare et exporte panStep : la position, la visée (radians), le temps écoulé et la constante de temps (ms) (début).
+export function panStep(pos, goal, dtMs, tauMs = ZOOM_TAU_MS) {
+  // Part du chemin parcourue pendant dt.
+  const k = 1 - Math.exp(-Math.min(Math.max(0, dtMs), 100) / tauMs);
+  // Écart de longitude par le plus court chemin.
+  const dLon = Math.atan2(Math.sin(goal.lon - pos.lon), Math.cos(goal.lon - pos.lon));
+  // Nouvelle longitude, ramenée entre −π et π.
+  const lon = Math.atan2(Math.sin(pos.lon + dLon * k), Math.cos(pos.lon + dLon * k));
+  // Renvoie la nouvelle position.
+  return { lon, lat: pos.lat + (goal.lat - pos.lat) * k };
+// Fin de panStep.
+}
