@@ -75,8 +75,9 @@ export async function createEarthViewer(container) {
   if (viewer.scene.moon) viewer.scene.moon.show = false;
   // Le globe : jour et nuit d'après le Soleil à l'heure réelle, atmosphère.
   viewer.scene.globe.enableLighting = true;
-  // Horloge du globe : l'heure réelle, qui avance.
-  viewer.clock.currentTime = Cesium.JulianDate.now(); viewer.clock.shouldAnimate = true;
+  // Horloge du globe : l'heure réelle au départ ; ensuite, elle suit l'heure de l'app à chaque image (accélération du
+  // temps comprise, voir CesiumEarth.tick), elle n'avance donc pas d'elle-même.
+  viewer.clock.currentTime = Cesium.JulianDate.now(); viewer.clock.shouldAnimate = false;
   // Renvoie le globe et la bibliothèque.
   return { viewer, Cesium };
 // Fin de createEarthViewer.

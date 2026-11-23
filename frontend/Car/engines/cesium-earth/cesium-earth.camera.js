@@ -5,7 +5,7 @@
  */
 
 // Importe les calculs de la caméra.
-import { MIN_ALTITUDE_M, approachPitch, clampPitch, dragMove, keyMove, moveAngles, pitchForTilt, surfaceRotation, wrapHeading, zoomStep } from './cesium-earth.camera-math.js';
+import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, keyMove, moveAngles, pitchForTilt, surfaceRotation, wrapHeading, zoomStep } from './cesium-earth.camera-math.js';
 // Importe la mise en forme d'une distance (comme le HUD de three.js).
 import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
@@ -164,6 +164,23 @@ export class CesiumCamera {
     // Le long du sol.
     this.travel(m.right, m.forward);
   // Fin de keysTick.
+  }
+
+  /**
+   * Rotation automatique (bouton « Rotation »), comme dans la scène three.js : la caméra tourne autour de l'axe des
+   * pôles vers l'est, à la même vitesse (0,072 rad/s × multiplicateur de Paramètres), ralentie près du sol.
+   */
+  // autoRotate : le temps écoulé en ms (début).
+  autoRotate(dtMs) {
+    // Angle de cette image.
+    const a = autoRotateAngle(dtMs, this.engine.rotateSpeed ?? 1, this.altitudeM);
+    // Rien : rien.
+    if (!(a > 0)) return;
+    // Rotation directe autour de l'axe des pôles (+Z) : CesiumJS tourne de −angle, on lui passe −a.
+    this.cam.rotate(this.Cesium.Cartesian3.UNIT_Z, -a);
+    // Une image.
+    this.viewer.scene.requestRender();
+  // Fin de autoRotate.
   }
 
   /**

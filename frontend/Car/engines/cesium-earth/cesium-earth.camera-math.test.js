@@ -119,3 +119,23 @@ test('gestes : rotation qui déplace la caméra vers le haut et la droite de l\'
   const pole = surfaceRotation({ x: 0, y: 0, z: 7e6 }, 0, 0, 0.1);
   assert.ok(pole.axis.every(Number.isFinite));
 });
+
+// Importe la rotation automatique et l'ombre du globe.
+import { AUTO_ROTATE_SPEED, autoRotateAngle, cesiumShade } from './cesium-earth.camera-math.js';
+
+test('rotation automatique : même vitesse que three.js, multiplicateur, ralentie près du sol', () => {
+  // Une seconde (bornée à 100 ms), multiplicateur 2, au-dessus d'un rayon terrestre : vitesse pleine.
+  assert.ok(Math.abs(autoRotateAngle(100, 2, 2 * EARTH_RADIUS_M) - AUTO_ROTATE_SPEED * 2 * 0.1) < 1e-15);
+  // Retour d'onglet : borné à 100 ms.
+  assert.equal(autoRotateAngle(5000, 1, 2 * EARTH_RADIUS_M), autoRotateAngle(100, 1, 2 * EARTH_RADIUS_M));
+  // À un dixième de rayon d'altitude : dix fois plus lent.
+  assert.ok(Math.abs(autoRotateAngle(100, 1, 0.1 * EARTH_RADIUS_M) - AUTO_ROTATE_SPEED * 0.01) < 1e-15);
+});
+
+test('ombre du globe : coupée à 0, face nuit à l\'obscurité de CesiumJS à 1, fondu entre les deux', () => {
+  assert.deepEqual(cesiumShade(0), { enableLighting: false, vertexShadowDarkness: 1 });
+  assert.deepEqual(cesiumShade(1), { enableLighting: true, vertexShadowDarkness: 0.3 });
+  assert.ok(Math.abs(cesiumShade(0.5).vertexShadowDarkness - 0.65) < 1e-12 && cesiumShade(0.5).enableLighting);
+  // Valeur illisible : ombre pleine.
+  assert.equal(cesiumShade(undefined).enableLighting, true);
+});
