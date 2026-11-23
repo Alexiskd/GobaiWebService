@@ -16,7 +16,8 @@ import { TIME_OFFSET_MAX_H, TIME_OFFSET_STEP_H, formatOffset } from '@/engines/a
 import { parseViewHash } from '@/engines/astre-solide/astre-solide.view-link.js';
 
 /**
- * Panneau du globe de près (affiché seulement quand le globe CesiumJS a la main) : curseur du temps (±12 h, on voit
+ * Panneau du globe de près (affiché seulement quand le globe CesiumJS a la main) : vol entre deux villes (« Paris →
+ * Tokyo », la route et la distance parcourue s'affichent dessous), curseur du temps (±12 h, on voit
  * la nuit avancer) et favoris de vues. Une étoile
  * enregistre la vue actuelle (son lien), la liste y revole en un clic ; la croix retire un favori.
  */
@@ -38,6 +39,22 @@ export function GlobePanel({ hud, engine }) {
   const [offset, setOffset] = useState(() => (engine?.timeOffsetMs ?? 0) / 3600000);
   // changeOffset : nouveau décalage, appliqué au moteur (début).
   const changeOffset = (h) => setOffset(engine?.setTimeOffset(h) ?? h);
+  // Route du vol en cours (texte du HUD) et texte saisi du trajet.
+  const route = useHud(hud, (s) => s.route);
+  // Texte du trajet saisi.
+  const [trip, setTrip] = useState('');
+  // Message d'erreur du trajet.
+  const [tripError, setTripError] = useState('');
+  // fly : lance le vol entre les deux lieux saisis (début).
+  const fly = (e) => {
+    // Pas de rechargement de la page.
+    e.preventDefault();
+    // Vol demandé au moteur.
+    const r = engine?.flyRoute(trip);
+    // Erreur affichée, ou effacée.
+    setTripError(r?.error ?? '');
+  // Fin de fly.
+  };
   // En entrant ou en sortant du globe de près : décalage relu (il revient à 0 en sortant).
   useEffect(() => { setOffset((engine?.timeOffsetMs ?? 0) / 3600000); }, [engine, near]);
   // save : remplace la liste et l'écrit (début).
@@ -72,6 +89,13 @@ export function GlobePanel({ hud, engine }) {
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="t-caption text-soft px-2 py-1 rounded-[8px] hover:underline">Mes vues ({favorites.length})</button>
       {/* Fin de la ligne. */}
       </div>
+      {/* Vol entre deux lieux : « Paris → Tokyo ». */}
+      <form onSubmit={fly} className="flex flex-row items-center gap-1 px-1">
+        <input value={trip} onChange={(e) => setTrip(e.target.value)} placeholder="Paris → Tokyo" aria-label="Vol entre deux villes" className="t-caption flex-1 min-w-0 px-2 py-1 rounded-[8px] bg-transparent border border-current/20" />
+        <button type="submit" disabled={!trip.trim()} className="t-caption px-2 py-1 rounded-[8px] hover:underline disabled:opacity-40">Voler</button>
+      </form>
+      {/* Route en cours ou erreur. */}
+      {(route || tripError) && <span className="t-caption text-soft px-2 tabular-nums" role="status">{route || tripError}</span>}
       {/* Curseur du temps : −12 h à +12 h ; « maintenant » revient à l'heure réelle. */}
       <div className="flex flex-row items-center gap-2 px-2">
         <span className="t-caption text-soft flex-none">Heure</span>

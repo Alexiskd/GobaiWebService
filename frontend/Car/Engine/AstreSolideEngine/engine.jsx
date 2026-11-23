@@ -1,5 +1,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
+// Importe la lecture d'un trajet « A → B » et la recherche d'une ville (vol entre deux lieux).
+import { findCity, parseRoute } from '../../engines/astre-solide/astre-solide.route.js';
 // Importe le décalage du curseur du temps (borné, pas de 15 min).
 import { clampOffsetHours } from '../../engines/astre-solide/astre-solide.time.js';
 import { calculateOrbitPosition } from './OrbitEngine/orbitCalculation.jsx';
@@ -3155,6 +3157,31 @@ export class SolarEngine {
     // Vrai.
     return true;
   // Fin de openViewLink.
+  }
+
+  /**
+   * Vol entre deux lieux de la Terre écrit « Paris → Tokyo » (villes Natural Earth déjà chargées), sur le globe de
+   * près. Renvoie { from, to, km } ou { error } (texte à afficher).
+   */
+  // flyRoute : le texte du trajet (début).
+  flyRoute(text) {
+    // Seulement de près sur la Terre.
+    if (!this.cesiumHold || this.solidGlobe.bodyId !== 'earth') return { error: 'Zoomez sur la Terre pour voler entre deux lieux.' };
+    // Les deux noms.
+    const names = parseRoute(text);
+    // Illisible : exemple.
+    if (!names) return { error: 'Écrivez par exemple « Paris → Tokyo ».' };
+    // Les deux villes.
+    const [a, b] = names.map((n) => findCity(this.worldCities, n));
+    // Introuvable : laquelle.
+    if (!a || !b) return { error: `Ville introuvable : ${!a ? names[0] : names[1]}.` };
+    // Points nommés (nom français si connu).
+    const from = { lon: a.lon, lat: a.lat, name: a.nameFr || a.name }, to = { lon: b.lon, lat: b.lat, name: b.nameFr || b.name };
+    // Vol lancé.
+    const km = this.solidGlobe.camera.flyRoute(from, to);
+    // Renvoie le trajet.
+    return { from, to, km };
+  // Fin de flyRoute.
   }
 
   /**
