@@ -122,8 +122,8 @@ test('fondu : zoom avant, la nouvelle image monte en fondu par-dessus l’ancien
   for (const p of entering) {
     // Son fondu est en mode « in ».
     assert.equal(p.fx.mode, 'in');
-    // Son matériau est transparent.
-    assert.ok(p.mesh.material.transparent);
+    // Son matériau de fondu est opaque (fondu en tramage dans le shader) et distinct du matériau de la tuile.
+    assert.ok(!p.mesh.material.transparent && p.mesh.material !== p.base);
     // Son opacité part de 0.
     assert.equal(p.mesh.material.uniforms.alpha.value, 0, 'part de transparent');
     // Son opacité est une variable distincte de celle du matériau d'origine.

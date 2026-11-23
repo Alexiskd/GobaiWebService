@@ -127,6 +127,12 @@ export const tileFragmentShader = [
   // opaque et la valeur est ignorée.
   // Variable uniforme : l'opacité de la cellule.
   'uniform float alpha;',
+  // bayer2 / bayer4 : seuils de la trame de Bayer 2 × 2 puis 4 × 4 (16 valeurs régulières entre 0 et 1), d'après la
+  // position du pixel à l'écran ; sans opérations sur les bits (GLSL ES 1.0). Coordonnées ramenées modulo 2 avant le
+  // carré : sur un grand écran (2 556 px de haut sur iPhone), y² dépasserait la précision des flottants 32 bits.
+  'float bayer2(vec2 a){a=mod(floor(a),2.);return fract(a.x*.5+a.y*a.y*.75);}',
+  // Trame 4 × 4 : la trame 2 × 2 des blocs de 2 pixels, affinée par celle des pixels ; décalée d'un demi-pas (1/32).
+  'float bayer4(vec2 a){return bayer2(.5*a)*.25+bayer2(a)+.03125;}',
   // Côté de l'image du fond en pixels (256 ou 512 selon le fournisseur) : agrandissement lissé et ombrage par l'image.
   'uniform float mapSize;',
   // Accord des couleurs entre les couches : gain et décalage par canal de la source de l'image (1 et 0 sans correction).
@@ -380,7 +386,11 @@ export const tileFragmentShader = [
   // Lumière ×1,5 plus le halo de la mosaïque, multipliés par l'intensité, passés par la courbe douce, ajoutés du côté
   // nuit. Fin des deux cas.
   'base+=lightKnee((core*1.5+(lgOn>.5?cityHalo(lgQ,lgX,lgY):vec3(0.)))*(1.+.5*lv))*lwt*sh;}}',
-  // Couleur finale, avec l'opacité de la cellule. Fin de la fonction principale.
-  'gl_FragColor=vec4(base,alpha);}',
+  // Fondu en tramage (cellules hexagonales, voir hexDisplay.jsx) : pendant un fondu, le matériau reste opaque et une
+  // part des pixels (1 − alpha), répartie selon une trame de Bayer 4 × 4 fixée à l'écran, n'est pas dessinée. Pas de
+  // mélange transparent : ni tri, ni voile, ni coût de transparence ; l'image du dessous apparaît par les trous.
+  'if(alpha<.999&&alpha<=bayer4(gl_FragCoord.xy))discard;',
+  // Couleur finale, opaque. Fin de la fonction principale.
+  'gl_FragColor=vec4(base,1.);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
 ].join('\n');
