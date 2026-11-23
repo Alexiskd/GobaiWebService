@@ -260,6 +260,8 @@ export class AstreSolideGlobe {
     if (globalThis.location?.hash?.startsWith('#vue=')) setViewHash('');
     // Bouton du HUD et panneau du globe masqués.
     this.engine.hud?.set({ viewLink: '', globeNear: false });
+    // Curseur du temps : retour à l'heure réelle (il n'est réglable que de près).
+    this.engine.setTimeOffset?.(0);
     // Globe masqué (la superposition le réaffiche à la prochaine image three.js), sa boucle arrêtée, repères HTML de
     // la scène three.js rendus.
     this.container.style.display = 'none'; this.viewer.useDefaultRenderLoop = false; this.setLabelsHidden(false);
@@ -390,7 +392,7 @@ export class AstreSolideGlobe {
     // Note l'instant.
     this.lastTick = now;
     // Heure de l'app : réelle à vitesse 1, sinon accélérée, comme dans la boucle de three.js.
-    e.simMs = e.speed === 1 || !Number.isFinite(e.simMs) ? Date.now() : e.simMs + dt * e.speed;
+    e.simMs = e.speed === 1 || !Number.isFinite(e.simMs) ? Date.now() + (e.timeOffsetMs ?? 0) : e.simMs + dt * e.speed;
     // Horloge du globe à cette heure.
     this.viewer.clock.currentTime = this.Cesium.JulianDate.fromDate(new Date(e.simMs), this.viewer.clock.currentTime);
     // Fondu du bouton « Ombre » (avancé ici tant que la boucle de three.js est en attente).
