@@ -2,8 +2,6 @@
 import { useCallback, useEffect, useState } from 'react';
 // Importe la table « toutes les familles affichées » et la liste des familles d'astres.
 import { ALL_KINDS_SHOWN, BODY_KINDS } from '@/Engine/AstreSolideEngine/BodyEngine/bodyKinds';
-// Importe le profil d'affichage d'un astre et la lecture du choix du relief (engine earth-globe).
-import { globeProfile, reliefShown } from '@/engines/earth-globe/index.js';
 
 /** Rotation automatique, vue 3/4, repères du système solaire (orbites, points des planètes) et ciel lointain, envoyés au moteur. */
 /**
@@ -13,7 +11,7 @@ import { globeProfile, reliefShown } from '@/engines/earth-globe/index.js';
 // prefersReducedMotion : vrai si le système demande moins d'animations (faux hors navigateur).
 const prefersReducedMotion = () => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
 
-// Relief en volume de la Terre (« gobai:relief-3d », voir TileManager) : « 0 » = coupé, nombre = exagération, absent = défaut du profil.
+// Relief en volume de la Terre (« gobai:relief-3d », voir TileManager) : « 0 » ou absent = coupé, nombre = exagération.
 // storedLights : valeur enregistrée des lumières de la nuit, null si elle manque ou si le stockage est inaccessible.
 const storedLights = () => { try { return globalThis.localStorage?.getItem('gobai:lumieres-nuit') ?? null; } catch { return null; } };
 // storedRelief : valeur enregistrée du relief, null si elle manque ou si le stockage est inaccessible.
@@ -49,10 +47,10 @@ export function useCameraToggles(engine, initial = {}) {
   // État : nuages et atmosphère de la Terre, affichés au départ (calque séparé de sa couche unique ; décochable dans
   // Paramètres).
   const [earthAtmosphere, setEarthAtmosphere] = useState(true);
-  // Relief en volume de la Terre (vraies altitudes) : allumé par défaut, méthode « Earth Maps » (engine earth-globe :
-  // tuiles drapées sur le relief). Le choix est gardé dans le navigateur par le moteur.
-  // État : relief affiché d'après la valeur enregistrée, sinon le défaut du profil de la Terre.
-  const [relief, setReliefShown] = useState(() => reliefShown(storedRelief(), globeProfile('earth').reliefDefaultOn));
+  // Relief en volume de la Terre (vraies altitudes) : coupé par défaut — carte à plat, affichée plus vite. Le choix
+  // est gardé dans le navigateur par le moteur.
+  // État : relief affiché si la valeur enregistrée est un nombre positif.
+  const [relief, setReliefShown] = useState(() => Number(storedRelief()) > 0);
   // setRelief : active ou coupe le relief ; début de la fonction mémorisée.
   const setRelief = useCallback((on) => {
     // Met l'état à jour.
