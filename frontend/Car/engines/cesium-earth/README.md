@@ -8,6 +8,8 @@ dessine à la fois.
 |---|---|
 | `cesium-earth.module.js` | Passage three.js ↔ CesiumJS, conteneur du globe, mise en attente de la scène three.js. |
 | `cesium-earth.viewer.js` | Crée le globe (CesiumJS chargé seulement à la première approche de la Terre). |
+| `cesium-earth.camera.js` | Caméra du globe pilotée par les commandes de three.js : navball, +/−, verrou du nord, vue 3/4, pilotage au téléphone, lieux, villes, position ; HUD (distance, échelle, boussole). |
+| `cesium-earth.camera-math.js` | Calculs purs de cette caméra (zoom, tangage, déplacement, cap). |
 | `cesium-earth.handoff.js` | Règles du passage (altitudes d'entrée, de sortie, de retour, réarmement). |
 | `cesium-earth.sources.js` | Imagerie ouverte, sans clé : NASA GIBS, Sentinel-2 cloudless (EOX), orthophotos IGN. |
 
