@@ -1,7 +1,7 @@
 // Tests des sources d'imagerie du globe CesiumJS (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CESIUM_IMAGERY, imageryCredits } from './cesium-earth.sources.js';
+import { CESIUM_IMAGERY, imageryCredits } from './astre-solide.sources.js';
 
 test('trois couches ouvertes, sans clé, de la plus large à la plus fine', () => {
   assert.deepEqual(CESIUM_IMAGERY.map((l) => l.id), ['gibs', 'sentinel2', 'ign']);

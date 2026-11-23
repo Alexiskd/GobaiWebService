@@ -117,10 +117,10 @@ import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProf
 import { FpsMeter, PerfProbe } from './PerfEngine/perfProbe.jsx';
 // Importe le module de qualité du rendu (mesures, profils et surchauffe : engines/render-quality).
 import { createRenderQualityModule } from '../../engines/render-quality/index.js';
-// Importe le globe CesiumJS de la Terre de près (engine cesium-earth).
-import { CesiumEarth } from '../../engines/cesium-earth/index.js';
+// Importe le globe CesiumJS des astres solides (engine astre-solide).
+import { AstreSolideGlobe } from '../../engines/astre-solide/index.js';
 // Importe la traduction du repère terrestre de CesiumJS (ECEF) vers le repère des tuiles de la Terre.
-import { ecefToTilesLocal } from '../../engines/cesium-earth/cesium-earth.camera-math.js';
+import { ecefToTilesLocal } from '../../engines/astre-solide/astre-solide.camera-math.js';
 import { SystemRegistry } from '../SystemeEngine/core/system/SystemRegistry.js';
 import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
 import { CoreActivityPolicy } from '../SystemeEngine/core/system/CoreActivityPolicy.js';
@@ -457,10 +457,11 @@ export class SolarEngine {
     this.earth.group.add(this.volcanoes.root);
     // Nuages LiDAR calés par GPS.
     this.lidar = new LidarGlobe(this); // nuages LiDAR calés par GPS, sur la Terre
-    // La Terre de près est affichée par CesiumJS (engine cesium-earth) ; pendant ce temps, la scène three.js attend.
+    // L'astre solide ciblé (la Terre par défaut) est dessiné par CesiumJS (engine astre-solide) ; de près, la scène
+    // three.js attend.
     this.cesiumHold = false;
-    // Le passage entre la scène three.js et le globe CesiumJS.
-    this.cesiumEarth = new CesiumEarth(this);
+    // Le globe CesiumJS des astres solides : superposition et passage de près.
+    this.solidGlobe = new AstreSolideGlobe(this);
     // Noms des pays posés à plat sur le globe, au milieu de chaque pays, visibles avant les villes.
     this.countryLabels = new CountryLabels({
       // Parent : celui du conteneur, ou la page.
@@ -2260,7 +2261,7 @@ export class SolarEngine {
     // Fin de ce cas.
     }
     // Une autre cible que la Terre : le globe CesiumJS rend la main à la scène three.js.
-    this.cesiumEarth?.onFocus(i === this.tiledById?.earth?.focus);
+    this.solidGlobe?.onFocus(i === this.tiledById?.[this.solidGlobe.bodyId]?.focus);
     // Garde la cible.
     this.focus = i;
     // Point de départ de la transition.
@@ -2297,7 +2298,7 @@ export class SolarEngine {
   // De loin c'est la même chose que la distance ; de près, le zoom reste progressif jusqu'au sol (Terre comme Lune).
   zoom(f) {
     // Globe CesiumJS actif : le zoom porte sur sa caméra.
-    if (this.cesiumHold) return this.cesiumEarth.camera.zoom(f);
+    if (this.cesiumHold) return this.solidGlobe.camera.zoom(f);
     // Note l'activité.
     this.markActive();
     // Zoom avant sur l'astre : la rotation automatique de la caméra autour de lui s'arrête d'elle-même.
@@ -2412,7 +2413,7 @@ export class SolarEngine {
   // resetView : revient à la vue globale (début).
   resetView() {
     // Globe CesiumJS actif : il rend d'abord la main à la scène three.js.
-    this.cesiumEarth?.leave();
+    this.solidGlobe?.leave();
     // Cible : le Soleil.
     this.setFocus(0);
     // Azimut d'origine.
@@ -2552,7 +2553,7 @@ export class SolarEngine {
   // globeView : la vue du globe dans le repère fixe de l'astre (début).
   globeView() {
     // Globe CesiumJS actif : la navball lit sa caméra.
-    if (this.cesiumHold) return this.cesiumEarth.camera.globeView();
+    if (this.cesiumHold) return this.solidGlobe.camera.globeView();
     // La cible.
     const f = this.focusTarget();
     // Son maillage : tuilé, planète, Lune, satellite ou Soleil.
@@ -2588,7 +2589,7 @@ export class SolarEngine {
   // pilot : pilote la caméra depuis la navball, en degrés (début).
   pilot({ dh = 0, dp = 0 } = {}) {
     // Globe CesiumJS actif : la navball pilote sa caméra.
-    if (this.cesiumHold) return this.cesiumEarth.camera.pilot({ dh, dp });
+    if (this.cesiumHold) return this.solidGlobe.camera.pilot({ dh, dp });
     // Un mouvement : note l'activité.
     if (dh || dp) this.markActive();
     // Changement de cap (début).
@@ -2620,7 +2621,7 @@ export class SolarEngine {
     // Aucun mouvement : rien.
     if (!right && !forward) return;
     // Globe CesiumJS actif : le pilotage au téléphone déplace sa caméra.
-    if (this.cesiumHold) return this.cesiumEarth.camera.moveBy(right, forward);
+    if (this.cesiumHold) return this.solidGlobe.camera.moveBy(right, forward);
     // Lâche les lieux suivis.
     this.releaseLocks();
     // Finesse du pas selon la proximité du sol.
@@ -2643,7 +2644,7 @@ export class SolarEngine {
     // Aucun mouvement : rien.
     if (!dx && !dy) return;
     // Globe CesiumJS actif : sa caméra se déplace de la même façon (le sol suit le doigt).
-    if (this.cesiumHold) return this.cesiumEarth.camera.dragBy(dx, dy);
+    if (this.cesiumHold) return this.solidGlobe.camera.dragBy(dx, dy);
     // Pas de rotation correspondant aux pixels, vue inclinée comprise.
     const step = dragStep(dx, dy, dragRadPerPx(this.surfaceRatio(), this.cam.fov, this.H), this.tiltV || 0);
     // Nouvelle position sur la sphère.
@@ -2661,7 +2662,7 @@ export class SolarEngine {
     // Garde l'état.
     this.northLock = Boolean(on);
     // Globe CesiumJS actif : le verrou s'applique à sa caméra.
-    if (this.cesiumHold) return this.cesiumEarth.camera.setNorthLock(this.northLock);
+    if (this.cesiumHold) return this.solidGlobe.camera.setNorthLock(this.northLock);
     // Recalage instantané : le cap saute directement sur le nord, sans transition.
     if (this.northLock && this.recalibrateNorth()) this.heading = this.headingGoal;
     // Renvoie l'état.
@@ -2672,7 +2673,7 @@ export class SolarEngine {
   // goCity : va à une ville de la liste (début).
   goCity(index) {
     // Globe CesiumJS actif : sa caméra vole jusqu'à la ville (≈ 2,5 km d'altitude).
-    if (this.cesiumHold) { const c = this.cityItems?.[index]; return c ? this.cesiumEarth.camera.flyTo({ lon: c.lon, lat: c.lat, altitudeM: 2500 }) : undefined; }
+    if (this.cesiumHold && this.solidGlobe.bodyId === 'earth') { const c = this.cityItems?.[index]; return c ? this.solidGlobe.camera.flyTo({ lon: c.lon, lat: c.lat, altitudeM: 2500 }) : undefined; }
     // Cible : la Terre.
     this.setFocus(this.earthFocus);
     // Distance voulue : plus près avec une carte.
@@ -2690,7 +2691,7 @@ export class SolarEngine {
   // goTo : va à un lieu de la Terre (début).
   goTo({ name, lon, lat, altitudeM, follow = false, fly = false }) {
     // Globe CesiumJS actif : sa caméra vole jusqu'au lieu.
-    if (this.cesiumHold) return this.cesiumEarth.camera.flyTo({ lon, lat, altitudeM: Number.isFinite(altitudeM) && altitudeM > 0 ? altitudeM : 2500 });
+    if (this.cesiumHold && this.solidGlobe.bodyId === 'earth') return this.solidGlobe.camera.flyTo({ lon, lat, altitudeM: Number.isFinite(altitudeM) && altitudeM > 0 ? altitudeM : 2500 });
     // Cible : la Terre.
     this.setFocus(this.earthFocus);
     // Si une altitude est demandée (début).
@@ -2726,7 +2727,7 @@ export class SolarEngine {
     // Met à jour le point.
     this.userMarker.set(position);
     // Le même point sur le globe CesiumJS, s'il existe.
-    this.cesiumEarth?.camera?.setUserPosition(position);
+    if (this.solidGlobe?.bodyId === 'earth') this.solidGlobe.camera?.setUserPosition(position);
     // Caméra posée sur « Ma position » : elle suit l'utilisateur quand il se déplace.
     const lock = this.lockCity;
     // Latitude et longitude reçues.
@@ -2824,37 +2825,75 @@ export class SolarEngine {
   // Fin de gpsState.
   }
 
-  /** Passe la main au globe CesiumJS quand la Terre est ciblée et la caméra proche (voir engines/cesium-earth). */
-  // updateCesiumEarth : à chaque image (début).
-  updateCesiumEarth() {
-    // La Terre tuilée.
-    const tb = this.tiledById?.earth;
-    // Sans Terre : rien.
-    if (!tb || !this.cesiumEarth) return;
-    // Position de la caméra dans le repère des tuiles de la Terre (sphère de rayon 1, axe des pôles = +Y).
+  /**
+   * Astre solide visé par le globe CesiumJS (engine astre-solide) : l'astre ciblé s'il est solide et a une carte (la
+   * Terre, la Lune, Mars, Mercure, les satellites à carte), sinon la Terre. Les géantes gazeuses et Vénus (sans fond
+   * de carte) restent en three.js. Renvoie { id, name, radiusKm, airless }.
+   */
+  // solidGlobeTarget : l'astre visé (début).
+  solidGlobeTarget() {
+    // Astre tuilé ciblé.
+    const tb = this.tiledBodies?.find((t) => t.focus === this.focus);
+    // Solide, et la Terre ou un fond de carte posé : cet astre ; sinon la Terre.
+    const id = tb && !tb.cfg.gas && (tb.id === 'earth' || tb.tiles.base?.source) ? tb.id : 'earth';
+    // Sa description.
+    const cfg = TILED_BODY_BY_ID[id];
+    // Nom affiché (celui des données), rayon et air.
+    return { id, name: this.focusTargets?.[this.tiledById?.[id]?.focus]?.name ?? id, radiusKm: cfg?.radiusKm ?? 6371, airless: Boolean(cfg?.airless) };
+  // Fin de solidGlobeTarget.
+  }
+
+  /** Fond de carte de l'app pour un astre (lu par le globe CesiumJS) : { key, source, projectionId, credit } ou null. */
+  // solidImagery : l'identifiant de l'astre (début).
+  solidImagery(id) {
+    // Fond posé dans le gestionnaire de tuiles de l'astre.
+    const base = this.tiledById?.[id]?.tiles.base;
+    // Sans fond : null.
+    if (!base?.source) return null;
+    // Description de la source.
+    const info = base.source.info || {};
+    // Le fond : sa clé (couche choisie), sa source, son découpage et sa mention.
+    return { key: base.id, source: base.source, projectionId: info.projection === 'equirectangular' ? 'equirectangular' : 'mercator', credit: info.attribution || info.credit || info.name || '' };
+  // Fin de solidImagery.
+  }
+
+  /** Choisit l'astre du globe CesiumJS et lui passe la main quand il est ciblé et la caméra proche. */
+  // updateSolidGlobe : à chaque image (début).
+  updateSolidGlobe() {
+    // Sans globe : rien.
+    if (!this.solidGlobe) return;
+    // Astre visé, transmis au globe (recréé s'il change).
+    const target = this.solidGlobeTarget();
+    // Transmis.
+    this.solidGlobe.setTarget(target);
+    // Son astre tuilé.
+    const tb = this.tiledById?.[target.id];
+    // Sans astre : rien.
+    if (!tb) return;
+    // Position de la caméra dans le repère des tuiles de l'astre (sphère de rayon 1, axe des pôles = +Y).
     const local = tb.tiles.root.worldToLocal(this.cam.position.clone());
-    // Le module décide : Terre ciblée, distance au centre, rayon, direction de la caméra.
-    this.cesiumEarth.update({ earthFocused: this.focus === tb.focus, dist: local.length() * tb.radius, radius: tb.radius, camLocal: [local.x, local.y, local.z] });
-  // Fin de updateCesiumEarth.
+    // Le module décide : astre ciblé, distance au centre, rayon, direction de la caméra.
+    this.solidGlobe.update({ focused: this.focus === tb.focus, dist: local.length() * tb.radius, radius: tb.radius, camLocal: [local.x, local.y, local.z] });
+  // Fin de updateSolidGlobe.
   }
 
   /**
-   * Vue de la caméra three.js dans le repère des tuiles de la Terre (sphère de rayon 1, axe des pôles = +Y) : position
-   * (en rayons terrestres), regard et haut unitaires, ouverture verticale (degrés) et proportions. Sert au globe
-   * CesiumJS, qui dessine la Terre par-dessus la scène three.js. null sans Terre tuilée.
+   * Vue de la caméra three.js dans le repère des tuiles d'un astre (sphère de rayon 1, axe des pôles = +Y) : position
+   * (en rayons de l'astre), regard et haut unitaires, ouverture verticale (degrés), proportions, hauteur de l'écran,
+   * et direction du Soleil vue de l'astre. Sert au globe CesiumJS. null sans cet astre tuilé.
    */
-  // earthCameraView : la vue de la caméra (début).
-  earthCameraView() {
-    // La Terre tuilée.
-    const tb = this.tiledById?.earth;
-    // Sans Terre : null.
+  // solidBodyView : l'identifiant de l'astre (début).
+  solidBodyView(id) {
+    // L'astre tuilé.
+    const tb = this.tiledById?.[id];
+    // Sans astre : null.
     if (!tb) return null;
     // Repère des tuiles, matrices à jour.
     const root = tb.tiles.root;
     // Matrices du repère à jour.
     root.updateWorldMatrix(true, false);
     // Vecteurs et matrice de travail (créés une fois).
-    const w = this.earthViewVecs || (this.earthViewVecs = { inv: new THREE.Matrix4(), pos: new THREE.Vector3(), dir: new THREE.Vector3(), up: new THREE.Vector3() });
+    const w = this.solidViewVecs || (this.solidViewVecs = { inv: new THREE.Matrix4(), pos: new THREE.Vector3(), dir: new THREE.Vector3(), up: new THREE.Vector3(), sun: new THREE.Vector3(), center: new THREE.Vector3() });
     // Passage de la scène au repère des tuiles.
     w.inv.copy(root.matrixWorld).invert();
     // Caméra et ses matrices à jour.
@@ -2867,30 +2906,56 @@ export class SolarEngine {
     cam.getWorldDirection(w.dir).transformDirection(w.inv);
     // Haut de l'image dans le repère des tuiles.
     w.up.set(0, 1, 0).applyQuaternion(cam.quaternion).transformDirection(w.inv);
+    // Centre de l'astre dans la scène.
+    w.center.setFromMatrixPosition(root.matrixWorld);
+    // Direction de l'astre vers le Soleil, dans le repère des tuiles.
+    w.sun.copy(this.sunMesh.position).sub(w.center).transformDirection(w.inv);
     // La vue.
-    return { pos: w.pos.toArray(), dir: w.dir.toArray(), up: w.up.toArray(), fovyDeg: cam.fov, aspect: cam.aspect, viewportH: this.H };
-  // Fin de earthCameraView.
+    return { pos: w.pos.toArray(), dir: w.dir.toArray(), up: w.up.toArray(), sunDir: w.sun.toArray(), fovyDeg: cam.fov, aspect: cam.aspect, viewportH: this.H };
+  // Fin de solidBodyView.
   }
 
   /**
-   * Fond spatial du globe CesiumJS (fond transparent) : dessine la scène three.js sans la Terre, vue de la caméra du
-   * globe. `position`, `direction` et `up` sont dans le repère terrestre de CesiumJS (ECEF, mètres), `fovy` est
-   * l'ouverture verticale en radians. La caméra three.js est remise en place ensuite (rien ne bouge dans la scène).
+   * Cache un astre solide de three.js (le globe CesiumJS le dessine) et renvoie la fonction qui le rend. La Terre :
+   * tout son groupe (globe, carte, frontières, volcans, nuages) ; un autre astre : sa sphère, son modèle, ses tuiles
+   * et son atmosphère (ses satellites restent affichés).
    */
-  // renderCesiumBackdrop : la caméra du globe (début).
-  renderCesiumBackdrop({ position, direction, up, fovy }) {
-    // La Terre tuilée et son repère.
-    const tb = this.tiledById?.earth;
-    // Sans Terre, moteur arrêté ou en pause : rien.
+  // hideSolidBody : l'identifiant de l'astre (début).
+  hideSolidBody(id) {
+    // L'astre tuilé.
+    const tb = this.tiledById?.[id];
+    // Sans astre : rien à rendre.
+    if (!tb) return () => {};
+    // Objets à cacher.
+    const objs = id === 'earth' ? [this.earth.group, tb.tiles.root] : [tb.mesh, tb.tiles.root, this.atmospheres?.[id], tb.model?.isObject3D ? tb.model : tb.model?.root];
+    // Leur état d'avant.
+    const was = objs.map((o) => (o ? o.visible : null));
+    // Cachés.
+    for (const o of objs) if (o) o.visible = false;
+    // Fonction qui rend leur état.
+    return () => objs.forEach((o, i) => { if (o) o.visible = was[i]; });
+  // Fin de hideSolidBody.
+  }
+
+  /**
+   * Fond spatial du globe CesiumJS de près (fond transparent) : dessine la scène three.js sans l'astre du globe, vue de
+   * la caméra du globe. `position`, `direction` et `up` sont dans le repère de l'astre de CesiumJS (mètres), `fovy`
+   * est l'ouverture verticale en radians. La caméra three.js est remise en place ensuite (rien ne bouge dans la scène).
+   */
+  // renderCesiumBackdrop : l'astre, son rayon et la caméra du globe (début).
+  renderCesiumBackdrop({ bodyId = 'earth', radiusM = 6371000, position, direction, up, fovy }) {
+    // L'astre tuilé et son repère.
+    const tb = this.tiledById?.[bodyId];
+    // Sans astre, moteur arrêté ou en pause : rien.
     if (!tb || this.stopped || this.paused || this.suspended) return;
-    // Repère des tuiles de la Terre (sphère de rayon 1, axe des pôles = +Y), matrices à jour.
+    // Repère des tuiles de l'astre (sphère de rayon 1, axe des pôles = +Y), matrices à jour.
     const root = tb.tiles.root;
     // Matrices du repère à jour.
     root.updateWorldMatrix(true, false);
     // Vecteurs de travail (créés une fois).
     const v = this.backdropVecs || (this.backdropVecs = { pos: new THREE.Vector3(), dir: new THREE.Vector3(), up: new THREE.Vector3(), look: new THREE.Vector3(), savedPos: new THREE.Vector3(), savedQuat: new THREE.Quaternion(), savedUp: new THREE.Vector3() });
-    // Position de la caméra du globe dans la scène.
-    v.pos.fromArray(ecefToTilesLocal(position)); root.localToWorld(v.pos);
+    // Position de la caméra du globe dans la scène (en rayons de l'astre, puis dans la scène).
+    v.pos.fromArray(ecefToTilesLocal(position, 1 / radiusM)); root.localToWorld(v.pos);
     // Direction du regard dans la scène.
     v.dir.fromArray(ecefToTilesLocal(direction, 1)).transformDirection(root.matrixWorld);
     // Haut de l'image dans la scène.
@@ -2905,21 +2970,17 @@ export class SolarEngine {
     if (Number.isFinite(fovy)) cam.fov = THREE.MathUtils.radToDeg(fovy);
     // Projection recalculée.
     cam.updateProjectionMatrix();
-    // La Terre de three.js (globe, carte, frontières, volcans, nuages) et ses tuiles sont cachées : le globe CesiumJS
-    // est la Terre ; seul l'espace autour est dessiné.
-    const earthWas = this.earth.group.visible, tilesWere = root.visible;
-    // Cachées.
-    this.earth.group.visible = false; root.visible = false;
+    // L'astre de three.js est caché : le globe CesiumJS le dessine ; seul l'espace autour est dessiné.
+    const restore = this.hideSolidBody(bodyId);
     // Une image de l'espace, comme dans la boucle (effacement manuel) : l'image est effacée, le ciel lointain
-    // (étoiles, Voie lactée, galaxies) est dessiné d'abord, puis la scène par-dessus. Sans cela, le fond restait noir
-    // ou gardait l'image précédente.
+    // (étoiles, Voie lactée, galaxies) est dessiné d'abord, puis la scène par-dessus.
     this.renderer.clear();
     // Ciel lointain, vu de la caméra du globe.
     this.sky.render(this.renderer, cam, 0);
-    // Scène (Soleil, Lune, planètes) par-dessus.
+    // Scène (Soleil, planètes, satellites) par-dessus.
     this.renderer.render(this.scene, cam);
-    // La Terre et ses tuiles reprennent leur état.
-    this.earth.group.visible = earthWas; root.visible = tilesWere;
+    // L'astre reprend son état.
+    restore();
     // La caméra three.js reprend son état.
     cam.position.copy(v.savedPos); cam.quaternion.copy(v.savedQuat); cam.up.copy(v.savedUp); cam.fov = savedFov;
     // Projection d'origine.
@@ -2951,8 +3012,8 @@ export class SolarEngine {
    */
   // goToSite : survole un lieu d'un astre tuilé (début).
   goToSite(id, { lon, lat }, altitudeKm) {
-    // Globe CesiumJS actif et site de la Terre : sa caméra vole jusqu'au site.
-    if (this.cesiumHold && id === 'earth') return this.cesiumEarth.camera.flyTo({ lon, lat, altitudeM: (altitudeKm ?? TILED_BODY_BY_ID.earth.siteAltitudeKm) * 1000 });
+    // Globe CesiumJS de près sur cet astre : sa caméra vole jusqu'au site.
+    if (this.cesiumHold && id === this.solidGlobe.bodyId) return this.solidGlobe.camera.flyTo({ lon, lat, altitudeM: (altitudeKm ?? TILED_BODY_BY_ID[id]?.siteAltitudeKm ?? 300) * 1000 });
     // L'astre.
     const tb = this.tiledById[id];
     // Inconnu ou sans cible : rien.
@@ -3447,7 +3508,7 @@ export class SolarEngine {
   // setViewLock : verrouille la vue sur l'astre le plus proche, ou la rend (début).
   setViewLock(on) {
     // Globe CesiumJS actif : le verrouillage sur l'astre le plus proche se fait dans la scène three.js.
-    if (on) this.cesiumEarth?.leave();
+    if (on) this.solidGlobe?.leave();
     // Note l'activité.
     this.markActive?.();
     // HUD à mettre à jour.
@@ -3495,7 +3556,7 @@ export class SolarEngine {
 
   /** Vue 3/4 automatique : inclinaison progressive près du sol (true par défaut), ou regard vertical (false). */
   // setTilt : active ou coupe la vue inclinée automatique.
-  setTilt(on) { this.tiltOn = on; this.pilotTilt = null; if (this.cesiumHold) this.cesiumEarth.camera.setTilt(on); }
+  setTilt(on) { this.tiltOn = on; this.pilotTilt = null; if (this.cesiumHold) this.solidGlobe.camera.setTilt(on); }
 
   /** Frontières et littoraux : polylignes [lon, lat, …] de GET /borders (remplacent les précédentes). */
   // setBorders : reçoit les frontières, les littoraux et les pays (début).
@@ -3925,8 +3986,8 @@ export class SolarEngine {
     if (this.shouldUpdateCoreEngine('volcanoes', 'earth')) this.volcanoes.sync(this.earth.mesh.rotation.y);
     // Met à jour les nuages LiDAR.
     if (this.shouldUpdateCoreEngine('lidar', 'earth')) this.lidar.update(this.cam);
-    // Terre ciblée et caméra proche : le globe CesiumJS prend la main au même endroit (voir cesium-earth).
-    this.updateCesiumEarth();
+    // Astre solide visé par le globe CesiumJS ; ciblé et caméra proche : le globe prend la main au même endroit.
+    this.updateSolidGlobe();
     // Couche de tuiles de la Terre affichée, s'il y a une carte.
     const groundLayer = this.tiles.active ? this.tiles.base?.layer : null;
     // Niveau du sol dessiné sous la caméra : celui de la cellule hexagonale la plus proche (les cellules sont posées au
@@ -3961,9 +4022,9 @@ export class SolarEngine {
           });
         tb.tiles.setCoreMemoryProfile(profile);
       }
-      // Terre dessinée par CesiumJS par-dessus three.js : ses tuiles three.js ne sont plus demandées (réseau et
-      // carte graphique épargnés) ; celles déjà chargées restent pour le retour à la Terre de three.js.
-      if (tiled.has(tb.id) && !(tb.id === 'earth' && this.cesiumOverlayOn) && this.coreActivityPolicy.shouldUpdateTiles({ state: coreState, focused })) {
+      // Astre solide dessiné par CesiumJS par-dessus three.js : ses tuiles three.js ne sont plus demandées (réseau et
+      // carte graphique épargnés) ; celles déjà chargées restent pour le retour à l'astre de three.js.
+      if (tiled.has(tb.id) && !(tb.id === this.solidGlobe?.bodyId && this.cesiumOverlayOn) && this.coreActivityPolicy.shouldUpdateTiles({ state: coreState, focused })) {
         tb.tiles.update();
       }
       // Le basculement modèle/tuiles reste évalué chaque image pour préserver la continuité visuelle.
@@ -3991,22 +4052,22 @@ export class SolarEngine {
 
     // Début de la mesure du rendu.
     probe.renderStart();
-    // Terre toujours en CesiumJS : la caméra du globe suit celle de three.js ; vrai si le globe dessine la Terre.
-    const earthByCesium = this.cesiumEarth?.overlayFrame(this.earthCameraView()) ?? false;
+    // Astre solide visé en CesiumJS : la caméra du globe suit celle de three.js ; vrai si le globe dessine l'astre.
+    const solidId = this.solidGlobe?.bodyId;
+    // Vrai si le globe dessine l'astre à cette image.
+    const bodyByCesium = solidId ? this.solidGlobe.overlayFrame(this.solidBodyView(solidId)) : false;
     // Efface l'image.
     this.renderer.clear();
     // Dessine le ciel lointain.
     this.sky.render(this.renderer, this.cam, dt);
-    // Terre de three.js (globe, carte, frontières, volcans) et ses tuiles cachées si le globe la dessine.
-    const earthWas = this.earth.group.visible, earthRoot = this.tiledById?.earth?.tiles.root, rootWas = earthRoot?.visible;
-    // Cachées le temps du rendu.
-    if (earthByCesium) { this.earth.group.visible = false; if (earthRoot) earthRoot.visible = false; }
+    // L'astre de three.js caché le temps du rendu, si le globe le dessine.
+    const restoreBody = bodyByCesium ? this.hideSolidBody(solidId) : null;
     // Dessine la scène par-dessus.
     this.renderer.render(this.scene, this.cam);
-    // Elles reprennent leur état.
-    if (earthByCesium) { this.earth.group.visible = earthWas; if (earthRoot) earthRoot.visible = rootWas; }
-    // Le globe dessine la Terre par-dessus l'image three.js, vu de la même caméra.
-    if (earthByCesium) this.cesiumEarth.drawOverlay();
+    // L'astre reprend son état.
+    restoreBody?.();
+    // Le globe dessine l'astre par-dessus l'image three.js, vu de la même caméra.
+    if (bodyByCesium) this.solidGlobe.drawOverlay();
     // Fin de la mesure du rendu.
     probe.renderEnd();
     // Fin de la mesure de l'image.
@@ -5142,7 +5203,7 @@ export class SolarEngine {
     // Moteur arrêté.
     this.stopped = true;
     // Libère le globe CesiumJS de la Terre.
-    this.cesiumEarth?.dispose();
+    this.solidGlobe?.dispose();
     // Détruit les gestionnaires du Core (les ressources graphiques historiques restent libérées par leur propriétaire).
     this.coreScheduler?.clear();
     this.coreResources?.disposeAll();

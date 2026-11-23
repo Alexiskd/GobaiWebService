@@ -29,10 +29,10 @@ export const TILT_RESPONSE_MS = 700;
 export const clampPitch = (p) => Math.max(PITCH_MIN_DEG, Math.min(PITCH_MAX_DEG, p));
 
 /** 0 loin du sol, 1 près du sol (courbe en S), d'après l'altitude (m) : même rampe que three.js. */
-// Déclare et exporte tiltEngagement : l'altitude en mètres.
-export function tiltEngagement(altitudeM) {
-  // Distance au centre, en rayons.
-  const ratio = 1 + altitudeM / EARTH_RADIUS_M;
+// Déclare et exporte tiltEngagement : l'altitude et le rayon de l'astre (la Terre par défaut), en mètres.
+export function tiltEngagement(altitudeM, radiusM = EARTH_RADIUS_M) {
+  // Distance au centre, en rayons de l'astre.
+  const ratio = 1 + altitudeM / radiusM;
   // Avancement entre le début (0) et l'inclinaison complète (1), borné.
   const x = Math.max(0, Math.min(1, (TILT_START_RATIO - ratio) / (TILT_START_RATIO - TILT_FULL_RATIO)));
   // Courbe en S.
@@ -41,8 +41,8 @@ export function tiltEngagement(altitudeM) {
 }
 
 /** Tangage voulu (degrés) : vue 3/4 automatique selon l'altitude si elle est active, sinon regard vertical. */
-// Déclare et exporte pitchForTilt : la vue 3/4 active ou non, l'altitude (m).
-export const pitchForTilt = (tiltOn, altitudeM) => (tiltOn ? clampPitch(PITCH_MIN_DEG + TILT_MAX_DEG * tiltEngagement(altitudeM)) : PITCH_MIN_DEG);
+// Déclare et exporte pitchForTilt : la vue 3/4 active ou non, l'altitude et le rayon de l'astre (m).
+export const pitchForTilt = (tiltOn, altitudeM, radiusM = EARTH_RADIUS_M) => (tiltOn ? clampPitch(PITCH_MIN_DEG + TILT_MAX_DEG * tiltEngagement(altitudeM, radiusM)) : PITCH_MIN_DEG);
 
 /** Lissage exponentiel indépendant de la cadence (dt et tau en ms), comme approachTilt de three.js. */
 // Déclare et exporte approachPitch : tangage actuel, voulu, temps écoulé.
@@ -65,10 +65,10 @@ export function zoomStep(altitudeM, f) {
  * Déplacement three.js le long des axes de l'écran (radians, pas d'autant plus fin qu'on est près du sol : facteur
  * 0,9 × altitude / rayon) traduit en angles de rotation autour du centre de la Terre (radians).
  */
-// Déclare et exporte moveAngles : les pas à droite et en avant, l'altitude (m).
-export function moveAngles(right, forward, altitudeM) {
+// Déclare et exporte moveAngles : les pas à droite et en avant, l'altitude et le rayon de l'astre (m).
+export function moveAngles(right, forward, altitudeM, radiusM = EARTH_RADIUS_M) {
   // Finesse du pas : comme surfaceRatio × 0,9 dans three.js, bornée à 1.
-  const k = Math.max(1e-9, Math.min(1, (0.9 * altitudeM) / EARTH_RADIUS_M));
+  const k = Math.max(1e-9, Math.min(1, (0.9 * altitudeM) / radiusM));
   // Angles de rotation.
   return { right: right * k, forward: forward * k };
 // Fin de moveAngles.
@@ -79,7 +79,7 @@ export function moveAngles(right, forward, altitudeM) {
 export const wrapHeading = (h) => ((h % 360) + 360) % 360;
 
 /**
- * Point du repère terrestre de CesiumJS (ECEF : mètres, +Z vers le pôle Nord, +X vers la longitude 0) traduit dans le
+ * Point du repère de l'astre dans CesiumJS (ECEF, ou repère fixe de l'astre : mètres, +Z vers le pôle Nord, +X vers la longitude 0) traduit dans le
  * repère des tuiles de la Terre de three.js (sphère de rayon 1, axe des pôles = +Y, longitude = atan2(−z, x)).
  * Avec `scale = 1`, traduit une direction (sans changer d'unité).
  */
@@ -97,9 +97,9 @@ export const KEY_ROTATE_SPEED = 1.1;
  * inclinée (3/4) agrandit le déplacement vertical. Renvoie { right, forward } en radians le long des axes de l'écran.
  */
 // Déclare et exporte dragMove : le glisser et l'état de la caméra du globe (début).
-export function dragMove(dx, dy, { altitudeM, fovyRad, viewportH, pitchDeg = -90 }) {
-  // Angle par pixel : altitude en rayons terrestres, ouverture verticale en degrés, hauteur de l'écran.
-  const radPerPx = dragRadPerPx(Math.max(0, altitudeM) / EARTH_RADIUS_M, (fovyRad * 180) / Math.PI, viewportH);
+export function dragMove(dx, dy, { altitudeM, fovyRad, viewportH, pitchDeg = -90, radiusM = EARTH_RADIUS_M }) {
+  // Angle par pixel : altitude en rayons de l'astre, ouverture verticale en degrés, hauteur de l'écran.
+  const radPerPx = dragRadPerPx(Math.max(0, altitudeM) / radiusM, (fovyRad * 180) / Math.PI, viewportH);
   // Inclinaison de la vue : 0 en regardant droit vers le sol (tangage −90°).
   const tilt = ((pitchDeg + 90) * Math.PI) / 180;
   // Même conversion que la scène three.js.
@@ -111,10 +111,10 @@ export function dragMove(dx, dy, { altitudeM, fovyRad, viewportH, pitchDeg = -90
  * Flèches maintenues : déplacement de cette image le long des axes de l'écran (radians), d'autant plus fin qu'on est
  * près du sol (même facteur que la scène three.js : 0,9 × altitude / rayon, borné à 1), dt borné à 100 ms.
  */
-// Déclare et exporte keyMove : les flèches enfoncées, le temps écoulé (ms) et l'altitude (m) (début).
-export function keyMove(keys, dtMs, altitudeM) {
-  // Finesse du pas selon la proximité du sol.
-  const k = Math.max(1e-9, Math.min(1, (0.9 * Math.max(0, altitudeM)) / EARTH_RADIUS_M));
+// Déclare et exporte keyMove : les flèches enfoncées, le temps écoulé (ms), l'altitude et le rayon de l'astre (m) (début).
+export function keyMove(keys, dtMs, altitudeM, radiusM = EARTH_RADIUS_M) {
+  // Finesse du pas selon la proximité du sol (altitude en rayons de l'astre).
+  const k = Math.max(1e-9, Math.min(1, (0.9 * Math.max(0, altitudeM)) / radiusM));
   // Pas de cette image.
   const step = Math.min(Math.max(0, dtMs), 100) * 0.001 * KEY_ROTATE_SPEED * k;
   // Droite moins gauche, haut moins bas.
@@ -165,10 +165,10 @@ export const AUTO_ROTATE_SPEED = 0.072;
  * three.js : vitesse × multiplicateur de Paramètres × temps écoulé, ralentie près du sol (altitude en rayons, bornée
  * à 1). dt borné à 100 ms (retour d'onglet : pas de saut).
  */
-// Déclare et exporte autoRotateAngle : le temps écoulé (ms), le multiplicateur et l'altitude (m).
-export function autoRotateAngle(dtMs, rotateSpeed = 1, altitudeM = EARTH_RADIUS_M) {
-  // Ralenti près du sol : altitude en rayons terrestres, entre 0 et 1.
-  const near = Math.max(0, Math.min(1, altitudeM / EARTH_RADIUS_M));
+// Déclare et exporte autoRotateAngle : le temps écoulé (ms), le multiplicateur, l'altitude et le rayon de l'astre (m).
+export function autoRotateAngle(dtMs, rotateSpeed = 1, altitudeM = EARTH_RADIUS_M, radiusM = EARTH_RADIUS_M) {
+  // Ralenti près du sol : altitude en rayons de l'astre, entre 0 et 1.
+  const near = Math.max(0, Math.min(1, altitudeM / radiusM));
   // Angle de cette image.
   return AUTO_ROTATE_SPEED * (Number.isFinite(rotateSpeed) ? rotateSpeed : 1) * Math.min(Math.max(0, dtMs), 100) * 0.001 * near;
 // Fin de autoRotateAngle.
@@ -203,7 +203,7 @@ export const tilesLocalToEcef = ([x, y, z], scale = EARTH_RADIUS_M) => ({ x: x *
  * moins d'un pixel (`viewportH` : hauteur de l'écran en pixels).
  */
 // Déclare et exporte threeViewToCesium : la vue three.js et l'ouverture verticale (degrés) et les proportions (début).
-export function threeViewToCesium({ pos, dir, up }, { fovyDeg, aspect, viewportH = 0 }) {
+export function threeViewToCesium({ pos, dir, up }, { fovyDeg, aspect, viewportH = 0, radiusM = EARTH_RADIUS_M }) {
   // Distance de la caméra au centre de la Terre, en rayons.
   const d = Math.hypot(pos[0], pos[1], pos[2]) || 1e-9;
   // Ouverture verticale en radians.
@@ -222,12 +222,13 @@ export function threeViewToCesium({ pos, dir, up }, { fovyDeg, aspect, viewportH
   // Ouverture CesiumJS : horizontale sur un écran plus large que haut.
   const fov = aspect > 1 ? 2 * Math.atan(Math.tan(fovy / 2) * aspect) : fovy;
   // Altitude de la caméra (m).
-  const altitudeM = (d - 1) * EARTH_RADIUS_M;
-  // Plan proche : la moitié de la distance au sommet de l'atmosphère (200 km), jamais sous 1 m.
-  const near = Math.max(1, 0.5 * (altitudeM - 2e5));
-  // Plan lointain : au-delà de la face cachée de la Terre.
-  const far = (d + 2) * EARTH_RADIUS_M;
+  const altitudeM = (d - 1) * radiusM;
+  // Plan proche : la moitié de la distance au sommet de l'atmosphère (200 km, ou 3 % du rayon pour un petit astre),
+  // jamais sous 1 m.
+  const near = Math.max(1, 0.5 * (altitudeM - Math.min(2e5, 0.03 * radiusM)));
+  // Plan lointain : au-delà de la face cachée de l'astre.
+  const far = (d + 2) * radiusM;
   // Renvoie la vue CesiumJS.
-  return { position: tilesLocalToEcef(pos), direction: tilesLocalToEcef(dir, 1), up: tilesLocalToEcef(up, 1), fov, aspect, near, far, inView };
+  return { position: tilesLocalToEcef(pos, radiusM), direction: tilesLocalToEcef(dir, 1), up: tilesLocalToEcef(up, 1), fov, aspect, near, far, inView };
 // Fin de threeViewToCesium.
 }

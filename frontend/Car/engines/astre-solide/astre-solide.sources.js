@@ -1,6 +1,6 @@
 /**
  * Sources d'imagerie du globe CesiumJS de la Terre : ouvertes, sans clé ni licence payante. Table de données lue par
- * le globe (cesium-earth.viewer.js), dans l'ordre d'empilement (la première en dessous). Fonctions pures.
+ * le globe (astre-solide.viewer.js), dans l'ordre d'empilement (la première en dessous). Fonctions pures.
  */
 
 // Emprise de la France métropolitaine et de la Corse [ouest, sud, est, nord] (degrés), celle de la table du serveur.

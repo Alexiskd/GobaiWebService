@@ -1,11 +1,11 @@
 /**
- * Globe CesiumJS de la Terre : créé à la première approche de la Terre (CesiumJS n'est téléchargé qu'à ce moment-là),
- * puis gardé et seulement masqué. Sans Cesium ion ni aucune clé : imagerie ouverte (cesium-earth.sources.js),
- * ellipsoïde WGS84, jour et nuit d'après l'heure réelle. Rendu à la demande (rien n'est dessiné quand rien ne bouge).
+ * Globe CesiumJS d'un astre solide (la Terre, la Lune, Mars, Mercure, les satellites à carte) : créé à la première
+ * image (CesiumJS n'est téléchargé qu'à ce moment-là), recréé quand l'astre visé change. Sans Cesium ion ni aucune
+ * clé. Rendu à la demande (rien n'est dessiné quand rien ne bouge).
  */
 
 // Importe la table des couches d'imagerie.
-import { CESIUM_IMAGERY } from './cesium-earth.sources.js';
+import { CESIUM_IMAGERY } from './astre-solide.sources.js';
 
 // Adresse des fichiers statiques de CesiumJS (Workers, Assets, Widgets), copiés dans public/cesium au build.
 export const CESIUM_BASE_URL = '/cesium';
@@ -24,11 +24,26 @@ function loadCss(href) {
 }
 
 /**
- * Crée le globe dans `container`. Renvoie { viewer, Cesium }.
- * @param {HTMLElement} container
+ * Ellipsoïde d'un astre solide : WGS84 pour la Terre, sphère de son rayon moyen pour les autres. Doit être posé comme
+ * ellipsoïde par défaut de CesiumJS avant la création du globe (caméra, cartographie, découpage des tuiles).
  */
-// Déclare et exporte createEarthViewer, asynchrone : le conteneur (début).
-export async function createEarthViewer(container) {
+// Déclare et exporte bodyEllipsoid : la bibliothèque et l'astre { id, radiusKm }.
+export function bodyEllipsoid(Cesium, { id, radiusKm }) {
+  // La Terre : WGS84 ; un autre astre : sphère de son rayon, en mètres.
+  return id === 'earth' ? Cesium.Ellipsoid.WGS84 : new Cesium.Ellipsoid(radiusKm * 1000, radiusKm * 1000, radiusKm * 1000);
+// Fin de bodyEllipsoid.
+}
+
+/**
+ * Crée le globe d'un astre solide dans `container`. Renvoie { viewer, Cesium, ellipsoid }.
+ * La Terre a ses couches d'imagerie ouvertes (astre-solide.sources.js) ; les autres astres reçoivent ensuite le fond
+ * de carte de l'app (astre-solide.imagery.js, voir AstreSolideGlobe.syncImagery). Sans air (Lune, Mercure…) : ni
+ * atmosphère autour du globe, ni voile au sol.
+ * @param {HTMLElement} container
+ * @param {{ id: string, radiusKm: number, airless?: boolean }} body
+ */
+// Déclare et exporte createSolidViewer, asynchrone : le conteneur et l'astre (début).
+export async function createSolidViewer(container, body) {
   // Adresse des fichiers statiques, lue par CesiumJS avant son premier chargement de worker.
   globalThis.CESIUM_BASE_URL = CESIUM_BASE_URL;
   // Feuille de style des widgets (crédits).
@@ -37,10 +52,14 @@ export async function createEarthViewer(container) {
   const Cesium = await import('cesium');
   // Aucun jeton Cesium ion : aucune requête vers ion.
   Cesium.Ion.defaultAccessToken = '';
+  // Ellipsoïde de l'astre.
+  const ellipsoid = bodyEllipsoid(Cesium, body);
+  // Ellipsoïde par défaut de CesiumJS (caméra, cartographie) : celui de l'astre, si cette version le permet.
+  try { if ('default' in Cesium.Ellipsoid) Cesium.Ellipsoid.default = ellipsoid; } catch { /* version sans ellipsoïde par défaut */ }
   // Le globe (début) :
   const viewer = new Cesium.Viewer(container, {
-    // aucune couche par défaut (celle d'ion), ellipsoïde sans relief ;
-    baseLayer: false, terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+    // ellipsoïde de l'astre, aucune couche par défaut (celle d'ion), sol sans relief ;
+    ellipsoid, baseLayer: false, terrainProvider: new Cesium.EllipsoidTerrainProvider({ ellipsoid }),
     // aucun widget : l'interface de l'app reste la seule ;
     animation: false, timeline: false, baseLayerPicker: false, geocoder: false, homeButton: false,
     sceneModePicker: false, navigationHelpButton: false, fullscreenButton: false, infoBox: false,
@@ -52,8 +71,8 @@ export async function createEarthViewer(container) {
     contextOptions: { webgl: { alpha: true } }, skyBox: false,
   // Fin du globe.
   });
-  // Pour chaque couche de la table, dans l'ordre d'empilement (début).
-  for (const s of CESIUM_IMAGERY) {
+  // La Terre : ses couches d'imagerie ouvertes, dans l'ordre d'empilement (début).
+  if (body.id === 'earth') for (const s of CESIUM_IMAGERY) {
     // Source de tuiles Web Mercator (début) :
     const provider = new Cesium.UrlTemplateImageryProvider({
       // l'adresse, le niveau le plus fin et la mention ;
@@ -73,12 +92,18 @@ export async function createEarthViewer(container) {
   if (viewer.scene.sun) viewer.scene.sun.show = false;
   // La Lune de CesiumJS, si elle existe : cachée.
   if (viewer.scene.moon) viewer.scene.moon.show = false;
-  // Le globe : jour et nuit d'après le Soleil à l'heure réelle, atmosphère.
+  // Astre sans air : ni atmosphère autour du globe, ni voile au sol.
+  if (body.airless) { if (viewer.scene.skyAtmosphere) viewer.scene.skyAtmosphere.show = false; viewer.scene.globe.showGroundAtmosphere = false; }
+  // Lumière du Soleil : une lumière directionnelle, orientée à chaque image d'après la scène three.js (même Soleil
+  // pour tous les astres, voir AstreSolideGlobe.syncSun) ; l'atmosphère suit cette lumière.
+  viewer.scene.light = new Cesium.DirectionalLight({ direction: new Cesium.Cartesian3(-1, 0, 0) });
+  // Atmosphère éclairée par cette lumière (et non par le Soleil calculé pour la Terre).
+  viewer.scene.globe.dynamicAtmosphereLightingFromSun = false;
+  // Le globe : jour et nuit d'après cette lumière.
   viewer.scene.globe.enableLighting = true;
-  // Horloge du globe : l'heure réelle au départ ; ensuite, elle suit l'heure de l'app à chaque image (accélération du
-  // temps comprise, voir CesiumEarth.tick), elle n'avance donc pas d'elle-même.
+  // Horloge du globe : l'heure de l'app, réglée à chaque image ; elle n'avance pas d'elle-même.
   viewer.clock.currentTime = Cesium.JulianDate.now(); viewer.clock.shouldAnimate = false;
-  // Renvoie le globe et la bibliothèque.
-  return { viewer, Cesium };
-// Fin de createEarthViewer.
+  // Renvoie le globe, la bibliothèque et l'ellipsoïde.
+  return { viewer, Cesium, ellipsoid };
+// Fin de createSolidViewer.
 }

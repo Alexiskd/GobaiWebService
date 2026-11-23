@@ -5,7 +5,7 @@
  */
 
 // Importe les calculs de la caméra.
-import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, keyMove, moveAngles, pitchForTilt, surfaceRotation, wrapHeading, zoomStep } from './cesium-earth.camera-math.js';
+import { MIN_ALTITUDE_M, approachPitch, autoRotateAngle, clampPitch, dragMove, keyMove, moveAngles, pitchForTilt, surfaceRotation, wrapHeading, zoomStep } from './astre-solide.camera-math.js';
 // Importe la mise en forme d'une distance (comme le HUD de three.js).
 import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gravityMath.jsx';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
@@ -14,14 +14,17 @@ import { scaleLevel } from '../../Engine/AstreSolideEngine/CameraEngine/scaleLev
 // Déclare et exporte la classe CesiumCamera (début).
 export class CesiumCamera {
   /**
-   * @param {{ viewer: object, Cesium: object, engine: object }} o le globe, la bibliothèque et le moteur three.js
+   * @param {{ viewer: object, Cesium: object, engine: object, body?: object }} o le globe, la bibliothèque, le moteur three.js et l'astre { id, name, radiusKm }
    */
   // Constructeur.
-  constructor({ viewer, Cesium, engine }) {
+  constructor({ viewer, Cesium, engine, body = { id: 'earth', name: 'Terre', radiusKm: 6371 } }) {
     // Garde le globe, la bibliothèque et le moteur.
     this.viewer = viewer; this.Cesium = Cesium; this.engine = engine;
     // Raccourci vers la caméra.
     this.cam = viewer.camera;
+    // L'astre du globe (identifiant, nom, rayon) et son rayon en mètres : les pas, la vue 3/4 et la rotation
+    // automatique sont réglés en rayons de l'astre, comme dans la scène three.js.
+    this.body = body; this.radiusM = (body.radiusKm ?? 6371) * 1000;
     // Altitude minimale de la caméra au-dessus de l'ellipsoïde.
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = MIN_ALTITUDE_M;
     // Gestes propres à CesiumJS coupés : la souris, le doigt, la molette et le clavier passent par les mêmes
@@ -124,8 +127,8 @@ export class CesiumCamera {
   moveBy(right = 0, forward = 0) {
     // Rien : rien.
     if (!right && !forward) return;
-    // Angles de rotation autour du centre de la Terre.
-    const a = moveAngles(right, forward, this.altitudeM);
+    // Angles de rotation autour du centre de l'astre.
+    const a = moveAngles(right, forward, this.altitudeM, this.radiusM);
     // Déplacement le long du sol, comme le glisser.
     this.travel(a.right, a.forward);
   // Fin de moveBy.
@@ -142,7 +145,7 @@ export class CesiumCamera {
     // Canevas du globe (hauteur de l'écran).
     const c = this.viewer.scene.canvas;
     // Déplacement en radians, même conversion que three.js.
-    const m = dragMove(dx, dy, { altitudeM: this.altitudeM, fovyRad: this.cam.frustum.fovy, viewportH: c.clientHeight, pitchDeg: this.Cesium.Math.toDegrees(this.cam.pitch) });
+    const m = dragMove(dx, dy, { altitudeM: this.altitudeM, fovyRad: this.cam.frustum.fovy, viewportH: c.clientHeight, pitchDeg: this.Cesium.Math.toDegrees(this.cam.pitch), radiusM: this.radiusM });
     // Déplacement le long du sol.
     this.travel(m.right, m.forward);
   // Fin de dragBy.
@@ -162,7 +165,7 @@ export class CesiumCamera {
     // Aucune flèche : rien.
     if (!keys || !(keys.left || keys.right || keys.up || keys.down)) return;
     // Déplacement de cette image.
-    const m = keyMove(keys, dt, this.altitudeM);
+    const m = keyMove(keys, dt, this.altitudeM, this.radiusM);
     // Le long du sol.
     this.travel(m.right, m.forward);
   // Fin de keysTick.
@@ -175,7 +178,7 @@ export class CesiumCamera {
   // autoRotate : le temps écoulé en ms (début).
   autoRotate(dtMs) {
     // Angle de cette image.
-    const a = autoRotateAngle(dtMs, this.engine.rotateSpeed ?? 1, this.altitudeM);
+    const a = autoRotateAngle(dtMs, this.engine.rotateSpeed ?? 1, this.altitudeM, this.radiusM);
     // Rien : rien.
     if (!(a > 0)) return;
     // Rotation directe autour de l'axe des pôles (+Z) : CesiumJS tourne de −angle, on lui passe −a.
@@ -187,7 +190,7 @@ export class CesiumCamera {
 
   /**
    * Déplace la caméra le long du sol de `right` et `forward` radians (axes de l'écran posés sur le sol, cap compris),
-   * en la tournant autour du centre de la Terre : même altitude, même cap et même inclinaison, comme moveOnSphere dans
+   * en la tournant autour du centre de l'astre : même altitude, même cap et même inclinaison, comme moveOnSphere dans
    * la scène three.js.
    */
   // travel : le déplacement en radians (début).
@@ -196,7 +199,7 @@ export class CesiumCamera {
     const r = surfaceRotation(this.cam.positionWC, this.cam.heading, right, forward);
     // Rien : rien.
     if (!r) return;
-    // Rotation de la caméra autour du centre de la Terre.
+    // Rotation de la caméra autour du centre de l'astre.
     this.cam.rotate(new this.Cesium.Cartesian3(r.axis[0], r.axis[1], r.axis[2]), r.angle);
     // Une image.
     this.viewer.scene.requestRender();
@@ -237,7 +240,7 @@ export class CesiumCamera {
     // La vue 3/4 automatique reprend la main sur l'inclinaison pilotée.
     this.pilotTilt = false;
     // Coupée : retour au regard vertical (active : autoTilt s'en charge en douceur).
-    if (!on) this.orbit(this.engine.northLock ? 0 : this.Cesium.Math.toDegrees(this.cam.heading), pitchForTilt(false, this.altitudeM));
+    if (!on) this.orbit(this.engine.northLock ? 0 : this.Cesium.Math.toDegrees(this.cam.heading), pitchForTilt(false, this.altitudeM, this.radiusM));
     // Une image, pour lancer le mouvement.
     this.viewer.scene.requestRender();
   // Fin de setTilt.
@@ -255,7 +258,7 @@ export class CesiumCamera {
       // au-dessus du lieu, jamais sous l'altitude minimale ;
       destination: Cesium.Cartesian3.fromDegrees(lon, lat, Math.max(MIN_ALTITUDE_M, altitudeM)),
       // cap au nord, tangage de la vue en cours ;
-      orientation: { heading: 0, pitch: Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn && !this.pilotTilt, altitudeM)), roll: 0 },
+      orientation: { heading: 0, pitch: Cesium.Math.toRadians(pitchForTilt(this.engine.tiltOn && !this.pilotTilt, altitudeM, this.radiusM)), roll: 0 },
       // en 2 secondes (aucune animation si le système en demande moins).
       duration: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 2,
     // Fin du vol.
@@ -278,7 +281,7 @@ export class CesiumCamera {
     // Vue 3/4 coupée, inclinaison pilotée ou vol en cours : rien.
     if (!this.engine.tiltOn || this.pilotTilt || this.cam._currentFlight) return;
     // Tangage actuel et tangage voulu, en degrés.
-    const current = this.Cesium.Math.toDegrees(this.cam.pitch), target = pitchForTilt(true, this.altitudeM);
+    const current = this.Cesium.Math.toDegrees(this.cam.pitch), target = pitchForTilt(true, this.altitudeM, this.radiusM);
     // Déjà en place (à 0,05° près) : rien.
     if (Math.abs(target - current) < 0.05) return;
     // Un pas vers le tangage voulu, cap gardé (nord si verrouillé), autour du point visé.
@@ -324,12 +327,12 @@ export class CesiumCamera {
     const km = this.altitudeM / 1000;
     // Distance mise en forme.
     const distance = formatDistanceKm(km);
-    // Nom de la Terre.
-    const name = this.engine.earth?.def?.name ?? 'Terre';
+    // Nom de l'astre.
+    const name = this.body.name ?? this.body.id;
     // Cap en radians.
     const heading = this.cam.heading;
     // Publication : distance, échelle, boussole (nord de l'astre, à l'écran à −cap).
-    hud.set({ zoomText: `${name} · ${distance}`, zoomShort: distance, scaleText: scaleLevel(km, { earth: true }), compass: { angle: -heading, bearing: -heading, system: false } });
+    hud.set({ zoomText: `${name} · ${distance}`, zoomShort: distance, scaleText: scaleLevel(km, { earth: this.body.id === 'earth' }), compass: { angle: -heading, bearing: -heading, system: false } });
   // Fin de publishHud.
   }
 // Fin de la classe CesiumCamera.
