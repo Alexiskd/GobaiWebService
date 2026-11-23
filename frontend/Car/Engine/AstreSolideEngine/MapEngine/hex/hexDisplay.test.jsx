@@ -286,8 +286,9 @@ test('fondu : zoom continu, toujours une image opaque sous celles qui apparaisse
     // Chaque cellule voulue a sous elle une image opaque : la sienne, ou celle d'une cellule plus grande qui la contient.
     // Pour chaque cellule voulue (début).
     for (const cell of hex.cells) {
-      // Cherche une paire opaque, de cellule aussi grande ou plus grande, qui contient son centre.
-      const ok = pairs.some((p) => opaque(p) && p.f <= cell.f && cellKeyOf(cell.center, p.f) === p.cellKey);
+      // Cherche une paire opaque, de cellule aussi grande ou plus grande, qui contient son centre. Une cellule coupée en
+      // morceaux (voir hexRegions.jsx) a une clé de morceau (« ~ ») : on compare donc la clé de la cellule entière.
+      const ok = pairs.some((p) => opaque(p) && p.f <= cell.f && cellKeyOf(cell.center, p.f) === p.hexKey);
       // Il doit y en avoir une.
       assert.ok(ok, `${label} : cellule ${cell.key} sans image opaque`);
     // Fin de la boucle.
