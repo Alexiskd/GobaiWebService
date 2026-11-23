@@ -451,3 +451,35 @@ test('paires : élagage jusqu\'aux trois quarts, les plus anciennes d\'abord, ja
   assert.ok(hex.pairs.has('p326'));
 // Fin du test.
 });
+
+// Importe TILE_FADES, l'interrupteur des fondus, depuis hexDisplay.
+import { TILE_FADES } from './hexDisplay.jsx';
+
+// Test : jamais de fondu au-dessus d'une zone vide.
+test('fondu : rallumé, mais une cellule qui apparaît sur une zone vide est posée d\'un coup (pas de voile)', () => {
+  // Fondus actifs.
+  assert.equal(TILE_FADES, true);
+  // Affichage des cellules sur une fausse couche.
+  const hex = new HexDisplay(fakeLayer());
+  // Durée normale du fondu.
+  hex.fadeMs = FADE_MS;
+  // Premier affichage : rien n'était affiché avant.
+  hex.select(viewAt(2), OPTS);
+  // Affichage à l'instant 0.
+  hex.show(0);
+  // Aucun fondu : tout est posé d'un coup, opaque.
+  assert.equal(hex.active.size, 0);
+  // Chaque paire affichée a son matériau d'origine.
+  for (const p of hex.shown) assert.equal(p.mesh.material, p.base);
+  // Zoom avant : les cellules plus fines apparaissent par-dessus les anciennes.
+  hex.select(viewAt(0.3), OPTS);
+  // Affichage à l'instant 16.
+  hex.show(16);
+  // Des fondus ont lieu.
+  const fading = [...hex.active].filter((p) => p.fx?.mode === 'in');
+  // Il y en a.
+  assert.ok(fading.length > 0);
+  // Chacun a, dessous, une image gardée opaque d'une cellule aussi grande ou plus grande.
+  for (const p of fading) assert.ok([...hex.active].some((q) => q.fx?.mode === 'hold' && q.f <= p.f && cellKeyOf(p.center, q.f) === q.hexKey));
+// Fin du test.
+});
