@@ -42,3 +42,25 @@ test('shader : ombrage par l\'image mesuré à 1,5 pixel de l\'image (mapSize)',
   assert.doesNotMatch(tileFragmentShader, /1\.5\/256\./);
 // Fin du test.
 });
+
+// Importe tileAnisotropy, le filtrage anisotrope des tuiles, depuis tileManager.
+import { tileAnisotropy } from './tileManager.jsx';
+// Importe les profils d'appareil, depuis powerSaver.
+import { DESKTOP_PROFILE, HANDHELD_PROFILE } from '../../PerfEngine/powerSaver.jsx';
+
+// Test : le filtrage anisotrope des tuiles.
+test('tuiles : filtrage anisotrope 16 sur tous les appareils, borné par la carte graphique', () => {
+  // Ordinateur, carte qui permet 16 : 16.
+  assert.equal(tileAnisotropy(DESKTOP_PROFILE, 16), 16);
+  // Téléphone : même valeur.
+  assert.equal(tileAnisotropy(HANDHELD_PROFILE, 16), 16);
+  // Carte limitée à 4 : 4.
+  assert.equal(tileAnisotropy(DESKTOP_PROFILE, 4), 4);
+  // Profil inconnu : 16, borné par la carte.
+  assert.equal(tileAnisotropy(undefined, 8), 8);
+  // Ancien profil sans valeur pour les tuiles : sa valeur générale.
+  assert.equal(tileAnisotropy({ anisotropy: 8 }, 16), 8);
+  // Carte sans filtrage anisotrope (0) : 1.
+  assert.equal(tileAnisotropy(DESKTOP_PROFILE, 0), 1);
+// Fin du test.
+});

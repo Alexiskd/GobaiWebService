@@ -25,8 +25,9 @@ export const TARGET_FPS = 50;
 export const TARGET_FRAME_MS = 1000 / TARGET_FPS;
 
 // Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 1,75 dès le départ, plancher de la
-// résolution adaptative à 0,75, anticrénelage, anisotropie de 8.
-export const DESKTOP_PROFILE = { handheld: false, dprMax: 2, dprStart: 2, dprMin: 0.75, frameMs: 0, antialias: true, anisotropy: 8 };
+// résolution adaptative à 0,75, anticrénelage, anisotropie de 8 (16 pour les tuiles des cartes : vues rasantes nettes,
+// toujours bornée par la carte graphique).
+export const DESKTOP_PROFILE = { handheld: false, dprMax: 2, dprStart: 2, dprMin: 0.75, frameMs: 0, antialias: true, anisotropy: 8, tileAnisotropy: 16 };
 // Déclare et exporte le profil d'un appareil tenu en main : densité plafonnée à 2 dès le départ, plancher à 1,25 (un
 // écran de téléphone est vu de près : en dessous, l'image devient floue), le reste comme l'ordinateur (ralenti au
 // repos, voir targetFrameMs).
