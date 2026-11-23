@@ -187,7 +187,7 @@ export class TileManager {
     if (this.lightsSource && this.uniforms.lightsOn.value > 0) this.loadLightsMosaic();
     // Relief coupé pour l'instant.
     this.reliefOn = false;
-    // Dernier réglage demandé du relief ; la Terre (lighting « earth ») ne l'affiche qu'à 1 km d'altitude ou moins.
+    // Dernier réglage demandé du relief ; plafond d'altitude : celui du profil de l'astre (Terre « Earth Maps » : aucun), sinon 1 km pour la Terre.
     this.reliefAsk = { on: false, exaggeration: 1 }; this.reliefNear = true; this.reliefCapKm = reliefCapKm(body, body.lighting === 'earth' ? RELIEF_MAX_KM : Infinity);
     // Dernière mesure de la hauteur du sol : instant et valeur.
     this.reliefProbe = { at: 0, floor: 0 };
@@ -197,7 +197,7 @@ export class TileManager {
     // à plat, sans tuiles d'altitude à télécharger. Ombrage estimé d'après l'image (autres astres) : toujours actif.
     // Règle le relief : pour un relief Terrarium,
     this.setRelief(this.relief?.kind === 'terrarium'
-      // le choix gardé par l'utilisateur, coupé par défaut ;
+      // le choix gardé par l'utilisateur, sinon le défaut du profil de l'astre (Terre : allumé) ;
       ? reliefChoice(readReliefChoice(), this.relief.exaggeration ?? 1, Boolean(body.reliefDefaultOn))
       // sinon actif.
       : { on: true, exaggeration: this.relief?.exaggeration ?? 1 });
