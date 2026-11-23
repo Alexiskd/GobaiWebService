@@ -101,7 +101,10 @@ export function HudTop({ hud }) {
         <LiveBadge className={`ml-[0.2em] ${live ? 'visible' : 'invisible'}`} />
         {/* Sujet du site à côté de son nom, écrit dans le bleu du fond du bandeau (il suit le thème jour / nuit). */}
         {/* Le sujet du site, à traduire, de la couleur du fond du bandeau. */}
-        <span translate="yes" className="text-surface font-normal">: système solaire 3D</span>
+        {/* Sur téléphone, ce texte invisible passait à la ligne (flex-wrap) : le titre prenait deux lignes, dont une vide,
+            et le logo se centrait entre la ligne visible et la ligne vide. Il est donc retiré de la mise en page
+            (sr-only : toujours lu par les moteurs et les lecteurs d'écran, sans occuper de place). */}
+        <span translate="yes" className={compact ? 'sr-only' : 'text-surface font-normal'}>: système solaire 3D</span>
       {/* Fin du titre. */}
       </Typography>
       {/* La date, en petit, en chiffres de largeur fixe, sous le titre. */}
