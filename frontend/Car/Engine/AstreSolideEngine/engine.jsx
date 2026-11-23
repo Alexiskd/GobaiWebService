@@ -3034,7 +3034,8 @@ export class SolarEngine {
    * est l'ouverture verticale en radians. La caméra three.js est remise en place ensuite (rien ne bouge dans la scène).
    */
   // renderCesiumBackdrop : l'astre, son rayon et la caméra du globe (début).
-  renderCesiumBackdrop({ bodyId = 'earth', radiusM = 6371000, position, direction, up, fovy }) {
+  // space faux : le sol remplit l'image du globe, l'espace n'est pas redessiné (seulement l'atmosphère).
+  renderCesiumBackdrop({ bodyId = 'earth', radiusM = 6371000, position, direction, up, fovy, space = true }) {
     // L'astre tuilé et son repère.
     const tb = this.tiledById?.[bodyId];
     // Sans astre, moteur arrêté ou en pause : rien.
@@ -3061,17 +3062,21 @@ export class SolarEngine {
     if (Number.isFinite(fovy)) cam.fov = THREE.MathUtils.radToDeg(fovy);
     // Projection recalculée.
     cam.updateProjectionMatrix();
-    // L'astre de three.js est caché : le globe CesiumJS le dessine ; seul l'espace autour est dessiné.
-    const restore = this.hideSolidBody(bodyId);
-    // Une image de l'espace, comme dans la boucle (effacement manuel) : l'image est effacée, le ciel lointain
-    // (étoiles, Voie lactée, galaxies) est dessiné d'abord, puis la scène par-dessus.
-    this.renderer.clear();
-    // Ciel lointain, vu de la caméra du globe.
-    this.sky.render(this.renderer, cam, 0);
-    // Scène (Soleil, planètes, satellites) par-dessus.
-    this.renderer.render(this.scene, cam);
-    // L'astre reprend son état.
-    restore();
+    // Espace visible (début).
+    if (space) {
+      // L'astre de three.js est caché : le globe CesiumJS le dessine ; seul l'espace autour est dessiné.
+      const restore = this.hideSolidBody(bodyId);
+      // Une image de l'espace, comme dans la boucle (effacement manuel) : l'image est effacée, le ciel lointain
+      // (étoiles, Voie lactée, galaxies) est dessiné d'abord, puis la scène par-dessus.
+      this.renderer.clear();
+      // Ciel lointain, vu de la caméra du globe.
+      this.sky.render(this.renderer, cam, 0);
+      // Scène (Soleil, planètes, satellites) par-dessus.
+      this.renderer.render(this.scene, cam);
+      // L'astre reprend son état.
+      restore();
+    // Fin de l'espace.
+    }
     // Atmosphère de l'astre par-dessus le globe, vue de la même caméra.
     this.renderAtmosphereOverlay(bodyId, cam);
     // La caméra three.js reprend son état.
