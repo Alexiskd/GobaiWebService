@@ -490,9 +490,11 @@
 
   /* Bandeau du titre (HudTop), ordinateur et téléphone : même habillage que la barre de navigation (.m-nav) — fond
      panel, filet edge, rayon 18 px, ombre portée. Grille à deux colonnes : la tuile du logo et la ligne du nom partagent
-     la rangée 1 (leurs centres sont sur la même ligne horizontale), la date et l'astre visé passent dessous. */
+     la rangée 1 (leurs centres sont sur la même ligne horizontale), la date et l'astre visé passent dessous.
+     L'ensemble (logo, titre et badge, date) est centré horizontalement dans le bandeau (justify-content: center). */
   .hud-title {
-    display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 10px; row-gap: 2px;
+    display: grid; grid-template-columns: auto minmax(0, max-content); justify-content: center; align-items: center;
+    column-gap: 10px; row-gap: 2px;
     box-sizing: border-box; padding: 7px 14px 7px 7px; border: 1px solid var(--color-edge); border-radius: 18px;
     background-color: var(--color-panel); color: var(--color-ink); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
     user-select: none; contain: layout style;
@@ -512,7 +514,7 @@
   .hud-title[data-compact] .hud-title-name { font-size: 14.5px; }
   .hud-title-inf { color: #0000ff; font-size: 1.5em; line-height: 0.8; font-weight: 800; }
   .hud-title-alt { color: var(--color-soft); font-weight: 400; }
-  .hud-title-name .g-live { margin-left: auto; }
+  /* Badge « En direct » collé au nom (écart de la ligne, 7 px). */
   /* Lignes d'information : date, images par seconde, astre visé. */
   .hud-title-meta {
     grid-column: 2; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
