@@ -12,8 +12,6 @@ import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gra
 import { VIEW_LINK_MS, formatViewHash, setViewHash } from './astre-solide.view-link.js';
 // Importe le nom du lieu sous la caméra (ville, région, pays).
 import { placeText } from './astre-solide.place.js';
-// Importe les calculs du vol entre deux lieux.
-import { bearing, cruiseAltitudeM, easeRoute, greatCircle, routeAltitudeM, routeDurationMs, routeKm } from './astre-solide.route.js';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
 import { scaleLevel } from '../../Engine/AstreSolideEngine/CameraEngine/scaleLevels.jsx';
 
@@ -49,7 +47,7 @@ export class CesiumCamera {
     // Instant de la dernière image, pour les flèches du clavier maintenues.
     this.lastKeysAt = performance.now();
     // Avant chaque image du globe : zoom lissé, flèches du clavier maintenues, puis vue 3/4 automatique.
-    viewer.scene.preUpdate.addEventListener(() => { this.routeTick(); this.zoomTick(); this.keysTick(); this.autoTilt(); });
+    viewer.scene.preUpdate.addEventListener(() => { this.zoomTick(); this.keysTick(); this.autoTilt(); });
   // Fin du constructeur.
   }
 
@@ -107,8 +105,6 @@ export class CesiumCamera {
   /** Boutons +/− et molette du HUD : facteur sur l'altitude (< 1 rapproche). */
   // zoom : le facteur (début).
   zoom(f) {
-    // Un vol entre deux lieux en cours s'arrête (l'utilisateur reprend la main).
-    this.stopRoute();
     // Zoom calé sur three.js : l'altitude visée est multipliée par le facteur (bornée par l'altitude minimale de
     // l'astre) ; la caméra s'en rapproche en douceur à chaque image (zoomTick), à la verticale du même point, avec
     // le même cap et la même inclinaison.
@@ -214,8 +210,6 @@ export class CesiumCamera {
   dragBy(dx, dy) {
     // Aucun mouvement : rien.
     if (!dx && !dy) return;
-    // Un vol entre deux lieux en cours s'arrête (l'utilisateur reprend la main).
-    this.stopRoute();
     // Canevas du globe (hauteur de l'écran).
     const c = this.viewer.scene.canvas;
     // Déplacement en radians, même conversion que three.js.
@@ -404,58 +398,6 @@ export class CesiumCamera {
     // Une image.
     this.viewer.scene.requestRender();
   // Fin de applyView.
-  }
-
-  /**
-   * Vol entre deux lieux ({ lon, lat, name } en degrés) : la caméra suit l'arc du grand cercle, monte jusqu'à
-   * l'altitude de croisière puis redescend à 8 km au-dessus de l'arrivée, le regard tourné vers la route (−35°).
-   * Le HUD publie la distance parcourue (hud.route). Arrêté par un glisser ou un zoom.
-   */
-  // flyRoute : départ et arrivée (début).
-  flyRoute(from, to) {
-    // Points illisibles : rien.
-    if (![from?.lon, from?.lat, to?.lon, to?.lat].every(Number.isFinite)) return null;
-    // Distance du trajet.
-    const km = routeKm(from, to);
-    // Vol en cours (durée raccourcie à 0,5 s si le système demande moins d'animation).
-    this.route = { from, to, km, t0: performance.now(), ms: globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 500 : routeDurationMs(km), startM: Math.max(8000, this.altitudeM), endM: 8000, cruiseM: cruiseAltitudeM(km) };
-    // Inclinaison pilotée par le vol (pas de vue 3/4 automatique).
-    this.pilotTilt = true;
-    // Zoom en cours oublié.
-    this.altGoal = undefined; this.panTo = undefined;
-    // Une image.
-    this.viewer.scene.requestRender();
-    // Renvoie la distance.
-    return km;
-  // Fin de flyRoute.
-  }
-
-  /** Arrête le vol entre deux lieux (le HUD n'affiche plus la route). */
-  // stopRoute.
-  stopRoute() { if (!this.route) return; this.route = null; this.engine.hud?.set({ route: '' }); }
-
-  /** Avance le vol entre deux lieux, avant chaque image du globe. */
-  // routeTick (début).
-  routeTick() {
-    // Pas de vol, ou globe sans la main : rien.
-    if (!this.route || !this.engine.cesiumHold) return;
-    // Raccourcis.
-    const r = this.route, { Cesium } = this;
-    // Fraction du temps, adoucie.
-    const u = Math.min(1, (performance.now() - r.t0) / r.ms), t = easeRoute(u);
-    // Point de la route et point un peu plus loin (pour le cap).
-    const p = greatCircle(r.from, r.to, t), ahead = greatCircle(r.from, r.to, Math.min(1, t + 0.01));
-    // Cap : vers la suite de la route (à l'arrivée, celui de la fin du trajet).
-    const h = t < 0.99 ? bearing(p, ahead) : bearing(greatCircle(r.from, r.to, 0.98), r.to);
-    // Caméra : sur la route, à l'altitude du profil, regard vers l'avant et vers le bas.
-    this.cam.setView({ destination: Cesium.Cartesian3.fromDegrees(p.lon, p.lat, routeAltitudeM(t, r.startM, r.endM, r.cruiseM), this.viewer.scene.globe.ellipsoid), orientation: { heading: Cesium.Math.toRadians(h), pitch: Cesium.Math.toRadians(-35), roll: 0 } });
-    // HUD : la route et la distance parcourue.
-    this.engine.hud?.set({ route: `${r.from.name ?? ''} → ${r.to.name ?? ''} · ${formatDistanceKm(r.km * t)} / ${formatDistanceKm(r.km)}` });
-    // Arrivé : fin du vol (la route reste affichée 3 s).
-    if (u >= 1) { this.route = null; setTimeout(() => { if (!this.route) this.engine.hud?.set({ route: '' }); }, 3000); }
-    // Image suivante.
-    this.viewer.scene.requestRender();
-  // Fin de routeTick.
   }
 
   /** Favori ou lien de vue sur le même astre : vol jusqu'à la vue (position, cap, inclinaison gardée). */
