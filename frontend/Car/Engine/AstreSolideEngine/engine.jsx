@@ -2898,6 +2898,8 @@ export class SolarEngine {
     const tb = this.tiledById?.[target.id];
     // Sans astre : rien.
     if (!tb) return;
+    // Repère des tuiles à la rotation propre de l'astre (voir syncSolidRoot).
+    this.syncSolidRoot(tb);
     // Position de la caméra dans le repère des tuiles de l'astre (sphère de rayon 1, axe des pôles = +Y).
     const local = tb.tiles.root.worldToLocal(this.cam.position.clone());
     // Astre ciblé : la distance visée par le zoom three.js (pour que le zoom en cours continue dans le globe).
@@ -2905,6 +2907,18 @@ export class SolarEngine {
     // Le module décide : astre ciblé, distance au centre et distance visée, rayon, direction de la caméra.
     this.solidGlobe.update({ focused, dist, distGoal: focused ? this.distGoal : dist, radius: tb.radius, camLocal: [local.x, local.y, local.z] });
   // Fin de updateSolidGlobe.
+  }
+
+  /**
+   * Repère des tuiles d'un astre remis à sa rotation propre. Ce repère ne suit la rotation de l'astre que dans la mise à
+   * jour des tuiles three.js, qui est sautée quand le globe CesiumJS dessine l'astre : figé, il faisait tourner le globe
+   * CesiumJS avec la caméra et l'ombre jour/nuit restait collée au sol (elle suivait la rotation de la planète).
+   */
+  // syncSolidRoot : l'astre tuilé (début).
+  syncSolidRoot(tb) {
+    // Recopie de la rotation propre, si l'astre en a une (planètes ; la Lune est orientée par son groupe).
+    tb.tiles.body?.syncRotation?.(tb.tiles.root);
+  // Fin de syncSolidRoot.
   }
 
   /**
@@ -2920,6 +2934,8 @@ export class SolarEngine {
     if (!tb) return null;
     // Repère des tuiles, matrices à jour.
     const root = tb.tiles.root;
+    // Rotation propre de l'astre recopiée sur le repère (voir syncSolidRoot).
+    this.syncSolidRoot(tb);
     // Matrices du repère à jour.
     root.updateWorldMatrix(true, false);
     // Vecteurs et matrice de travail (créés une fois).
