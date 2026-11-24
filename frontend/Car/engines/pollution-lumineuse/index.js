@@ -2,6 +2,6 @@
 // au-dessus du globe CesiumJS et sous les nuages.
 
 // La couche.
-export { LightPollutionLayer, POLLUTION_LAYER, POLLUTION_SHELL_RADIUS, POLLUTION_RENDER_ORDER } from './pollution-lumineuse.layer.js';
+export { LightPollutionLayer, POLLUTION_LAYER, POLLUTION_SHELL_RADIUS, POLLUTION_RENDER_ORDER, SHADOW_RENDER_ORDER } from './pollution-lumineuse.layer.js';
 // Les calculs purs.
-export { MERCATOR_MAX_LAT, mosaicUv, nightAmount } from './pollution-lumineuse.math.js';
+export { MERCATOR_MAX_LAT, mosaicUv, nightAmount, dayLight, shadowAlpha, NIGHT_FLOOR } from './pollution-lumineuse.math.js';

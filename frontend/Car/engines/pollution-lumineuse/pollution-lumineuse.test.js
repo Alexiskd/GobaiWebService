@@ -1,9 +1,9 @@
 // Tests de l'engine pollution-lumineuse (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mosaicUv, nightAmount } from './pollution-lumineuse.math.js';
-import { pollutionFragmentShader } from './pollution-lumineuse.shader.js';
-import { LightPollutionLayer, POLLUTION_LAYER, POLLUTION_RENDER_ORDER, POLLUTION_SHELL_RADIUS } from './pollution-lumineuse.layer.js';
+import { dayLight, mosaicUv, nightAmount, NIGHT_FLOOR, shadowAlpha } from './pollution-lumineuse.math.js';
+import { pollutionFragmentShader, shadowFragmentShader } from './pollution-lumineuse.shader.js';
+import { LightPollutionLayer, POLLUTION_LAYER, POLLUTION_RENDER_ORDER, POLLUTION_SHELL_RADIUS, SHADOW_RENDER_ORDER } from './pollution-lumineuse.layer.js';
 import * as THREE from 'three';
 
 test('mosaïque : longitude 0 et équateur au centre, nord en haut, bornée au Web Mercator', () => {
@@ -57,7 +57,34 @@ test('couche : coque sous les nuages, sur son propre calque, dessinée avant l\'
   assert.equal(layer.uniforms.intensity.value, 1);
   layer.update([0, 1, 0], 0.4, 0.25);
   assert.equal(layer.uniforms.intensity.value, 0.25);
+  // Ombre : même calque, dessinée avant les lumières, mêmes variables, visible avec elles ou seule.
+  assert.equal(layer.shadowMesh.parent, root);
+  assert.ok(layer.shadowMesh.layers.test(own) && SHADOW_RENDER_ORDER < POLLUTION_RENDER_ORDER);
+  assert.equal(layer.shadowMesh.material.uniforms, layer.uniforms);
+  layer.setVisible(false, true);
+  assert.equal(layer.mesh.visible, false); assert.equal(layer.shadowMesh.visible, true);
   // Libération.
   layer.dispose();
   assert.equal(root.children.length, 0);
+});
+
+test('ombre : plein jour sans ombre, nuit noire au plancher, terminateur en dégradé large', () => {
+  assert.equal(dayLight(1), 1);
+  assert.equal(dayLight(-0.5), 0);
+  assert.ok(shadowAlpha(1) < 1e-12);
+  assert.ok(Math.abs(shadowAlpha(-0.5) - (1 - NIGHT_FLOOR)) < 1e-12);
+  // La lumière baisse sans saut du plein jour à la nuit.
+  let prev = 1;
+  for (let c = 1; c >= -0.4; c -= 0.01) { const l = dayLight(c); assert.ok(l <= prev + 1e-12); assert.ok(prev - l < 0.03); prev = l; }
+  // Dégradé large : à l'horizon il reste de la lumière, à 10° sous l'horizon pas encore la nuit noire.
+  assert.ok(dayLight(0) > 0.1 && dayLight(0) < 0.4);
+  assert.ok(dayLight(-0.17) > 0.01);
+  // Vue de nuit : ombre partout.
+  assert.ok(Math.abs(shadowAlpha(1, 1) - (1 - NIGHT_FLOOR)) < 1e-12);
+});
+
+test('shader de l\'ombre : mêmes constantes que dayLight', () => {
+  assert.match(shadowFragmentShader, /\(c\+\.28\)\/\.58/);
+  assert.match(shadowFragmentShader, /\.75\+\.25\*clamp\(c,0\.,1\.\)/);
+  assert.match(shadowFragmentShader, /\.96\*k/);
 });

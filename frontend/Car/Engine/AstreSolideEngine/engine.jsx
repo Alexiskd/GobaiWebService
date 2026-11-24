@@ -2995,9 +2995,13 @@ export class SolarEngine {
   renderAtmosphereOverlay(bodyId, cam) {
     // Atmosphère de l'astre (affichée seulement si elle n'est pas coupée dans Paramètres).
     const atmo = bodyId && this.atmospheres?.[bodyId]?.visible ? this.atmospheres[bodyId] : null;
-    // Pollution lumineuse : seulement sur la Terre, lumières de la nuit allumées, et pas quand on a zoomé sur la Terre
-    // (globe de près : sol entièrement éclairé, ni ombre ni lumières de la nuit).
-    const pollution = bodyId === 'earth' && !this.cesiumHold && this.lightPollution && this.tiledById?.earth?.tiles.uniforms.lightsOn.value > 0.5 ? this.lightPollution : null;
+    // Fondu du zoom adouci du globe de la Terre (0 de près : ni ombre ni lumières de la nuit ; transition dans le temps).
+    const earthFade = this.solidGlobe?.body?.id === 'earth' ? (this.solidGlobe.visualFade ?? this.solidGlobe.zoomFade ?? 1) : 1;
+    // Ombre de la Terre et lumières de la nuit (engine pollution-lumineuse) : seulement sur la Terre, tant que l'ombre
+    // ou son fondu ne sont pas nuls (la Terre de CesiumJS n'a pas d'autre ombre).
+    const pollution = bodyId === 'earth' && this.lightPollution && earthFade * (this.shadeNow ?? 1) > 0.002 ? this.lightPollution : null;
+    // Lumières de la nuit allumées dans Paramètres.
+    const lightsOn = this.tiledById?.earth?.tiles.uniforms.lightsOn.value > 0.5;
     // Couche existante.
     const layer = this.atmoOverlay;
     // Ni atmosphère ni pollution lumineuse : couche masquée.
@@ -3039,15 +3043,13 @@ export class SolarEngine {
     // Pollution lumineuse (début).
     if (pollution) {
       // Mosaïque mondiale des lumières chargée (une fois) par les tuiles de la Terre.
-      this.tiledById.earth.tiles.loadLightsMosaic?.();
-      // Fondu du zoom : seulement quand le globe est celui de la Terre.
-      const fade = this.solidGlobe?.body?.id === 'earth' ? (this.solidGlobe.zoomFade ?? 1) : 1;
-      // Soleil vu de la Terre (repère de ses tuiles), ombre de l'app et fondu du zoom.
-      pollution.update(this.solidBodyView('earth')?.sunDir, this.shadeNow ?? 1, fade);
+      if (lightsOn) this.tiledById.earth.tiles.loadLightsMosaic?.();
+      // Soleil vu de la Terre (repère de ses tuiles), ombre de l'app et fondu du zoom adouci.
+      pollution.update(this.solidBodyView('earth')?.sunDir, this.shadeNow ?? 1, earthFade);
     // Fin de la pollution lumineuse.
     }
     // Coque des lumières dessinée seulement ici, sur la Terre.
-    this.lightPollution?.setVisible(Boolean(pollution));
+    this.lightPollution?.setVisible(Boolean(pollution) && lightsOn, Boolean(pollution));
     // Calques de la caméra gardés.
     const mask = cam.layers.mask;
     // Seuls les calques de l'atmosphère et de la pollution lumineuse (dessinée en premier, donc sous les nuages).
