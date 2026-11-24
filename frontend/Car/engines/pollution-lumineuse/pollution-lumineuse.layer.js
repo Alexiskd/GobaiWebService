@@ -14,7 +14,7 @@
 // Importe toute la bibliothèque three.js sous le nom THREE.
 import * as THREE from 'three';
 // Importe les shaders de la couche.
-import { pollutionFragmentShader, pollutionVertexShader } from './pollution-lumineuse.shader.js';
+import { pollutionFragmentShader, pollutionVertexShader, shadowFragmentShader } from './pollution-lumineuse.shader.js';
 
 // Calque three.js de la couche (distinct du calque 0 de la scène et de celui de l'atmosphère, 5).
 export const POLLUTION_LAYER = 6;
@@ -22,6 +22,8 @@ export const POLLUTION_LAYER = 6;
 export const POLLUTION_SHELL_RADIUS = 1 + 3 / 6371;
 // Ordre de dessin : avant l'atmosphère et les nuages (ordre 0), donc dessous.
 export const POLLUTION_RENDER_ORDER = -10;
+// Ordre de dessin de l'ombre : avant les lumières (elles s'allument par-dessus la nuit).
+export const SHADOW_RENDER_ORDER = -11;
 
 // Déclare et exporte la classe LightPollutionLayer (début).
 export class LightPollutionLayer {
@@ -46,8 +48,11 @@ export class LightPollutionLayer {
     const material = new THREE.ShaderMaterial({
       // les shaders et les variables ;
       vertexShader: pollutionVertexShader, fragmentShader: pollutionFragmentShader, uniforms: this.uniforms,
-      // lumière ajoutée, sans écrire la profondeur ; seule la face tournée vers la caméra (pas la face cachée).
-      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.FrontSide,
+      // lumière ajoutée sans toucher à l'opacité de la couche (sinon la face de nuit masquerait le globe), sans écrire
+      // la profondeur ; seule la face tournée vers la caméra (pas la face cachée).
+      transparent: true, depthWrite: false, side: THREE.FrontSide,
+      blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor,
+      blendSrcAlpha: THREE.ZeroFactor, blendDstAlpha: THREE.OneFactor,
     // Fin du matériau.
     });
     // La coque.
@@ -62,6 +67,30 @@ export class LightPollutionLayer {
     this.mesh.frustumCulled = false;
     // Rattachée au repère des tuiles : elle tourne avec la Terre.
     root.add(this.mesh);
+    // Ombre de la face de nuit (début) : le globe CesiumJS de la Terre n'a plus son propre éclairage (terminateur trop
+    // net) ; cette coque l'assombrit avec un terminateur en dégradé large (pollution-lumineuse.math.js, dayLight).
+    const shadowMaterial = new THREE.ShaderMaterial({
+      // les shaders et les variables (les mêmes objets que la couche des lumières) ;
+      vertexShader: pollutionVertexShader, fragmentShader: shadowFragmentShader, uniforms: this.uniforms,
+      // alpha prémultiplié : fond × (1 − alpha) + lueur ; sans écrire la profondeur ; face tournée vers la caméra.
+      transparent: true, depthWrite: false, side: THREE.FrontSide,
+      blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor,
+      blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
+    // Fin du matériau de l'ombre.
+    });
+    // La coque de l'ombre : même géométrie, même calque, dessinée avant les lumières.
+    this.shadowMesh = new THREE.Mesh(this.mesh.geometry, shadowMaterial);
+    // Son nom.
+    this.shadowMesh.name = 'ombre-terre';
+    // Seulement sur le calque de la couche.
+    this.shadowMesh.layers.set(POLLUTION_LAYER);
+    // Avant les lumières.
+    this.shadowMesh.renderOrder = SHADOW_RENDER_ORDER;
+    // Toujours dessinée quand sa couche l'est.
+    this.shadowMesh.frustumCulled = false;
+    // Rattachée au repère des tuiles.
+    root.add(this.shadowMesh);
+    // Fin de l'ombre.
     // Repère gardé (pour la libération).
     this.root = root;
   // Fin du constructeur.
@@ -84,16 +113,16 @@ export class LightPollutionLayer {
   // Fin de update.
   }
 
-  /** Visible ou non (seulement quand le globe CesiumJS dessine la Terre). */
-  // setVisible : l'état.
-  setVisible(on) { this.mesh.visible = Boolean(on); }
+  /** Lumières et ombre visibles ou non (seulement quand le globe CesiumJS dessine la Terre). */
+  // setVisible : les lumières, et l'ombre (par défaut comme les lumières).
+  setVisible(lights, shadow = lights) { this.mesh.visible = Boolean(lights); this.shadowMesh.visible = Boolean(shadow); }
 
   // dispose : libère la coque (début).
   dispose() {
     // Retirée du repère.
-    this.root.remove(this.mesh);
-    // Géométrie et matériau libérés.
-    this.mesh.geometry.dispose(); this.mesh.material.dispose();
+    this.root.remove(this.mesh); this.root.remove(this.shadowMesh);
+    // Géométrie (partagée) et matériaux libérés.
+    this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.shadowMesh.material.dispose();
   // Fin de dispose.
   }
 // Fin de la classe LightPollutionLayer.

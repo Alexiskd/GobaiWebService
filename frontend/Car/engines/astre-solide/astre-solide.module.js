@@ -460,11 +460,45 @@ export class AstreSolideGlobe {
    * Bouton « Ombre » : l'intensité d'ombre de l'app (engine.shadeNow, avec son fondu) appliquée au globe. En zoomant
    * sur l'astre, elle baisse en fondu (zoomFade) ; de près (globe de près), elle est coupée : sol entièrement éclairé.
    */
+  // Durée caractéristique (ms) de la transition du fondu du zoom.
+  static FADE_MS = 450;
+
+  /**
+   * Fondu du zoom adouci : il rejoint sa cible (fondu du zoom, 0 de près) en exponentielle, à chaque image, au lieu de
+   * sauter. Tant qu'il n'a pas rejoint sa cible, une image du globe est redemandée (rendu à la demande). Renvoie le
+   * fondu de cette image (aussi gardé dans `visualFade`, lu par la couche d'ombre et de lumières de la Terre).
+   */
+  // easeFade : avance le fondu (début).
+  easeFade() {
+    // Instant présent et temps écoulé depuis la dernière avance (borné à 100 ms).
+    const now = performance.now(), dt = Math.min(100, Math.max(0, now - (this.fadeT ?? now)));
+    // Noté.
+    this.fadeT = now;
+    // Cible : 0 de près, sinon le fondu du zoom.
+    const goal = this.active ? 0 : (this.zoomFade ?? 1);
+    // Valeur actuelle (la cible à la première image).
+    const cur = this.visualFade ?? goal;
+    // Avance exponentielle ; collée à la cible quand l'écart est imperceptible.
+    const next = cur + (goal - cur) * (1 - Math.exp(-dt / AstreSolideGlobe.FADE_MS));
+    // Gardé.
+    this.visualFade = Math.abs(goal - next) < 0.002 ? goal : next;
+    // Transition en cours : une autre image du globe.
+    if (this.visualFade !== goal) this.viewer?.scene.requestRender();
+    // Le fondu de cette image.
+    return this.visualFade;
+  // Fin de easeFade.
+  }
+
   // applyShade : règle l'éclairage du globe (début).
   applyShade() {
     // Intensité : 0 quand on a zoomé sur l'astre (globe de près : sol entièrement éclairé, sans ombre jour/nuit) ;
     // sinon celle du bouton « Ombre » (ombre pleine si elle n'a jamais été réglée), baissée par le fondu du zoom.
-    const v = this.active ? 0 : (this.engine.shadeNow ?? 1) * (this.zoomFade ?? 1);
+    // Fondu du zoom adouci dans le temps (voir easeFade) : l'ombre et la pollution lumineuse disparaissent et
+    // reviennent en transition, même quand le zoom saute un palier ou que le globe de près prend ou rend la main.
+    const fade = this.easeFade();
+    // Intensité : celle du bouton « Ombre » (ombre pleine si elle n'a jamais été réglée), baissée par ce fondu. La Terre
+    // a son ombre en couche three.js (engine pollution-lumineuse, terminateur en dégradé) : son globe reste éclairé.
+    const v = this.body?.id === 'earth' ? 0 : (this.engine.shadeNow ?? 1) * fade;
     // Distance de la caméra au centre de l'astre (m).
     const p = this.viewer.camera.positionWC, d = Math.hypot(p.x, p.y, p.z);
     // Déjà appliquée, caméra à moins de 1 000 km de la distance du réglage (écart d'ombre < 0,0001) : rien.

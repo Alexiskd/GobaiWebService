@@ -48,3 +48,30 @@ export const pollutionFragmentShader = [
   'gl_FragColor=vec4(col*k,1.);}',
 // Fin du shader de fragments.
 ].join('\n');
+
+// Déclare et exporte le shader de fragments de l'ombre (début) : face de nuit de la Terre posée sur le globe CesiumJS,
+// en alpha prémultiplié (fond × (1 − alpha) + lueur du crépuscule). Mêmes formules que dayLight et shadowAlpha
+// (pollution-lumineuse.math.js).
+export const shadowFragmentShader = [
+  // Direction du Soleil (repère des tuiles), ombre, vue de nuit et intensité (fondu du zoom).
+  'uniform vec3 sunDir;uniform float shade;uniform float lightView;uniform float intensity;',
+  // Direction du point.
+  'varying vec3 vDir;',
+  // Déclarations de la profondeur logarithmique.
+  '#include <logdepthbuf_pars_fragment>',
+  // Fonction principale (début) et profondeur logarithmique.
+  'void main(){', '#include <logdepthbuf_fragment>',
+  // Force de l'ombre : bouton « Ombre » × fondu du zoom (vue de nuit : entière).
+  'float k=(lightView>.5?1.:shade)*intensity;if(k<.002){discard;}',
+  // Cosinus de la hauteur du Soleil au point.
+  'float c=dot(normalize(vDir),normalize(sunDir));',
+  // Lumière du sol : dégradé en S de −0,28 (fin du crépuscule) à +0,30 (plein jour), jour atténué quand le Soleil est bas.
+  'float t=clamp((c+.28)/.58,0.,1.);float l=t*t*(3.-2.*t)*(.75+.25*clamp(c,0.,1.));if(lightView>.5){l=0.;}',
+  // Opacité de l'ombre (plancher de nuit 4 %).
+  'float a=(1.-l)*.96*k;if(a<.002){discard;}',
+  // Lueur chaude du crépuscule, juste après le coucher (bande étroite, discrète).
+  'float g=exp(-pow((c+.04)/.06,2.))*.05*k*(1.-lightView);',
+  // Alpha prémultiplié. Fin de la fonction principale.
+  'gl_FragColor=vec4(vec3(1.,.48,.22)*g,a);}',
+// Fin du shader de l'ombre.
+].join('\n');

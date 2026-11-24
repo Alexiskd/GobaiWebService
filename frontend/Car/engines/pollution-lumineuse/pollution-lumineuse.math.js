@@ -43,3 +43,39 @@ export function nightAmount(cosSun, lightView = 0) {
   return t * t * (3 - 2 * t);
 // Fin de nightAmount.
 }
+
+// Lumière gardée sur la face de nuit (sol à peine visible, comme sur les photos de la Terre de nuit sans lune).
+export const NIGHT_FLOOR = 0.04;
+// Terminateur : dégradé de la lumière du sol entre ces deux cosinus de la hauteur du Soleil (−0,28 ≈ 16° sous
+// l'horizon : fin du crépuscule ; +0,30 ≈ 17° au-dessus : plein jour).
+export const TERMINATOR_LO = -0.28;
+export const TERMINATOR_HI = 0.3;
+// Atténuation du plein jour quand le Soleil descend (Soleil au zénith : 1 ; à l'horizon : 0,75).
+export const DAY_DIM = 0.25;
+
+/**
+ * Lumière du jour reçue par le sol (0 nuit noire, 1 Soleil au zénith), d'après le cosinus de la hauteur du Soleil :
+ * dégradé en S du crépuscule (16° sous l'horizon) au plein jour (17° au-dessus), sans cassure, et léger
+ * assombrissement du jour quand le Soleil est bas. Terminateur large et doux, comme sur les photos prises de l'espace.
+ */
+// Déclare et exporte dayLight : le cosinus (début).
+export function dayLight(cosSun) {
+  // Avancement dans le terminateur, courbe en S.
+  const t = Math.max(0, Math.min(1, (cosSun - TERMINATOR_LO) / (TERMINATOR_HI - TERMINATOR_LO))), s = t * t * (3 - 2 * t);
+  // Atténuation du jour selon la hauteur du Soleil.
+  return s * (1 - DAY_DIM + DAY_DIM * Math.max(0, Math.min(1, cosSun)));
+// Fin de dayLight.
+}
+
+/**
+ * Opacité de l'ombre posée sur le globe CesiumJS (0 de jour, 1 − NIGHT_FLOOR en nuit noire) ; vue de nuit : nuit
+ * partout. Même formule dans le shader de l'ombre (pollution-lumineuse.shader.js).
+ */
+// Déclare et exporte shadowAlpha : le cosinus et la vue de nuit (début).
+export function shadowAlpha(cosSun, lightView = 0) {
+  // Lumière du sol (nulle en vue de nuit).
+  const l = lightView > 0.5 ? 0 : dayLight(cosSun);
+  // Ombre : ce qui manque de lumière, en gardant le plancher de nuit.
+  return (1 - l) * (1 - NIGHT_FLOOR);
+// Fin de shadowAlpha.
+}
