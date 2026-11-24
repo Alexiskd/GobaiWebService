@@ -175,6 +175,8 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null) {
       sunI: { value: SUN_INTENSITY }, discGain: { value: spec.aerial ? AERIAL_DISC_GAIN : DISC_GAIN },
       // Perspective aérienne : le fond est atténué par l'air traversé.
       aerial: { value: spec.aerial ? 1 : 0 },
+      // Dessin sur la couche au-dessus du globe CesiumJS (voir group.userData.overlayMode) : non par défaut.
+      overlay: { value: 0 },
     // Fin des variables uniformes.
     },
     // Les shaders de la coquille.
@@ -241,6 +243,25 @@ export function createAtmosphere(id, radius, uniforms, getSpin = null) {
     // Signale à three.js que le matériau a changé.
     material.needsUpdate = true;
   // Fin de track.
+  };
+  /**
+   * Mode « couche au-dessus du globe CesiumJS » (engine.renderAtmosphereOverlay) : la couche est un canevas
+   * transparent que le navigateur compose en alpha prémultiplié (couleur + fond × (1 − alpha)). Le mélange de la
+   * scène three.js (fond × part transmise, ou additif) y donnait une opacité égale à la part transmise : le sol du
+   * globe était effacé là où l'air traversé est le plus mince, c'est-à-dire juste sous la caméra (ombre qui suivait la
+   * caméra). En mode couche : opacité 1 − part transmise (ou 0 en additif) et mélange prémultiplié.
+   */
+  // overlayMode : allumé ou éteint (début).
+  group.userData.overlayMode = (on) => {
+    // Le shader sort l'opacité de la couche.
+    material.uniforms.overlay.value = on ? 1 : 0;
+    // Couche : mélange prémultiplié (couleur + destination × (1 − alpha), même règle pour l'alpha).
+    if (on) Object.assign(material, { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.OneMinusSrcAlphaFactor, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneMinusSrcAlphaFactor });
+    // Scène three.js : mélange d'origine (perspective aérienne ou additif).
+    else if (spec.aerial) Object.assign(material, { blending: THREE.CustomBlending, blendEquation: THREE.AddEquation, blendSrc: THREE.OneFactor, blendDst: THREE.SrcAlphaFactor, blendSrcAlpha: null, blendDstAlpha: null });
+    // Additif.
+    else Object.assign(material, { blending: THREE.AdditiveBlending, blendSrcAlpha: null, blendDstAlpha: null });
+  // Fin de overlayMode.
   };
   // Renvoie le groupe.
   return group;

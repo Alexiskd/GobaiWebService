@@ -3036,8 +3036,12 @@ export class SolarEngine {
     const mask = cam.layers.mask;
     // Seuls les calques de l'atmosphère et de la pollution lumineuse (dessinée en premier, donc sous les nuages).
     cam.layers.set(ATMO_LAYER); cam.layers.enable(POLLUTION_LAYER);
+    // Coquille de l'atmosphère en mode couche : le sol du globe n'est plus assombri sous la caméra.
+    atmo?.userData.overlayMode?.(true);
     // Une image de la pollution lumineuse, de l'atmosphère et des nuages.
     o.renderer.render(this.scene, cam);
+    // Mode d'origine rendu pour la scène three.js.
+    atmo?.userData.overlayMode?.(false);
     // Calques de la caméra rendus.
     cam.layers.mask = mask;
     // Couche affichée.

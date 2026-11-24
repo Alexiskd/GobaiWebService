@@ -151,6 +151,9 @@ export const shellFragmentShader = [
   // Variables uniformes : la direction du Soleil, le rayon de l'astre, la perspective aérienne (1 : le fond est
   // atténué par l'air traversé, voir atmosphere.jsx) et la vue de nuit (pas de lumière du jour diffusée).
   'uniform vec3 sunV;uniform float planetR;uniform float aerial;uniform float lightView;',
+  // Variable uniforme : 1 quand la coquille est dessinée sur la couche posée au-dessus du globe CesiumJS (canevas
+  // transparent, composé par le navigateur en alpha prémultiplié : le fond y est gardé selon 1 − opacité).
+  'uniform float overlay;',
   // Variables reçues du shader de sommets.
   'varying vec3 vP;varying vec3 vC;',
   // Le code GLSL de la diffusion.
@@ -161,6 +164,9 @@ export const shellFragmentShader = [
   // Couleur : la diffusion calculée depuis la position de la caméra en rayons de l'astre, dans la direction du point,
   // avec la direction du Soleil ; opacité : la part du fond qui traverse l'air en perspective aérienne, sinon 1.
   'float tv;vec3 c=atmoScatter(-vC/planetR,normalize(vP),normalize(sunV),tv)*(1.-lightView);',
+  // Couche au-dessus du globe CesiumJS : opacité 1 − part transmise (perspective aérienne) ou 0 (additif), pour que
+  // le sol du globe soit gardé selon la part qui traverse l'air, et non assombri sous la caméra.
+  'if(overlay>.5){gl_FragColor=vec4(c,aerial>.5?1.-tv:0.);return;}',
   // Fin de la fonction principale.
   'gl_FragColor=vec4(c,aerial>.5?tv:1.);}',
 // Fin : les lignes sont jointes par des retours à la ligne.
