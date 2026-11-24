@@ -8,7 +8,7 @@ import { cx } from './cx.js';
 import {
   LuArrowDownLeft, LuArrowDownRight, LuArrowLeft, LuArrowUp, LuArrowUpDown, LuArrowUpLeft, LuArrowUpRight, LuBrain,
   LuBuilding2, LuCheck, LuChevronDown, LuChevronUp, LuCircleAlert, LuCircleCheck, LuCompass, LuCopyright,
-  LuDownload, LuEclipse, LuExternalLink, LuFileText, LuFlaskConical, LuGauge, LuGlobe, LuGripVertical,
+  LuDownload, LuEclipse, LuExternalLink, LuFileText, LuFlaskConical, LuGauge, LuGlobe, LuHeart, LuGripVertical,
   LuHouse, LuImages, LuInfo, LuKeyRound, LuLocateFixed, LuLock, LuLockOpen, LuLogOut,
   LuMapPin, LuMapPinPlus, LuMinus, LuNavigation, LuNetwork, LuPause, LuPlaneTakeoff, LuPlay,
   LuPlus, LuRefreshCw, LuRoute, LuSearch, LuSparkles, LuSquare, LuTriangleAlert, LuVideo,
@@ -57,6 +57,8 @@ export const CopyrightIcon = icon(LuCopyright);
 export const GalleryIcon = icon(LuImages);
 // Moniteur de performance.
 export const SpeedIcon = icon(LuGauge);
+// Don : un cœur.
+export const FavoriteIcon = icon(LuHeart);
 // Arborescence des astres : un arbre.
 export const AccountTreeIcon = icon(LuNetwork);
 // Pilotage au téléphone : zoom seul, puis zoom et déplacement.

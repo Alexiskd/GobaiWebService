@@ -16,8 +16,8 @@ import { HIDDEN } from './hiddenActions.js';
 import {
   // Recherche, ombre, rotation, vue 3/4 et verrouillage.
   SearchIcon, ShadowIcon, AutorenewIcon, CameraIcon, LockIcon, LockOpenIcon,
-  // Contribution, sources et galerie.
-  AddLocationIcon, CopyrightIcon, ScienceIcon,
+  // Contribution, sources, galerie et don.
+  AddLocationIcon, CopyrightIcon, ScienceIcon, FavoriteIcon,
   // Arborescence des astres et icône de l'assistant.
   AccountTreeIcon, AutoAwesomeIcon, RouteIcon, InfoIcon,
 // Fin de la liste ; module des icônes.
@@ -45,7 +45,7 @@ export function toolbarActions({
   // Les états affichés par les boutons.
   auto, tilt,
   // Tous les autres rappels et libellés.
-  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onToggleAuto, onToggleTilt, onSources, onGallery, onContribute, onTrip, tripOpen, onInfos, infosOpen,
+  onSearch, onAssistant, assistantOpen, assistantProvider, night, onToggleDayNight, onToggleAuto, onToggleTilt, onSources, onDonate, onGallery, onContribute, onTrip, tripOpen, onInfos, infosOpen,
   // Affichage Schwarzschild : son état et son rappel (bouton posé à côté d'Ombre).
   schwarzschild, onToggleSchwarzschild,
   // L'arborescence des astres : son rappel et son état.
@@ -110,6 +110,8 @@ export function toolbarActions({
     // ── Bloc « info » — Node : sources du site, avec les paramètres.
     // Node Open Source (si le rappel existe) : icône seule — ce dont le site est fait.
     onSources && { id: 'sources', group: 'info', icon: CopyrightIcon, label: 'Node Open Source', short: 'Node', iconOnly: true, onClick: onSources, title: 'Node Open Source : paramètres, dépendances, sources des données et services utilisés (S)' },
+    // Faire un don : accessible directement depuis la barre d'outils sur ordinateur.
+    onDonate && { id: 'donate', group: 'info', icon: FavoriteIcon, label: 'Faire un don', onClick: onDonate, title: 'Soutenir Gobai Space' },
   // Fin du tableau : retire les entrées absentes et les boutons masqués.
   ].filter((a) => a && !HIDDEN.has(a.id));
 // Fin de toolbarActions.
