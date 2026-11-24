@@ -465,14 +465,18 @@ export class AstreSolideGlobe {
     // Intensité : 0 quand on a zoomé sur l'astre (globe de près : sol entièrement éclairé, sans ombre jour/nuit) ;
     // sinon celle du bouton « Ombre » (ombre pleine si elle n'a jamais été réglée), baissée par le fondu du zoom.
     const v = this.active ? 0 : (this.engine.shadeNow ?? 1) * (this.zoomFade ?? 1);
-    // Déjà appliquée : rien.
-    if (v === this.shadeApplied) return;
-    // Notée.
-    this.shadeApplied = v;
+    // Distance de la caméra au centre de l'astre (m).
+    const p = this.viewer.camera.positionWC, d = Math.hypot(p.x, p.y, p.z);
+    // Déjà appliquée, caméra à moins de 1 000 km de la distance du réglage (écart d'ombre < 0,0001) : rien.
+    if (v === this.shadeApplied && Math.abs(d - (this.shadeDist ?? -Infinity)) < 1e6) return;
+    // Notées.
+    this.shadeApplied = v; this.shadeDist = d;
     // Réglages du globe.
-    const g = this.viewer.scene.globe, s = cesiumShade(v);
-    // Éclairage du Soleil et obscurité de la face nuit.
+    const g = this.viewer.scene.globe, s = cesiumShade(v, d);
+    // Éclairage du Soleil et obscurité de la face nuit (relief).
     g.enableLighting = s.enableLighting; g.vertexShadowDarkness = s.vertexShadowDarkness;
+    // Globe plat : fondu de l'ombrage jour/nuit réglé pour valoir l'intensité vue de la caméra.
+    g.lightingFadeOutDistance = s.lightingFadeOutDistance; g.lightingFadeInDistance = s.lightingFadeInDistance;
     // Une image (le fond three.js, dont les autres astres, est redessiné avec la même ombre).
     this.viewer.scene.requestRender();
   // Fin de applyShade.

@@ -174,17 +174,29 @@ export function autoRotateAngle(dtMs, rotateSpeed = 1, altitudeM = EARTH_RADIUS_
 // Fin de autoRotateAngle.
 }
 
+// Étendue (m) du fondu d'éclairage de CesiumJS détourné pour régler l'intensité de l'ombre : très grande devant la
+// distance de la caméra, pour qu'un léger décalage de cette distance entre deux réglages ne change pas l'ombre.
+export const SHADE_FADE_SPAN_M = 1e10;
+
 /**
  * Bouton « Ombre » sur le globe : intensité de l'ombre (0 = Terre entièrement éclairée, 1 = face nuit dans l'ombre,
- * fondu entre les deux) traduite en réglages du globe CesiumJS. À 0, l'éclairage est coupé ; au-dessus, l'obscurité
- * de la face nuit (`vertexShadowDarkness`, 0,3 par défaut dans CesiumJS) va de 1 (aucune ombre) à 0,3.
+ * fondu entre les deux) traduite en réglages du globe CesiumJS. À 0, l'éclairage est coupé.
+ *  - Globe plat (ombrage jour/nuit de CesiumJS) : l'obscurité de la face nuit est fixe dans le shader (0,3), seul son
+ *    fondu selon la distance de la caméra (`lightingFadeOutDistance` → `lightingFadeInDistance`) la règle. Les deux
+ *    distances sont posées autour de la distance de la caméra `camDistM` pour que ce fondu vaille l'intensité.
+ *  - Globe en relief (éclairage par sommet) : obscurité de la face nuit (`vertexShadowDarkness`) de 1 (aucune ombre)
+ *    à 0,3.
  */
-// Déclare et exporte cesiumShade : l'intensité de l'ombre (début).
-export function cesiumShade(value) {
+// Déclare et exporte cesiumShade : l'intensité de l'ombre et la distance de la caméra au centre de l'astre (début).
+export function cesiumShade(value, camDistM = 0) {
   // Intensité bornée entre 0 et 1 (1 si illisible).
   const v = Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
-  // Éclairage du Soleil seulement s'il y a de l'ombre ; obscurité de la face nuit selon l'intensité.
-  return { enableLighting: v > 0, vertexShadowDarkness: 0.3 + 0.7 * (1 - v) };
+  // Distance de la caméra (0 si illisible).
+  const d = Number.isFinite(camDistM) ? camDistM : 0;
+  // Début du fondu : fondu = (d − début) / étendue = v.
+  const out = d - v * SHADE_FADE_SPAN_M;
+  // Éclairage du Soleil seulement s'il y a de l'ombre ; obscurité de la face nuit et fondu selon l'intensité.
+  return { enableLighting: v > 0, vertexShadowDarkness: 0.3 + 0.7 * (1 - v), lightingFadeOutDistance: out, lightingFadeInDistance: out + SHADE_FADE_SPAN_M };
 // Fin de cesiumShade.
 }
 

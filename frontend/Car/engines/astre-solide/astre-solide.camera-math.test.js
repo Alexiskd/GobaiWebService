@@ -121,7 +121,7 @@ test('gestes : rotation qui déplace la caméra vers le haut et la droite de l\'
 });
 
 // Importe la rotation automatique et l'ombre du globe.
-import { AUTO_ROTATE_SPEED, autoRotateAngle, cesiumShade } from './astre-solide.camera-math.js';
+import { AUTO_ROTATE_SPEED, autoRotateAngle, cesiumShade, SHADE_FADE_SPAN_M } from './astre-solide.camera-math.js';
 
 test('rotation automatique : même vitesse que three.js, multiplicateur, ralentie près du sol', () => {
   // Une seconde (bornée à 100 ms), multiplicateur 2, au-dessus d'un rayon terrestre : vitesse pleine.
@@ -133,11 +133,20 @@ test('rotation automatique : même vitesse que three.js, multiplicateur, ralenti
 });
 
 test('ombre du globe : coupée à 0, face nuit à l\'obscurité de CesiumJS à 1, fondu entre les deux', () => {
-  assert.deepEqual(cesiumShade(0), { enableLighting: false, vertexShadowDarkness: 1 });
-  assert.deepEqual(cesiumShade(1), { enableLighting: true, vertexShadowDarkness: 0.3 });
+  assert.equal(cesiumShade(0).enableLighting, false); assert.equal(cesiumShade(0).vertexShadowDarkness, 1);
+  assert.equal(cesiumShade(1).enableLighting, true); assert.equal(cesiumShade(1).vertexShadowDarkness, 0.3);
   assert.ok(Math.abs(cesiumShade(0.5).vertexShadowDarkness - 0.65) < 1e-12 && cesiumShade(0.5).enableLighting);
   // Valeur illisible : ombre pleine.
   assert.equal(cesiumShade(undefined).enableLighting, true);
+});
+
+test('ombre du globe plat : le fondu de CesiumJS vu de la caméra vaut l\'intensité', () => {
+  // Fondu calculé comme dans le shader du globe de CesiumJS (GlobeFS : clamp((d − début) / (fin − début), 0, 1)).
+  const fade = (s, d) => Math.max(0, Math.min(1, (d - s.lightingFadeOutDistance) / (s.lightingFadeInDistance - s.lightingFadeOutDistance)));
+  for (const d of [7e6, 4e7, 4e8]) for (const v of [0, 0.25, 0.5, 1]) assert.ok(Math.abs(fade(cesiumShade(v, d), d) - v) < 1e-9);
+  // Caméra qui a bougé de 1 000 km depuis le réglage : écart négligeable.
+  assert.ok(Math.abs(fade(cesiumShade(0.5, 4e7), 4.1e7) - 0.5) < 1e-3);
+  assert.ok(SHADE_FADE_SPAN_M > 1e9);
 });
 
 // Importe la vue de three.js traduite pour le globe.
