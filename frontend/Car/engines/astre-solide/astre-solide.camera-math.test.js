@@ -226,3 +226,13 @@ test('ciel visible : vue vers le sol de près, non ; vers l\'horizon ou de loin,
   // Valeurs illisibles : ciel dessiné par prudence.
   assert.equal(skyVisible({ position: { x: 0, y: 0, z: 0 }, direction: { x: 1, y: 0, z: 0 }, up: { x: 0, y: 0, z: 1 }, fovy, radiusM: R }), true);
 });
+
+// Importe la finesse des tuiles du globe.
+import { globeScreenError } from './astre-solide.camera-math.js';
+
+test('finesse des tuiles : plus grossière en mouvement et sur écran tactile', () => {
+  assert.equal(globeScreenError(), 2);
+  assert.equal(globeScreenError({ touch: true }), 3);
+  assert.equal(globeScreenError({ moving: true }), 4);
+  assert.equal(globeScreenError({ moving: true, touch: true }), 5);
+});
