@@ -11,6 +11,8 @@ test('adresse du site : fenêtre ouverte, astre ciblé, sinon accueil', () => {
   assert.equal(sitePathFor({ galleryOpen: true, panel: null, bodyName: 'Mars' }), '/donnees');
   // Panneau des sources ouvert : /node.
   assert.equal(sitePathFor({ galleryOpen: false, panel: 'sources', bodyName: 'Mars' }), '/node');
+  // Fenêtre de don ouverte : /faire-un-don.
+  assert.equal(sitePathFor({ galleryOpen: false, panel: 'donate', bodyName: 'Mars' }), '/faire-un-don');
   // Aucune fenêtre : l'adresse de l'astre, sans accent ni majuscule.
   assert.equal(sitePathFor({ galleryOpen: false, panel: null, bodyName: 'Vénus' }), '/venus');
   // Astre inconnu : l'accueil.

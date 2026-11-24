@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 /**
  * Gestion centralisée des fenêtres : une seule ouverte à la fois, jamais deux fenêtres superposées (sur téléphone, où
  * elles couvrent tout l'écran, une seconde fenêtre cacherait la première sans moyen d'y revenir).
- * Fenêtres : 'layers' (informations), 'search', 'sources', 'settings', 'gallery',
+ * Fenêtres : 'layers' (informations), 'search', 'sources', 'donate', 'settings', 'gallery',
  * 'plateau', 'trip' (temps de trajet). Les surfaces du HUD qui ne couvrent rien (l'assistant, l'arborescence des astres) restent
  * à part : elles se rangent dans les zones de l'écran (voir theme/layout).
  * Raccourcis : Ctrl K ou / (recherche), S (Node), L (informations), Échap (fermer).
@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 // Déclare et exporte le crochet usePanels : reçoit le mode compact.
 export function usePanels({ compact }) {
   // État : le panneau ouvert, aucun au départ.
-  const [panel, setPanel] = useState(null); // 'layers' | 'search' | 'sources' | null
+  const [panel, setPanel] = useState(null); // 'layers' | 'search' | 'sources' | 'donate' | null
 
   // Vrai si le panneau d'informations est ouvert.
   const layersOpen = panel === 'layers'; // sans astre ciblé : Informations sur le Soleil

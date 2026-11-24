@@ -29,6 +29,17 @@ export const fetchSatelliteEphemeris = (signal) => get('/ephemeris/satellites', 
 // fetchMoonPhases : les prochaines phases de la Lune.
 export const fetchMoonPhases = (signal) => get('/ephemeris/moon/phases', { signal });
 /** Configuration des dons : { enabled, environment, currency, minAmount }. */
+// fetchDonationConfig : la configuration des dons.
+export const fetchDonationConfig = (signal) => get('/donations/config', { signal });
+/** Crée la page de paiement Stripe pour amount euros : { id, url }. */
+// createDonationOrder : crée un don d'un montant donné.
+export const createDonationOrder = (amount) => post('/donations/orders', { amount });
+/** Au retour de Stripe, confirme que le don est payé : { status, amount }. */
+// captureDonation : confirme un don payé.
+export const captureDonation = (orderId) => post(`/donations/orders/${encodeURIComponent(orderId)}/capture`);
+/** Le donateur a quitté la page de paiement : elle est fermée côté Stripe. */
+// cancelDonation : abandonne un don.
+export const cancelDonation = (orderId) => post(`/donations/orders/${encodeURIComponent(orderId)}/cancel`);
 /** Frontières et littoraux : { source, attribution, count, lines, coastlines } (polylignes [lon, lat, …]). */
 // fetchBorders : les frontières et les littoraux.
 export const fetchBorders = (signal) => get('/borders', { signal });

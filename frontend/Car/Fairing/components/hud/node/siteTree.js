@@ -78,6 +78,8 @@ export const SITE_TREE = node('Accueil', '/', [
   node('Données', '/donnees'),
   // La page « Node Open Source » : /node.
   node('Node Open Source', '/node'),
+  // La page des dons : /faire-un-don.
+  node('Dons au développeur de l’application Gobai', '/faire-un-don'),
 // Fin de l'arborescence.
 ]);
 

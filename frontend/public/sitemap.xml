@@ -635,6 +635,18 @@
     <priority>0.4</priority>
   <!-- Fin de la page. -->
   </url>
+  <!-- Page /faire-un-don (début). -->
+  <url>
+    <!-- Son adresse. -->
+    <loc>https://www.gobaispace.com/faire-un-don</loc>
+    <!-- Dernière modification : 13 novembre 2026. -->
+    <lastmod>2026-11-13</lastmod>
+    <!-- Mise à jour attendue : chaque mois. -->
+    <changefreq>monthly</changefreq>
+    <!-- Priorité : 0,5. -->
+    <priority>0.5</priority>
+  <!-- Fin de la page. -->
+  </url>
 <!-- Fin du plan du site. -->
   <!-- Page légale : Mentions légales (début). -->
   <url>
