@@ -28,7 +28,7 @@ import { setViewHash } from './astre-solide.view-link.js';
 // Importe le relief en volume de la Terre (AWS Terrain Tiles).
 import { createTerrainProvider } from './astre-solide.terrain.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
-import { cesiumShade, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
+import { cesiumShade, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
 const HIDE_LABELS_CSS = '[data-astre-solide="on"] > .l, [data-astre-solide="on"] > .user-marker, [data-astre-solide="on"] > .city-card { display: none !important; }';
@@ -130,6 +130,14 @@ export class AstreSolideGlobe {
       this.viewer.camera.changed.addEventListener(() => this.onCameraChange());
       // Sensibilité du changement de caméra : 1 % (assez pour suivre le zoom).
       this.viewer.camera.percentageChanged = 0.01;
+      // Écran tactile (téléphone, tablette) : tuiles un peu moins fines au repos.
+      this.touch = Boolean(globalThis.matchMedia?.('(pointer: coarse)').matches);
+      // Finesse des tuiles au repos.
+      this.setMoving(false);
+      // En mouvement : tuiles plus grossières (moins de tuiles chargées et dessinées) ; à l'arrêt : finesse normale.
+      this.viewer.camera.moveStart.addEventListener(() => this.setMoving(true));
+      // À l'arrêt : finesse normale.
+      this.viewer.camera.moveEnd.addEventListener(() => this.setMoving(false));
       // Après chaque image du globe de près : la scène three.js redessine l'espace derrière, vue de la même caméra.
       this.viewer.scene.postRender.addEventListener(() => this.drawBackdrop());
       // Avant chaque image du globe de près : heure de l'app, fondu de l'ombre, Soleil et rotation automatique.
@@ -430,6 +438,22 @@ export class AstreSolideGlobe {
     // Rotation automatique, hors glisser.
     if (e.autoRotate && !e.drag) this.camera.autoRotate(dt);
   // Fin de tick.
+  }
+
+  /** Finesse des tuiles du globe selon le mouvement de la caméra (voir globeScreenError). */
+  // setMoving : vrai pendant que la caméra bouge (début).
+  setMoving(moving) {
+    // Sans globe : rien.
+    if (!this.viewer) return;
+    // Erreur d'écran tolérée.
+    const sse = globeScreenError({ moving, touch: this.touch });
+    // Inchangée : rien.
+    if (this.viewer.scene.globe.maximumScreenSpaceError === sse) return;
+    // Appliquée.
+    this.viewer.scene.globe.maximumScreenSpaceError = sse;
+    // À l'arrêt : une image pour charger les tuiles fines.
+    if (!moving) this.viewer.scene.requestRender();
+  // Fin de setMoving.
   }
 
   /**

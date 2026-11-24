@@ -336,3 +336,15 @@ export function skyVisible({ position: p, direction: d, up: u, fovy, aspect = 1,
   return false;
 // Fin de skyVisible.
 }
+
+/**
+ * Finesse des tuiles du globe (erreur d'écran tolérée, en pixels ; CesiumJS : 2 par défaut). Au repos : 2 sur
+ * ordinateur, 3 sur écran tactile (téléphone, tablette : moins de tuiles, moins de chauffe). En mouvement : 2 de plus
+ * (des tuiles plus grossières suffisent pendant que la vue bouge ; les fines arrivent dès l'arrêt).
+ */
+// Déclare et exporte globeScreenError : en mouvement ? écran tactile ? (début).
+export function globeScreenError({ moving = false, touch = false } = {}) {
+  // Repos, plus le surcoût du mouvement.
+  return (touch ? 3 : 2) + (moving ? 2 : 0);
+// Fin de globeScreenError.
+}
