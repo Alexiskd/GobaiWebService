@@ -28,7 +28,7 @@ import { setViewHash } from './astre-solide.view-link.js';
 // Importe le relief en volume de la Terre (AWS Terrain Tiles).
 import { createTerrainProvider } from './astre-solide.terrain.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
-import { cesiumShade, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
+import { cesiumShade, fadeProgress, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
 const HIDE_LABELS_CSS = '[data-astre-solide="on"] > .l, [data-astre-solide="on"] > .user-marker, [data-astre-solide="on"] > .city-card { display: none !important; }';
@@ -209,7 +209,7 @@ export class AstreSolideGlobe {
     // La superposition est finie : le globe a la main.
     this.overlayOn = false; this.engine.cesiumOverlayOn = false;
     // Globe affiché, repères HTML de la scène three.js masqués.
-    this.container.style.display = 'block'; hideLabelsRule(); this.setLabelsHidden(true);
+    this.container.style.display = 'block'; this.container.style.opacity = '1'; this.fadeStart = -Infinity; hideLabelsRule(); this.setLabelsHidden(true);
     // Rendu du globe relancé.
     this.viewer.useDefaultRenderLoop = true;
     // Une image tout de suite.
@@ -311,7 +311,7 @@ export class AstreSolideGlobe {
     // Soleil de la scène three.js.
     this.syncSun(view.sunDir);
     // Globe affiché, s'il ne l'était pas.
-    if (!this.overlayOn) { this.container.style.display = 'block'; this.overlayOn = true; this.engine.cesiumOverlayOn = true; }
+    if (!this.overlayOn) { this.container.style.opacity = '0'; this.container.style.display = 'block'; this.overlayOn = true; this.engine.cesiumOverlayOn = true; this.shownAt = performance.now(); this.fadeStart = null; }
     // Vrai : le globe dessine l'astre.
     return true;
   // Fin de overlayFrame.
@@ -328,13 +328,18 @@ export class AstreSolideGlobe {
     this.applyShade(); this.syncImagery();
     // Image demandée (rendu à la demande), puis dessinée tout de suite.
     this.viewer.scene.requestRender(); this.viewer.resize(); this.viewer.render();
+    // Fondu d'apparition : il démarre quand les tuiles visibles sont arrivées (ou au plus tard après FADE_WAIT_MS),
+    // pour ne jamais montrer le sol uni d'attente ; opacité du globe à jour.
+    const now = performance.now();
+    if (this.fadeStart == null && (this.viewer.scene.globe.tilesLoaded || now - (this.shownAt ?? now) > AstreSolideGlobe.FADE_WAIT_MS)) this.fadeStart = now;
+    this.container.style.opacity = String(this.fadeIn);
   // Fin de drawOverlay.
   }
 
   // hideOverlay : coupe la superposition et renvoie faux (début).
   hideOverlay() {
     // Si elle était active : globe masqué, astre de three.js rendu.
-    if (this.overlayOn) { if (this.container) this.container.style.display = 'none'; this.overlayOn = false; this.engine.cesiumOverlayOn = false; }
+    if (this.overlayOn) { if (this.container) this.container.style.display = 'none'; this.overlayOn = false; this.engine.cesiumOverlayOn = false; this.fadeStart = null; }
     // Faux : three.js dessine l'astre.
     return false;
   // Fin de hideOverlay.
@@ -462,6 +467,13 @@ export class AstreSolideGlobe {
    */
   // Durée caractéristique (ms) de la transition du fondu du zoom.
   static FADE_MS = 450;
+  // Fondu d'apparition du globe par-dessus three.js : durée (ms), et attente maximale des tuiles avant de le lancer.
+  static FADE_IN_MS = 400;
+  static FADE_WAIT_MS = 1500;
+
+  /** Opacité du globe dans son fondu d'apparition (0 à 1 ; 1 de près), voir fadeProgress. */
+  // fadeIn : l'opacité.
+  get fadeIn() { return fadeProgress(this.fadeStart, performance.now(), AstreSolideGlobe.FADE_IN_MS); }
 
   /**
    * Fondu du zoom adouci : il rejoint sa cible (fondu du zoom, 0 de près) en exponentielle, à chaque image, au lieu de

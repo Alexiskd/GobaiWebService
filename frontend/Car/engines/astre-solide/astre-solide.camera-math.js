@@ -360,3 +360,18 @@ export function globeScreenError({ moving = false, touch = false } = {}) {
   return (touch ? 3 : 2) + (moving ? 2 : 0);
 // Fin de globeScreenError.
 }
+
+/**
+ * Avancement d'un fondu (0 à 1, courbe en S) commencé à `start` (null : pas commencé → 0 ; −Infinity : fini → 1),
+ * à l'instant `now`, sur `durationMs`. Fonction pure.
+ */
+// Déclare et exporte fadeProgress : le début, l'instant et la durée.
+export function fadeProgress(start, now, durationMs) {
+  // Pas commencé : 0.
+  if (start == null) return 0;
+  // Avancement borné.
+  const t = durationMs > 0 ? Math.max(0, Math.min(1, (now - start) / durationMs)) : 1;
+  // Courbe en S (départ et arrivée doux).
+  return t * t * (3 - 2 * t);
+// Fin de fadeProgress.
+}

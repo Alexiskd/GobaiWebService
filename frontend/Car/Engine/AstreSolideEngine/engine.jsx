@@ -3017,7 +3017,7 @@ export class SolarEngine {
    * Paramètres : la couche est masquée.
    */
   // renderAtmosphereOverlay : l'astre et la caméra (début).
-  renderAtmosphereOverlay(bodyId, cam) {
+  renderAtmosphereOverlay(bodyId, cam, opacity = 1) {
     // Atmosphère de l'astre (affichée seulement si elle n'est pas coupée dans Paramètres).
     const atmo = bodyId && this.atmospheres?.[bodyId]?.visible ? this.atmospheres[bodyId] : null;
     // Fondu du zoom adouci du globe de la Terre (0 de près : ni ombre ni lumières de la nuit ; transition dans le temps).
@@ -3089,6 +3089,8 @@ export class SolarEngine {
     cam.layers.mask = mask;
     // Couche affichée.
     o.canvas.style.display = 'block';
+    // Opacité de la couche : celle du globe CesiumJS pendant son fondu d'apparition (fondu enchaîné avec three.js).
+    o.canvas.style.opacity = String(opacity);
   // Fin de renderAtmosphereOverlay.
   }
 
@@ -4242,8 +4244,10 @@ export class SolarEngine {
     this.renderer.clear();
     // Dessine le ciel lointain.
     this.sky.render(this.renderer, this.cam, dt);
-    // L'astre de three.js caché le temps du rendu, si le globe le dessine.
-    const restoreBody = bodyByCesium ? this.hideSolidBody(solidId) : null;
+    // Fondu d'apparition du globe (0 → 1) : tant qu'il n'est pas fini, l'astre de three.js reste dessiné dessous.
+    const fadeIn = bodyByCesium ? (this.solidGlobe.fadeIn ?? 1) : 0;
+    // L'astre de three.js caché le temps du rendu, si le globe le dessine entièrement.
+    const restoreBody = bodyByCesium && fadeIn >= 1 ? this.hideSolidBody(solidId) : null;
     // Dessine la scène par-dessus.
     this.renderer.render(this.scene, this.cam);
     // L'astre reprend son état.
@@ -4251,7 +4255,7 @@ export class SolarEngine {
     // Le globe dessine l'astre par-dessus l'image three.js, vu de la même caméra.
     if (bodyByCesium) this.solidGlobe.drawOverlay();
     // Atmosphère de l'astre (moteur d'atmosphère three.js) posée par-dessus le globe, ou couche masquée.
-    this.renderAtmosphereOverlay(bodyByCesium ? solidId : null, this.cam);
+    this.renderAtmosphereOverlay(bodyByCesium ? solidId : null, this.cam, fadeIn);
     // Fin de la mesure du rendu.
     probe.renderEnd();
     // Fin de la mesure de l'image.
