@@ -18,7 +18,7 @@
 // Importe les règles du passage.
 import { RETURN_KM, altitudeKm, zoomFade, lonLatOf, rearm, scaledKm, shouldEnter, shouldExit } from './astre-solide.handoff.js';
 // Importe la création du globe.
-import { createSolidViewer } from './astre-solide.viewer.js';
+import { cesiumResolutionScale, createSolidViewer } from './astre-solide.viewer.js';
 // Importe le fournisseur d'images qui lit le fond de carte de l'app.
 import { tileSourceImageryProvider } from './astre-solide.imagery.js';
 // Importe la caméra du globe pilotée par les commandes de three.js (navball, zoom, verrous).
@@ -28,7 +28,7 @@ import { setViewHash } from './astre-solide.view-link.js';
 // Importe le relief en volume de la Terre (AWS Terrain Tiles).
 import { createTerrainProvider } from './astre-solide.terrain.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
-import { cesiumShade, fadeProgress, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
+import { cesiumShade, fadeProgress, globeCacheOptions, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
 const HIDE_LABELS_CSS = '[data-astre-solide="on"] > .l, [data-astre-solide="on"] > .user-marker, [data-astre-solide="on"] > .city-card { display: none !important; }';
@@ -132,6 +132,8 @@ export class AstreSolideGlobe {
       this.viewer.camera.percentageChanged = 0.01;
       // Écran tactile (téléphone, tablette) : tuiles un peu moins fines au repos.
       this.touch = Boolean(globalThis.matchMedia?.('(pointer: coarse)').matches);
+      // Mémoire des tuiles déjà vues et préchargement des voisines, selon l'appareil (voir globeCacheOptions).
+      Object.assign(this.viewer.scene.globe, globeCacheOptions({ touch: this.touch }));
       // Finesse des tuiles au repos.
       this.setMoving(false);
       // En mouvement : tuiles plus grossières (moins de tuiles chargées et dessinées) ; à l'arrêt : finesse normale.
@@ -324,8 +326,8 @@ export class AstreSolideGlobe {
     if (!this.overlayOn || this.active) return;
     // Horloge du globe à l'heure de l'app.
     this.viewer.clock.currentTime = this.Cesium.JulianDate.fromDate(new Date(this.engine.simMs ?? Date.now()), this.viewer.clock.currentTime);
-    // Ombre du globe (bouton « Ombre ») et fond de carte de l'app.
-    this.applyShade(); this.syncImagery();
+    // Ombre du globe (bouton « Ombre »), fond de carte de l'app et définition de la scène three.js.
+    this.applyShade(); this.syncImagery(); this.syncResolution();
     // Image demandée (rendu à la demande), puis dessinée tout de suite.
     this.viewer.scene.requestRender(); this.viewer.resize(); this.viewer.render();
     // Fondu d'apparition : il démarre quand les tuiles visibles sont arrivées (ou au plus tard après FADE_WAIT_MS),
@@ -438,11 +440,28 @@ export class AstreSolideGlobe {
     this.viewer.clock.currentTime = this.Cesium.JulianDate.fromDate(new Date(e.simMs), this.viewer.clock.currentTime);
     // Fondu du bouton « Ombre » (avancé ici tant que la boucle de three.js est en attente).
     e.updateShadeFade?.(dt);
-    // Ombre, Soleil et fond de carte à jour.
-    this.applyShade(); this.syncSun(); this.syncImagery();
+    // Ombre, Soleil, fond de carte et définition à jour.
+    this.applyShade(); this.syncSun(); this.syncImagery(); this.syncResolution();
     // Rotation automatique, hors glisser.
     if (e.autoRotate && !e.drag) this.camera.autoRotate(dt);
   // Fin de tick.
+  }
+
+  /**
+   * Définition du globe : même densité de pixels que la scène three.js (engine.dpr, réglée par l'énergie et la
+   * surchauffe), voir cesiumResolutionScale. Net sur écran Retina, sans dépasser la charge choisie par l'app.
+   */
+  // syncResolution : règle l'échelle de rendu du globe (début).
+  syncResolution() {
+    // Sans globe : rien.
+    if (!this.viewer) return;
+    // Échelle voulue.
+    const scale = cesiumResolutionScale(this.engine.dpr, globalThis.devicePixelRatio);
+    // Inchangée : rien.
+    if (this.viewer.resolutionScale === scale) return;
+    // Appliquée (le canevas du globe est redimensionné), puis une image.
+    this.viewer.resolutionScale = scale; this.viewer.scene.requestRender();
+  // Fin de syncResolution.
   }
 
   /** Finesse des tuiles du globe selon le mouvement de la caméra (voir globeScreenError). */

@@ -1,7 +1,7 @@
 // Tests des calculs de la caméra du globe CesiumJS (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MIN_ALTITUDE_M, PITCH_MAX_DEG, PITCH_MIN_DEG, approachPitch, clampPitch, tiltEngagement, moveAngles, pitchForTilt, wrapHeading, zoomStep, fadeProgress } from './astre-solide.camera-math.js';
+import { MIN_ALTITUDE_M, PITCH_MAX_DEG, PITCH_MIN_DEG, approachPitch, clampPitch, tiltEngagement, moveAngles, pitchForTilt, wrapHeading, zoomStep, globeCacheOptions, fadeProgress } from './astre-solide.camera-math.js';
 
 test('zoom : facteur sur l\'altitude, jamais sous le plancher', () => {
   assert.equal(zoomStep(1000, 0.5), 500);
@@ -244,6 +244,11 @@ test('finesse des tuiles : plus grossière en mouvement et sur écran tactile', 
   assert.equal(globeScreenError({ touch: true }), 3);
   assert.equal(globeScreenError({ moving: true }), 4);
   assert.equal(globeScreenError({ moving: true, touch: true }), 5);
+});
+
+test('globe : mémoire des tuiles et voisines préchargées sur ordinateur, allégées sur téléphone', () => {
+  assert.deepEqual(globeCacheOptions(), { tileCacheSize: 400, preloadSiblings: true, preloadAncestors: true });
+  assert.deepEqual(globeCacheOptions({ touch: true }), { tileCacheSize: 150, preloadSiblings: false, preloadAncestors: true });
 });
 
 test('fondu d\'apparition du globe : 0 avant les tuiles, courbe en S, 1 de près', () => {
