@@ -11,3 +11,5 @@ export { CESIUM_IMAGERY, FRANCE_BBOX, imageryCredits } from './astre-solide.sour
 export { imageryOptions, tileSourceImageryProvider } from './astre-solide.imagery.js';
 // Le nom du lieu sous la caméra (ville, région, pays selon l'altitude).
 export { placeText, nearestCity, distanceKm } from './astre-solide.place.js';
+// Les données du globe lues comme dans la fiche d'information (rayon, type, air, couleur).
+export { solidBodyFacts, MOON_RADIUS_KM, THREE_ONLY_SOLIDS } from './astre-solide.facts.js';

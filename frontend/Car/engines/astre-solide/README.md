@@ -5,7 +5,11 @@ pour chacun : la Terre, la Lune, Mars, Mercure et les satellites qui ont un fond
 Callisto, Titan, Encelade…). Les géantes gazeuses et Vénus (sans fond de carte) restent en three.js.
 
 Un seul globe à la fois : celui de l'astre solide ciblé, ou la Terre si la cible n'en est pas un
-(`engine.solidGlobeTarget`). Quand l'astre visé change, le globe est recréé avec l'ellipsoïde de l'astre (WGS84 pour
+(`engine.solidGlobeTarget`). Chaque astre solide est découpé en tuiles par CesiumJS, avec ou sans fond de carte, d'après
+les données de la composante « Caractéristiques et informations » (`astre-solide.facts.js`) : rayon de la fiche
+(ellipsoïde et découpage), type (« Géante… » : pas de globe), épaisseur d'atmosphère (« Aucune » : sans air) et couleur
+de l'interface (sol tant que le fond de carte n'est pas là). Restent en three.js : les géantes, Vénus (nuages opaques)
+et les satellites irréguliers (Phobos, Deimos : modèle 3D). Quand l'astre visé change, le globe est recréé avec l'ellipsoïde de l'astre (WGS84 pour
 la Terre, sphère de son rayon pour les autres).
 
 Deux régimes :
@@ -31,6 +35,7 @@ avec le même découpage (plate carrée NASA Trek ou Web Mercator). Lumière : m
 | `astre-solide.camera.js` | Caméra du globe pilotée par les commandes de three.js, réglée sur le rayon de l'astre ; HUD. |
 | `astre-solide.camera-math.js` | Calculs purs de cette caméra (zoom, tangage, déplacement, repères, vue three.js). |
 | `astre-solide.handoff.js` | Règles du passage : altitudes de la Terre ramenées au rayon de chaque astre. |
+| `astre-solide.facts.js` | Données du globe lues comme dans la fiche d'information (rayon, type, air, couleur). |
 | `astre-solide.sources.js` | Imagerie ouverte de la Terre, sans clé : NASA GIBS, Sentinel-2 cloudless (EOX), IGN. |
 
 Sans Cesium ion ni aucune clé. Fichiers statiques de CesiumJS copiés dans `public/cesium` au build

@@ -34,8 +34,9 @@ function loadCss(href) {
 export const BODY_BASE_COLORS = { earth: '#0d1b2a', moon: '#8a8580', mars: '#9a5b3e', mercury: '#8b8580', venus: '#c8b27f' };
 // Teinte des autres astres solides (satellites naturels…).
 export const DEFAULT_BASE_COLOR = '#7d7873';
-// Déclare et exporte baseColorOf : l'identifiant de l'astre.
-export const baseColorOf = (id) => BODY_BASE_COLORS[id] ?? DEFAULT_BASE_COLOR;
+// Déclare et exporte baseColorOf : l'identifiant de l'astre et sa couleur dans l'interface (fiche d'information), en
+// repli pour les astres sans teinte réglée ici (satellites sans fond de carte : leur sphère gardait cette couleur).
+export const baseColorOf = (id, color = null) => BODY_BASE_COLORS[id] ?? color ?? DEFAULT_BASE_COLOR;
 
 // Déclare et exporte bodyEllipsoid : la bibliothèque et l'astre { id, radiusKm }.
 export function bodyEllipsoid(Cesium, { id, radiusKm }) {
@@ -50,7 +51,7 @@ export function bodyEllipsoid(Cesium, { id, radiusKm }) {
  * de carte de l'app (astre-solide.imagery.js, voir AstreSolideGlobe.syncImagery). Seul le globe est dessiné ici :
  * l'atmosphère vient de la scène three.js.
  * @param {HTMLElement} container
- * @param {{ id: string, radiusKm: number, airless?: boolean }} body
+ * @param {{ id: string, radiusKm: number, airless?: boolean, color?: string|null }} body (rayon de la fiche d'information)
  */
 // Déclare et exporte createSolidViewer, asynchrone : le conteneur et l'astre (début).
 export async function createSolidViewer(container, body) {
@@ -96,7 +97,7 @@ export async function createSolidViewer(container, body) {
   // Fin de la boucle.
   }
   // Sol à la teinte de l'astre tant que ses tuiles arrivent (pas le bleu par défaut de CesiumJS).
-  viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString(baseColorOf(body.id));
+  viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString(baseColorOf(body.id, body.color));
   // Fond de la scène transparent (début de l'espace : la scène three.js).
   viewer.scene.backgroundColor = Cesium.Color.TRANSPARENT;
   // Ni Soleil ni Lune de CesiumJS (sans ciel étoilé, CesiumJS peut ne pas les créer) : ceux de la scène three.js se
