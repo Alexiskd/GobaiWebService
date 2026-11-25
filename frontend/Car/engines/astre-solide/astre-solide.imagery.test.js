@@ -1,7 +1,8 @@
 // Tests du fond de carte de l'app lu par CesiumJS (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { imageryOptions, tileSourceImageryProvider } from './astre-solide.imagery.js';
+import { imageryOptions, templateOf, tileSourceImageryProvider } from './astre-solide.imagery.js';
+import { baseColorOf } from './astre-solide.viewer.js';
 import { threeViewToCesium, tilesLocalToEcef, EARTH_RADIUS_M } from './astre-solide.camera-math.js';
 
 // Faux CesiumJS : seulement ce que le fournisseur utilise.
@@ -10,7 +11,25 @@ const FakeCesium = {
   WebMercatorTilingScheme: class { constructor(o) { this.kind = 'webmercator'; this.ellipsoid = o.ellipsoid; this.rectangle = 'mercator'; } },
   Event: class {},
   Credit: class { constructor(t) { this.text = t; } },
+  UrlTemplateImageryProvider: class { constructor(o) { Object.assign(this, o); this.kind = 'url'; } },
 };
+
+test('imagerie : source avec adresse de tuiles → fournisseur d\'adresses de CesiumJS, même découpage', () => {
+  assert.equal(templateOf({ info: { urlTemplate: '/api/v1/tiles/mars-viking/{z}/{x}/{y}' } }), '/api/v1/tiles/mars-viking/{z}/{x}/{y}');
+  assert.equal(templateOf({ info: { urlTemplate: '/x/{z}' } }), null);
+  assert.equal(templateOf(null), null);
+  const source = { minZoom: 0, maxZoom: 7, info: { urlTemplate: '/api/v1/tiles/mars-viking/{z}/{x}/{y}' }, loadImage: async () => null };
+  const p = tileSourceImageryProvider(FakeCesium, { source, projectionId: 'equirectangular', ellipsoid: 'mars', credit: 'Mars Trek' });
+  assert.equal(p.kind, 'url');
+  assert.equal(p.url, '/api/v1/tiles/mars-viking/{z}/{x}/{y}');
+  assert.equal(p.tilingScheme.kind, 'geographic'); assert.equal(p.tilingScheme.ellipsoid, 'mars');
+  assert.equal(p.maximumLevel, 7); assert.equal(p.credit.text, 'Mars Trek');
+});
+
+test('globe : sol à la teinte de l\'astre, jamais le bleu de CesiumJS', () => {
+  for (const id of ['moon', 'mars', 'mercury', 'venus', 'io']) assert.match(baseColorOf(id), /^#[0-9a-f]{6}$/);
+  assert.notEqual(baseColorOf('venus'), baseColorOf('mars'));
+});
 
 test('imagerie : découpage NASA Trek (plate carrée) ou Web Mercator, niveaux de la source', () => {
   assert.deepEqual(imageryOptions({ minZoom: 0, maxZoom: 7 }, 'equirectangular'), { scheme: 'geographic', minimumLevel: 0, maximumLevel: 7, tileSize: 256 });
