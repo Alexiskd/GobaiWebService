@@ -360,3 +360,11 @@ export function globeScreenError({ moving = false, touch = false } = {}) {
   return (touch ? 3 : 2) + (moving ? 2 : 0);
 // Fin de globeScreenError.
 }
+
+/**
+ * Mémoire des tuiles du globe CesiumJS : nombre de tuiles déjà vues gardées (retour instantané sur une zone vue) et
+ * préchargement des tuiles voisines (déplacement sans trou). Ordinateur : 400 tuiles et voisines préchargées ;
+ * écran tactile (téléphone) : 150 tuiles, sans préchargement des voisines (mémoire et chauffe). Fonction pure.
+ */
+// Déclare et exporte globeCacheOptions : l'écran tactile ou non.
+export const globeCacheOptions = ({ touch = false } = {}) => ({ tileCacheSize: touch ? 150 : 400, preloadSiblings: !touch, preloadAncestors: true });
