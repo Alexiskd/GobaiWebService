@@ -38,6 +38,20 @@ export const DEFAULT_BASE_COLOR = '#7d7873';
 // repli pour les astres sans teinte réglée ici (satellites sans fond de carte : leur sphère gardait cette couleur).
 export const baseColorOf = (id, color = null) => BODY_BASE_COLORS[id] ?? color ?? DEFAULT_BASE_COLOR;
 
+/**
+ * Échelle de rendu du globe CesiumJS pour qu'il ait la même définition que la scène three.js : CesiumJS dessine à
+ * `devicePixelRatio × resolutionScale` pixels par pixel CSS ; three.js à `dpr` (densité de l'app, baissée par le
+ * réglage d'énergie et la surchauffe). Bornée entre 0,25 et 1 (jamais plus fin que l'écran). Fonction pure.
+ */
+// Déclare et exporte cesiumResolutionScale : la densité de l'app et celle de l'écran.
+export const cesiumResolutionScale = (dpr, deviceRatio) => {
+  // Densité de l'écran (1 si illisible) et de l'app (celle de l'écran si illisible).
+  const dev = Number.isFinite(deviceRatio) && deviceRatio > 0 ? deviceRatio : 1, app = Number.isFinite(dpr) && dpr > 0 ? dpr : dev;
+  // Rapport borné, arrondi au centième (pas de changement pour un écart imperceptible).
+  return Math.round(Math.max(0.25, Math.min(1, app / dev)) * 100) / 100;
+// Fin de cesiumResolutionScale.
+};
+
 // Déclare et exporte bodyEllipsoid : la bibliothèque et l'astre { id, radiusKm }.
 export function bodyEllipsoid(Cesium, { id, radiusKm }) {
   // La Terre : WGS84 ; un autre astre : sphère de son rayon, en mètres.
@@ -77,6 +91,9 @@ export async function createSolidViewer(container, body) {
     selectionIndicator: false, vrButton: false,
     // rendu à la demande : rien n'est dessiné quand rien ne bouge (téléphone : pas de chauffe) ;
     requestRenderMode: true, maximumRenderTimeChange: Infinity,
+    // définition réglée par l'app (AstreSolideGlobe.syncResolution) : même densité de pixels que la scène three.js,
+    // au lieu de la définition « recommandée » du navigateur (1 pixel par pixel CSS, flou sur écran Retina) ;
+    useBrowserRecommendedResolution: false,
     // fond spatial transparent : canevas WebGL avec canal alpha et pas de ciel étoilé de CesiumJS ; l'espace visible
     // autour du globe est celui de la scène three.js (étoiles, Soleil, Lune, planètes), dessinée dessous.
     contextOptions: { webgl: { alpha: true } }, skyBox: false,
