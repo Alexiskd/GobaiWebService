@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { imageryOptions, templateOf, tileSourceImageryProvider } from './astre-solide.imagery.js';
-import { baseColorOf } from './astre-solide.viewer.js';
+import { baseColorOf, cesiumResolutionScale } from './astre-solide.viewer.js';
 import { threeViewToCesium, tilesLocalToEcef, EARTH_RADIUS_M } from './astre-solide.camera-math.js';
 
 // Faux CesiumJS : seulement ce que le fournisseur utilise.
@@ -70,4 +70,16 @@ test('astres solides : vue three.js traduite au rayon de l\'astre (Lune)', () =>
   assert.ok(v.far < 5 * EARTH_RADIUS_M);
   // Aller : un rayon de la Lune.
   assert.equal(tilesLocalToEcef([0, 1, 0], R).z, R);
+});
+
+test('globe : même définition que la scène three.js, jamais plus fin que l\'écran', () => {
+  // iPhone (écran ×3) et app à ×2 : deux tiers.
+  assert.equal(cesiumResolutionScale(2, 3), 0.67);
+  // Ordinateur ×2, app ×2 : pleine définition.
+  assert.equal(cesiumResolutionScale(2, 2), 1);
+  // App plus fine que l'écran : bornée à 1 ; très basse : 0,25.
+  assert.equal(cesiumResolutionScale(3, 1), 1);
+  assert.equal(cesiumResolutionScale(0.1, 3), 0.25);
+  // Valeurs illisibles : pleine définition.
+  assert.equal(cesiumResolutionScale(undefined, undefined), 1);
 });
