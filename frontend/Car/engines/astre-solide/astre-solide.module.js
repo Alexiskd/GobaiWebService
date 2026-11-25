@@ -28,7 +28,7 @@ import { setViewHash } from './astre-solide.view-link.js';
 // Importe le relief en volume de la Terre (AWS Terrain Tiles).
 import { createTerrainProvider } from './astre-solide.terrain.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
-import { cesiumShade, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
+import { cesiumShade, globeCacheOptions, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
 const HIDE_LABELS_CSS = '[data-astre-solide="on"] > .l, [data-astre-solide="on"] > .user-marker, [data-astre-solide="on"] > .city-card { display: none !important; }';
@@ -132,6 +132,8 @@ export class AstreSolideGlobe {
       this.viewer.camera.percentageChanged = 0.01;
       // Écran tactile (téléphone, tablette) : tuiles un peu moins fines au repos.
       this.touch = Boolean(globalThis.matchMedia?.('(pointer: coarse)').matches);
+      // Mémoire des tuiles déjà vues et préchargement des voisines, selon l'appareil (voir globeCacheOptions).
+      Object.assign(this.viewer.scene.globe, globeCacheOptions({ touch: this.touch }));
       // Finesse des tuiles au repos.
       this.setMoving(false);
       // En mouvement : tuiles plus grossières (moins de tuiles chargées et dessinées) ; à l'arrêt : finesse normale.
