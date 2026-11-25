@@ -100,7 +100,7 @@ import { createShadedSphereMaterial } from '../TextureEngine/sphereShade.jsx';
 // Importe createAtmosphere, l'atmosphère d'une planète.
 import { createAtmosphere } from './AtmosphereEngine/atmosphere.jsx';
 // Importe underCloudFloorRadii, la hauteur du plancher sous les nuages.
-import { underCloudFloorRadii } from './AtmosphereEngine/atmosphereData.jsx';
+import { atmosphereThickness, underCloudFloorRadii } from './AtmosphereEngine/atmosphereData.jsx';
 // Importe la masse d'un astre, l'astre dominant et la mise en forme d'une distance.
 import { bodyMassKg, dominantBody, formatDistanceKm } from './OrbitEngine/gravityMath.jsx';
 // Importe createGasInterior, l'intérieur d'une géante gazeuse.
@@ -123,6 +123,10 @@ import { AstreSolideGlobe } from '../../engines/astre-solide/index.js';
 import { LightPollutionLayer, POLLUTION_LAYER } from '../../engines/pollution-lumineuse/index.js';
 // Importe la traduction du repère terrestre de CesiumJS (ECEF) vers le repère des tuiles de la Terre.
 import { ecefToTilesLocal } from '../../engines/astre-solide/astre-solide.camera-math.js';
+// Importe planetData : les caractéristiques fixes d'une planète (type affiché dans la fiche).
+import { planetData } from './BodyEngine/planetData.jsx';
+// Importe solidBodyFacts : les données du globe CesiumJS lues comme dans la fiche d'information.
+import { solidBodyFacts } from '../../engines/astre-solide/astre-solide.facts.js';
 import { SystemRegistry } from '../SystemeEngine/core/system/SystemRegistry.js';
 import { PerivolumeManager } from '../SystemeEngine/PerivolumeEngine/PerivolumeManager.js';
 import { CoreActivityPolicy } from '../SystemeEngine/core/system/CoreActivityPolicy.js';
@@ -2854,20 +2858,41 @@ export class SolarEngine {
   }
 
   /**
-   * Astre solide visé par le globe CesiumJS (engine astre-solide) : l'astre ciblé s'il est solide et a une carte (la
-   * Terre, la Lune, Mars, Mercure, les satellites à carte), sinon la Terre. Les géantes gazeuses et Vénus (sans fond
-   * de carte) restent en three.js. Renvoie { id, name, radiusKm, airless }.
+   * Données d'un astre pour le globe CesiumJS, lues comme dans la composante « Caractéristiques et informations » :
+   * rayon de la fiche, type (géante ou non), épaisseur d'atmosphère, couleur de l'interface (voir astre-solide.facts).
+   */
+  // solidFacts : l'identifiant de l'astre (début).
+  solidFacts(id) {
+    // Mêmes sources que la fiche : data.bodies, planetData (type) et atmosphereThickness (épaisseur).
+    return solidBodyFacts(id, {
+      // Les astres de l'app, l'identifiant d'une planète, le type et l'épaisseur d'atmosphère affichés.
+      bodies: this.data.bodies, bodyIdOf: bodyId, typeOf: (b) => planetData(b)?.type ?? null, atmosphereKmOf: (b) => atmosphereThickness(b)?.km ?? null,
+      // Les réglages des tuiles, en repli.
+      cfg: TILED_BODY_BY_ID[id] ?? null,
+    // Fin des données.
+    });
+  // Fin de solidFacts.
+  }
+
+  /**
+   * Astre solide visé par le globe CesiumJS (engine astre-solide) : chaque astre solide ciblé est découpé en tuiles par
+   * CesiumJS (la Terre, la Lune, Mars, Mercure et tous les satellites sphériques, avec ou sans fond de carte),
+   * avec le rayon affiché dans sa fiche d'information ; sinon la Terre. Les géantes, Vénus (nuages three.js) et les
+   * satellites irréguliers (Phobos, Deimos : modèle 3D) restent en three.js. Renvoie { id, name, radiusKm, airless,
+   * color, minAltitudeKm }.
    */
   // solidGlobeTarget : l'astre visé (début).
   solidGlobeTarget() {
     // Astre tuilé ciblé.
     const tb = this.tiledBodies?.find((t) => t.focus === this.focus);
-    // Solide, et la Terre ou un fond de carte posé : cet astre ; sinon la Terre.
-    const id = tb && !tb.cfg.gas && (tb.id === 'earth' || tb.tiles.base?.source) ? tb.id : 'earth';
-    // Sa description.
-    const cfg = TILED_BODY_BY_ID[id];
-    // Nom affiché (celui des données), rayon et air.
-    return { id, name: this.focusTargets?.[this.tiledById?.[id]?.focus]?.name ?? id, radiusKm: cfg?.radiusKm ?? 6371, airless: Boolean(cfg?.airless), minAltitudeKm: cfg ? minAltitudeRadii(cfg) * cfg.radiusKm : 0 };
+    // Ses données de fiche.
+    const facts = tb ? this.solidFacts(tb.id) : null;
+    // Solide d'après sa fiche : cet astre ; sinon la Terre.
+    const f = facts?.solid ? facts : this.solidFacts('earth');
+    // Réglages des tuiles de l'astre retenu.
+    const cfg = TILED_BODY_BY_ID[f.id];
+    // Nom affiché (celui des données), rayon de la fiche, air, couleur et altitude minimale (en rayons, ramenée au rayon de la fiche).
+    return { id: f.id, name: f.name ?? this.focusTargets?.[this.tiledById?.[f.id]?.focus]?.name ?? f.id, radiusKm: f.radiusKm, airless: f.airless, color: f.color, minAltitudeKm: cfg ? minAltitudeRadii(cfg) * f.radiusKm : 0 };
   // Fin de solidGlobeTarget.
   }
 
