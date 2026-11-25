@@ -27,6 +27,19 @@ export function imageryOptions(source, projectionId) {
 }
 
 /**
+ * Adresse des tuiles d'une source three.js (`info.urlTemplate`, avec {z}, {x} et {y}), ou null. Fonction pure.
+ * @param {{ info?: { urlTemplate?: string } }} source
+ */
+// Déclare et exporte templateOf : la source (début).
+export function templateOf(source) {
+  // Adresse décrite par la source.
+  const t = source?.info?.urlTemplate;
+  // Seulement une adresse complète.
+  return typeof t === 'string' && t.includes('{z}') && t.includes('{x}') && t.includes('{y}') ? t : null;
+// Fin de templateOf.
+}
+
+/**
  * Fournisseur d'images CesiumJS qui lit une source de tuiles three.js (`source.loadImage({ z, x, y }, signal)`).
  * Sous le niveau le plus grossier de la source, une image transparente d'un pixel (CesiumJS demande toujours le
  * niveau 0). Une tuile en échec est signalée à CesiumJS, qui garde l'image du niveau au-dessus.
@@ -39,6 +52,22 @@ export function tileSourceImageryProvider(Cesium, { source, projectionId, ellips
   const o = imageryOptions(source, projectionId);
   // Découpage de l'astre (même ellipsoïde que le globe).
   const tilingScheme = o.scheme === 'geographic' ? new Cesium.GeographicTilingScheme({ ellipsoid }) : new Cesium.WebMercatorTilingScheme({ ellipsoid });
+  // Adresse des tuiles de la source ({z}/{x}/{y}), si elle en a une servie dès le niveau 0.
+  const template = templateOf(source);
+  // Cas courant (NASA Trek, USGS, relais du serveur) : le fournisseur d'adresses de CesiumJS, le même que pour la Terre
+  // (chargement, file d'attente et nouveaux essais de CesiumJS). Le fournisseur maison ci-dessous reste pour les
+  // sources sans adresse (images composées dans le navigateur).
+  if (template && o.minimumLevel === 0) {
+    // Le fournisseur d'adresses (début) :
+    return new Cesium.UrlTemplateImageryProvider({
+      // l'adresse (relative : même serveur que la page), le découpage, la taille et les niveaux ;
+      url: template, tilingScheme, tileWidth: o.tileSize, tileHeight: o.tileSize, minimumLevel: 0, maximumLevel: o.maximumLevel,
+      // image opaque, mention de la source.
+      hasAlphaChannel: false, ...(credit ? { credit: new Cesium.Credit(credit) } : {}),
+    // Fin du fournisseur d'adresses.
+    });
+  // Fin de ce cas.
+  }
   // Image transparente d'un pixel, pour les niveaux trop grossiers (créée à la première demande).
   let blank = null;
   // Le fournisseur (début) :

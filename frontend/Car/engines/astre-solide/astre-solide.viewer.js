@@ -27,6 +27,16 @@ function loadCss(href) {
  * Ellipsoïde d'un astre solide : WGS84 pour la Terre, sphère de son rayon moyen pour les autres. Doit être posé comme
  * ellipsoïde par défaut de CesiumJS avant la création du globe (caméra, cartographie, découpage des tuiles).
  */
+/**
+ * Couleur du sol d'un astre là où ses tuiles ne sont pas encore arrivées (ou absentes : Vénus n'a pas de fond de
+ * carte) : sa teinte moyenne, au lieu du bleu par défaut de CesiumJS (« écran bleu »).
+ */
+export const BODY_BASE_COLORS = { earth: '#0d1b2a', moon: '#8a8580', mars: '#9a5b3e', mercury: '#8b8580', venus: '#c8b27f' };
+// Teinte des autres astres solides (satellites naturels…).
+export const DEFAULT_BASE_COLOR = '#7d7873';
+// Déclare et exporte baseColorOf : l'identifiant de l'astre.
+export const baseColorOf = (id) => BODY_BASE_COLORS[id] ?? DEFAULT_BASE_COLOR;
+
 // Déclare et exporte bodyEllipsoid : la bibliothèque et l'astre { id, radiusKm }.
 export function bodyEllipsoid(Cesium, { id, radiusKm }) {
   // La Terre : WGS84 ; un autre astre : sphère de son rayon, en mètres.
@@ -85,6 +95,8 @@ export async function createSolidViewer(container, body) {
     viewer.imageryLayers.add(new Cesium.ImageryLayer(provider, s.minimumTerrainLevel ? { minimumTerrainLevel: s.minimumTerrainLevel } : {}));
   // Fin de la boucle.
   }
+  // Sol à la teinte de l'astre tant que ses tuiles arrivent (pas le bleu par défaut de CesiumJS).
+  viewer.scene.globe.baseColor = Cesium.Color.fromCssColorString(baseColorOf(body.id));
   // Fond de la scène transparent (début de l'espace : la scène three.js).
   viewer.scene.backgroundColor = Cesium.Color.TRANSPARENT;
   // Ni Soleil ni Lune de CesiumJS (sans ciel étoilé, CesiumJS peut ne pas les créer) : ceux de la scène three.js se
