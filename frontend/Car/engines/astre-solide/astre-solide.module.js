@@ -122,6 +122,14 @@ export class AstreSolideGlobe {
         if (this.body !== body || this.engine.stopped) { made.viewer.destroy(); div.remove(); return false; }
         // Gardés.
         ({ viewer: this.viewer, Cesium: this.Cesium, ellipsoid: this.ellipsoid } = made); this.container = div;
+        // Le globe doit porter l'ellipsoïde de l'astre (sinon ses tuiles ne se poseraient pas au bon endroit) :
+        // sinon, il est détruit et la création est considérée comme un échec (three.js garde l'astre).
+        if (this.viewer.scene.globe.ellipsoid !== this.ellipsoid) {
+          this.viewer.destroy(); div.remove();
+          this.viewer = null; this.container = null; this.Cesium = null; this.ellipsoid = null;
+          this.failed = true; this.armed = false;
+          return false;
+        }
       // Échec (CesiumJS indisponible) : three.js garde les astres, plus d'essai.
       } catch { this.failed = true; this.armed = false; div.remove(); return false; }
       // Caméra pilotée par les commandes de three.js, réglée sur le rayon de l'astre.
@@ -416,20 +424,34 @@ export class AstreSolideGlobe {
     this.syncTerrain();
     // La Terre garde ses couches ouvertes ; sans globe : rien.
     if (!this.viewer || this.body.id === 'earth') return;
+    // Astre courant (garde contre un changement d'astre pendant un chargement).
+    const bodyId = this.body.id;
     // Fond de carte de l'app pour cet astre (ou null).
-    const img = this.engine.solidImagery?.(this.body.id) ?? null;
+    const img = this.engine.solidImagery?.(bodyId) ?? null;
     // Même fond qu'avant : rien.
     if ((img?.key ?? null) === this.imageryKey) return;
-    // Noté.
+    // Noté (jeton : une couche plus récente annule celle-ci).
     this.imageryKey = img?.key ?? null;
-    // Anciennes couches retirées.
-    this.viewer.imageryLayers.removeAll();
+    // Anciennes couches retirées et libérées (jamais de retour en arrière vers un ancien astre).
+    this.viewer.imageryLayers.removeAll(true);
     // Sans fond : le globe reste à sa couleur de base.
     if (!img) return;
-    // Fournisseur qui lit la source de tuiles de l'app.
+    // Fournisseur qui lit la source de tuiles de l'app, sur l'ellipsoïde de l'astre (même grille 2^(z+1) × 2^z).
     const provider = tileSourceImageryProvider(this.Cesium, { source: img.source, projectionId: img.projectionId, ellipsoid: this.ellipsoid, credit: img.credit });
-    // Ajouté au globe.
-    this.viewer.imageryLayers.add(new this.Cesium.ImageryLayer(provider));
+    // Échec d'une tuile : signalé dans la console (sinon le globe reste uni sans erreur visible).
+    provider.errorEvent?.addEventListener((err) => {
+      console.error('[Cesium Imagery Error]', {
+        bodyId,
+        url: provider.url || img.source?.info?.urlTemplate || '',
+        level: err?.level, x: err?.x, y: err?.y,
+        timesRetried: err?.timesRetried,
+        message: err?.message,
+      });
+    });
+    // Ajouté au globe, bien visible.
+    const layer = new this.Cesium.ImageryLayer(provider);
+    layer.show = true; layer.alpha = 1.0;
+    this.viewer.imageryLayers.add(layer);
     // Une image.
     this.viewer.scene.requestRender();
   // Fin de syncImagery.

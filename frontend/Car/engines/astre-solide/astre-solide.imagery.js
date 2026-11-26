@@ -48,10 +48,14 @@ export function templateOf(source) {
  */
 // Déclare et exporte tileSourceImageryProvider : la bibliothèque et la source (début).
 export function tileSourceImageryProvider(Cesium, { source, projectionId, ellipsoid, credit = '' }) {
+  // Mention : chaîne uniquement (CesiumJS refuse tout autre type pour Credit).
+  const creditText = typeof credit === 'string' ? credit : '';
   // Réglages de la source.
   const o = imageryOptions(source, projectionId);
-  // Découpage de l'astre (même ellipsoïde que le globe).
-  const tilingScheme = o.scheme === 'geographic' ? new Cesium.GeographicTilingScheme({ ellipsoid }) : new Cesium.WebMercatorTilingScheme({ ellipsoid });
+  // Découpage de l'astre (même ellipsoïde que le globe) : grille géographique 2^(z+1) × 2^z explicite, ou Web Mercator.
+  const tilingScheme = o.scheme === 'geographic'
+    ? new Cesium.GeographicTilingScheme({ ellipsoid, numberOfLevelZeroTilesX: 2, numberOfLevelZeroTilesY: 1 })
+    : new Cesium.WebMercatorTilingScheme({ ellipsoid });
   // Adresse des tuiles de la source ({z}/{x}/{y}), si elle en a une servie dès le niveau 0.
   const template = templateOf(source);
   // Cas courant (NASA Trek, USGS, relais du serveur) : le fournisseur d'adresses de CesiumJS, le même que pour la Terre
@@ -63,7 +67,7 @@ export function tileSourceImageryProvider(Cesium, { source, projectionId, ellips
       // l'adresse (relative : même serveur que la page), le découpage, la taille et les niveaux ;
       url: template, tilingScheme, tileWidth: o.tileSize, tileHeight: o.tileSize, minimumLevel: 0, maximumLevel: o.maximumLevel,
       // image opaque, mention de la source.
-      hasAlphaChannel: false, ...(credit ? { credit: new Cesium.Credit(credit) } : {}),
+      hasAlphaChannel: false, ...(creditText ? { credit: new Cesium.Credit(creditText) } : {}),
     // Fin du fournisseur d'adresses.
     });
   // Fin de ce cas.
@@ -79,7 +83,7 @@ export function tileSourceImageryProvider(Cesium, { source, projectionId, ellips
     // Prêt tout de suite, sans transparence (fond opaque), sans politique de rejet.
     ready: true, readyPromise: Promise.resolve(true), hasAlphaChannel: false, tileDiscardPolicy: undefined,
     // Événement des erreurs, mention de la source, pas de mandataire.
-    errorEvent: new Cesium.Event(), credit: credit ? new Cesium.Credit(credit) : undefined, proxy: undefined,
+    errorEvent: new Cesium.Event(), credit: creditText ? new Cesium.Credit(creditText) : undefined, proxy: undefined,
     // Pas de mention par tuile.
     getTileCredits() { return []; },
     // Pas d'objet à choisir sur la carte.

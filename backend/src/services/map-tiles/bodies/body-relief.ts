@@ -56,7 +56,8 @@ export const BODY_RELIEF_SOURCES: Record<string, BodyReliefSource> = {
   venus: {
     id: 'venus', label: 'Vénus', dataset: 'Magellan GTDR, topographie globale 4 641 m gapfilled v02 (NASA Venus Trek)',
     url: 'https://trek.nasa.gov/venus/trekarcgis/rest/services/venus/Venus_Magellan_Topography_Global_4641m_gapfilled_v02/ImageServer',
-    env: 'VENUS_RELIEF_IMAGESERVER_URL', radiusKm: 6051.8, maxZoom: 5, limitM: 15_000, srs: '29900',
+    // Le service Venus Trek est en IAU Venus (WKID 104902), pas 29900 : avec 29900, l'export renvoie une valeur constante.
+    env: 'VENUS_RELIEF_IMAGESERVER_URL', radiusKm: 6051.8, maxZoom: 5, limitM: 15_000, srs: '104902',
   },
 };
 
