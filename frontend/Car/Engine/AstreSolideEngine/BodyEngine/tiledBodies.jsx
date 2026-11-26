@@ -197,10 +197,24 @@ export const TILED_BODIES = [
     id: 'venus', hudKey: 'venusTiles', mapLabel: 'Carte de Vénus',
     // Rayon de 6051,8 km, altitude minimale de 3 km, survol à 300 km.
     radiusKm: 6051.8, minAltitudeKm: 3, siteAltitudeKm: 300,
-    // Avec atmosphère, calque fondu par transparence.
-    airless: false, overlayMode: 'blend', // pas de fond de carte : atmosphère et nuages dessinés par atmosphere.jsx
+    // Avec atmosphère, calque fondu par transparence. Fond de carte : Venus Trek (données Magellan) et USGS,
+    // découverts par le serveur (voir satellite-sources.ts) ; l'atmosphère et les nuages restent dessinés par
+    // atmosphere.jsx par-dessus le globe.
+    airless: false, overlayMode: 'blend',
     // Niveaux 0 à 2 gardés en mémoire, préchargement actif, 200 images en mémoire vive.
     pinnedMaxZoom: 2, prefetch: true, ramCapacity: 200,
+    // Relief en volume, sur le modèle de Mars et de Mercure : topographie globale GTDR Magellan à 4 641 m
+    // (NASA Venus Trek), réencodée en Terrarium par le serveur dans le découpage géographique des images de
+    // Vénus. Altitudes signées par rapport à la sphère de 6 051,8 km : les plaines (vers −2 km) creusent la
+    // surface, Maxwell Montes (vers +11 km) la soulève. Allumé et coupé par le réglage « relief en volume ».
+    relief: {
+      // Format Terrarium, niveaux 3 à 5 (au-delà, la tuile du niveau 5 est agrandie), sans exagération.
+      kind: 'terrarium', minZoom: 3, maxZoom: 5, exaggeration: 1, signed: true,
+      // Source unique : le relais du serveur (même origine que le site).
+      sources: [{ template: '/api/v1/tiles/relief/venus/{z}/{x}/{y}.png' }],
+      // Relief en volume coupé, ou altitude pas encore arrivée : l'ombrage estimé d'après l'image, force 0,4, comme avant.
+      imageStrength: 0.4,
+    },
     // Modèle 3D au-delà de 2,2 rayons.
     modelSwitchRadii: 2.2,
   // Fin de Vénus.

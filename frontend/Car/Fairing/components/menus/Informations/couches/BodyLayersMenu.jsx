@@ -6,6 +6,8 @@ import { Lune } from '../astres/Lune.jsx';
 import { Mars } from '../astres/Mars.jsx';
 // Importe le menu de Mercure.
 import { Mercure } from '../astres/Mercure.jsx';
+// Importe le menu de Vénus.
+import { Venus } from '../astres/Venus.jsx';
 // Importe le menu de la Terre.
 import { Terre } from '../astres/Terre.jsx';
 // Importe le menu des satellites et des géantes.
@@ -15,7 +17,7 @@ import { PlanetSettings } from '../astres/PlanetSettings.jsx';
 import { TILED_BODY_BY_ID } from '@/Engine/AstreSolideEngine/BodyEngine/tiledBodies';
 
 // Astres qui ont leur propre menu de cartes.
-const MAPPED_BODIES = ['earth', 'moon', 'mars', 'mercury'];
+const MAPPED_BODIES = ['earth', 'moon', 'mars', 'mercury', 'venus'];
 
 /**
  * Composante adaptative : contenu du panneau « Informations » propre à l’astre visualisé.
@@ -33,6 +35,8 @@ export function BodyLayersMenu({
   marsLayers = [], marsBaseId = null, onMarsBase,
   // Calques, fond et rappel de Mercure.
   mercuryLayers = [], mercuryBaseId = null, onMercuryBase,
+  // Calques, fond et rappel de Vénus.
+  venusLayers = [], venusBaseId = null, onVenusBase,
   // Fonds de tous les astres et rappel générique.
   bodyBases = {}, onBodyBase,
   rotateSpeed, onRotateSpeed, rotating, onGoPlace, onDone,
@@ -106,6 +110,12 @@ export function BodyLayersMenu({
         <Mercure hud={hud} layers={mercuryLayers} baseId={mercuryBaseId} onBase={onMercuryBase} listStatus={listStatus} shade={shade} onShade={onShade} />
       // Fin du cas.
       )}
+      {/* Pour Vénus (début). */}
+      {currentId === 'venus' && (
+        // Son menu.
+        <Venus hud={hud} layers={venusLayers} baseId={venusBaseId} onBase={onVenusBase} listStatus={listStatus} shade={shade} onShade={onShade} />
+      // Fin du cas.
+      )}
 
       {/* Pour un satellite ou une géante (début). */}
       {isTrekBody && (
@@ -135,7 +145,7 @@ export function BodyLayersMenu({
       {/* Sans astre visé (début). */}
       {currentId === null && (
         // Une note qui invite à cibler un astre.
-        <Hint>Vue d’ensemble : ciblez la Terre, la Lune, Mars ou Mercure pour voir ses informations.</Hint>
+        <Hint>Vue d’ensemble : ciblez la Terre, la Lune, Mars, Mercure ou Vénus pour voir ses informations.</Hint>
       // Fin du cas.
       )}
       {/* Pour un astre sans menu de cartes (début). */}

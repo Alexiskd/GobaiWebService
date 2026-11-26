@@ -11,6 +11,10 @@
  *
  * Les géantes gazeuses (Jupiter, Saturne, Uranus, Neptune) n'ont pas de portail Solar System Treks :
  * seules les cartes de l'USGS sont essayées pour elles (champ `trek` vide).
+ *
+ * Vénus a son portail Solar System Treks (Venus Trek, données Magellan) : comme un satellite, toutes ses
+ * couches Trek sont découvertes dans l'annuaire ArcGIS du portail, et la carte USGS (venus_simp_cyl.map) sert
+ * de secours.
  */
 
 // Liste de tous les satellites connus de l'application.
@@ -164,6 +168,11 @@ export const SATELLITE_SOURCES: SatelliteSourceSpec[] = [
   { id: 'uranus', name: 'Uranus', trekBody: 'Uranus', trek: [], usgsMap: '/maps/uranus/uranus_simp_cyl.map', planet: true, system: 'uranus' },
   // Neptune : planète, carte USGS seulement.
   { id: 'neptune', name: 'Neptune', trekBody: 'Neptune', trek: [], usgsMap: '/maps/neptune/neptune_simp_cyl.map', planet: true, system: 'neptune' },
+  // Vénus : portail Venus Trek (données Magellan : mosaïques SAR, topographie, réflectivité, émissivité), carte USGS en secours.
+  { id: 'venus', name: 'Vénus', trekBody: 'Venus', trek: [
+    // mosaïques SAR globales Magellan publiées en WMTS par Venus Trek (noms essayés dans l'ordre) ;
+    'Venus_Magellan_Global_Mosaic_750m', 'Venus_Magellan_Global_Mosaic_4641m', 'Venus_Magellan_C3_MDIR_Colorized_Global_Mosaic_2025m',
+  ], usgsMap: '/maps/venus/venus_simp_cyl.map', planet: true },
 // Fin de la liste.
 ];
 

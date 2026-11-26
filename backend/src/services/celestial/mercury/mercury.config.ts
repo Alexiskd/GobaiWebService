@@ -31,6 +31,10 @@ export interface MercuryConfig {
   quickmapTileUrl: string;
   // quickmapMaxZoom : leur niveau maximal.
   quickmapMaxZoom: number;
+  // bepicolomboWmtsBaseUrl : adresse de base des tuiles WMTS BepiColombo (mission ESA/JAXA en orbite depuis novembre 2026).
+  bepicolomboWmtsBaseUrl: string;
+  // bepicolomboMaxZoom : leur niveau maximal.
+  bepicolomboMaxZoom: number;
   // httpTimeoutMs : délai maximal d'un appel.
   httpTimeoutMs: number;
   // healthTimeoutMs : délai maximal d'un test de santé.
@@ -214,6 +218,18 @@ export function loadMercuryConfig(
     ),
     // Le niveau maximal du fond Mercury Basemap : 5 par défaut, de 0 à 14.
     quickmapMaxZoom: readInt(env, 'MERCURY_QUICKMAP_MAX_ZOOM', 5, 0, 14),
+    // L'adresse de base des tuiles WMTS BepiColombo, lue
+    bepicolomboWmtsBaseUrl: readString(
+      // dans l'environnement,
+      env,
+      // sous ce nom,
+      'MERCURY_BEPICOLOMBO_WMTS_BASE_URL',
+      // avec cette valeur par défaut : le produit SYMBIO-SYS publié par NASA Mercury Trek (grille équirectangulaire, comme MESSENGER) ;
+      'https://trek.nasa.gov/tiles/Mercury/EQ/Mercury_BepiColombo_SYMBIOS_Global_Mosaic_1km/1.0.0',
+    // les barres finales sont retirées.
+    ).replace(/\/+$/, ''),
+    // Leur niveau maximal : 7 par défaut, de 0 à 14.
+    bepicolomboMaxZoom: readInt(env, 'MERCURY_BEPICOLOMBO_MAX_ZOOM', 7, 0, 14),
     // Le délai d'un appel, lu
     httpTimeoutMs: readInt(
       // dans l'environnement,

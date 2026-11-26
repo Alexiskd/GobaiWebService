@@ -1,18 +1,26 @@
-// Importe les sources et les fonctions pures du relief de Mars et de Mercure.
+// Importe les sources et les fonctions pures du relief de Mars, de Mercure et de Vénus.
 import { bodyReliefExportUrl, bodyReliefSource, bodyTileBounds, bodyVerticalStep, cleanBodyHeights, missingShare } from './body-relief';
 // Importe l'encodeur et le décodeur Terrarium.
 import { decodeTerrariumPng, encodeTerrariumPng } from '../terrarium';
 
-describe('relief de Mars et de Mercure', () => {
+describe('relief de Mars, de Mercure et de Vénus', () => {
   const mars = bodyReliefSource('mars')!;
   const mercury = bodyReliefSource('mercury')!;
+  const venus = bodyReliefSource('venus')!;
 
   it('ne sert que les astres déclarés', () => {
     expect(mars.label).toBe('Mars');
     expect(mercury.label).toBe('Mercure');
-    expect(bodyReliefSource('venus')).toBeUndefined();
+    expect(venus.label).toBe('Vénus');
+    expect(venus.maxZoom).toBe(5);
     // Un nom de propriété hérité d'Object n'est pas un astre.
     expect(bodyReliefSource('toString')).toBeUndefined();
+  });
+
+  it('demande la référence spatiale de Vénus (IAU 29900) pour son relief', () => {
+    const v = new URL(bodyReliefExportUrl(venus, venus.url, 0, 0, 0));
+    expect(v.searchParams.get('bboxSR')).toBe('29900');
+    expect(v.searchParams.get('imageSR')).toBe('29900');
   });
 
   it('découpe l’astre en 2^(z+1) × 2^z tuiles, d’ouest en est et du nord au sud', () => {

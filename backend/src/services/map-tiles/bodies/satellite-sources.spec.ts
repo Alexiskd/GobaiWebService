@@ -17,9 +17,9 @@ describe('sources des satellites', () => {
     expect(moons.map((s) => s.id).sort()).toEqual(SATELLITES.map((s) => s.id).sort());
     // Chacune doit avoir au moins un produit Trek.
     for (const s of moons) expect(s.trek.length).toBeGreaterThan(0);
-    // Géantes gazeuses : pas de portail Trek, carte USGS seulement.
-    // Les planètes : Jupiter, Saturne, Uranus, Neptune, dans cet ordre.
-    expect(SATELLITE_SOURCES.filter((s) => s.planet).map((s) => s.id)).toEqual(['jupiter', 'saturn', 'uranus', 'neptune']);
+    // Géantes gazeuses : pas de portail Trek, carte USGS seulement ; Vénus a Venus Trek.
+    // Les planètes : Jupiter, Saturne, Uranus, Neptune, Vénus, dans cet ordre.
+    expect(SATELLITE_SOURCES.filter((s) => s.planet).map((s) => s.id)).toEqual(['jupiter', 'saturn', 'uranus', 'neptune', 'venus']);
   // Fin du test.
   });
 

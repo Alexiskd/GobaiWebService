@@ -553,6 +553,12 @@ export function SolarScene({ data, onSettled, covered = false }) {
         mercuryBaseId={bases.mercuryBaseId}
         // Choix du fond de Mercure.
         onMercuryBase={bases.chooseMercuryBase}
+        // Calques de Vénus.
+        venusLayers={layers.venusLayers}
+        // Fond choisi pour Vénus.
+        venusBaseId={bases.venusBaseId}
+        // Choix du fond de Vénus.
+        onVenusBase={bases.chooseVenusBase}
         // Fonds choisis pour tous les astres.
         bodyBases={bases.bases}
         // Choix du fond d'un astre quelconque.

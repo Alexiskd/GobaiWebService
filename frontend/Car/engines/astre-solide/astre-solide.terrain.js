@@ -1,9 +1,11 @@
 /**
- * Relief en volume du globe CesiumJS de la Terre : altitudes AWS Terrain Tiles (format Terrarium, Web Mercator, libres
- * et sans clé, déjà la source de secours du relief de l'app), lues par un CustomHeightmapTerrainProvider de CesiumJS
- * au découpage géographique (le globe entier, pôles compris). Chaque point de la grille d'une tuile est lu dans la
- * tuile Terrarium qui le contient (au plus le niveau 12 : plus fin, les tuiles du niveau 12 sont réutilisées). La mer
- * reste plate (altitudes négatives ramenées à 0). Calculs purs testés ; le chargement des images est injecté.
+ * Relief en volume du globe CesiumJS : celui de la Terre (altitudes AWS Terrain Tiles, format Terrarium, Web Mercator,
+ * libres et sans clé, déjà la source de secours du relief de l'app) et celui des autres astres solides (Lune, Mars,
+ * Mercure, Vénus : tuiles Terrarium servies par le relais du serveur, découpage géographique 2^(z+1) × 2^z de
+ * l'astre — le même que le globe). Chaque point de la grille d'une tuile est lu dans la tuile Terrarium qui le
+ * contient (au plus le niveau le plus fin de la source : plus fin, les tuiles de ce niveau sont réutilisées). La mer
+ * de la Terre reste plate (altitudes négatives ramenées à 0) ; les autres astres ont un relief signé (les bassins
+ * creusent sous la sphère de référence). Calculs purs testés ; le chargement des images est injecté.
  */
 
 // Déclare et exporte l'adresse des tuiles d'altitude.
@@ -70,14 +72,110 @@ export function tilePlan(x, y, level, out = HEIGHTMAP_SIZE) {
 // Fin de tilePlan.
 }
 
-/** Altitude (m) d'un pixel Terrarium ; la mer est ramenée à 0 (elle reste plate). */
-// Déclare et exporte terrariumAt : les pixels RGBA, leur côté, et le pixel (u, v) dans une tuile de 256 (début).
-export function terrariumAt(rgba, size, u, v) {
+/** Altitude (m) d'un pixel Terrarium ; la mer est ramenée à 0 (elle reste plate), sauf si le relief est signé. */
+// Déclare et exporte terrariumAt : les pixels RGBA, leur côté, le pixel (u, v) dans une tuile de 256, et « signé » (début).
+export function terrariumAt(rgba, size, u, v, signed = false) {
   // Pixel dans l'image (tuiles de 256 ou de 512 pixels).
   const k = (Math.min(size - 1, Math.floor((v * size) / 256)) * size + Math.min(size - 1, Math.floor((u * size) / 256))) * 4;
-  // Altitude décodée, jamais négative.
-  return Math.max(0, rgba[k] * 256 + rgba[k + 1] + rgba[k + 2] / 256 - 32768);
+  // Altitude décodée (R × 256 + G + B / 256 − 32768), jamais négative sauf relief signé (Lune, Mars, Mercure, Vénus :
+  // les bassins creusent sous la sphère de référence).
+  const h = rgba[k] * 256 + rgba[k + 1] + rgba[k + 2] / 256 - 32768;
+  // Renvoie l'altitude, ramenée à 0 sous la mer si le relief n'est pas signé.
+  return signed ? h : Math.max(0, h);
 // Fin de terrariumAt.
+}
+
+/**
+ * Plan d'une tuile du globe d'un astre autre que la Terre, en découpage géographique (2^(z+1) × 2^z tuiles au niveau z,
+ * le même que celui des images et du relief de l'astre — comme sur la Terre, où le relief est aussi lu en grille
+ * géographique). Les tuiles d'altitude de l'astre sont lues au niveau zs = niveau borné entre minZoom et maxZoom de
+ * sa source : au-dessous de minZoom et au-delà de maxZoom, la tuile de ce niveau est reprise (échantillonnée).
+ * @param {number} x colonne, {number} y ligne, {number} level niveau du globe, {object} o { minZoom, maxZoom }, out taille de la grille
+ */
+// Déclare et exporte bodyTilePlan : la colonne, la ligne, le niveau, les bornes de la source et la taille (début).
+export function bodyTilePlan(x, y, level, { minZoom = 0, maxZoom = 12 } = {}, out = HEIGHTMAP_SIZE) {
+  // Taille de la tuile du globe (degrés), bord ouest et bord nord.
+  const span = 180 / 2 ** level, west = -180 + x * span, north = 90 - y * span;
+  // Niveau des tuiles sources : celui demandé, borné entre le plus grossier et le plus fin servis.
+  const z = Math.max(minZoom, Math.min(maxZoom, level));
+  // Pixels et tuiles des points.
+  const pts = [], tiles = new Map();
+  // Nombre de pixels sur un tour au niveau source.
+  const n = 256 * 2 ** z;
+  // Pour chaque point de la grille (début).
+  for (let j = 0; j < out; j++) for (let i = 0; i < out; i++) {
+    // Longitude et latitude du point (un point du bord est et sud reste dans la tuile de l'intérieur).
+    const lon = west + (i / (out - 1)) * span, lat = north - (j / (out - 1)) * span;
+    // Pixel global du point, borné à la carte.
+    const px = Math.min(n - 1, Math.max(0, ((lon + 180) / 360) * n));
+    const py = Math.min(n - 1, Math.max(0, ((90 - lat) / 180) * n));
+    // Pixel entier, tuile et pixel dans la tuile.
+    const ix = Math.min(Math.floor(px), n - 1), iy = Math.min(Math.floor(py), n - 1);
+    // Clé de la tuile.
+    const key = `${z}/${ix >> 8}/${iy >> 8}`;
+    // Tuile notée.
+    if (!tiles.has(key)) tiles.set(key, { z, x: ix >> 8, y: iy >> 8 });
+    // Point noté.
+    pts.push({ key, u: ix & 255, v: iy & 255 });
+  // Fin des points.
+  }
+  // Renvoie le niveau source, ses tuiles et les points.
+  return { z, tiles: [...tiles.entries()], points: pts };
+// Fin de bodyTilePlan.
+}
+
+/**
+ * Fournisseur de relief CesiumJS d'un astre solide autre que la Terre (Lune, Mars, Mercure, Vénus) : tuiles Terrarium
+ * servies par le relais du serveur (`/api/v1/tiles/relief/<astre>/{z}/{x}/{y}.png`, ou moon-relief pour la Lune),
+ * dans le découpage géographique 2^(z+1) × 2^z de l'astre — le même découpage que le globe (GeographicTilingScheme).
+ * `load` (adresse → { rgba, size }) peut être remplacé (tests). Les tuiles décodées sont gardées (64 au plus).
+ * @param {object} Cesium la bibliothèque CesiumJS
+ * @param {object} ellipsoid l'ellipsoïde de l'astre
+ * @param {object} o { template, minZoom, maxZoom, signed, credit }
+ */
+// Déclare et exporte createBodyTerrainProvider : CesiumJS, l'ellipsoïde, la source et le chargeur (début).
+export function createBodyTerrainProvider(Cesium, ellipsoid, { template, minZoom = 0, maxZoom = 12, signed = false, credit = 'Relief : tuiles Terrarium du serveur (NASA Trek)' }, load = loadPixels) {
+  // Tuiles décodées (promesses), de la plus ancienne à la plus récente.
+  const cache = new Map();
+  // tile : la tuile source décodée, gardée (début).
+  const tile = (z, x, y) => {
+    // Clé.
+    const key = `${z}/${x}/${y}`;
+    // Déjà demandée : la même promesse, remise en fin (la plus récente).
+    let p = cache.get(key);
+    // Trouvée : remise en fin.
+    if (p) { cache.delete(key); cache.set(key, p); return p; }
+    // Demandée : adresse remplie.
+    p = load(template.replace('{z}', z).replace('{x}', x).replace('{y}', y));
+    // Un échec est oublié (nouvel essai plus tard).
+    p.catch(() => cache.delete(key));
+    // Gardée ; la plus ancienne part au-delà de la limite.
+    cache.set(key, p); if (cache.size > TERRAIN_CACHE) cache.delete(cache.keys().next().value);
+    // Renvoyée.
+    return p;
+  // Fin de tile.
+  };
+  // Fournisseur CesiumJS (début).
+  return new Cesium.CustomHeightmapTerrainProvider({
+    // Grille de 65 × 65 points, découpage géographique (2 × 1 tuiles au niveau 0), mention de la source.
+    width: HEIGHTMAP_SIZE, height: HEIGHTMAP_SIZE, tilingScheme: new Cesium.GeographicTilingScheme({ ellipsoid }), credit,
+    // Altitudes d'une tuile (début).
+    callback: async (x, y, level) => {
+      // Plan : tuiles sources et pixels des points.
+      const plan = bodyTilePlan(x, y, level, { minZoom, maxZoom });
+      // Tuiles sources téléchargées (ou reprises de la mémoire).
+      const imgs = new Map(await Promise.all(plan.tiles.map(async ([key, t]) => [key, await tile(t.z, t.x, t.y)])));
+      // Grille d'altitudes.
+      const h = new Float32Array(plan.points.length);
+      // Chaque point lu dans sa tuile.
+      plan.points.forEach((p, i) => { const img = imgs.get(p.key); h[i] = terrariumAt(img.rgba, img.size, p.u, p.v, signed); });
+      // Renvoie la grille.
+      return h;
+    // Fin de la tuile.
+    },
+  // Fin du fournisseur.
+  });
+// Fin de createBodyTerrainProvider.
 }
 
 /** Pixels RGBA d'une image PNG téléchargée (navigateur : createImageBitmap + OffscreenCanvas ou canvas). */

@@ -1,5 +1,5 @@
 /**
- * Relief des astres solides autres que la Terre et la Lune (Mars, Mercure) : fonctions pures, sans NestJS ni base
+ * Relief des astres solides autres que la Terre et la Lune (Mars, Mercure, Vénus) : fonctions pures, sans NestJS ni base
  * de données, pour être testées seules. Le service (body-relief.service.ts) s'occupe du réseau, du cache et de BP.
  *
  * Même méthode que le relief de la Lune (moon-relief.service.ts) : le modèle numérique d'élévation de l'astre est lu
@@ -38,6 +38,9 @@ export interface BodyReliefSource {
  *  - Mercure : DEM global MESSENGER / USGS à 665 m/pixel (v2), de NASA Mercury Trek — le jeu déjà référencé par le
  *    catalogue de Mercure (couche « usgs-dem-665m »). À 665 m, le niveau 6 (≈ 468 m par pixel) suffit.
  *    Extrêmes de Mercure : environ −5 400 m à +4 500 m.
+ *  - Vénus : topographie globale GTDR Magellan à 4 641 m/pixel (gapfilled v02), de NASA Venus Trek. À 4 641 m, le
+ *    niveau 5 (≈ 4 887 m par pixel à l'équateur) suffit. Extrêmes de Vénus : environ −2 km à +11 km
+ *    (Maxwell Montes).
  */
 export const BODY_RELIEF_SOURCES: Record<string, BodyReliefSource> = {
   mars: {
@@ -49,6 +52,11 @@ export const BODY_RELIEF_SOURCES: Record<string, BodyReliefSource> = {
     id: 'mercury', label: 'Mercure', dataset: 'MESSENGER MDIS, DEM global USGS 665 m v2 (NASA Mercury Trek)',
     url: 'https://trek.nasa.gov/mercury/arcgis/rest/services/mercury/Mercury_Messenger_USGS_DEM_Global_665m_v2/ImageServer',
     env: 'MERCURY_RELIEF_IMAGESERVER_URL', radiusKm: 2439.4, maxZoom: 6, limitM: 12_000, srs: '19900',
+  },
+  venus: {
+    id: 'venus', label: 'Vénus', dataset: 'Magellan GTDR, topographie globale 4 641 m gapfilled v02 (NASA Venus Trek)',
+    url: 'https://trek.nasa.gov/venus/trekarcgis/rest/services/venus/Venus_Magellan_Topography_Global_4641m_gapfilled_v02/ImageServer',
+    env: 'VENUS_RELIEF_IMAGESERVER_URL', radiusKm: 6051.8, maxZoom: 5, limitM: 15_000, srs: '29900',
   },
 };
 

@@ -35,6 +35,8 @@ const PROVIDER_LABEL: Record<string, string> = {
   'mercury-quickmap': 'Mercury QuickMap',
   // OpenPlanetaryMap (Mercure).
   'opm-mercury': 'OpenPlanetaryMap',
+  // ESA/JAXA BepiColombo (Mercure).
+  'bepicolombo': 'ESA / JAXA (BepiColombo)',
 // Fin de la table.
 };
 
