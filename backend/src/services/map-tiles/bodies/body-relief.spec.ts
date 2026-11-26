@@ -17,10 +17,10 @@ describe('relief de Mars, de Mercure et de Vénus', () => {
     expect(bodyReliefSource('toString')).toBeUndefined();
   });
 
-  it('demande la référence spatiale de Vénus (IAU 29900) pour son relief', () => {
+  it('demande la référence spatiale de Vénus (IAU Venus, WKID 104902) pour son relief', () => {
     const v = new URL(bodyReliefExportUrl(venus, venus.url, 0, 0, 0));
-    expect(v.searchParams.get('bboxSR')).toBe('29900');
-    expect(v.searchParams.get('imageSR')).toBe('29900');
+    expect(v.searchParams.get('bboxSR')).toBe('104902');
+    expect(v.searchParams.get('imageSR')).toBe('104902');
   });
 
   it('découpe l’astre en 2^(z+1) × 2^z tuiles, d’ouest en est et du nord au sud', () => {

@@ -2577,8 +2577,8 @@ export function loadMoonConfig(
       env,
       // sous ce nom,
       'MOON_LROC_GETMAP_URL',
-      // avec cette valeur par défaut.
-      'https://wms.im-ldi.com/',
+      // avec cette valeur par défaut (le service WMS de LunaServ ; la racine n'accepte que la 1.1.1 et ne porte pas les couches lunaires).
+      'https://wms.im-ldi.com/lunaserv/wms',
     // Fin de la lecture.
     ),
     // Le niveau maximal de LROC Lunaserv : 7 par défaut, de 0 à 12.
@@ -3256,8 +3256,8 @@ export function buildProviders(config: MoonConfig): ProviderDefinition[] {
     wms: {
       // l'adresse des requêtes GetMap ;
       getMapUrl: config.lrocGetMapUrl,
-      // la version 1.3.0 ;
-      version: '1.3.0',
+      // la version 1.1.1 (seule acceptée par LunaServ en GetMap) ;
+      version: '1.1.1',
       // la projection de la Lune ;
       srs: 'IAU2000:30100',
       // la longitude d'abord dans l'emprise.
@@ -3331,8 +3331,8 @@ export function buildProviders(config: MoonConfig): ProviderDefinition[] {
           license: 'Domaine public (NASA)',
           // ses réglages WMTS :
           wmts: {
-            // l'adresse de base ;
-            baseUrl: config.trekBaseUrl,
+            // l'adresse de base : dossier Trek de la Lune, produit et version 1.0.0 (comme Mars) ;
+            baseUrl: `${config.trekBaseUrl}/${config.trekProduct}/1.0.0`,
             // le style ;
             style: config.trekStyle,
             // le jeu de tuiles ;
@@ -3488,7 +3488,7 @@ export function buildProviders(config: MoonConfig): ProviderDefinition[] {
       // son identifiant, « lroc-lunaserv » ;
       id: 'lroc-lunaserv',
       // son nom ;
-      name: 'LROC LunaServ (WMS 1.3.0)',
+      name: 'LROC LunaServ (WMS 1.1.1)',
       // sa nature, WMS ;
       kind: 'wms',
       // sa description :
@@ -3503,12 +3503,12 @@ export function buildProviders(config: MoonConfig): ProviderDefinition[] {
       license: 'Usage libre avec attribution',
       // sans jeton ;
       requiresToken: false,
-      // l'adresse de ses capacités, en WMS 1.3.0 ;
-      capabilitiesUrl: `${config.lrocCapabilitiesUrl}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities`,
+      // l'adresse de ses capacités, en WMS 1.1.1 ;
+      capabilitiesUrl: `${config.lrocCapabilitiesUrl}?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetCapabilities`,
       // ses remarques :
       notes: [
-        // l'ordre des axes de l'emprise suit la projection ;
-        'WMS 1.3.0 : l’ordre des axes du BBOX suit la convention CRS.',
+        // en 1.1.1, l'emprise suit la longitude d'abord ;
+        'WMS 1.1.1 (le service LunaServ refuse la 1.3.0 en GetMap) : BBOX ouest,sud,est,nord.',
         // les niveaux, pris dans la configuration.
         `Niveaux 0 à ${config.lrocMaxZoom}.`,
       // Fin des remarques.
@@ -3525,8 +3525,8 @@ export function buildProviders(config: MoonConfig): ProviderDefinition[] {
           description:
             // son texte ;
             'Mosaïque globale de la caméra grand angle de LRO, en projection simple cylindrique.',
-          // son nom chez la source ;
-          upstreamLayer: 'lroc_wmosaic',
+          // son nom chez la source (la couche « lroc_wmosaic » n'existe pas sur LunaServ : la mosaïque globale est « luna_wac_global ») ;
+          upstreamLayer: 'luna_wac_global',
           // sa nature, WMS ;
           kind: 'wms',
           // son découpage, plate carrée ;
@@ -3549,8 +3549,8 @@ export function buildProviders(config: MoonConfig): ProviderDefinition[] {
           wms: {
             // l'adresse des requêtes GetMap ;
             getMapUrl: config.lrocGetMapUrl,
-            // la version 1.3.0 ;
-            version: '1.3.0',
+            // la version 1.1.1 (seule acceptée par LunaServ en GetMap) ;
+            version: '1.1.1',
             // la projection de la Lune ;
             srs: 'IAU2000:30100',
             // la longitude d'abord dans l'emprise.

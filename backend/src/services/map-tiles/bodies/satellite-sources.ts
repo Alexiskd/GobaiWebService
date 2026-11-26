@@ -170,7 +170,10 @@ export const SATELLITE_SOURCES: SatelliteSourceSpec[] = [
   { id: 'neptune', name: 'Neptune', trekBody: 'Neptune', trek: [], usgsMap: '/maps/neptune/neptune_simp_cyl.map', planet: true, system: 'neptune' },
   // Vénus : portail Venus Trek (données Magellan : mosaïques SAR, topographie, réflectivité, émissivité), carte USGS en secours.
   { id: 'venus', name: 'Vénus', trekBody: 'Venus', trek: [
-    // mosaïques SAR globales Magellan publiées en WMTS par Venus Trek (noms essayés dans l'ordre) ;
+    // image radar Magellan (réflectivité de Fresnel) publiée en WMTS par Venus Trek : la carte « satellite » de Vénus,
+    // essayée en premier (les produits de l'annuaire ArcGIS — gravité, topographie… — servent ensuite) ;
+    'Venus_Magellan_FresnelReflectivity_Global_4641m', 'Venus_Magellan_MicrowaveEmissivity_Global_4641m',
+    // mosaïques globales si elles existent un jour sous ces noms.
     'Venus_Magellan_Global_Mosaic_750m', 'Venus_Magellan_Global_Mosaic_4641m', 'Venus_Magellan_C3_MDIR_Colorized_Global_Mosaic_2025m',
   ], usgsMap: '/maps/venus/venus_simp_cyl.map', planet: true },
 // Fin de la liste.

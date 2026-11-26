@@ -2914,8 +2914,12 @@ export class SolarEngine {
     if (!base?.source) return null;
     // Description de la source.
     const info = base.source.info || {};
+    // Mention : le texte de l'attribution ({ text } de l'API, ou chaîne), sinon credit ou nom, toujours une chaîne
+    // (CesiumJS refuse tout autre type pour son crédit).
+    const a = info.attribution;
+    const credit = (typeof a === 'string' ? a : a?.text) || info.credit || info.name || '';
     // Le fond : sa clé (couche choisie), sa source, son découpage et sa mention.
-    return { key: base.id, source: base.source, projectionId: info.projection === 'equirectangular' ? 'equirectangular' : 'mercator', credit: info.attribution || info.credit || info.name || '' };
+    return { key: base.id, source: base.source, projectionId: info.projection === 'equirectangular' ? 'equirectangular' : 'mercator', credit: typeof credit === 'string' ? credit : '' };
   // Fin de solidImagery.
   }
 
