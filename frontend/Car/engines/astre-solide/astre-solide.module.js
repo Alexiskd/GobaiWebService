@@ -25,8 +25,8 @@ import { tileSourceImageryProvider } from './astre-solide.imagery.js';
 import { CesiumCamera } from './astre-solide.camera.js';
 // Importe l'effacement de l'ancre du lien de vue.
 import { setViewHash } from './astre-solide.view-link.js';
-// Importe le relief en volume de la Terre (AWS Terrain Tiles).
-import { createTerrainProvider } from './astre-solide.terrain.js';
+// Importe le relief en volume de la Terre (AWS Terrain Tiles) et celui des autres astres solides (tuiles Terrarium du serveur).
+import { createBodyTerrainProvider, createTerrainProvider } from './astre-solide.terrain.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
 import { cesiumShade, fadeProgress, globeCacheOptions, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
@@ -162,7 +162,7 @@ export class AstreSolideGlobe {
     // Conteneur retiré.
     this.container?.remove();
     // Plus de globe.
-    this.viewer = null; this.container = null; this.camera = null; this.ellipsoid = null; this.imageryKey = null; this.terrain = null; this.terrainKey = undefined;
+    this.viewer = null; this.container = null; this.camera = null; this.ellipsoid = null; this.imageryKey = null; this.terrain = null; this.bodyTerrain = null; this.terrainKey = undefined;
   // Fin de destroyViewer.
   }
 
@@ -365,25 +365,39 @@ export class AstreSolideGlobe {
   }
 
   /**
-   * Relief en volume de la Terre : suit le réglage « Relief » de l'app (allumé, éteint, exagération). Le fournisseur
-   * d'altitudes (AWS Terrain Tiles) n'est posé ou retiré que quand le réglage change.
+   * Relief en volume de l'astre du globe (la Terre : AWS Terrain Tiles ; la Lune, Mars, Mercure, Vénus : tuiles
+   * Terrarium servies par le serveur, même découpage géographique que le globe) : suit le réglage « Relief » de
+   * l'app (allumé, éteint, exagération). Le fournisseur d'altitudes n'est posé ou retiré que quand le réglage
+   * change (créé une fois par astre : ses tuiles restent en mémoire).
    */
   // syncTerrain : pose ou retire le relief du globe (début).
   syncTerrain() {
     // Sans globe : rien.
     if (!this.viewer) return;
-    // Réglage « Relief » de l'app pour la Terre (seul astre au relief en volume dans le globe pour l'instant).
-    const r = this.body.id === 'earth' ? this.engine.solidRelief?.('earth') : null;
-    // Clé du réglage : « off » ou l'exagération.
-    const key = r?.on ? `on:${r.exaggeration}` : 'off';
+    // Réglage « Relief » de l'app pour l'astre courant (null si l'astre n'a pas de relief Terrarium).
+    const r = this.engine.solidRelief?.(this.body.id) ?? null;
+    // Relief possible pour cet astre : la Terre a son fournisseur AWS ; les autres ont besoin d'une source à modèle.
+    const possible = r && (this.body.id === 'earth' || r.terrain?.template);
+    // Clé du réglage : astre, « off » ou l'exagération.
+    const key = `${this.body.id}:${possible && r.on ? `on:${r.exaggeration}` : 'off'}`;
     // Inchangé : rien.
     if (key === this.terrainKey) return;
     // Relief allumé ou éteint avant et maintenant.
-    const wasOn = Boolean(this.terrainKey?.startsWith('on')), on = key !== 'off';
+    const wasOn = Boolean(this.terrainKey?.includes(':on:')), on = key.includes(':on:');
     // Noté.
     this.terrainKey = key;
     // Fournisseur changé seulement si le relief s'allume ou s'éteint (créé une fois : ses tuiles restent en mémoire).
-    if (on !== wasOn) this.viewer.terrainProvider = on ? (this.terrain || (this.terrain = createTerrainProvider(this.Cesium, this.ellipsoid))) : new this.Cesium.EllipsoidTerrainProvider({ ellipsoid: this.ellipsoid });
+    if (on !== wasOn) {
+      // Fournisseur : aucun relief, le fournisseur de la Terre, ou celui de l'astre (tuiles Terrarium du serveur).
+      const provider = !on
+        ? new this.Cesium.EllipsoidTerrainProvider({ ellipsoid: this.ellipsoid })
+        : this.body.id === 'earth'
+          ? (this.terrain || (this.terrain = createTerrainProvider(this.Cesium, this.ellipsoid)))
+          : (this.bodyTerrain || (this.bodyTerrain = createBodyTerrainProvider(this.Cesium, this.ellipsoid, r.terrain)));
+      // Posé.
+      this.viewer.terrainProvider = provider;
+    // Fin du changement.
+    }
     // Exagération des altitudes (CesiumJS 1.116 et plus).
     if ('verticalExaggeration' in this.viewer.scene) this.viewer.scene.verticalExaggeration = on ? r.exaggeration : 1;
     // Une image.

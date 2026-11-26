@@ -13,8 +13,10 @@ export const PROVIDER_IDS = [
   'mercury-trek-wmts',
   // le fond Mercury Basemap (MESSENGER / USGS) ;
   'mercury-quickmap',
-  // OpenPlanetaryMap.
+  // OpenPlanetaryMap ;
   'opm-mercury',
+  // ESA/JAXA BepiColombo (en orbite depuis le 21 novembre 2026) ;
+  'bepicolombo',
 // Fin de la liste, figée.
 ] as const;
 

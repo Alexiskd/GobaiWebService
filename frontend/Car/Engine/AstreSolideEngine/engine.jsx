@@ -980,8 +980,10 @@ export class SolarEngine {
   }
 
   /**
-   * Réglage « Relief » de l'app pour un astre, lu par le globe CesiumJS (relief en volume de la Terre) :
-   * { on, exaggeration }, ou null si l'astre n'a pas de relief Terrarium.
+   * Réglage « Relief » de l'app pour un astre, lu par le globe CesiumJS (relief en volume) :
+   * { on, exaggeration, terrain? }, ou null si l'astre n'a pas de relief Terrarium. `terrain` (absent pour la Terre,
+   * dont le globe a son propre fournisseur AWS) décrit la source de tuiles d'altitude des autres astres solides
+   * (Lune, Mars, Mercure, Vénus) : { template, minZoom, maxZoom, signed } — le relais du serveur.
    */
   // solidRelief : l'identifiant de l'astre (début).
   solidRelief(id) {
@@ -991,8 +993,16 @@ export class SolarEngine {
     if (t?.relief?.kind !== 'terrarium') return null;
     // Réglage demandé (activé par défaut, comme les tuiles).
     const ask = t.reliefAsk ?? { on: true, exaggeration: 1 };
-    // Renvoie le réglage.
-    return { on: Boolean(ask.on), exaggeration: Number.isFinite(ask.exaggeration) && ask.exaggeration > 0 ? ask.exaggeration : 1 };
+    // Le réglage.
+    const r = { on: Boolean(ask.on), exaggeration: Number.isFinite(ask.exaggeration) && ask.exaggeration > 0 ? ask.exaggeration : 1 };
+    // La Terre : son globe a son propre fournisseur (AWS Terrain Tiles), rien de plus à passer.
+    if (id === 'earth') return r;
+    // Autre astre : la première source à modèle d'adresse (le relais du serveur, ex. /api/v1/tiles/relief/mars/...).
+    const src = (t.relief.sources || []).find((s) => s?.template);
+    // Sans source à modèle : pas de relief en volume possible pour cet astre.
+    if (!src) return { ...r, terrain: null };
+    // Renvoie le réglage, avec la description de la source de tuiles d'altitude.
+    return { ...r, terrain: { template: src.template, minZoom: t.relief.minZoom ?? 0, maxZoom: t.relief.maxZoom ?? 12, signed: Boolean(t.relief.signed) } };
   // Fin de solidRelief.
   }
 
@@ -2876,10 +2886,9 @@ export class SolarEngine {
 
   /**
    * Astre solide visé par le globe CesiumJS (engine astre-solide) : chaque astre solide ciblé est découpé en tuiles par
-   * CesiumJS (la Terre, la Lune, Mars, Mercure et tous les satellites sphériques, avec ou sans fond de carte),
-   * avec le rayon affiché dans sa fiche d'information ; sinon la Terre. Les géantes, Vénus (nuages three.js) et les
-   * satellites irréguliers (Phobos, Deimos : modèle 3D) restent en three.js. Renvoie { id, name, radiusKm, airless,
-   * color, minAltitudeKm }.
+   * CesiumJS (la Terre, la Lune, Mars, Mercure, Vénus et tous les satellites sphériques, avec ou sans fond de carte),
+   * avec le rayon affiché dans sa fiche d'information ; sinon la Terre. Les géantes et les satellites irréguliers
+   * (Phobos, Deimos : modèle 3D) restent en three.js. Renvoie { id, name, radiusKm, airless, color, minAltitudeKm }.
    */
   // solidGlobeTarget : l'astre visé (début).
   solidGlobeTarget() {

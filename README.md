@@ -30,23 +30,44 @@ Computing, Transmission — voir `ARCHITECTURE.md`).
 `frontend/Car/Computing/api` ne contient plus que les adaptateurs client : l'API n'est servie que par `backend/`.
 Les mentions `frontend/src/…` plus bas dans ce fichier datent d'avant la fusion.
 
-## Relief de Mars et de Mercure (20 novembre 2026)
+## Relief des planètes solides (20 novembre 2026)
 
-Mars et Mercure ont le même moteur de relief en volume que la Lune.
+Mars, Mercure et Vénus ont le même moteur de relief en volume que la Lune.
 
-- **Serveur** : `GET /api/v1/tiles/relief/{mars|mercury}/{z}/{x}/{y}.png` rend une tuile Terrarium de 256 px
+- **Serveur** : `GET /api/v1/tiles/relief/{mars|mercury|venus}/{z}/{x}/{y}.png` rend une tuile Terrarium de 256 px
   (altitude en m = R × 256 + G + B / 256 − 32768), dans le découpage géographique 2^(z+1) × 2^z des images de
   l'astre. `GET /api/v1/tiles/relief/status` donne l'état. Code : `backend/src/services/map-tiles/body-relief*.ts`.
 - **Sources** (NASA Trek, ImageServer ArcGIS, `exportImage` en TIFF flottant) : Mars = MOLA + HRSC mélangés à 200 m,
-  niveaux 0 à 8 ; Mercure = DEM MESSENGER / USGS à 665 m, niveaux 0 à 6. Adresses remplaçables par
-  `MARS_RELIEF_IMAGESERVER_URL` et `MERCURY_RELIEF_IMAGESERVER_URL`.
+  niveaux 0 à 8 ; Mercure = DEM MESSENGER / USGS à 665 m, niveaux 0 à 6 ; Vénus = topographie GTDR Magellan à 4 641 m
+  (gapfilled v02, NASA Venus Trek), niveaux 0 à 5. Adresses remplaçables par `MARS_RELIEF_IMAGESERVER_URL`,
+  `MERCURY_RELIEF_IMAGESERVER_URL` et `VENUS_RELIEF_IMAGESERVER_URL`.
 - **Cache** : mémoire du processus, puis table `body_relief_tiles` de la base si `DATABASE_URL` est réglé. Pas de
   préchargement : une tuile est fabriquée à sa première demande. Une réponse sans aucune altitude n'est ni servie
   ni gardée.
-- **Moteur** : `relief` de Mars et de Mercure dans `tiledBodies.jsx` passe à `terrarium` (altitudes signées), avec
+- **Moteur** : `relief` de Mars, de Mercure et de Vénus dans `tiledBodies.jsx` passe à `terrarium` (altitudes signées), avec
   `imageStrength: 0.4` : l'ombrage estimé d'après l'image reste affiché quand le relief en volume est coupé.
 - **Interface** : l'interrupteur « Relief 3D » (le même réglage que celui de la Terre) apparaît dans les réglages
-  de la Lune, de Mars et de Mercure.
+  de la Lune, de Mars, de Mercure et de Vénus.
+
+## Planètes solides avec CesiumJS et API image (26 novembre 2026)
+
+Toutes les planètes solides — Mercure, Vénus, la Terre, Mars — plus la Lune et les satellites à carte sont dessinées
+par le globe CesiumJS (`frontend/Car/engines/astre-solide/`) dès que la caméra s'en approche ; Vénus n'est plus
+réservée à three.js (`THREE_ONLY_SOLIDS` est vide).
+
+- **Images** : chaque astre a son API image en tuiles, même découpage 2^(z+1) × 2^z que la Terre dans le globe
+  (GeographicTilingScheme côté CesiumJS, lu tel quel depuis le fond choisi dans l'app) :
+  - Lune, Mars, Mercure : catalogues `backend/src/services/celestial/{moon,mars,mercury}` exposés en
+    `space-<astre>-<fournisseur>-<couche>` et servis par `/api/v1/<astre>/providers/.../tile/{z}/{x}/{y}` ;
+    **Mercure** a aussi un fournisseur `bepicolombo` (ESA/JAXA, en orbite depuis le 21 novembre 2026 ; adresse
+    remplaçable par `MERCURY_BEPICOLOMBO_WMTS_BASE_URL`) ;
+  - Vénus : portail **Venus Trek** (données Magellan) découvert dans `satellite-sources.ts`, servi comme les
+    satellites par `/api/v1/tiles/satellites/venus/layers` et `/api/v1/tiles/satellite/venus/{z}/{x}/{y}`, avec la
+    carte USGS `venus_simp_cyl.map` en secours.
+- **Relief en volume dans le globe** : `syncTerrain` du module CesiumJS pose un `CustomHeightmapTerrainProvider`
+  par astre — AWS Terrain Tiles pour la Terre, tuiles Terrarium du serveur (géographique 2^(z+1) × 2^z, altitudes
+  signées) pour la Lune (`/api/v1/tiles/moon-relief/...`), Mars, Mercure et Vénus (`/api/v1/tiles/relief/...`) —
+  selon le même réglage « Relief 3D ». Code : `astre-solide.terrain.js` (`createBodyTerrainProvider`, `bodyTilePlan`).
 
 ## Natural satellites (Jupiter, Saturn)
 

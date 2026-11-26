@@ -40,16 +40,22 @@ const BY_PROVIDER = {
   'opm-mars': 'OpenPlanetaryMap',
   // OpenPlanetaryMap, pour Mercure.
   'opm-mercury': 'OpenPlanetaryMap',
+  // ESA/JAXA BepiColombo, pour Mercure.
+  'bepicolombo': 'ESA / JAXA (BepiColombo)',
+  // Venus Trek, pour Vénus.
+  'venus-trek': 'NASA / JPL-Caltech (Venus Trek)',
+  // USGS Astrogeology, pour Vénus.
+  'usgs-astro-venus': 'USGS Astrogeology',
   // Le Murray Lab.
   'murray-lab': 'NASA Mars Trek + Caltech Murray Lab (fusion Gobai)',
 // Fin de l'objet.
 };
 
-/** Fournisseur d'une couche des catalogues Lune/Mars/Mercure : identifiant `space-<astre>-<fournisseur>-<couche>`. */
+/** Fournisseur d'une couche des catalogues Lune/Mars/Mercure/Vénus : identifiant `space-<astre>-<fournisseur>-<couche>`. */
 // Déclare spaceProvider : reçoit l'identifiant d'une couche.
 function spaceProvider(id) {
   // Extrait ce qui suit « space- » et le nom de l'astre.
-  const rest = /^space-(?:moon|mars|mercury)-(.+)$/.exec(id || '')?.[1];
+  const rest = /^space-(?:moon|mars|mercury|venus)-(.+)$/.exec(id || '')?.[1];
   // Identifiant d'une autre forme : pas de fournisseur.
   if (!rest) return null;
   // Parmi les fournisseurs dont le nom commence le reste, garde le plus long ; null s'il n'y en a pas.

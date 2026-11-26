@@ -5,7 +5,7 @@ import { Group } from '../../../ui/Group.jsx';
 import { Switch } from '../../../ui/Switch.jsx';
 
 /** Astres, hors la Terre, dont le relief en volume vient de tuiles d'altitude (voir tiledBodies) : l'interrupteur « Relief 3D » leur est proposé. */
-const RELIEF_BODIES = ['moon', 'mars', 'mercury'];
+const RELIEF_BODIES = ['moon', 'mars', 'mercury', 'venus'];
 
 /** Réglages attachés à l'astre actuellement décrit dans le panneau Informations. */
 export function PlanetSettings({
@@ -46,7 +46,7 @@ export function PlanetSettings({
       )}
 
       {/* Relief en volume des astres dont le serveur sert les altitudes (Lune : LOLA ; Mars : MOLA + HRSC ; Mercure :
-          MESSENGER). C'est le même réglage que le « Relief 3D » de la Terre : un seul interrupteur pour tous les astres. */}
+          MESSENGER ; Vénus : GTDR Magellan). C'est le même réglage que le « Relief 3D » de la Terre : un seul interrupteur pour tous les astres. */}
       {RELIEF_BODIES.includes(bodyId) && (
         <Group title="Cartographie en relief">
           <Switch checked={Boolean(relief)} onChange={onRelief} label="Relief 3D" hint="Cratères, volcans et bassins en volume, d’après les altitudes mesurées ; décoché : carte à plat, plus rapide" />

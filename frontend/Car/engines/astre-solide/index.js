@@ -9,6 +9,8 @@ export { ENTER_KM, EXIT_KM, RETURN_KM, REARM_KM, EARTH_RADIUS_KM, altitudeKm, sc
 export { CESIUM_IMAGERY, FRANCE_BBOX, imageryCredits } from './astre-solide.sources.js';
 // Le fond de carte de l'app lu par CesiumJS (autres astres).
 export { imageryOptions, tileSourceImageryProvider } from './astre-solide.imagery.js';
+// Le relief en volume du globe CesiumJS (Terre : AWS Terrain Tiles ; Lune, Mars, Mercure, Vénus : tuiles Terrarium du serveur).
+export { createTerrainProvider, createBodyTerrainProvider, bodyTilePlan, terrariumAt, tilePlan } from './astre-solide.terrain.js';
 // Le nom du lieu sous la caméra (ville, région, pays selon l'altitude).
 export { placeText, nearestCity, distanceKm } from './astre-solide.place.js';
 // Les données du globe lues comme dans la fiche d'information (rayon, type, air, couleur).

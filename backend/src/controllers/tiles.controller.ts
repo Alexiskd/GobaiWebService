@@ -743,7 +743,7 @@ export class TilesController {
 
   // Route GET /api/v1/tiles/relief/status.
   @Get('relief/status')
-  @ApiOperation({ summary: 'Relief de Mars et de Mercure : état', description: 'Pour chaque astre : jeu de données, rayon de référence, niveau le plus fin, nombre de tuiles déjà gardées dans la base PostgreSQL et gabarit d’adresse des tuiles.' })
+  @ApiOperation({ summary: 'Relief de Mars, de Mercure et de Vénus : état', description: 'Pour chaque astre : jeu de données, rayon de référence, niveau le plus fin, nombre de tuiles déjà gardées dans la base PostgreSQL et gabarit d’adresse des tuiles.' })
   @ApiOkResponse({ description: '{ database, bodies: [{ id, label, dataset, radiusKm, maxZoom, stored, template }] }' })
   // Méthode bodyReliefStatus : écrit l'état en JSON, jamais gardé en cache.
   bodyReliefStatus(@Res() res: TileResponse): void {
@@ -756,8 +756,8 @@ export class TilesController {
   @Get('relief/:body/:z/:x/:y')
   @SkipThrottle()
   @ApiOperation({
-    summary: 'Relief de Mars ou de Mercure (Terrarium)',
-    description: 'body = mars (MOLA + HRSC 200 m, niveaux 0 à 8) ou mercury (DEM MESSENGER / USGS 665 m, niveaux 0 à 6), lus sur NASA Trek et réencodés '
+    summary: 'Relief de Mars, de Mercure ou de Vénus (Terrarium)',
+    description: 'body = mars (MOLA + HRSC 200 m, niveaux 0 à 8), mercury (DEM MESSENGER / USGS 665 m, niveaux 0 à 6) ou venus (GTDR Magellan 4 641 m, niveaux 0 à 5), lus sur NASA Trek et réencodés '
       + 'en Terrarium PNG de 256 px : altitude (m) = R × 256 + G + B / 256 − 32768, par rapport à la sphère de référence de l’astre. '
       + 'Découpage géographique 2^(z+1) × 2^z, celui des images de l’astre.',
   })

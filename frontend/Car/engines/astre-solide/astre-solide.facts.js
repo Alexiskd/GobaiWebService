@@ -10,8 +10,10 @@
 export const EARTH_RADIUS_KM = 6371;
 // Rayon moyen de la Lune (km) : la fiche de la Lune affiche un diamètre moyen de 3 474,8 km.
 export const MOON_RADIUS_KM = 1737.4;
-// Astres solides laissés à three.js : Vénus, sans fond de carte, couverte de nuages opaques dessinés par three.js.
-export const THREE_ONLY_SOLIDS = Object.freeze(new Set(['venus']));
+// Astres solides laissés à three.js : aucun pour l'instant — toutes les planètes solides (Mercure, Vénus, Terre,
+// Mars), la Lune et les satellites à carte sont dessinés par le globe CesiumJS. Vénus a désormais un fond de carte
+// (Venus Trek / USGS, voir satellite-sources.ts) et un relief (GTDR Magellan) : plus besoin de trois.js pour elle.
+export const THREE_ONLY_SOLIDS = Object.freeze(new Set([]));
 
 // finite : vrai si la valeur est un nombre fini et positif.
 const positive = (v) => Number.isFinite(v) && v > 0;

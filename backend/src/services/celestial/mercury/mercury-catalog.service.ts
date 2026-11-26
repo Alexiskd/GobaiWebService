@@ -39,6 +39,10 @@ const OPM_ATTRIBUTION =
 const QUICKMAP_ATTRIBUTION =
   // son texte.
   'MESSENGER MDIS / DEM USGS Astrogeology — fond Mercury Basemap (ArcGIS)';
+// Mention de BepiColombo (ESA/JAXA) :
+const BEPICOLOMBO_ATTRIBUTION =
+  // son texte.
+  'ESA/JAXA BepiColombo (MPO) — SYMBIO-SYS · NASA Mercury Trek';
 
 // Projection de Mercure.
 const MERCURY_CRS = 'IAU2000:19900';
@@ -813,7 +817,53 @@ function buildProviders(config: MercuryConfig): ProviderDefinition[] {
   // Fin de la couche.
   };
 
-  // Renvoie les six fournisseurs :
+  // Couche WMTS de BepiColombo (ESA/JAXA, en orbite autour de Mercure depuis le 21 novembre 2026) :
+  const bepicolomboLayer: CuratedLayer = {
+    // son identifiant, « symbios-global-mosaic » ;
+    id: 'symbios-global-mosaic',
+    // son titre ;
+    title: 'BepiColombo SYMBIO-SYS — mosaïque globale (Mercury Trek)',
+    // sa description :
+    description:
+      // son texte ;
+      'Mosaïque globale BepiColombo (MPO, ESA/JAXA) servie en WMTS par NASA Mercury Trek, grille équirectangulaire comme MESSENGER. '
+      + 'L\u2019adresse du produit est remplaçable par MERCURY_BEPICOLOMBO_WMTS_BASE_URL (phase scientifique à partir d\u2019avril 2027).',
+    // son nom chez la source :
+    upstreamLayer: 'Mercury_BepiColombo_SYMBIOS_Global_Mosaic_1km',
+    // sa nature, WMTS ;
+    kind: 'wmts',
+    // son découpage, plate carrée ;
+    scheme: 'equirectangular',
+    // sa projection, celle de Mercure ;
+    crs: MERCURY_CRS,
+    // son niveau minimal, 0 ;
+    minZoom: 0,
+    // son niveau maximal, pris dans la configuration ;
+    maxZoom: config.bepicolomboMaxZoom,
+    // des tuiles de 256 pixels ;
+    tileSize: 256,
+    // le format JPEG ;
+    format: 'image/jpeg',
+    // sa mention ;
+    attribution: BEPICOLOMBO_ATTRIBUTION,
+    // sa licence ;
+    license: 'Données ESA/JAXA ouvertes — citation souhaitée',
+    // ses réglages WMTS :
+    wmts: {
+      // l'adresse de base, prise dans la configuration ;
+      baseUrl: config.bepicolomboWmtsBaseUrl,
+      // le style ;
+      style: 'default',
+      // le jeu de tuiles ;
+      matrixSet: 'default028mm',
+      // l'extension jpg.
+      extension: 'jpg',
+    // Fin des réglages.
+    },
+  // Fin de la couche.
+  };
+
+  // Renvoie les sept fournisseurs :
   return [
     // un fournisseur :
     {
@@ -1023,6 +1073,42 @@ function buildProviders(config: MercuryConfig): ProviderDefinition[] {
       ],
       // sa couche.
       layers: [opmLayer],
+    // fin du fournisseur.
+    },
+    // un fournisseur :
+    {
+      // son identifiant, « bepicolombo » ;
+      id: 'bepicolombo',
+      // son nom ;
+      name: 'ESA/JAXA BepiColombo — Mercure',
+      // sa nature, WMTS ;
+      kind: 'wmts',
+      // sa description :
+      description:
+        // son texte ;
+        'Produits BepiColombo (MPO, ESA/JAXA — en orbite depuis le 21 novembre 2026) publiés par NASA Mercury Trek en WMTS, grille équirectangulaire.',
+      // l'adresse de sa documentation ;
+      docsUrl: 'https://www.cosmos.esa.int/web/bepicolombo',
+      // sa mention ;
+      attribution: BEPICOLOMBO_ATTRIBUTION,
+      // sa licence ;
+      license: 'Données ESA/JAXA ouvertes — citation souhaitée',
+      // sans jeton ;
+      requiresToken: false,
+      // l'adresse de ses capacités ;
+      capabilitiesUrl: `${config.bepicolomboWmtsBaseUrl}/WMTSCapabilities.xml`,
+      // ses remarques :
+      notes: [
+        // la grille : 2 colonnes × 1 ligne au niveau 0 ;
+        'Grille équirectangulaire 2:1 : 2 colonnes × 1 ligne au niveau 0, comme les produits MESSENGER.',
+        // l'adresse du produit est remplaçable ;
+        'Adresse du produit remplaçable par MERCURY_BEPICOLOMBO_WMTS_BASE_URL ; tant que le produit n\u2019est pas publié, ses tuiles répondent une erreur.',
+        // MESSENGER reste la référence tant que BepiColombo n\u2019a pas livré de mosaïque globale.
+        'MESSENGER (mercury-trek-wmts, usgs-astro-mercury) reste le fond par défaut tant que BepiColombo n\u2019a pas de mosaïque globale publiée.',
+      // fin des remarques ;
+      ],
+      // sa couche.
+      layers: [bepicolomboLayer],
     // fin du fournisseur.
     },
   // Fin de la liste.

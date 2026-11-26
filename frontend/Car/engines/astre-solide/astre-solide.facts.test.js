@@ -38,8 +38,13 @@ test('Mars : rayon de la fiche, avec atmosphère, couleur de l’interface', () 
 // Une géante : pas de globe.
 test('Jupiter : géante, non solide', () => assert.equal(solidBodyFacts('jupiter', ctx).solid, false));
 
-// Vénus : laissée à three.js.
-test('Vénus : laissée à three.js', () => assert.equal(solidBodyFacts('venus', ctx).solid, false));
+// Vénus : planète tellurique solide, globe CesiumJS comme les autres (fond Venus Trek / USGS, relief GTDR Magellan).
+test('Vénus : solide, globe CesiumJS', () => {
+  // Données.
+  const f = solidBodyFacts('venus', ctx);
+  // Vérifications.
+  assert.equal(f.solid, true); assert.equal(f.airless, false); assert.equal(f.radiusKm, 0.95 * EARTH_RADIUS_KM);
+});
 
 // Un satellite sans carte : solide, rayon de la liste, couleur de l'interface.
 test('Ariel : rayon de la liste des satellites', () => {
