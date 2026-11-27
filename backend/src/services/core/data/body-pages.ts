@@ -3,6 +3,30 @@ import { normalize } from '../../../common/text';
 // Chiffres des astres, fabrication des questions-réponses, et tournure « de »/« du »/« d’ » devant un nom.
 import { BODY_FACTS, bodyQuestions, ofLabel } from './body-facts';
 
+// Index généré à partir des 5 000 expressions du fichier SEO source (copié dans dist par Nest).
+type SeoKeywordRecord = { keyword: string; category: string };
+type SeoKeywordCoverage = { pages: Record<string, { fr: SeoKeywordRecord[]; en: SeoKeywordRecord[] }> };
+const SEO_KEYWORD_COVERAGE = require('../../content/seo/data/keyword-coverage.json') as SeoKeywordCoverage;
+
+/** Expressions les plus utiles à afficher dans le contenu éditorial d'une page, sans bourrage de mots-clés. */
+export function seoKeywordsForPage(slug: string, language: 'fr' | 'en' = 'fr', limit = 12): string[] {
+  const route = slug === '' || slug === '/' ? '/' : `/${slug.replace(/^\/+|\/+$/g, '').toLowerCase()}`;
+  const records = SEO_KEYWORD_COVERAGE.pages[route]?.[language] ?? [];
+  const priority: Record<string, number> = {
+    page_specific: 0, systeme_solaire: 0, solar_system: 0, terre_cartographie: 0, earth_mapping: 0,
+    galerie: 0, gallery: 0, long_tail_planetary: 1, planetary_features: 2, orbites: 2, orbits: 2,
+    astronomie: 2, astronomy: 2, lidar_topographie: 2, lidar_topography: 2,
+    donnees_sources: 2, data_sources: 2, moteur_3d: 3, '3d_engine': 3,
+    semantic_variants: 4, semantic_combinations: 5,
+  };
+  return [...records]
+    .filter((record) => record.keyword && !/[{}]/.test(record.keyword))
+    .sort((a, b) => (priority[a.category] ?? 9) - (priority[b.category] ?? 9))
+    .map((record) => record.keyword.replace(/\bde le\b/gi, 'du').replace(/\bà le\b/gi, 'au'))
+    .filter((keyword, index, all) => all.indexOf(keyword) === index)
+    .slice(0, Math.max(0, limit));
+}
+
 /**
  * Pages de référencement : une adresse par astre (https://www.gobaispace.com/mars, /titan…).
  * Le serveur renvoie l'application avec un titre, une description et une adresse canonique propres à l'astre ;
@@ -215,6 +239,11 @@ export function renderBodyMarkdown(body: BodyPage): string {
     lines.push('Sources des chiffres : NASA NSSDCA (Planetary Fact Sheets) et JPL Solar System Dynamics.');
   // Fin du cas.
   }
+  // Expressions associées à la page, sélectionnées dans le catalogue complet de 5 000 entrées.
+  const relatedKeywords = seoKeywordsForPage(body.slug, 'fr', 12);
+  if (relatedKeywords.length) {
+    lines.push('', '## Sujets et recherches associés', '', `Cette page couvre également les sujets suivants : ${relatedKeywords.join(' ; ')}.`);
+  }
   // Pour un astre (pas une fenêtre) :
   if (body.kind !== 'fenêtre') {
     // une section qui dit ce que l'application en montre, avec l'adresse.
@@ -249,6 +278,48 @@ const escapeHtml = (s: string): string =>
   // en remplaçant les quatre caractères spéciaux (&, <, >, ") par leur code.
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// Limites éditoriales demandées pour les extraits de résultats (sans couper au milieu d'un mot).
+const fitMeta = (value: string, limit: number): string => {
+  const clean = value.replace(/\s+/g, ' ').trim();
+  if (clean.length <= limit) return clean;
+  const cut = clean.slice(0, limit - 1).replace(/\s+\S*$/, '').trim();
+  return `${cut}…`;
+};
+
+// Identifiants Wikidata connus ; aucun identifiant n'est inventé pour les autres objets du catalogue.
+const WIKIDATA: Record<string, string> = {
+  soleil: 'Q525', mercure: 'Q308', venus: 'Q313', terre: 'Q2', lune: 'Q405', mars: 'Q111',
+  jupiter: 'Q319', saturne: 'Q193', uranus: 'Q324', neptune: 'Q332', pluton: 'Q339',
+};
+
+function relatedBodyPages(body: BodyPage): BodyPage[] {
+  if (body.kind === 'fenêtre') return [];
+  const parentLabel = PARENT_OF.get(body.slug);
+  if (parentLabel) {
+    const parentName = parentLabel.replace(/^(la|le)\s+/i, '');
+    const parent = BODY_PAGES.find((p) => normalize(p.name) === normalize(parentName));
+    return parent ? [parent] : [];
+  }
+  return BODY_PAGES.filter((p) => PARENT_OF.get(p.slug) === body.label || PARENT_OF.get(p.slug) === body.name);
+}
+
+/**
+ * Accueil pré-rendu : conserve le modèle Vite, mais expose une courte sélection de thèmes réellement couverts.
+ */
+export function renderHomePage(template: string): string {
+  const relatedKeywords = seoKeywordsForPage('/', 'fr', 16);
+  const keywords = ['système solaire 3D', ...relatedKeywords].filter((value, index, all) => all.indexOf(value) === index);
+  let html = template.replace(
+    /(<meta\s+name="keywords"\s+content=")[^"]*(")/,
+    (_match, before: string, after: string) => `${before}${escapeHtml(keywords.join(', '))}${after}`,
+  );
+  const section = relatedKeywords.length
+    ? `<section class="seo-related-topics" aria-labelledby="home-related-topics-title"><h2 id="home-related-topics-title">Explorer les thèmes du système solaire</h2><p>Gobai Space aborde aussi : ${relatedKeywords.map(escapeHtml).join(' · ')}.</p></section>`
+    : '';
+  html = html.replace('</main>', `${section}\n      </main>`);
+  return html;
+}
+
 /**
  * index.html du site, avec le titre, la description, l'adresse canonique, les chiffres et la FAQ propres à la page.
  * tags : balisage SEO (titre, description…) lu dans la table seo_tags (voir seo-tags.service.ts) ; absent ou
@@ -263,10 +334,14 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
   // Nom du site dans le titre : sans le mot-clé pour une fenêtre, avec pour un astre.
   const site = body.kind === 'fenêtre' ? `${APP_NAME} (Gobai Space)` : `${SITE_KEYWORD} ${APP_NAME} (Gobai Space)`;
   // Titre et description bruts (avant mise en forme HTML) : ceux de la table seo_tags s'ils sont renseignés, sinon ceux écrits dans le code.
-  const titleText = tags?.get('title') || `${body.heading} · ${site}`;
-  const descriptionText = tags?.get('description') || body.description;
+  const defaultTitle = body.kind === 'fenêtre'
+    ? `${body.name} | Gobai Space`
+    : `${body.name} en 3D | Système solaire 3D · Gobai Space`;
+  const titleText = fitMeta(tags?.get('title') || defaultTitle, 60);
+  const descriptionText = fitMeta(tags?.get('description') || body.description, 155);
   // Mot-clé de référencement (balise meta "keywords") : celui de la table seo_tags, sinon celui calculé pour l'astre.
-  const keywordsText = tags?.get('keywords') || focusKeyword(body);
+  const relatedKeywords = seoKeywordsForPage(body.slug, 'fr', 12);
+  const keywordsText = tags?.get('keywords') || [focusKeyword(body), ...relatedKeywords].join(', ');
   // Titre complet, rendu inoffensif.
   const title = escapeHtml(titleText);
   // Description, rendue inoffensive.
@@ -276,7 +351,7 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
   // Fonction meta : remplace le contenu d'une balise meta désignée par son nom,
   const meta = (html: string, key: string, value: string): string =>
     // en gardant le début et la fin de la balise et en changeant seulement la valeur.
-    html.replace(new RegExp(`(<meta\\s+(?:name|property)="${key}"\\s+content=")[^"]*(")`), (_m, a: string, b: string) => a + value + b);
+    html.replace(new RegExp(`(<meta\s+(?:name|property)="${key}"\s+content=")[^"]*(")`), (_m, a: string, b: string) => a + value + b);
 
   // Remplace la balise title du modèle.
   let html = template.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${title}</title>`);
@@ -295,10 +370,12 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
   html = meta(html, 'og:title', title);
   // Remplace la description pour les réseaux sociaux.
   html = meta(html, 'og:description', description);
+  html = meta(html, 'og:image:alt', escapeHtml(`Aperçu 3D de ${body.label} dans Go白ناन्टех`));
   // Remplace le titre pour X (Twitter).
   html = meta(html, 'twitter:title', title);
   // Remplace la description pour X (Twitter).
   html = meta(html, 'twitter:description', description);
+  html = meta(html, 'twitter:image:alt', escapeHtml(`Aperçu 3D de ${body.label} dans Go白ناन्टех`));
   // Texte de départ lu par les moteurs de recherche : le titre et la première phrase deviennent ceux de l'astre,
   // suivis de ses chiffres.
   // HTML des chiffres : s'il y en a,
@@ -312,7 +389,16 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
     // repère le titre principal et le premier paragraphe,
     /(<main class="seo-shell">\s*<h1>)[\s\S]*?(<\/h1>\s*<p>)[\s\S]*?(<\/p>)/,
     // et les remplace par le titre de la page, sa description, puis ses chiffres.
-    (_m, a: string, b: string, c: string) => `${a}${escapeHtml(body.heading)}${b}${description}${c}${factsHtml}`,
+    (_m, a: string, b: string, c: string) => {
+      const related = relatedBodyPages(body);
+      const relatedHtml = related.length
+        ? `\n        <h2>${body.kind === 'satellite' ? 'Planète associée' : 'Satellites naturels'}</h2>\n        <ul>${related.map((item) => `<li><a href="/${escapeHtml(item.slug)}">${escapeHtml(item.name)} en 3D</a></li>`).join('')}</ul>`
+        : '';
+      const keywordHtml = relatedKeywords.length
+        ? `\n        <section class="seo-related-topics" aria-labelledby="seo-related-topics-title">\n          <h2 id="seo-related-topics-title">Sujets et recherches associés</h2>\n          <p>Cette page couvre également : ${relatedKeywords.map(escapeHtml).join(' · ')}.</p>\n        </section>`
+        : '';
+      return `${a}${escapeHtml(body.heading)}${b}${description}${c}${factsHtml}${relatedHtml}${keywordHtml}`;
+    },
   // Fin du remplacement.
   );
   // FAQ : celle de l'accueil ne vaut que pour l'accueil. Ici, les questions de l'astre la remplacent (ou rien).
@@ -375,6 +461,7 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
       name: titleText,
       // sa description,
       description: descriptionText,
+      keywords: relatedKeywords,
       // sa langue,
       inLanguage: 'fr',
       // le site dont elle fait partie,
@@ -393,6 +480,7 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
           name: body.name,
           // sa description,
           description: descriptionText,
+          ...(WIKIDATA[body.slug] ? { sameAs: `https://www.wikidata.org/wiki/Q${WIKIDATA[body.slug].replace(/^Q/, '')}` } : {}),
           // et ses chiffres, chacun sous forme de propriété nommée.
           additionalProperty: facts.map((f) => ({ '@type': 'PropertyValue', name: f.label, value: f.value })),
         // Fin du sujet.

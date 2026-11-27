@@ -289,3 +289,23 @@ The sale of exports (store, JWT access keys, paid `/export` routes, paid API doc
 - **The €4 999 bundle no longer covers orbits.** It would have undercut the hourly rate by a factor of several hundred. `scopeAllows` makes the exception explicit: the universal scope opens every model and every tile, and nothing of `orbit:*`.
 
 Everything else is unchanged: browsing the site is free, and the orbit computation behind the paid route is the same local model the scene uses.
+
+
+## Couverture SEO bilingue (5 000 expressions)
+
+Le fichier source `seo/gobai-seo-keywords-fr-en.json` contient 5 000 expressions (2 578 FR et 2 422 EN). Le générateur `scripts/build-seo-keyword-index.mjs` les affecte à une page existante selon `target_page`, la catégorie et le sujet, puis produit :
+
+- `backend/src/services/content/seo/data/keyword-coverage.json` : index utilisé par le rendu SEO du backend ;
+- `seo/keyword-coverage.json` : copie complète destinée à l'audit ;
+- `seo/keyword-coverage-report.md` : répartition des expressions par page et par langue.
+
+Le rendu HTML sélectionne un petit ensemble d'expressions pertinentes pour le contenu visible de chaque page. Il ne publie pas les 5 000 termes en bloc dans `meta keywords` : le JSON source précise que ce serait une mauvaise pratique. Les expressions anglaises restent classées séparément afin de pouvoir les employer sur de véritables pages anglaises, sans mélanger artificiellement les langues dans les pages françaises.
+
+Commandes :
+
+```bash
+npm run seo:keywords
+npm run build
+```
+
+Le build exécute automatiquement le générateur avant la compilation NestJS et Vite.

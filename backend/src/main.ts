@@ -31,7 +31,7 @@ import { canonicalRedirect, canonicalRedirectEnabled } from './common/canonical-
 // Branche la documentation Swagger sur /api/docs.
 import { setupOpenApi } from './modules/openapi';
 // Pages des astres pour le référencement : recherche d'une page d'après l'adresse, et rendus HTML, Markdown et llms-full.txt.
-import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderLlmsFull } from './services/core/data/body-pages';
+import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderHomePage, renderLlmsFull } from './services/core/data/body-pages';
 // Service du balisage SEO (table seo_tags) : titre et description de chaque page, lus en base s'ils y sont rangés.
 import { SeoTagsService } from './services/content/seo/seo-tags.service';
 
@@ -54,6 +54,8 @@ function serveFrontend(app: NestExpressApplication, seoTags: SeoTagsService): st
   // Le site compilé ne change pas pendant la vie du processus : modèle lu une fois, une page rendue par astre.
   // Lit index.html une seule fois en texte UTF-8 : il sert de modèle pour les pages des astres.
   const template = readFileSync(index, 'utf8');
+  // Accueil pré-rendu avec les thèmes français pertinents issus du catalogue SEO.
+  const homeHtml = renderHomePage(template);
   // Cache en mémoire des pages d'astres déjà rendues : identifiant de la page (slug) → HTML complet.
   const bodyPages = new Map<string, string>();
 
@@ -75,6 +77,21 @@ function serveFrontend(app: NestExpressApplication, seoTags: SeoTagsService): st
     // Envoie la réponse : type text/markdown et page de l'astre en Markdown, ou type text/plain et texte complet du site.
     res.type(page ? 'text/markdown' : 'text/plain').send(page ? renderBodyMarkdown(page) : llmsFull);
   // Fin du middleware des versions texte.
+  });
+
+  // Les pages pré-générées sont servies AVANT express.static : sinon un dossier /jupiter peut déclencher
+  // une redirection automatique vers /jupiter/ et créer une deuxième forme d'URL.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (req.path === '/api' || req.path.startsWith('/api/')) return next();
+    const body = bodyPageFor(req.path);
+    if (!body) return next();
+    res.setHeader('Cache-Control', 'no-cache');
+    const prerendered = join(dir, body.slug, 'index.html');
+    if (existsSync(prerendered)) return res.type('html').sendFile(prerendered);
+    let html = bodyPages.get(body.slug);
+    if (!html) bodyPages.set(body.slug, (html = renderBodyPage(template, body, seoTags.getPageTags(body.slug))));
+    return res.type('html').send(html);
   });
 
   // Sert les fichiers du site compilé (scripts, styles, images) directement depuis le dossier.
@@ -100,22 +117,8 @@ function serveFrontend(app: NestExpressApplication, seoTags: SeoTagsService): st
     if ((req.method !== 'GET' && req.method !== 'HEAD') || isApi || extname(req.path)) return next();
     // no-cache : le navigateur doit revalider la page à chaque visite, pour voir tout de suite un nouveau déploiement.
     res.setHeader('Cache-Control', 'no-cache');
-    // Cherche si l'adresse est la page d'un astre (/mars, /titan…) ; undefined sinon.
-    const body = bodyPageFor(req.path);
-    // Si c'est une page d'astre :
-    if (body) {
-      // reprend la page déjà rendue dans le cache, si elle existe ;
-      let html = bodyPages.get(body.slug);
-      // sinon la fabrique à partir du modèle (titre, description, chiffres de l'astre, et balisage de la table seo_tags s'il y en a), la range dans le cache et la garde dans html ;
-      if (!html) bodyPages.set(body.slug, (html = renderBodyPage(template, body, seoTags.getPageTags(body.slug))));
-      // envoie le HTML avec le type text/html ;
-      res.type('html').send(html);
-      // et termine ici : la requête est traitée.
-      return;
-    // Fin du cas « page d'astre ».
-    }
     // Toute autre adresse : envoie index.html tel quel, l'application React fait le reste dans le navigateur.
-    res.sendFile(index);
+    res.type('html').send(homeHtml);
   // Fin du dernier middleware.
   });
   // Renvoie le dossier du site, pour l'afficher dans le journal au démarrage.
@@ -177,6 +180,17 @@ async function bootstrap() {
   });
   // Service du balisage SEO (table seo_tags) : déjà chargé en mémoire, puisque NestFactory.create a attendu onModuleInit.
   const seoTags = app.get(SeoTagsService);
+
+  // Fichier de validation IndexNow : INDEXNOW_KEY est configurée dans Render, jamais commitée.
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const key = process.env.INDEXNOW_KEY?.trim();
+    if (key && req.method === 'GET' && req.path === `/${key}.txt`) {
+      res.type('text/plain').setHeader('Cache-Control', 'public, max-age=3600');
+      return res.send(key);
+    }
+    return next();
+  });
+
   // Branche le site compilé ; site vaut le dossier servi, ou null s'il est absent.
   const site = serveFrontend(app, seoTags);
   // Applique les réglages communs : préfixe /api, version v1, CORS (frontend seulement), filtre d'erreurs, validation.

@@ -41,6 +41,17 @@ describe('canonicalRedirect', () => {
   // Fin du test.
   });
 
+  // Ancienne forme et barres doubles.
+  it('remplace /planet?id= par la page de l’astre et fusionne les barres doubles', () => {
+    // Ancienne adresse d'une planète.
+    expect(canonicalRedirect(get('/planet?id=Jupiter'))).toBe('https://www.gobaispace.com/jupiter');
+    // Barres doubles.
+    expect(canonicalRedirect(get('//mars'))).toBe('https://www.gobaispace.com/mars');
+    // La casse d'un fichier de Vite n'est jamais changée.
+    expect(canonicalRedirect(get('/assets/index-AbC12.js'))).toBeNull();
+  // Fin du test.
+  });
+
   // Barre finale ailleurs.
   it('retire la barre finale des autres chemins sans extension', () => {
     // Chemin de deux segments.

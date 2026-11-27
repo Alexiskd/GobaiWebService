@@ -3,7 +3,7 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 // Pool : un groupe de connexions à PostgreSQL.
 import { Pool } from 'pg';
 // Pages des astres et des fenêtres, et nom du site : source du balisage à ranger en base au premier démarrage.
-import { APP_NAME, BODY_PAGES, SITE_KEYWORD, SITE_URL, WINDOW_PAGES, focusKeyword, type BodyPage } from '../../core/data/body-pages';
+import { APP_NAME, BODY_PAGES, SITE_KEYWORD, SITE_URL, WINDOW_PAGES, focusKeyword, seoKeywordsForPage, type BodyPage } from '../../core/data/body-pages';
 
 /**
  * Balisage SEO des pages (titre, description, adresse canonique, balises Open Graph et X/Twitter), en base
@@ -57,7 +57,7 @@ function tagsFor(body: BodyPage): Omit<SeoTagRow, 'position'>[] {
   const title = `${body.heading} · ${site}`;
   const description = body.description;
   // Mot-clé de référencement : la planète mère pour un satellite, la position réelle pour les autres astres.
-  const keywords = focusKeyword(body);
+  const keywords = [focusKeyword(body), ...seoKeywordsForPage(body.slug, 'fr', 12)].join(', ');
   // Les neuf lignes : titre, description, mot-clé, adresse canonique, puis les quatre balises des réseaux sociaux.
   return [
     { page_slug: body.slug, tag_type: 'title', tag_name: 'title', tag_content: title },

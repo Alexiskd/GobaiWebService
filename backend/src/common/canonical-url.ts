@@ -51,18 +51,25 @@ export function canonicalRedirect(req: CanonicalRequest): string | null {
 
   // Hôte demandé, en minuscules et sans le port (« WWW.GobaiSpace.com:443 » devient « www.gobaispace.com »).
   const host = (req.host ?? '').toLowerCase().replace(/:\d+$/, '');
-  // Chemin de destination : au départ, le même chemin.
-  let target = path;
+  // Chemin de destination : au départ, le même chemin, barres doubles fusionnées (//mars devient /mars).
+  let target = path.replace(/\/{2,}/g, '/');
+  // Paramètres de destination : au départ, ceux de la requête.
+  let search = query;
+  // Ancienne forme /planet?id=jupiter : remplacée par la page /jupiter, sans paramètres.
+  const legacyId = /^\/planet\/?$/i.test(target) ? new URLSearchParams(query).get('id') : null;
+  // Identifiant présent : on vise la page /<id> (reconnue ou non plus bas), paramètres retirés.
+  if (legacyId) { target = `/${encodeURIComponent(legacyId)}`; search = ''; }
   // Page d'un astre ou d'une fenêtre reconnue (/mars, /Mars/, /ganymède…) ; undefined sinon.
-  const page = bodyPageFor(path);
+  const page = bodyPageFor(target);
   // Page reconnue : sa seule adresse est /<slug>, celle du sitemap.
   if (page) target = `/${page.slug}`;
   // Autre chemin sans extension terminé par « / » (sauf la racine) : barre finale retirée.
-  else if (path.length > 1 && path.endsWith('/') && !/\.[a-z0-9]+\/$/i.test(path)) target = path.replace(/\/+$/, '') || '/';
+  else if (target.length > 1 && target.endsWith('/') && !/\.[a-z0-9]+\/$/i.test(target)) target = target.replace(/\/+$/, '') || '/';
+  // La casse des autres chemins n'est jamais changée : les fichiers de Vite (/assets/index-AbC12.js) en dépendent.
 
-  // Déjà sur l'hôte officiel et sur le bon chemin : aucune redirection.
-  if (host === CANONICAL_HOST && target === path) return null;
-  // Sinon : adresse officielle, chemin corrigé, paramètres d'origine.
-  return `${SITE_URL}${target}${query}`;
+  // Déjà sur l'hôte officiel, sur le bon chemin et avec les mêmes paramètres : aucune redirection.
+  if (host === CANONICAL_HOST && target === path && search === query) return null;
+  // Sinon : adresse officielle, chemin corrigé, paramètres gardés (sauf ancienne forme /planet?id=).
+  return `${SITE_URL}${target}${search}`;
 // Fin de canonicalRedirect.
 }

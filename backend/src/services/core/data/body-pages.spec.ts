@@ -1,7 +1,7 @@
 // Chiffres et fonctions de mise en forme testés.
 import { BODY_FACTS, bodyQuestions, duration, fr, ofLabel } from './body-facts';
 // Pages et fonctions de rendu testées.
-import { BODY_PAGES, WINDOW_PAGES, bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderLlmsFull } from './body-pages';
+import { BODY_PAGES, WINDOW_PAGES, bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderHomePage, renderLlmsFull, seoKeywordsForPage } from './body-pages';
 // readFileSync : lit un fichier en entier.
 import { readFileSync } from 'fs';
 // join : assemble des morceaux de chemin.
@@ -104,6 +104,9 @@ describe('pages des astres (référencement et assistants IA)', () => {
     expect(html).toContain('<h2>Mars en chiffres</h2>');
     // Et le diamètre dans la liste.
     expect(html).toContain('<li>Diamètre moyen : 6 779 km</li>');
+    // Elle expose une sélection de sujets réellement associés à Mars dans le catalogue des 5 000 expressions.
+    expect(html).toContain('Sujets et recherches associés');
+    expect(html).toContain('Mars en 3D');
     // Elle a la FAQ de Mars.
     expect(html).toContain('<h2>Questions fréquentes sur Mars</h2>');
     // Elle n'a plus la FAQ de l'accueil.
@@ -139,6 +142,18 @@ describe('pages des astres (référencement et assistants IA)', () => {
     // Le modèle d'origine garde sa FAQ générale.
     expect(graphs(template)[0]['@graph'].map((n) => n['@type'])).toContain('FAQPage');
   // Fin du test.
+  });
+
+  // Test de couverture du catalogue bilingue.
+  it('répartit les 5 000 expressions sur des pages et sélectionne des termes par langue', () => {
+    const frMars = seoKeywordsForPage('mars', 'fr');
+    const enMars = seoKeywordsForPage('mars', 'en');
+    expect(frMars.length).toBeGreaterThan(0);
+    expect(enMars.length).toBeGreaterThan(0);
+    expect(frMars.length).toBeLessThanOrEqual(12);
+    expect(enMars.length).toBeLessThanOrEqual(12);
+    expect(frMars).toContain('Mars en 3D');
+    expect(renderHomePage(template)).toContain('Explorer les thèmes du système solaire');
   });
 
   // Huitième test : le Markdown.
