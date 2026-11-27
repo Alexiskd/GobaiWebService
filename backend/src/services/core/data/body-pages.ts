@@ -304,19 +304,16 @@ function relatedBodyPages(body: BodyPage): BodyPage[] {
 }
 
 /**
- * Accueil pré-rendu : conserve le modèle Vite, mais expose une courte sélection de thèmes réellement couverts.
+ * Accueil pré-rendu : conserve le modèle Vite, avec les thèmes du catalogue SEO dans la seule balise meta keywords.
  */
 export function renderHomePage(template: string): string {
   const relatedKeywords = seoKeywordsForPage('/', 'fr', 16);
   const keywords = ['système solaire 3D', ...relatedKeywords].filter((value, index, all) => all.indexOf(value) === index);
-  let html = template.replace(
+  const html = template.replace(
     /(<meta\s+name="keywords"\s+content=")[^"]*(")/,
     (_match, before: string, after: string) => `${before}${escapeHtml(keywords.join(', '))}${after}`,
   );
-  const section = relatedKeywords.length
-    ? `<section class="seo-related-topics" aria-labelledby="home-related-topics-title"><h2 id="home-related-topics-title">Explorer les thèmes du système solaire</h2><p>Gobai Space aborde aussi : ${relatedKeywords.map(escapeHtml).join(' · ')}.</p></section>`
-    : '';
-  html = html.replace('</main>', `${section}\n      </main>`);
+  // Pas de liste de mots-clés dans le texte : du texte caché bourré de mots-clés est sanctionné par Google.
   return html;
 }
 
@@ -394,10 +391,7 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
       const relatedHtml = related.length
         ? `\n        <h2>${body.kind === 'satellite' ? 'Planète associée' : 'Satellites naturels'}</h2>\n        <ul>${related.map((item) => `<li><a href="/${escapeHtml(item.slug)}">${escapeHtml(item.name)} en 3D</a></li>`).join('')}</ul>`
         : '';
-      const keywordHtml = relatedKeywords.length
-        ? `\n        <section class="seo-related-topics" aria-labelledby="seo-related-topics-title">\n          <h2 id="seo-related-topics-title">Sujets et recherches associés</h2>\n          <p>Cette page couvre également : ${relatedKeywords.map(escapeHtml).join(' · ')}.</p>\n        </section>`
-        : '';
-      return `${a}${escapeHtml(body.heading)}${b}${description}${c}${factsHtml}${relatedHtml}${keywordHtml}`;
+      return `${a}${escapeHtml(body.heading)}${b}${description}${c}${factsHtml}${relatedHtml}`;
     },
   // Fin du remplacement.
   );

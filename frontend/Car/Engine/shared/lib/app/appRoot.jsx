@@ -9,8 +9,8 @@
  * créée, et `failover.jsx` demande le démontage avant de quitter la page, sans avoir à importer `main.jsx`.
  *
  * La séparation qui compte : l'élément `#root` n'appartient qu'à React. Le contenu de départ lu par les
- * moteurs de recherche vit à côté, dans `#seo`, et c'est ce module qui le retire une fois l'application
- * affichée. Les deux ne partagent donc jamais de parent, et personne ne réécrit les nœuds de l'autre.
+ * moteurs de recherche vit à côté, dans `#seo`, et c'est ce module qui le rend inerte (sans le retirer)
+ * une fois l'application affichée. Les deux ne partagent donc jamais de parent, et personne ne réécrit les nœuds de l'autre.
  */
 
 // La racine React, une fois créée ; null avant.
@@ -33,20 +33,25 @@ export function setAppRoot(root) {
 export const getAppRoot = () => appRoot;
 
 /**
- * Retire le contenu de départ destiné aux moteurs de recherche.
- * Il a fait son travail dans le HTML servi : le garder dans la page ne sert plus qu'à être parcouru par le
- * traducteur et les lecteurs d'écran, qui liraient alors deux fois la même présentation.
+ * Rend le contenu de départ destiné aux moteurs de recherche inerte, sans le retirer du DOM.
+ * Google lit la page APRÈS l'exécution du JavaScript : un #seo retiré ne lui laisserait aucun texte à indexer.
+ * Il reste donc dans la page, toujours invisible à l'écran (classe seo-shell), mais aria-hidden pour que les
+ * lecteurs d'écran ne lisent pas deux fois la même présentation, translate="no" pour les traducteurs, et inert.
  */
-export function removeSeoShell(doc = globalThis.document) {
-  // Le nœud, s'il est encore là.
+export function hideSeoShell(doc = globalThis.document) {
+  // Le nœud, s'il est là.
   const shell = doc?.getElementById?.('seo');
-  // Absent : rien à faire.
-  if (!shell) return false;
-  // Retiré de son parent.
-  shell.remove();
-  // Retrait fait.
+  // Absent, ou déjà rendu inerte : rien à faire.
+  if (!shell || shell.getAttribute?.('aria-hidden') === 'true') return false;
+  // Ignoré par les lecteurs d'écran.
+  shell.setAttribute('aria-hidden', 'true');
+  // Ignoré par les traducteurs du navigateur.
+  shell.setAttribute('translate', 'no');
+  // Ni focus, ni clic possible dedans.
+  shell.setAttribute('inert', '');
+  // Fait.
   return true;
-// Fin de removeSeoShell.
+// Fin de hideSeoShell.
 }
 
 /**

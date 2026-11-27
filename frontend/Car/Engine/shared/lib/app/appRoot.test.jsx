@@ -3,7 +3,7 @@ import { test } from 'node:test';
 // Importe assert en mode strict.
 import assert from 'node:assert/strict';
 // Importe la garde de la racine React.
-import { getAppRoot, removeSeoShell, setAppRoot, unmountApp } from './appRoot.jsx';
+import { getAppRoot, hideSeoShell, setAppRoot, unmountApp } from './appRoot.jsx';
 
 /** Fausse racine React : elle compte ses démontages. */
 const fakeRoot = (onUnmount) => { let n = 0; return { unmount: () => { n += 1; onUnmount?.(); }, get calls() { return n; } }; };
@@ -57,26 +57,27 @@ test('avale un refus de React sans relancer le démontage', () => {
 // Fin du test.
 });
 
-// Test : le retrait du contenu de départ.
-test('retire le contenu de départ des moteurs de recherche, une seule fois', () => {
-  // Un nœud qui se souvient d'avoir été retiré.
-  let removed = 0;
-  // Un faux document qui ne rend le nœud que la première fois.
-  const shell = { remove: () => { removed += 1; shell.gone = true; }, gone: false };
-  const doc = { getElementById: (id) => (id === 'seo' && !shell.gone ? shell : null) };
-  // Premier appel : le nœud est retiré.
-  assert.equal(removeSeoShell(doc), true);
-  // Deuxième : il n'y a plus rien à retirer.
-  assert.equal(removeSeoShell(doc), false);
-  // Un seul retrait.
-  assert.equal(removed, 1);
+// Test : le contenu de départ reste dans la page, rendu inerte.
+test('rend le contenu de départ inerte sans le retirer, une seule fois', () => {
+  // Un faux nœud qui garde ses attributs.
+  const attrs = {};
+  const shell = { setAttribute: (k, v) => { attrs[k] = v; }, getAttribute: (k) => attrs[k] ?? null, remove: () => { throw new Error('retiré'); } };
+  const doc = { getElementById: (id) => (id === 'seo' ? shell : null) };
+  // Premier appel : le nœud est rendu inerte.
+  assert.equal(hideSeoShell(doc), true);
+  // Attributs posés.
+  assert.equal(attrs['aria-hidden'], 'true');
+  assert.equal(attrs.translate, 'no');
+  assert.equal(attrs.inert, '');
+  // Deuxième : déjà fait.
+  assert.equal(hideSeoShell(doc), false);
 // Fin du test.
 });
 
 // Test : sans document, rien ne casse.
 test('ne lève rien sans document', () => {
   // Aucun document : le retrait renvoie faux.
-  assert.equal(removeSeoShell(undefined), false);
-  assert.equal(removeSeoShell({}), false);
+  assert.equal(hideSeoShell(undefined), false);
+  assert.equal(hideSeoShell({}), false);
 // Fin du test.
 });

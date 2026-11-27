@@ -2,7 +2,8 @@
 
 ## Déjà intégré au dépôt
 
-- Canonicalisation HTTP vers `https://www.gobaispace.com`, minuscules et suppression du slash final (301).
+- Canonicalisation HTTP vers `https://www.gobaispace.com` (301, `backend/src/common/canonical-url.ts`) : pages d'astres ramenées à leur slug, slash final retiré ; la casse des autres chemins est gardée (fichiers Vite).
+- Contenu `#seo` gardé dans le DOM après le montage de React (rendu inerte), pour que Google l'indexe après exécution du JavaScript ; aucune liste de mots-clés dans le texte.
 - Pages des astres pré-générées par `frontend/scripts/generate-seo-pages.mjs` après compilation backend.
 - Sitemap construit depuis `BODY_PAGES` et `WINDOW_PAGES` (source backend), avec `lastmod` issu du dernier commit Git lorsque disponible.
 - `robots.txt` autorise les ressources `/assets/` et les robots déclarés, tout en excluant l'API.
