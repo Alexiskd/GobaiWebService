@@ -2,6 +2,20 @@
 import { useEffect, useRef } from 'react';
 // Importe les deux fonctions pures de l'adresse du site.
 import { siteHeadFor, sitePathFor } from './siteAddress.jsx';
+// Version anglaise du site (/en/…).
+import { englishPathOf, isEnglishPath } from '@/Engine/shared/lib/app/englishPaths.js';
+
+/** Titre anglais d'une adresse /en/… (même forme que le serveur, body-pages-en.ts). */
+function englishTitle(path) {
+  // Adresse anglaise sans « /en/ ».
+  const slug = path.replace(/^\/en\/?/, '');
+  // Accueil.
+  if (!slug) return '3D Solar System, live · Go白ناन्टех (Gobai Space)';
+  // Nom lisible (« Moon », « Gallery »).
+  const name = slug.charAt(0).toUpperCase() + slug.slice(1);
+  // Titre.
+  return `${name} in 3D, live · 3D Solar System Go白ناन्टех (Gobai Space)`;
+}
 
 // Les réexporte, pour les modules qui les importent d'ici.
 export { siteHeadFor, sitePathFor };
@@ -27,18 +41,22 @@ export function useSiteAddress({ ready, galleryOpen, panel, bodyName }) {
     if (path === last.current) return;
     // Mémorise la nouvelle adresse.
     last.current = path;
+    // Version anglaise : l'adresse reste en /en/… (jumelle anglaise de la page française).
+    const english = isEnglishPath();
+    // Adresse affichée.
+    const shown = english ? englishPathOf(path) : path;
     // Début du bloc protégé : le navigateur peut refuser.
     try {
       // Remplace l'adresse sans ajouter d'entrée à l'historique, en gardant les paramètres et l'ancre.
-      window.history.replaceState(window.history.state, '', `${path}${window.location.search}${window.location.hash}`);
+      window.history.replaceState(window.history.state, '', `${shown}${window.location.search}${window.location.hash}`);
     // Un refus est ignoré.
     } catch { /* adresse inchangée (navigateur qui refuse) : sans conséquence pour l'app */ }
     // Calcule le titre et l'adresse canonique.
     const head = siteHeadFor(path, bodyName);
     // Met à jour le titre de l'onglet.
-    document.title = head.title;
+    document.title = english ? englishTitle(shown) : head.title;
     // Met à jour la balise link canonique, si elle existe.
-    document.querySelector('link[rel="canonical"]')?.setAttribute('href', head.canonical);
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', english ? `https://www.gobaispace.com${shown}` : head.canonical);
   // Fin de l'effet ; dépendances : l'état prêt et l'adresse (règle ESLint désactivée sur cette ligne).
   }, [ready, path]); // eslint-disable-line react-hooks/exhaustive-deps
 // Fin de useSiteAddress.

@@ -2,6 +2,8 @@
 import { normalize } from '../../../common/text';
 // Chiffres des astres, fabrication des questions-réponses, et tournure « de »/« du »/« d’ » devant un nom.
 import { BODY_FACTS, bodyQuestions, ofLabel } from './body-facts';
+// Adresse anglaise jumelle d'une page (hreflang).
+import { englishPathFor } from './en-slugs';
 
 // Index généré à partir des 5 000 expressions du fichier SEO source (copié dans dist par Nest, voir nest-cli.json : outDir « dist/… »).
 type SeoKeywordRecord = { keyword: string; category: string };
@@ -360,8 +362,8 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
   let html = template.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${title}</title>`);
   // Remplace l'adresse canonique.
   html = html.replace(/(<link\s+rel="canonical"\s+href=")[^"]*(")/, (_m, a: string, b: string) => a + url + b);
-  // Versions linguistiques : une seule (français), déclarée pour elle-même et comme version par défaut.
-  html = html.replace(/(<link\s+rel="alternate"\s+hreflang="[^"]+"\s+href=")[^"]*(")/g, (_m, a: string, b: string) => a + url + b);
+  // Versions linguistiques : cette page en français (aussi version par défaut) et sa jumelle anglaise (/en/…).
+  html = html.replace(/(<link\s+rel="alternate"\s+hreflang="(fr|en|x-default)"\s+href=")[^"]*(")/g, (_m, a: string, lang: string, b: string) => a + (lang === 'en' ? `${SITE_URL}${englishPathFor(body.slug)}` : url) + b);
   // Version texte de la page pour les assistants IA : /mars.md à la place du résumé général.
   // Remplace l'adresse de la version Markdown.
   html = html.replace(/(<link\s+rel="alternate"\s+type="text\/markdown"\s+href=")[^"]*(")/, (_m, a: string, b: string) => `${a}${url}.md${b}`);

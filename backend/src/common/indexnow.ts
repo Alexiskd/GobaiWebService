@@ -1,5 +1,7 @@
 // Adresse du site et liste des pages (astres et fenêtres), la même source que le sitemap.
 import { BODY_PAGES, SITE_URL, WINDOW_PAGES } from '../services/core/data/body-pages';
+// Adresse anglaise jumelle de chaque page.
+import { englishPathFor } from '../services/core/data/en-slugs';
 
 /**
  * IndexNow : prévient Bing, Yandex, Seznam, Naver… (et par Bing, ChatGPT Search et DuckDuckGo) que les pages du
@@ -17,7 +19,9 @@ export const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/indexnow';
 // Déclare indexNowUrls : renvoie la liste des adresses complètes.
 export function indexNowUrls(): string[] {
   // Accueil, puis une adresse par astre et par fenêtre, sans doublon.
-  return [...new Set([`${SITE_URL}/`, ...[...BODY_PAGES, ...WINDOW_PAGES].map((p) => `${SITE_URL}/${p.slug}`)])];
+  // Pages françaises puis leurs jumelles anglaises (/en/…).
+  const pages = [...BODY_PAGES, ...WINDOW_PAGES];
+  return [...new Set([`${SITE_URL}/`, ...pages.map((p) => `${SITE_URL}/${p.slug}`), `${SITE_URL}/en`, ...pages.map((p) => `${SITE_URL}${englishPathFor(p.slug)}`)])];
 // Fin de indexNowUrls.
 }
 

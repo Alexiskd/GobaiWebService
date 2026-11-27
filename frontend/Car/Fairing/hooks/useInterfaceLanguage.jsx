@@ -1,5 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useMemo et useState.
 import { useCallback, useEffect, useMemo, useState } from 'react';
+// Version anglaise du site (/en/…).
+import { isEnglishPath } from '@/Engine/shared/lib/app/englishPaths.js';
 // Importe loadLanguageData, qui charge le référentiel des langues.
 import { loadLanguageData } from '@/Engine/shared/i18n/languages';
 // Importe plusieurs fonctions et constantes du module i18nMath (début de la liste).
@@ -15,7 +17,13 @@ const FONT_LINK_ID = 'i18n-font';
 const BIDI_STYLE_ID = 'i18n-bidi';
 
 // navLanguages : langues préférées du navigateur ; liste vide hors navigateur, sinon la liste complète, sinon la langue unique.
-const navLanguages = () => (typeof navigator === 'undefined' ? [] : navigator.languages?.length ? navigator.languages : [navigator.language]);
+// Langues du navigateur ; sur la version anglaise du site (/en/…), l'anglais passe en tête.
+const navLanguages = () => {
+  // Langues déclarées par le navigateur.
+  const list = typeof navigator === 'undefined' ? [] : navigator.languages?.length ? [...navigator.languages] : [navigator.language];
+  // Adresse anglaise : anglais d'abord.
+  return isEnglishPath() ? ['en', ...list] : list;
+};
 
 // Avant le chargement du référentiel : langue du navigateur telle quelle (« en-US » → en), puis l'anglais.
 // Déclare quickChain, la chaîne de traduction provisoire.

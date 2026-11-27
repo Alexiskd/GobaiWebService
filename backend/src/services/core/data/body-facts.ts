@@ -54,7 +54,7 @@ export function duration(days: number): string {
 
 /** Rayon moyen (km) et caractéristiques fixes des planètes ; clé = nom français de bodies.data.ts. */
 // Caractéristiques fixes de chaque planète, par nom français : rayon moyen, type, masse volumique, pesanteur, température.
-const PLANET_FACTS: Record<string, { radiusKm: number; type: string; density: number; gravity: number; temperature: string }> = {
+export const PLANET_FACTS: Record<string, { radiusKm: number; type: string; density: number; gravity: number; temperature: string }> = {
   // Mercure : rayon moyen 2439,7 km, planète tellurique, masse volumique 5,43 g/cm³, pesanteur 3,7 m/s², et sa température.
   Mercure: { radiusKm: 2439.7, type: 'Planète tellurique', density: 5.43, gravity: 3.7, temperature: '−180 à +430 °C, de la nuit au plein jour' },
   // Vénus : rayon moyen 6051,8 km, planète tellurique, masse volumique 5,24 g/cm³, pesanteur 8,87 m/s², et sa température.

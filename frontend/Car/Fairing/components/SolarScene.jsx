@@ -1,5 +1,7 @@
 // Importe de React les crochets useCallback, useEffect, useMemo, useRef, useState et useSyncExternalStore.
 import { lazy, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+// Adresse française de la page affichée, version anglaise (/en/…) comprise.
+import { frenchSlugFromPath } from '@/Engine/shared/lib/app/englishPaths.js';
 // Importe bodyId, qui donne l'identifiant d'un astre.
 import { bodyId } from '@/Engine/AstreSolideEngine/LabelEngine/bodyPlaces';
 // Importe les astres enlevés par défaut, la visibilité par défaut, le test de famille masquée et la famille d'une planète.
@@ -394,7 +396,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // Effet exécuté une seule fois : ouvre la fenêtre demandée par l'adresse.
   useEffect(() => {
     // Lit le chemin de l'adresse, sans barres obliques, en minuscules.
-    const slug = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+    // Version anglaise comprise (/en/gallery → galerie).
+    const slug = frenchSlugFromPath(window.location.pathname).toLowerCase();
     // Adresse /donnees : ouvre la fenêtre Données.
     if (slug === 'donnees' || slug === 'galerie') setGalleryOpen(true); // « /galerie » : l'adresse du sitemap et de index.html
     // Adresse /node : ouvre la fenêtre des sources.
