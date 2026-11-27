@@ -52,6 +52,17 @@ describe('canonicalRedirect', () => {
   // Fin du test.
   });
 
+  // Version anglaise.
+  it('ramène les variantes des pages anglaises à leur adresse', () => {
+    // Bonne adresse.
+    expect(canonicalRedirect(get('/en/moon'))).toBeNull();
+    expect(canonicalRedirect(get('/en'))).toBeNull();
+    // Majuscules et barre finale.
+    expect(canonicalRedirect(get('/EN/Moon/'))).toBe('https://www.gobaispace.com/en/moon');
+    expect(canonicalRedirect(get('/en/'))).toBe('https://www.gobaispace.com/en');
+  // Fin du test.
+  });
+
   // Barre finale ailleurs.
   it('retire la barre finale des autres chemins sans extension', () => {
     // Chemin de deux segments.

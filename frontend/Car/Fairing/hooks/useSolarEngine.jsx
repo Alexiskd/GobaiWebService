@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { tilesApi } from '@/Computing/api';
 // Importe la lecture du lien de vue (ancre #vue=…), sans charger le globe.
 import { parseViewHash } from '@/engines/astre-solide/astre-solide.view-link.js';
+// Adresse française de la page affichée, version anglaise (/en/…) comprise.
+import { frenchSlugFromPath } from '@/Engine/shared/lib/app/englishPaths.js';
 
 /**
  * Crée le moteur 3D et le détruit au démontage.
@@ -38,9 +40,8 @@ export function useSolarEngine({ containerRef, data, labels, hud, engineRef }) {
         instance = new SolarEngine({ container: containerRef.current, data, labels, hud, tilesApi, onFocusChange: setFocus });
         // Adresse d'un astre (https://www.gobaispace.com/mars) : on s'y téléporte dès l'ouverture.
         // Lit le chemin de l'adresse, sans les barres obliques de début et de fin.
-        let slug = window.location.pathname.replace(/^\/+|\/+$/g, '');
-        // Décode les caractères encodés de l'adresse ; si le décodage échoue, on ignore l'adresse.
-        try { slug = decodeURIComponent(slug); } catch { slug = ''; }
+        // Version anglaise (/en/earth) traduite en adresse française (terre) ; décodage compris (invalide : vide).
+        const slug = frenchSlugFromPath(window.location.pathname);
         // S'il reste un nom simple (sans barre oblique), le moteur vise l'astre correspondant.
         if (slug && !slug.includes('/')) instance.focusBySlug(slug);
         // Lien de vue (/terre#vue=48.99,2.09,2500,40,-35) : la caméra va à ce point de vue.

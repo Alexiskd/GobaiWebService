@@ -1,5 +1,7 @@
 // Adresse officielle du site (https://www.gobaispace.com) et recherche de la page d'un astre d'après son adresse.
 import { SITE_URL, bodyPageFor } from '../services/core/data/body-pages';
+// Page anglaise d'une adresse /en/… (version anglaise du site).
+import { englishPageFor } from '../services/core/data/body-pages-en';
 
 /**
  * Adresse unique pour le référencement : chaque page n'a qu'une seule adresse, celle du sitemap.
@@ -61,8 +63,12 @@ export function canonicalRedirect(req: CanonicalRequest): string | null {
   if (legacyId) { target = `/${encodeURIComponent(legacyId)}`; search = ''; }
   // Page d'un astre ou d'une fenêtre reconnue (/mars, /Mars/, /ganymède…) ; undefined sinon.
   const page = bodyPageFor(target);
+  // Page anglaise reconnue (/en, /EN/Moon/…) ; undefined sinon.
+  const english = englishPageFor(target);
   // Page reconnue : sa seule adresse est /<slug>, celle du sitemap.
   if (page) target = `/${page.slug}`;
+  // Page anglaise : /en pour l'accueil, /en/<slug anglais> sinon.
+  else if (english) target = english.page ? `/en/${english.page.slug}` : '/en';
   // Autre chemin sans extension terminé par « / » (sauf la racine) : barre finale retirée.
   else if (target.length > 1 && target.endsWith('/') && !/\.[a-z0-9]+\/$/i.test(target)) target = target.replace(/\/+$/, '') || '/';
   // La casse des autres chemins n'est jamais changée : les fichiers de Vite (/assets/index-AbC12.js) en dépendent.

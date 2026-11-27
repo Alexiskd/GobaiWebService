@@ -30,15 +30,21 @@ for (const page of allPages) {
   await writeFile(target, pageHtml, 'utf8');
 }
 
-const urls = [
-  { loc: `${SITE_URL}/`, priority: '1.0' },
-  ...allPages.map((page) => ({ loc: `${SITE_URL}/${page.slug}`, priority: page.kind === 'fenêtre' ? '0.5' : '0.8' })),
+// Adresses anglaises jumelles (/en/…) : chaque paire français/anglais se déclare l'une l'autre (hreflang).
+const { englishPathFor, EN_SLUG_OF } = require(join(frontendRoot, '..', 'backend', 'dist', 'services', 'core', 'data', 'en-slugs.js'));
+const pair = (frPath, enPath) => ({ fr: `${SITE_URL}${frPath}`, en: `${SITE_URL}${enPath}` });
+const pairs = [
+  { ...pair('/', '/en'), priority: '1.0' },
+  // Seules les pages qui ont une jumelle anglaise (toutes aujourd'hui, voir en-slugs.ts).
+  ...allPages.filter((page) => EN_SLUG_OF[page.slug]).map((page) => ({ ...pair(`/${page.slug}`, englishPathFor(page.slug)), priority: page.kind === 'fenêtre' ? '0.5' : '0.8' })),
 ];
-const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(({ loc, priority }) => `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>${priority}</priority></url>`).join('\n')}\n</urlset>\n`;
+const alternates = ({ fr, en }) => `<xhtml:link rel="alternate" hreflang="fr" href="${fr}"/><xhtml:link rel="alternate" hreflang="en" href="${en}"/><xhtml:link rel="alternate" hreflang="x-default" href="${fr}"/>`;
+const urls = pairs.flatMap((p) => [{ loc: p.fr, priority: p.priority, alt: alternates(p) }, { loc: p.en, priority: p.priority, alt: alternates(p) }]);
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.map(({ loc, priority, alt }) => `  <url><loc>${loc}</loc>${alt}<lastmod>${lastmod}</lastmod><changefreq>weekly</changefreq><priority>${priority}</priority></url>`).join('\n')}\n</urlset>\n`;
 await writeFile(join(dist, 'sitemap.xml'), sitemap, 'utf8');
 
 const llms = await readFile(join(frontendRoot, 'public', 'llms.txt'), 'utf8');
 const full = [llms.trim(), ...allPages.map((page) => renderBodyMarkdown(page).trim())].join('\n\n---\n\n') + '\n';
 await writeFile(join(dist, 'llms-full.txt'), full, 'utf8');
 
-console.log(`[SEO] ${allPages.length} pages HTML pré-générées, sitemap (${urls.length} URL) et llms-full.txt créés.`);
+console.log(`[SEO] ${allPages.length} pages HTML pré-générées, sitemap (${urls.length} URL, français et anglais) et llms-full.txt créés.`);

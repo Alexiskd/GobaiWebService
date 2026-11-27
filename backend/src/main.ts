@@ -35,6 +35,8 @@ import { setupOpenApi } from './modules/openapi';
 // Pages des astres pour le référencement : recherche d'une page d'après l'adresse, et rendus HTML, Markdown et llms-full.txt.
 import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, renderHomePage, renderLlmsFull } from './services/core/data/body-pages';
 // Service du balisage SEO (table seo_tags) : titre et description de chaque page, lus en base s'ils y sont rangés.
+// Version anglaise du site : page d'une adresse /en/… et son rendu.
+import { englishPageFor, renderEnglishPage } from './services/core/data/body-pages-en';
 import { SeoTagsService } from './services/content/seo/seo-tags.service';
 
 /**
@@ -93,6 +95,27 @@ function serveFrontend(app: NestExpressApplication, seoTags: SeoTagsService): st
     if (existsSync(prerendered)) return res.type('html').sendFile(prerendered);
     let html = bodyPages.get(body.slug);
     if (!html) bodyPages.set(body.slug, (html = renderBodyPage(template, body, seoTags.getPageTags(body.slug))));
+    return res.type('html').send(html);
+  });
+
+  // Version anglaise (/en, /en/jupiter…) : rendue depuis le modèle, gardée en mémoire (body-pages-en.ts).
+  // Pages anglaises déjà rendues : adresse anglaise (vide pour l'accueil) → HTML.
+  const englishPages = new Map<string, string>();
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    // Lectures seulement.
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    // Page anglaise de cette adresse, ou undefined.
+    const en = englishPageFor(req.path);
+    // Autre adresse : suivant.
+    if (!en) return next();
+    // Revalidée à chaque visite, comme les pages françaises.
+    res.setHeader('Cache-Control', 'no-cache');
+    // Clé du cache.
+    const key = en.page?.slug ?? '';
+    // Rendue une fois.
+    let html = englishPages.get(key);
+    if (!html) englishPages.set(key, (html = renderEnglishPage(template, en.page)));
+    // Envoi.
     return res.type('html').send(html);
   });
 
