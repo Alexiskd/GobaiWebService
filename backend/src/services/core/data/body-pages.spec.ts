@@ -113,6 +113,10 @@ describe('pages des astres (référencement et assistants IA)', () => {
     expect(html).not.toContain('Gobai Space est-il gratuit');
     // Elle pointe vers sa version Markdown.
     expect(html).toContain('href="https://www.gobaispace.com/mars.md"');
+    // Ses balises de partage sont les siennes : description, image et langue.
+    expect(html).toMatch(/<meta name="description" content="[^"]*Mars/);
+    expect(html).toContain('<meta property="og:image" content="https://www.gobaispace.com/og/mars.jpg"');
+    expect(html).toContain('<link rel="alternate" hreflang="fr" href="https://www.gobaispace.com/mars"');
     // Elle garde le paragraphe « Chargement ».
     expect(html).toContain('<p>Chargement de l’application…</p>');
     // Types des éléments de chaque bloc de données structurées.
