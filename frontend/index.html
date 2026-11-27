@@ -76,8 +76,13 @@
     <!-- Couleur de la barre du navigateur. -->
     <meta name="theme-color" content="#0d1a3a" />
     <!-- Les données du noyau sont embarquées dans le bundle statique : aucun endpoint API ne doit être préchargé ici. -->
-    <!-- Feuille de style de la police Google Sans, relayée par notre serveur : le navigateur ne contacte pas Google (RGPD). -->
-    <link rel="stylesheet" href="/api/fonts/css2?family=Google+Sans:wght@400;500;600;700&display=swap" />
+    <!-- Feuille de style de la police Google Sans, relayée par notre serveur : le navigateur ne contacte pas Google (RGPD).
+         Chargée sans bloquer l'affichage (preload puis bascule en stylesheet) : la page s'affiche aussitôt avec la police
+         de secours, Google Sans la remplace à son arrivée (display=swap). Sans JavaScript : balise noscript. -->
+    <link rel="preload" as="style" href="/api/fonts/css2?family=Google+Sans:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="/api/fonts/css2?family=Google+Sans:wght@400;500;600;700&display=swap" /></noscript>
+    <!-- Logo de l'écran de chargement : première image affichée (LCP), téléchargée en priorité. -->
+    <link rel="preload" as="image" href="/logo.webp?v=4" type="image/webp" fetchpriority="high" />
     <!-- Connexion ouverte d'avance vers le studio de visualisation de la NASA. -->
     <link rel="preconnect" href="https://svs.gsfc.nasa.gov" crossorigin />
 
