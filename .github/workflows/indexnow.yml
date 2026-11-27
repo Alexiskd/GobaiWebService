@@ -1,11 +1,11 @@
 name: IndexNow après déploiement Render
+# Envoi automatique : fait par le serveur après chaque démarrage sur Render (backend/src/common/indexnow.ts).
+# Ce workflow reste pour un envoi manuel (onglet Actions → Run workflow).
 on:
   workflow_dispatch:
-  deployment_status:
 
 jobs:
   submit:
-    if: github.event_name == 'workflow_dispatch' || github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

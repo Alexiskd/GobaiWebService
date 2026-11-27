@@ -28,6 +28,8 @@ import { androidAssetLinks } from './common/android-asset-links';
 import { publicUrl } from './common/public-url';
 // Adresse unique pour le référencement : redirection 301 vers https://www.gobaispace.com/<page du sitemap>.
 import { canonicalRedirect, canonicalRedirectEnabled } from './common/canonical-url';
+// IndexNow : soumission des pages aux moteurs une minute après chaque démarrage en production.
+import { scheduleIndexNow } from './common/indexnow';
 // Branche la documentation Swagger sur /api/docs.
 import { setupOpenApi } from './modules/openapi';
 // Pages des astres pour le référencement : recherche d'une page d'après l'adresse, et rendus HTML, Markdown et llms-full.txt.
@@ -202,6 +204,8 @@ async function bootstrap() {
   setupOpenApi(app, url);
   // Ouvre le port et attend que le serveur écoute.
   await app.listen(config.port);
+  // Nouvelle version en ligne : prévient les moteurs (IndexNow) dans une minute, si INDEXNOW_KEY est définie.
+  scheduleIndexNow();
   // Site présent : écrit dans le journal son adresse et le dossier servi.
   if (site) console.log(`Site      : ${url}/  (${site})`);
   // Site absent : le signale et rappelle la commande qui le compile.
