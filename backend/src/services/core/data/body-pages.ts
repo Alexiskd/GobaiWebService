@@ -3,10 +3,16 @@ import { normalize } from '../../../common/text';
 // Chiffres des astres, fabrication des questions-réponses, et tournure « de »/« du »/« d’ » devant un nom.
 import { BODY_FACTS, bodyQuestions, ofLabel } from './body-facts';
 
-// Index généré à partir des 5 000 expressions du fichier SEO source (copié dans dist par Nest).
+// Index généré à partir des 5 000 expressions du fichier SEO source (copié dans dist par Nest, voir nest-cli.json : outDir « dist/… »).
 type SeoKeywordRecord = { keyword: string; category: string };
 type SeoKeywordCoverage = { pages: Record<string, { fr: SeoKeywordRecord[]; en: SeoKeywordRecord[] }> };
-const SEO_KEYWORD_COVERAGE = require('../../content/seo/data/keyword-coverage.json') as SeoKeywordCoverage;
+// Fichier absent (copie Nest ratée) : index vide plutôt qu'un plantage du build et du serveur au démarrage.
+const SEO_KEYWORD_COVERAGE: SeoKeywordCoverage = (() => {
+  // Essaie de charger l'index des mots-clés.
+  try { return require('../../content/seo/data/keyword-coverage.json') as SeoKeywordCoverage; }
+  // Introuvable : aucun mot-clé, les pages restent correctes.
+  catch { console.warn('[SEO] keyword-coverage.json introuvable : mots-clés désactivés'); return { pages: {} }; }
+})();
 
 /** Expressions les plus utiles à afficher dans le contenu éditorial d'une page, sans bourrage de mots-clés. */
 export function seoKeywordsForPage(slug: string, language: 'fr' | 'en' = 'fr', limit = 12): string[] {

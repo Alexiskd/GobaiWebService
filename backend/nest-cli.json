@@ -7,7 +7,7 @@
     "assets": [
       {
         "include": "services/content/seo/data/**/*",
-        "outDir": "services/content/seo/data"
+        "outDir": "dist/services/content/seo/data"
       }
     ]
   }
