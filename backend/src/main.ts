@@ -26,6 +26,8 @@ import { postgresSecretStore } from './common/session-secret.store';
 import { androidAssetLinks } from './common/android-asset-links';
 // Calcule l'adresse publique du service (PUBLIC_URL, adresse du site sur Render, ou localhost en développement).
 import { publicUrl } from './common/public-url';
+// Adresse unique pour le référencement : redirection 301 vers https://www.gobaispace.com/<page du sitemap>.
+import { canonicalRedirect, canonicalRedirectEnabled } from './common/canonical-url';
 // Branche la documentation Swagger sur /api/docs.
 import { setupOpenApi } from './modules/openapi';
 // Pages des astres pour le référencement : recherche d'une page d'après l'adresse, et rendus HTML, Markdown et llms-full.txt.
@@ -145,6 +147,23 @@ async function bootstrap() {
 
   // Crée l'application NestJS sur Express à partir du module racine ; await attend que tous les modules soient prêts.
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Adresse unique pour le référencement : premier middleware, avant tout le reste (voir canonical-url.ts).
+  // Actif seulement en production sur Render : en développement, localhost n'est jamais redirigé.
+  if (canonicalRedirectEnabled()) {
+    // Pour chaque requête : calcule l'adresse officielle si celle demandée n'en est pas une.
+    app.use((req: Request, res: Response, next: NextFunction) => {
+      // Adresse de destination, ou null si la requête est déjà à la bonne adresse.
+      const target = canonicalRedirect({ method: req.method, host: req.headers.host, originalUrl: req.originalUrl });
+      // Bonne adresse : on passe au middleware suivant.
+      if (!target) return next();
+      // Redirection permanente : Google transfère le référencement vers l'adresse officielle ; cache d'un jour.
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      // Envoie la redirection 301.
+      res.redirect(301, target);
+    // Fin du middleware d'adresse unique.
+    });
+  // Fin du cas « production ».
+  }
   // Application Android (Trusted Web Activity) : preuve que le site et l'application ont le même propriétaire.
   // Prépare le contenu du fichier assetlinks.json à partir des variables d'environnement (nom de l'application Android, empreintes de signature).
   const assetLinks = androidAssetLinks(process.env);
