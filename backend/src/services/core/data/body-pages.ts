@@ -354,12 +354,14 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
   // Fonction meta : remplace le contenu d'une balise meta désignée par son nom,
   const meta = (html: string, key: string, value: string): string =>
     // en gardant le début et la fin de la balise et en changeant seulement la valeur.
-    html.replace(new RegExp(`(<meta\s+(?:name|property)="${key}"\s+content=")[^"]*(")`), (_m, a: string, b: string) => a + value + b);
+    html.replace(new RegExp(`(<meta\\s+(?:name|property)="${key}"\\s+content=")[^"]*(")`), (_m, a: string, b: string) => a + value + b);
 
   // Remplace la balise title du modèle.
   let html = template.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${title}</title>`);
   // Remplace l'adresse canonique.
   html = html.replace(/(<link\s+rel="canonical"\s+href=")[^"]*(")/, (_m, a: string, b: string) => a + url + b);
+  // Versions linguistiques : une seule (français), déclarée pour elle-même et comme version par défaut.
+  html = html.replace(/(<link\s+rel="alternate"\s+hreflang="[^"]+"\s+href=")[^"]*(")/g, (_m, a: string, b: string) => a + url + b);
   // Version texte de la page pour les assistants IA : /mars.md à la place du résumé général.
   // Remplace l'adresse de la version Markdown.
   html = html.replace(/(<link\s+rel="alternate"\s+type="text\/markdown"\s+href=")[^"]*(")/, (_m, a: string, b: string) => `${a}${url}.md${b}`);
@@ -373,12 +375,21 @@ export function renderBodyPage(template: string, body: BodyPage, tags?: Map<stri
   html = meta(html, 'og:title', title);
   // Remplace la description pour les réseaux sociaux.
   html = meta(html, 'og:description', description);
-  html = meta(html, 'og:image:alt', escapeHtml(`Aperçu 3D de ${body.label} dans Go白ناन्टех`));
+  // Image de partage propre à l'astre (frontend/public/og/<slug>.jpg, voir seo/tools/generate-og-images.py) ;
+  // une fenêtre (Galerie, Node, dons) garde l'image générale du site.
+  const ogImage = body.kind === 'fenêtre' ? `${SITE_URL}/og-image.jpg` : `${SITE_URL}/og/${body.slug}.jpg`;
+  // Texte de remplacement de l'image.
+  const ogAlt = escapeHtml(body.kind === 'fenêtre' ? `${body.name} · ${APP_NAME}` : `${body.name} : illustration, système solaire 3D ${APP_NAME}`);
+  // Image pour Facebook, LinkedIn, WhatsApp…
+  html = meta(html, 'og:image', ogImage);
+  html = meta(html, 'og:image:alt', ogAlt);
   // Remplace le titre pour X (Twitter).
   html = meta(html, 'twitter:title', title);
   // Remplace la description pour X (Twitter).
   html = meta(html, 'twitter:description', description);
-  html = meta(html, 'twitter:image:alt', escapeHtml(`Aperçu 3D de ${body.label} dans Go白ناन्टех`));
+  // Image et texte de remplacement pour X (Twitter).
+  html = meta(html, 'twitter:image', ogImage);
+  html = meta(html, 'twitter:image:alt', ogAlt);
   // Texte de départ lu par les moteurs de recherche : le titre et la première phrase deviennent ceux de l'astre,
   // suivis de ses chiffres.
   // HTML des chiffres : s'il y en a,
