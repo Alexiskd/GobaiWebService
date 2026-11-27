@@ -8,7 +8,7 @@
 - Sitemap construit depuis `BODY_PAGES` et `WINDOW_PAGES` (source backend), avec `lastmod` issu du dernier commit Git lorsque disponible.
 - `robots.txt` autorise les ressources `/assets/` et les robots déclarés, tout en excluant l'API.
 - `seo/baseline.md` sert de fiche de mesure initiale ; renseigner les vraies mesures.
-- IndexNow : définir `INDEXNOW_KEY` dans Render et dans les secrets GitHub Actions. Le workflow peut être lancé manuellement après le déploiement ; l'événement `deployment_status` est également pris en charge si le fournisseur de déploiement publie cet événement GitHub.
+- IndexNow : définir `INDEXNOW_KEY` dans Render (8 à 128 caractères, lettres, chiffres, tirets). Le serveur sert `/<clé>.txt` et soumet toutes les pages du sitemap une minute après chaque démarrage en production (`backend/src/common/indexnow.ts`). Le workflow GitHub reste pour un envoi manuel (secret `INDEXNOW_KEY` requis).
 
 ## Commandes
 
