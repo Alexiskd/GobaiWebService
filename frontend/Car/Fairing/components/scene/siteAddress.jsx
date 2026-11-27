@@ -18,15 +18,19 @@ const KNOWN_PATHS = new Set();
 
 /** Fenêtres ayant leur adresse : identifiant du panneau → adresse. */
 // Le panneau des sources a l'adresse /node.
-const PANEL_PATHS = { sources: '/node', donate: '/faire-un-don' };
+const PANEL_PATHS = { sources: '/node', donate: '/faire-un-don', search: '/recherche', trip: '/trajet' };
 
 /** Adresse de ce qui est affiché : la fenêtre ouverte d'abord, sinon l'astre ciblé, sinon l'accueil. */
 // Déclare et exporte sitePathFor : galerie ouverte, panneau ouvert et nom de l'astre.
-export function sitePathFor({ galleryOpen, panel, bodyName }) {
+export function sitePathFor({ galleryOpen, panel, bodyName, navigatorOpen = false, schwarzschild = false }) {
   // Fenêtre Données ouverte : /donnees.
   if (galleryOpen) return '/donnees';
   // Panneau qui a une adresse : cette adresse.
   if (PANEL_PATHS[panel]) return PANEL_PATHS[panel];
+  // Fenêtres hors panneaux : arborescence des astres, vue de la relativité (l'assistant, ouvert par défaut, ne change
+  // pas l'adresse ; /assistant l'ouvre seulement).
+  if (navigatorOpen) return '/astres';
+  if (schwarzschild) return '/relativite';
   // Adresse de l'astre : son nom normalisé, précédé d'une barre oblique.
   const path = `/${fold(bodyName || '')}`;
   // Cette adresse si elle est connue, l'accueil sinon.
@@ -46,6 +50,11 @@ const WINDOW_TITLES = {
   '/node': 'Node Open Source : sources des données',
   // Titre de la fenêtre de don.
   '/faire-un-don': 'Dons au développeur de l’application Gobai',
+  '/recherche': 'Rechercher une ville ou un astre en 3D',
+  '/astres': 'Arborescence des astres du système solaire',
+  '/trajet': 'Temps de trajet sur la Terre et jusqu’à la Lune',
+  '/relativite': 'Relativité générale : le système solaire selon Schwarzschild',
+  '/assistant': 'Assistant IA du système solaire 3D',
 // Fin de l'objet.
 };
 /** Noms qui prennent un article dans le titre de leur page (comme côté serveur, body-pages.ts). */

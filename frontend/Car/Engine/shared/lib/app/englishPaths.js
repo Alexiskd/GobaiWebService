@@ -7,7 +7,7 @@
 
 // Adresse française → adresse anglaise (copie de en-slugs.ts : toute page ajoutée là-bas doit l'être ici).
 export const EN_SLUG_OF = {
-  soleil: 'sun', mercure: 'mercury', venus: 'venus', terre: 'earth', lune: 'moon', mars: 'mars', phobos: 'phobos', deimos: 'deimos', jupiter: 'jupiter', saturne: 'saturn', uranus: 'uranus', neptune: 'neptune', pluton: 'pluto', io: 'io', europe: 'europa', ganymede: 'ganymede', callisto: 'callisto', mimas: 'mimas', encelade: 'enceladus', tethys: 'tethys', dione: 'dione', rhea: 'rhea', titan: 'titan', japet: 'iapetus', miranda: 'miranda', ariel: 'ariel', umbriel: 'umbriel', titania: 'titania', oberon: 'oberon', triton: 'triton', charon: 'charon', galerie: 'gallery', node: 'node', 'faire-un-don': 'donate',
+  soleil: 'sun', mercure: 'mercury', venus: 'venus', terre: 'earth', lune: 'moon', mars: 'mars', phobos: 'phobos', deimos: 'deimos', jupiter: 'jupiter', saturne: 'saturn', uranus: 'uranus', neptune: 'neptune', pluton: 'pluto', io: 'io', europe: 'europa', ganymede: 'ganymede', callisto: 'callisto', mimas: 'mimas', encelade: 'enceladus', tethys: 'tethys', dione: 'dione', rhea: 'rhea', titan: 'titan', japet: 'iapetus', miranda: 'miranda', ariel: 'ariel', umbriel: 'umbriel', titania: 'titania', oberon: 'oberon', triton: 'triton', charon: 'charon', galerie: 'gallery', node: 'node', 'faire-un-don': 'donate', ceres: 'ceres', recherche: 'search', astres: 'bodies', trajet: 'trip', relativite: 'relativity', assistant: 'assistant',
 };
 // Adresse anglaise → adresse française.
 const FR_SLUG_OF = Object.fromEntries(Object.entries(EN_SLUG_OF).map(([fr, en]) => [en, fr]));

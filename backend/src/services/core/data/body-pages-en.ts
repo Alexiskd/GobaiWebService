@@ -42,6 +42,7 @@ const EN: Record<string, [string, string, string]> = {
   mars: ['Mars', 'Mars', 'Mars in 3D, live: the red planet with NASA maps of its surface, volcanoes, canyons and landing sites.'],
   phobos: ['Phobos', 'Phobos', 'Phobos in 3D, live: the largest moon of Mars, with the NASA 3D model of its irregular shape and its real-time orbit.'],
   deimos: ['Deimos', 'Deimos', 'Deimos in 3D, live: the small outer moon of Mars, with the NASA 3D model of its irregular shape and its real-time orbit.'],
+  ceres: ['Ceres', 'Ceres', 'Ceres in 3D, live: the dwarf planet of the asteroid belt, between Mars and Jupiter, explored by the Dawn spacecraft.'],
   jupiter: ['Jupiter', 'Jupiter', 'Jupiter in 3D, live: the largest planet in the solar system, its cloud bands, its interior and its four large moons.'],
   saturne: ['Saturn', 'Saturn', 'Saturn in 3D, live: the gas giant, its modelled rings and its moons, from Mimas to Titan.'],
   uranus: ['Uranus', 'Uranus', 'Uranus in 3D, live: the ice giant tipped on its side, at its real position in the solar system.'],
@@ -67,6 +68,11 @@ const EN: Record<string, [string, string, string]> = {
   charon: ['Charon', 'Charon', 'Charon in 3D, live: the large moon of Pluto, flown by New Horizons in 2015, at its real position.'],
   galerie: ['Gallery', 'the gallery', 'The Gobai Space gallery: NASA images and videos of the planets, dwarf planets, giants and their moons, sorted by body.'],
   node: ['Node Open Source', 'Node Open Source', 'Node Open Source: the data sources and open projects behind Gobai Space, from NASA Trek maps to IGN and Sentinel-2 imagery.'],
+  recherche: ['Search', 'search', 'Search for a city on Earth, a place on the Moon, a planet or a moon, and fly there in the live 3D solar system.'],
+  astres: ['Bodies', 'the bodies', 'Every body of the solar system in 3D, as a tree: the Sun, the planets, the dwarf planets and their natural satellites.'],
+  trajet: ['Trip', 'trips', 'Compute the travel time between two places on Earth or on the Moon, all the way to the Apollo sites, from the 3D solar system.'],
+  relativite: ['Relativity (E = mc²)', 'relativity', 'The 3D solar system seen through general relativity: Schwarzschild gravity wells, perivolumes and orbits of every body (E = mc²).'],
+  assistant: ['Assistant', 'the assistant', 'An AI assistant (Claude or Mistral, with your own key) that drives the 3D solar system: go to a body or a city, change the display.'],
   'faire-un-don': ['Donate to the developer of the Gobai app', 'donations', 'Support the developer of the Gobai app: a card donation helps keep the 3D solar system free, ad-free and online.'],
 };
 
@@ -76,6 +82,11 @@ const headingEn = (fr: BodyPage, name: string, label: string): string => {
   if (fr.slug === 'galerie') return 'Gallery of solar system images';
   if (fr.slug === 'node') return 'Node Open Source: data sources';
   if (fr.slug === 'faire-un-don') return name;
+  if (fr.slug === 'recherche') return 'Search for a city or a body in 3D';
+  if (fr.slug === 'astres') return 'Tree of the solar system bodies';
+  if (fr.slug === 'trajet') return 'Travel time on Earth and to the Moon';
+  if (fr.slug === 'relativite') return 'General relativity: the solar system according to Schwarzschild';
+  if (fr.slug === 'assistant') return 'AI assistant for the 3D solar system';
   // Astres : nom (avec article en tête de phrase) suivi de « in 3D, live ».
   return `${label.charAt(0).toUpperCase()}${label.slice(1)} in 3D, live`;
 };

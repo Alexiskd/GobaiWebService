@@ -72,6 +72,8 @@ export const PLANET_FACTS: Record<string, { radiusKm: number; type: string; dens
   // Neptune : rayon moyen 24622 km, géante de glaces, masse volumique 1,64 g/cm³, pesanteur 11,15 m/s², et sa température.
   Neptune: { radiusKm: 24622, type: 'Géante de glaces', density: 1.64, gravity: 11.15, temperature: '≈ −201 °C au niveau 1 bar' },
   // Pluton : rayon moyen 1188,3 km, planète naine, masse volumique 1,85 g/cm³, pesanteur 0,62 m/s², et sa température.
+  // Cérès : rayon moyen 469,7 km, planète naine de la ceinture d'astéroïdes, 2,16 g/cm³, 0,28 m/s² (NASA, mission Dawn).
+  'Cérès': { radiusKm: 469.7, type: 'Planète naine', density: 2.16, gravity: 0.28, temperature: '≈ −105 °C en moyenne au sol' },
   Pluton: { radiusKm: 1188.3, type: 'Planète naine', density: 1.85, gravity: 0.62, temperature: '≈ −230 °C au sol' },
 // Fin de la table.
 };

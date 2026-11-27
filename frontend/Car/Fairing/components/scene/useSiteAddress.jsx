@@ -26,11 +26,11 @@ export { siteHeadFor, sitePathFor };
  * (l'accueil reste « / »). L'historique n'est pas allongé : le bouton Retour quitte le site comme avant.
  */
 // Déclare et exporte le crochet useSiteAddress : état prêt, galerie ouverte, panneau ouvert et nom de l'astre.
-export function useSiteAddress({ ready, galleryOpen, panel, bodyName }) {
+export function useSiteAddress({ ready, galleryOpen, panel, bodyName, navigatorOpen = false, schwarzschild = false }) {
   // Référence : la dernière adresse traitée, null au départ.
   const last = useRef(null);
   // Adresse de ce qui est affiché.
-  const path = sitePathFor({ galleryOpen, panel, bodyName });
+  const path = sitePathFor({ galleryOpen, panel, bodyName, navigatorOpen, schwarzschild });
   // Effet relancé quand l'adresse change.
   useEffect(() => {
     // Tant que l'application n'est pas prête, rien à faire.

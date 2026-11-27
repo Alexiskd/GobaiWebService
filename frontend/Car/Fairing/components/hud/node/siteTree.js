@@ -66,16 +66,19 @@ export const SITE_TREE = node('Accueil', '/', [
     node('Neptune', '/neptune', [node('Triton', '/triton')]),
     // La page de Pluton (/pluton), avec son satellite : Charon (/charon).
     node('Pluton', '/pluton', [node('Charon', '/charon')]),
-    // Les quatre autres planètes naines du catalogue statique (dwarf-planets.data.ts), absentes de l'arborescence
-    // alors que le moteur les affiche et que leur adresse ouvre bien l'astre : Cérès, Hauméa, Makémaké et Éris.
+    // Cérès, seule autre planète naine présente dans les données de l'app (dwarf-planets.data.ts) ; Hauméa, Makémaké
+    // et Éris n'y sont pas encore (script npm run dwarf:import à lancer), donc sans page.
     node('Cérès', '/ceres'),
-    node('Hauméa', '/haumea'),
-    node('Makémaké', '/makemake'),
-    node('Éris', '/eris'),
   // Fin de la liste des enfants.
   ]),
   // La page « Données » : /donnees.
   node('Données', '/donnees'),
+  // Les fonctions de la barre d'outils : recherche, astres, trajet, relativité, assistant.
+  node('Recherche', '/recherche'),
+  node('Astres', '/astres'),
+  node('Trajet', '/trajet'),
+  node('Relativité (E = mc²)', '/relativite'),
+  node('Assistant', '/assistant'),
   // La page « Node Open Source » : /node.
   node('Node Open Source', '/node'),
   // La page des dons : /faire-un-don.
