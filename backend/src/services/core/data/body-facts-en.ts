@@ -47,6 +47,7 @@ const PLANET_EN: Record<string, { type: string; temperature: string }> = {
   Saturne: { type: 'Gas giant', temperature: '≈ −139 °C at the 1 bar level' },
   Uranus: { type: 'Ice giant', temperature: '≈ −197 °C at the 1 bar level' },
   Neptune: { type: 'Ice giant', temperature: '≈ −201 °C at the 1 bar level' },
+  'Cérès': { type: 'Dwarf planet', temperature: '≈ −105 °C average at the surface' },
   Pluton: { type: 'Dwarf planet', temperature: '≈ −230 °C at the surface' },
 };
 

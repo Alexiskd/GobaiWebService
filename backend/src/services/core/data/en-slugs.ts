@@ -6,7 +6,7 @@
 export const EN_HOME_PATH = '/en';
 // Adresse française → adresse anglaise.
 export const EN_SLUG_OF: Readonly<Record<string, string>> = {
-  soleil: 'sun', mercure: 'mercury', venus: 'venus', terre: 'earth', lune: 'moon', mars: 'mars', phobos: 'phobos', deimos: 'deimos', jupiter: 'jupiter', saturne: 'saturn', uranus: 'uranus', neptune: 'neptune', pluton: 'pluto', io: 'io', europe: 'europa', ganymede: 'ganymede', callisto: 'callisto', mimas: 'mimas', encelade: 'enceladus', tethys: 'tethys', dione: 'dione', rhea: 'rhea', titan: 'titan', japet: 'iapetus', miranda: 'miranda', ariel: 'ariel', umbriel: 'umbriel', titania: 'titania', oberon: 'oberon', triton: 'triton', charon: 'charon', galerie: 'gallery', node: 'node', 'faire-un-don': 'donate',
+  soleil: 'sun', mercure: 'mercury', venus: 'venus', terre: 'earth', lune: 'moon', mars: 'mars', phobos: 'phobos', deimos: 'deimos', jupiter: 'jupiter', saturne: 'saturn', uranus: 'uranus', neptune: 'neptune', pluton: 'pluto', io: 'io', europe: 'europa', ganymede: 'ganymede', callisto: 'callisto', mimas: 'mimas', encelade: 'enceladus', tethys: 'tethys', dione: 'dione', rhea: 'rhea', titan: 'titan', japet: 'iapetus', miranda: 'miranda', ariel: 'ariel', umbriel: 'umbriel', titania: 'titania', oberon: 'oberon', triton: 'triton', charon: 'charon', galerie: 'gallery', node: 'node', 'faire-un-don': 'donate', ceres: 'ceres', recherche: 'search', astres: 'bodies', trajet: 'trip', relativite: 'relativity', assistant: 'assistant',
 };
 
 /** Chemin anglais d'une page française (« /en/moon ») ; accueil anglais si la page n'a pas de jumelle. */

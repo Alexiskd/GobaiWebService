@@ -404,6 +404,11 @@ export function SolarScene({ data, onSettled, covered = false }) {
     else if (slug === 'node') panels.setPanel('sources');
     // Adresse /faire-un-don : ouvre la fenêtre de don.
     else if (slug === 'faire-un-don') panels.setPanel('donate');
+    // Fonctions de la barre d'outils : recherche, trajet, assistant, arborescence des astres.
+    else if (slug === 'recherche') panels.setPanel('search');
+    else if (slug === 'trajet') panels.setPanel('trip');
+    else if (slug === 'assistant') setAssistantOpen(true);
+    else if (slug === 'astres') setNavigatorOpen(true);
   // Fin de l'effet ; aucune dépendance (règle ESLint désactivée sur cette ligne).
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Assistant : exécute une action demandée par le modèle, avec les mêmes fonctions que les boutons de l'interface.
@@ -503,7 +508,17 @@ export function SolarScene({ data, onSettled, covered = false }) {
   };
   // À chaque clic (astre, galerie, Node), la barre d'adresse prend l'adresse de la page.
   // Tient la barre d'adresse à jour selon la fenêtre ouverte et l'astre visé.
-  useSiteAddress({ ready: Boolean(engine), galleryOpen, panel: panels.panel, bodyName: bodyNames[focus] });
+  useSiteAddress({ ready: Boolean(engine), galleryOpen, panel: panels.panel, bodyName: bodyNames[focus], navigatorOpen, schwarzschild });
+  // Adresse /relativite (ou /en/relativity) : active la vue de la relativité dès que le moteur est prêt, une seule fois.
+  const relativityFromUrl = useRef(frenchSlugFromPath(window.location.pathname).toLowerCase() === 'relativite');
+  useEffect(() => {
+    // Pas demandé par l'adresse, ou moteur pas encore prêt : rien.
+    if (!relativityFromUrl.current || !engine) return;
+    // Fait une seule fois.
+    relativityFromUrl.current = false;
+    // Active la vue ; le bouton suit l'état réel du moteur.
+    setSchwarzschild(Boolean(engine.setSchwarzschild(true)));
+  }, [engine]);
 
   // Éléments du HUD posés différemment selon l'écran : sur ordinateur, chacun à sa place fixe ; sur téléphone,
   // rangés dans les deux zones de l'écran (MobileTopBar, MobileDock), où rien ne se recouvre (voir theme/layout).

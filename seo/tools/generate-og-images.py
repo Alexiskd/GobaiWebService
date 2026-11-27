@@ -29,6 +29,7 @@ BODIES = {
     "terre": ("Terre", "Planète", (110, 170, 240), (20, 50, 120), "plain"),
     "lune": ("Lune", "Satellite de la Terre", (215, 215, 210), (90, 90, 90), "plain"),
     "mars": ("Mars", "Planète", (230, 120, 70), (110, 40, 20), "plain"),
+    "ceres": ("Cérès", "Planète naine", (200, 195, 185), (80, 76, 70), "plain"),
     "phobos": ("Phobos", "Satellite de Mars", (170, 150, 130), (70, 60, 50), "plain"),
     "deimos": ("Deimos", "Satellite de Mars", (185, 170, 150), (80, 70, 60), "plain"),
     "jupiter": ("Jupiter", "Géante gazeuse", (235, 200, 160), (140, 90, 60), "bands"),

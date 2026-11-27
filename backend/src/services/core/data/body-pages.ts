@@ -96,6 +96,12 @@ export const WINDOW_PAGES: BodyPage[] = [
   // la fenêtre des sources, à l'adresse /node.
   windowPage('node', 'Node Open Source', 'Node Open Source : sources des données', 'Node Open Source : les sources de données et les projets libres derrière Gobai Space, des cartes NASA Trek à l’imagerie IGN et Sentinel-2.'),
   // la fenêtre des dons, à l'adresse /faire-un-don.
+  // les fonctions de la barre d'outils : recherche, arborescence des astres, temps de trajet, relativité, assistant ;
+  windowPage('recherche', 'Recherche', 'Rechercher une ville ou un astre en 3D', 'Rechercher une ville de la Terre, un lieu de la Lune, une planète ou un satellite, et s’y rendre en 3D dans le système solaire en direct.'),
+  windowPage('astres', 'Astres', 'Arborescence des astres du système solaire', 'Tous les astres du système solaire en 3D, classés en arborescence : le Soleil, les planètes, les planètes naines et leurs satellites naturels.'),
+  windowPage('trajet', 'Trajet', 'Temps de trajet sur la Terre et jusqu’à la Lune', 'Calculer le temps de trajet entre deux positions de la Terre ou de la Lune, jusqu’aux sites Apollo, depuis le système solaire en 3D.'),
+  windowPage('relativite', 'Relativité (E = mc²)', 'Relativité générale : le système solaire selon Schwarzschild', 'Le système solaire en 3D vu par la relativité générale : puits de gravité de Schwarzschild, périvolumes et orbites de chaque astre (E = mc²).'),
+  windowPage('assistant', 'Assistant', 'Assistant IA du système solaire 3D', 'Un assistant IA (Claude ou Mistral, avec votre propre clé) qui pilote le système solaire en 3D : aller sur un astre, une ville, régler l’affichage.'),
   windowPage('faire-un-don', 'Dons au développeur de l’application Gobai', 'Dons au développeur de l’application Gobai', 'Soutenir le développeur de l’application Gobai : un don par carte bancaire aide à garder le système solaire en 3D gratuit, sans publicité et en ligne.'),
 // Fin de la liste.
 ];
@@ -118,6 +124,8 @@ export const BODY_PAGES: BodyPage[] = [
   page('Phobos', 'Phobos', 'satellite', 'Phobos en 3D et en direct : la plus grande lune de Mars, avec le modèle 3D NASA de sa forme irrégulière et son orbite en temps réel.'),
   // Page de Deimos (satellite) : nom avec article « Deimos », puis sa description.
   page('Deimos', 'Deimos', 'satellite', 'Deimos en 3D et en direct : la petite lune extérieure de Mars, avec le modèle 3D NASA de sa forme irrégulière et son orbite en temps réel.'),
+  // Page de Cérès (planète naine) : la seule planète naine de la ceinture d'astéroïdes.
+  page('Cérès', 'Cérès', 'planète naine', 'Cérès en 3D et en direct : la planète naine de la ceinture d’astéroïdes, entre Mars et Jupiter, explorée par la sonde Dawn.'),
   // Page de Jupiter (planète) : nom avec article « Jupiter », puis sa description.
   page('Jupiter', 'Jupiter', 'planète', 'Jupiter en 3D et en direct : la plus grande planète du système solaire, ses bandes de nuages, son intérieur et ses quatre grandes lunes.'),
   // Page de Saturne (planète) : nom avec article « Saturne », puis sa description.

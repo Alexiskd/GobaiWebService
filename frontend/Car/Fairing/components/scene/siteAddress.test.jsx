@@ -17,6 +17,14 @@ test('adresse du site : fenêtre ouverte, astre ciblé, sinon accueil', () => {
   assert.equal(sitePathFor({ galleryOpen: false, panel: null, bodyName: 'Vénus' }), '/venus');
   // Astre inconnu : l'accueil.
   assert.equal(sitePathFor({ galleryOpen: false, panel: null, bodyName: 'Inconnu' }), '/');
+  // Fonctions de la barre d'outils : recherche et trajet (panneaux), astres et relativité (états).
+  assert.equal(sitePathFor({ galleryOpen: false, panel: 'search', bodyName: 'Mars' }), '/recherche');
+  assert.equal(sitePathFor({ galleryOpen: false, panel: 'trip', bodyName: 'Mars' }), '/trajet');
+  assert.equal(sitePathFor({ galleryOpen: false, panel: null, bodyName: 'Mars', navigatorOpen: true }), '/astres');
+  assert.equal(sitePathFor({ galleryOpen: false, panel: null, bodyName: 'Mars', schwarzschild: true }), '/relativite');
+  // Cérès a sa page ; Éris pas encore (absente des données de l'app).
+  assert.equal(sitePathFor({ galleryOpen: false, panel: null, bodyName: 'Cérès' }), '/ceres');
+  assert.equal(sitePathFor({ galleryOpen: false, panel: null, bodyName: 'Éris' }), '/');
 // Fin du test.
 });
 
