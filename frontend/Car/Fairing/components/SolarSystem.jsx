@@ -1,11 +1,9 @@
 // Importe de React les crochets useCallback et useState.
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 // Importe les composants du kit d'interface (Tailwind CSS et Base UI).
 import { Alert, Button } from '@/Fairing/kit';
 // Importe useSolarData, qui charge les données de la scène.
 import { useSolarData } from '@/Fairing/hooks/useSolarData';
-// Importe SolarScene, la scène 3D et son interface.
-import { SolarScene } from './SolarScene.jsx';
 // Importe l'écran de chargement.
 import { LoadingScreen } from './ui/LoadingScreen.jsx';
 
@@ -29,6 +27,29 @@ export function FullScreenMessage({ children }) {
 export function SolarSystem() {
   // Charge les données : statut, données, erreur et fonction de nouvelle tentative.
   const { status, data, error, retry } = useSolarData();
+  // La scène 3D est importée après le premier affichage, quand le navigateur est disponible.
+  const [SolarSceneComponent, setSolarSceneComponent] = useState(null);
+  useEffect(() => {
+    if (status !== 'ready' || SolarSceneComponent) return undefined;
+    let cancelled = false;
+    let idleId;
+    let timeoutId;
+    const loadScene = () => import('./SolarScene.jsx').then(({ SolarScene }) => {
+      if (!cancelled) setSolarSceneComponent(() => SolarScene);
+    }).catch((error) => {
+      console.error('[Gobai] Impossible de charger le moteur 3D :', error);
+    });
+    if (typeof window.requestIdleCallback === 'function') {
+      idleId = window.requestIdleCallback(loadScene, { timeout: 1400 });
+    } else {
+      timeoutId = window.setTimeout(loadScene, 250);
+    }
+    return () => {
+      cancelled = true;
+      if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, [status, SolarSceneComponent]);
   // La scène est montée sous l'écran de chargement, qui reste affiché jusqu'à ce que le moteur 3D soit prêt.
   // État : vrai quand la scène est prête.
   const [sceneSettled, setSceneSettled] = useState(false);
@@ -54,7 +75,7 @@ export function SolarSystem() {
     // Fragment : regroupe la scène et l'écran de chargement.
     <>
       {/* Données prêtes : monte la scène ; elle est « couverte » tant qu'elle n'est pas révélée et que l'écran de chargement est là. */}
-      {status === 'ready' && <SolarScene data={data} onSettled={onSettled} covered={!revealed && !loaderGone} />}
+      {status === 'ready' && SolarSceneComponent && <SolarSceneComponent data={data} onSettled={onSettled} covered={!revealed && !loaderGone} />}
       {/* Tant que l'écran de chargement n'a pas disparu (début). */}
       {!loaderGone && (
         // L'écran de chargement, avec l'étape, le libellé et les deux rappels.

@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node scripts/copie-cesium.mjs && vite",
     "dev": "node scripts/copie-cesium.mjs && vite",
-    "build": "node scripts/verifie-imports.mjs Car && node scripts/copie-cesium.mjs && vite build",
+    "build": "node scripts/verifie-imports.mjs Car && node scripts/copie-cesium.mjs && vite build && node scripts/generate-seo-pages.mjs",
     "preview": "vite preview",
     "test": "node scripts/verifie-imports.mjs Car && tsx --test \"Car/**/*.test.jsx\" \"Car/**/*.test.js\"",
     "verifie:imports": "node scripts/verifie-imports.mjs Car",
