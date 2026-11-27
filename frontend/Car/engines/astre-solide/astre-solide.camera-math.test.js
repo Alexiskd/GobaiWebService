@@ -244,11 +244,18 @@ test('finesse des tuiles : plus grossière en mouvement et sur écran tactile', 
   assert.equal(globeScreenError({ touch: true }), 3);
   assert.equal(globeScreenError({ moving: true }), 4);
   assert.equal(globeScreenError({ moving: true, touch: true }), 5);
+  // Gammes de téléphone : plus grossier en gamme moyenne et basse.
+  assert.equal(globeScreenError({ touch: true, tier: 'mid' }), 4);
+  assert.equal(globeScreenError({ touch: true, tier: 'low', moving: true }), 8);
+  // Ordinateur : la gamme n'y change rien.
+  assert.equal(globeScreenError({ tier: 'low' }), 2);
 });
 
 test('globe : mémoire des tuiles et voisines préchargées sur ordinateur, allégées sur téléphone', () => {
   assert.deepEqual(globeCacheOptions(), { tileCacheSize: 400, preloadSiblings: true, preloadAncestors: true });
   assert.deepEqual(globeCacheOptions({ touch: true }), { tileCacheSize: 150, preloadSiblings: false, preloadAncestors: true });
+  assert.equal(globeCacheOptions({ touch: true, tier: 'mid' }).tileCacheSize, 90);
+  assert.equal(globeCacheOptions({ touch: true, tier: 'low' }).tileCacheSize, 50);
 });
 
 test('fondu d\'apparition du globe : 0 avant les tuiles, courbe en S, 1 de près', () => {

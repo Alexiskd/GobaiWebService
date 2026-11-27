@@ -9,7 +9,7 @@ import {
   // Le cadenceur, le profil de rendu, le limiteur, le rythme visé et la part des envois.
   paceFrame, renderProfile, skipFrame, TARGET_FPS, TARGET_FRAME_MS, uploadShare,
   // Le profil du système d'une planète.
-  SYSTEM_PROFILE,
+  SYSTEM_PROFILE, HANDHELD_TIERS, HANDHELD_FPS, QUALITY_TIERS, systemProfile,
 // Fin de la liste : le module powerSaver.
 } from './powerSaver.jsx';
 
@@ -26,33 +26,31 @@ test('appareil tenu en main : tactile sans pointeur fin', () => {
   assert.equal(isHandheld(win('(any-pointer: fine)')), false); // ordinateur
   // Sans fenêtre : faux.
   assert.equal(isHandheld(null), false);
-  // Profil d'un appareil à pointeur imprécis : celui du téléphone.
-  assert.equal(renderProfile(win('(pointer: coarse)')), HANDHELD_PROFILE);
+  // Profil d'un appareil à pointeur imprécis, sans information : celui du milieu de gamme.
+  assert.equal(renderProfile(win('(pointer: coarse)'), {}), HANDHELD_TIERS.mid);
+  // iPhone 15 : haut de gamme.
+  assert.equal(renderProfile(win('(pointer: coarse)'), { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', screenWidth: 393, screenHeight: 852 }), HANDHELD_PROFILE);
   // Profil d'une fenêtre qui ne répond à aucune requête : celui de l'ordinateur.
   assert.equal(renderProfile(win()), DESKTOP_PROFILE);
 // Fin du test.
 });
 
-// Test : la comparaison des deux profils.
-test('profil téléphone : la même qualité que l’ordinateur, une densité adaptée à son écran', () => {
-  // Même anticrénelage, même anisotropie.
-  for (const k of ['antialias', 'anisotropy']) assert.equal(HANDHELD_PROFILE[k], DESKTOP_PROFILE[k], k);
-  // Densité plafonnée à 2 sur téléphone (écran à 3 pixels par point CSS), 1,75 sur ordinateur, dès le départ.
-  assert.equal(HANDHELD_PROFILE.dprMax, 2); assert.equal(DESKTOP_PROFILE.dprMax, 2);
-  // Départ au plafond, sur les deux.
-  assert.equal(HANDHELD_PROFILE.dprStart, HANDHELD_PROFILE.dprMax); assert.equal(DESKTOP_PROFILE.dprStart, DESKTOP_PROFILE.dprMax);
-  // Plancher de la résolution adaptative : 1,25 sur téléphone, 0,75 sur ordinateur.
-  assert.equal(HANDHELD_PROFILE.dprMin, 1.25); assert.equal(DESKTOP_PROFILE.dprMin, 0.75);
-  // Aucun réglage allégé.
-  assert.equal(HANDHELD_PROFILE.lite, undefined);
-  // L'ordinateur vise la durée d'image commune.
-  assert.equal(DESKTOP_PROFILE.frameMs, 0); // ordinateur : aucune limite logicielle
-  // Le téléphone aussi.
-  assert.equal(HANDHELD_PROFILE.frameMs, TARGET_FRAME_MS);
-  // Le rythme visé est de 50 images par seconde.
+// Test : les profils par gamme.
+test('profils téléphone : 30 images par seconde en mouvement, densité et anticrénelage selon la gamme', () => {
+  // Haut de gamme : densité 1,5, anticrénelage, 30 en mouvement, 20 au repos.
+  assert.deepEqual([HANDHELD_TIERS.high.dprMax, HANDHELD_TIERS.high.antialias, Math.round(1000 / HANDHELD_TIERS.high.frameMs), 1000 / HANDHELD_TIERS.high.idleFrameMs], [1.5, true, 30, 20]);
+  // Milieu de gamme : densité 1,25, sans anticrénelage, 30 et 15.
+  assert.deepEqual([HANDHELD_TIERS.mid.dprMax, HANDHELD_TIERS.mid.antialias, Math.round(1000 / HANDHELD_TIERS.mid.frameMs), Math.round(1000 / HANDHELD_TIERS.mid.idleFrameMs)], [1.25, false, 30, 15]);
+  // Gamme basse : densité 1, sans anticrénelage, 24 et 10.
+  assert.deepEqual([HANDHELD_TIERS.low.dprMax, HANDHELD_TIERS.low.antialias, Math.round(1000 / HANDHELD_TIERS.low.frameMs), 1000 / HANDHELD_TIERS.low.idleFrameMs], [1, false, 24, 10]);
+  // Chaque gamme démarre à son plafond, au-dessus de son plancher.
+  for (const p of Object.values(HANDHELD_TIERS)) { assert.equal(p.dprStart, p.dprMax); assert.ok(p.dprMin <= p.dprMax); assert.equal(p.handheld, true); }
+  // Le téléphone de référence est le haut de gamme, à 30 images par seconde.
+  assert.equal(HANDHELD_PROFILE, HANDHELD_TIERS.high); assert.equal(HANDHELD_FPS, 30);
+  // L'ordinateur : densité 2, plancher 0,75, aucune limite logicielle, anticrénelage.
+  assert.deepEqual([DESKTOP_PROFILE.dprMax, DESKTOP_PROFILE.dprMin, DESKTOP_PROFILE.frameMs, DESKTOP_PROFILE.antialias], [2, 0.75, 0, true]);
+  // Rythme visé commun du cadenceur : 50 images par seconde (inchangé).
   assert.equal(TARGET_FPS, 50);
-  // Le téléphone a l'anticrénelage.
-  assert.equal(HANDHELD_PROFILE.antialias, true);
 // Fin du test.
 });
 
@@ -159,18 +157,24 @@ test('envois de tuiles : pleins quand le rythme est tenu, réduits quand il flé
 // Test : la durée d'image normalisée.
 test('durée d’image normalisée : 20 ms à 50 images par seconde vaut 16,7 ms à 60', () => {
   // 20 ms pour une durée visée de 20 ms : 16,7 ms, à 1e-9 près.
-  assert.ok(Math.abs(normalizedFrameMs(1000 / 50, HANDHELD_PROFILE.frameMs) - 1000 / 60) < 1e-9);
+  assert.ok(Math.abs(normalizedFrameMs(1000 / 50, TARGET_FRAME_MS) - 1000 / 60) < 1e-9);
+  // 33,3 ms pour un téléphone à 30 images par seconde : 16,7 ms (rythme tenu).
+  assert.ok(Math.abs(normalizedFrameMs(1000 / 30, HANDHELD_PROFILE.frameMs) - 1000 / 60) < 1e-9);
   // Sans durée visée : la durée brute.
   assert.equal(normalizedFrameMs(20, 0), 20);
   // 50 ms pour une durée visée de 20 ms : plus de 24 ms.
-  assert.ok(normalizedFrameMs(50, HANDHELD_PROFILE.frameMs) > 24); // 20 images par seconde : jugé trop lent
+  assert.ok(normalizedFrameMs(50, TARGET_FRAME_MS) > 24); // 20 images par seconde : jugé trop lent
 // Fin du test.
 });
 
 // Test : la qualité des shaders.
-test('shaders : 16 pas de diffusion × 6 vers le Soleil et 5 octaves, sur tous les appareils', () => {
-  // La qualité complète.
+test('shaders : qualité complète sur ordinateur, allégée sur téléphone selon la gamme', () => {
+  // Hors navigateur (ordinateur, tests) : la qualité complète.
   assert.deepEqual(QUALITY, { scatterSteps: 16, lightSteps: 6, octaves: 5 });
+  // Chaque gamme de téléphone fait moins de pas que la précédente.
+  assert.ok(QUALITY_TIERS.high.scatterSteps < QUALITY_TIERS.desktop.scatterSteps);
+  assert.ok(QUALITY_TIERS.mid.scatterSteps < QUALITY_TIERS.high.scatterSteps);
+  assert.ok(QUALITY_TIERS.low.scatterSteps < QUALITY_TIERS.mid.scatterSteps);
   // L'ordinateur et le téléphone démarrent à leur densité maximale.
   assert.equal(DESKTOP_PROFILE.dprStart, DESKTOP_PROFILE.dprMax); assert.equal(HANDHELD_PROFILE.dprStart, HANDHELD_PROFILE.dprMax);
 // Fin du test.
@@ -205,11 +209,13 @@ test('scène recouverte par l’écran de chargement : 8 images par seconde au p
 });
 
 // Test : la durée visée selon l'état.
-test('rythme visé : 20 images par seconde au repos sur téléphone et en mode économie', () => {
-  // Téléphone sans état particulier : la durée commune.
-  assert.equal(targetFrameMs(HANDHELD_PROFILE), TARGET_FRAME_MS);                       // téléphone, en mouvement : 50
-  // Téléphone au repos : la durée de repos.
-  assert.equal(targetFrameMs(HANDHELD_PROFILE, { idle: true }), IDLE_FRAME_MS);         // téléphone au repos : 20
+test('rythme visé : 30 en mouvement et 20 au repos sur téléphone, 20 en mode économie', () => {
+  // Téléphone en mouvement : 30 images par seconde.
+  assert.equal(targetFrameMs(HANDHELD_PROFILE), 1000 / 30);
+  // Téléphone au repos : 20 images par seconde.
+  assert.equal(targetFrameMs(HANDHELD_PROFILE, { idle: true }), IDLE_FRAME_MS);
+  // Gamme basse au repos : 10 images par seconde.
+  assert.equal(targetFrameMs(HANDHELD_TIERS.low, { idle: true }), 100);
   // Ordinateur au repos : jamais ralenti seul, aucune limite logicielle.
   assert.equal(targetFrameMs(DESKTOP_PROFILE, { idle: true }), 0);
   // Ordinateur en mode économie : la durée de repos.
@@ -220,13 +226,15 @@ test('rythme visé : 20 images par seconde au repos sur téléphone et en mode �
 });
 
 // Test : téléphone dans le système d'une planète.
-test('système d’une planète sur téléphone : même qualité, rythme maximal même au repos', () => {
-  // Densité d'un téléphone (plafond et plancher), anisotropie d'un ordinateur.
-  assert.equal(SYSTEM_PROFILE.dprMax, HANDHELD_PROFILE.dprMax); assert.equal(SYSTEM_PROFILE.dprMin, HANDHELD_PROFILE.dprMin); assert.equal(SYSTEM_PROFILE.anisotropy, DESKTOP_PROFILE.anisotropy);
+test('système d’une planète sur téléphone : même gamme, rythme en mouvement tenu même au repos', () => {
+  // Densité et anisotropie de la gamme du téléphone.
+  assert.equal(SYSTEM_PROFILE.dprMax, HANDHELD_PROFILE.dprMax); assert.equal(SYSTEM_PROFILE.dprMin, HANDHELD_PROFILE.dprMin); assert.equal(SYSTEM_PROFILE.anisotropy, HANDHELD_PROFILE.anisotropy);
+  // Dérivé de n'importe quelle gamme : même gamme.
+  assert.equal(systemProfile(HANDHELD_TIERS.low).tier, 'low');
   // Toujours un téléphone (dimensionnements de départ).
   assert.equal(SYSTEM_PROFILE.handheld, true);
-  // Sans limite, en mouvement comme au repos.
-  assert.equal(targetFrameMs(SYSTEM_PROFILE), 0); assert.equal(targetFrameMs(SYSTEM_PROFILE, { idle: true }), 0);
+  // 30 images par seconde, en mouvement comme au repos (plus de rythme illimité : pas de surchauffe).
+  assert.equal(targetFrameMs(SYSTEM_PROFILE), 1000 / 30); assert.equal(targetFrameMs(SYSTEM_PROFILE, { idle: true }), 1000 / 30);
   // L'économie d'énergie et l'écran de chargement restent prioritaires.
   assert.equal(targetFrameMs(SYSTEM_PROFILE, { saving: true }), IDLE_FRAME_MS); assert.equal(targetFrameMs(SYSTEM_PROFILE, { covered: true }), COVERED_FRAME_MS);
 // Fin du test.

@@ -112,7 +112,7 @@ import { arrowSign, crossPole, moveOnSphere } from './InputEngine/deviceCompassM
 // Importe dragRadPerPx et dragStep, la conversion d'un glissement en rotation.
 import { dragRadPerPx, dragStep } from './InputEngine/touchMath.jsx';
 // Importe les réglages de rythme d'images et d'économie d'énergie, depuis powerSaver.
-import { IDLE_AFTER_MS, SYSTEM_PROFILE, normalizedFrameMs, paceFrame, renderProfile, targetFrameMs } from './PerfEngine/powerSaver.jsx';
+import { IDLE_AFTER_MS, normalizedFrameMs, paceFrame, renderProfile, systemProfile, targetFrameMs } from './PerfEngine/powerSaver.jsx';
 // Importe PerfProbe, la sonde de performance.
 import { FpsMeter, PerfProbe } from './PerfEngine/perfProbe.jsx';
 // Importe le module de qualité du rendu (mesures, profils et surchauffe : engines/render-quality).
@@ -565,10 +565,12 @@ export class SolarEngine {
 
   // initRenderer : crée le moteur de rendu, la scène et la caméra (début).
   initRenderer() {
-    // Profil de rendu : la même qualité partout ; un téléphone ralentit seulement au repos (voir powerSaver.jsx).
+    // Profil de rendu : celui de l'appareil ; sur téléphone, celui de sa gamme (voir powerSaver.jsx et deviceTier.jsx).
     this.power = renderProfile();
     // Profil de l'appareil, gardé : this.power devient celui du rythme maximal dans le système d'une planète (applySystemView).
     this.basePower = this.power;
+    // Profil du système d'une planète, dérivé de celui de l'appareil (même gamme, pas de ralenti au repos).
+    this.systemPower = systemProfile(this.power);
     // Planète du système affiché (la caméra est dans sa sphère de Hill) : aucune.
     this.systemHost = null;
     // Moteur de rendu WebGL, avec profondeur logarithmique.
@@ -4437,7 +4439,7 @@ export class SolarEngine {
   // syncSystemProfile : accorde le profil de rendu au système affiché (début).
   syncSystemProfile() {
     // Rythme maximal seulement sur téléphone, dans un système, hors économie d'énergie.
-    const want = this.systemHost && this.basePower.handheld && !this.saving ? SYSTEM_PROFILE : this.basePower;
+    const want = this.systemHost && this.basePower.handheld && !this.saving ? this.systemPower : this.basePower;
     // Déjà le bon : rien à faire.
     if (this.power === want) return;
     // Change de profil.
