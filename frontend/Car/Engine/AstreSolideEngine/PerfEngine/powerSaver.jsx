@@ -1,18 +1,18 @@
-// Rythme d'images et économie d'énergie. Téléphone, tablette et ordinateur ont les mêmes shaders (QUALITY), le même
-// anticrénelage et la même anisotropie (8). La densité de pixels suit l'écran : jusqu'à 1,75 sur ordinateur, jusqu'à
-// 2 sur un appareil tenu en main, dont l'écran a souvent 3 pixels par point CSS (à 1,75, l'image y était étirée de
-// 70 %). La résolution adaptative y descend au plus bas à 1,25 (0,75 sur ordinateur) : la Terre vue de l'espace garde
-// le même détail que sur ordinateur. Un appareil tenu en main n'a pas de ventilateur : il ralentit aussi au repos,
-// 20 images par seconde (aucun geste récent).
+// Importe la gamme de l'appareil et la lecture des informations du navigateur.
+import { currentDeviceInfo, deviceTier } from './deviceTier.jsx';
+// Rythme d'images et économie d'énergie, selon l'appareil.
+// Ordinateur : qualité complète, densité de pixels jusqu'à 2, aucun plafond logiciel d'images.
+// Appareil tenu en main (tous les smartphones, voir deviceTier.jsx) : profil de sa gamme (HANDHELD_TIERS) —
+// 30 images par seconde en mouvement (24 en gamme basse), 20 / 15 / 10 au repos, densité 1,5 / 1,25 / 1,
+// shaders allégés (QUALITY_TIERS). Un téléphone n'a pas de ventilateur : c'est ce qui évite la surchauffe.
 // Sur tous les appareils, tant que l'écran de chargement recouvre la scène, le moteur ne dessine que quelques
 // images par seconde (COVERED_FRAME_MS) : les shaders se compilent et les tuiles arrivent, sans chauffer pour rien.
-// Sur téléphone, zoomé dans le système d'une planète (voir systemView.jsx) : rythme maximal de l'écran, sans ralenti
-// au repos (SYSTEM_PROFILE) ; les autres planètes et leurs satellites ne sont alors plus dessinés, pour ne pas chauffer.
+// Sur téléphone, zoomé dans le système d'une planète (voir systemView.jsx) : le rythme en mouvement est tenu même au
+// repos (systemProfile) ; les autres planètes et leurs satellites ne sont alors plus dessinés.
 //
-// Rythme : sur ordinateur, aucun plafond logiciel ; sur mobile, cadence adaptative à TARGET_FPS
-// de zoom et la fréquence de l'écran (60, 120, 144 Hz…) : voir `paceFrame`. Pour TENIR ce rythme quand la scène est
-// lourde, la résolution adaptative (Engine.adaptResolution) baisse la densité de pixels dès que la moyenne descend
-// sous ≈ 45 images par seconde, et les tuiles envoyées au GPU par image sont réduites (`uploadShare`).
+// Le rythme est tenu par `paceFrame`, quelle que soit la fréquence de l'écran (60, 120 Hz…). Pour TENIR ce rythme
+// quand la scène est lourde, la résolution adaptative (Engine.adaptResolution) baisse la densité de pixels jusqu'au
+// plancher du profil, et les tuiles envoyées au GPU par image sont réduites (`uploadShare`).
 
 /** Durée d'une image à 60 images par seconde : référence des seuils de la résolution adaptative. */
 // Déclare et exporte la durée d'une image à 60 images par seconde.
@@ -24,16 +24,41 @@ export const TARGET_FPS = 50;
 // Déclare et exporte la durée d'une image à ce rythme : 20 ms.
 export const TARGET_FRAME_MS = 1000 / TARGET_FPS;
 
-// Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 1,75 dès le départ, plancher de la
+// Déclare et exporte le profil d'un ordinateur : densité de pixels plafonnée à 2 dès le départ, plancher de la
 // résolution adaptative à 0,75, anticrénelage, anisotropie de 8 (16 pour les tuiles des cartes : vues rasantes nettes,
-// toujours bornée par la carte graphique).
-export const DESKTOP_PROFILE = { handheld: false, dprMax: 2, dprStart: 2, dprMin: 0.75, frameMs: 0, antialias: true, anisotropy: 8, tileAnisotropy: 16 };
-// Déclare et exporte le profil d'un appareil tenu en main : densité plafonnée à 2 dès le départ, plancher à 1,25 (un
-// écran de téléphone est vu de près : en dessous, l'image devient floue), le reste comme l'ordinateur (ralenti au
-// repos, voir targetFrameMs).
-export const HANDHELD_PROFILE = { ...DESKTOP_PROFILE, handheld: true, dprMax: 2, dprStart: 2, dprMin: 1.25, frameMs: TARGET_FRAME_MS };
-// Déclare et exporte le profil d'un téléphone dans le système d'une planète : sans plafond d'images ni ralenti au repos.
-export const SYSTEM_PROFILE = { ...HANDHELD_PROFILE, system: true, frameMs: 0 };
+// toujours bornée par la carte graphique). Aucun plafond logiciel d'images : 60 par seconde et plus.
+export const DESKTOP_PROFILE = { handheld: false, tier: 'desktop', dprMax: 2, dprStart: 2, dprMin: 0.75, frameMs: 0, antialias: true, anisotropy: 8, tileAnisotropy: 16 };
+
+/** Rythme d'un téléphone en mouvement : 30 images par seconde (haut et milieu de gamme), 24 en gamme basse. */
+// Déclare et exporte le rythme d'un téléphone en mouvement.
+export const HANDHELD_FPS = 30;
+
+/**
+ * Profils des appareils tenus en main, par gamme (voir deviceTier.jsx). Un téléphone n'a pas de ventilateur : le rythme
+ * est plafonné (30 images par seconde en mouvement, moins au repos) et la densité de pixels limitée (un écran à
+ * 3 pixels par point CSS dessiné à 3 coûte 4 fois plus qu'à 1,5, pour une différence à peine visible).
+ *  - high (iPhone 15+, Android haut de gamme) : densité 1,5, anticrénelage, 30 / 20 images par seconde ;
+ *  - mid (iPhone 11-14, Android milieu de gamme) : densité 1,25, sans anticrénelage, 30 / 15 ;
+ *  - low (anciens téléphones) : densité 1, sans anticrénelage, 24 / 10, anisotropie réduite.
+ */
+// Déclare et exporte les profils par gamme (début).
+export const HANDHELD_TIERS = {
+  // Haut de gamme.
+  high: { handheld: true, tier: 'high', dprMax: 1.5, dprStart: 1.5, dprMin: 1, frameMs: 1000 / HANDHELD_FPS, idleFrameMs: 1000 / 20, antialias: true, anisotropy: 8, tileAnisotropy: 8 },
+  // Milieu de gamme.
+  mid: { handheld: true, tier: 'mid', dprMax: 1.25, dprStart: 1.25, dprMin: 1, frameMs: 1000 / HANDHELD_FPS, idleFrameMs: 1000 / 15, antialias: false, anisotropy: 4, tileAnisotropy: 4 },
+  // Gamme basse.
+  low: { handheld: true, tier: 'low', dprMax: 1, dprStart: 1, dprMin: 0.75, frameMs: 1000 / 24, idleFrameMs: 1000 / 10, antialias: false, anisotropy: 2, tileAnisotropy: 2 },
+// Fin des profils par gamme.
+};
+// Déclare et exporte le profil d'un appareil tenu en main de référence : le haut de gamme.
+export const HANDHELD_PROFILE = HANDHELD_TIERS.high;
+
+/** Profil d'un téléphone dans le système d'une planète : son rythme en mouvement tenu même au repos (pas de 20). */
+// Déclare et exporte systemProfile : le profil de l'appareil.
+export const systemProfile = (base) => ({ ...base, system: true });
+// Déclare et exporte le profil du système d'une planète pour le haut de gamme.
+export const SYSTEM_PROFILE = systemProfile(HANDHELD_PROFILE);
 
 /** Au repos (aucun geste depuis IDLE_AFTER_MS) sur téléphone, et en mode économie d'énergie : 20 images par seconde. */
 // Déclare et exporte la durée d'une image au repos : 50 ms.
@@ -56,7 +81,7 @@ export function targetFrameMs(profile, { covered = false, saving = false, idle =
   // Économie d'énergie : la durée d'une image au repos.
   if (saving) return IDLE_FRAME_MS;
   // Appareil tenu en main au repos, hors du système d'une planète : la plus longue des deux durées, celle du profil ou celle du repos.
-  if (profile.handheld && idle && !profile.system) return Math.max(profile.frameMs, IDLE_FRAME_MS);
+  if (profile.handheld && idle && !profile.system) return Math.max(profile.frameMs, profile.idleFrameMs ?? IDLE_FRAME_MS);
   // Sinon : la durée du profil.
   return profile.frameMs;
 // Fin de targetFrameMs.
@@ -66,9 +91,24 @@ export function targetFrameMs(profile, { covered = false, saving = false, idle =
 // Déclare et exporte la durée d'une image sous l'écran de chargement : 125 ms.
 export const COVERED_FRAME_MS = 1000 / 8;
 
-/** Échantillons par pixel des shaders coûteux, sur tous les appareils : 16 pas de diffusion × 6 vers le Soleil, bruit à 5 octaves. */
-// Déclare et exporte la qualité des shaders : 16 pas de diffusion, 6 vers le Soleil, 5 octaves.
-export const QUALITY = { scatterSteps: 16, lightSteps: 6, octaves: 5 };
+/**
+ * Échantillons par pixel des shaders coûteux (atmosphère, nuages, ciel), par gamme : l'ordinateur garde la qualité
+ * complète (16 pas de diffusion × 6 vers le Soleil, bruit à 5 octaves) ; un téléphone en fait moins (ces shaders
+ * tournent sur chaque pixel de l'écran : c'est la première source de chauffe).
+ */
+// Déclare et exporte la qualité des shaders par gamme.
+export const QUALITY_TIERS = {
+  // Ordinateur : qualité complète.
+  desktop: { scatterSteps: 16, lightSteps: 6, octaves: 5 },
+  // Haut de gamme.
+  high: { scatterSteps: 12, lightSteps: 4, octaves: 4 },
+  // Milieu de gamme.
+  mid: { scatterSteps: 8, lightSteps: 4, octaves: 4 },
+  // Gamme basse.
+  low: { scatterSteps: 6, lightSteps: 3, octaves: 3 },
+// Fin des qualités.
+};
+
 /** Somme des amplitudes d'un bruit à `octaves` octaves (0,5 + 0,25 + …) : sert à garder la même luminosité. */
 // Déclare et exporte fbmNorm : 1 − 0,5 puissance le nombre d'octaves.
 export const fbmNorm = (octaves) => 1 - 0.5 ** octaves;
@@ -83,11 +123,11 @@ export function isHandheld(win = typeof window === 'undefined' ? null : window) 
 // Fin de isHandheld.
 }
 
-/** Profil de rendu de l'appareil : { handheld, dprMax, dprStart, dprMin, frameMs (0 = sans limite), antialias, anisotropy }. */
+/** Profil de rendu de l'appareil (selon sa gamme sur téléphone) : { handheld, tier, dprMax, dprStart, dprMin, frameMs (0 = sans limite), antialias, anisotropy }. */
 // Déclare et exporte renderProfile : la fenêtre.
-export function renderProfile(win) {
-  // Renvoie le profil tenu en main ou le profil d'ordinateur.
-  return isHandheld(win) ? HANDHELD_PROFILE : DESKTOP_PROFILE;
+export function renderProfile(win = typeof window === 'undefined' ? null : window, device = currentDeviceInfo(win)) {
+  // Appareil tenu en main : le profil de sa gamme ; sinon le profil d'ordinateur.
+  return isHandheld(win) ? HANDHELD_TIERS[deviceTier(device)] : DESKTOP_PROFILE;
 // Fin de renderProfile.
 }
 
@@ -147,3 +187,7 @@ export function normalizedFrameMs(rawDt, frameMs) {
   return frameMs > 0 ? rawDt * (FULL_FRAME_MS / frameMs) : rawDt;
 // Fin de normalizedFrameMs.
 }
+
+/** Qualité des shaders de l'appareil courant, lue une fois au chargement (ordinateur, tests : qualité complète). */
+// Déclare et exporte QUALITY : celle de la gamme du profil de l'appareil.
+export const QUALITY = QUALITY_TIERS[renderProfile().tier] || QUALITY_TIERS.desktop;

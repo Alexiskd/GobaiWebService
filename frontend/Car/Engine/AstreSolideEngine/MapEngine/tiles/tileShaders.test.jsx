@@ -49,11 +49,11 @@ import { tileAnisotropy } from './tileManager.jsx';
 import { DESKTOP_PROFILE, HANDHELD_PROFILE } from '../../PerfEngine/powerSaver.jsx';
 
 // Test : le filtrage anisotrope des tuiles.
-test('tuiles : filtrage anisotrope 16 sur tous les appareils, borné par la carte graphique', () => {
+test('tuiles : filtrage anisotrope 16 sur ordinateur, 8 sur téléphone haut de gamme, borné par la carte graphique', () => {
   // Ordinateur, carte qui permet 16 : 16.
   assert.equal(tileAnisotropy(DESKTOP_PROFILE, 16), 16);
-  // Téléphone : même valeur.
-  assert.equal(tileAnisotropy(HANDHELD_PROFILE, 16), 16);
+  // Téléphone haut de gamme : 8 (moins de lectures de texture, moins de chauffe).
+  assert.equal(tileAnisotropy(HANDHELD_PROFILE, 16), 8);
   // Carte limitée à 4 : 4.
   assert.equal(tileAnisotropy(DESKTOP_PROFILE, 4), 4);
   // Profil inconnu : 16, borné par la carte.

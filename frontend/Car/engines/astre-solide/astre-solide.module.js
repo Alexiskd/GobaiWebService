@@ -140,8 +140,10 @@ export class AstreSolideGlobe {
       this.viewer.camera.percentageChanged = 0.01;
       // Écran tactile (téléphone, tablette) : tuiles un peu moins fines au repos.
       this.touch = Boolean(globalThis.matchMedia?.('(pointer: coarse)').matches);
+      // Gamme de l'appareil (profil de rendu du moteur three.js) : moins de tuiles sur un téléphone modeste.
+      this.tier = this.engine?.basePower?.tier || 'high';
       // Mémoire des tuiles déjà vues et préchargement des voisines, selon l'appareil (voir globeCacheOptions).
-      Object.assign(this.viewer.scene.globe, globeCacheOptions({ touch: this.touch }));
+      Object.assign(this.viewer.scene.globe, globeCacheOptions({ touch: this.touch, tier: this.tier }));
       // Finesse des tuiles au repos.
       this.setMoving(false);
       // En mouvement : tuiles plus grossières (moins de tuiles chargées et dessinées) ; à l'arrêt : finesse normale.
@@ -506,7 +508,7 @@ export class AstreSolideGlobe {
     // Sans globe : rien.
     if (!this.viewer) return;
     // Erreur d'écran tolérée.
-    const sse = globeScreenError({ moving, touch: this.touch });
+    const sse = globeScreenError({ moving, touch: this.touch, tier: this.tier });
     // Inchangée : rien.
     if (this.viewer.scene.globe.maximumScreenSpaceError === sse) return;
     // Appliquée.

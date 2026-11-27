@@ -2,12 +2,8 @@
 import { useEffect, useLayoutEffect, useSyncExternalStore } from 'react';
 // Importe le lecteur et l'abonnement du réglage jour/nuit.
 import { getDayNight, subscribeDayNight } from '@/Engine/shared/lib/device/dayNight';
-// Importe la détection de l'appareil et le test de compatibilité.
-import { currentDevice, isDeviceSupported } from '@/Engine/shared/lib/device/deviceGate';
 // Importe le composant principal de la scène.
 import SolarSystem from './components/SolarSystem.jsx';
-// Importe l'écran d'excuse des appareils non compatibles.
-import { AppareilNonCompatible } from './components/ui/AppareilNonCompatible.jsx';
 // Importe SceneStyles, qui bloque la sélection de texte sur écran tactile (la feuille scene.css habille la scène).
 import { SceneStyles } from './theme/SceneStyles.jsx';
 // Importe le nom du thème et la couleur de la barre d'état.
@@ -25,9 +21,8 @@ const DIAGNOSTIC = wantsDiagnostic();
 // Thème de toute l'app (feuille theme/app.css, Tailwind CSS) : bleu nuit ou gris doux selon le bouton « Ombre ».
 // Le passage d'un thème à l'autre est fondu par le navigateur (voir theme/themeTransition.jsx).
 // `SceneStyles` habille les éléments que le moteur 3D crée lui-même.
-// Téléphone en dessous de l'iPhone 15 ou de son équivalent : mot d'excuse à la place de l'app (rien de lourd n'est chargé).
-// Calcule une seule fois, au chargement, si l'appareil est compatible.
-const SUPPORTED = isDeviceSupported(currentDevice());
+// Tous les smartphones ouvrent l'app : la charge du rendu est adaptée à la gamme de l'appareil
+// (Engine/AstreSolideEngine/PerfEngine/deviceTier.jsx et powerSaver.jsx), au lieu d'un mot d'excuse.
 
 // Déclare et exporte par défaut le composant App, racine de l'application.
 export default function App() {
@@ -54,8 +49,8 @@ export default function App() {
       <RenderLoopRoot>
         {/* Blocage de la sélection de texte sur écran tactile. */}
         <SceneStyles />
-        {/* Appareil compatible : l'application ; sinon : l'écran d'excuse. */}
-        {SUPPORTED ? <SolarSystem /> : <AppareilNonCompatible />}
+        {/* L'application, sur tous les appareils. */}
+        <SolarSystem />
         {/* Diagnostic de la mise en page, seulement si l'adresse le demande. */}
         {DIAGNOSTIC && <DiagnosticInterface />}
       {/* Fin de la boucle de rendu. */}
