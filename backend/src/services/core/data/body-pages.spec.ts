@@ -104,8 +104,8 @@ describe('pages des astres (référencement et assistants IA)', () => {
     expect(html).toContain('<h2>Mars en chiffres</h2>');
     // Et le diamètre dans la liste.
     expect(html).toContain('<li>Diamètre moyen : 6 779 km</li>');
-    // Elle expose une sélection de sujets réellement associés à Mars dans le catalogue des 5 000 expressions.
-    expect(html).toContain('Sujets et recherches associés');
+    // Pas de liste de mots-clés cachée dans le texte (risque de sanction Google), mais le lien vers ses satellites.
+    expect(html).not.toContain('Sujets et recherches associés');
     expect(html).toContain('Mars en 3D');
     // Elle a la FAQ de Mars.
     expect(html).toContain('<h2>Questions fréquentes sur Mars</h2>');

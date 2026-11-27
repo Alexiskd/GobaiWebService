@@ -203,7 +203,7 @@
     </script>
 
     <!-- Contenu de départ (ci-dessous dans #seo, à côté de #root) : lu par les moteurs de recherche dans le HTML
-         servi, non affiché à l'écran, puis retiré par l'application dès qu'elle est montée. Il est volontairement
+         servi, non affiché à l'écran, puis rendu inerte (aria-hidden, sans être retiré : Google lit la page après le JavaScript) dès que l'application est montée. Il est volontairement
          hors de #root : cet élément n'appartient qu'à React, qui est seul à écrire dedans. -->
     <style>
       /* Page sans marge, sur fond noir. */
