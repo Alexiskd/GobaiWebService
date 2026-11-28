@@ -3,6 +3,7 @@
  * publiée, puis figé ici. Le code testé n'appelle aucun service : la référence ne sert qu'à mesurer l'écart.
  */
 import { PLANETS } from '../../core/data/bodies.data';
+import { DWARF_PLANETS_DATA } from '../../core/data/dwarf-planets.data';
 import {
   AU_KM, TT_MINUS_UTC_S, UNIX_EPOCH_JD, centuriesTT, earthPosition, elementsAt,
   heliocentric, heliocentricState, moonGeocentric, solveKepler,
@@ -72,7 +73,11 @@ describe('planet-orbits', () => {
     for (const p of PLANETS) {
       // Les douze nombres.
       expect(p.elements).toHaveLength(12);
-      // Au moins une dérive non nulle : des éléments figés à J2000 décalent les planètes en quelques décennies.
+      // Planète naine (importée d'Horizons) : dérives séculaires inconnues, seule la longitude moyenne avance
+      // (moyen mouvement, élément 7).
+      if (DWARF_PLANETS_DATA.includes(p)) { expect(p.elements[7]).not.toBe(0); continue; }
+      // Planète majeure : au moins une dérive non nulle (des éléments figés à J2000 décalent les planètes en
+      // quelques décennies).
       expect([1, 3, 5, 9, 11].some((i) => p.elements[i] !== 0)).toBe(true);
     // Fin des planètes.
     }

@@ -121,8 +121,8 @@ describe('pages des astres (référencement et assistants IA)', () => {
     expect(html).toContain('<p>Chargement de l’application…</p>');
     // Types des éléments de chaque bloc de données structurées.
     const types = graphs(html).map((g) => g['@graph'].map((n) => n['@type']));
-    // Premier bloc : celui du site, sans FAQ ; second bloc : fil d'Ariane, page et FAQ de l'astre.
-    expect(types).toEqual([['WebSite', 'WebApplication', 'Person'], ['BreadcrumbList', 'WebPage', 'FAQPage']]);
+    // Premier bloc : celui du site (site, application, organisation, auteur), sans FAQ ; second bloc : fil d'Ariane, page et FAQ de l'astre.
+    expect(types).toEqual([['WebSite', 'WebApplication', 'Organization', 'Person'], ['BreadcrumbList', 'WebPage', 'FAQPage']]);
   // Fin du test.
   });
 
@@ -157,7 +157,8 @@ describe('pages des astres (référencement et assistants IA)', () => {
     expect(frMars.length).toBeLessThanOrEqual(12);
     expect(enMars.length).toBeLessThanOrEqual(12);
     expect(frMars).toContain('Mars en 3D');
-    expect(renderHomePage(template)).toContain('Explorer les thèmes du système solaire');
+    // Accueil : les thèmes du catalogue vont dans la seule balise meta keywords (pas de texte caché bourré de mots-clés).
+    expect(renderHomePage(template)).toMatch(/<meta\s+name="keywords"\s+content="système solaire 3D, [^"]+"/);
   });
 
   // Huitième test : le Markdown.

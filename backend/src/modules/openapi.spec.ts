@@ -35,6 +35,8 @@ describe('documentation de l’API', () => {
     for (const file of files) {
       // Son contenu.
       const source = readFileSync(join(CONTROLLERS, file), 'utf8');
+      // Contrôleur exclu de la documentation (relais technique) : pas de groupe à vérifier.
+      if (source.includes('@ApiExcludeController()')) continue;
       // Son étiquette.
       const tag = /@ApiTags\('([^']+)'\)/.exec(source);
       // Elle existe.

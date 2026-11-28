@@ -3,7 +3,7 @@
 // Le serveur lit la feuille de style et les fichiers chez Google, les garde en mémoire, et les sert lui-même.
 import { BadRequestException, Controller, Get, NotFoundException, Param, Query, Res, VERSION_NEUTRAL } from '@nestjs/common';
 // Masque la route dans la documentation publique de l'API.
-import { ApiExcludeController } from '@nestjs/swagger';
+import { ApiExcludeController, ApiOperation } from '@nestjs/swagger';
 // Dispense de la limite de débit : une page charge plusieurs fichiers de police d'un coup.
 import { SkipThrottle } from '@nestjs/throttler';
 // Type de la réponse Express.
@@ -53,6 +53,7 @@ export class FontsController {
 
   /** GET /api/fonts/css2?family=… : la feuille de style, avec des adresses de fichiers réécrites vers ce serveur. */
   @Get('css2')
+  @ApiOperation({ summary: 'Feuille de style Google Fonts relayée (adresses des fichiers réécrites vers ce serveur)' })
   async css(@Query('family') family: string | string[] | undefined, @Query('display') display: string | undefined, @Res() res: Response): Promise<void> {
     // Plusieurs familles possibles (« family=A&family=B »).
     const families = (Array.isArray(family) ? family : [family]).filter((f): f is string => typeof f === 'string');
@@ -72,6 +73,7 @@ export class FontsController {
 
   /** GET /api/fonts/files/<famille>/<version>/<fichier>.woff2 : un fichier de police. */
   @Get('files/:family/:version/:file')
+  @ApiOperation({ summary: 'Fichier de police WOFF2 relayé depuis gstatic' })
   async file(@Param('family') fam: string, @Param('version') version: string, @Param('file') file: string, @Res() res: Response): Promise<void> {
     // Chemin relatif chez gstatic.
     const path = `${fam}/${version}/${file}`;
@@ -87,6 +89,7 @@ export class FontsController {
 
   /** GET /api/fonts/draco/<fichier> : le décodeur Draco des modèles 3D, relayé lui aussi (même raison). */
   @Get('draco/:file')
+  @ApiOperation({ summary: 'Décodeur Draco des modèles 3D relayé depuis gstatic' })
   async draco(@Param('file') file: string, @Res() res: Response): Promise<void> {
     // Seuls les trois fichiers du décodeur sont relayés.
     const type = Object.prototype.hasOwnProperty.call(DRACO_FILES, file) ? DRACO_FILES[file] : null;
