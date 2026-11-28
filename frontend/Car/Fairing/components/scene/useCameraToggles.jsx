@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState } from 'react';
 // Importe la table « toutes les familles affichées » et la liste des familles d'astres.
 import { ALL_KINDS_SHOWN, BODY_KINDS } from '@/Engine/AstreSolideEngine/BodyEngine/bodyKinds';
+// Remise à zéro des anciens choix de calques (avant la lecture des états ci-dessous).
+import '@/Engine/shared/lib/settings/resetLayerChoices.js';
 
 /** Rotation automatique, vue 3/4, repères du système solaire (orbites, points des planètes) et ciel lointain, envoyés au moteur. */
 /**
@@ -50,7 +52,8 @@ export function useCameraToggles(engine, initial = {}) {
   // Relief en volume de la Terre (vraies altitudes) : coupé par défaut — carte à plat, affichée plus vite. Le choix
   // est gardé dans le navigateur par le moteur.
   // État : relief affiché si la valeur enregistrée est un nombre positif.
-  const [relief, setReliefShown] = useState(() => Number(storedRelief()) > 0);
+  // Relief 3D : actif par défaut (refonte : plus d'interrupteur), sauf s'il a été coupé depuis (assistant).
+  const [relief, setReliefShown] = useState(() => storedRelief() !== '0');
   // setRelief : active ou coupe le relief ; début de la fonction mémorisée.
   const setRelief = useCallback((on) => {
     // Met l'état à jour.

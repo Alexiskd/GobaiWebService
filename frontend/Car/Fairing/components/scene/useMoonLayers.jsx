@@ -6,10 +6,10 @@ import { resolveApiUrl } from '../../../Computing/api/index.jsx';
 /** Calques propres à la Lune : lieux (interrupteur des Paramètres) et couleurs naturelles. */
 // Déclare et exporte le crochet useMoonLayers : reçoit le moteur.
 export function useMoonLayers({ engine }) {
-  // État : lieux lunaires affichés ou non (non au départ).
-  const [moonFeatures, setMoonFeatures] = useState(false);
-  // État : pays de la Lune (frontières et noms d'après les alunissages) affichés ou non (non au départ).
-  const [moonCountries, setMoonCountries] = useState(false);
+  // État : lieux lunaires affichés (toujours, depuis la refonte).
+  const [moonFeatures, setMoonFeatures] = useState(true);
+  // État : pays de la Lune (frontières et noms d'après les alunissages) affichés (toujours, depuis la refonte).
+  const [moonCountries, setMoonCountries] = useState(true);
   // État : couleurs naturelles chargées (true), en échec (false) ou pas encore connues (null).
   const [moonColorOk, setMoonColorOk] = useState(null);
 
