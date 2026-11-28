@@ -1,4 +1,5 @@
 // Importe les composants du kit d'interface (Tailwind CSS et Base UI).
+import { useState } from 'react';
 import { useMediaQuery } from '@/Fairing/kit';
 // Importe safe, qui donne une marge de sécurité de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
@@ -7,7 +8,7 @@ import { Readout } from '../hud/Readout.jsx';
 // Importe ToolbarButton, le bouton d'action.
 import { ToolbarButton } from './ToolbarButton.jsx';
 // Ordre des blocs et leurs noms.
-import { GROUP_LABELS, TOOLBAR_GROUPS } from './toolbarActions.jsx';
+import { CORE_ACTIONS, GROUP_LABELS, TOOLBAR_GROUPS } from './toolbarActions.jsx';
 
 // Ordinateur / laptop : une seule ligne alignée, cinq blocs séparés (explorer, affichage, données, assistant, Node),
 // indicateur de zoom intégré à gauche. Aucun bouton parent « Menu » : Données et Node sont des boutons directs, et les
@@ -52,6 +53,13 @@ export function DesktopToolbar({ hud, actions }) {
         </div>
       // Fin des blocs.
       ))}
+      {/* Le bouton « Plus », s'il y a des actions cachées. */}
+      {hidden > 0 || more ? (
+        <>
+          <div role="separator" aria-orientation="vertical" className="g-divider-v mx-1 my-1.5" />
+          <ToolbarButton action={moreAction} compact={false} />
+        </>
+      ) : null}
     {/* Fin de la carte. */}
     </div>
   // Fin du rendu.
