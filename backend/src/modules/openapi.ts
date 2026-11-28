@@ -29,7 +29,7 @@ const TAGS: [string, string][] = [
   // Le site.
   ['Contributions', 'Placements LiDAR proposés par les visiteurs, comptes et votes.'],
   ['Moteur', 'Moteur 3D chiffré servi au frontend, et sa clé de déchiffrement (origines autorisées seulement).'],
-  ['Référencement', 'Plan du site, robots.txt et pages HTML des astres servies aux moteurs de recherche.'],
+  ['Référencement', 'Balisage SEO enregistré en base : titre, description, Open Graph, X/Twitter.'],
   ['Galerie', 'Photos et vidéos de la galerie.'],
   ['Assistant', 'Assistant de la barre d’outils.'],
   ['Dons', 'Dons par carte bancaire.'],
