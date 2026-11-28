@@ -12,6 +12,8 @@ import { formatDistanceKm } from '../../Engine/AstreSolideEngine/OrbitEngine/gra
 import { VIEW_LINK_MS, formatViewHash, setViewHash } from './astre-solide.view-link.js';
 // Importe le nom du lieu sous la caméra (ville, région, pays).
 import { placeText } from './astre-solide.place.js';
+// Importe la visée du zoom tenue près de la caméra.
+import { leadBound } from '../../Engine/AstreSolideEngine/InputEngine/zoomMath.jsx';
 // Importe le niveau d'échelle (« Rue », « Ville », « Planète »…).
 import { scaleLevel } from '../../Engine/AstreSolideEngine/CameraEngine/scaleLevels.jsx';
 
@@ -108,7 +110,8 @@ export class CesiumCamera {
     // Zoom calé sur three.js : l'altitude visée est multipliée par le facteur (bornée par l'altitude minimale de
     // l'astre) ; la caméra s'en rapproche en douceur à chaque image (zoomTick), à la verticale du même point, avec
     // le même cap et la même inclinaison.
-    this.altGoal = zoomGoal(this.altGoal ?? this.altitudeM, f, this.minAltitudeM);
+    // La visée reste à moins de 6 fois l'altitude de la caméra (molette lancée vite : pas d'emballement).
+    this.altGoal = Math.max(this.minAltitudeM, leadBound(zoomGoal(this.altGoal ?? this.altitudeM, f, this.minAltitudeM), this.altitudeM));
     // Une image (la boucle avance le zoom).
     this.viewer.scene.requestRender();
   // Fin de zoom.
