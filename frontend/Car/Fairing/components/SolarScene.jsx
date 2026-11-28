@@ -45,10 +45,6 @@ import { ZoomPad } from './hud/ZoomPad.jsx';
 import { FullScreenMessage } from './SolarSystem.jsx';
 // Importe la barre d'outils.
 import { Toolbar } from './toolbar/Toolbar.jsx';
-// Importe le menu de l'assistant.
-import { Assistant } from './menus/Assistant/Assistant.jsx';
-// Importe la fenêtre de don.
-import { Don } from './menus/Don/Don.jsx';
 // Importe hasDonationReturn, le test du retour de la page de paiement.
 import { hasDonationReturn } from './menus/Don/donationReturn.jsx';
 // Importe le rappel des dons (à l'ouverture, puis toutes les dix minutes).
@@ -122,6 +118,9 @@ const Attribution = lazy(() => import('./hud/node/Attribution.jsx').then((m) => 
 const Trajet = lazy(() => import('./menus/Trajet/Trajet.jsx').then((m) => ({ default: m.Trajet })));
 // La fenêtre Données (flux cognitif et théorie quantique).
 const Donnees = lazy(() => import('./menus/Donnees/Donnees.jsx').then((m) => ({ default: m.Donnees })));
+// Assistant et dons : chargés à leur première ouverture seulement (refonte, vitesse : moins de code au démarrage).
+const Assistant = lazy(() => import('./menus/Assistant/Assistant.jsx').then((m) => ({ default: m.Assistant })));
+const Don = lazy(() => import('./menus/Don/Don.jsx').then((m) => ({ default: m.Don })));
 
 // Déclare et exporte le composant SolarScene : données, rappel « scène prête » et indicateur « couverte » (faux par défaut).
 export function SolarScene({ data, onSettled, covered = false }) {
@@ -633,6 +632,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
   // L'assistant à la place de la navigation : on lui demande d'aller sur un astre, et il agit sur la scène pendant que
   // l'utilisateur continue de la manipuler (le panneau n'est jamais modal).
   const assistantEl = (
+    <LazyWindow open={assistantOpen}>
       <Assistant
         // Affiché ou non : le bouton « Assistant » de la barre d'outils le montre et le masque.
         open={assistantOpen}
@@ -650,6 +650,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
         onAction={runAssistantAction}
       // Fin du panneau de l'assistant.
       />
+    </LazyWindow>
   // Fin de la constante.
   );
   // L'arborescence des astres, ouverte par son bouton : elle garde son pilotage du zoom par le menu des satellites
@@ -883,7 +884,7 @@ export function SolarScene({ data, onSettled, covered = false }) {
       // Fin de la fenêtre de recherche.
       />
       {/* La fenêtre de don. */}
-      <Don open={panels.panel === 'donate'} onClose={panels.closePanel} />
+      <LazyWindow open={panels.panel === 'donate'}><Don open={panels.panel === 'donate'} onClose={panels.closePanel} /></LazyWindow>
       {/* La fenêtre de temps de trajet : se connecte à l'assistant (clé de l'utilisateur) pour les trajets hors Apollo. */}
       <LazyWindow open={panels.panel === 'trip'}><Trajet open={panels.panel === 'trip'} onClose={panels.closePanel} onOpenAssistant={() => setAssistantOpen(true)} /></LazyWindow>
       {/* La galerie. */}

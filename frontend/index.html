@@ -86,6 +86,9 @@
     <link rel="preload" as="image" href="/logo.webp?v=4" type="image/webp" fetchpriority="high" />
     <!-- Connexion ouverte d'avance vers le studio de visualisation de la NASA. -->
     <link rel="preconnect" href="https://svs.gsfc.nasa.gov" crossorigin />
+    <!-- Hôtes des tuiles lues dès l'ouverture sur la Terre (relief AWS, rues OpenFreeMap) : connexion ouverte d'avance. -->
+    <link rel="preconnect" href="https://s3.amazonaws.com" crossorigin />
+    <link rel="dns-prefetch" href="https://tiles.openfreemap.org" />
 
     <!-- Données structurées (schema.org) : site, application et auteur -->
     <script type="application/ld+json">
