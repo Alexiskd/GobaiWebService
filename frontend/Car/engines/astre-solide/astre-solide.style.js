@@ -8,14 +8,14 @@
  */
 
 // Importe la palette Orbite.
-import { MOON_COUNTRY_COLORS, NIGHT } from '../../Fairing/theme/palette.js';
+import { MAP_GRAYS, MOON_COUNTRY_COLORS, NIGHT } from '../../Fairing/theme/palette.js';
 
 /** Lignes, par calque : couleur, opacité, épaisseur (px). */
 // Déclare et exporte le style des lignes.
 export const LINES = Object.freeze({
-  border: { color: NIGHT.gold, alpha: 0.7, width: 1 },
-  // Littoraux : nacre neutre (pas de bleu clair sur le globe, choix gardé), plus discrets que les frontières.
-  coast: { color: NIGHT.pearl, alpha: 0.45, width: 1 },
+  // Cartographie en noir et blanc, fondu de gris : frontières gris clair, littoraux gris moyen, plus discrets.
+  border: { color: MAP_GRAYS.g80, alpha: 0.75, width: 1 },
+  coast: { color: MAP_GRAYS.g50, alpha: 0.55, width: 1 },
   moonBorder: { color: NIGHT.primaryLight, alpha: 0.6, width: 1 },
   orbit: { alpha: 0.35, width: 1 },
 });

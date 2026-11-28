@@ -460,7 +460,7 @@ test('source des rues : littoraux de la couche « eau » tracés dans la tuile, 
   // Un seul segment : le littoral à x = 2048 ; les trois segments qui longent les bords de la tuile sont écartés.
   assert.equal(c.ctx.calls.filter((k) => k[0] === 'lineTo').length, 1);
   // Teinte des littoraux.
-  assert.equal(c.ctx.strokeStyle, '#f2efe6');
+  assert.equal(c.ctx.strokeStyle, '#a8a8a8');
 // Fin du test.
 });
 

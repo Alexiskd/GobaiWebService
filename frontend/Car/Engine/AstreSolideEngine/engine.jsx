@@ -4259,7 +4259,8 @@ export class SolarEngine {
     // Fondu d'apparition du globe (0 → 1) : tant qu'il n'est pas fini, l'astre de three.js reste dessiné dessous.
     const fadeIn = bodyByCesium ? (this.solidGlobe.fadeIn ?? 1) : 0;
     // L'astre de three.js caché le temps du rendu, si le globe le dessine entièrement.
-    const restoreBody = bodyByCesium && fadeIn >= 1 ? this.hideSolidBody(solidId) : null;
+    // (seulement si ses tuiles sont déjà arrivées : sinon l'astre de three.js reste visible, jamais d'écran vide).
+    const restoreBody = bodyByCesium && fadeIn >= 1 && this.solidGlobe.bodyReady ? this.hideSolidBody(solidId) : null;
     // Dessine la scène par-dessus.
     this.renderer.render(this.scene, this.cam);
     // L'astre reprend son état.

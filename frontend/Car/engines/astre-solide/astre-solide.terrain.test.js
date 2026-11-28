@@ -32,8 +32,13 @@ test('tuile source en échec : refusée en tuile fine (parente agrandie), plate 
   const get = (t) => (t === plan.tiles[1][1] ? Promise.reject(new Error('502')) : Promise.resolve({ rgba, size: 256 }));
   // Tuile fine : refusée, CesiumJS reprend sa parente.
   await assert.rejects(heightsFor(plan, get, 5));
-  // Tuile racine : le globe s'affiche, 0 m là où la donnée manque.
-  assert.deepEqual([...(await heightsFor(plan, get, 0))], [5, 0]);
+  // Tuile racine (relief lu dès le niveau 0) : le globe s'affiche, 0 m là où la donnée manque.
+  assert.deepEqual([...(await heightsFor(plan, get, 0, false, { minLevel: 0 }))], [5, 0]);
+  // Niveaux grossiers : plat, sans aucun téléchargement.
+  let asked = 0; const h = await heightsFor(plan, () => { asked++; return Promise.resolve({ rgba, size: 256 }); }, 1);
+  assert.deepEqual([...h], [0, 0]); assert.equal(asked, 0);
+  // Source trop lente : tuile fine refusée après le délai (CesiumJS reprend la parente).
+  await assert.rejects(heightsFor(plan, () => new Promise(() => {}), 5, false, { timeoutMs: 20 }));
 });
 
 test('plan d\'une tuile d\'astre : découpage géographique 2^(z+1) × 2^z, niveau borné à la source', () => {

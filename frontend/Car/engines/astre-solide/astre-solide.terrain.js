@@ -131,6 +131,16 @@ export function bodyTilePlan(x, y, level, { maxZoom = 12 } = {}, out = HEIGHTMAP
 // Fin de bodyTilePlan.
 }
 
+/** Niveau de tuile du globe à partir duquel le relief est lu (en dessous : plat, aucun téléchargement). */
+// Déclare et exporte le niveau minimal du relief.
+export const RELIEF_MIN_LEVEL = 2;
+/** Attente maximale d'une tuile d'altitude (ms) : au-delà, la tuile du globe reprend le relief de sa parente. */
+// Déclare et exporte l'attente maximale.
+export const SOURCE_TIMEOUT_MS = 2500;
+/** Promesse rejetée si elle n'aboutit pas dans le délai. */
+// withTimeout : la promesse et le délai (début).
+const withTimeout = (p, ms) => (ms > 0 ? Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('relief : délai dépassé')), ms))]) : p);
+
 /**
  * Grille d'altitudes d'une tuile du globe à partir de son plan. Les tuiles sources sont attendues ensemble ; si l'une
  * échoue (réseau, serveur), une tuile fine est refusée — CesiumJS reprend alors le relief de sa tuile parente,
@@ -142,9 +152,13 @@ export function bodyTilePlan(x, y, level, { maxZoom = 12 } = {}, out = HEIGHTMAP
  * @param {boolean} signed relief signé
  */
 // Déclare et exporte heightsFor, asynchrone (début).
-export async function heightsFor(plan, get, level, signed = false) {
-  // Tuiles sources : réussies ou en échec, sans tout arrêter.
-  const got = await Promise.allSettled(plan.tiles.map(([, t]) => get(t)));
+export async function heightsFor(plan, get, level, signed = false, { minLevel = RELIEF_MIN_LEVEL, timeoutMs = SOURCE_TIMEOUT_MS } = {}) {
+  // Niveaux grossiers (globe vu de loin, où le relief au zoom est de toute façon nul) : plat, sans rien télécharger —
+  // le globe s'affiche tout de suite.
+  if (level < minLevel) return new Float32Array(plan.points.length);
+  // Tuiles sources : réussies, en échec ou trop lentes (au-delà de timeoutMs, comptées en échec : le globe n'attend
+  // jamais une source lente ; CesiumJS reprend la tuile parente).
+  const got = await Promise.allSettled(plan.tiles.map(([, t]) => withTimeout(get(t), timeoutMs)));
   // Images décodées par clé (null si en échec).
   const imgs = new Map(plan.tiles.map(([key], i) => [key, got[i].status === 'fulfilled' ? got[i].value : null]));
   // Une tuile en échec sur une tuile fine : refusée (CesiumJS agrandit la parente).
