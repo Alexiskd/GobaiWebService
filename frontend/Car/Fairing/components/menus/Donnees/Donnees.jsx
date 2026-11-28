@@ -1,4 +1,6 @@
 // Fenêtre plein écran « Données » : en-tête, barre de navigation à onglets, puis le contenu de l'onglet choisi.
+// Palette Orbite.
+import { NIGHT } from '../../../theme/palette.js';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 // Importe les composants du kit d'interface (Tailwind CSS et Base UI).
 import { CircularProgress, Dialog, IconButton, Tooltip } from '@/Fairing/kit';
@@ -18,7 +20,7 @@ export const DONNEES_TABS = [
 
 /** Couleurs de la fenêtre (fond presque noir, comme la galerie) et police de l'interface. */
 const V = {
-  void: '#07080d', panel: '#10121b', line: '#222636', ink: '#e8e9f0', muted: '#8a8fa6',
+  void: NIGHT.bg, panel: NIGHT.panel, line: '#1c2540', ink: NIGHT.ink, muted: NIGHT.soft,
   font: '"Google Sans", "Roboto", "Helvetica Neue", Arial, sans-serif',
 };
 // Marges de sécurité de l'écran (encoche, coins arrondis de l'iPhone).
@@ -102,7 +104,7 @@ export function Donnees({ open, onClose }) {
       onClose={(event, reason) => onClose?.(event, reason)}
       fullScreen
       aria-label="Données"
-      paperClassName="bg-[#07080d] text-[#e8e9f0]" paperStyle={{ fontFamily: V.font }}
+      paperClassName="bg-bg text-ink" paperStyle={{ fontFamily: V.font }}
     >
       {/* En-tête fixe : titre, description de l'onglet, fermeture ; puis la barre de navigation. */}
       <header

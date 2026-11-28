@@ -15,10 +15,10 @@ function GateButton({ primary = false, children, className, ...props }) {
     <button type="button"
       {...props}
       className={cx(
-        'g-base flex items-center justify-center gap-2 min-h-12 px-3 py-2 rounded-[12px] font-sys text-[15px] font-semibold leading-[1.3] text-center min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] disabled:text-[#a3a097]',
+        'g-base flex items-center justify-center gap-2 min-h-12 px-3 py-2 rounded-[12px] font-sys text-[15px] font-semibold leading-[1.3] text-center min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] disabled:text-soft',
         primary
-          ? 'bg-[#d97757] text-[#1f1e1d] hover:bg-[#e08a6d] focus-visible:bg-[#e08a6d] disabled:bg-[#30302e]'
-          : 'border border-[#3b3a37] text-[#eceae3] hover:bg-[#30302e] focus-visible:bg-[#30302e] disabled:bg-transparent',
+          ? 'bg-primary text-on-primary hover:bg-primary-light focus-visible:bg-primary-light disabled:bg-raised'
+          : 'border border-edge text-ink hover:bg-hover focus-visible:bg-hover disabled:bg-transparent',
         className,
       )}
     >
@@ -31,7 +31,7 @@ function GateButton({ primary = false, children, className, ...props }) {
 function ErrorNote({ children }) {
   if (!children) return null;
   return (
-    <p role="alert" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] px-2.5 py-2 rounded-[10px] bg-[#262624] text-[#e5867a] font-sys text-[13.5px] leading-[1.45]" style={{ borderLeft: `3px solid ${C.error}` }}>
+    <p role="alert" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] px-2.5 py-2 rounded-[10px] bg-raised text-error font-sys text-[13.5px] leading-[1.45]" style={{ borderLeft: `3px solid ${C.error}` }}>
       {children}
     </p>
   );
@@ -102,18 +102,18 @@ export function MobileLoginBar({ initialError = '', onBilling, onConnected, chec
       className="relative flex flex-col gap-1.5 pointer-events-none pl-[calc(var(--safe-left,env(safe-area-inset-left,0px))_+_10px)] pr-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_10px)] min-[700px]:pl-0 min-[700px]:pr-[calc(var(--safe-right,env(safe-area-inset-right,0px))_+_8px)]"
     >
       {error && (
-        <div className="pointer-events-auto w-full max-w-110 mx-auto box-border px-3 py-2 rounded-[16px] bg-[color:rgba(31,30,29,0.94)]" style={{ border: `1px solid ${C.border}` }}>
-          <p role="alert" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13.5px] leading-[1.4] text-[#e5867a]">{error}</p>
+        <div className="pointer-events-auto w-full max-w-110 mx-auto box-border px-3 py-2 rounded-[16px] bg-[color:rgba(10,15,28,0.94)]" style={{ border: `1px solid ${C.border}` }}>
+          <p role="alert" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13.5px] leading-[1.4] text-error">{error}</p>
         </div>
       )}
       <form
         onSubmit={submit}
-        className="pointer-events-auto flex items-center gap-1 w-full max-w-110 mx-auto box-border min-h-10 pl-[3.2px] pr-1 py-[3.2px] rounded-[20px] font-sys text-[#eceae3] bg-[color:rgba(31,30,29,0.88)] [box-shadow:0_4px_16px_rgba(0,0,0,0.4)]" style={{ border: `1px solid ${error ? C.error : C.border}` }}
+        className="pointer-events-auto flex items-center gap-1 w-full max-w-110 mx-auto box-border min-h-10 pl-[3.2px] pr-1 py-[3.2px] rounded-[20px] font-sys text-ink bg-[color:rgba(10,15,28,0.88)] [box-shadow:0_4px_16px_rgba(0,0,0,0.4)]" style={{ border: `1px solid ${error ? C.error : C.border}` }}
       >
         {checkingLabel ? (
           <div role="status" className="flex flex-row gap-2 items-center flex-auto min-w-0 min-h-8 px-2.5">
-            <CircularProgress size={16} className="text-[#d97757] flex-none" />
-            <p className="t-body1 truncate font-sys text-[14px] text-[#a3a097]">{checkingLabel}</p>
+            <CircularProgress size={16} className="text-primary flex-none" />
+            <p className="t-body1 truncate font-sys text-[14px] text-soft">{checkingLabel}</p>
           </div>
         ) : !p ? (
           // Temps 1 : le choix du fournisseur, deux moitiés de la pilule.
@@ -123,7 +123,7 @@ export function MobileLoginBar({ initialError = '', onBilling, onConnected, chec
               type="button"
               onClick={() => choose(x.id)}
               aria-label={`Se connecter à ${x.label}`}
-              className="g-base flex-[1_1_0] min-w-0 min-h-8 flex items-center justify-center gap-1.5 px-2 rounded-[16px] font-sys text-[14px] font-semibold text-[#eceae3] active:bg-[#30302e] focus-visible:bg-[#30302e]"
+              className="g-base flex-[1_1_0] min-w-0 min-h-8 flex items-center justify-center gap-1.5 px-2 rounded-[16px] font-sys text-[14px] font-semibold text-ink active:bg-raised focus-visible:bg-hover"
             >
               <ProviderLogo provider={x.id} size={18} />
               <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap">{x.label}</span>
@@ -132,10 +132,10 @@ export function MobileLoginBar({ initialError = '', onBilling, onConnected, chec
         ) : (
           // Temps 2 : retour, clé d'API, connexion. 16 px pour que Safari ne zoome pas au focus.
           <>
-            <button type="button" onClick={back} disabled={busy} aria-label="Changer de fournisseur" className="g-base flex-none w-8 h-8 rounded-full text-[#a3a097]">
+            <button type="button" onClick={back} disabled={busy} aria-label="Changer de fournisseur" className="g-base flex-none w-8 h-8 rounded-full text-soft">
               <ArrowBackIcon className="text-[17px]" />
             </button>
-            <KeyIcon className="text-[18px] text-[#a3a097] flex-none" />
+            <KeyIcon className="text-[18px] text-soft flex-none" />
             <InputBase
               fullWidth
               inputRef={inputRef}
@@ -147,15 +147,15 @@ export function MobileLoginBar({ initialError = '', onBilling, onConnected, chec
               disabled={busy}
               enterKeyHint="go"
               inputProps={{ 'aria-label': `Clé d’API ${p.platform}`, spellCheck: false, autoCapitalize: 'off', autoCorrect: 'off', 'aria-invalid': Boolean(error) }}
-              className="flex-auto min-w-0 text-[#eceae3] font-sys text-[16px] leading-[1.35] [&_input]:p-0 [&_input::placeholder]:text-[#a3a097] [&_input::placeholder]:opacity-100"
+              className="flex-auto min-w-0 text-ink font-sys text-[16px] leading-[1.35] [&_input]:p-0 [&_input::placeholder]:text-soft [&_input::placeholder]:opacity-100"
             />
             <button
               type="submit"
               disabled={busy || !clean}
               aria-label={busy ? 'Vérification de la clé' : 'Se connecter'}
-              className={`g-base flex-none w-8 h-8 rounded-full ${!busy && clean ? 'bg-[#d97757]' : 'bg-[#30302e]'} ${!busy && clean ? 'text-[#1f1e1d]' : 'text-[#a3a097]'} [transition:background-color_120ms] active:[transform:scale(0.94)]`}
+              className={`g-base flex-none w-8 h-8 rounded-full ${!busy && clean ? 'bg-primary' : 'bg-raised'} ${!busy && clean ? 'text-on-primary' : 'text-soft'} [transition:background-color_120ms] active:[transform:scale(0.94)]`}
             >
-              {busy ? <CircularProgress size={16} className="text-[#d97757]" /> : <SendIcon className="text-[17px]" />}
+              {busy ? <CircularProgress size={16} className="text-primary" /> : <SendIcon className="text-[17px]" />}
             </button>
           </>
         )}
@@ -176,13 +176,13 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
 
   return (
     <section aria-label="Connexion à l’assistant" className="flex flex-col gap-2.5 p-3 min-w-0">
-      <h3 className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-serif text-[18px] leading-[1.3] text-[#eceae3]">
+      <h3 className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-serif text-[18px] leading-[1.3] text-ink">
         {p ? `Se connecter à ${p.label}` : 'Connectez-vous pour utiliser l’assistant'}
       </h3>
 
       {!p ? (
         <>
-          <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13.5px] leading-[1.45] text-[#a3a097]">
+          <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13.5px] leading-[1.45] text-soft">
             Choisissez votre fournisseur, puis entrez votre propre clé d’API.
           </p>
           <ErrorNote>{error}</ErrorNote>
@@ -192,7 +192,7 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
                 <ProviderLogo provider={x.id} size={24} />
                 <span className="min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] flex flex-col">
                   <span>Se connecter à {x.label}</span>
-                  <span className="text-[12px] font-normal text-[#a3a097]">{x.platform}</span>
+                  <span className="text-[12px] font-normal text-soft">{x.platform}</span>
                 </span>
               </GateButton>
             ))}
@@ -202,12 +202,12 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
         <form onSubmit={submit} className="flex flex-col gap-[8.8px] min-w-0">
           <div className="flex flex-row gap-2 items-center min-w-0">
             <ProviderLogo provider={p.id} size={22} />
-            <label htmlFor="gobai-assistant-key" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[14px] text-[#eceae3]">
+            <label htmlFor="gobai-assistant-key" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[14px] text-ink">
               Clé d’API {p.platform}
             </label>
           </div>
-          <div className="flex items-center gap-2 px-2.5 min-h-12 rounded-[12px] bg-[#262624] focus-within:border-[#a3a097]" style={{ border: `1px solid ${error ? C.error : C.border}` }}>
-            <KeyIcon className="text-[18px] text-[#a3a097] flex-none" />
+          <div className="flex items-center gap-2 px-2.5 min-h-12 rounded-[12px] bg-raised focus-within:border-soft" style={{ border: `1px solid ${error ? C.error : C.border}` }}>
+            <KeyIcon className="text-[18px] text-soft flex-none" />
             <InputBase
               id="gobai-assistant-key"
               inputRef={inputRef}
@@ -219,11 +219,11 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
               disabled={busy}
               inputProps={{ spellCheck: false, autoCapitalize: 'off', autoCorrect: 'off', 'aria-invalid': Boolean(error), 'aria-describedby': 'gobai-assistant-key-note' }}
               // 16 px : Safari sur iPhone ne zoome pas au focus.
-              className="flex-auto min-w-0 text-[#eceae3] font-sys text-[16px] [&_input::placeholder]:text-[#a3a097] [&_input::placeholder]:opacity-100"
+              className="flex-auto min-w-0 text-ink font-sys text-[16px] [&_input::placeholder]:text-soft [&_input::placeholder]:opacity-100"
             />
           </div>
           <ErrorNote>{error}</ErrorNote>
-          <Link href={p.keysUrl} target="_blank" rel="noopener noreferrer" className="min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] self-start inline-flex items-center gap-1 min-h-8 text-[#d97757] font-sys text-[13.5px]">
+          <Link href={p.keysUrl} target="_blank" rel="noopener noreferrer" className="min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] self-start inline-flex items-center gap-1 min-h-8 text-primary font-sys text-[13.5px]">
             Obtenir une clé sur {p.platform} <OpenInNewIcon className="text-[15px]" />
           </Link>
           <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-2">
@@ -231,13 +231,13 @@ export function LoginScreen({ initialError = '', onBilling, onConnected }) {
               <ArrowBackIcon className="text-[18px]" /> Retour
             </GateButton>
             <GateButton type="submit" primary disabled={busy || !clean}>
-              {busy ? <><CircularProgress size={16} className="text-[#a3a097]" /> Vérification…</> : 'Se connecter'}
+              {busy ? <><CircularProgress size={16} className="text-soft" /> Vérification…</> : 'Se connecter'}
             </GateButton>
           </div>
         </form>
       )}
 
-      <p id="gobai-assistant-key-note" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[11.5px] leading-[1.45] text-[#a3a097]">{KEY_NOTE}</p>
+      <p id="gobai-assistant-key-note" className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[11.5px] leading-[1.45] text-soft">{KEY_NOTE}</p>
     </section>
   );
 }
@@ -275,12 +275,12 @@ export function BillingScreen({ provider, keyToRetry, message, billingUrl, onRes
     <section role="alert" aria-label={`Facturation ${p.label}`} className="flex flex-col gap-2.5 p-3 min-w-0">
       <div className="flex flex-row gap-2 items-center min-w-0">
         <ProviderLogo provider={p.id} size={24} />
-        <h3 className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-serif text-[18px] leading-[1.3] text-[#eceae3]">Moyen de paiement requis</h3>
+        <h3 className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-serif text-[18px] leading-[1.3] text-ink">Moyen de paiement requis</h3>
       </div>
-      <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[14px] leading-[1.5] text-[#eceae3]">
+      <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[14px] leading-[1.5] text-ink">
         {message || `Votre compte ${p.label} n’a pas de moyen de paiement ou n’a plus de crédit gratuit.`}
       </p>
-      <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13px] leading-[1.45] text-[#a3a097]">
+      <p className="t-body1 min-w-0 [overflow-wrap:anywhere] [word-break:break-word] [hyphens:auto] font-sys text-[13px] leading-[1.45] text-soft">
         Ajoutez un moyen de paiement sur {p.platform}, puis revenez ici.
       </p>
       <GateButton primary component="a" href={billingUrl || p.billingUrl} target="_blank" rel="noopener noreferrer">
@@ -288,11 +288,11 @@ export function BillingScreen({ provider, keyToRetry, message, billingUrl, onRes
       </GateButton>
       {keyToRetry && (
         <GateButton onClick={retry} disabled={busy}>
-          {busy ? <><CircularProgress size={16} className="text-[#a3a097]" /> Vérification…</> : 'J’ai ajouté un moyen de paiement'}
+          {busy ? <><CircularProgress size={16} className="text-soft" /> Vérification…</> : 'J’ai ajouté un moyen de paiement'}
         </GateButton>
       )}
       <ErrorNote>{note}</ErrorNote>
-      <GateButton onClick={onLogout} className="border-0 text-[#a3a097] min-h-11">
+      <GateButton onClick={onLogout} className="border-0 text-soft min-h-11">
         <LogoutIcon className="text-[17px]" /> Se déconnecter
       </GateButton>
     </section>

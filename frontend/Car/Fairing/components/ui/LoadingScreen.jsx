@@ -57,16 +57,19 @@ export function stepDone(id, step, leaving) {
 // Fin de stepDone.
 }
 
+// Palette Orbite : encres et accents de l'interface.
+import { NIGHT } from '../../theme/palette.js';
+
 // Couleurs de l'app : celles des astres (Soleil puis planètes, dans l'ordre de la Navigation),
 // le bleu du ∞ du titre, l'ambre des accents et les encres des panneaux.
 // Les dix couleurs des astres.
 const BODY_COLORS = ['#ffb300', '#b5b5b5', '#e8c27a', '#3d8bff', '#e0553a', '#d9a066', '#f0dc9a', '#7fe3ee', '#4a6bff', '#d8b894'];
-// Encre claire du texte.
-const INK = '#e8edf8';
+// Encre claire du texte (palette Orbite).
+const INK = NIGHT.ink;
 // Encre atténuée.
-const DIM = '#8b97b3';
-// Ambre des accents.
-const SUN = '#f0b24a';
+const DIM = NIGHT.soft;
+// Or des accents.
+const SUN = NIGHT.gold;
 // Bleu de la marque.
 const BRAND_BLUE = '#0000FF';
 // Dégradé horizontal qui parcourt les couleurs des astres.
@@ -274,7 +277,7 @@ export function LoadingScreen({ step, label, onDone, onReveal, children }) {
             // Jamais traduit.
             translate="no"
             // Ligne flexible qui passe à la ligne, taille selon l'écran, demi-gras, encre claire.
-            className="t-body1 m-0 min-w-0 flex items-center flex-wrap gap-x-[0.3em] text-[1.15rem] min-[600px]:text-[1.4rem] font-semibold leading-[1.2] text-[#e8edf8]"
+            className="t-body1 m-0 min-w-0 flex items-center flex-wrap gap-x-[0.3em] text-[1.15rem] min-[600px]:text-[1.4rem] font-semibold leading-[1.2] text-ink"
           // Fin de la balise ouvrante.
           >
             {/* Le symbole ∞ en bleu de la marque, deux fois plus grand, décoratif. */}
@@ -282,7 +285,7 @@ export function LoadingScreen({ step, label, onDone, onReveal, children }) {
             {/* Le nom de l'application. */}
             Go白ناन्टех
             {/* La suite du nom, en encre atténuée, décorative. */}
-            <span aria-hidden="true" className="text-[#8b97b3] font-normal">α΄一하나א</span>
+            <span aria-hidden="true" className="text-soft font-normal">α΄一하나א</span>
             {/* Le badge « En direct ». */}
             <LiveBadge className="ml-[0.2em]" />
           {/* Fin du nom. */}
@@ -323,9 +326,9 @@ export function LoadingScreen({ step, label, onDone, onReveal, children }) {
         {/* Ligne du libellé et du pourcentage, aux deux extrémités. */}
         <div className="flex items-baseline justify-between gap-4 mt-2.5">
           {/* Le libellé de l'étape, en encre atténuée. */}
-          <p className="t-body2 text-[#8b97b3]">{label}</p>
+          <p className="t-body2 text-soft">{label}</p>
           {/* Le pourcentage, en ambre, gras, à chiffres de largeur fixe ; « 0 % » au départ. */}
-          <p ref={percentRef} className="t-body2 text-[#f0b24a] font-bold tabular-nums">0 %</p>
+          <p ref={percentRef} className="t-body2 text-gold font-bold tabular-nums">0 %</p>
         {/* Fin de la ligne. */}
         </div>
 
@@ -343,13 +346,13 @@ export function LoadingScreen({ step, label, onDone, onReveal, children }) {
                 // Clé unique : l'identifiant de l'étape.
                 key={id}
                 // Coche et nom côte à côte, en petit ; encre claire si l'étape est finie, atténuée sinon.
-                className={`inline-flex items-center gap-[6px] text-[12px] ${done ? 'text-[#e8edf8]' : 'text-[#8b97b3]'} [transition:color_.3s_ease]`}
+                className={`inline-flex items-center gap-[6px] text-[12px] ${done ? 'text-ink' : 'text-soft'} [transition:color_.3s_ease]`}
               // Fin de la balise ouvrante.
               >
                 {/* La coche (début de la balise). */}
                 <span
                   // Début du style.
-                  className={`w-3.5 h-3.5 rounded-full grid place-items-center text-[10px] leading-none text-[#000] ${done ? 'bg-[#f0b24a]' : 'bg-transparent'} [transition:background-color_.3s_ease,border-color_.3s_ease]`} style={{ border: `1px solid ${done ? SUN : 'rgba(160, 180, 220, 0.4)'}` }}
+                  className={`w-3.5 h-3.5 rounded-full grid place-items-center text-[10px] leading-none text-[#000] ${done ? 'bg-gold' : 'bg-transparent'} [transition:background-color_.3s_ease,border-color_.3s_ease]`} style={{ border: `1px solid ${done ? SUN : 'rgba(160, 180, 220, 0.4)'}` }}
                 // Fin de la balise ouvrante.
                 >
                   {/* La coche si l'étape est finie, rien sinon. */}

@@ -1,3 +1,5 @@
+// Importe le style unique des calques (palette Orbite).
+import { LINES, hexNumber } from '../../../engines/astre-solide/astre-solide.style.js';
 // Géométrie des frontières, sans three.js (testable) : polylignes lon/lat → segments 3D sur la sphère unité.
 // Importe la conversion d'une longitude et d'une latitude en point 3D.
 import { lonLatToXYZ } from '../MapEngine/mercator.jsx';
@@ -53,15 +55,7 @@ export function buildBorderSegments(lines) {
 // borderLift : hauteur des frontières, 1 % de l'altitude de la caméra, bornée entre 2,6e-5 et 2e-3 rayon.
 export const borderLift = (altitude) => Math.min(2e-3, Math.max(2.6e-5, altitude * 0.01));
 
-/**
- * Style des frontières terrestres : ambre chaud, bien visible sur les tuiles claires et sombres.
- * Feuille de route 3.2 : les frontières et les littoraux avaient la même couleur et la même opacité.
- */
-// Style des frontières : couleur ambre et opacité élevée.
-export const BORDER_STYLE = Object.freeze({ color: 0xffd166, opacity: 0.9 });
-/**
- * Style des littoraux : blanc cassé, plus discret que les frontières pour ne pas les concurrencer, et sans bleu
- * (le bleu clair a été retiré du rendu).
- */
-// Style des littoraux : couleur blanc cassé et opacité réduite.
-export const COAST_STYLE = Object.freeze({ color: 0xf2efe6, opacity: 0.6 });
+/** Style des frontières terrestres : or de la palette Orbite (style unique des calques, astre-solide.style.js). */
+export const BORDER_STYLE = Object.freeze({ color: hexNumber(LINES.border.color), opacity: LINES.border.alpha });
+/** Style des littoraux : nacre neutre, plus discrète que les frontières, sans bleu (le bleu clair a été retiré du rendu). */
+export const COAST_STYLE = Object.freeze({ color: hexNumber(LINES.coast.color), opacity: LINES.coast.alpha });

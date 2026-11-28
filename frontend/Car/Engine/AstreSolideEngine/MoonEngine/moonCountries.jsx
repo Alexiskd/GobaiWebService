@@ -8,6 +8,8 @@
 //
 // Fonctions pures, testées dans moonCountries.test.jsx.
 
+// Importe les couleurs des pays, prises dans la palette Orbite.
+import { MOON_COUNTRY_COLORS } from '../../../Fairing/theme/palette.js';
 // Importe les lieux de la Lune (les sites d'alunissage en font partie).
 import { MOON_FEATURES } from './moonFeatures.jsx';
 
@@ -19,7 +21,7 @@ import { MOON_FEATURES } from './moonFeatures.jsx';
 export const MOON_COUNTRIES = [
   // Apollonie : les alunissages américains.
   {
-    id: 'apollonie', name: 'Apollonie', earth: 'États-Unis', color: '#7fb3ff',
+    id: 'apollonie', name: 'Apollonie', earth: 'États-Unis', color: MOON_COUNTRY_COLORS.apollonie,
     rockets: ['Saturn V', 'Atlas-Centaur', 'Falcon 9'], missions: ['Apollo', 'Surveyor', 'IM-', 'Blue Ghost'],
     capital: { name: 'Tranquillité', site: 'Apollo 11' },
     descent: [
@@ -30,7 +32,7 @@ export const MOON_COUNTRIES = [
   },
   // Lunovie : les alunissages soviétiques.
   {
-    id: 'lunovie', name: 'Lunovie', earth: 'URSS / Russie', color: '#ff8a7a',
+    id: 'lunovie', name: 'Lunovie', earth: 'URSS / Russie', color: MOON_COUNTRY_COLORS.lunovie,
     rockets: ['Molniya', 'Proton'], missions: ['Luna', 'Lunokhod'],
     capital: { name: 'Descensus', site: 'Luna 9' },
     descent: [
@@ -42,7 +44,7 @@ export const MOON_COUNTRIES = [
   },
   // Guanghanie : les alunissages chinois.
   {
-    id: 'guanghanie', name: 'Guanghanie', earth: 'Chine', color: '#ffd36b',
+    id: 'guanghanie', name: 'Guanghanie', earth: 'Chine', color: MOON_COUNTRY_COLORS.guanghanie,
     rockets: ['Longue Marche 3B', 'Longue Marche 5'], missions: ['Chang’e', "Chang'e"],
     capital: { name: 'Tianhe', site: 'Chang’e 4' },
     descent: [
@@ -54,7 +56,7 @@ export const MOON_COUNTRIES = [
   },
   // Chandrapur : l'alunissage indien.
   {
-    id: 'chandrapur', name: 'Chandrapur', earth: 'Inde', color: '#8fe3a8',
+    id: 'chandrapur', name: 'Chandrapur', earth: 'Inde', color: MOON_COUNTRY_COLORS.chandrapur,
     rockets: ['LVM3'], missions: ['Chandrayaan'],
     capital: { name: 'Shiv Shakti', site: 'Chandrayaan-3' },
     descent: [
@@ -65,7 +67,7 @@ export const MOON_COUNTRIES = [
   },
   // Kaguyakuni : l'alunissage japonais.
   {
-    id: 'kaguyakuni', name: 'Kaguyakuni', earth: 'Japon', color: '#e9a6ff',
+    id: 'kaguyakuni', name: 'Kaguyakuni', earth: 'Japon', color: MOON_COUNTRY_COLORS.kaguyakuni,
     rockets: ['H-IIA'], missions: ['SLIM'],
     capital: { name: 'Shioli', site: 'SLIM' },
     descent: [
