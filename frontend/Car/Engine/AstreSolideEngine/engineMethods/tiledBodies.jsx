@@ -16,8 +16,10 @@ import { isKindHidden } from '../BodyEngine/bodyKinds.jsx';
 import { sitesFromRegions } from '../../EruptionEngine/sunSurfaceMath.jsx';
 import { pickSystem } from '../../SystemeEngine/PerivolumeEngine/systemPick.js';
 import { WELL_LINE_OPACITY, MODEL_POLAR_LIMIT, AMBIENT_SHADED, SUN_LIGHT, SHADE_FADE_MS, ORBIT_POINTS } from './constants.jsx';
+import { setKnownPlaces } from '../MapEngine/earth/roadSource.jsx';
 
 // Méthodes : astres tuilés (modèle commun).
+
 export const tiledBodyMethods = {
   // ------------------------------------------------- astres tuilés (modèle commun)
 
@@ -513,7 +515,7 @@ export const tiledBodyMethods = {
   /** Noms des villes du monde : [{ name, lon, lat, pop, capital }] triés par population. */
   // setCityLabels : reçoit les villes du monde.
   // Gardées aussi pour le nom du lieu sous la caméra du globe de près (HUD).
-  setCityLabels(cities) { this.worldCities = Array.isArray(cities) ? cities : []; this.worldLabels.setCities(cities); },
+  setCityLabels(cities) { this.worldCities = Array.isArray(cities) ? cities : []; this.worldLabels.setCities(cities); setKnownPlaces(this.worldCities.map((c) => c.name)); },
   // setCityLabelsVisible : affiche ou masque les noms des villes.
   setCityLabelsVisible(on) { this.worldLabels.setVisible(on); },
   // setCountryLabelsVisible : affiche ou masque les noms des pays.

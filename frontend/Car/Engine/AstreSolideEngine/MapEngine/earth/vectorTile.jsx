@@ -7,6 +7,8 @@
  * peu de la tuile (marge prévue par le fournisseur).
  */
 
+// Type de géométrie « point » (lieux habités : villes, villages…) : 1.
+const TYPE_POINT = 1;
 // Type de géométrie « ligne » dans le format des tuiles vectorielles : 2.
 const TYPE_LINE = 2;
 // Type de géométrie « polygone » (surfaces : mer, lacs), lu comme des anneaux fermés.
@@ -185,7 +187,7 @@ export function readLines(r, closed = false) {
 }
 
 // readLayer : lit une couche, avec la liste des propriétés à garder (début).
-function readLayer(r, keysWanted) {
+function readLayer(r, keysWanted, withPoints = false) {
   // Clés, valeurs et objets bruts de la couche.
   const keys = [], values = [], raw = [];
   // Nom de la couche et étendue de son repère, 4096 par défaut.
@@ -235,8 +237,10 @@ function readLayer(r, keysWanted) {
       else f.skip(wire);
     // Fin de la boucle.
     }
-    // Ni ligne ni polygone, ou pas de géométrie : objet ignoré.
-    if ((type !== TYPE_LINE && type !== TYPE_POLYGON) || !geometry) continue; // lignes (routes, cours d'eau) et contours des surfaces (littoraux) ; points ignorés
+    // Point d'une couche de points demandée (lieux habités) : gardé à part, avec ses points.
+    const isPoint = withPoints && type === TYPE_POINT;
+    // Ni ligne ni polygone (ni point demandé), ou pas de géométrie : objet ignoré.
+    if ((type !== TYPE_LINE && type !== TYPE_POLYGON && !isPoint) || !geometry) continue; // lignes (routes, cours d'eau) et contours des surfaces (littoraux) ; points ignorés
     // Propriétés gardées.
     const props = {};
     // S'il a des propriétés (début).
@@ -251,6 +255,8 @@ function readLayer(r, keysWanted) {
       }
     // Fin de ce cas.
     }
+    // Point : ses coordonnées, gardées si la géométrie en a.
+    if (isPoint) { const points = readPoints(geometry); if (points.length) features.push({ props, points }); continue; }
     // Lignes de la géométrie.
     const lines = readLines(geometry, type === TYPE_POLYGON);
     // S'il y en a : garde l'objet.
@@ -262,14 +268,36 @@ function readLayer(r, keysWanted) {
 // Fin de readLayer.
 }
 
+/** Lit les points d'une géométrie de type point : x, y à la suite (repère de la tuile). */
+// Déclare et exporte readPoints : le lecteur de la géométrie (début).
+export function readPoints(r) {
+  // Points lus, et position courante.
+  const out = [];
+  let x = 0, y = 0;
+  // Tant qu'il reste des octets (début).
+  while (r.pos < r.end) {
+    // Commande, son numéro et son nombre de répétitions.
+    const command = r.varint(), id = command & 7;
+    // Un point n'a que la commande 1 (aller à) : toute autre rend la géométrie illisible.
+    if (id !== 1) throw new Error('géométrie de point illisible');
+    // Pour chaque répétition : avance la position et garde le point.
+    for (let count = command >> 3; count > 0; count--) { x += zigzag(r.varint()); y += zigzag(r.varint()); out.push(x, y); }
+  // Fin de la boucle.
+  }
+  // Renvoie les points.
+  return Int32Array.from(out);
+// Fin de readPoints.
+}
+
 /**
  * Décode les lignes d'une tuile vectorielle.
  * @param {Uint8Array} bytes  fichier de la tuile (non compressé)
  * @param {Record<string, string[] | null>} layers  couches à lire → propriétés à garder (null = toutes)
+ * @param {{ points?: string[] }} [options]  couches dont les points sont lus aussi (objets { props, points })
  * @returns {Record<string, { extent: number, features: { props: object, lines: { points: Int32Array, box: number[] }[] }[] }>}
  */
 // Déclare et exporte decodeLines : les octets de la tuile et les couches à lire.
-export function decodeLines(bytes, layers) {
+export function decodeLines(bytes, layers, { points = [] } = {}) {
   // Résultat.
   const out = {};
   // Lecteur de la tuile.
@@ -298,7 +326,7 @@ export function decodeLines(bytes, layers) {
     // Couche sans nom ou non demandée : ignorée.
     if (name === null || !(name in layers)) continue;
     // Lit la couche avec les propriétés demandées.
-    const read = readLayer(layer, layers[name]);
+    const read = readLayer(layer, layers[name], points.includes(name));
     // Range son étendue et ses objets sous son nom.
     out[name] = { extent: read.extent, features: read.features };
   // Fin de la boucle.
