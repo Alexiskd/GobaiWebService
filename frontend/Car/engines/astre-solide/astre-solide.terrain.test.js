@@ -1,7 +1,7 @@
 // Tests du relief du globe CesiumJS (node --test).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { HEIGHTMAP_SIZE, MAX_SOURCES, TERRAIN_MAX_LEVEL, bodyTilePlan, createBodyTerrainProvider, createTerrainProvider, mercatorPixel, terrariumAt, tilePlan } from './astre-solide.terrain.js';
+import { HEIGHTMAP_SIZE, MAX_SOURCES, TERRAIN_MAX_LEVEL, bodyTilePlan, createBodyTerrainProvider, createTerrainProvider, heightsFor, mercatorPixel, terrariumAt, tilePlan } from './astre-solide.terrain.js';
 
 // Tuile Terrarium de 256 × 256 pixels : altitude = colonne (m), moitié basse sous la mer.
 const enc = (m) => { const v = m + 32768; return [Math.floor(v / 256), Math.floor(v % 256), 0]; };
@@ -22,15 +22,28 @@ test('altitude d\'un pixel : décodée, mer ramenée à 0, tuiles de 512 pixels,
   assert.equal(terrariumAt(rgba, 256, 100, 200, true), -300);
   const big = new Uint8ClampedArray(512 * 512 * 4).fill(0); big.set([...enc(1234), 255], (2 * 512 + 2) * 4);
   assert.equal(terrariumAt(big, 512, 1, 1), 1234);
+  // Lecture bilinéaire : entre les colonnes 100 et 101, la pente est suivie (plus de marches d'escalier).
+  assert.equal(terrariumAt(rgba, 256, 100.5, 10), 100.5);
+  assert.equal(terrariumAt(rgba, 256, 100.25, 10), 100.25);
+});
+
+test('tuile source en échec : refusée en tuile fine (parente agrandie), plate en tuile racine', async () => {
+  const plan = { tiles: [['a', {}], ['b', {}]], points: [{ key: 'a', u: 5, v: 0 }, { key: 'b', u: 7, v: 0 }] };
+  const get = (t) => (t === plan.tiles[1][1] ? Promise.reject(new Error('502')) : Promise.resolve({ rgba, size: 256 }));
+  // Tuile fine : refusée, CesiumJS reprend sa parente.
+  await assert.rejects(heightsFor(plan, get, 5));
+  // Tuile racine : le globe s'affiche, 0 m là où la donnée manque.
+  assert.deepEqual([...(await heightsFor(plan, get, 0))], [5, 0]);
 });
 
 test('plan d\'une tuile d\'astre : découpage géographique 2^(z+1) × 2^z, niveau borné à la source', () => {
   // Niveau 0 du globe : 2 × 1 tuiles, la tuile 0/0/0 couvre l'ouest ; niveau source = 0.
   const p0 = bodyTilePlan(0, 0, 0, { minZoom: 3, maxZoom: 8 });
-  assert.equal(p0.z, 3); // au-dessous du minZoom, la tuile du niveau 3 est reprise
+  assert.equal(p0.z, 0); // même niveau que le globe : une seule tuile source pour une tuile racine (plus 64)
+  assert.equal(p0.tiles.length, 1);
   assert.equal(p0.points.length, HEIGHTMAP_SIZE * HEIGHTMAP_SIZE);
-  // Coin nord-ouest de la tuile : pixel (0, 0) de la tuile source 3/0/0.
-  assert.deepEqual(p0.points[0], { key: '3/0/0', u: 0, v: 0 });
+  // Coin nord-ouest de la tuile : pixel (0, 0) de la tuile source 0/0/0.
+  assert.deepEqual(p0.points[0], { key: '0/0/0', u: 0, v: 0 });
   // Niveau 8 du globe : niveau source borné au maxZoom 8.
   const p8 = bodyTilePlan(510, 254, 8, { minZoom: 3, maxZoom: 8 });
   assert.equal(p8.z, 8);
