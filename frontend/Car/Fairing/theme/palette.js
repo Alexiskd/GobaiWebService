@@ -34,6 +34,12 @@ export const DAY = Object.freeze({
   violet: '#6b4fd0', cyan: '#127a8a', green: '#177a5b', gold: '#876510', coral: '#c2413a',
 });
 
+/**
+ * Gris de la cartographie (rues, frontières, littoraux) : noir et blanc en fondu de gris, du plus important (blanc)
+ * au plus discret (gris moyen). Neutres : ni bleu ni teinte, pour ne pas concurrencer les images satellite.
+ */
+export const MAP_GRAYS = Object.freeze({ g100: '#ffffff', g90: '#ececec', g80: '#dcdcdc', g70: '#cccccc', g60: '#bdbdbd', g50: '#a8a8a8', g40: '#949494', g30: '#7a7a7a' });
+
 /** Jetons de texte, vérifiés ≥ 4,5 : 1 sur le panneau de leur thème. */
 // Déclare et exporte les jetons de texte.
 export const TEXT_TOKENS = ['ink', 'soft', 'primary', 'violet', 'cyan', 'green', 'gold', 'coral'];

@@ -176,7 +176,7 @@ export class AstreSolideGlobe {
   // destroyViewer : détruit le globe de l'astre en cours (début).
   destroyViewer() {
     // Paramètres de l'astre libérés avant le globe.
-    this.overlays?.destroy(); this.overlays = null;
+    this.overlays?.destroy(); this.overlays = null; this.everLoaded = false;
     // Globe détruit, s'il existe.
     if (this.viewer && !this.viewer.isDestroyed()) this.viewer.destroy();
     // Conteneur retiré.
@@ -204,6 +204,8 @@ export class AstreSolideGlobe {
     if (this.pending) return;
     // Réarme le passage si la caméra est assez haute.
     this.armed = rearm(this.armed, altKm, this.body.radiusKm);
+    // Globe sans tuiles encore dessinées : pas de passage (l'écran resterait vide le temps qu'elles arrivent).
+    if (!this.everLoaded) return;
     // Pas de passage : rien.
     if (!shouldEnter({ focused, altKm, armed: this.armed, radiusKm: this.body.radiusKm })) return;
     // Passe la main au globe au même endroit ; le zoom three.js en cours continue dans le globe (même altitude visée).
@@ -355,7 +357,9 @@ export class AstreSolideGlobe {
     // Fondu d'apparition : il démarre quand les tuiles visibles sont arrivées (ou au plus tard après FADE_WAIT_MS),
     // pour ne jamais montrer le sol uni d'attente ; opacité du globe à jour.
     const now = performance.now();
-    if (this.fadeStart == null && (this.viewer.scene.globe.tilesLoaded || now - (this.shownAt ?? now) > AstreSolideGlobe.FADE_WAIT_MS)) this.fadeStart = now;
+    // Tuiles visibles arrivées au moins une fois : le globe peut remplacer l'astre de three.js.
+    if (this.viewer.scene.globe.tilesLoaded) this.everLoaded = true;
+    if (this.fadeStart == null && (this.everLoaded || now - (this.shownAt ?? now) > AstreSolideGlobe.FADE_WAIT_MS)) this.fadeStart = now;
     this.container.style.opacity = String(this.fadeIn);
   // Fin de drawOverlay.
   }
@@ -550,6 +554,12 @@ export class AstreSolideGlobe {
   // Fondu d'apparition du globe par-dessus three.js : durée (ms), et attente maximale des tuiles avant de le lancer.
   static FADE_IN_MS = 400;
   static FADE_WAIT_MS = 1500;
+
+  /**
+   * Vrai quand le globe a déjà dessiné ses tuiles au moins une fois : seulement alors l'astre de three.js peut être
+   * caché dessous (sinon, tuiles en retard au zoom : rien à l'écran, l'astre « disparaissait »).
+   */
+  get bodyReady() { return Boolean(this.everLoaded); }
 
   /** Opacité du globe dans son fondu d'apparition (0 à 1 ; 1 de près), voir fadeProgress. */
   // fadeIn : l'opacité.

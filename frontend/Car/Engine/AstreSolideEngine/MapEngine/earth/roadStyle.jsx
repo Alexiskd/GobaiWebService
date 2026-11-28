@@ -28,25 +28,25 @@ export const ROAD_MAX_ZOOM = 17;
 // Déclare et exporte la table des types de voie (début).
 export const ROAD_CLASSES = {
   // path, sentier : blanc à 55 %, tracé dès le niveau 15.
-  path: { rank: 0, width: 0.8, color: '#ffffff', alpha: 0.55, minZoom: 15, nameZoom: 17 },
+  path: { rank: 0, width: 0.8, color: '#949494', alpha: 0.55, minZoom: 15, nameZoom: 17 },
   // track, chemin : blanc à 55 %, tracé dès le niveau 15.
-  track: { rank: 1, width: 0.8, color: '#ffffff', alpha: 0.55, minZoom: 15, nameZoom: 17 },
+  track: { rank: 1, width: 0.8, color: '#949494', alpha: 0.55, minZoom: 15, nameZoom: 17 },
   // service, voie de service : blanc à 70 %, tracé dès le niveau 15.
-  service: { rank: 2, width: 1.0, color: '#ffffff', alpha: 0.7, minZoom: 15, nameZoom: 16 },
+  service: { rank: 2, width: 1.0, color: '#a8a8a8', alpha: 0.7, minZoom: 15, nameZoom: 16 },
   // minor, rue : blanc à 85 %, tracée dès le niveau 12.
-  minor: { rank: 3, width: 1.5, color: '#ffffff', alpha: 0.85, minZoom: 12, nameZoom: 15 },
+  minor: { rank: 3, width: 1.5, color: '#bdbdbd', alpha: 0.85, minZoom: 12, nameZoom: 15 },
   // rail, voie ferrée, métro aérien et tram : gris clair en tirets à 90 %, sur la rue et sous les routes, dès le niveau 13.
-  rail: { rank: 3.5, width: 1.2, color: '#cfcfcf', alpha: 0.9, dash: [4, 3], minZoom: 13, nameZoom: 16 },
+  rail: { rank: 3.5, width: 1.2, color: '#7a7a7a', alpha: 0.9, dash: [4, 3], minZoom: 13, nameZoom: 16 },
   // tertiary, route tertiaire : blanc à 95 %, tracée dès le niveau 11.
-  tertiary: { rank: 4, width: 1.9, color: '#ffffff', alpha: 0.95, minZoom: 11, nameZoom: 13 },
+  tertiary: { rank: 4, width: 1.9, color: '#cccccc', alpha: 0.95, minZoom: 11, nameZoom: 13 },
   // secondary, route secondaire : blanc crème opaque, tracée dès le niveau 9.
-  secondary: { rank: 5, width: 2.2, color: '#fff4d6', alpha: 1, minZoom: 9, nameZoom: 13 },
+  secondary: { rank: 5, width: 2.2, color: '#dcdcdc', alpha: 1, minZoom: 9, nameZoom: 13 },
   // primary, route principale : jaune pâle opaque, tracée dès le niveau 7.
-  primary: { rank: 6, width: 2.6, color: '#fde68a', alpha: 1, minZoom: 7, nameZoom: 12 },
+  primary: { rank: 6, width: 2.6, color: '#ececec', alpha: 1, minZoom: 7, nameZoom: 12 },
   // trunk, voie rapide : jaune orangé opaque, tracée dès le niveau 5.
-  trunk: { rank: 7, width: 3.0, color: '#fbc85c', alpha: 1, minZoom: 5, nameZoom: 10 },
+  trunk: { rank: 7, width: 3.0, color: '#f6f6f6', alpha: 1, minZoom: 5, nameZoom: 10 },
   // motorway, autoroute : orange opaque, tracée dès le niveau 4.
-  motorway: { rank: 8, width: 3.4, color: '#f7a440', alpha: 1, minZoom: 4, nameZoom: 10 },
+  motorway: { rank: 8, width: 3.4, color: '#ffffff', alpha: 1, minZoom: 4, nameZoom: 10 },
 // Fin de la table.
 };
 // Déclare et exporte la couleur du liseré des routes : noir à 45 %.
@@ -378,7 +378,7 @@ export function planLabels(candidates, { size, font, measure, max = MAX_LABELS }
 }
 
 // Couleur des littoraux tracés dans la tuile : la même teinte que les littoraux du globe (bordersGeometry.jsx).
-export const COAST_COLOR = '#f2efe6';
+export const COAST_COLOR = '#a8a8a8';
 // Opacité des littoraux tracés dans la tuile : plus discrète que les frontières, comme sur le globe.
 export const COAST_ALPHA = 0.6;
 
