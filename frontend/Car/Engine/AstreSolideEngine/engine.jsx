@@ -3267,6 +3267,8 @@ export class SolarEngine {
 
   // setMoonFeatureTypes : choisit les types de lieux affichés.
   setMoonFeatureTypes(types) { this.moonFeatureTypes = new Set(types); this.applyMoonFeatures(); }
+  /** Pays de la Lune (frontières et noms d'après les alunissages, voir MoonEngine/moonCountries.jsx) : affichés ou non. */
+  setMoonCountriesVisible(on) { this.moonCountriesOn = Boolean(on); }
   // applyMoonFeatures : applique ce choix (début).
   applyMoonFeatures() {
     // Lieux des types choisis.

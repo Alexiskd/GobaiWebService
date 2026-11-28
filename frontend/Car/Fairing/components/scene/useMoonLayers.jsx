@@ -8,11 +8,16 @@ import { resolveApiUrl } from '../../../Computing/api/index.jsx';
 export function useMoonLayers({ engine }) {
   // État : lieux lunaires affichés ou non (non au départ).
   const [moonFeatures, setMoonFeatures] = useState(false);
+  // État : pays de la Lune (frontières et noms d'après les alunissages) affichés ou non (non au départ).
+  const [moonCountries, setMoonCountries] = useState(false);
   // État : couleurs naturelles chargées (true), en échec (false) ou pas encore connues (null).
   const [moonColorOk, setMoonColorOk] = useState(null);
 
   // Donne au moteur les types de lieux à afficher : les quatre types si l'interrupteur est actif, aucun sinon.
   useEffect(() => { engine?.setMoonFeatureTypes(moonFeatures ? ['landing', 'mare', 'crater', 'region'] : []); }, [engine, moonFeatures]);
+
+  // Donne au moteur l'affichage des pays de la Lune.
+  useEffect(() => { engine?.setMoonCountriesVisible?.(moonCountries); }, [engine, moonCountries]);
 
   // Effet qui charge les couleurs naturelles de la Lune.
   useEffect(() => {
@@ -31,7 +36,7 @@ export function useMoonLayers({ engine }) {
   // Fin de l'effet ; dépendance : le moteur.
   }, [engine]);
 
-  // Renvoie l'état des lieux, sa fonction de mise à jour et l'état des couleurs.
-  return { moonFeatures, setMoonFeatures, moonColorOk };
+  // Renvoie l'état des lieux et des pays, leurs fonctions de mise à jour et l'état des couleurs.
+  return { moonFeatures, setMoonFeatures, moonCountries, setMoonCountries, moonColorOk };
 // Fin de useMoonLayers.
 }
