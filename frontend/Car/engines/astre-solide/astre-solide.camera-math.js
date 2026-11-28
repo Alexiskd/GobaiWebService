@@ -5,6 +5,8 @@
 
 // Importe la conversion du glisser de la scène three.js (angle par pixel, raccourci de la vue 3/4).
 import { dragRadPerPx, dragStep } from '../../Engine/AstreSolideEngine/InputEngine/touchMath.jsx';
+// Importe les profils de tuiles par astre.
+import { profileCacheOptions, profileScreenError } from './astre-solide.tiles.js';
 // Importe le lissage du zoom commun à three.js (temps borné, pas de saut après une pause).
 import { easeFactor } from '../../Engine/AstreSolideEngine/InputEngine/zoomMath.jsx';
 
@@ -356,14 +358,10 @@ export function skyVisible({ position: p, direction: d, up: u, fovy, aspect = 1,
  * ordinateur, 3 sur écran tactile (téléphone, tablette : moins de tuiles, moins de chauffe). En mouvement : 2 de plus
  * (des tuiles plus grossières suffisent pendant que la vue bouge ; les fines arrivent dès l'arrêt).
  */
-// Erreur d'écran tolérée au repos sur écran tactile, par gamme de l'appareil (voir PerfEngine/deviceTier.jsx).
-const TOUCH_SSE = { high: 3, mid: 4, low: 6 };
-// Tuiles gardées en mémoire sur écran tactile, par gamme.
-const TOUCH_CACHE = { high: 150, mid: 90, low: 50 };
 // Déclare et exporte globeScreenError : en mouvement ? écran tactile ? (début).
-export function globeScreenError({ moving = false, touch = false, tier = 'high' } = {}) {
-  // Repos selon l'appareil (téléphone : plus grossier en gamme moyenne et basse), plus le surcoût du mouvement.
-  return (touch ? (TOUCH_SSE[tier] ?? TOUCH_SSE.high) : 2) + (moving ? 2 : 0);
+export function globeScreenError({ moving = false, touch = false, tier = 'high', bodyId = 'earth' } = {}) {
+  // Profil de l'astre (astre-solide.tiles.js) : repos selon l'appareil, plus le surcoût du mouvement.
+  return profileScreenError({ bodyId, moving, touch, tier });
 // Fin de globeScreenError.
 }
 
@@ -373,7 +371,7 @@ export function globeScreenError({ moving = false, touch = false, tier = 'high' 
  * écran tactile (téléphone) : 150 tuiles, sans préchargement des voisines (mémoire et chauffe). Fonction pure.
  */
 // Déclare et exporte globeCacheOptions : l'écran tactile ou non.
-export const globeCacheOptions = ({ touch = false, tier = 'high' } = {}) => ({ tileCacheSize: touch ? (TOUCH_CACHE[tier] ?? TOUCH_CACHE.high) : 400, preloadSiblings: !touch, preloadAncestors: true });
+export const globeCacheOptions = ({ touch = false, tier = 'high', bodyId = 'earth' } = {}) => profileCacheOptions({ bodyId, touch, tier });
 
 /**
  * Avancement d'un fondu (0 à 1, courbe en S) commencé à `start` (null : pas commencé → 0 ; −Infinity : fini → 1),
