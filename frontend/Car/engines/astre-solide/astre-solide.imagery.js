@@ -44,10 +44,11 @@ export function templateOf(source) {
  * Sous le niveau le plus grossier de la source, une image transparente d'un pixel (CesiumJS demande toujours le
  * niveau 0). Une tuile en échec est signalée à CesiumJS, qui garde l'image du niveau au-dessus.
  * @param {object} Cesium la bibliothèque CesiumJS
- * @param {{ source: object, projectionId: string, ellipsoid: object, credit?: string }} o
+ * @param {{ source: object, projectionId: string, ellipsoid: object, credit?: string, alpha?: boolean }} o (alpha : tuiles
+ *   transparentes, pour un calque posé par-dessus le fond de carte, comme les rues)
  */
 // Déclare et exporte tileSourceImageryProvider : la bibliothèque et la source (début).
-export function tileSourceImageryProvider(Cesium, { source, projectionId, ellipsoid, credit = '' }) {
+export function tileSourceImageryProvider(Cesium, { source, projectionId, ellipsoid, credit = '', alpha = false }) {
   // Mention : chaîne uniquement (CesiumJS refuse tout autre type pour Credit).
   const creditText = typeof credit === 'string' ? credit : '';
   // Réglages de la source.
@@ -67,7 +68,7 @@ export function tileSourceImageryProvider(Cesium, { source, projectionId, ellips
       // l'adresse (relative : même serveur que la page), le découpage, la taille et les niveaux ;
       url: template, tilingScheme, tileWidth: o.tileSize, tileHeight: o.tileSize, minimumLevel: 0, maximumLevel: o.maximumLevel,
       // image opaque, mention de la source.
-      hasAlphaChannel: false, ...(creditText ? { credit: new Cesium.Credit(creditText) } : {}),
+      hasAlphaChannel: alpha, ...(creditText ? { credit: new Cesium.Credit(creditText) } : {}),
     // Fin du fournisseur d'adresses.
     });
   // Fin de ce cas.
@@ -81,7 +82,7 @@ export function tileSourceImageryProvider(Cesium, { source, projectionId, ellips
     // Niveaux : CesiumJS demande dès 0, on répond pour tous jusqu'au plus fin de la source.
     minimumLevel: 0, maximumLevel: o.maximumLevel,
     // Prêt tout de suite, sans transparence (fond opaque), sans politique de rejet.
-    ready: true, readyPromise: Promise.resolve(true), hasAlphaChannel: false, tileDiscardPolicy: undefined,
+    ready: true, readyPromise: Promise.resolve(true), hasAlphaChannel: alpha, tileDiscardPolicy: undefined,
     // Événement des erreurs, mention de la source, pas de mandataire.
     errorEvent: new Cesium.Event(), credit: creditText ? new Cesium.Credit(creditText) : undefined, proxy: undefined,
     // Pas de mention par tuile.

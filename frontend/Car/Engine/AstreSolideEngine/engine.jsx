@@ -3765,6 +3765,8 @@ export class SolarEngine {
   /** Frontières et littoraux : polylignes [lon, lat, …] de GET /borders (remplacent les précédentes). */
   // setBorders : reçoit les frontières, les littoraux et les pays (début).
   setBorders({ lines = [], coastlines = [], countries = [] }) {
+    // Gardées telles quelles : le globe CesiumJS redessine les mêmes lignes (engines/astre-solide/astre-solide.overlays.js).
+    this.borderData = { lines, coastlines, countries };
     // build : remplace un jeu de lignes par de nouvelles, dans son style (début).
     const build = (old, polylines, style) => {
       // S'il y a un ancien jeu (début).

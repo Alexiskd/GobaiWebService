@@ -28,6 +28,8 @@ import { setViewHash } from './astre-solide.view-link.js';
 // Importe le relief en volume de la Terre (AWS Terrain Tiles) et celui des autres astres solides (tuiles Terrarium du serveur).
 import { createBodyTerrainProvider, createTerrainProvider } from './astre-solide.terrain.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
+// Importe les paramètres de l'astre redessinés sur le globe (rues, frontières, noms, volcans, lieux de la Lune).
+import { GlobeOverlays } from './astre-solide.overlays.js';
 import { cesiumShade, fadeProgress, globeCacheOptions, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
@@ -136,6 +138,8 @@ export class AstreSolideGlobe {
       this.camera = new CesiumCamera({ viewer: this.viewer, Cesium: this.Cesium, engine: this.engine, body });
       // Relief posé dès la création (avant la première image) : pas de changement de fournisseur pendant le zoom.
       this.syncTerrain();
+      // Paramètres de l'astre de la scène three.js, redessinés sur le globe (voir astre-solide.overlays.js).
+      this.overlays = new GlobeOverlays({ Cesium: this.Cesium, viewer: this.viewer, engine: this.engine, body, ellipsoid: this.ellipsoid });
       // À chaque mouvement : verrou du nord, HUD, et retour à la scène three.js si la caméra s'éloigne.
       this.viewer.camera.changed.addEventListener(() => this.onCameraChange());
       // Sensibilité du changement de caméra : 1 % (assez pour suivre le zoom).
@@ -169,6 +173,8 @@ export class AstreSolideGlobe {
 
   // destroyViewer : détruit le globe de l'astre en cours (début).
   destroyViewer() {
+    // Paramètres de l'astre libérés avant le globe.
+    this.overlays?.destroy(); this.overlays = null;
     // Globe détruit, s'il existe.
     if (this.viewer && !this.viewer.isDestroyed()) this.viewer.destroy();
     // Conteneur retiré.
@@ -340,6 +346,8 @@ export class AstreSolideGlobe {
     this.viewer.clock.currentTime = this.Cesium.JulianDate.fromDate(new Date(this.engine.simMs ?? Date.now()), this.viewer.clock.currentTime);
     // Ombre du globe (bouton « Ombre »), fond de carte de l'app et définition de la scène three.js.
     this.applyShade(); this.syncImagery(); this.syncResolution();
+    // Paramètres de l'astre en superposition (calques WebGL de three.js, cachés sous le globe).
+    this.overlays?.sync(false);
     // Image demandée (rendu à la demande), puis dessinée tout de suite.
     this.viewer.scene.requestRender(); this.viewer.resize(); this.viewer.render();
     // Fondu d'apparition : il démarre quand les tuiles visibles sont arrivées (ou au plus tard après FADE_WAIT_MS),
@@ -500,6 +508,8 @@ export class AstreSolideGlobe {
     e.updateShadeFade?.(dt);
     // Ombre, Soleil, fond de carte et définition à jour.
     this.applyShade(); this.syncSun(); this.syncImagery(); this.syncResolution();
+    // Paramètres de l'astre de près : tous les calques (repères HTML de three.js masqués).
+    this.overlays?.sync(true);
     // Rotation automatique, hors glisser.
     if (e.autoRotate && !e.drag) this.camera.autoRotate(dt);
   // Fin de tick.
