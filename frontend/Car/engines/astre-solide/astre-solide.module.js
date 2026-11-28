@@ -470,16 +470,7 @@ export class AstreSolideGlobe {
     if (!img) return;
     // Fournisseur qui lit la source de tuiles de l'app, sur l'ellipsoïde de l'astre (même grille 2^(z+1) × 2^z).
     const provider = tileSourceImageryProvider(this.Cesium, { source: img.source, projectionId: img.projectionId, ellipsoid: this.ellipsoid, credit: img.credit });
-    // Échec d'une tuile : signalé dans la console (sinon le globe reste uni sans erreur visible).
-    provider.errorEvent?.addEventListener((err) => {
-      console.error('[Cesium Imagery Error]', {
-        bodyId,
-        url: provider.url || img.source?.info?.urlTemplate || '',
-        level: err?.level, x: err?.x, y: err?.y,
-        timesRetried: err?.timesRetried,
-        message: err?.message,
-      });
-    });
+    // Échec d'une tuile : rien dans la console (consigne : console vide) ; CesiumJS garde l'image du niveau au-dessus.
     // Ajouté au globe, bien visible.
     const layer = new this.Cesium.ImageryLayer(provider);
     layer.show = true; layer.alpha = 1.0;
