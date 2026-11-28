@@ -13,7 +13,6 @@ import { PANEL_W, edge } from '@/Fairing/theme/layout';
 // Importe safe, la marge de sécurité d'un bord de l'écran.
 import { safe } from '@/Fairing/theme/mediaQueries';
 // Importe le compteur d'images par seconde (forme en ligne, à la suite de la date).
-import { FpsCounter } from './perf/FpsCounter.jsx';
 // Importe le badge « En direct ».
 import { LiveBadge } from '../ui/LiveBadge.jsx';
 
@@ -101,12 +100,10 @@ export function HudTop({ hud }) {
         <LiveBadge className={live ? 'visible' : 'invisible'} />
       {/* Fin du titre. */}
       </h1>
-      {/* La date, suivie du compteur d'images par seconde sur ordinateur. */}
+      {/* La date (aucun compteur d'images par seconde à l'écran). */}
       <span className="hud-title-meta">
         {/* La date. */}
         {date}
-        {/* Le compteur d'images par seconde. Pas monté sur téléphone : aucun abonnement inutile aux FPS. */}
-        {!compact && <FpsCounter hud={hud} />}
       {/* Fin de la ligne de la date. */}
       </span>
       {/* Le texte de l'astre visé, s'il existe, hors téléphone, plus discret. */}

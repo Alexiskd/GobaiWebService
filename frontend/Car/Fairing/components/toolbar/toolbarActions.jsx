@@ -31,6 +31,12 @@ const assistantIcon = (provider) => PROVIDER_MARKS[provider] ?? AutoAwesomeIcon;
 // Nom du fournisseur pour l'infobulle.
 const PROVIDER_NAMES = { claude: 'Claude', mistral: 'Mistral' };
 
+/**
+ * Interface minimale (plan de refonte, étape 5) : sur ordinateur, seules ces actions restent à l'écran ; les autres
+ * passent derrière le bouton « Plus » (⋯) de la barre. Le téléphone garde sa feuille d'actions.
+ */
+export const CORE_ACTIONS = new Set(['search', 'assistant', 'infos', 'daynight']);
+
 /** Blocs de la barre ordinateur, dans l'ordre d'affichage. */
 export const TOOLBAR_GROUPS = ['explore', 'display', 'data', 'assistant', 'info'];
 /** Nom de chaque bloc, lu par les lecteurs d'écran. */
