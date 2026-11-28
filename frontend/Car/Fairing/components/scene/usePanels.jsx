@@ -55,6 +55,20 @@ export function usePanels({ compact }) {
   // Fin de l'effet ; aucune dépendance.
   }, []);
 
+  // Interface minimale (refonte) : sur téléphone, un geste sur la scène 3D (le canevas) referme la fenêtre ouverte —
+  // elle couvre l'écran ; l'utilisateur n'a pas à chercher le bouton de fermeture.
+  useEffect(() => {
+    // Ordinateur ou aucune fenêtre ouverte : rien.
+    if (!compact || !panel) return undefined;
+    // Geste sur un canevas (three.js ou CesiumJS) : fenêtre refermée.
+    const onDown = (e) => { if (e.target instanceof HTMLCanvasElement) setPanel(null); };
+    // Écoute en phase de capture.
+    window.addEventListener('pointerdown', onDown, { capture: true });
+    // Nettoyage.
+    return () => window.removeEventListener('pointerdown', onDown, { capture: true });
+  // Fin de l'effet ; dépendances : téléphone et fenêtre ouverte.
+  }, [compact, panel]);
+
   // Début de l'objet renvoyé.
   return {
     // Le panneau, sa fonction de mise à jour, la fermeture et l'état des informations.
