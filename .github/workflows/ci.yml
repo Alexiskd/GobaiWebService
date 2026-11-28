@@ -1,0 +1,58 @@
+# Intégration continue : à chaque PR (et à chaque fusion dans main), le frontend et le backend sont installés,
+# testés et construits, comme sur Render. Une PR dont un des deux jobs échoue ne doit pas être fusionnée.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Une seule exécution par branche : une nouvelle poussée annule la précédente.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (imports, tests, build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # Installation exacte d'après le fichier de verrouillage.
+      - run: npm ci --include=dev
+      # Imports vérifiés puis tests unitaires (tsx --test).
+      - run: npm test
+      # Build de production (Vite + pages SEO), comme sur Render.
+      - run: npm run build
+
+  backend:
+    name: Backend (build, tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      # Installation exacte d'après le fichier de verrouillage.
+      - run: npm ci --include=dev
+      # Compilation NestJS (TypeScript).
+      - run: npm run build
+      # Tests unitaires (Jest).
+      - run: npm test -- --ci
