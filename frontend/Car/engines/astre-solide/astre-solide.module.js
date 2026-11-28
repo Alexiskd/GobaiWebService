@@ -30,6 +30,8 @@ import { createBodyTerrainProvider, createTerrainProvider } from './astre-solide
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
 // Importe les paramètres de l'astre redessinés sur le globe (rues, frontières, noms, lieux et pays de la Lune).
 import { GlobeOverlays } from './astre-solide.overlays.js';
+// Importe les profils de tuiles par astre (fond des océans en relief).
+import { tileProfile } from './astre-solide.tiles.js';
 import { cesiumShade, fadeProgress, globeCacheOptions, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 
 // Règle CSS : globe de près, les repères HTML de la scène three.js (noms, carte de ville, position) sont masqués.
@@ -149,7 +151,7 @@ export class AstreSolideGlobe {
       // Gamme de l'appareil (profil de rendu du moteur three.js) : moins de tuiles sur un téléphone modeste.
       this.tier = this.engine?.basePower?.tier || 'high';
       // Mémoire des tuiles déjà vues et préchargement des voisines, selon l'appareil (voir globeCacheOptions).
-      Object.assign(this.viewer.scene.globe, globeCacheOptions({ touch: this.touch, tier: this.tier }));
+      Object.assign(this.viewer.scene.globe, globeCacheOptions({ touch: this.touch, tier: this.tier, bodyId: body.id }));
       // Finesse des tuiles au repos.
       this.setMoving(false);
       // En mouvement : tuiles plus grossières (moins de tuiles chargées et dessinées) ; à l'arrêt : finesse normale.
@@ -412,7 +414,7 @@ export class AstreSolideGlobe {
       const provider = !on
         ? new this.Cesium.EllipsoidTerrainProvider({ ellipsoid: this.ellipsoid })
         : this.body.id === 'earth'
-          ? (this.terrain || (this.terrain = createTerrainProvider(this.Cesium, this.ellipsoid)))
+          ? (this.terrain || (this.terrain = createTerrainProvider(this.Cesium, this.ellipsoid, undefined, { signed: tileProfile('earth').oceanFloor })))
           : (this.bodyTerrain || (this.bodyTerrain = createBodyTerrainProvider(this.Cesium, this.ellipsoid, r.terrain)));
       // Posé.
       this.viewer.terrainProvider = provider;
@@ -538,7 +540,7 @@ export class AstreSolideGlobe {
     // Sans globe : rien.
     if (!this.viewer) return;
     // Erreur d'écran tolérée.
-    const sse = globeScreenError({ moving, touch: this.touch, tier: this.tier });
+    const sse = globeScreenError({ moving, touch: this.touch, tier: this.tier, bodyId: this.body?.id });
     // Inchangée : rien.
     if (this.viewer.scene.globe.maximumScreenSpaceError === sse) return;
     // Appliquée.

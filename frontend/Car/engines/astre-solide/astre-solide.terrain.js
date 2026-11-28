@@ -227,11 +227,12 @@ async function loadPixels(url) {
 }
 
 /**
- * Fournisseur de relief CesiumJS de la Terre. `load` (adresse → { rgba, size }) peut être remplacé (tests). Les tuiles
+ * Fournisseur de relief CesiumJS de la Terre. `load` (adresse → { rgba, size }) peut être remplacé (tests). `signed` :
+ * fond des océans en relief (bathymétrie des tuiles AWS, GEBCO / ETOPO) au lieu d'une mer plate. Les tuiles
  * décodées sont gardées (64 au plus) : les tuiles plus fines que le niveau 12 réutilisent leur ancêtre.
  */
 // Déclare et exporte createTerrainProvider : CesiumJS, l'ellipsoïde et le chargeur (début).
-export function createTerrainProvider(Cesium, ellipsoid, load = loadPixels) {
+export function createTerrainProvider(Cesium, ellipsoid, load = loadPixels, { signed = false } = {}) {
   // Tuiles décodées (promesses), de la plus ancienne à la plus récente.
   const cache = new Map();
   // tile : la tuile source décodée, gardée (début).
@@ -261,7 +262,7 @@ export function createTerrainProvider(Cesium, ellipsoid, load = loadPixels) {
       // Plan : tuiles sources et pixels des points.
       const plan = tilePlan(x, y, level);
       // Grille d'altitudes, lue dans les tuiles sources (voir heightsFor : une tuile en échec ne casse pas le globe).
-      return heightsFor(plan, (t) => tile(t.z, t.x, t.y), level, false);
+      return heightsFor(plan, (t) => tile(t.z, t.x, t.y), level, signed);
     // Fin de la tuile.
     },
   // Fin du fournisseur.
