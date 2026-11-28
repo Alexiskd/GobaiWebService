@@ -4,6 +4,8 @@
 
 // Importe le facteur de zoom d'un pincement et la détection des contacts périmés, depuis touchMath.
 import { pinchFactor, stalePointers } from './touchMath.jsx';
+// Importe la lecture de la molette en pixels (lignes et pages converties).
+import { wheelDeltaPx } from './zoomMath.jsx';
 // Importe les facteurs du double-clic (zoom vers le point cliqué du globe de près).
 import { DBLCLICK_IN, DBLCLICK_OUT } from '../../../engines/astre-solide/astre-solide.camera-math.js';
 
@@ -224,8 +226,8 @@ export function bindInput(engine) {
     e.preventDefault();
     // Arrête la propagation de l'événement.
     e.stopPropagation();
-    // Déplacement de la molette, borné entre −120 et 120.
-    const delta = Math.max(-120, Math.min(120, e.deltaY));
+    // Déplacement de la molette en pixels (Firefox compte en lignes), borné entre −120 et 120.
+    const delta = wheelDeltaPx(e, window.innerHeight);
     // Zoome d'un facteur exponentiel, plus fort avec la touche Ctrl.
     engine.zoom(Math.exp(delta * (e.ctrlKey ? 0.012 : 0.0025)));
   // Fin de wheelZoom.

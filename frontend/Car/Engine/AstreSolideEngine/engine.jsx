@@ -23,6 +23,8 @@ import { satelliteState, synchronousBasis } from './SatelliteEngine/satelliteMat
 import { layoutLabels } from './LabelEngine/labelLayout.jsx';
 // Importe bindInput, le branchement de la souris, du clavier et du tactile.
 import { bindInput } from './InputEngine/input.jsx';
+// Importe le zoom fluide : lissage sans saut, visée tenue près de la caméra.
+import { easeFactor, leadBound } from './InputEngine/zoomMath.jsx';
 // Importe les calculs de la vue inclinée à l'approche du sol, depuis cameraTilt.
 import { TILT_MAX_ANGLE, approachAngle, approachTilt, tiltEngagement, tiltPose } from './CameraEngine/cameraTilt.jsx';
 // Importe RELIEF_KEY et TileManager, la clé du choix du relief et le gestionnaire des tuiles d'un astre.
@@ -2365,8 +2367,10 @@ export class SolarEngine {
         const atFloor = this.distGoal <= floor * (1 + 1e-9) && this.dist <= floor * 1.02;
         // Altitude au-dessus des nuages.
         const altitude = Math.max(this.distGoal, floor) - local;
+        // Altitude où se trouve la caméra : la visée reste à moins de 6 fois d'elle (pas d'emballement à la molette).
+        const current = Math.max(this.dist, floor) - local;
         // Au plancher en zoomant : entre dans les nuages ; sinon l'altitude est multipliée, bornée.
-        this.distGoal = f < 1 && atFloor ? local * GAS_ENTRY_RADII : clamp(local + altitude * f, floor, MAX_DISTANCE);
+        this.distGoal = f < 1 && atFloor ? local * GAS_ENTRY_RADII : clamp(local + leadBound(altitude * f, current), floor, MAX_DISTANCE);
       // Dans les nuages (début).
       } else {
         // Dans les nuages (Jupiter), le pas est adouci : un cran traverse à peu près un pont nuageux.
@@ -2391,8 +2395,10 @@ export class SolarEngine {
     if (tb?.model && tb.modelWanted && tb.cfg.modelMinDistanceRadii) minDistance = Math.max(minDistance, radius * tb.cfg.modelMinDistanceRadii);
     // Altitude visée au-dessus de l'astre.
     const altitude = Math.max(this.distGoal, minDistance) - radius;
+    // Altitude où se trouve la caméra : la visée reste à moins de 6 fois d'elle (pas d'emballement à la molette).
+    const current = Math.max(this.dist, minDistance) - radius;
     // Nouvelle distance voulue, bornée.
-    this.distGoal = clamp(radius + altitude * f, minDistance, MAX_DISTANCE);
+    this.distGoal = clamp(radius + leadBound(altitude * f, current), minDistance, MAX_DISTANCE);
   // Fin de zoom.
   }
 
@@ -4718,8 +4724,8 @@ export class SolarEngine {
       if (flight.t >= flight.plan.ms) this.zoomFlight = null;
     // Sinon (début).
     } else {
-      // Zoom lissé vers la distance voulue.
-      this.dist *= Math.pow(this.distGoal / this.dist, 1 - Math.exp(-dt / ZOOM_TAU_MS));
+      // Zoom lissé vers la distance voulue ; temps borné à une image à 30 par seconde (pas de saut après une pause).
+      this.dist *= Math.pow(this.distGoal / this.dist, easeFactor(dt, ZOOM_TAU_MS));
     // Fin du choix.
     }
 

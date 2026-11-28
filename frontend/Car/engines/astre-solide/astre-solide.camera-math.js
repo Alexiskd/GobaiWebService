@@ -5,6 +5,8 @@
 
 // Importe la conversion du glisser de la scène three.js (angle par pixel, raccourci de la vue 3/4).
 import { dragRadPerPx, dragStep } from '../../Engine/AstreSolideEngine/InputEngine/touchMath.jsx';
+// Importe le lissage du zoom commun à three.js (temps borné, pas de saut après une pause).
+import { easeFactor } from '../../Engine/AstreSolideEngine/InputEngine/zoomMath.jsx';
 
 // Rayon moyen de la Terre, en mètres.
 export const EARTH_RADIUS_M = 6371000;
@@ -258,14 +260,14 @@ export const zoomGoal = (goalM, f, minM = MIN_ALTITUDE_M, maxM = 1e9) => Math.ma
 
 /**
  * Avance l'altitude vers l'altitude visée comme la distance de la caméra three.js : rapprochement géométrique
- * (altitude × (visée / altitude)^(1 − e^(−dt/τ))), indépendant de la cadence ; dt borné à 100 ms.
+ * (altitude × (visée / altitude)^(1 − e^(−dt/τ))), indépendant de la cadence ; dt borné à 34 ms (voir zoomMath).
  */
 // Déclare et exporte easeAltitude : l'altitude actuelle, visée (m), le temps écoulé et la constante de temps (ms).
 export function easeAltitude(altM, goalM, dtMs, tauMs = ZOOM_TAU_MS) {
   // Altitudes illisibles ou nulles : directement la visée.
   if (!(altM > 0) || !(goalM > 0)) return goalM;
   // Rapprochement géométrique, comme this.dist *= (distGoal / dist)^k dans three.js.
-  return altM * Math.pow(goalM / altM, 1 - Math.exp(-Math.min(Math.max(0, dtMs), 100) / tauMs));
+  return altM * Math.pow(goalM / altM, easeFactor(dtMs, tauMs));
 // Fin de easeAltitude.
 }
 
