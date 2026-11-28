@@ -1,5 +1,5 @@
 /**
- * Constantes et petites fonctions communes au moteur SolarEngine (engine.jsx) et à ses méthodes (dossier engine/).
+ * Constantes et petites fonctions communes au moteur SolarEngine (engine.jsx) et à ses méthodes (dossier engineMethods/).
  */
 import * as THREE from 'three';
 import { D } from '../OrbitEngine/ephemeris.jsx';

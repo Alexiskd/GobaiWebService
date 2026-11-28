@@ -9,14 +9,14 @@ import { UserMarker } from './InputEngine/userMarker.jsx';
 import { AstreSolideGlobe } from '../../engines/astre-solide/index.js';
 import { renderLoop } from '../SystemeEngine/core/render/RenderLoop.js';
 import { SharedResourcePool } from '../SystemeEngine/core/system/SharedResourcePool.js';
-import { VIEW_DISTANCE, START_DISTANCE } from './engine/constants.jsx';
-import { installMethods } from './engine/install.jsx';
-import { setupMethods } from './engine/setup.jsx';
-import { commandMethods } from './engine/commands.jsx';
-import { compassMethods } from './engine/compass.jsx';
-import { liveMoonMethods } from './engine/liveMoon.jsx';
-import { tiledBodyMethods } from './engine/tiledBodies.jsx';
-import { loopMethods } from './engine/loop.jsx';
+import { VIEW_DISTANCE, START_DISTANCE } from './engineMethods/constants.jsx';
+import { installMethods } from './engineMethods/install.jsx';
+import { setupMethods } from './engineMethods/setup.jsx';
+import { commandMethods } from './engineMethods/commands.jsx';
+import { compassMethods } from './engineMethods/compass.jsx';
+import { liveMoonMethods } from './engineMethods/liveMoon.jsx';
+import { tiledBodyMethods } from './engineMethods/tiledBodies.jsx';
+import { loopMethods } from './engineMethods/loop.jsx';
 
 export class SolarEngine {
   // Constructeur : le conteneur, les données, les étiquettes, le HUD, l'API des tuiles et les deux fonctions de changement (début).
@@ -410,6 +410,6 @@ export class SolarEngine {
 // Fin de la classe SolarEngine.
 }
 
-// Méthodes rangées par thème dans le dossier engine/ (construction, commandes, boussole, Lune en direct, astres
+// Méthodes rangées par thème dans le dossier engineMethods/ (construction, commandes, boussole, Lune en direct, astres
 // tuilés, boucle) : installées sur la classe comme des méthodes ordinaires.
 installMethods(SolarEngine, setupMethods, commandMethods, compassMethods, liveMoonMethods, tiledBodyMethods, loopMethods);
