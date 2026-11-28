@@ -33,7 +33,6 @@ Le travail se fait en cinq lots, une PR chacun :
 | Frontières et littoraux (Natural Earth) | Paramètres › Cartographie | désactivé |
 | Nuages et atmosphère de la Terre (Xweather, sinon Open-Meteo ; vent Open-Meteo) | Paramètres › Atmosphère | **désactivé depuis le lot 1** (avant : un seul interrupteur, activé, partagé avec Vénus et Mars) |
 | Noms des villes, noms des pays | Paramètres › Cartographie | désactivés |
-| Volcans en éruption | Paramètres › Cartographie | désactivé |
 | Lumières de la nuit, vue de la pollution lumineuse | Paramètres › Cartographie | activées / désactivée |
 | Relief 3D | Paramètres › Cartographie en relief | désactivé |
 | Ma position | Paramètres › Ma position | à la demande |

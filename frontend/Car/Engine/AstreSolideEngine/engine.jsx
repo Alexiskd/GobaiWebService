@@ -95,8 +95,6 @@ import { createSaturnRings } from '../AstreGazeuxEngine/saturnRings.jsx';
 import { createSunSurface } from '../EruptionEngine/sunSurface.jsx';
 // Importe sitesFromRegions, qui place les régions actives réelles dans le repère propre du Soleil.
 import { sitesFromRegions } from '../EruptionEngine/sunSurfaceMath.jsx';
-// Importe VolcanoLayer, les volcans en éruption sur la Terre.
-import { VolcanoLayer } from '../EruptionEngine/volcanoes.jsx';
 // Importe createShadedSphereMaterial, le matériau d'une sphère unie ombrée.
 import { createShadedSphereMaterial } from '../TextureEngine/sphereShade.jsx';
 // Importe createAtmosphere, l'atmosphère d'une planète.
@@ -461,10 +459,6 @@ export class SolarEngine {
     this.initTiles();
     // Crée les frontières.
     this.initBorders();
-    // Volcans en éruption (liste posée plus tard par setVolcanoes) : calque dans le groupe de la Terre.
-    this.volcanoes = new VolcanoLayer();
-    // L'ajoute au groupe de la Terre.
-    this.earth.group.add(this.volcanoes.root);
     // Nuages LiDAR calés par GPS.
     this.lidar = new LidarGlobe(this); // nuages LiDAR calés par GPS, sur la Terre
     // L'astre solide ciblé (la Terre par défaut) est dessiné par CesiumJS (engine astre-solide) ; de près, la scène
@@ -2176,7 +2170,7 @@ export class SolarEngine {
       transitions: [...(this.coreTransitions ?? [])],
       queuedTasks: this.coreScheduler?.size ?? 0,
       managedResources: this.coreResources?.size ?? 0,
-      specializedEngineCadence: { atmosphere: this.coreEngineActivityPolicy?.getCadence('atmosphere') ?? null, lidar: this.coreEngineActivityPolicy?.getCadence('lidar') ?? null, volcanoes: this.coreEngineActivityPolicy?.getCadence('volcanoes') ?? null },
+      specializedEngineCadence: { atmosphere: this.coreEngineActivityPolicy?.getCadence('atmosphere') ?? null, lidar: this.coreEngineActivityPolicy?.getCadence('lidar') ?? null },
       renderBudget: this.coreRenderBudgetPolicy?.snapshot() ?? null,
       renderPipeline: this.coreRenderDiagnosticsPolicy?.snapshot() ?? null,
       gpuMemoryBudget: this.coreGpuMemoryBudget?.getDiagnostics() ?? null,
@@ -3009,7 +3003,7 @@ export class SolarEngine {
 
   /**
    * Cache un astre solide de three.js (le globe CesiumJS le dessine) et renvoie la fonction qui le rend. La Terre :
-   * tout son groupe (globe, carte, frontières, volcans, nuages) ; un autre astre : sa sphère, son modèle, ses tuiles
+   * tout son groupe (globe, carte, frontières, nuages) ; un autre astre : sa sphère, son modèle, ses tuiles
    * et son atmosphère (ses satellites restent affichés).
    */
   // hideSolidBody : l'identifiant de l'astre (début).
@@ -3933,11 +3927,6 @@ export class SolarEngine {
   setCoastsVisible(on) { this.coastsOn = on; this.applyBorders(); }
   // setCoastsFromTiles : les littoraux du globe cèdent la place à ceux des tuiles quand le calque des rues est affiché.
   setCoastsFromTiles(on) { this.coastsFromTiles = Boolean(on); this.applyBorders(); }
-  /** Volcans en éruption : pose la liste reçue du serveur ([{ id, name, lon, lat }]). */
-  // setVolcanoes : pose les volcans en éruption.
-  setVolcanoes(list) { this.volcanoes.set(list); }
-  // setVolcanoesVisible : affiche ou masque les volcans en éruption.
-  setVolcanoesVisible(on) { this.volcanoes.setVisible(on); }
 
   /**
    * Régions actives du Soleil : garde la réponse de /api/v1/sun/regions et la pose aussitôt. Les positions sont
@@ -4191,8 +4180,6 @@ export class SolarEngine {
     this.updateSunDirections();
     // Met à jour les frontières.
     this.updateBorders();
-    // Les volcans suivent la rotation de la Terre.
-    if (this.shouldUpdateCoreEngine('volcanoes', 'earth')) this.volcanoes.sync(this.earth.mesh.rotation.y);
     // Met à jour les nuages LiDAR.
     if (this.shouldUpdateCoreEngine('lidar', 'earth')) this.lidar.update(this.cam);
     // Astre solide visé par le globe CesiumJS ; ciblé et caméra proche : le globe prend la main au même endroit.
@@ -5505,8 +5492,6 @@ export class SolarEngine {
     this.userMarker.dispose();
     // Libère les noms des pays.
     this.countryLabels.dispose();
-    // Libère les volcans.
-    this.volcanoes.dispose();
     // Libère la fiche de ville.
     this.cityCard.dispose();
     // Libère les noms des lieux de la Lune.

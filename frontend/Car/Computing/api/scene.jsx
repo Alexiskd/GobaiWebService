@@ -122,7 +122,4 @@ export const fetchSolarActivity = (signal) => get('/sun/activity', { signal });
  *  Positions héliographiques de Stonyhurst, en degrés : latitude positive au nord, longitude positive à l'ouest. */
 // fetchSolarRegions : les régions actives et les éruptions localisées.
 export const fetchSolarRegions = (signal) => get('/sun/regions', { signal });
-/** Volcans en éruption dans le monde (NASA EONET) : { source, generatedAt, volcanoes: [{ id, name, lon, lat, date, link }] }. */
-// fetchVolcanoes : les volcans en éruption.
-export const fetchVolcanoes = (signal) => get('/volcanoes', { signal });
 

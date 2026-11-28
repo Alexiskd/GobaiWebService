@@ -41,8 +41,8 @@ test('assistant : actions valides traduites en commandes de l’interface', () =
 test('assistant : tous les interrupteurs de Paramètres sont pilotables', () => {
   // Le relief 3D.
   assert.deepEqual(r({ name: 'regler_affichage', input: { reglage: 'relief_3d', actif: true } }, BODIES), { type: 'setting', setting: 'relief_3d', on: true, label: 'Relief 3D : activé' });
-  // Les volcans en éruption.
-  assert.equal(r({ name: 'regler_affichage', input: { reglage: 'volcans', actif: false } }, BODIES).on, false);
+  // Les volcans en éruption ont été retirés : réglage inconnu, refusé.
+  assert.equal(r({ name: 'regler_affichage', input: { reglage: 'volcans', actif: false } }, BODIES), null);
   // Les rues et routes.
   assert.equal(r({ name: 'regler_affichage', input: { reglage: 'rues', actif: true } }, BODIES).label, 'Rues et routes : activé');
   // Les contours, frontières et littoraux ensemble.

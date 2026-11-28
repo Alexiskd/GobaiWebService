@@ -22,8 +22,8 @@ const SETTINGS = {
   rotation_automatique: 'Rotation automatique', vue_3_4: 'Vue 3/4', ombre: 'Ombre',
   // Cartographie de la Terre à plat : noms des villes, noms des pays, contours,
   noms_villes: 'Noms des villes', noms_pays: 'Noms des pays', frontieres_et_littoraux: 'Frontières et littoraux',
-  // rues et routes, volcans en éruption et coordonnées GPS.
-  rues: 'Rues et routes', volcans: 'Volcans en éruption', coordonnees_gps: 'Coordonnées GPS',
+  // rues et routes et coordonnées GPS.
+  rues: 'Rues et routes', coordonnees_gps: 'Coordonnées GPS',
   // Cartographie en relief : relief 3D.
   relief_3d: 'Relief 3D',
   // Appareil : économie d'énergie (le noir pur est fusionné dans le thème, le moniteur de performance a été retiré).

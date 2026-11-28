@@ -40,7 +40,7 @@ export function EntreeTerre({ layer }) {
 
 /**
  * Cartographie de la Terre, à plat : sa couche unique (entrée « Terre »), puis ce qui se lit sur la carte (noms des
- * villes et des pays, frontières et littoraux, rues et routes d'OpenStreetMap, volcans en éruption en direct, lumières
+ * villes et des pays, frontières et littoraux, rues et routes d'OpenStreetMap, lumières
  * de la nuit). Le relief a son propre groupe, CartographieRelief ci-dessous.
  */
 // Déclare et exporte le composant Cartographie (début de la liste des propriétés).
@@ -51,8 +51,6 @@ export function Cartographie({
   cityNames, onCityNames, cityNamesHint, countryNames, onCountryNames, outlines, onOutlines, outlinesHint,
   // Les rues (éteintes par défaut) et leur rappel.
   streets = false, onStreets,
-  // Les volcans en éruption, leur rappel et leur texte d'aide.
-  volcanoes = false, onVolcanoes, volcanoesHint,
   // Les lumières de la nuit (allumées par défaut) et leur rappel ; la vue de la pollution lumineuse (coupée) et son rappel.
   nightLights = true, onNightLights, lightView = false, onLightView,
 // Fin de la liste des propriétés.
@@ -73,12 +71,6 @@ export function Cartographie({
       {onStreets && (
         // Interrupteur des rues et des routes.
         <Switch checked={streets} onChange={onStreets} label="Rues et routes" hint="Grands axes de loin, rues et noms en zoomant" />
-      // Fin du cas.
-      )}
-      {/* Si le réglage des volcans est fourni (début). */}
-      {onVolcanoes && (
-        // Interrupteur des volcans en éruption.
-        <Switch checked={volcanoes} onChange={onVolcanoes} label="Volcans en éruption" hint={volcanoesHint} />
       // Fin du cas.
       )}
       {/* Si le réglage des lumières de la nuit est fourni (début). */}

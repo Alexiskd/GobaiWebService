@@ -2,8 +2,6 @@
 import { useCallback, useEffect, useState } from 'react';
 // Importe l'identifiant du calque des rues.
 import { ROADS_LAYER_ID } from '@/Engine/AstreSolideEngine/MapEngine/earth/roadSource';
-// Importe le chargement des volcans en éruption.
-import { fetchVolcanoes } from '@/Computing/api/scene';
 
 // Déclare remember : reçoit la clé et la valeur.
 function remember(key, value) {
@@ -25,16 +23,6 @@ function storedStreets() {
   try { return globalThis.localStorage?.getItem(STREETS_KEY) === '1'; } catch { return false; }
 // Fin de storedStreets.
 }
-// Clé du stockage local : volcans en éruption.
-const VOLCANOES_KEY = 'gobai:volcans'; // volcans en éruption : « 1 » quand ils sont affichés (masqués par défaut)
-// Déclare storedVolcanoes, qui lit l'affichage enregistré des volcans.
-function storedVolcanoes() {
-  // Vrai si la valeur enregistrée vaut « 1 » ; faux si le stockage est inaccessible.
-  try { return globalThis.localStorage?.getItem(VOLCANOES_KEY) === '1'; } catch { return false; }
-// Fin de storedVolcanoes.
-}
-// Délai entre deux lectures de la liste des volcans : 30 minutes.
-const VOLCANOES_REFRESH_MS = 30 * 60 * 1000;
 
 /** Affichage de la Terre (ombrage, frontières, littoraux, noms, rues) et son envoi au moteur. */
 // Déclare et exporte le crochet useEarthDisplay : moteur et fonction de messages.
@@ -72,41 +60,6 @@ export function useEarthDisplay({ engine, push }) {
   // Transmet l'affichage des littoraux au moteur.
   useEffect(() => { engine?.setCoastsVisible(coasts); }, [engine, coasts]);
 
-  // Volcans en éruption, en direct (NASA EONET) : masqués par défaut.
-  // État : volcans affichés ou non, lu dans le stockage.
-  const [volcanoes, setVolcanoesOn] = useState(storedVolcanoes);
-  // État : nombre de volcans en éruption, null tant que la liste n'est pas arrivée.
-  const [volcanoCount, setVolcanoCount] = useState(null);
-  // setVolcanoes : affiche ou masque les volcans ; début de la fonction mémorisée.
-  const setVolcanoes = useCallback((on) => {
-    // Change l'état.
-    setVolcanoesOn(Boolean(on));
-    // Garde le choix : « 1 » s'ils sont affichés, rien sinon.
-    remember(VOLCANOES_KEY, on ? '1' : null);
-  // Fin de setVolcanoes ; fonction stable.
-  }, []);
-  // Transmet l'affichage des volcans au moteur.
-  useEffect(() => { engine?.setVolcanoesVisible(volcanoes); }, [engine, volcanoes]);
-  // Charge la liste des volcans quand ils sont affichés, puis toutes les 30 minutes (début de l'effet).
-  useEffect(() => {
-    // Sans moteur, ou volcans masqués : rien.
-    if (!engine || !volcanoes) return undefined;
-    // Contrôleur d'abandon de la lecture en cours.
-    const controller = new AbortController();
-    // load : lit la liste et la pose dans le moteur ; un échec est ignoré, le calque est automatique.
-    const load = () => fetchVolcanoes(controller.signal)
-      // Liste reçue : la pose et note le nombre de volcans.
-      .then((data) => { const list = data?.volcanoes || []; engine.setVolcanoes(list); setVolcanoCount(list.length); })
-      // Échec : rien.
-      .catch(() => {});
-    // Première lecture.
-    load();
-    // Lectures suivantes.
-    const timer = setInterval(load, VOLCANOES_REFRESH_MS);
-    // Nettoyage : arrête les lectures.
-    return () => { controller.abort(); clearInterval(timer); };
-  // Fin de l'effet.
-  }, [engine, volcanoes]);
   // Transmet l'affichage des noms de pays au moteur.
   useEffect(() => { engine?.setCountryLabelsVisible(countryNames); }, [engine, countryNames]);
   // Transmet l'affichage des noms de villes au moteur.
@@ -162,8 +115,6 @@ export function useEarthDisplay({ engine, push }) {
     countryNames, setCountryNames, cityNames, setCityNames, showCityNames, gps, setGps,
     // Les rues, et leur fonction.
     streets, setStreets,
-    // Les volcans en éruption, leur fonction et leur nombre.
-    volcanoes, setVolcanoes, volcanoCount,
   // Fin de l'objet renvoyé.
   };
 // Fin de useEarthDisplay.

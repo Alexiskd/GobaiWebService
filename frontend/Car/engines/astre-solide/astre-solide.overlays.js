@@ -1,6 +1,6 @@
 /**
  * Paramètres de l'astre sur le globe CesiumJS : les calques réglés dans l'app pour un astre de la scène three.js
- * (rues, frontières, littoraux, noms des pays et des villes, volcans en éruption, lieux de la Lune) sont redessinés
+ * (rues, frontières, littoraux, noms des pays et des villes, lieux et pays de la Lune) sont redessinés
  * sur son globe CesiumJS, avec les mêmes données et les mêmes interrupteurs.
  *
  * Moteur réglé par une table (OVERLAYS) : chaque ligne dit pour quel astre, quand le calque est voulu (lu dans le
@@ -9,7 +9,7 @@
  *
  * Deux moments :
  *  - superposition (de loin, le globe est dessiné par-dessus la scène three.js) : les calques dessinés en WebGL par
- *    three.js (lignes, noms des pays, volcans) sont cachés sous le globe ; ils sont donc redessinés ici. Les repères
+ *    three.js (lignes, noms des pays) sont cachés sous le globe ; ils sont donc redessinés ici. Les repères
  *    HTML (noms des villes, lieux de la Lune) restent ceux de three.js (`html: true` : pas de doublon) ;
  *  - de près (le globe a la main, three.js en attente et repères HTML masqués) : tous les calques sont dessinés ici.
  *
@@ -31,9 +31,9 @@ export const LABEL_FONT = '600 13px "Google Sans", system-ui, sans-serif';
 /** Villes nommées au plus (les plus peuplées d'abord) : au-delà, le globe serait illisible et lent. */
 // Déclare et exporte le nombre maximal de villes.
 export const MAX_CITIES = 400;
-/** Couleurs des calques (mêmes teintes que three.js : frontières dorées, littoraux crème, volcans rouges). */
+/** Couleurs des calques (mêmes teintes que three.js : frontières dorées, littoraux crème). */
 // Déclare et exporte les couleurs.
-export const COLORS = { moonBorder: '#cfe3ff', border: '#ffd166', coast: '#f2efe6', volcano: '#ff4d2e', label: '#ffffff', outline: '#000000' };
+export const COLORS = { moonBorder: '#cfe3ff', border: '#ffd166', coast: '#f2efe6', label: '#ffffff', outline: '#000000' };
 
 /**
  * Polylignes plates [lon, lat, lon, lat, …] (format de GET /borders) coupées au saut de l'antiméridien (plus de 180°
@@ -142,10 +142,6 @@ export const OVERLAYS = [
   // Noms des villes (repères HTML de three.js).
   { id: 'cities', body: 'earth', kind: 'labels', html: true,
     want: (e) => Boolean(e.worldLabels?.visible), data: (e) => topCities(e.worldCities) },
-  // Volcans en éruption (NASA EONET).
-  { id: 'volcanoes', body: 'earth', kind: 'points', color: COLORS.volcano,
-    want: (e) => Boolean(e.volcanoes?.root?.visible),
-    data: (e) => (e.volcanoes?.list || []).map((v) => ({ text: v.name, lon: v.lon, lat: v.lat, rank: 0 })) },
   // Lieux de la Lune (repères HTML de three.js).
   { id: 'moon-places', body: 'moon', kind: 'labels', html: true,
     want: (e) => (e.moonFeatureTypes?.size ?? 0) > 0, data: (e) => moonPlaces(e.moonFeatureTypes) },
@@ -237,9 +233,9 @@ export class GlobeOverlays {
       return { visible: true, show(on) { coll.show = on; this.visible = on; }, destroy() { viewer.scene.primitives.remove(coll); } };
     // Fin des lignes.
     }
-    // Noms, et points pour les volcans (début).
+    // Noms, et points des repères si la ligne en demande (début).
     const labels = viewer.scene.primitives.add(new Cesium.LabelCollection());
-    // Points (volcans seulement).
+    // Points (lignes de type « points »).
     const points = d.kind === 'points' ? viewer.scene.primitives.add(new Cesium.PointPrimitiveCollection()) : null;
     // Couleurs.
     const fill = Cesium.Color.fromCssColorString(COLORS.label), outline = Cesium.Color.fromCssColorString(COLORS.outline).withAlpha(0.85);
@@ -256,7 +252,7 @@ export class GlobeOverlays {
         pixelOffset: new Cesium.Cartesian2(0, points ? -8 : 0), eyeOffset: new Cesium.Cartesian3(0, 0, -1000),
         translucencyByDistance: new Cesium.NearFarScalar(far * 0.6, 1, far, 0),
       });
-      // Volcan : un point rouge.
+      // Repère : un point.
       if (points) points.add({ position, pixelSize: 7, color: Cesium.Color.fromCssColorString(d.color), outlineColor: outline, outlineWidth: 1 });
     // Fin des noms.
     }

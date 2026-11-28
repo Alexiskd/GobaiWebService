@@ -18,7 +18,6 @@ const TAGS: [string, string][] = [
   ['Lune', 'Catalogue des couches de la Lune, passerelle de tuiles et stockage local.'],
   ['Mars', 'Catalogue des couches de Mars et passerelle de tuiles.'],
   ['Mercure', 'Catalogue des couches de Mercure et passerelle de tuiles.'],
-  ['Volcans', 'Volcans en éruption dans le monde, en direct.'],
   // La carte de la Terre.
   ['Tuiles', 'Modèle de tuiles simplifié : couches, URL, coordonnées, attribution.'],
   ['Nuages de points', 'Fichiers COPC/LAS servis en HTTP Range pour le rendu côté navigateur.'],
