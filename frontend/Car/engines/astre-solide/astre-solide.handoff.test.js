@@ -58,3 +58,22 @@ test('fondu du zoom : plein au-dessus de FADE_KM, nul à ENTER_KM, ramené au ra
   assert.ok(Math.abs(zoomFade(scaledKm((ENTER_KM + FADE_KM) / 2, 1737), 1737) - 0.5) < 1e-9);
   assert.equal(zoomFade(NaN), 1);
 });
+
+// Importe le relief au zoom.
+import { reliefRamp } from './astre-solide.handoff.js';
+
+test('relief au zoom : rien de loin, fondu en S, complet de près, arrondi au 1/50', () => {
+  // Terre à 20 000 km : aucun relief ; à 100 km : complet.
+  assert.equal(reliefRamp(20000, 6371), 0);
+  assert.equal(reliefRamp(100, 6371), 1);
+  // Entre les deux : une part, qui grandit en approchant.
+  const mid = reliefRamp(900, 6371);
+  assert.ok(mid > 0 && mid < 1);
+  assert.ok(reliefRamp(500, 6371) > mid);
+  // Même nombre de rayons sur la Lune.
+  assert.equal(reliefRamp(20, 1737.4), 1); assert.equal(reliefRamp(1000, 1737.4), 0);
+  // Arrondi au 1/50.
+  assert.equal(Math.round(mid * 50), mid * 50);
+  // Altitude inconnue : pas de relief.
+  assert.equal(reliefRamp(NaN, 6371), 0);
+});
