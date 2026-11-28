@@ -393,3 +393,97 @@ export function isEdgeRun(x1, y1, x2, y2, extent) {
   return (x1 === x2 && (x1 <= 0 || x1 >= extent)) || (y1 === y2 && (y1 <= 0 || y1 >= extent));
 // Fin de isEdgeRun.
 }
+
+// ------------------------------------------------------------------------- noms des lieux habités
+
+/**
+ * Noms des lieux habités (couche `place` d'OpenMapTiles) : villes, petites villes, villages, hameaux, quartiers.
+ * Chaque type a son niveau d'apparition (les tuiles ne contiennent déjà que les lieux utiles à leur niveau), son
+ * importance (ordre de pose : le plus important d'abord), sa taille et sa graisse (pixels d'une tuile de 256 px).
+ */
+export const PLACE_CLASSES = {
+  city: { rank: 0, minZoom: 6, size: 13, weight: 700 },
+  town: { rank: 1, minZoom: 9, size: 11.5, weight: 600 },
+  village: { rank: 2, minZoom: 11, size: 10.5, weight: 600 },
+  suburb: { rank: 3, minZoom: 12, size: 10, weight: 500 },
+  hamlet: { rank: 4, minZoom: 13, size: 9.5, weight: 500 },
+  quarter: { rank: 4, minZoom: 13, size: 9.5, weight: 500 },
+  neighbourhood: { rank: 5, minZoom: 14, size: 9, weight: 500 },
+  isolated_dwelling: { rank: 6, minZoom: 15, size: 9, weight: 500 },
+  locality: { rank: 6, minZoom: 15, size: 9, weight: 500 },
+};
+/** Noms de lieux posés au plus par tuile. */
+export const MAX_PLACE_LABELS = 24;
+
+/** Nom affiché d'un lieu : le nom français s'il existe, sinon le nom local, sinon le nom international. */
+// Déclare et exporte placeName : les propriétés du lieu.
+export function placeName(props) {
+  // Premier nom non vide.
+  const n = props?.['name:fr'] || props?.name || props?.name_int || '';
+  // Sans espaces autour.
+  return typeof n === 'string' ? n.trim() : '';
+// Fin de placeName.
+}
+
+/** Clé de comparaison d'un nom : minuscules, sans accents ni espaces autour (« Pékin » = « pekin »). */
+// Déclare et exporte placeKey : le nom.
+export const placeKey = (name) => String(name ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+/**
+ * Choix des noms de lieux d'une tuile. `candidates` : { props, x, y } en pixels de la tuile. Les plus importants
+ * d'abord (type, capitale, rang du fournisseur) ; un nom est refusé s'il dépasse de la tuile (il serait coupé au
+ * bord), s'il en chevauche un déjà posé, s'il est déjà écrit dans la tuile ou s'il est dans `known` (villes déjà
+ * nommées par les repères cliquables de l'app). Renvoie { text, x, y, font, weight } (x, y : centre du nom).
+ */
+// Déclare et exporte planPlaces : les candidats et les options (début).
+export function planPlaces(candidates, { z, size, measure, known = null, max = MAX_PLACE_LABELS }) {
+  // Rapport de taille par rapport à 256 pixels.
+  const s = size / 256;
+  // Candidats gardés : type connu, déjà à ce niveau, avec un nom.
+  const list = [];
+  // Pour chaque candidat (début).
+  for (const c of candidates) {
+    // Son type et ses réglages.
+    const cls = PLACE_CLASSES[c.props?.class];
+    // Type non dessiné ou pas encore à ce niveau : ignoré.
+    if (!cls || z < cls.minZoom) continue;
+    // Son nom.
+    const text = placeName(c.props);
+    // Sans nom, ou déjà nommé par l'app : ignoré.
+    if (!text || known?.has(placeKey(text))) continue;
+    // Rang du fournisseur (petit = important), capitale d'abord.
+    const rank = Number.isFinite(c.props.rank) ? c.props.rank : 99, capital = c.props.capital ? 0 : 1;
+    // Gardé.
+    list.push({ text, x: c.x, y: c.y, cls, rank, capital });
+  // Fin de la boucle.
+  }
+  // Ordre de pose : type, capitale, rang.
+  list.sort((a, b) => a.cls.rank - b.cls.rank || a.capital - b.capital || a.rank - b.rank);
+  // Noms posés, leurs boîtes et les noms déjà écrits.
+  const out = [], boxes = [], seen = new Set();
+  // Pour chaque candidat, dans l'ordre (début).
+  for (const c of list) {
+    // Assez de noms : fin.
+    if (out.length >= max) break;
+    // Taille de police à cette échelle.
+    const font = c.cls.size * s;
+    // Demi-largeur et demi-hauteur de la boîte, avec une petite marge.
+    const hw = measure(c.text, font, c.cls.weight) / 2 + 2 * s, hh = font * 0.65;
+    // Boîte du nom.
+    const box = [c.x - hw, c.y - hh, c.x + hw, c.y + hh];
+    // Dépasse de la tuile : refusé (il serait coupé au bord).
+    if (box[0] < 0 || box[1] < 0 || box[2] > size || box[3] > size) continue;
+    // Déjà écrit dans la tuile : refusé.
+    const key = placeKey(c.text);
+    if (seen.has(key)) continue;
+    // Chevauche un nom posé : refusé.
+    if (boxes.some((b) => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) continue;
+    // Posé.
+    boxes.push(box); seen.add(key);
+    out.push({ text: c.text, x: c.x, y: c.y, font, weight: c.cls.weight });
+  // Fin de la boucle.
+  }
+  // Renvoie les noms posés.
+  return out;
+// Fin de planPlaces.
+}

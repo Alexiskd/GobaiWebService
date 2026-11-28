@@ -10,10 +10,12 @@ import {
   BRIDGE_CASING, ROAD_CLASSES, ROAD_MAX_ZOOM, ROAD_MIN_ZOOM, TUNNEL_ALPHA, boxVisible, roadPaint, circlesCollide, clipLine, labelCircles, lineLength, placeLabel, planLabels,
   // Le type de voie, le nom d'une voie, le passage aux pixels et la largeur d'un tracé.
   roadClass, roadLabel, roadTileTransform, roadWidth,
+  // Les noms des lieux habités.
+  PLACE_CLASSES, placeName, placeKey, planPlaces,
 // Fin de la liste : le module roadStyle.
 } from './roadStyle.jsx';
 // Importe l'identifiant du calque des rues et la classe de la source, depuis roadSource.
-import { ROADS_LAYER_ID, RoadSource } from './roadSource.jsx';
+import { ROADS_LAYER_ID, RoadSource, setKnownPlaces } from './roadSource.jsx';
 
 // ---- Petit encodeur de tuile vectorielle (protobuf), pour fabriquer des tuiles d'essai.
 // varint : écrit un entier en octets à longueur variable.
@@ -44,7 +46,17 @@ function geometry(lines, closed = false) {
   return g;
 // Fin de geometry.
 }
-/** layers : [{ name, extent?, features: [{ type?, props, lines }] }] → octets de la tuile. */
+// pointGeometry : écrit des points (type 1) : une seule commande « aller à » répétée.
+function pointGeometry(pts) {
+  // Octets et position courante.
+  const g = [...varint(((pts.length / 2) << 3) | 1)]; let x = 0, y = 0;
+  // Chaque point, en écart depuis le précédent.
+  for (let i = 0; i < pts.length; i += 2) { g.push(...varint(zz(pts[i] - x)), ...varint(zz(pts[i + 1] - y))); x = pts[i]; y = pts[i + 1]; }
+  // Renvoie les octets.
+  return g;
+// Fin de pointGeometry.
+}
+/** layers : [{ name, extent?, features: [{ type?, props, lines | points }] }] → octets de la tuile. */
 // Déclare et exporte encodeTile : la liste des couches à écrire.
 export function encodeTile(layers) {
   // Octets de la tuile.
@@ -70,7 +82,7 @@ export function encodeTile(layers) {
       // Fin de la boucle des propriétés.
       }
       // Ajoute l'objet au corps : ses propriétés, son type (ligne par défaut) et sa géométrie.
-      body.push(...field(2, 2, [...field(2, 2, tags), ...field(3, 0, varint(f.type ?? 2)), ...field(4, 2, geometry(f.lines, f.type === 3))]));
+      body.push(...field(2, 2, [...field(2, 2, tags), ...field(3, 0, varint(f.type ?? 2)), ...field(4, 2, f.points ? pointGeometry(f.points) : geometry(f.lines, f.type === 3))]));
     // Fin de la boucle des objets.
     }
     // Ajoute chaque clé au corps.
@@ -481,5 +493,78 @@ test('types de voie : opacité croissante avec l’importance, couleurs opaques,
   assert.equal(roadPaint('minor', { tunnel: true }).alpha, ROAD_CLASSES.minor.alpha * TUNNEL_ALPHA);
   // Pont : liseré élargi.
   assert.equal(roadPaint('minor', { bridge: true }).casing - roadPaint('minor').casing, BRIDGE_CASING);
+// Fin du test.
+});
+
+// ---- Noms des lieux habités (couche « place »).
+
+// Test : les points de la couche des lieux.
+test('tuile vectorielle : points des lieux lus seulement pour les couches demandées', () => {
+  // Tuile : deux villages et une ville.
+  const bytes = encodeTile([{ name: 'place', features: [
+    { type: 1, props: { class: 'village', name: 'Andrésy' }, points: [100, 200, 300, 400] },
+    { type: 1, props: { class: 'city', name: 'Paris', 'name:fr': 'Paris', rank: 1 }, points: [2048, 2048] },
+  ] }]);
+  // Avec les points demandés : deux objets, leurs points et leurs propriétés.
+  const out = decodeLines(bytes, { place: ['class', 'name', 'name:fr', 'rank'] }, { points: ['place'] });
+  assert.equal(out.place.features.length, 2);
+  assert.deepEqual([...out.place.features[0].points], [100, 200, 300, 400]);
+  assert.deepEqual(out.place.features[1].props, { class: 'city', name: 'Paris', 'name:fr': 'Paris', rank: 1 });
+  // Sans : la couche est lue, mais ses points sont ignorés (les lignes seules sont gardées).
+  assert.equal(decodeLines(bytes, { place: null }).place.features.length, 0);
+// Fin du test.
+});
+
+// Test : le choix des noms de lieux.
+test('noms des lieux : niveau d’apparition par type, plus importants d’abord, sans chevauchement ni coupure', () => {
+  // Mesure : 6 pixels par caractère.
+  const measure = (t) => t.length * 6;
+  // Candidats : une ville, une petite ville, un village et un hameau, bien séparés.
+  const c = [
+    { props: { class: 'hamlet', name: 'Le Hameau' }, x: 60, y: 200 },
+    { props: { class: 'village', name: 'Villiers' }, x: 60, y: 140 },
+    { props: { class: 'town', name: 'Poissy' }, x: 60, y: 80 },
+    { props: { class: 'city', name: 'Paris' }, x: 180, y: 40 },
+  ];
+  // Au niveau 9 : la ville et la petite ville ; au 11 : le village en plus ; au 13 : tout.
+  assert.deepEqual(planPlaces(c, { z: 9, size: 256, measure }).map((l) => l.text), ['Paris', 'Poissy']);
+  assert.deepEqual(planPlaces(c, { z: 11, size: 256, measure }).map((l) => l.text), ['Paris', 'Poissy', 'Villiers']);
+  assert.deepEqual(planPlaces(c, { z: 13, size: 256, measure }).map((l) => l.text), ['Paris', 'Poissy', 'Villiers', 'Le Hameau']);
+  // Ordre des niveaux d'apparition : du plus grand au plus petit lieu.
+  assert.ok(PLACE_CLASSES.city.minZoom < PLACE_CLASSES.town.minZoom && PLACE_CLASSES.town.minZoom < PLACE_CLASSES.village.minZoom && PLACE_CLASSES.village.minZoom < PLACE_CLASSES.hamlet.minZoom);
+  // Un village qui chevauche la ville : la ville gagne.
+  assert.deepEqual(planPlaces([{ props: { class: 'village', name: 'Proche' }, x: 100, y: 100 }, { props: { class: 'city', name: 'Grande' }, x: 104, y: 102 }], { z: 12, size: 256, measure }).map((l) => l.text), ['Grande']);
+  // Nom qui dépasserait du bord : refusé (il serait coupé).
+  assert.equal(planPlaces([{ props: { class: 'city', name: 'Bordure' }, x: 3, y: 100 }], { z: 8, size: 256, measure }).length, 0);
+  // Nom déjà donné par l'app (accents ignorés) ou en double dans la tuile : écrit une seule fois, ou pas du tout.
+  assert.equal(planPlaces([{ props: { class: 'city', name: 'Pekin' }, x: 128, y: 128 }], { z: 8, size: 256, measure, known: new Set([placeKey('Pékin')]) }).length, 0);
+  assert.equal(planPlaces([{ props: { class: 'town', name: 'Duo' }, x: 60, y: 60 }, { props: { class: 'town', name: 'Duo' }, x: 180, y: 180 }], { z: 10, size: 256, measure }).length, 1);
+  // Nom français d'abord, sinon le nom local.
+  assert.equal(placeName({ name: 'München', 'name:fr': 'Munich' }), 'Munich');
+  assert.equal(placeName({ name: 'Conflans-Sainte-Honorine' }), 'Conflans-Sainte-Honorine');
+// Fin du test.
+});
+
+// Test, asynchrone : les noms des lieux écrits dans la tuile.
+test('source des rues : noms des lieux écrits dans la tuile, sauf ceux que l’app nomme déjà', async () => {
+  // Tuile : une ville connue de l'app et une petite ville, aucune route.
+  const tile = encodeTile([{ name: 'place', features: [
+    { type: 1, props: { class: 'city', name: 'Paris' }, points: [1000, 1000] },
+    { type: 1, props: { class: 'town', name: 'Conflans' }, points: [3000, 3000] },
+  ] }]);
+  // Faux accès.
+  const io = { fetchJson: async () => ({ tiles: ['https://tiles.exemple/planet/v1/{z}/{x}/{y}.pbf'], maxzoom: 14 }), fetchBytes: async () => tile, makeCanvas: fakeCanvas, storage: () => null };
+  // Paris est déjà nommé par les repères de l'app.
+  setKnownPlaces(['Paris']);
+  // Tuile de niveau 12.
+  const source = await new RoadSource({ io }).start();
+  const c = await source.loadImage({ z: 12, x: 10, y: 20 });
+  // Une vraie tuile : les lieux suffisent à dessiner.
+  assert.equal(c.width, 256);
+  // Seule la petite ville est écrite.
+  assert.deepEqual(c.ctx.calls.filter((k) => k[0] === 'fillText').map((k) => k[1]), ['Conflans']);
+  // Remise à zéro pour les autres tests.
+  setKnownPlaces([]);
+  source.dispose();
 // Fin du test.
 });

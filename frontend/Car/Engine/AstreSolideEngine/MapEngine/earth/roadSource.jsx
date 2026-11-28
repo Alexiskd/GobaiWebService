@@ -14,6 +14,8 @@ import {
   COAST_ALPHA, COAST_COLOR,
   // Les fonctions de dessin : visibilité, choix des noms, type, nom et peinture d'une voie, passage aux pixels et largeur.
   boxVisible, planLabels, roadClass, roadLabel, roadPaint, roadTileTransform, roadWidth,
+  // Les noms des lieux habités : leur choix et la clé de comparaison des noms.
+  planPlaces, placeKey,
   // Le test des segments qui longent un bord de la tuile.
   isEdgeRun,
 // Fin de la liste : le module roadStyle.
@@ -32,7 +34,15 @@ const TEMPLATE_KEY = 'gobai:rues-modele';
 /** Couches lues dans chaque tuile, et propriétés gardées. */
 // Couches à lire et propriétés à garder.
 // La couche « eau » (mers, lacs) fournit les littoraux : seuls ses contours sont lus, sans propriété.
-const LAYERS = { transportation: ['class', 'brunnel'], transportation_name: ['class', 'name', 'ref'], water: [] };
+// La couche « lieux » (villes, villages, hameaux…) : leurs points, type, noms, rang et capitale.
+const LAYERS = { transportation: ['class', 'brunnel'], transportation_name: ['class', 'name', 'ref'], water: [], place: ['class', 'name', 'name:fr', 'name_int', 'rank', 'capital'] };
+// Couches dont les points sont lus.
+const POINT_LAYERS = { points: ['place'] };
+
+/** Villes déjà nommées par les repères cliquables de l'app (clés de placeKey) : pas écrites une seconde fois. */
+let KNOWN_PLACES = new Set();
+// Déclare et exporte setKnownPlaces : les noms des villes de l'app.
+export function setKnownPlaces(names) { KNOWN_PLACES = new Set((names || []).map(placeKey).filter(Boolean)); }
 /** Tuiles de données décodées gardées en mémoire (une tuile de niveau 14 sert jusqu'à 64 tuiles affichées). */
 // Nombre de tuiles de données gardées en mémoire : 24.
 const DATA_CACHE = 24;
@@ -239,7 +249,7 @@ export class RoadSource {
         // le compteur d'échecs revient à 0 ;
         this.failures = 0;
         // renvoie les lignes décodées, ou null pour une tuile absente.
-        return bytes ? decodeLines(bytes, LAYERS) : null;
+        return bytes ? decodeLines(bytes, LAYERS, POINT_LAYERS) : null;
       // Fin du traitement.
       });
       // Un échec n'est pas gardé : la tuile sera redemandée.
@@ -294,12 +304,14 @@ export class RoadSource {
     const roads = data?.transportation;
     // La couche de l'eau, dont les contours sont les littoraux.
     const water = data?.water;
-    // Ni route ni eau : null.
-    if (!roads?.features.length && !water?.features.length) return null;
+    // Les lieux habités (villes, villages…).
+    const places = data?.place;
+    // Ni route, ni eau, ni lieu : null.
+    if (!roads?.features.length && !water?.features.length && !places?.features.length) return null;
     // Niveau de la tuile.
     const { z } = coord;
     // Passage aux pixels pour l'étendue des données (la même pour toutes les couches d'une tuile).
-    const t = roadTileTransform(coord, (roads ?? water).extent, size);
+    const t = roadTileTransform(coord, (roads ?? water ?? places).extent, size);
     // Rapport de taille par rapport à 256 pixels.
     const s = size / 256;
     // Tracés regroupés par type de voie (et tunnel ou non) : un seul tracé de canevas par groupe.
@@ -331,8 +343,10 @@ export class RoadSource {
       }
     // Fin de la boucle des objets.
     }
-    // Ni tracé ni littoral : null.
-    if (!groups.size && !water?.features.length) return null;
+    // Noms des lieux habités de la tuile, posés à l'avance (sans canevas : la mesure suit la police).
+    const placeLabels = this.planPlaceLabels(coord, places, size);
+    // Ni tracé, ni littoral, ni nom de lieu : null.
+    if (!groups.size && !water?.features.length && !placeLabels.length) return null;
     // Canevas de la tuile.
     const canvas = this.io.makeCanvas(size);
     // Son contexte de dessin.
@@ -428,6 +442,8 @@ export class RoadSource {
     ctx.setLineDash([]);
     // Dessine les noms.
     this.drawNames(ctx, coord, data.transportation_name, size);
+    // Puis les noms des lieux, par-dessus.
+    this.drawPlaces(ctx, placeLabels);
     // Renvoie le canevas.
     return canvas;
   // Fin de draw.
@@ -511,6 +527,44 @@ export class RoadSource {
     // Fin de la boucle.
     }
   // Fin de drawNames.
+  }
+
+  /** Noms des lieux habités d'une tuile : candidats en pixels, puis choix (importance, sans chevauchement). */
+  // planPlaceLabels : la tuile, la couche des lieux et la taille (début).
+  planPlaceLabels(coord, places, size) {
+    // Aucun lieu : aucun nom.
+    if (!places?.features.length) return [];
+    // Passage aux pixels pour l'étendue de cette couche.
+    const t = roadTileTransform(coord, places.extent, size);
+    // Candidats : chaque point en pixels, avec ses propriétés.
+    const candidates = [];
+    for (const f of places.features) for (let i = 0; i < f.points.length; i += 2) candidates.push({ props: f.props, x: f.points[i] * t.scale + t.offsetX, y: f.points[i + 1] * t.scale + t.offsetY });
+    // Contexte de mesure partagé (un petit canevas créé une fois).
+    const m = (this.measureCtx ??= this.io.makeCanvas(4).getContext('2d'));
+    // Mesure d'un nom dans sa police.
+    const measure = (text, font, weight) => { m.font = `${weight} ${font}px ${FONT}`; return m.measureText(text).width; };
+    // Choix des noms.
+    return planPlaces(candidates, { z: coord.z, size, measure, known: KNOWN_PLACES });
+  // Fin de planPlaceLabels.
+  }
+
+  /** Écrit les noms des lieux : texte blanc à liseré sombre, comme les noms des rues, centré sur le lieu. */
+  // drawPlaces : le contexte et les noms posés (début).
+  drawPlaces(ctx, labels) {
+    // Aucun nom : rien.
+    if (!labels.length) return;
+    // Texte centré, contour arrondi, blanc sur liseré noir.
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(0,0,0,0.82)'; ctx.fillStyle = '#ffffff';
+    // Pour chaque nom : sa police, son liseré, puis le texte.
+    for (const l of labels) {
+      ctx.font = `${l.weight} ${l.font}px ${FONT}`;
+      ctx.lineWidth = l.font * 0.3;
+      ctx.strokeText(l.text, l.x, l.y);
+      ctx.fillText(l.text, l.x, l.y);
+    // Fin de la boucle.
+    }
+  // Fin de drawPlaces.
   }
 
   // dispose : libère la source (début).
