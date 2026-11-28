@@ -4291,7 +4291,7 @@ export class SolarEngine {
   }
 
   /**
-   * Compteur d'images par seconde (composante FpsCounter) : images réellement dessinées par le moteur, moyennées sur
+   * Compteur d'images par seconde (mesures de perf, voir perfProbe.jsx) : images réellement dessinées par le moteur, moyennées sur
    * une fenêtre glissante d'une seconde (voir FpsMeter, perfProbe.jsx). Les rappels sautés (rythme réduit sur
    * téléphone) ne comptent pas. Le HUD reçoit la moyenne, le rythme de l'image la plus lente et le rythme visé, et
    * n'est prévenu que lorsqu'une valeur change.

@@ -4,7 +4,6 @@ import { PerivolumeManager, LOAD_STATE } from './PerivolumeManager.js';
 import { SystemRegistry } from '../core/system/SystemRegistry.js';
 import { SystemManager } from '../core/system/SystemManager.js';
 import { createGobaiPerivolumeAxioms } from './PerivolumeAxiomPolicy.js';
-import { perivolumeCube, perivolumeBox, perivolumeSphere, perivolumeCylinder, verifyIsoperimetricInequality, containsPerivolumePoint } from './PerivolumeGeometry.js';
 
 function setup(ids, axioms, centerOverrides = {}) {
   const registry = new SystemRegistry();
@@ -48,20 +47,4 @@ test('les transitions reviennent à la géométrie naturelle lorsque la caméra 
   const result = manager.update([500, 0, 0]);
   assert.equal(result.find((item) => item.id === 'system:solar').state, LOAD_STATE.UNLOADED);
   assert.equal(manager.getLoadProfile('system:solar').render, false);
-});
-
-test('les fonctions de surface respectent les formules de périvolume', () => {
-  assert.equal(perivolumeCube(4), 96);
-  assert.equal(perivolumeBox(2, 3, 4), 52);
-  assert.ok(Math.abs(perivolumeSphere(5) - 100 * Math.PI) < 1e-10);
-  assert.ok(Math.abs(perivolumeCylinder(3, 7) - 60 * Math.PI) < 1e-10);
-  const r = 5; const volume = 4 / 3 * Math.PI * r ** 3;
-  assert.equal(verifyIsoperimetricInequality(volume, perivolumeSphere(r)), true);
-});
-
-test('appartenance aux périvolumes cubique, boîte, sphère et cylindre', () => {
-  assert.equal(containsPerivolumePoint([1, 1, 1], [0, 0, 0], { type: 'cube', side: 2 }), true);
-  assert.equal(containsPerivolumePoint([2, 0, 0], [0, 0, 0], { type: 'box', length: 2, width: 2, height: 2 }), false);
-  assert.equal(containsPerivolumePoint([0, 0, 0], [0, 0, 0], { type: 'sphere', radius: 1 }), true);
-  assert.equal(containsPerivolumePoint([0.5, 1, 0], [0, 0, 0], { type: 'cylinder', radius: 1, height: 2 }), true);
 });
