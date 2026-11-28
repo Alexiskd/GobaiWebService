@@ -34,10 +34,14 @@ export function SolarSystem() {
     let cancelled = false;
     let idleId;
     let timeoutId;
+    // Essais de chargement de la scène (réseau coupé un instant : nouvel essai, sans rien écrire dans la console).
+    let tries = 0;
     const loadScene = () => import('./SolarScene.jsx').then(({ SolarScene }) => {
       if (!cancelled) setSolarSceneComponent(() => SolarScene);
-    }).catch((error) => {
-      console.error('[Gobai] Impossible de charger le moteur 3D :', error);
+    }).catch(() => {
+      // Échec : jusqu'à trois nouveaux essais, espacés de 2 s.
+      tries += 1;
+      if (!cancelled && tries <= 3) timeoutId = window.setTimeout(loadScene, 2000);
     });
     if (typeof window.requestIdleCallback === 'function') {
       idleId = window.requestIdleCallback(loadScene, { timeout: 1400 });
