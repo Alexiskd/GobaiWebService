@@ -65,3 +65,28 @@ export function lonLatOf([x, y, z]) {
   return { lon: (Math.atan2(-z, x) * 180) / Math.PI, lat: (Math.asin(Math.max(-1, Math.min(1, y / r))) * 180) / Math.PI };
 // Fin de lonLatOf.
 }
+
+/**
+ * Relief au zoom : part du relief affichée selon l'altitude de la caméra. Aucun relief de loin (au-dessus de
+ * RELIEF_FAR_RADII rayons d'altitude), relief complet de près (sous RELIEF_NEAR_RADII), fondu en S entre les deux.
+ * Terre : plein sous ≈ 255 km, rien au-dessus de ≈ 1 600 km ; Lune : plein sous ≈ 70 km, rien au-dessus de ≈ 430 km.
+ * Le résultat est arrondi au 1/50 : CesiumJS ne recalcule les volumes des tuiles qu'à un vrai changement.
+ */
+// Déclare et exporte les altitudes du fondu du relief (en rayons de l'astre).
+export const RELIEF_NEAR_RADII = 0.04;
+// Déclare et exporte l'altitude au-dessus de laquelle le relief est absent (en rayons).
+export const RELIEF_FAR_RADII = 0.25;
+// Déclare et exporte reliefRamp : l'altitude (km) et le rayon de l'astre (km) (début).
+export function reliefRamp(altKm, radiusKm) {
+  // Rayon illisible : relief complet ; altitude pas encore connue : pas de relief (il apparaîtra en approchant).
+  if (!(radiusKm > 0)) return 1;
+  if (!Number.isFinite(altKm)) return 0;
+  // Altitude en rayons.
+  const a = altKm / radiusKm;
+  // Position dans le fondu : 0 de loin, 1 de près.
+  const t = Math.min(1, Math.max(0, (RELIEF_FAR_RADII - a) / (RELIEF_FAR_RADII - RELIEF_NEAR_RADII)));
+  // Courbe en S, arrondie au 1/50.
+  return Math.round(t * t * (3 - 2 * t) * 50) / 50;
+// Fin de reliefRamp.
+}
+

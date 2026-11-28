@@ -17,8 +17,10 @@ export function pickMoonBlend(status) {
   const stored = (status?.variants || []).filter((v) => v.stored);
   // Aucune : rien à charger.
   if (!stored.length) return null;
-  // Le relief réel en priorité.
-  const v = stored.find((x) => x.exaggeration === 1) || stored[0];
+  // Le relief réel seulement (les variantes exagérées ne sont plus utilisées).
+  const v = stored.find((x) => x.exaggeration === 1);
+  // Pas encore fabriqué : rien à charger.
+  if (!v) return null;
   // Adresse du fichier lu dans BP.
   return `${API_BASE}/tiles/moon-blend/${v.exaggeration}/model.glb`;
 }

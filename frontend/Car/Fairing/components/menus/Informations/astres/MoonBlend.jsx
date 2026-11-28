@@ -1,7 +1,7 @@
 // Box « Blend · Lune » des caractéristiques de la Lune, présentée comme la box « Fond de carte · Lune » : le modèle 3D
 // complet de la Lune, reconstruit par le serveur à partir des couches de la carte réelle (couleurs NASA SVS × détail
-// Kaguya) et de l'outil de relief (altitudes LOLA), puis enregistré dans BP. Une option par relief (×1, ×5, ×10) :
-// à créer, en fabrication, ou enregistrée dans BP et téléchargeable.
+// Kaguya) et de l'outil de relief (altitudes LOLA), puis enregistré dans BP. Seul le relief réel (altitudes mesurées,
+// sans exagération) est proposé : à créer, en fabrication, ou enregistré dans BP et téléchargeable.
 // Hooks de React.
 import { useCallback, useEffect, useState } from 'react';
 // Importe les composants du kit d'interface (Tailwind CSS et Base UI).
@@ -17,8 +17,10 @@ import { DownloadIcon, PlayArrowIcon } from '../../../ui/icons.jsx';
 
 // Relecture de l'état pendant une fabrication.
 const POLL_MS = 4000;
-// Libellés des variantes.
-const LABELS = { 1: 'Relief réel', 5: 'Relief × 5', 10: 'Relief × 10' };
+// Libellé de la seule variante proposée : le relief réel (× 1).
+const LABELS = { 1: 'Relief réel' };
+// Variante gardée : les altitudes mesurées, sans exagération (les variantes × 5 et × 10 ne sont plus proposées).
+const REAL = (v) => v.exaggeration === 1;
 
 /** Description d'une variante : enregistrée (taille, date), en fabrication, en échec, ou à créer. */
 function describe(v) {
@@ -48,7 +50,7 @@ export function MoonBlend() {
   // Première lecture.
   useEffect(() => { const c = new AbortController(); read(c.signal); return () => c.abort(); }, [read]);
   // Relecture tant qu'une variante est en fabrication.
-  const building = Boolean(status?.variants?.some((v) => v.building));
+  const building = Boolean(status?.variants?.some((v) => REAL(v) && v.building));
   useEffect(() => {
     if (!building) return undefined;
     const t = setInterval(() => read(), POLL_MS);
@@ -73,8 +75,8 @@ export function MoonBlend() {
           enregistré dans BP. S’ouvre dans Blender (Fichier › Importer › glTF).
         </Hint>
       )}
-      {/* Une option par relief, avec son bouton : télécharger si elle est dans BP, créer sinon. */}
-      {status?.database && status.variants.map((v) => (
+      {/* Le relief réel seul, avec son bouton : télécharger s'il est dans BP, créer sinon. */}
+      {status?.database && status.variants.filter(REAL).map((v) => (
         <Radio
           key={v.exaggeration}
           name="moon-blend"

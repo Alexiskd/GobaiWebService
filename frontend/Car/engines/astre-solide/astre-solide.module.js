@@ -16,7 +16,7 @@
  */
 
 // Importe les règles du passage.
-import { RETURN_KM, altitudeKm, zoomFade, lonLatOf, rearm, scaledKm, shouldEnter, shouldExit } from './astre-solide.handoff.js';
+import { RETURN_KM, altitudeKm, zoomFade, lonLatOf, rearm, scaledKm, shouldEnter, shouldExit, reliefRamp } from './astre-solide.handoff.js';
 // Importe la création du globe.
 import { cesiumResolutionScale, createSolidViewer } from './astre-solide.viewer.js';
 // Importe le fournisseur d'images qui lit le fond de carte de l'app.
@@ -134,6 +134,8 @@ export class AstreSolideGlobe {
       } catch { this.failed = true; this.armed = false; div.remove(); return false; }
       // Caméra pilotée par les commandes de three.js, réglée sur le rayon de l'astre.
       this.camera = new CesiumCamera({ viewer: this.viewer, Cesium: this.Cesium, engine: this.engine, body });
+      // Relief posé dès la création (avant la première image) : pas de changement de fournisseur pendant le zoom.
+      this.syncTerrain();
       // À chaque mouvement : verrou du nord, HUD, et retour à la scène three.js si la caméra s'éloigne.
       this.viewer.camera.changed.addEventListener(() => this.onCameraChange());
       // Sensibilité du changement de caméra : 1 % (assez pour suivre le zoom).
@@ -186,8 +188,8 @@ export class AstreSolideGlobe {
     if (!this.body) return;
     // De près : ni ombre ni pollution lumineuse (fondu terminé).
     if (this.active) { this.zoomFade = 0; return; }
-    // Altitude de la caméra, en km de l'astre.
-    const altKm = altitudeKm(dist, radius, this.body.radiusKm);
+    // Altitude de la caméra, en km de l'astre (gardée pour le relief au zoom, voir syncTerrain).
+    const altKm = this.altKm = altitudeKm(dist, radius, this.body.radiusKm);
     // Fondu du zoom : l'ombre et la pollution lumineuse baissent en approchant de l'astre ciblé.
     this.zoomFade = focused ? zoomFade(altKm, this.body.radiusKm) : 1;
     // En création : rien de plus.
@@ -390,8 +392,8 @@ export class AstreSolideGlobe {
     const possible = r && (this.body.id === 'earth' || r.terrain?.template);
     // Clé du réglage : astre, « off » ou l'exagération.
     const key = `${this.body.id}:${possible && r.on ? `on:${r.exaggeration}` : 'off'}`;
-    // Inchangé : rien.
-    if (key === this.terrainKey) return;
+    // Inchangé : seule l'exagération au zoom est mise à jour.
+    if (key === this.terrainKey) { this.applyReliefZoom(possible && r.on, r); return; }
     // Relief allumé ou éteint avant et maintenant.
     const wasOn = Boolean(this.terrainKey?.includes(':on:')), on = key.includes(':on:');
     // Noté.
@@ -408,11 +410,29 @@ export class AstreSolideGlobe {
       this.viewer.terrainProvider = provider;
     // Fin du changement.
     }
-    // Exagération des altitudes (CesiumJS 1.116 et plus).
-    if ('verticalExaggeration' in this.viewer.scene) this.viewer.scene.verticalExaggeration = on ? r.exaggeration : 1;
+    // Exagération au zoom.
+    this.applyReliefZoom(on, r);
     // Une image.
     this.viewer.scene.requestRender();
   // Fin de syncTerrain.
+  }
+
+  /**
+   * Relief au zoom : aucun de loin, fondu en approchant, complet de près (voir reliefRamp). Le fournisseur de relief
+   * reste posé (le changer viderait toutes les tuiles du globe, qui disparaîtrait le temps de les recharger) : seule
+   * l'exagération des altitudes varie (CesiumJS 1.116 et plus), sans rechargement des tuiles.
+   */
+  // applyReliefZoom : relief allumé ou non, et le réglage (début).
+  applyReliefZoom(on, r) {
+    // Sans réglage d'exagération dans cette version de CesiumJS : rien.
+    if (!('verticalExaggeration' in this.viewer.scene)) return;
+    // Altitude de la caméra (km) : celle du globe de près, celle de three.js sinon.
+    const altKm = this.active ? (this.camera?.altitudeM ?? 0) / 1000 : this.altKm;
+    // Exagération voulue : celle du réglage × la part du relief à cette altitude (presque 0 de loin, jamais 0 pile).
+    const exag = on ? Math.max(1e-3, r.exaggeration * reliefRamp(altKm, this.body.radiusKm)) : 1;
+    // Posée seulement si elle change (une image de plus pour la montrer).
+    if (this.viewer.scene.verticalExaggeration !== exag) { this.viewer.scene.verticalExaggeration = exag; this.viewer.scene.requestRender(); }
+  // Fin de applyReliefZoom.
   }
 
   /**
