@@ -1,3 +1,5 @@
+// Importe et lance la remise à zéro des anciens choix de calques (tous actifs depuis la refonte).
+import '../../../shared/lib/settings/resetLayerChoices.js';
 // Importe uploadShare, la part des envois de tuiles autorisée, depuis powerSaver.
 import { uploadShare } from '../../PerfEngine/powerSaver.jsx';
 
@@ -191,12 +193,11 @@ export class TileManager {
     this.reliefProbe = { at: 0, floor: 0 };
     // Vecteur de travail.
     this.local = new THREE.Vector3();
-    // Relief en volume (vraies altitudes : la Terre) : coupé tant que l'utilisateur ne l'a pas allumé — la carte est
-    // à plat, sans tuiles d'altitude à télécharger. Ombrage estimé d'après l'image (autres astres) : toujours actif.
+    // Relief en volume (vraies altitudes) : actif par défaut (refonte : plus d'interrupteur ; il apparaît au zoom). Ombrage estimé d'après l'image (autres astres) : toujours actif.
     // Règle le relief : pour un relief Terrarium,
     this.setRelief(this.relief?.kind === 'terrarium'
       // le choix gardé par l'utilisateur, coupé par défaut ;
-      ? reliefChoice(readReliefChoice(), this.relief.exaggeration ?? 1, false)
+      ? reliefChoice(readReliefChoice(), this.relief.exaggeration ?? 1, true)
       // sinon actif.
       : { on: true, exaggeration: this.relief?.exaggeration ?? 1 });
     // Numéro du type de détail simulé.

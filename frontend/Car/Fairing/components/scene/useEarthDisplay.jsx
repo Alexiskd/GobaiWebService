@@ -16,11 +16,11 @@ function remember(key, value) {
 // Fin de remember.
 }
 // Clé du stockage local : calque des rues.
-const STREETS_KEY = 'gobai:rues'; // calque des rues (OpenStreetMap) : « 1 » quand il est affiché
+const STREETS_KEY = 'gobai:rues'; // calque des rues (OpenStreetMap) : affiché par défaut, « 0 » s'il est coupé
 // Déclare storedStreets, qui lit l'affichage enregistré des rues.
 function storedStreets() {
   // Vrai si la valeur enregistrée vaut « 1 » ; faux si le stockage est inaccessible.
-  try { return globalThis.localStorage?.getItem(STREETS_KEY) === '1'; } catch { return false; }
+  try { return globalThis.localStorage?.getItem(STREETS_KEY) !== '0'; } catch { return true; }
 // Fin de storedStreets.
 }
 
@@ -30,13 +30,13 @@ export function useEarthDisplay({ engine, push }) {
   // État : ombrage, actif au départ.
   const [shade, setShade] = useState(true);
   // État : frontières, masquées au départ.
-  const [borders, setBorders] = useState(false);
+  const [borders, setBorders] = useState(true);
   // État : littoraux, masqués au départ.
-  const [coasts, setCoasts] = useState(false);
+  const [coasts, setCoasts] = useState(true);
   // État : noms des pays, masqués au départ.
-  const [countryNames, setCountryNames] = useState(false);
+  const [countryNames, setCountryNames] = useState(true);
   // État : noms des villes, masqués au départ.
-  const [cityNames, setCityNames] = useState(false);
+  const [cityNames, setCityNames] = useState(true);
   // État : coordonnées GPS, affichées au départ.
   const [gps, setGps] = useState(true); // coordonnées GPS des coins de l'écran
   // Rues et routes du monde (OpenStreetMap, tuiles vectorielles OpenFreeMap) : éteint par défaut.
@@ -46,8 +46,8 @@ export function useEarthDisplay({ engine, push }) {
   const setStreets = useCallback((on) => {
     // Met l'état à jour, converti en booléen.
     setStreetsOn(Boolean(on));
-    // Enregistre « 1 », ou efface l'entrée.
-    remember(STREETS_KEY, on ? '1' : null);
+    // Affichées par défaut : seul un arrêt (assistant) est gardé, « 0 ».
+    remember(STREETS_KEY, on ? null : '0');
   // Fin de setStreets ; fonction stable.
   }, []);
   // La couche unique de la Terre est une imagerie, sans noms ni routes : les noms des villes s'affichent dès qu'ils sont demandés.
