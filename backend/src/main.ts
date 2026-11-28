@@ -37,6 +37,7 @@ import { bodyPageFor, markdownPageFor, renderBodyMarkdown, renderBodyPage, rende
 // Service du balisage SEO (table seo_tags) : titre et description de chaque page, lus en base s'ils y sont rangés.
 // Version anglaise du site : page d'une adresse /en/… et son rendu.
 import { englishPageFor, renderEnglishPage } from './services/core/data/body-pages-en';
+import { securityHeaders } from './common/security-headers';
 import { SeoTagsService } from './services/content/seo/seo-tags.service';
 
 /**
@@ -175,6 +176,10 @@ async function bootstrap() {
 
   // Crée l'application NestJS sur Express à partir du module racine ; await attend que tous les modules soient prêts.
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Pas de signature « X-Powered-By: Express ».
+  app.disable('x-powered-by');
+  // En-têtes de sécurité sur toutes les réponses (voir common/security-headers.ts).
+  app.use(securityHeaders);
   // Adresse unique pour le référencement : premier middleware, avant tout le reste (voir canonical-url.ts).
   // Actif seulement en production sur Render : en développement, localhost n'est jamais redirigé.
   if (canonicalRedirectEnabled()) {
