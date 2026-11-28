@@ -629,6 +629,8 @@ export function SolarScene({ data, onSettled, covered = false }) {
         }}
         moonPlaces={moon.moonFeatures}
         onMoonPlaces={moon.setMoonFeatures}
+        moonCountries={moon.moonCountries}
+        onMoonCountries={moon.setMoonCountries}
       // Fin du panneau d'informations.
       />
   // Fin de la constante.

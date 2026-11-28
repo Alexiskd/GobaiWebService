@@ -3,6 +3,7 @@ import { Cartographie, CartographieRelief } from '../../Parametres/Cartographie.
 import { VitesseRotation } from '../../Parametres/VitesseRotation.jsx';
 import { Group } from '../../../ui/Group.jsx';
 import { Switch } from '../../../ui/Switch.jsx';
+import { MoonCountries } from './MoonCountries.jsx';
 
 /** Astres, hors la Terre, dont le relief en volume vient de tuiles d'altitude (voir tiledBodies) : l'interrupteur « Relief 3D » leur est proposé. */
 const RELIEF_BODIES = ['moon', 'mars', 'mercury', 'venus'];
@@ -12,7 +13,7 @@ export function PlanetSettings({
   bodyId, bodyName, rotateSpeed, onRotateSpeed, rotating,
   atmosphereLayers = {}, atmospheres, onAtmospheres, venusAtmosphere, onVenusAtmosphere,
   marsAtmosphere, onMarsAtmosphere, relief, onRelief, earthLayers = {}, onGoPlace, onDone,
-  moonPlaces, onMoonPlaces,
+  moonPlaces, onMoonPlaces, moonCountries, onMoonCountries,
 }) {
   if (!bodyId) return null;
   const earth = bodyId === 'earth';
@@ -56,8 +57,11 @@ export function PlanetSettings({
       {bodyId === 'moon' && (
         <Group title="Repères lunaires">
           <Switch checked={moonPlaces} onChange={onMoonPlaces} label="Lieux de la Lune" hint="Alunissages (Apollo, Chang’e…), mers, cratères" />
+          <Switch checked={Boolean(moonCountries)} onChange={onMoonCountries} label="Pays de la Lune" hint="Frontières imaginaires d’après les alunissages et les fusées qui les ont lancés" />
         </Group>
       )}
+      {/* Pays de la Lune affichés : leur liste, avec la descendance sémantique de chaque nom. */}
+      {bodyId === 'moon' && moonCountries && <MoonCountries />}
     </section>
   );
 }

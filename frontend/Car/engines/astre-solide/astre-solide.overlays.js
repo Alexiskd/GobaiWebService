@@ -20,6 +20,8 @@
 import { tileSourceImageryProvider } from './astre-solide.imagery.js';
 // Importe les lieux de la Lune (mêmes données que les repères three.js).
 import { MOON_FEATURES } from '../../Engine/AstreSolideEngine/MoonEngine/moonFeatures.jsx';
+// Importe les pays de la Lune : frontières et noms d'après les alunissages.
+import { countryLabels, moonBorders } from '../../Engine/AstreSolideEngine/MoonEngine/moonCountries.jsx';
 // Importe l'identifiant du calque des rues de la Terre.
 import { ROADS_LAYER_ID } from '../../Engine/AstreSolideEngine/MapEngine/earth/roadSource.jsx';
 
@@ -31,7 +33,7 @@ export const LABEL_FONT = '600 13px "Google Sans", system-ui, sans-serif';
 export const MAX_CITIES = 400;
 /** Couleurs des calques (mêmes teintes que three.js : frontières dorées, littoraux crème, volcans rouges). */
 // Déclare et exporte les couleurs.
-export const COLORS = { border: '#ffd166', coast: '#f2efe6', volcano: '#ff4d2e', label: '#ffffff', outline: '#000000' };
+export const COLORS = { moonBorder: '#cfe3ff', border: '#ffd166', coast: '#f2efe6', volcano: '#ff4d2e', label: '#ffffff', outline: '#000000' };
 
 /**
  * Polylignes plates [lon, lat, lon, lat, …] (format de GET /borders) coupées au saut de l'antiméridien (plus de 180°
@@ -102,6 +104,13 @@ export function moonPlaces(types, features = MOON_FEATURES) {
 // Fin de moonPlaces.
 }
 
+/** Pays de la Lune, calculés une seule fois (données figées). */
+// memo : une fonction de calcul (début).
+const memo = (fn) => { let v = null; return () => (v ??= fn()); };
+// Frontières et noms des pays de la Lune, gardés.
+const MOON_BORDERS = memo(() => Object.assign(moonBorders(), { ref: 'pays-lune' }));
+const MOON_COUNTRY_LABELS = memo(() => Object.assign(countryLabels().map((c) => ({ ...c, rank: 0 })), { ref: 'pays-lune' }));
+
 /** Signature d'un jeu de données : change quand les données changent (nouvelle liste ou autre longueur). */
 // sig : les données (début).
 const sig = (data) => (data ? `${data.length}:${data.ref ?? ''}` : 'none');
@@ -140,6 +149,12 @@ export const OVERLAYS = [
   // Lieux de la Lune (repères HTML de three.js).
   { id: 'moon-places', body: 'moon', kind: 'labels', html: true,
     want: (e) => (e.moonFeatureTypes?.size ?? 0) > 0, data: (e) => moonPlaces(e.moonFeatureTypes) },
+  // Pays de la Lune : frontières entre les territoires des alunissages de chaque nation.
+  { id: 'moon-borders', body: 'moon', kind: 'lines', color: COLORS.moonBorder, alpha: 0.85,
+    want: (e) => Boolean(e.moonCountriesOn), data: () => MOON_BORDERS() },
+  // Pays de la Lune : leurs noms, sur leur capitale.
+  { id: 'moon-countries', body: 'moon', kind: 'labels',
+    want: (e) => Boolean(e.moonCountriesOn), data: () => MOON_COUNTRY_LABELS() },
 // Fin de la table.
 ];
 

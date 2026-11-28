@@ -42,7 +42,7 @@ export function BodyLayersMenu({
   rotateSpeed, onRotateSpeed, rotating, onGoPlace, onDone,
   atmosphereLayers, atmospheres, onAtmospheres, venusAtmosphere, onVenusAtmosphere,
   marsAtmosphere, onMarsAtmosphere, relief, onRelief, earthLayers,
-  moonPlaces, onMoonPlaces,
+  moonPlaces, onMoonPlaces, moonCountries, onMoonCountries,
 // Fin de la liste des propriétés.
 }) {
   // La configuration de l'astre visé, s'il est tuilé.
@@ -175,6 +175,8 @@ export function BodyLayersMenu({
           earthLayers={earthLayers}
           moonPlaces={moonPlaces}
           onMoonPlaces={onMoonPlaces}
+          moonCountries={moonCountries}
+          onMoonCountries={onMoonCountries}
         />
       )}
     {/* Fin du fragment. */}
