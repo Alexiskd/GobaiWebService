@@ -7,8 +7,8 @@ services:
     name: gobai-space
     # Environnement Node.
     runtime: node
-    # Offre gratuite.
-    plan: free
+    # Offre Starter (pas de mise en veille).
+    plan: starter
     # Commande de construction.
     buildCommand: npm run build
     # Commande de démarrage.
