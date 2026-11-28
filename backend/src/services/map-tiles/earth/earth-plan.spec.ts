@@ -87,8 +87,10 @@ describe('table de priorité des sources de la Terre', () => {
   it('décrit la carte marine : NOAA loin, fondu, puis GEBCO seule, sans retour en arrière', () => {
     // La table.
     const plan = earthPlan(enabledSources(env), env);
-    // Version 3, avec la carte marine du serveur.
-    expect([plan.version, plan.marine]).toEqual([3, earthMarine(env)]);
+    // Version de la table (4 depuis l'emprise réelle de Sentinel-2), avec la carte marine du serveur.
+    expect([plan.version, plan.marine]).toEqual([EARTH_PLAN_VERSION, earthMarine(env)]);
+    // La carte marine est apparue à la version 3 : toujours présente après.
+    expect(plan.version).toBeGreaterThanOrEqual(3);
     // Ordre des étapes, du plus lointain au plus proche.
     const order = ['noaa', 'fondu', 'gebco'];
     // Étapes des paliers, du plus lointain au plus proche.

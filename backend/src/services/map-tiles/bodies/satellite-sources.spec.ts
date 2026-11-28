@@ -5,18 +5,21 @@ import {
 // Fin de l'import.
 } from './satellite-sources';
 // Liste des satellites affichés.
-import { SATELLITES } from '../../core/data/bodies.data';
+import { ALL_SATELLITES, SATELLITES } from '../../core/data/bodies.data';
 
 // Groupe de tests des sources des satellites.
 describe('sources des satellites', () => {
   // Premier test : la liste.
-  it('couvre exactement les satellites affichés', () => {
+  it('couvre exactement les satellites connus : affichés (avec Trek) et candidats (découverte Trek puis USGS)', () => {
     // Fiches qui ne sont pas des planètes.
     const moons = SATELLITE_SOURCES.filter((s) => !s.planet);
-    // Leurs identifiants doivent être ceux des satellites affichés.
-    expect(moons.map((s) => s.id).sort()).toEqual(SATELLITES.map((s) => s.id).sort());
-    // Chacune doit avoir au moins un produit Trek.
-    for (const s of moons) expect(s.trek.length).toBeGreaterThan(0);
+    // Leurs identifiants sont ceux de tous les satellites connus (affichés et candidats : Phobos, Hypérion, Nix…).
+    expect(moons.map((s) => s.id).sort()).toEqual(ALL_SATELLITES.map((s) => s.id).sort());
+    // Chaque satellite affiché a au moins un produit Trek.
+    const shown = new Set(SATELLITES.map((s) => s.id));
+    for (const s of moons.filter((m) => shown.has(m.id))) expect(s.trek.length).toBeGreaterThan(0);
+    // Chaque candidat a une carte USGS de repli dans le dossier de sa planète.
+    for (const s of moons.filter((m) => !shown.has(m.id))) expect(s.usgsMap).toMatch(/^\/maps\/[a-z]+\/[a-z]+_simp_cyl\.map$/);
     // Géantes gazeuses : pas de portail Trek, carte USGS seulement ; Vénus a Venus Trek.
     // Les planètes : Jupiter, Saturne, Uranus, Neptune, Vénus, dans cet ordre.
     expect(SATELLITE_SOURCES.filter((s) => s.planet).map((s) => s.id)).toEqual(['jupiter', 'saturn', 'uranus', 'neptune', 'venus']);

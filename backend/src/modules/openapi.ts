@@ -28,6 +28,7 @@ const TAGS: [string, string][] = [
   ['Position', 'Position GPS sur la Terre ou la Lune, temps de trajet (durée seule) et itinéraire par étapes (un moyen de locomotion par étape).'],
   // Le site.
   ['Contributions', 'Placements LiDAR proposés par les visiteurs, comptes et votes.'],
+  ['Moteur', 'Moteur 3D chiffré servi au frontend, et sa clé de déchiffrement (origines autorisées seulement).'],
   ['Galerie', 'Photos et vidéos de la galerie.'],
   ['Assistant', 'Assistant de la barre d’outils.'],
   ['Dons', 'Dons par carte bancaire.'],
