@@ -41,8 +41,6 @@ import { MarsModule } from './mars.module';
 import { MercuryModule } from './mercury.module';
 // Module du Soleil : point sous-solaire et activité solaire.
 import { SunModule } from './sun.module';
-// Module des volcans : volcans en éruption en direct (NASA EONET).
-import { VolcanoesModule } from './volcanoes.module';
 // Module du blocage des API externes : liste des API déconnectées.
 import { ApisModule } from './apis.module';
 // Module des contributions : comptes, placements LiDAR et votes.
@@ -87,8 +85,6 @@ import { SeoModule } from './seo.module';
     MercuryModule,
     // Routes du Soleil.
     SunModule,
-    // Routes des volcans en éruption : /api/v1/volcanoes.
-    VolcanoesModule,
     // World Atlas (pays en TopoJSON), source des frontières : /api/v1/world-atlas
     // Routes de World Atlas, importé avant les frontières qui s'en servent.
     WorldAtlasModule,

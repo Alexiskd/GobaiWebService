@@ -42,8 +42,8 @@ test('table : chaque paramètre lit l’état de l’app et ses données', () =>
   assert.equal(byId.coasts.want({ coastsOn: true, coastsFromTiles: true }), false);
   // Villes et lieux de la Lune : repères HTML (pas en double en superposition).
   assert.equal(byId.cities.html, true); assert.equal(byId['moon-places'].html, true);
-  // Volcans : liste du calque three.js.
-  assert.deepEqual(byId.volcanoes.data({ volcanoes: { list: [{ name: 'Etna', lon: 15, lat: 37.7 }] } }), [{ text: 'Etna', lon: 15, lat: 37.7, rank: 0 }]);
+  // Volcans en éruption retirés.
+  assert.equal(byId.volcanoes, undefined);
   // Rues : seulement quand le calque des rues est posé sur la Terre.
   assert.equal(byId.roads.want({ tiledById: { earth: { tiles: { overlay: { id: 'earth-roads' } } } } }), true);
   assert.equal(byId.roads.want({}), false);

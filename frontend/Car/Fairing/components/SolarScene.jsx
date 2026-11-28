@@ -474,8 +474,6 @@ export function SolarScene({ data, onSettled, covered = false }) {
         frontieres_et_littoraux: (on) => { earth.setBorders(on); earth.setCoasts(on); },
         // Les rues et routes d'OpenStreetMap.
         rues: earth.setStreets,
-        // Les volcans en éruption.
-        volcans: earth.setVolcanoes,
         // Les coordonnées GPS des coins de l'écran.
         coordonnees_gps: earth.setGps,
         // Le relief 3D du globe.
@@ -619,13 +617,10 @@ export function SolarScene({ data, onSettled, covered = false }) {
           outlinesHint: bordersInfo ? 'Frontières des pays, bord de mer, océans et Caspienne · Natural Earth 1:50m' : 'Chargement…',
           streets: earth.streets,
           onStreets: earth.setStreets,
-          volcanoes: earth.volcanoes,
-          onVolcanoes: earth.setVolcanoes,
           nightLights: camera.nightLights,
           onNightLights: camera.setNightLights,
           lightView: camera.lightView,
           onLightView: camera.setLightView,
-          volcanoesHint: earth.volcanoCount === null ? 'En direct · NASA EONET' : `${earth.volcanoCount} en cours dans le monde · NASA EONET`,
         }}
         moonPlaces={moon.moonFeatures}
         onMoonPlaces={moon.setMoonFeatures}

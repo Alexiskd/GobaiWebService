@@ -24,7 +24,7 @@ export const DISPLAY_SETTINGS = [
   // caméra et rotation,
   'rotation_automatique', 'vue_3_4', 'ombre',
   // cartographie de la Terre à plat,
-  'noms_villes', 'noms_pays', 'frontieres_et_littoraux', 'rues', 'volcans', 'coordonnees_gps',
+  'noms_villes', 'noms_pays', 'frontieres_et_littoraux', 'rues', 'coordonnees_gps',
   // cartographie en relief,
   'relief_3d',
   // appareil (le noir pur est fusionné dans le thème, le moniteur de performance a été retiré).
@@ -71,7 +71,7 @@ export const ASSISTANT_TOOLS: ToolDefinition[] = [
   }),
   // Outil « regler_affichage » : active ou désactive un interrupteur.
   tool('regler_affichage', 'Active ou désactive un interrupteur de l’interface : repères du système solaire, caméra, '
-    + 'cartographie de la Terre (noms, frontières, rues, volcans) et réglages '
+    + 'cartographie de la Terre (noms, frontières, rues) et réglages '
     + 'de l’appareil. Ce sont les interrupteurs de la fenêtre Paramètres et de la barre d’outils.', {
     // Paramètre reglage : un texte parmi les réglages autorisés.
     reglage: { type: 'string', enum: [...DISPLAY_SETTINGS] },

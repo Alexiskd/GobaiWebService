@@ -28,7 +28,7 @@ import { setViewHash } from './astre-solide.view-link.js';
 // Importe le relief en volume de la Terre (AWS Terrain Tiles) et celui des autres astres solides (tuiles Terrarium du serveur).
 import { createBodyTerrainProvider, createTerrainProvider } from './astre-solide.terrain.js';
 // Importe le tangage de la vue 3/4, les réglages de l'ombre, la vue three.js traduite et le passage des repères.
-// Importe les paramètres de l'astre redessinés sur le globe (rues, frontières, noms, volcans, lieux de la Lune).
+// Importe les paramètres de l'astre redessinés sur le globe (rues, frontières, noms, lieux et pays de la Lune).
 import { GlobeOverlays } from './astre-solide.overlays.js';
 import { cesiumShade, fadeProgress, globeCacheOptions, globeScreenError, pitchForTilt, skyVisible, threeViewToCesium, tilesLocalToEcef } from './astre-solide.camera-math.js';
 

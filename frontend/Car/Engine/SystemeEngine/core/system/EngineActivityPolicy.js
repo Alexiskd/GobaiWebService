@@ -6,7 +6,6 @@ export class EngineActivityPolicy {
     this.profiles = Object.freeze({
       atmosphere: { backgroundEvery: 4, ...(profiles.atmosphere || {}) },
       lidar: { backgroundEvery: 3, ...(profiles.lidar || {}) },
-      volcanoes: { backgroundEvery: 4, ...(profiles.volcanoes || {}) },
       earthLabels: { backgroundEvery: 2, ...(profiles.earthLabels || {}) },
       moonLabels: { backgroundEvery: 2, ...(profiles.moonLabels || {}) },
     });
