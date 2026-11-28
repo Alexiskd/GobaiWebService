@@ -23,7 +23,8 @@
   --font-sys: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
 
-  /* Couleurs de marque (les mêmes dans les deux thèmes). */
+  /* Couleurs de la palette Orbite (source : Fairing/theme/palette.js, vérifiée par palette.test.js) ; le thème jour
+     remplace les accents par leurs versions sombres. */
   --color-primary: #8baeff;
   --color-primary-light: #b5caff;
   --color-primary-dark: #5e82d5;
@@ -32,14 +33,18 @@
   --color-on-secondary: #17112c;
   --color-success: #5ad9b3;
   --color-info: #70dceb;
-  --color-warning: #f3c66d;
-  --color-error: #ff8294;
+  --color-warning: #e8c46a;
+  --color-error: #ff8a7a;
+  /* Accents de la palette Orbite (Fairing/theme/palette.js). */
+  --color-gold: #e8c46a;
+  --color-coral: #ff8a7a;
+  --color-violet: #b39aff;
 
   /* Surfaces et textes : valeurs du thème nuit ; le thème jour les remplace plus bas. */
   --color-bg: #05070d;
   --color-surface: #05070d;
-  --color-panel: #070b15;
-  --color-raised: #0c1220;
+  --color-panel: #0a0f1c;
+  --color-raised: #111a2e;
   --color-edge: rgba(177, 199, 255, 0.17);
   --color-line: rgba(177, 199, 255, 0.14);
   --color-ink: #f4f7ff;
@@ -56,19 +61,33 @@
 @layer base {
   /* Thème jour : seules les surfaces et les textes changent. */
   :root[data-theme="day"] {
-    --color-surface: #e9eff8;
+    --color-bg: #eef2f9;
+    --color-surface: #eef2f9;
     --color-panel: #f9fbff;
-    --color-raised: #ffffff;
+    --color-raised: #e4eaf5;
     --color-edge: rgba(43, 66, 110, 0.14);
     --color-line: rgba(43, 66, 110, 0.14);
-    --color-ink: #19243a;
-    --color-soft: #58677f;
+    --color-ink: #10162a;
+    --color-soft: #4a5672;
     --color-faint: #8b96a9;
     --color-hover: rgba(75, 112, 183, 0.08);
     --color-selected: rgba(66, 112, 204, 0.18);
     --color-focus: rgba(66, 112, 204, 0.18);
     --color-field: rgba(25, 45, 78, 0.035);
     --color-nav: #c9ced6;
+    /* Accents du thème jour : plus sombres, lisibles sur fond clair (palette Orbite, ≥ 4,5 : 1). */
+    --color-primary: #3d63c9;
+    --color-primary-light: #5e82d5;
+    --color-primary-dark: #2c4ea8;
+    --color-on-primary: #ffffff;
+    --color-secondary: #6b4fd0;
+    --color-violet: #6b4fd0;
+    --color-success: #177a5b;
+    --color-info: #127a8a;
+    --color-warning: #876510;
+    --color-gold: #876510;
+    --color-error: #c2413a;
+    --color-coral: #c2413a;
     color-scheme: light;
   }
   :root { color-scheme: dark; }

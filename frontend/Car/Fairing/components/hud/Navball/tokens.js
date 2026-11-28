@@ -3,24 +3,27 @@
 // Jetons visuels de la navball
 // ======================================================
 
-// Déclare et exporte C, la palette et les polices de la navball (début de l'objet).
+// Couleurs de la palette Orbite.
+import { NIGHT } from '../../../theme/palette.js';
+
+// Déclare et exporte C, la palette et les polices de la navball, prises dans la palette Orbite (début de l'objet).
 export const C = {
   // Couleur de fond.
-  bg: "#08090a",
+  bg: NIGHT.bg,
   // Couleur des panneaux.
-  panel: "#111315",
+  panel: NIGHT.panel,
   // Couleur des traits.
-  line: "#26292c",
+  line: "#1c2540",
 
   // Couleur du texte.
-  fg: "#e9ebec",
+  fg: NIGHT.ink,
   // Couleur du texte atténué.
-  mute: "#80868b",
+  mute: NIGHT.soft,
 
   // Couleur d'accent, presque blanche.
-  accent: "#f2f4f5",
+  accent: NIGHT.ink,
   // Ambre.
-  amber: "#e8b44a",
+  amber: NIGHT.gold,
 
   // Police des titres (valeur à la ligne suivante).
   display:

@@ -3,8 +3,11 @@
 // quand la balise <html> porte `data-theme="day"` (voir App.jsx). Aucun objet de thème n'est fabriqué au rendu :
 // changer de thème ne fait que changer un attribut, et le navigateur recolore la page.
 
+// Palette Orbite.
+import { DAY, NIGHT } from './palette.js';
+
 // Couleur de fond pleine de chaque thème : celle de la barre d'état du téléphone (balise meta theme-color).
-const SOLID = { night: '#05070D', day: '#E9EFF8' };
+const SOLID = { night: NIGHT.bg, day: DAY.bg };
 
 /** Nom du thème posé sur <html> : « day » pour le jour, « night » sinon. */
 // Déclare et exporte themeName : reçoit le mode jour/nuit de l'application.

@@ -1,5 +1,7 @@
 // Visualisation de l'itinéraire : chaque étape est modélisée par le moteur de son moyen de locomotion
 // (Engine/ItineraireEngine) — en 3D pour les véhicules volants, en 2D pour ceux qui roulent, marchent ou naviguent.
+// Palette Orbite.
+import { DAY as DAY_COLORS, NIGHT } from '../../../theme/palette.js';
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 // Importe les composants du kit d'interface (Tailwind CSS et Base UI).
 import { Button, Chip, IconButton, Tooltip, useMediaQuery } from '@/Fairing/kit';
@@ -38,7 +40,7 @@ export function ItineraireView({ itinerary }) {
   const kind = track && track.dimension === '3d' && webgl ? '3d' : '2d';
   const dark = dayNight !== DAY;
   // Couleur du texte du thème en cours (la même que --color-ink).
-  const ink = dark ? '#f4f7ff' : '#19243a';
+  const ink = dark ? NIGHT.ink : DAY_COLORS.ink;
 
   // Un nouvel itinéraire repart de la vue d'ensemble.
   useEffect(() => { setSel('all'); progress.current = 0; }, [itinerary]);
@@ -47,7 +49,7 @@ export function ItineraireView({ itinerary }) {
     const canvas = canvasRef.current;
     if (!canvas || !model.tracks.length) return undefined;
     progress.current = 0;
-    const colors = { background: dark ? '#0b1220' : '#eef3fb', grid: dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)', text: ink };
+    const colors = { background: dark ? NIGHT.panel : DAY_COLORS.bg, grid: dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)', text: ink };
     let draw, resize, dispose = () => {};
     if (kind === '3d') {
       let r;

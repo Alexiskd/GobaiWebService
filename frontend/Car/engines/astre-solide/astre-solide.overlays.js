@@ -25,15 +25,11 @@ import { countryLabels, moonBorders } from '../../Engine/AstreSolideEngine/MoonE
 // Importe l'identifiant du calque des rues de la Terre.
 import { ROADS_LAYER_ID } from '../../Engine/AstreSolideEngine/MapEngine/earth/roadSource.jsx';
 
-/** Police des noms, celle de l'app. */
-// Déclare et exporte la police des noms.
-export const LABEL_FONT = '600 13px "Google Sans", system-ui, sans-serif';
+// Importe le style unique des calques (palette Orbite) : lignes, noms, couleurs.
+import { LABEL_INK, LINES, labelFont, labelText, moonCountryColor } from './astre-solide.style.js';
 /** Villes nommées au plus (les plus peuplées d'abord) : au-delà, le globe serait illisible et lent. */
 // Déclare et exporte le nombre maximal de villes.
 export const MAX_CITIES = 400;
-/** Couleurs des calques (mêmes teintes que three.js : frontières dorées, littoraux crème). */
-// Déclare et exporte les couleurs.
-export const COLORS = { moonBorder: '#cfe3ff', border: '#ffd166', coast: '#f2efe6', label: '#ffffff', outline: '#000000' };
 
 /**
  * Polylignes plates [lon, lat, lon, lat, …] (format de GET /borders) coupées au saut de l'antiméridien (plus de 180°
@@ -90,7 +86,7 @@ export function topCities(cities, max = MAX_CITIES) {
     .filter((c) => Number.isFinite(c?.lon) && Number.isFinite(c?.lat) && (c.native || c.name))
     .slice().sort((a, b) => (b.pop || 0) - (a.pop || 0) || (b.capital ? 1 : 0) - (a.capital ? 1 : 0))
     .slice(0, max)
-    .map((c, rank) => ({ text: c.native || c.name, lon: c.lon, lat: c.lat, rank: c.capital ? Math.min(rank, 100) : rank }));
+    .map((c, rank) => ({ text: c.native || c.name, lon: c.lon, lat: c.lat, rank: c.capital ? Math.min(rank, 100) : rank, kind: c.capital || rank < 30 ? 'major' : 'minor' }));
 // Fin de topCities.
 }
 
@@ -100,7 +96,7 @@ export function moonPlaces(types, features = MOON_FEATURES) {
   // Types choisis (ensemble).
   const set = types instanceof Set ? types : new Set(types || []);
   // Lieux de ces types, avec leur rang d'après leur niveau.
-  return features.filter((f) => set.has(f.type)).map((f) => ({ text: f.name, lon: f.lon, lat: f.lat, rank: f.tier === 0 ? 0 : f.tier === 1 ? 60 : 200 }));
+  return features.filter((f) => set.has(f.type)).map((f) => ({ text: f.name, lon: f.lon, lat: f.lat, rank: f.tier === 0 ? 0 : f.tier === 1 ? 60 : 200, kind: f.tier === 0 ? 'major' : 'minor' }));
 // Fin de moonPlaces.
 }
 
@@ -109,7 +105,7 @@ export function moonPlaces(types, features = MOON_FEATURES) {
 const memo = (fn) => { let v = null; return () => (v ??= fn()); };
 // Frontières et noms des pays de la Lune, gardés.
 const MOON_BORDERS = memo(() => Object.assign(moonBorders(), { ref: 'pays-lune' }));
-const MOON_COUNTRY_LABELS = memo(() => Object.assign(countryLabels().map((c) => ({ ...c, rank: 0 })), { ref: 'pays-lune' }));
+const MOON_COUNTRY_LABELS = memo(() => Object.assign(countryLabels().map((c) => ({ ...c, rank: 0, kind: 'country', color: moonCountryColor(c.id) })), { ref: 'pays-lune' }));
 
 /** Signature d'un jeu de données : change quand les données changent (nouvelle liste ou autre longueur). */
 // sig : les données (début).
@@ -130,15 +126,15 @@ export const OVERLAYS = [
     want: (e) => e.tiledById?.earth?.tiles?.overlay?.id === ROADS_LAYER_ID,
     data: (e) => { const s = e.tiledById?.earth?.tiles?.overlay?.source; return s ? Object.assign([s], { ref: ROADS_LAYER_ID }) : null; } },
   // Frontières.
-  { id: 'borders', body: 'earth', kind: 'lines', color: COLORS.border, alpha: 0.9,
+  { id: 'borders', body: 'earth', kind: 'lines', ...LINES.border,
     want: (e) => Boolean(e.bordersOn), data: (e) => e.borderData?.lines || null },
   // Littoraux (sauf quand le calque des rues donne les siens).
-  { id: 'coasts', body: 'earth', kind: 'lines', color: COLORS.coast, alpha: 0.6,
+  { id: 'coasts', body: 'earth', kind: 'lines', ...LINES.coast,
     want: (e) => Boolean(e.coastsOn) && !e.coastsFromTiles, data: (e) => e.borderData?.coastlines || null },
   // Noms des pays (dessinés en WebGL par three.js).
   { id: 'countries', body: 'earth', kind: 'labels',
     want: (e) => Boolean(e.countryLabels?.enabled),
-    data: (e) => (e.countryLabels?.items || []).map((c, i) => ({ text: c.text, lon: c.lon, lat: c.lat, rank: i < 40 ? 0 : 30 })) },
+    data: (e) => (e.countryLabels?.items || []).map((c, i) => ({ text: c.text, lon: c.lon, lat: c.lat, rank: i < 40 ? 0 : 30, kind: 'country' })) },
   // Noms des villes (repères HTML de three.js).
   { id: 'cities', body: 'earth', kind: 'labels', html: true,
     want: (e) => Boolean(e.worldLabels?.visible), data: (e) => topCities(e.worldCities) },
@@ -146,7 +142,7 @@ export const OVERLAYS = [
   { id: 'moon-places', body: 'moon', kind: 'labels', html: true,
     want: (e) => (e.moonFeatureTypes?.size ?? 0) > 0, data: (e) => moonPlaces(e.moonFeatureTypes) },
   // Pays de la Lune : frontières entre les territoires des alunissages de chaque nation.
-  { id: 'moon-borders', body: 'moon', kind: 'lines', color: COLORS.moonBorder, alpha: 0.85,
+  { id: 'moon-borders', body: 'moon', kind: 'lines', ...LINES.moonBorder,
     want: (e) => Boolean(e.moonCountriesOn), data: () => MOON_BORDERS() },
   // Pays de la Lune : leurs noms, sur leur capitale.
   { id: 'moon-countries', body: 'moon', kind: 'labels',
@@ -226,7 +222,7 @@ export class GlobeOverlays {
         // Points avec leur hauteur.
         const pts = []; for (let i = 0; i < run.length; i += 2) pts.push(run[i], run[i + 1], 30);
         // Ligne de 1,5 pixel.
-        coll.add({ positions: Cesium.Cartesian3.fromDegreesArrayHeights(pts, ellipsoid), width: 1.5, material });
+        coll.add({ positions: Cesium.Cartesian3.fromDegreesArrayHeights(pts, ellipsoid), width: d.width ?? 1, material });
       // Fin des morceaux.
       }
       // Renvoie le calque.
@@ -238,7 +234,7 @@ export class GlobeOverlays {
     // Points (lignes de type « points »).
     const points = d.kind === 'points' ? viewer.scene.primitives.add(new Cesium.PointPrimitiveCollection()) : null;
     // Couleurs.
-    const fill = Cesium.Color.fromCssColorString(COLORS.label), outline = Cesium.Color.fromCssColorString(COLORS.outline).withAlpha(0.85);
+    const fill = Cesium.Color.fromCssColorString(LABEL_INK.fill).withAlpha(LABEL_INK.fillAlpha), outline = Cesium.Color.fromCssColorString(LABEL_INK.halo).withAlpha(LABEL_INK.haloAlpha);
     // Chaque nom (début).
     for (const p of data) {
       // Position, un peu au-dessus du sol.
@@ -247,13 +243,13 @@ export class GlobeOverlays {
       const far = fadeRadii(p.rank) * R;
       // Le nom : visible de près, effacé au-delà de sa distance ; avancé vers l'œil (pas mangé par le relief).
       labels.add({
-        position, text: p.text, font: LABEL_FONT, fillColor: fill, outlineColor: outline, outlineWidth: 3,
+        position, text: labelText(p.text, p.kind), font: labelFont(p.kind), fillColor: p.color ? Cesium.Color.fromCssColorString(p.color) : fill, outlineColor: outline, outlineWidth: LABEL_INK.haloWidth,
         style: Cesium.LabelStyle.FILL_AND_OUTLINE, verticalOrigin: Cesium.VerticalOrigin.BOTTOM,
         pixelOffset: new Cesium.Cartesian2(0, points ? -8 : 0), eyeOffset: new Cesium.Cartesian3(0, 0, -1000),
         translucencyByDistance: new Cesium.NearFarScalar(far * 0.6, 1, far, 0),
       });
       // Repère : un point.
-      if (points) points.add({ position, pixelSize: 7, color: Cesium.Color.fromCssColorString(d.color), outlineColor: outline, outlineWidth: 1 });
+      if (points) points.add({ position, pixelSize: 6, color: Cesium.Color.fromCssColorString(d.color), outlineColor: outline, outlineWidth: 1 });
     // Fin des noms.
     }
     // Renvoie le calque.

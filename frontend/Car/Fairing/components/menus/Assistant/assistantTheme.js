@@ -1,11 +1,13 @@
+import { NIGHT } from '../../../theme/palette.js';
+
 /**
- * Couleurs et polices de l'assistant, les mêmes de jour comme de nuit : fond anthracite chaud, texte blanc cassé,
- * lignes survolées en gris plus clair, orange de l'accent pour l'action principale. Partagées par la fenêtre, l'écran
- * de connexion et l'écran de facturation.
+ * Couleurs et polices de l'assistant, prises dans la palette Orbite (thème nuit, les mêmes de jour comme de nuit) :
+ * fond bleu nuit, texte encre, bleu de la marque pour l'action principale, corail pour les erreurs. Partagées par la
+ * fenêtre, l'écran de connexion et l'écran de facturation. Seul le logo du fournisseur (Claude, Mistral) l'identifie.
  */
 export const C = {
-  panel: '#1f1e1d', field: '#262624', row: '#30302e', border: '#3b3a37',
-  text: '#eceae3', muted: '#a3a097', accent: '#d97757', error: '#e5867a',
+  panel: NIGHT.panel, field: NIGHT.raised, row: NIGHT.raised, border: 'rgba(177, 199, 255, 0.17)',
+  text: NIGHT.ink, muted: NIGHT.soft, accent: NIGHT.primary, error: NIGHT.coral,
 };
 export const SANS = 'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 export const SERIF = 'Georgia, "Iowan Old Style", "Times New Roman", serif';
