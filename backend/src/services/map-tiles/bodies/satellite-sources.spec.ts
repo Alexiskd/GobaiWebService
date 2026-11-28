@@ -15,9 +15,9 @@ describe('sources des satellites', () => {
     const moons = SATELLITE_SOURCES.filter((s) => !s.planet);
     // Leurs identifiants sont ceux de tous les satellites connus (affichés et candidats : Phobos, Hypérion, Nix…).
     expect(moons.map((s) => s.id).sort()).toEqual(ALL_SATELLITES.map((s) => s.id).sort());
-    // Chaque satellite affiché a au moins un produit Trek.
+    // Chaque satellite affiché a une carte : un produit Trek, ou à défaut une carte USGS (Uranus, Triton, Charon).
     const shown = new Set(SATELLITES.map((s) => s.id));
-    for (const s of moons.filter((m) => shown.has(m.id))) expect(s.trek.length).toBeGreaterThan(0);
+    for (const s of moons.filter((m) => shown.has(m.id))) expect(s.trek.length > 0 || /_simp_cyl\.map$/.test(s.usgsMap ?? '')).toBe(true);
     // Chaque candidat a une carte USGS de repli dans le dossier de sa planète.
     for (const s of moons.filter((m) => !shown.has(m.id))) expect(s.usgsMap).toMatch(/^\/maps\/[a-z]+\/[a-z]+_simp_cyl\.map$/);
     // Géantes gazeuses : pas de portail Trek, carte USGS seulement ; Vénus a Venus Trek.
